@@ -208,9 +208,13 @@ Windows, Linux and macOS. What differs per platform is **Decaid itself**:
   folder (needs Manage External Storage).
 - **Windows / Linux (the team's test rig):** Decaid run with device simulation. Decaid
   v0.8.8 has prebuilt releases (a Windows x64 ZIP; Linux x86_64 and aarch64 AppImage and
-  tar.gz), so the team does not build it. The simulation is chosen at build time with
-  `--dart-define=simulate=1`; whether the prebuilt release offers it is confirmed in the
-  test-rig task.
+  tar.gz), so the team does not build it. The prebuilt release has the simulation as a
+  runtime setting: `POST /api/v1/settings` with `{"simulatedDevices":["machine","scale"]}`
+  and a scan connect a simulated machine and scale; a first start needs the flag
+  `--bypass-onboarding`. This was run on Windows on 2026-10-11 (research.md, section 8,
+  with the steps to start it). A full simulated shot runs. Two limits: simulated steam does
+  not end by itself, and the simulated scale's weight cannot be set. Only the `debug`
+  endpoints and the replay simulator need a source build with `--dart-define=simulate=1`.
 
 ### 4.4 Release
 - Public GitHub repository under **GPL-3.0**, the same licence as Decaid (founder's decision,
@@ -286,6 +290,13 @@ has prebuilt Windows and Linux releases; the profile v2 enumerations; how Stream
 a shot record carries profile, bean and grinder and the skin writes them back with
 `PUT /api/v1/workflow`; the live scale weight is on `/ws/v1/scale/snapshot`.
 
+Answered by the test rig (D2b, research.md section 8), by running Decaid v0.8.8 on Windows:
+the prebuilt release's simulation runs a full shot and feeds `/ws/v1/machine/snapshot`; the
+steam timer is `steamSettings.duration`, in whole seconds (`stopAtTemperature` is for a milk
+probe and does not reach the machine); the `ShotRecord` schema, whose measurements come only
+with `GET /api/v1/shots/{id}`; the scale weight is streamed outside a shot too; the values of
+all five default A-Flow profiles as Decaid ships them.
+
 - Which tablet model and screen size is the design target? (owner)
 - What are the skin and the repository called? `decaid-skin` is provisional; decided before
   the first public release. (owner)
@@ -293,12 +304,20 @@ a shot record carries profile, bean and grinder and the skin writes them back wi
   one drink, as defaults. (owner)
 - Which values does the detail panel leave out besides volume? Decided on the editor
   prototype (D5). (owner)
-- Does Decaid's device simulation run a full shot and feed `/ws/v1/machine/snapshot`? The
-  research inferred it and did not see it run. (research)
-- Which field sets the steam timer: `steamSettings.duration` or
-  `SteamSettings.stopAtTemperature`? The sources contradict each other. (research)
-- The exact `ShotRecord` schema, and the byte format and key order of a v2 profile file.
+- Steam test (acceptance 4) against the simulation: the simulated scale's weight cannot be
+  set, and simulated steam does not end when the duration is over. Where do the mug weights
+  come from in the test (for example WebSocket routing in Playwright), and is "the skin
+  sends the computed seconds as `steamSettings.duration`" enough for the automated part?
+  (owner)
+- Does the real DE1 stop steaming when `steamSettings.duration` is over? The simulation
+  cannot show it; a check for the founder with item 7. (owner)
+- Do the default A-Flow profiles Decaid ships equal the plugin's `.tcl` files? In Decaid's
+  default-medium the Pause step has 15 s where the first research read 0 s. Decides which
+  of the two the 3.0 fixtures start from (D3). (research)
+- The byte format of a v2 profile file only matters for an export: the API takes and
+  returns JSON numbers, the bundled files hold strings. Does v1 export files at all?
   (research)
-- The field-by-field values of the four default A-Flow profiles other than default-medium.
+- Decaid served the bundled skin on port 27906, not on a port from 24800 as 4.1 says. How
+  the port is chosen is not known; read it from `GET /api/v1/webui/server/status`.
   (research)
 - Where is a profile's A-Flow lineage stored: the profile notes or the KV store? (research)

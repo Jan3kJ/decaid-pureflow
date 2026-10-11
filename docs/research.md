@@ -418,3 +418,317 @@ For the founder's attention; the spec itself is not edited here.
 
 Sources: see §§1-6 above (no new sources for this section; it synthesizes contradictions already
 cited).
+
+## 8. Test rig (D2b)
+
+Done on 2026-10-11 on the team's Windows 10 x64 machine, by running the prebuilt Decaid
+v0.8.8 (build `aab5f938`). Every claim is marked **seen running** (a request was sent to the
+running gateway and the response is quoted), **read** (taken from a file in the release ZIP or
+from the source at the release commit, not exercised) or **not seen**.
+
+**Result: the prebuilt release runs with device simulation. No source build is needed.** A
+full simulated shot runs and feeds both snapshot streams. The limits are in 8.7: simulated
+steam never ends by itself, and the simulated scale's weight cannot be set from outside.
+
+### 8.1 What the release offers for simulation
+
+| Claim | Status |
+|---|---|
+| The release has a runtime setting `simulatedDevices` (a list of `machine`, `scale`, `sensor`, `bengle`) in `GET` / `POST /api/v1/settings`. No `--dart-define` is needed | seen running |
+| It is the same setting as **Settings → Simulated Devices** in the app | read (source); the app's window was not seen |
+| With `["machine","scale"]` a scan finds and connects `MockDe1` (machine, model `DE1Pro`, serial `mock-de1`) and `MockScale` ("Mock Scale") | seen running |
+| The setting is stored (`%APPDATA%\net.tadel\Decaid\shared_preferences.json`), and Decaid remembers the two devices as preferred. After a restart the machine was connected again without any API call | seen running |
+| **First start: the device services are only initialised after the onboarding screens.** Until someone clicks through them, a scan finds nothing (and stays at `"scanning":true`) even with the setting on. The command-line flag `--bypass-onboarding` skips them and marks onboarding as done for later starts | seen running; the cause was read in `onboarding_feature/steps/initialization_step.dart` |
+| Other flags of the release: `--serial` (no Bluetooth scan), `--direct`, `--skin <id>`, **`--skin-path <folder>`** (serve a skin straight from a folder), `--no-account`, `--print-storage-paths` | read (`lib/src/cli/cli_args.dart`); only `--bypass-onboarding` and `--serial` were run |
+| The `debug` endpoints (`/api/v1/debug/scale/{command}`, `/debug/machine/{command}`, `/debug/replay/...`) need a build with `--dart-define=simulate=...`. In the release `GET /api/v1/debug/flow-smoothing` answers `404 Route not found` | seen running for that one endpoint; read (`rest_v1.yml`) for the others |
+| The `replay` simulator (`MockReplayDe1`) is not in the setting's list of allowed values, so it needs a source build | read (`rest_v1.yml`), not tried |
+| The app also has a "Try Demo Mode" button for a start without devices | read (string in the binary), not tried |
+| The gateway listens on `0.0.0.0:8080`, the API docs on `:4001` | seen running |
+| The gateway answers CORS requests from another origin: `access-control-allow-origin` echoes the `Origin` header, the preflight answers `200`. A skin on the Vite dev server can call it directly | seen running with `Origin: http://localhost:5173` |
+| The bundled Streamline skin was served on `localhost:27906`, not on a port "from 24800" as `spec.md` 4.1 says. `GET /api/v1/webui/server/status` gives the real port | seen running |
+| The release ZIP holds the full API description: `data/flutter_assets/assets/api/rest_v1.yml` (8916 lines) and `websocket_v1.yml` (1110 lines), and the default profiles as JSON. Use these instead of fetched web pages | read |
+
+Request and response that switch simulation on:
+
+```
+POST /api/v1/settings   {"simulatedDevices":["machine","scale"]}      -> 200 null
+GET  /api/v1/devices/scan                                          -> 200 (after 15 s)
+[{"name":"Mock Scale","id":"MockScale","state":"connected","type":"scale","available":true,"connectionRole":"primary"},
+ {"name":"MockDe1","id":"MockDe1","state":"connected","type":"machine","available":true}]
+GET  /api/v1/machine/state                                         -> 200
+{"timestamp":"2026-10-11T12:23:05.107650","state":{"state":"idle","substate":"idle"},"flow":0.0,"pressure":0.0,
+ "targetFlow":0.0,"targetPressure":0.0,"mixTemperature":13.0,"groupTemperature":13.0,"targetMixTemperature":90.0,
+ "targetGroupTemperature":90.0,"profileFrame":0,"steamTemperature":26}
+```
+
+Without a machine, `GET /api/v1/machine/state` answers
+`500 {"error":"DeviceNotConnectedException: machine not connected"}` (seen running).
+Posting a value the setting already has changes nothing (read in `settings_controller.dart`).
+
+### 8.2 Does a simulated shot run from start to end and feed the snapshot stream? Yes
+
+**Seen running.** Profile "A-Flow / default-medium" (`profile:6c8161b8fe267a5be64e`), target
+yield 36 g, both WebSockets open:
+
+```
+PUT /api/v1/workflow  {"profile":{...},"context":{"targetDoseWeight":18,"targetYield":36,"coffeeName":"Rig Bean A",
+                       "coffeeRoaster":"Rig","grinderModel":"Rig Grinder","grinderSetting":"5.2"}}   -> 200 (the whole workflow)
+PUT /api/v1/scale/tare                                                                              -> 200 null
+PUT /api/v1/machine/state/espresso                                                                  -> 200 null
+```
+
+`/ws/v1/machine/snapshot`, state / substate / profile frame as they changed (seconds after
+the script started; the shot was requested at 3.1; `weight` is from `/ws/v1/scale/snapshot`):
+
+```
+ 0.2 idle/idle/frame0                 pressure=0.00  flow=0.00 weight=0
+ 3.1 espresso/preparingForShot/frame0 pressure=0.11  flow=2.80 weight=0
+ 3.6 espresso/preinfusion/frame0      pressure=0.68  flow=7.40 weight=0
+ 4.0 espresso/preinfusion/frame1      pressure=0.84  flow=7.89 weight=0
+ 8.0 espresso/pouring/frame2          pressure=3.22  flow=8.00 weight=0
+12.1 espresso/preparingForShot/frame4 pressure=3.43  flow=1.66 weight=2.19
+12.3 espresso/preparingForShot/frame5 pressure=1.00  flow=0.45 weight=2.53
+12.7 espresso/pouring/frame5          pressure=1.27  flow=0.53 weight=2.67
+20.3 espresso/pouring/frame6          pressure=10.00 flow=2.50 weight=11.25
+20.4 espresso/pouring/frame7          pressure=1.00  flow=0.25 weight=11.46
+20.5 espresso/pouring/frame8          pressure=1.85  flow=0.86 weight=11.46
+31.1 idle/idle/frame0                 pressure=0.00  flow=0.00 weight=34.07
+```
+
+- The shot took 28 s and ended by itself: Decaid stopped it at the target weight. The stored
+  record says `"stopReason":"targetWeight"` and `"actualYield":34.3` for a target of 36, so
+  the cup ended 1.7 g under the target. A test for "stops at the target weight" needs a
+  tolerance.
+- The mock follows the profile's steps: frames 0, 1, 2, 4, 5, 6, 7, 8 were seen (frame 3, the
+  2nd fill with 0 s, was skipped), pressure reached 10.0 bar and flow 8.0 ml/s. The substate
+  is not monotonic (`preparingForShot` came back at frame 4), so the UI must not derive the
+  phase from the substate alone; `profileFrame` says which step runs.
+- Frame rate of `/ws/v1/machine/snapshot`: about 10 per second during the shot (287 frames
+  in 31 s), about 2 per second while idle (6 frames in 3 s). The first frame arrives right
+  after connecting.
+- A frame, verbatim: `{"timestamp":"2026-10-11T12:23:39.408036","state":{"state":"idle","substate":"idle"},"flow":0.0,"pressure":0.0,"targetFlow":0.0,"targetPressure":0.0,"mixTemperature":44.0,"groupTemperature":44.0,"targetMixTemperature":93.0,"targetGroupTemperature":93.0,"profileFrame":0,"steamTemperature":88}`.
+  There is no weight in it.
+- `/ws/v1/machine/shotState` also works: `state` went `idle` → `preheating` → `pouring` →
+  `stopping` → `finished` → `idle`, with one `shotId` for the whole shot and a `decision`
+  event at every frame change and at the stop.
+- The simulated machine starts cold (13 °C) and heats up; the shot above was started at
+  44 °C and ran.
+
+### 8.3 Which field sets the steam timer? `steamSettings.duration`
+
+**Seen running.**
+
+```
+PUT /api/v1/workflow  {"steamSettings":{"duration":8}}
+  -> 200, "steamSettings":{"targetTemperature":150,"duration":8,"flow":0.8,"stopAtTemperature":0}
+/ws/v1/machine/shotSettings, first frame after it:
+  {"steamSetting":0,"targetSteamTemp":150,"targetSteamDuration":8,"targetHotWaterTemp":75,"targetHotWaterVolume":50,
+   "targetHotWaterDuration":30,"targetShotVolume":36,"groupTemp":94.0}
+
+PUT /api/v1/workflow  {"steamSettings":{"stopAtTemperature":40,"duration":50}}
+  -> 200, "steamSettings":{"targetTemperature":150,"duration":50,"flow":0.8,"stopAtTemperature":40}
+/ws/v1/machine/shotSettings: "targetSteamDuration":50, and no field for the stop temperature
+
+PUT /api/v1/workflow  {"steamSettings":{"duration":null}}
+  -> 400 {"error":"Invalid request","message":"FormatException: Field \"duration\" cannot be null"}
+```
+
+- `duration` (whole seconds) is what reaches the machine, as `targetSteamDuration`. The body
+  may hold only the field that changes; the other steam fields keep their values.
+- Both fields exist, which explains the contradiction in the first research.
+  `stopAtTemperature` is for a milk probe. It is stored and returned but does not show up in
+  the machine's shot settings. `rest_v1.yml` says about it: "Scaffolding only today — no
+  machine in production has an integrated probe wired, so the field round-trips but does not
+  affect machine behaviour" (read).
+- Not seen: a machine that stops steaming when the duration is over. The simulated machine
+  does not (8.7), so this stays a check on the real DE1.
+
+### 8.4 The `ShotRecord` schema
+
+**Seen running** for every field with a value below (the record of the shot in 8.2); it
+matches `components/schemas/ShotRecord` in the release's `rest_v1.yml`. Fields marked
+"per schema" were only read.
+
+```
+GET /api/v1/shots/latest   -> 200, 3 144 bytes, no measurements (schema ShotRecordSummary)
+GET /api/v1/shots?limit=5  -> 200, {"items":[ ...summaries... ], ...}
+GET /api/v1/shots/{id}     -> 200, 150 174 bytes, with 278 measurements (schema ShotRecord)
+```
+
+```
+id            "ee7495ea-e744-4db8-93e2-a91f706c7e52"   the shotId of /ws/v1/machine/shotState
+timestamp     "2026-10-11T12:23:42.408198"             shot start, local time, no zone
+createdAt     "2026-10-11T10:24:14.310637Z"            UTC
+updatedAt     "2026-10-11T10:24:14.310637Z"            UTC
+stopReason    "targetWeight"       per schema an open set: targetWeight, targetVolume, apiStop, appStop,
+                                   machineEnded, error
+annotations   {"actualDoseWeight":18,"actualYield":34.3}
+              per schema also: drinkTds, drinkEy, enjoyment (0-10), espressoNotes, extras
+workflow      the whole workflow as it was at the shot:
+  id, name, description
+  profile       the full v2 profile (title, notes, author, beverage_type, steps, target_weight, ...)
+  context       {"targetDoseWeight":18,"targetYield":36,"grinderModel":"Rig Grinder","grinderSetting":"5.2",
+                 "coffeeName":"Rig Bean A","coffeeRoaster":"Rig"}
+                per schema also: targetWaterVolume, grinderId, beanBatchId, finalBeverageType,
+                baristaName, drinkerName
+  steamSettings {"targetTemperature":150,"duration":50,"flow":0.8,"stopAtTemperature":0}
+  hotWaterData  {"targetTemperature":75,"duration":30,"volume":50,"flow":10}
+  rinseData     {"targetTemperature":90,"duration":10,"flow":6}
+  machine       {"provenanceStatus":"captured","flowCalibration":1,"serialNumber":"mock-de1","model":"DE1Pro",
+                 "firmwareVersion":"1337"}
+measurements  only in GET /api/v1/shots/{id}; one entry per machine frame (278 for 27.7 s):
+  machine       a MachineSnapshot, the same fields as a frame of /ws/v1/machine/snapshot
+  scale         {"timestamp":"...","weight":6.205,"weightFlow":0.930,"battery":100,"timerValue":13305}
+  volume        10.06     ml since shot start
+```
+
+What this means for the history overlay (spec 3.5): the list comes from `GET /api/v1/shots`
+(summaries carry profile, bean and grinder setting, so an entry can be built without the
+measurements), and the graph of one entry needs one `GET /api/v1/shots/{id}`. The profile is
+stored as a copy inside the shot, not as a profile id. `GET /api/v1/shots` has the filters
+`beanBatchId` and `profileTitle` (read, not tried). Steam runs are stored separately
+(`GET /api/v1/steams/latest` and `/steams/{id}`: seen running, 8.7).
+
+### 8.5 Is the scale weight streamed on `/ws/v1/scale/snapshot` outside a shot? Yes
+
+**Seen running**, with the machine idle after the shot had ended:
+
+```
+ws://localhost:8080/ws/v1/scale/snapshot
+{"status":"connected"}
+{"timestamp":"2026-10-11T12:24:26.313996","weight":34.31715970191449,"weightFlow":0.0,"battery":100,"timerValue":27499}
+{"timestamp":"2026-10-11T12:24:26.514056","weight":34.31715970191449,"weightFlow":0.0,"battery":100,"timerValue":27499}
+```
+
+- About 5 frames per second: 16 frames in 3 s while idle, 156 in 31 s around the shot, 218
+  in 43 s around a steam run.
+- **The first frame is a status frame without a weight** (`{"status":"connected"}`). The
+  client must not read `weight` from every frame.
+- `PUT /api/v1/scale/tare` outside a shot answers `200 null`, and the next frames carry
+  `"weight":0.0`.
+- `weight` is unrounded (34.31715970191449); the skin rounds for display.
+
+### 8.6 Profiles: answers that fell out of the run
+
+- **The API returns and accepts numbers as JSON numbers.** `GET /api/v1/profiles` gives
+  `"temperature":93`, `"seconds":1`, and `PUT /api/v1/workflow` took the same object back.
+  Seen running. The bundled *files* (`assets/defaultProfiles/*.json`) hold the same values as
+  strings (`"temperature": "93.0"`), indented by two spaces, with the top-level key order
+  `version`, `title`, `author`, `notes`, `beverage_type`, `steps`, `tank_temperature`,
+  `target_weight`, `target_volume`, `target_volume_count_start`, `type`, `hidden` (read, in
+  `A-Flow____default-medium.json`). The skin talks to the API, so the generator produces
+  numbers; the file format only matters for an export.
+- A stored profile is wrapped in a record: `id` (`profile:<20 hex>`), `profile`,
+  `metadataHash`, `compoundHash`, `parentId`, `visibility`, `isDefault`, `createdAt`,
+  `updatedAt`, `metadata` (`{"source":"bundled","filename":"..."}`). Seen running;
+  `GET /api/v1/profiles` returned 73 of them.
+- **Decaid ships the five A-Flow default profiles** (`isDefault: true`). Their values, from
+  `GET /api/v1/profiles` (seen running). Every step has `sensor: "coffee"`, `volume: 100`
+  and a limiter range of 0.6; all five have `target_volume: 100`,
+  `target_volume_count_start: 2`, `tank_temperature: 0`. A cell reads: the pump's target
+  (ml/s for a flow step, bar for a pressure step), temperature, seconds, exit weight if any,
+  limiter value (`lim`).
+
+  | Step (pump, transition) | light | medium | dark | very-dark | like-dflow |
+  |---|---|---|---|---|---|
+  | `target_weight` | 48 | 42 | 36 | 32 | 36 |
+  | Pre Fill (flow, fast) | 8, 95°, 1 s, lim 8 | 8, 93°, 1 s, lim 8 | 8, 93°, 1 s, lim 8 | 8, 93°, 1 s, lim 8 | 8, 93°, 1 s, lim 8 |
+  | Fill (flow, fast), exit pressure over 3 | 8, 95°, 15 s, lim 8 | 8, 93°, 15 s, lim 8 | 8, 93°, 15 s, lim 8 | 8, 93°, 15 s, lim 8 | 8, 93°, 15 s, lim 8 |
+  | Infuse (pressure, fast) | 3, 95°, 60 s, 6 g, lim 1 | 3, 93°, 60 s, 3.6 g, lim 1 | 3, 93°, 10 s, 2 g, lim 1 | 3, 93°, 6 s, 2 g, lim 1 | 3, 93°, 60 s, 4 g, lim 1 |
+  | 2nd Fill (flow, fast), exit pressure over 2.5 | 8, 95°, 0 s, lim 3 | same | same | same | same |
+  | Pause (pressure, fast), exit flow under 1 | 1, 95°, 15 s, lim 1 | same | same | same | same |
+  | Pressure Up (pressure, smooth), lim 0 | 9.5, 95°, 10 s, exit flow over 3 | 10, 93°, 10 s, exit flow over 2 | 9, 88°, 5 s, exit flow over 2 | 10, 88°, 3 s, exit flow over 3.6 | 10, 93°, 0 s, exit flow over 2 |
+  | Pressure Decline (pressure, smooth), lim 0 | 1, 95°, 0 s, exit flow under 3.1 | 1, 93°, 0 s, exit flow under 2.1 | 1, 88°, 0 s, exit flow under 2.1 | 1, 88°, 3 s, exit flow under 1.9 | 1, 93°, 0 s, exit flow under 2.1 |
+  | Flow Start (flow, fast), lim 0 | 3, 95°, 0 s | 2, 93°, 0 s | 2, 88°, 0 s | 1.8, 88°, 0 s | 2, 93°, 10 s, exit flow over 1.9 |
+  | Flow Extraction (flow, smooth) | 6, 95°, 60 s, lim 9.5 | 4, 93°, 60 s, lim 10 | 0, 88°, 60 s, lim 9 | 3.6, 88°, 60 s, lim 10 | 4, 93°, 60 s, lim 10 |
+
+  Two differences to the table in section 6: in Decaid's `default-medium` the Pause step has
+  15 s, not 0 s, and the profile's `target_weight` is 42. In all five the 2nd Fill has 0 s
+  while the Pause keeps 15 s. These are Decaid's conversions; whether they equal the
+  plugin's `.tcl` files was not compared. The complete steps are in the release's
+  `assets/defaultProfiles/A-Flow____default-*.json`.
+
+### 8.7 Limits of the simulation
+
+| Claim | Status |
+|---|---|
+| **Simulated steam does not end by itself.** With `duration: 8`, `PUT /api/v1/machine/state/steam` put the machine in `steam/idle`, and it was still there after 40 s. `PUT /api/v1/machine/state/idle` ended it | seen running |
+| **Simulated steam has no curve.** Pressure and flow stay 0.00 and `steamTemperature` stays at 150 for the whole run. About 2 frames per second | seen running |
+| A steam run is recorded: `GET /api/v1/steams/latest` → `id`, `timestamp`, `workflow`; `GET /api/v1/steams/{id}` adds `measurements` of `{"machine":{...},"milkTemperature":null}` | seen running |
+| **The simulated scale's weight cannot be set.** It rose during the simulated shot and kept the last value (34.3 g) until a tare. No endpoint of the release puts a mug on the mock scale | seen running for the behaviour; that no endpoint exists was read in `rest_v1.yml` |
+| `GET /api/v1/machine/capabilities` answers `{"capabilities":[]}` for the mock machine | seen running |
+| Sleep and wake, hot water, flush, the `block_tare_during_shot` 400, a second shot giving a second history entry, skin install by URL or ZIP, `--skin-path`, Playwright against the gateway | not seen: not tried in this task |
+| The Decaid window itself | not seen: the Windows session was disconnected, so no screenshot was possible. Everything was driven through the API. The bundled Streamline skin did load inside Decaid (log: `SkinView - Page finished loading: http://localhost:27906/`) |
+
+What follows for the acceptance tests (spec section 5, not changed here): item 2 (shot) can
+run against the simulation as written, with a tolerance on the final weight. Item 4 (steam)
+cannot get the mug weights s, m and l from the mock scale, and the mock machine will not
+show a timer running out. The simulation can still check that the skin sends the computed
+seconds as `steamSettings.duration` and that Decaid reports them back as
+`targetSteamDuration`. The scale frames would have to come from somewhere else, for example
+from Playwright's WebSocket routing in front of `/ws/v1/scale/snapshot`. That is a decision
+for the owner.
+
+### 8.8 Start the rig again
+
+The rig is in `..\decaid-rig`, outside the repository: the release ZIP (50 220 823 bytes,
+SHA-256 `f78ec23fede5eedd9421301dca1c03d0ec1d9705aa5c41aab3cefe39edfc943e`, equal to the
+release's `SHA256SUMS.txt`), unpacked in `decaid-0.8.8\`, three small Node scripts
+(`ws.mjs`, `shot.mjs`, `steam.mjs`) and the recorded responses in `log\`. Decaid keeps its
+own state in `%APPDATA%\net.tadel\Decaid` (37 MB: settings, database, installed skins).
+Nothing was installed; the ZIP needs no installer.
+
+1. Get the release, once (PowerShell):
+   ```
+   mkdir ..\decaid-rig; cd ..\decaid-rig
+   curl.exe -sSLO https://github.com/decentespresso/decaid/releases/download/v0.8.8/decaid-windows-x64-0.8.8.zip
+   Expand-Archive decaid-windows-x64-0.8.8.zip decaid-0.8.8
+   ```
+2. Start Decaid:
+   ```
+   Start-Process ..\decaid-rig\decaid-0.8.8\Decaid.exe -ArgumentList "--bypass-onboarding" -WorkingDirectory ..\decaid-rig\decaid-0.8.8
+   ```
+   The gateway answered 1 s later: `curl.exe http://localhost:8080/api/v1/info` →
+   `{"commit":"aab5f938...","version":"0.8.8","buildNumber":"2900",...}`.
+3. Switch simulation on, once per machine (it is stored), then scan:
+   ```
+   curl.exe -X POST -H "Content-Type: application/json" -d '{\"simulatedDevices\":[\"machine\",\"scale\"]}' http://localhost:8080/api/v1/settings
+   curl.exe http://localhost:8080/api/v1/devices/scan
+   ```
+   The scan took 15 s (it also searches Bluetooth; `--serial` in step 2 leaves that out and
+   a scan then takes under a second) and returned `MockDe1` and `MockScale` as `connected`.
+   This order, on a Decaid without simulated devices, was run once more at the end and
+   worked. On later starts step 2 alone is enough: Decaid connects both by itself (seen:
+   both connected 25 s after one start, the machine connected 61 s after another).
+4. Check: `curl.exe http://localhost:8080/api/v1/machine/state` → `200` with
+   `"state":{"state":"idle","substate":"idle"}`.
+5. A shot: `PUT /api/v1/workflow` with a profile and `context.targetYield`, then
+   `PUT /api/v1/machine/state/espresso`; watch `ws://localhost:8080/ws/v1/machine/snapshot`
+   and `/ws/v1/scale/snapshot`. `node shot.mjs profile:6c8161b8fe267a5be64e 36` does all of
+   it. Node 24 has `WebSocket` and `fetch` built in, so the scripts need no package.
+6. Stop: close the window, or `(Get-Process Decaid).CloseMainWindow()`. Decaid exited
+   cleanly every time, and port 8080 was free afterwards.
+
+To start from zero, delete `%APPDATA%\net.tadel\Decaid`. This run left Decaid with
+`gatewayMode: "tracking"` (it started as `"disabled"`; this task never set it), with
+onboarding marked as done and the two mock devices as preferred devices. Decaid is stopped.
+
+### 8.9 If a source build is ever needed
+
+Not needed for the rig. It would be needed for the `debug` endpoints or the `replay`
+simulator (8.1), and it needs the owner's approval. What it takes, from section 1 (read, not
+tried): the Flutter SDK (README: "3.7.0 or later"; the pinned version is not known), Visual
+Studio with its C++ desktop tools for a Windows build, a clone of `decentespresso/decaid`,
+and a build with `--dart-define=simulate=1`. A Linux build runs in Docker instead
+(`make build-amd`).
+
+Sources: the release `decaid-windows-x64-0.8.8.zip` from
+https://github.com/decentespresso/decaid/releases/tag/v0.8.8 (the running app, and its files
+`assets/api/rest_v1.yml`, `assets/api/websocket_v1.yml`, `assets/defaultProfiles/*.json`) ·
+seven source files read on GitHub at commit `aab5f938`, to find out why the first scans
+found nothing: `lib/main.dart`, `lib/src/cli/cli_args.dart`,
+`lib/src/services/simulated_device_service.dart`,
+`lib/src/settings/settings_controller.dart`,
+`lib/src/services/webserver/settings_handler.dart`,
+`lib/src/controllers/device_controller.dart`,
+`lib/src/onboarding_feature/steps/initialization_step.dart`.
