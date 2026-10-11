@@ -240,7 +240,9 @@ Windows or Linux. Items 7 and 8 are checks by the founder.
   limit; the team plans by capacity.
 - **Needs the founder's approval:** anything that costs money, every push to GitHub, making
   the repository public, and any change to sections 3 and 5 of this spec.
-- **External services:** GitHub (the repository) and Decaid's local gateway. No others.
+- **External services:** GitHub (the repository), Decaid's local gateway, and Gemini for
+  Stint's daily blog phase, which publishes a post (allowed by the founder, 2026-10-11). No
+  others.
 - **Needs the founder's hands:** the real DE1, the Android tablet (installing the ZIP), and
   the GitHub account.
 - Tests run without a machine. Anything that needs the real DE1 is a founder task, asked for
