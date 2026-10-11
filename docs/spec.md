@@ -176,10 +176,22 @@ Rules from `doc/Skins.md`:
 - optional `manifest.json` (id, name, description, version, author, repository); the id is one
   safe path component.
 
-### 4.2 Stack (proposal, confirmed in the scaffold milestone)
-- **TypeScript + Vite**, static build. UI framework: **Svelte**, for small bundles and little
-  code per screen. For comparison, the live Streamline skin (`decentespresso/streamline-js`
-  v0.2.12, ISC) uses no framework: Tailwind + daisyUI, esbuild and ECharts.
+### 4.2 Stack (decided in D2, 2026-10-11)
+- **TypeScript + Vite**, static build to `dist/`, with relative asset paths.
+- **UI framework: Svelte 5.** Decided on the two criteria of the scaffold milestone:
+  - *Bundle size.* The scaffold's whole build is 25 kB of JavaScript, 10.3 kB gzipped,
+    measured with Svelte 5.57 and Vite 8; that is the framework's fixed cost. No framework
+    costs 0 kB, so on size alone it wins, by about 10 kB. The skin is installed once as a ZIP
+    and served from localhost, so 10 kB is not felt. Svelte compiles components at build time,
+    which keeps it far below a framework with a full runtime.
+  - *Code per screen.* The skin is live state on screen: two snapshot streams drive the home,
+    espresso and steam screens, and the editor redraws a curve on every drag. In Svelte a
+    value in the markup follows its state by itself; without a framework each of those
+    updates is hand-written DOM code, on every screen. This is where Svelte wins, and it
+    outweighs the 10 kB.
+  - The live Streamline skin (`decentespresso/streamline-js` v0.2.12, ISC) takes the other
+    route: no framework, Tailwind + daisyUI, esbuild and ECharts. Its `api.js` stays a useful
+    reference for the API client (D4).
 - **Profile generator as a pure module** (A-Flow parameters -> v2 profile JSON), with no UI and
   no network. This is the product's core and gets the most tests.
 - **Charts:** a small canvas or SVG line chart of our own, or a light library; decided by
@@ -289,5 +301,4 @@ a shot record carries profile, bean and grinder and the skin writes them back wi
   (research)
 - The field-by-field values of the four default A-Flow profiles other than default-medium.
   (research)
-- Stack: Svelte, or no framework as Streamline does it (4.2)? (research)
 - Where is a profile's A-Flow lineage stored: the profile notes or the KV store? (research)

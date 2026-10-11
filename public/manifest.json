@@ -1,0 +1,8 @@
+{
+  "id": "decaid-skin",
+  "name": "decaid-skin",
+  "description": "A minimal skin for Decaid, built around an editor for A-Flow profiles.",
+  "version": "0.1.0",
+  "author": "Janek",
+  "repository": "https://github.com/Jan3kJ/decaid-skin"
+}
