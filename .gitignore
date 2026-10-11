@@ -1,3 +1,8 @@
 node_modules/
 dist/
 release/
+# stint: the runner's local files
+stint/logs/DayRun.log
+stint/logs/day-state-*.json
+stint/logs/tasks/
+stint/logs/blog-brief.md
