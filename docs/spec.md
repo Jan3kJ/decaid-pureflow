@@ -165,8 +165,11 @@ quickest way to repeat a good shot.
 ## 4. Technical approach
 
 ### 4.1 What a Decaid skin is
-A static web app (`index.html` at the root) served by Decaid's gateway from localhost (ports
-from 24800), talking to the gateway's REST and WebSocket API on port 8080. Decent prescribes
+A static web app (`index.html` at the root) served by Decaid from localhost, talking to the
+gateway's REST and WebSocket API on port 8080. Each installed skin has its own port, which
+Decaid assigns from 24800 upward and keeps over restarts; the bundled Streamline skin is on
+27906 on the test rig. The skin does not assume its port: `GET /api/v1/webui/server/status`
+returns it (research.md, section 9). Decent prescribes
 no framework and no design system. The **Streamline** skin is the reference implementation.
 Rules from `doc/Skins.md`:
 - persist state through the Decaid KV API or `localStorage`; `sessionStorage` is cleared when
@@ -297,6 +300,10 @@ probe and does not reach the machine); the `ShotRecord` schema, whose measuremen
 with `GET /api/v1/shots/{id}`; the scale weight is streamed outside a shot too; the values of
 all five default A-Flow profiles as Decaid ships them.
 
+Answered by the API client's rig check (D4, research.md section 9): the skin's port (4.1);
+a tare during a shot answers 400 `block_tare_during_shot` only with Decaid's setting
+`blockTareDuringShot` on; the state for sleep is `sleeping`.
+
 - Which tablet model and screen size is the design target? (owner)
 - What are the skin and the repository called? `decaid-skin` is provisional; decided before
   the first public release. (owner)
@@ -319,7 +326,11 @@ all five default A-Flow profiles as Decaid ships them.
 - The byte format of a v2 profile file only matters for an export: the API takes and
   returns JSON numbers, the bundled files hold strings. Does v1 export files at all?
   (research)
-- Decaid served the bundled skin on port 27906, not on a port from 24800 as 4.1 says. How
-  the port is chosen is not known; read it from `GET /api/v1/webui/server/status`.
-  (research)
-- Where is a profile's A-Flow lineage stored: the profile notes or the KV store? (research)
+- Where are a profile's A-Flow parameters stored: the profile notes or the KV store? Not
+  decided. The facts from the rig (D4, research.md 9.2): both hold a string, and the KV store
+  holds any JSON value. A profile's id is a hash of its steps, not of its notes, so
+  `POST /api/v1/profiles` with steps that already exist returns the existing record with its
+  old notes; changing notes takes `PUT /api/v1/profiles/{id}`. (owner)
+- Which call loads a profile: `POST /api/v1/machine/profile` (3.1) leaves the workflow's
+  profile as it was, and a shot record copies the workflow's profile; `PUT /api/v1/workflow`
+  changes both (research.md 9.3). Decided in D6. (owner)

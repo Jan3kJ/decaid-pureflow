@@ -732,3 +732,87 @@ found nothing: `lib/main.dart`, `lib/src/cli/cli_args.dart`,
 `lib/src/services/webserver/settings_handler.dart`,
 `lib/src/controllers/device_controller.dart`,
 `lib/src/onboarding_feature/steps/initialization_step.dart`.
+
+## 9. API client (D4)
+
+Done on 2026-10-12. The client is `src/api/`: `client.ts` (REST), `stream.ts` (the two
+snapshot streams) and `types.ts`, plain TypeScript without Svelte. Field names are from the
+release's `rest_v1.yml` and `websocket_v1.yml`. `scripts/rig-smoke.mjs` runs the same client
+against the rig: Node 24 imports the TypeScript files directly, so the check needs no build.
+Its output is in [d4-rig-smoke.txt](d4-rig-smoke.txt) (and in the rig's `log\`). It was run
+with `node scripts/rig-smoke.mjs --tare-block --sleep` against Decaid v0.8.8, started as in
+8.8 step 2; all 11 checks passed.
+
+Every claim is marked **seen running** (the script sent the request and the answer is in its
+output), **read** (from a file of the release or from `doc/Skins.md` at tag `v0.8.8`) or
+**not seen**.
+
+### 9.1 What the rig check showed
+
+| Claim | Status |
+|---|---|
+| Decaid started with step 2 alone; `GET /api/v1/machine/state` answered `200` with `"state":{"state":"idle","substate":"idle"}` within 50 s of the start (not timed more closely) | seen running |
+| `/ws/v1/machine/snapshot` delivers frames through the stream class: 5 frames in 3 s while idle, each a `MachineSnapshot` without a weight | seen running |
+| `/ws/v1/scale/snapshot` delivers frames: 16 in 3 s. The first is `{"status":"connected"}`, the second a weight frame. With no timer running, `timerValue` is `null` | seen running |
+| `PUT /api/v1/scale/tare` outside a shot answers `200 null`, and the next weight is 0 | seen running |
+| **A tare during a shot answers `400 {"details":"Tare blocked: a shot is in progress","type":"block_tare_during_shot"}`**, but only with the setting `blockTareDuringShot` on (`POST /api/v1/settings`); it is off by default. The client throws a `TareBlockedError` for it. After the shot a tare answers 200 again | seen running, in gateway mode `tracking` |
+| In gateway mode `full` the tare is never blocked | read (`rest_v1.yml`), not tried |
+| `GET /api/v1/webui/server/status` → `{"serving":true,"path":"...\web-ui\streamline.js","port":27906,"ip":"localhost"}`, and `http://localhost:27906/` answers 200 with HTML | seen running |
+| The port is the same as on 2026-10-11 (8.1), over several starts of Decaid | seen running |
+| Each installed skin has its own port, "derived from the skin's identity and remembered across restarts"; "Ports are assigned from 24800 upward. 3000, 4001 and 8080 are reserved"; `localhost:3000` redirects to the skin. If the port is taken, Decaid uses a temporary port for that run, and `localStorage` written under the usual port is not visible then; the KV store is not affected | read (`doc/Skins.md`) |
+| The port Decaid gives to this skin | not seen: the skin was not installed in Decaid |
+| `PUT /api/v1/machine/state/sleeping` puts the machine to sleep (`sleeping/idle`), `.../idle` wakes it. The state's name is `sleeping`, not `sleep` | seen running |
+| While the machine sleeps the scale stream sends `{"status":"disconnected"}` and no weights, and after the wake `{"status":"connected"}` and weights again, all on one socket: the stream stayed `open` and did not reconnect. (The rig has `scalePowerMode: "disconnect"`, so the scale is dropped when the machine sleeps) | seen running |
+| `PUT /api/v1/workflow` with only `{"steamSettings":{"duration":51}}` or only `{"context":{"targetYield":37}}` changes that one value and returns the whole workflow | seen running |
+| `GET /api/v1/shots?limit=5`, `/shots/latest` (no measurements) and `/shots/{id}` (278 measurements) fit the client's types | seen running |
+| A reconnect after the gateway went away, and an error frame on one of the two streams | not seen on the rig; covered by the tests with a fake WebSocket |
+
+### 9.2 Profile notes and the KV store: both hold a string
+
+For the question where a profile's A-Flow parameters are stored (spec 3.2 and 8). These are
+the facts; the decision is not made here.
+
+| Claim | Status |
+|---|---|
+| A profile's `notes` is a string. 161 characters of JSON text with quotes, a line break, `°` and `ü` came back unchanged from `POST /api/v1/profiles`, from `GET /api/v1/profiles/{id}` and from the list | seen running |
+| A KV value is any JSON value. A string and an object (with nested object, list, number, boolean, `null`) both came back unchanged from `POST` then `GET /api/v1/store/{namespace}/{key}` | seen running |
+| **A profile's id is a hash of its steps and targets, not of its notes.** The same profile posted again with other notes returned the existing record: the same id, the old notes, `parentId: null` although a parent id was sent. No error | seen running |
+| `PUT /api/v1/profiles/{id}` with the other notes changed them: the same id, a new `metadataHash` | seen running |
+| So a `POST` cannot give new notes to a profile whose steps already exist, for example one that equals a bundled default; that takes a `PUT`. And a default profile's content cannot be changed with `PUT`, "only metadata" | the first part seen running; the default-profile rule read (`rest_v1.yml`), not tried |
+| A KV key that does not exist answers `200 null`, not 404 as `doc/Skins.md` says. The client returns `null` for both | seen running |
+| `POST /api/v1/store/...` answers `200 {}`, not 204 as `rest_v1.yml` says. `DELETE` removes the key | seen running |
+| The KV store lives in the app, so it does not depend on the skin's port | read (`doc/Skins.md`) |
+| The longest string `notes` or a KV value can hold | not seen: not tried beyond 161 characters |
+
+### 9.3 Two more findings
+
+- **`POST /api/v1/machine/profile` does not change the workflow.** It answered 200, and
+  `GET /api/v1/workflow` still held the profile from before (seen running: the title was
+  unchanged). A shot record copies the workflow's profile (8.4), so a profile loaded this way
+  would not be the one in the history. `PUT /api/v1/workflow` with `profile` does both (8.2).
+  Which of the two the skin uses to load a profile is a decision for D6; spec 3.1 names
+  `POST /api/v1/machine/profile`.
+- **Stopping Decaid.** `(Get-Process Decaid).CloseMainWindow()` (8.8, step 6) returned false
+  this time: the process had no window handle, because the Windows session had no desktop.
+  It was ended with `Stop-Process -Force`. Afterwards no Decaid process was running and
+  ports 8080 and 27906 were free (seen running).
+
+### 9.4 The reconnect rule
+
+`doc/Skins.md` has two rules, and the stream class follows both (read; the tests cover them):
+reconnect after the socket closed, with a delay that doubles from 1 s to at most 30 s and
+starts again after a successful open; and "Do not reconnect the WebSocket on an error. The
+socket stays open across errors". The second is written for `/ws/v1/devices`, whose frames
+carry a `connectionStatus.error`, and for the scale stream, which reports a lost scale as
+`{"status":"disconnected"}` on the open socket. So a frame never makes the stream reconnect.
+One case goes beyond the document and is this client's own choice: when the gateway sends an
+error frame (`{"error":...}` or `{"e":...}`) and then closes the socket, the stream stops in
+the state `failed` and does not retry until `connect()` is called. Neither of the two
+snapshot streams is documented to do that.
+
+What the run left in the rig: nothing. The test profile, the KV keys (namespace
+`decaid-skin-rig-smoke`) and the shot of the blocked-tare check were deleted again, and
+`blockTareDuringShot` is back to `false`. The shot history holds the one shot of 8.2.
+
+Sources: the running Decaid v0.8.8 on the rig · `rest_v1.yml` and `websocket_v1.yml` in the
+release · https://raw.githubusercontent.com/decentespresso/decaid/v0.8.8/doc/Skins.md
