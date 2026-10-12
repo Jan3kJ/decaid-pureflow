@@ -311,9 +311,11 @@ all five default A-Flow profiles as Decaid ships them.
   (owner)
 - Does the real DE1 stop steaming when `steamSettings.duration` is over? The simulation
   cannot show it; a check for the founder with item 7. (owner)
-- Do the default A-Flow profiles Decaid ships equal the plugin's `.tcl` files? In Decaid's
-  default-medium the Pause step has 15 s where the first research read 0 s. Decides which
-  of the two the 3.0 fixtures start from (D3). (research)
+- Answered in D3 ([a-flow-3.0.md](a-flow-3.0.md)): Decaid's five default A-Flow profiles
+  equal the plugin's `.tcl` files except for the Pause step, which has 0 s in the plugin and
+  15 s in Decaid, in all five. The 3.0 fixtures start from the plugin. What is left: the
+  choices and the points on 3.2 listed in that document, sections 5 and 6, for the founder's
+  review. (owner)
 - The byte format of a v2 profile file only matters for an export: the API takes and
   returns JSON numbers, the bundled files hold strings. Does v1 export files at all?
   (research)

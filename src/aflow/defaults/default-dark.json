@@ -1,0 +1,17 @@
+{
+  "dose": 18,
+  "fillFlow": 8,
+  "fillTemperature": 93,
+  "infusePressure": 3,
+  "infuseTime": 10,
+  "infuseWeight": 2,
+  "secondFill": false,
+  "secondFillFlow": 8,
+  "pauseDuration": 15,
+  "pourPressure": 9,
+  "rampTime": 5,
+  "pourFlow": 2,
+  "pourTemperature": 88,
+  "stopWeight": 36,
+  "flowUp": false
+}
