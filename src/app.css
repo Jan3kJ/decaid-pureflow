@@ -1,8 +1,18 @@
 :root {
   color-scheme: dark;
   --bg: #111315;
+  --panel: #181b1e;
+  --raised: #24282d;
+  --line: #3a4047;
   --fg: #e8eaed;
+  --dim: #9aa3ad;
+  /* Colour carries the meaning (spec 3.2): the same three in every graph of the skin. */
+  --flow: #4da3ff;
+  --pressure: #3fcf8e;
+  --temperature: #ff6b6b;
   font-family: system-ui, sans-serif;
+  /* 16 px on the 1280 x 800 design target; every size is in rem and follows the viewport. */
+  font-size: min(2vh, 1.25vw);
 }
 
 html,
@@ -15,4 +25,12 @@ body,
 body {
   background: var(--bg);
   color: var(--fg);
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+@media (orientation: portrait) {
+  :root {
+    font-size: min(2vw, 1.25vh);
+  }
 }
