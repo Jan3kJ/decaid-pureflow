@@ -325,6 +325,11 @@ and the points of the first mapping document (3.2, [a-flow-3.0.md](a-flow-3.0.md
 in D3: Decaid's five default A-Flow profiles equal the plugin's `.tcl` files except for the
 Pause step, which has 0 s in the plugin and 15 s in Decaid.
 
+Answered in D6 (research.md section 10), on the rig: Decaid stops a shot at the workflow's
+`targetYield` and tares the scale at its start by itself, so the skin does neither; without a
+machine the snapshot stream stays open and silent; a page on another origin may call the
+gateway.
+
 - What are the skin and the repository called? `decaid-skin` is provisional; decided before
   the first public release. (owner)
 - Steam test (acceptance 4) against the simulation: the simulated scale's weight cannot be
@@ -350,6 +355,14 @@ Pause step, which has 0 s in the plugin and 15 s in Decaid.
   holds any JSON value. A profile's id is a hash of its steps, not of its notes, so
   `POST /api/v1/profiles` with steps that already exist returns the existing record with its
   old notes; changing notes takes `PUT /api/v1/profiles/{id}`. (owner)
-- Which call loads a profile: `POST /api/v1/machine/profile` (3.1) leaves the workflow's
-  profile as it was, and a shot record copies the workflow's profile; `PUT /api/v1/workflow`
-  changes both (research.md 9.3). Decided in D6. (owner)
+- Which call loads a profile: the skin uses `PUT /api/v1/workflow` (D6), because
+  `POST /api/v1/machine/profile` (still named in 3.1) leaves the workflow's profile as it was
+  and a shot record copies the workflow's profile (research.md 9.3). Asked of the founder on
+  2026-10-13 (request 167), not answered yet; the call is one function, `loadProfile` in
+  `src/shell/profiles.ts`. The row of 3.1 changes when the founder has answered. (owner)
+- Loading a profile also writes its `target_weight` as the workflow's `targetYield`, and the
+  dose of an A-Flow 3.0 default as `targetDoseWeight`: Decaid stops at the workflow's yield,
+  not at the profile's weight. Is that wanted, or does a yield set by hand survive a profile
+  change? (owner)
+- The flow-down defaults (dark, 46mm) pour nothing in their last step on the simulated
+  machine (research.md 10.4). A check on the real DE1 with item 7. (owner)

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { mockGateway } from './mock-gateway';
 
 const errors: string[] = [];
 
@@ -8,6 +9,9 @@ test.beforeEach(async ({ page }) => {
     if (message.type() === 'error') errors.push(message.text());
   });
   page.on('pageerror', (error) => errors.push(error.message));
+  // The editor is one screen of the shell: open the skin on it, with a gateway that answers.
+  await mockGateway(page);
+  await page.addInitScript(() => localStorage.setItem('decaid-skin.screen', 'editor'));
   await page.goto('/');
   await expect(page.getByTestId('graph')).toBeVisible();
   // The tests start from default-light; the first default, floral, has the 2nd fill on.

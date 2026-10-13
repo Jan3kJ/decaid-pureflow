@@ -816,3 +816,73 @@ What the run left in the rig: nothing. The test profile, the KV keys (namespace
 
 Sources: the running Decaid v0.8.8 on the rig · `rest_v1.yml` and `websocket_v1.yml` in the
 release · https://raw.githubusercontent.com/decentespresso/decaid/v0.8.8/doc/Skins.md
+
+## 10. Shell, home, picker and espresso screen (D6)
+
+Done on 2026-10-13 against Decaid v0.8.8 on the rig, started as in 8.8 step 2 and ended with
+`Stop-Process -Force` (9.3). The machine state answered 200 about 10 s after the start this
+time. Every claim is **seen running** unless marked otherwise.
+
+### 10.1 What the gateway does by itself
+
+| Claim | Status |
+|---|---|
+| **Decaid stops a shot at the workflow's `context.targetYield`, not at the profile's `target_weight`.** With the bundled default-medium (`target_weight` 42) and `targetYield` 36 the shot ended at 34.1 g with `stopReason: "targetWeight"`; with the 3.0 default-medium and `targetYield` 42 it ended at 40.4 g. The skin sends no stop of its own | seen running, three shots |
+| **`PUT /api/v1/workflow` with only a `profile` leaves `context.targetYield` as it was** (a profile with `target_weight` 48 was loaded, the yield stayed 36). So the skin writes the profile's `target_weight` as `targetYield` in the same call | seen running |
+| **Decaid tares the scale when a shot starts.** 34.1 g stood on the simulated scale; the first espresso frame still came with 34.1 g, and 0.5 s later the weight was 0. The skin sends no tare, and its graph leaves out the weight of the first second (`TARE_SETTLE_S` in `src/shell/shot.ts`) | seen running |
+| The simulated cup ends 1.6 to 2.2 g under the target (34.1 of 36, 40.4 of 42) | seen running |
+| A shot's record is written a few seconds after the machine is back in `idle`; `GET /api/v1/shots/latest` 3 s after the end still returned the shot before | seen running |
+| `DELETE /api/v1/shots/{id}` answers `200 {"success":true,"id":...}`; `DELETE /api/v1/profiles/{id}/purge` answers `200 {"success":true,"message":"Profile permanently deleted",...}` | seen running |
+
+### 10.2 Without a machine
+
+`PUT /api/v1/devices/disconnect` with `{"deviceId":"MockDe1"}` disconnected the simulated
+machine, `PUT /api/v1/devices/connect` brought it back (`outcome: "connected"`).
+
+| Claim | Status |
+|---|---|
+| **`/ws/v1/machine/snapshot` stays open and sends nothing while no machine is connected**, for a socket opened before and for one opened after the disconnect. Frames came again on both sockets right after the connect, with no reconnect | seen running |
+| `GET /api/v1/machine/state` and `PUT /api/v1/machine/state/espresso` answer `500 {"error":"DeviceNotConnectedException: machine not connected"}`; `GET /api/v1/workflow` answers 200 | seen running |
+| So the skin tells the two cases apart by the stream alone: the socket does not open → "Decaid is not reachable"; the socket is open and silent for 3 s (`FRAME_STALE_MS`; an idle machine sends 2 frames per second) → "No machine connected" | the rule is the skin's; both cases are covered by the mocked-gateway tests |
+
+### 10.3 Profiles
+
+| Claim | Status |
+|---|---|
+| The five generated A-Flow 3.0 defaults get new ids from `POST /api/v1/profiles` (they are not the bundled ones), `isDefault: false`, and the `metadata` sent with them comes back (`{"source":"decaid-skin","aflow":"3.0"}`) | seen running |
+| Three of them have the title of a bundled profile (`A-Flow / default-light`, `-medium`, `-dark`), so Decaid then lists two profiles under each of these titles. The picker marks ours with a tag "A-Flow 3.0" and tells them apart by their steps | seen running |
+| The gateway returns a step with another key order than it was sent, and `exit: null` for a step without one; the values are equal. "Decaid has this default" is therefore decided by title and steps, compared without key order and nulls (`sameProfile` in `src/shell/profiles.ts`) | seen running |
+
+### 10.4 The simulated machine and A-Flow 3.0 profiles
+
+| Claim | Status |
+|---|---|
+| **With a flow-down default (dark, 46mm) the simulated machine pours nothing in the last step.** Flow Extraction has the target flow 0 with a smooth transition; the mock's flow was 0 from the start of the step, the weight stayed at 2.2 g, and the shot ran the step's 60 s and ended with `stopReason: "machineEnded"`. Whether a real DE1 lets the flow decline slowly, as the plugin intends, is a check for the founder (acceptance item 7) | seen running with the 3.0 default-dark; 46mm not tried |
+| With a flow-up default (medium) the shot stops at the target weight. It takes about 102 s, because the mock does not leave the Infuse step at its weight (3.6 g): the scale stays at 0 until the pour, so Infuse runs its full 60 s | seen running |
+| The rig test of acceptance item 2 therefore uses the 3.0 default-medium | - |
+
+### 10.5 A page on another origin
+
+The dev server's page on `http://localhost:24800` calls the gateway on port 8080 across
+origins, as the bundled skin on 27906 does. It works: the gateway answers a request with
+`access-control-allow-origin: <the request's Origin>`, `access-control-allow-credentials: true`
+and `access-control-allow-methods: DELETE,GET,OPTIONS,PATCH,POST,PUT`, and a preflight
+`OPTIONS` with 200 (seen running, with `curl -H "Origin: http://localhost:24800"` and in
+Chromium through Playwright). WebSockets are not subject to it. So `npm run e2e:rig` serves the
+skin from the dev server; installing the build in Decaid was not needed.
+
+### 10.6 Tests
+
+- `npm run e2e` (`e2e/`): the editor on fixture data and the shell against a mocked gateway
+  (`e2e/mock-gateway.ts` answers the REST calls with `page.route` and the two WebSockets with
+  `page.routeWebSocket`). The replayed shot is `e2e/fixtures/shot.json`: both streams of a
+  simulated shot recorded on the rig, with 34.1 g left on the scale at its start.
+- `npm run e2e:rig` (`e2e-rig/`, `playwright.rig.config.ts`): acceptance item 2 against the
+  running rig. It skips itself when `GET /api/v1/machine/state` does not answer. It passed on
+  2026-10-13 (one test, 1.9 min).
+
+What the run left in the rig: nothing. The profiles and shots made by the probes and by the
+test were deleted (73 profiles and the one shot of 8.2 as before), the workflow's profile and
+context are as they were, and no setting and no KV key was written. The workflow and the
+settings from before are in the rig's `log\d6-workflow-before.json` and
+`log\d6-settings-before.json`.
