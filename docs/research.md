@@ -934,3 +934,24 @@ claim is **seen running**; the probe's output is in the rig's `log\d7-profile-pr
 What the run left in the rig: nothing. 73 profiles as before, hidden and deleted ones
 counted; the workflow's profile and context are as they were; no setting and no KV key was
 written.
+
+## 12. Steam page (D8a)
+
+Done on 2026-10-13, against Decaid v0.8.8 started as in 8.8 step 2 (the gateway answered
+`GET /api/v1/machine/state` with 200 within 5 s this time).
+
+| Claim | Status |
+|---|---|
+| `PUT /api/v1/workflow` with only `{"steamSettings":{"duration":N}}`, sent by the skin's favourite chip and by 'set timer', is read back with `GET /api/v1/workflow`; the other steam fields keep their values | seen running |
+| `PUT /api/v1/machine/state/steam` from the skin puts the simulated machine in `steam`; the skin's stop button (`PUT /api/v1/machine/state/idle`) ends it, and the machine is `idle` again | seen running |
+| `GET /api/v1/steams/ids` lists the steam records; each steam adds one, and `DELETE /api/v1/steams/{id}` removes it | seen running |
+| A real steam curve: the simulated machine has none (8.7), so the curve in `docs/product/steam.png` is the mocked gateway's | not seen |
+| The machine stopping when the duration is over | not seen: the founder's check on the real DE1 |
+
+Tests: `npm run e2e` has `e2e/steam.spec.ts` (seven tests, mocked gateway, fake scale frames);
+`npm run e2e:rig` has `e2e-rig/steam.spec.ts` (one test; only the scale's frames are fake).
+The rig suite passed on 2026-10-13 (four tests, 2.2 min); its output is in the rig's
+`log\d8a-e2e-rig.txt`.
+
+What the run left in the rig: nothing. The steam records the test made were deleted (two as
+before), and `steamSettings.duration` is 50 again.

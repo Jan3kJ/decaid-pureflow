@@ -17,10 +17,6 @@ export type Screen = (typeof SCREENS)[number];
 
 /** Screens that have their place in the shell and are built by a later milestone. */
 export const PLACEHOLDERS: Partial<Record<Screen, { title: string; text: string }>> = {
-  steam: {
-    title: 'Steam',
-    text: 'Start and stop, the steam graph and the timer set from the weight of the milk come here.',
-  },
   history: {
     title: 'Shot history',
     text: 'The list of previous shots comes here, as an overlay from the left edge.',

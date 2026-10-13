@@ -16,6 +16,7 @@ import { gatewayBaseUrl } from './gateway';
 import { gatewayAfter, homeAction, linkOf, statusOf, type Gateway } from './machine';
 import { followMachine, loadScreen, saveScreen, type Screen } from './nav';
 import { recordFrame, type Shot } from './shot';
+import { recordSteamFrame, type SteamRun } from '../steam/run';
 
 const CLOCK_MS = 500;
 
@@ -31,6 +32,8 @@ export class Skin {
   workflow: Workflow | null = $state.raw(null);
   /** the running shot, or the finished one until it is dismissed */
   shot: Shot | null = $state.raw(null);
+  /** the running steam, or the finished one until the next */
+  steam: SteamRun | null = $state.raw(null);
   /** what went wrong with the last action, for the user */
   notice: string | null = $state(null);
 
@@ -95,6 +98,7 @@ export class Skin {
     const next = followMachine(this.screen, this.machineState, state);
     this.machineState = state;
     this.shot = recordFrame(this.shot, frame, this.weight);
+    this.steam = recordSteamFrame(this.steam, frame);
     if (next !== this.screen) this.go(next);
   }
 
@@ -103,7 +107,7 @@ export class Skin {
     this.notice = null;
     saveScreen(screen);
     // Another client, Decaid's own screen for one, may have changed the workflow meanwhile.
-    if (screen === 'home') void this.refreshWorkflow();
+    if (screen === 'home' || screen === 'steam') void this.refreshWorkflow();
   }
 
   async refreshWorkflow(): Promise<void> {
@@ -122,6 +126,20 @@ export class Skin {
     return this.request('espresso', 'The shot did not start');
   }
 
+  startSteam(): Promise<void> {
+    return this.request('steam', 'Steam did not start');
+  }
+
+  /** Writes the steam timer to the machine: `steamSettings.duration`, whole seconds (spec 3.4). */
+  async setSteamTimer(seconds: number): Promise<void> {
+    this.notice = null;
+    try {
+      this.workflow = await this.client.setSteamDuration(Math.max(0, Math.round(seconds)));
+    } catch (error) {
+      this.notice = `The timer was not set: ${error instanceof Error ? error.message : String(error)}`;
+    }
+  }
+
   stop(): Promise<void> {
     return this.request('idle', 'The machine did not stop');
   }
@@ -130,7 +148,7 @@ export class Skin {
     if (this.shot?.ended) this.shot = null;
   }
 
-  private async request(state: 'espresso' | 'idle', failure: string): Promise<void> {
+  private async request(state: 'espresso' | 'steam' | 'idle', failure: string): Promise<void> {
     this.notice = null;
     try {
       await this.client.requestMachineState(state);

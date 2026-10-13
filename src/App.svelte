@@ -7,6 +7,7 @@
   import Profiles from './shell/Profiles.svelte';
   import { PLACEHOLDERS } from './shell/nav';
   import { Skin } from './shell/skin.svelte';
+  import Steam from './steam/Steam.svelte';
 
   const skin = new Skin();
   onMount(() => skin.connect());
@@ -36,6 +37,8 @@
       <Profiles {skin} />
     {:else if skin.screen === 'editor'}
       <Editor {skin} />
+    {:else if skin.screen === 'steam'}
+      <Steam {skin} />
     {:else if placeholder}
       <Placeholder title={placeholder.title} text={placeholder.text} />
     {/if}

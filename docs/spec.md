@@ -338,11 +338,18 @@ default's content cannot be changed with `PUT` (400).
 
 - What are the skin and the repository called? `decaid-skin` is provisional; decided before
   the first public release. (owner)
-- Steam test (acceptance 4) against the simulation: the simulated scale's weight cannot be
-  set, and simulated steam does not end when the duration is over. Where do the mug weights
-  come from in the test (for example WebSocket routing in Playwright), and is "the skin
-  sends the computed seconds as `steamSettings.duration`" enough for the automated part?
-  (owner)
+- Steam test (acceptance 4), as built in D8a; the founder agreed to it on 2026-10-13
+  (request 168). `npm run e2e` runs the steam page against a mocked gateway: Playwright
+  answers `/ws/v1/scale/snapshot` with fake weight frames for a small, a medium and a large
+  mug with milk, and the test checks the detected size, the milk and the seconds on screen
+  and that 'set timer' and a favourite chip send those seconds as `steamSettings.duration`.
+  `npm run e2e:rig` checks on the running gateway that the written duration is read back and
+  that steam starts and is stopped by the skin's stop button; there only the scale's frames
+  are fake. Not tested anywhere: a timer that runs out (next question). (answered)
+- Mug detection steps up above a mug's weight plus **the whole** milk of one drink: the
+  share is 1, one constant (`MUG_STEP_SHARE` in `src/steam/timer.ts`). With the founder's
+  defaults the medium mug starts above 375 g and the large one above 425 g, so 180 g of
+  milk is read right in each mug; DSx2's own share was not looked up. Is 1 right? (owner)
 - Does the real DE1 stop steaming when `steamSettings.duration` is over? The simulation
   cannot show it; a check for the founder with item 7. (owner)
 - The pause's move-on value (3.2, "move on pressure pause" in the review): a v2 step has one

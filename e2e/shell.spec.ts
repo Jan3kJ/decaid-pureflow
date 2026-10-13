@@ -221,7 +221,6 @@ test('every screen is one tap from home and back, and the screen survives a relo
   await page.goto('/');
 
   for (const [button, title] of [
-    ['open-steam', 'Steam'],
     ['nav-history', 'Shot history'],
     ['open-scale', 'Scale'],
     ['open-settings', 'Settings'],

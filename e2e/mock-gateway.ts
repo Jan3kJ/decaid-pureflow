@@ -147,12 +147,34 @@ export class MockGateway {
     );
   }
 
-  frame(): Json {
+  /** What stands on the scale, in g: the next weight frames say so. */
+  putOnScale(grams: number): void {
+    this.weight = grams;
+    this.sendScale({ timestamp: new Date().toISOString(), weight: grams, weightFlow: 0, battery: 100, timerValue: null });
+  }
+
+  /**
+   * The machine has steamed for `seconds`: its frames of that time, sent at once, with the
+   * curve of a real machine (the simulated one has none, research.md 8.7). It goes on steaming.
+   */
+  steamFor(seconds: number): void {
+    this.state = 'steam';
+    const now = Date.now();
+    for (let t = 0; t < seconds; t += 0.25) {
+      this.sendMachine({
+        ...this.frame(now - (seconds - t) * 1000),
+        pressure: 1.6 * (1 - Math.exp(-t / 1.5)) + 0.08 * Math.sin(t * 2),
+        steamTemperature: 152 - 9 * (1 - Math.exp(-t / 6)) + 0.6 * Math.sin(t),
+      });
+    }
+  }
+
+  frame(at = Date.now()): Json {
     return {
-      timestamp: new Date().toISOString().replace('Z', '000'),
+      timestamp: new Date(at).toISOString().replace('Z', '000'),
       state: { state: this.state, substate: 'idle' },
       flow: 0,
-      pressure: 0,
+      pressure: this.state === 'steam' ? 1.6 : 0,
       targetFlow: 0,
       targetPressure: 0,
       mixTemperature: 91.4,
@@ -160,7 +182,7 @@ export class MockGateway {
       targetMixTemperature: 93,
       targetGroupTemperature: 93,
       profileFrame: 0,
-      steamTemperature: 148,
+      steamTemperature: this.state === 'steam' ? 143 : 148,
     };
   }
 
@@ -227,7 +249,13 @@ export class MockGateway {
     }
     if (path === '/api/v1/workflow' && method === 'GET') return json(this.workflow);
     if (path === '/api/v1/workflow' && method === 'PUT') {
-      this.workflow = { ...this.workflow, ...body, context: { ...this.workflow.context, ...body.context } };
+      this.workflow = {
+        ...this.workflow,
+        ...body,
+        context: { ...this.workflow.context, ...body.context },
+        // What a patch leaves out keeps its value (research.md 8.3).
+        steamSettings: { ...this.workflow.steamSettings, ...body.steamSettings },
+      };
       return json(this.workflow);
     }
     if (path === '/api/v1/profiles' && method === 'GET') {

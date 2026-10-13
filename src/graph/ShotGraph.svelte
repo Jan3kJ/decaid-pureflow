@@ -19,6 +19,8 @@
     targetWeight?: number | null;
     /** the time axis is at least this long, and grows in steps of ten seconds */
     minSeconds?: number;
+    /** the top of the scale of pressure and flow; steam stays far under a shot's 12 */
+    yMax?: number;
     label?: string;
   }
 
@@ -30,12 +32,12 @@
     temperature,
     targetWeight = null,
     minSeconds = 30,
+    yMax = 12,
     label = 'shot graph',
   }: Props = $props();
 
   /** Pressure and flow share one scale, as in the editor: 1 bar is as high as 1 ml/s. */
-  const yMax = 12;
-  const mainTicks = [0, 3, 6, 9, 12];
+  const mainTicks = $derived([0, 1, 2, 3, 4].map((tick) => (tick * yMax) / 4));
 
   let width = $state(0);
   let height = $state(0);
