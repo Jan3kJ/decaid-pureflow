@@ -16,16 +16,23 @@ import {
   type StreamState,
   type Workflow,
 } from '../api';
+import { restoreEntry, seriesOf, type HistoryEntry } from '../history/entries';
 import { loadSettings, saveSettings, type Settings } from '../settings';
 import { gatewayBaseUrl } from './gateway';
 import { canSleep, gatewayAfter, homeAction, isAsleep, linkOf, statusOf, type Gateway, type ScaleLink } from './machine';
 import { followMachine, loadScreen, saveScreen, type Screen } from './nav';
-import { recordFrame, type Shot } from './shot';
+import { recordFrame, type Shot, type ShotSeries } from './shot';
 import { recordSteamFrame, type SteamRun } from '../steam/run';
 
 const CLOCK_MS = 500;
 /** The screen's brightness while the machine sleeps, 0-100; 100 is the system's own. */
 export const SLEEP_BRIGHTNESS = 5;
+
+/** An entry of the shot history that was made the current one, with its latest shot's graph. */
+export interface Recalled {
+  entry: HistoryEntry;
+  series: ShotSeries;
+}
 
 export class Skin {
   readonly baseUrl: string;
@@ -39,6 +46,10 @@ export class Skin {
   workflow: Workflow | null = $state.raw(null);
   /** the running shot, or the finished one until it is dismissed */
   shot: Shot | null = $state.raw(null);
+  /** the shot history's overlay is open (spec 3.1); only home shows it */
+  historyOpen = $state(false);
+  /** the history entry that was restored, until it is dismissed or a shot starts */
+  recalled: Recalled | null = $state.raw(null);
   /** the running steam, or the finished one until the next */
   steam: SteamRun | null = $state.raw(null);
   /** what the scale stream said about the scale */
@@ -137,6 +148,7 @@ export class Skin {
     const next = followMachine(this.screen, this.machineState, state);
     this.machineState = state;
     this.shot = recordFrame(this.shot, frame, this.weight);
+    if (this.shot && !this.shot.ended) this.recalled = null;
     this.steam = recordSteamFrame(this.steam, frame);
     if (next !== this.screen) this.go(next);
     void this.dim(state === 'sleeping');
@@ -172,6 +184,7 @@ export class Skin {
 
   go(screen: Screen): void {
     this.screen = screen;
+    this.historyOpen = false;
     this.notice = this.info = null;
     saveScreen(screen);
     // Another client, Decaid's own screen for one, may have changed the workflow meanwhile.
@@ -243,6 +256,26 @@ export class Skin {
 
   dismissShot(): void {
     if (this.shot?.ended) this.shot = null;
+  }
+
+  /**
+   * An entry of the shot history was tapped (spec 3.5): the overlay closes, the entry's
+   * profile, bean and grinder setting become the current ones, and home shows the graph of
+   * the last shot made with it. Only `GET /api/v1/shots/{id}` has the measurements.
+   */
+  async restore(entry: HistoryEntry): Promise<void> {
+    this.historyOpen = false;
+    this.notice = this.info = null;
+    try {
+      this.workflow = await restoreEntry(this.client, entry);
+      this.recalled = { entry, series: seriesOf(await this.client.getShot(entry.latest.id)) };
+    } catch (error) {
+      this.notice = `The entry was not restored: ${error instanceof Error ? error.message : String(error)}`;
+    }
+  }
+
+  dismissRecalled(): void {
+    this.recalled = null;
   }
 
   private async request(state: RequestedMachineState, failure: string): Promise<void> {

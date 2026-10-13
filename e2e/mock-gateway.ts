@@ -23,6 +23,16 @@ const isEspresso = (event: RecordedEvent) => event.machine?.state.state === 'esp
 export const SHOT_EVENTS = RECORDING.slice(RECORDING.findIndex(isEspresso));
 export const ESPRESSO_FRAMES = RECORDING.filter(isEspresso).length;
 
+/** The recorded shot as a shot record's measurements: one per espresso frame, with the scale's latest weight. */
+export const MEASUREMENTS: Json[] = [];
+{
+  let scale: Json | null = null;
+  for (const event of RECORDING) {
+    if (event.scale && 'weight' in event.scale) scale = event.scale;
+    if (isEspresso(event)) MEASUREMENTS.push({ machine: event.machine, scale, volume: null });
+  }
+}
+
 const CORS = {
   'access-control-allow-origin': '*',
   'access-control-allow-methods': 'DELETE,GET,OPTIONS,PATCH,POST,PUT',
@@ -45,7 +55,7 @@ function step(name: string, seconds: number): Json {
   };
 }
 
-function profile(title: string, targetWeight: number, steps = 1): Json {
+export function profile(title: string, targetWeight: number, steps = 1): Json {
   return {
     version: '2',
     title,
@@ -123,6 +133,9 @@ export class MockGateway {
     record('profile:dflow', profile('D-Flow / default', 36, 3), { source: 'bundled' }),
   ];
 
+  /** the shot records, without measurements: `GET /api/v1/shots` */
+  shots: Json[] = [];
+
   private readonly up: boolean;
   private readonly machineSockets = new Set<WebSocketRoute>();
   private readonly scaleSockets = new Set<WebSocketRoute>();
@@ -164,6 +177,19 @@ export class MockGateway {
       (request) =>
         request.method === method && (typeof path === 'string' ? request.path === path : path.test(request.path)),
     );
+  }
+
+  /** A shot in Decaid's history: the workflow as it was, as a shot record copies it (research.md 8.4). */
+  addShot(id: string, timestamp: string, shotProfile: Json, context: Json | null): void {
+    this.shots.push({
+      id,
+      timestamp,
+      createdAt: `${timestamp}Z`,
+      updatedAt: `${timestamp}Z`,
+      workflow: { id: 'workflow', name: 'Workflow', profile: shotProfile, context },
+      annotations: { actualDoseWeight: 18, actualYield: 34.1 },
+      stopReason: 'targetWeight',
+    });
   }
 
   /** What stands on the scale, in g: the next weight frames say so. */
@@ -297,11 +323,25 @@ export class MockGateway {
       this.workflow = {
         ...this.workflow,
         ...body,
-        context: { ...this.workflow.context, ...body.context },
+        // A null clears a field of the context: Decaid returns the context without it (research.md 14).
+        context: Object.fromEntries(
+          Object.entries({ ...this.workflow.context, ...body.context }).filter(([, value]) => value !== null),
+        ),
         // What a patch leaves out keeps its value (research.md 8.3).
         steamSettings: { ...this.workflow.steamSettings, ...body.steamSettings },
       };
       return json(this.workflow);
+    }
+    if (path === '/api/v1/shots' && method === 'GET') {
+      const limit = Number(url.searchParams.get('limit') ?? 20);
+      const offset = Number(url.searchParams.get('offset') ?? 0);
+      const newestFirst = [...this.shots].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+      return json({ items: newestFirst.slice(offset, offset + limit), total: this.shots.length, limit, offset });
+    }
+    if (path.startsWith('/api/v1/shots/') && method === 'GET') {
+      const shot = this.shots.find((candidate) => candidate.id === decodeURIComponent(path.split('/').pop()!));
+      // Only this call has the measurements (research.md 8.4).
+      return shot ? json({ ...shot, measurements: MEASUREMENTS }) : json({ error: 'Shot not found' }, 404);
     }
     if (path === '/api/v1/profiles' && method === 'GET') {
       const hidden = url.searchParams.get('includeHidden') === 'true';

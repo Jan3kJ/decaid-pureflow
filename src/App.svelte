@@ -1,27 +1,45 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import Editor from './editor/Editor.svelte';
+  import History from './history/History.svelte';
+  import { isOpeningSwipe, startsAtEdge, type Point } from './history/swipe';
   import Espresso from './shell/Espresso.svelte';
   import Home from './shell/Home.svelte';
-  import Placeholder from './shell/Placeholder.svelte';
   import Profiles from './shell/Profiles.svelte';
   import Scale from './shell/Scale.svelte';
   import Settings from './shell/Settings.svelte';
-  import { PLACEHOLDERS } from './shell/nav';
   import { Skin } from './shell/skin.svelte';
   import Steam from './steam/Steam.svelte';
 
   const skin = new Skin();
   onMount(() => skin.connect());
 
-  const placeholder = $derived(PLACEHOLDERS[skin.screen]);
+  // The shot history opens by its tab or by a swipe from the left edge, on home only: the
+  // editor's drags and every other screen never see the gesture (spec 3.1).
+  const home = $derived(skin.screen === 'home');
+  let swipe: (Point & { id: number }) | null = null;
+
+  function onpointerdown(event: PointerEvent) {
+    const start = { x: event.clientX, y: event.clientY };
+    swipe = home && !skin.historyOpen && startsAtEdge(start, innerWidth) ? { ...start, id: event.pointerId } : null;
+  }
+
+  function onpointermove(event: PointerEvent) {
+    if (!swipe || event.pointerId !== swipe.id) return;
+    if (isOpeningSwipe(swipe, { x: event.clientX, y: event.clientY }, innerWidth)) {
+      swipe = null;
+      skin.historyOpen = true;
+    }
+  }
+
+  const endSwipe = () => (swipe = null);
 </script>
 
-<main>
+<main class:home {onpointerdown} {onpointermove} onpointerup={endSwipe} onpointercancel={endSwipe}>
   <!-- The left edge: the way back to home, and on home the tab of the shot history (spec 3.1). -->
   <nav>
-    {#if skin.screen === 'home'}
-      <button class="tab" data-testid="nav-history" onclick={() => skin.go('history')}>
+    {#if home}
+      <button class="tab" data-testid="nav-history" onclick={() => (skin.historyOpen = true)}>
         <span>history</span>
       </button>
     {:else}
@@ -45,10 +63,12 @@
       <Scale {skin} />
     {:else if skin.screen === 'settings'}
       <Settings {skin} />
-    {:else if placeholder}
-      <Placeholder title={placeholder.title} text={placeholder.text} />
     {/if}
   </div>
+
+  {#if home && skin.historyOpen}
+    <History {skin} />
+  {/if}
 </main>
 
 <!-- A stream the gateway closed with an error does not open again by itself (research.md 9.4). -->
@@ -74,9 +94,15 @@
 
 <style>
   main {
+    position: relative;
     height: 100%;
     display: grid;
     grid-template-columns: 3.4rem minmax(0, 1fr);
+  }
+
+  /* A finger that moves sideways on home is the history's swipe, not the browser's pan. */
+  main.home {
+    touch-action: pan-y;
   }
 
   nav {

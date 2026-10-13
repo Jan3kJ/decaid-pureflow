@@ -330,6 +330,10 @@ Answered in D6 (research.md section 10), on the rig: Decaid stops a shot at the 
 machine the snapshot stream stays open and silent; a page on another origin may call the
 gateway.
 
+Answered in D8b (research.md section 14), on the rig: the bean and the grinder setting are
+fields of the workflow's `context`, in the workflow and in a shot record; a `null` in a
+`PUT /api/v1/workflow` clears one; a shot record holds a copy of the profile and no id.
+
 Answered in D7 (research.md section 11), on the rig: a profile's id is a hash of its steps
 and its target weight, not of its title, notes or author; an edit is recorded in Decaid's
 lineage by `POST /api/v1/profiles` with `parentId`, and
@@ -408,6 +412,24 @@ default's content cannot be changed with `PUT` (400).
   - A stream the gateway closed with an error stays closed (4.1); the skin says 'Decaid
     closed the connection' with a 'reconnect' button on every screen. Whether it should
     retry by itself instead is still the founder's word (day record of 2026-10-12). (owner)
+- Shot history (D8b, research.md section 14), choices the founder has not seen:
+  - A profile is taken by its title, not by its id: a shot record holds a copy of the
+    profile and no id, and the id changes with every edit. A renamed profile starts a new
+    entry; an edited one stays in its entry (`entryKey` in `src/history/entries.ts`). (owner)
+  - A bean is its name and roaster (`coffeeName`, `coffeeRoaster`); Decaid's batch id counts
+    only for a bean without both. Shots without a bean share one entry per profile, shown as
+    'no bean'. (owner)
+  - Restoring writes the stop weight and the dose of the profile, as the picker does, not
+    those of the shot. An entry without a bean or a grinder setting clears the current
+    ones. (owner)
+  - The swipe opens the overlay only when it starts in the left fifth of the screen
+    (`SWIPE_EDGE` in `src/history/swipe.ts`), so it cannot pass over a button of home. The
+    graph of the entry's last shot is shown on home, in the place of the last shot, until
+    it is dismissed or a shot starts. The list reads the newest 500 shots
+    (`HISTORY_SHOTS`). (owner)
+  - After a very fast flick the first tap outside may not close the overlay (seen with
+    synthetic touch events only, research.md section 14): a check on the tablet with
+    item 8. (owner)
 - The ghost curve of the profile's last shot in the editor: asked of the founder on
   2026-10-13 (request 171), not answered, so it is not built. (owner)
 - Which call loads a profile: the skin uses `PUT /api/v1/workflow` (D6), because

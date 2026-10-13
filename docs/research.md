@@ -979,3 +979,37 @@ What the run left in the rig: nothing. The shot of the blocked-tare test was del
 shot as before), `blockTareDuringShot` is `false` again, the brightness is back at 100 and
 the machine is `idle`. Decaid was ended with `Stop-Process -Force`; port 8080 was free
 afterwards.
+
+## 14. Shot history overlay (D8b)
+
+Done on 2026-10-13, against Decaid v0.8.8 started as in 8.8 step 2 (the gateway answered
+`GET /api/v1/machine/state` with 200 when it was first asked).
+The probe's output is in the rig's `log\d8b-probe.txt`.
+
+| Claim | Status |
+|---|---|
+| **A shot record holds a copy of the profile and no profile id** (`workflow.profile`: `version`, `title`, `notes`, `author`, `beverage_type`, `steps`, `target_volume`, `target_weight`, `target_volume_count_start`, `tank_temperature`). The id of a stored profile is a hash of the steps and the target weight (11.1), so it changes with every edit. The history therefore takes a profile by its **title**: an edited profile stays in its entry, and the title is what the user chose and reads | seen running (the record); the rule is the skin's (`entryKey` in `src/history/entries.ts`) |
+| **The bean and the grinder are fields of the workflow's `context`, in the workflow and in a shot alike**: `coffeeName`, `coffeeRoaster`, `beanBatchId` (a link to Decaid's bean catalogue) and `grinderSetting`, `grinderModel`, `grinderId` (a link to its grinder catalogue). All are strings and may be absent. The skin reads and writes these six and manages no catalogue (spec 3.3) | seen running for name, roaster, setting and model; the two ids read (`rest_v1.yml`, `WorkflowContext`) |
+| `PUT /api/v1/workflow` with these fields in `context` sets them and leaves dose and yield as they were | seen running |
+| **A `null` for one of them clears it**: the answer's context no longer has the key (200, also for `beanBatchId` and `grinderId`). So restoring an entry without a bean removes the current bean | seen running |
+| A profile of a few flow steps with `targetYield` 3 gives a simulated shot of 2.5 s (Rao Allongé: 18 measurements, `stopReason: "targetWeight"`, `actualYield` 2.4); its record was in `GET /api/v1/shots/latest` 6.5 s after the start | seen running |
+| `GET /api/v1/shots` returns the newest shot first; `limit` is at most 100, `offset` pages | seen running for the order; the limit read (`rest_v1.yml`) |
+| The skin's one `PUT /api/v1/workflow` for an entry (profile, bean, grinder setting) is read back with `GET /api/v1/workflow`: the profile equals the shot's copy | seen running (`e2e-rig/history.spec.ts`) |
+| A swipe whose touch events come with no time between them is a fling so fast that Chromium drops the tap that follows it (no `click` on the first tap, on the second it comes). With 30 ms between the events the tap works. Whether a very fast flick on the tablet does the same was not seen | seen running in Playwright's Chromium with synthetic touch events; not seen on a device |
+
+What the skin does with it: the list is `GET /api/v1/shots` without measurements, at most
+500 shots (`HISTORY_SHOTS`), grouped by `groupShots`; a tap sends one
+`PUT /api/v1/workflow` through `loadProfile` (the picker's function, with the bean and the
+grinder as further context fields), then `GET /api/v1/shots/{id}` for the measurements of the
+entry's latest shot. The stop weight and the dose after a restore are the profile's, as after
+a load from the picker, not the shot's.
+
+Tests: `npm run e2e` has `e2e/history.spec.ts` (seven tests, mocked gateway; the swipe is
+sent as touch events); `npm run e2e:rig` has `e2e-rig/history.spec.ts` (one test, four
+simulated shots, 46 s). The rig suite passed on 2026-10-13 (eight tests, 3.3 min); its output
+is in the rig's `log\d8b-e2e-rig.txt`.
+
+What the run left in the rig: nothing. The shots of the probe and of the test were deleted
+(one shot as before), the workflow equals `log\d8b-workflow-before.json` byte for byte, the
+settings equal `log\d8b-settings-before.json`, 73 profiles as before, no KV key was written.
+Decaid was ended with `Stop-Process -Force`; port 8080 was free afterwards.

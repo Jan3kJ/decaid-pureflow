@@ -1,5 +1,6 @@
 // The skin's navigation: one value says which screen is shown. No routes and no history
-// stack: every screen is one tap from home, and home is one tap from every screen.
+// stack: every screen is one tap from home, and home is one tap from every screen. The shot
+// history is not a screen: it is an overlay on home (spec 3.1, src/history).
 import type { MachineState } from '../api';
 
 export const SCREENS = [
@@ -8,20 +9,11 @@ export const SCREENS = [
   'profiles',
   'editor',
   'steam',
-  'history',
   'scale',
   'settings',
 ] as const;
 
 export type Screen = (typeof SCREENS)[number];
-
-/** Screens that have their place in the shell and are built by a later milestone. */
-export const PLACEHOLDERS: Partial<Record<Screen, { title: string; text: string }>> = {
-  history: {
-    title: 'Shot history',
-    text: 'The list of previous shots comes here, as an overlay from the left edge.',
-  },
-};
 
 export const SCREEN_KEY = 'decaid-skin.screen';
 

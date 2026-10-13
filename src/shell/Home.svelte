@@ -1,5 +1,6 @@
 <script lang="ts">
   import ShotGraph from '../graph/ShotGraph.svelte';
+  import { beanLabel } from '../history/entries';
   import { shotSeconds, shotWeight } from './shot';
   import type { Skin } from './skin.svelte';
 
@@ -14,6 +15,8 @@
   // The finished shot stays here until it is dismissed or the next one starts.
   const last = $derived(skin.shot?.ended ? skin.shot : null);
   const lastWeight = $derived(shotWeight(last));
+  // An entry restored from the shot history, with the graph of its latest shot (spec 3.5).
+  const recalled = $derived(skin.recalled);
 </script>
 
 <div class="home">
@@ -35,7 +38,27 @@
   </div>
 
   <section class="last">
-    {#if last}
+    {#if recalled}
+      {@const entry = recalled.entry}
+      <header>
+        <span class="recalled" data-testid="recalled">
+          last shot with
+          <strong data-testid="recalled-profile">{entry.profileTitle}</strong>
+          <strong data-testid="recalled-bean">{beanLabel(entry.bean)}</strong>
+          {#if entry.grinderSetting}
+            <strong data-testid="recalled-grinder">grinder {entry.grinderSetting}</strong>
+          {/if}
+        </span>
+        <button class="chip" data-testid="dismiss-recalled" onclick={() => skin.dismissRecalled()}>dismiss</button>
+      </header>
+      <div class="plot" data-testid="history-graph">
+        <ShotGraph
+          {...recalled.series}
+          targetWeight={entry.latest.workflow?.context?.targetYield}
+          label="last shot of the history entry"
+        />
+      </div>
+    {:else if last}
       <header>
         <span>
           last shot
@@ -189,6 +212,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 1rem;
     color: var(--dim);
   }
 
@@ -201,6 +225,17 @@
 
   .last header strong.weight {
     color: var(--weight);
+  }
+
+  .last header .recalled {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .last header .recalled strong {
+    font-size: 1.1rem;
   }
 
   .last header .chip {
