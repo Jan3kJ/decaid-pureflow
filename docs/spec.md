@@ -330,6 +330,12 @@ Answered in D6 (research.md section 10), on the rig: Decaid stops a shot at the 
 machine the snapshot stream stays open and silent; a page on another origin may call the
 gateway.
 
+Answered in D7 (research.md section 11), on the rig: a profile's id is a hash of its steps
+and its target weight, not of its title, notes or author; an edit is recorded in Decaid's
+lineage by `POST /api/v1/profiles` with `parentId`, and
+`GET /api/v1/profiles/{id}/lineage` returns the versions, hidden ones too; a bundled
+default's content cannot be changed with `PUT` (400).
+
 - What are the skin and the repository called? `decaid-skin` is provisional; decided before
   the first public release. (owner)
 - Steam test (acceptance 4) against the simulation: the simulated scale's weight cannot be
@@ -350,11 +356,30 @@ gateway.
 - The byte format of a v2 profile file only matters for an export: the API takes and
   returns JSON numbers, the bundled files hold strings. Does v1 export files at all?
   (research)
-- Where are a profile's A-Flow parameters stored: the profile notes or the KV store? Not
-  decided. The facts from the rig (D4, research.md 9.2): both hold a string, and the KV store
-  holds any JSON value. A profile's id is a hash of its steps, not of its notes, so
-  `POST /api/v1/profiles` with steps that already exist returns the existing record with its
-  old notes; changing notes takes `PUT /api/v1/profiles/{id}`. (owner)
+- Where are a profile's A-Flow parameters stored: the profile notes or the KV store? Asked of
+  the founder on 2026-10-13 (request 166), not answered when D7 was built. Built: the codec's
+  string is the profile's `notes`, and nothing else is in them, so Decaid's own screens show
+  that string as the profile's notes. One module knows the place (`readParams` and
+  `writeParams` in `src/editor/storage.ts`); the KV store can replace the notes there. The
+  five defaults carry their parameters the same way. (owner)
+- One profile for each set of steps (research.md 11.1): Decaid cannot hold the same steps and
+  stop weight under two names. 'Save as' with values that a visible profile already has,
+  for example a default with only another dose, saves nothing and says which profile has
+  them. Is that enough, or should such a profile be renamed instead? (owner)
+- 'Save' of an edited profile stores a new record with the old one as its parent and hides
+  the old one (`PUT /api/v1/profiles/{id}/visibility`), so the list shows a profile once and
+  the lineage keeps every version. Hidden, soft-deleted or left visible: which should an
+  older version be? A default has no 'save': it is saved under a new name. (owner)
+- 'Load to machine' loads the values on screen, saved or not, under the name of the profile
+  they started from, and goes back to home; the editor opens on them again. Unsaved edits
+  are lost when the editor is left without loading or saving. (owner)
+- The setting "first-step workaround" is `firstStepWorkaround` in `src/settings.ts`, off by
+  default, and acts where the editor generates a profile (save, save as, load to machine).
+  Profiles stored before it was switched on, and the defaults the picker adds, do not get
+  the Pre Fill step until they are saved or loaded from the editor. Its switch is on the
+  settings page (D8c). (owner)
+- The ghost curve of the profile's last shot in the editor: asked of the founder on
+  2026-10-13 (request 171), not answered, so it is not built. (owner)
 - Which call loads a profile: the skin uses `PUT /api/v1/workflow` (D6), because
   `POST /api/v1/machine/profile` (still named in 3.1) leaves the workflow's profile as it was
   and a shot record copies the workflow's profile (research.md 9.3). Asked of the founder on

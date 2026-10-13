@@ -3,11 +3,11 @@
 // other values: see docs/a-flow-3.0.md.
 import * as C from '../constants';
 import type { AFlowParams } from '../types';
-import mm46 from './default-46mm.json';
-import dark from './default-dark.json';
-import floral from './default-floral.json';
-import light from './default-light.json';
-import medium from './default-medium.json';
+import mm46 from './default-46mm.json' with { type: 'json' };
+import dark from './default-dark.json' with { type: 'json' };
+import floral from './default-floral.json' with { type: 'json' };
+import light from './default-light.json' with { type: 'json' };
+import medium from './default-medium.json' with { type: 'json' };
 
 export interface DefaultProfile {
   id: string;

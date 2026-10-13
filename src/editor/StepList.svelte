@@ -4,12 +4,14 @@
   interface Props {
     params: AFlowParams;
     title: string;
+    /** the setting of that name: the list starts with the Pre Fill step */
+    firstStepWorkaround?: boolean;
   }
 
-  let { params, title }: Props = $props();
+  let { params, title, firstStepWorkaround = false }: Props = $props();
 
   // What the machine would get: the generator's output, nothing computed here.
-  const profile = $derived(generateProfile(params, { title }));
+  const profile = $derived(generateProfile(params, { title, firstStepWorkaround }));
 
   function target(step: ProfileStep): string {
     return step.pump === 'flow' ? `${step.flow} ml/s` : `${step.pressure} bar`;

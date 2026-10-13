@@ -3,40 +3,28 @@
 import {
   AFLOW_VERSION,
   DEFAULT_AUTHOR,
-  DEFAULT_NOTES,
   DEFAULT_PROFILES,
   generateProfile,
   type DefaultProfile,
 } from '../aflow';
 import type { DecaidClient, Profile, ProfileRecord, Workflow, WorkflowContextPatch } from '../api';
+import { paramsNotes, readParams, sameSteps } from '../editor/storage';
 
 /** `metadata.source` of a profile this skin stored. */
 export const SKIN_SOURCE = 'decaid-skin';
 
-/** A default as the v2 profile the generator writes for it. */
+/** A default as the v2 profile the generator writes for it, with its parameters (editor/storage.ts). */
 export function defaultProfile(entry: DefaultProfile): Profile {
   return generateProfile(entry.params, {
     title: entry.title,
     author: DEFAULT_AUTHOR,
-    notes: DEFAULT_NOTES,
+    notes: paramsNotes(entry.params),
   }) as Profile;
-}
-
-/** A value with its keys in order and without null or missing fields: the gateway returns `null` where the generator leaves a field out. */
-function canonical(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(canonical);
-  if (typeof value !== 'object' || value === null) return value;
-  const sorted: Record<string, unknown> = {};
-  for (const key of Object.keys(value).sort()) {
-    const field = (value as Record<string, unknown>)[key];
-    if (field !== null && field !== undefined) sorted[key] = canonical(field);
-  }
-  return sorted;
 }
 
 /** The same title and the same steps. A title alone is not enough: Decaid bundles the plugin's defaults under three of the 3.0 titles. */
 export function sameProfile(a: Profile, b: Profile): boolean {
-  return a.title === b.title && JSON.stringify(canonical(a.steps)) === JSON.stringify(canonical(b.steps));
+  return a.title === b.title && sameSteps(a.steps, b.steps);
 }
 
 /** The A-Flow 3.0 defaults the gateway does not have yet, in their order. */
@@ -84,12 +72,9 @@ export function sortProfiles(records: readonly ProfileRecord[]): ProfileRecord[]
   );
 }
 
-/**
- * The dose a profile brings, in g. Only an A-Flow 3.0 default has one so far: where a saved
- * profile keeps its A-Flow parameters is decided with the editor (D7, spec section 8).
- */
+/** The dose a profile brings, in g: an A-Flow 3.0 profile has one in its parameters. */
 export function doseOf(profile: Profile): number | undefined {
-  return DEFAULT_PROFILES.find((entry) => sameProfile(defaultProfile(entry), profile))?.params.dose;
+  return readParams(profile)?.dose;
 }
 
 /**
@@ -100,7 +85,8 @@ export function doseOf(profile: Profile): number | undefined {
  * pulled; `POST /api/v1/machine/profile` would leave the workflow as it was (research 9.3).
  * Decaid stops a shot at the workflow's `targetYield`, not at the profile's `target_weight`,
  * and loading a profile does not change it (research.md, section 10): so the profile's stop
- * weight is written as the target yield here, and its dose where it has one.
+ * weight is written as the target yield here, and its dose where it has one. The picker and
+ * the editor's 'load to machine' both load with this function.
  */
 export function loadProfile(client: DecaidClient, profile: Profile): Promise<Workflow> {
   const context: WorkflowContextPatch = {};

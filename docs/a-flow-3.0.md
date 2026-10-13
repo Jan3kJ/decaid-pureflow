@@ -144,8 +144,26 @@ JSON, `{"aflow":"3.0","params":{...}}`, with a fixed key order (the order of sec
 every key present; a value that follows another one is written as `null`. Reading checks the
 version and the types, not the ranges. The format changed on 2026-10-13 and kept the version
 `3.0`: there is no `secondFill` key any more, and a string written before lacks the new keys
-and is rejected. No 3.0 profile had been saved. Where the string is stored is open (spec,
-section 8).
+and is rejected. No 3.0 profile had been saved.
+
+**Where it is stored (D7, 2026-10-13): the string is the profile's `notes`**, the whole of
+them, as spec 3.2 allows; the founder's choice between the notes and the KV store (request
+166) was not answered. `src/editor/storage.ts` is the one module that knows the place:
+
+- `readParams(profile)` gives the parameters, or nothing when the profile is not A-Flow 3.0:
+  the notes are not this string, a value is out of its range, or the profile's steps and
+  target weight are not what the generator writes for the parameters (with or without the
+  Pre Fill step). The last check keeps a profile whose steps were changed in another editor
+  from opening with old parameters. Only a profile with readable parameters is edited.
+- `writeParams(client, profile, params)` stores the profile with the string. Decaid's id of
+  a profile is a hash of its steps and target weight, so for steps that exist the `POST`
+  answers with the old record and its old notes; the notes are then changed with
+  `PUT /api/v1/profiles/{id}` (research.md, section 11).
+
+The five defaults are stored with their string as well (`defaultProfile` in
+`src/shell/profiles.ts`), in place of the plugin's notes text. The dose is read from the
+string when a profile is loaded and written to the workflow (`context.targetDoseWeight`);
+the stop weight is the profile's `target_weight` and the workflow's `targetYield`.
 
 ## 5. Choices the founder has not seen
 
@@ -178,6 +196,9 @@ section 8).
     move-on value (section 6); a pause of 0 s typed in detail mode switches the 2nd fill off.
 
 ## 6. Open for the founder
+
+- **Notes or KV store** for the saved string (section 4): built with the notes, which Decaid's
+  own screens then show as JSON text.
 
 - **The pause's move-on value** ("move on pressure pause" in the review). Asked on 2026-10-13
   (request 169), not answered when this was built. A v2 step has one exit. The Pause step

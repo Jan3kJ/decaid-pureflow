@@ -35,8 +35,7 @@
     {:else if skin.screen === 'profiles'}
       <Profiles {skin} />
     {:else if skin.screen === 'editor'}
-      <!-- The prototype on fixture data; D7 wires it to the machine. -->
-      <Editor />
+      <Editor {skin} />
     {:else if placeholder}
       <Placeholder title={placeholder.title} text={placeholder.text} />
     {/if}

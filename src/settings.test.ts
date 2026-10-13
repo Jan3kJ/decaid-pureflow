@@ -15,10 +15,19 @@ describe('settings', () => {
     expect(DEFAULT_SETTINGS.showProfileSteps).toBe(true);
   });
 
+  it('has the first-step workaround off by default, and reads it back when it is on', () => {
+    expect(loadSettings(fakeStore()).firstStepWorkaround).toBe(false);
+    expect(loadSettings(fakeStore('{"firstStepWorkaround":true}'))).toEqual({
+      showProfileSteps: true,
+      firstStepWorkaround: true,
+    });
+    expect(loadSettings(fakeStore('{"firstStepWorkaround":"yes"}')).firstStepWorkaround).toBe(false);
+  });
+
   it('reads back what it saved', () => {
     const store = fakeStore();
-    saveSettings({ showProfileSteps: false }, store);
-    expect(loadSettings(store)).toEqual({ showProfileSteps: false });
+    saveSettings({ showProfileSteps: false, firstStepWorkaround: true }, store);
+    expect(loadSettings(store)).toEqual({ showProfileSteps: false, firstStepWorkaround: true });
   });
 
   it('falls back to the defaults on anything it cannot read', () => {

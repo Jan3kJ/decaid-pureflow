@@ -9,6 +9,8 @@ import type {
   Profile,
   ProfileRecord,
   RequestedMachineState,
+  ProfileUpdate,
+  ProfileVisibility,
   SaveProfileOptions,
   ShotRecord,
   ShotRecordSummary,
@@ -141,9 +143,30 @@ export class DecaidClient {
     return this.request('GET', `/api/v1/profiles/${segment(id)}`);
   }
 
-  /** Stores a profile. The record's id is a hash of the content, so the same profile gets the same id. */
+  /**
+   * Stores a profile. The record's id is a hash of the steps and the target weight, not of the
+   * title or the notes: for steps that exist the answer is the existing record, unchanged.
+   */
   saveProfile(profile: Profile, options: SaveProfileOptions = {}): Promise<ProfileRecord> {
     return this.request('POST', '/api/v1/profiles', { profile, ...options });
+  }
+
+  /**
+   * Changes a stored profile. Notes and title leave the id as it is; other steps or another
+   * target weight give the record a new id. A bundled default's content cannot be changed (400).
+   */
+  updateProfile(id: string, update: ProfileUpdate): Promise<ProfileRecord> {
+    return this.request('PUT', `/api/v1/profiles/${segment(id)}`, update);
+  }
+
+  /** A hidden profile stays in the store and in the lineage, and leaves the list. */
+  setProfileVisibility(id: string, visibility: ProfileVisibility): Promise<ProfileRecord> {
+    return this.request('PUT', `/api/v1/profiles/${segment(id)}/visibility`, { visibility });
+  }
+
+  /** The versions of a profile, parents and children, hidden ones too. */
+  getProfileLineage(id: string): Promise<ProfileRecord[]> {
+    return this.request('GET', `/api/v1/profiles/${segment(id)}/lineage`);
   }
 
   // --- shots ---

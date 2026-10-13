@@ -76,6 +76,9 @@ function record(id: string, body: Json, metadata: Json | null): Json {
   };
 }
 
+/** What a record's id is made of. */
+const content = (body: Json) => JSON.stringify([body.steps, body.target_weight ?? 0]);
+
 export interface MockOptions {
   /** false: nothing answers on port 8080 */
   gateway?: boolean;
@@ -204,7 +207,8 @@ export class MockGateway {
     if (!this.up) return route.abort('connectionrefused');
     const request = route.request();
     const method = request.method();
-    const path = new URL(request.url()).pathname;
+    const url = new URL(request.url());
+    const path = url.pathname;
     if (method === 'OPTIONS') return route.fulfill({ status: 204, headers: CORS });
     const body = request.postData() ? JSON.parse(request.postData()!) : undefined;
     this.requests.push({ method, path, body });
@@ -226,11 +230,30 @@ export class MockGateway {
       this.workflow = { ...this.workflow, ...body, context: { ...this.workflow.context, ...body.context } };
       return json(this.workflow);
     }
-    if (path === '/api/v1/profiles' && method === 'GET') return json(this.profiles);
+    if (path === '/api/v1/profiles' && method === 'GET') {
+      const hidden = url.searchParams.get('includeHidden') === 'true';
+      return json(this.profiles.filter((stored) => stored.visibility === 'visible' || hidden));
+    }
     if (path === '/api/v1/profiles' && method === 'POST') {
+      // The id is a hash of the steps and the target weight: steps that exist give the
+      // existing record back, with its old title and notes (research.md 9.2 and 11).
+      const existing = this.profiles.find((stored) => content(stored.profile) === content(body.profile));
+      if (existing) return json(existing, 201);
       const saved = record(`profile:saved${this.profiles.length}`, body.profile, body.metadata ?? null);
+      saved.parentId = body.parentId ?? null;
       this.profiles.push(saved);
       return json(saved, 201);
+    }
+    const [, id, action] = /^\/api\/v1\/profiles\/([^/]+)(\/visibility)?$/.exec(decodeURIComponent(path)) ?? [];
+    if (method === 'PUT' && id) {
+      const stored = this.profiles.find((candidate) => candidate.id === id);
+      if (!stored) return json({ error: 'Invalid request' }, 400);
+      if (action) stored.visibility = body.visibility;
+      else {
+        if (body.profile) stored.profile = body.profile;
+        if ('metadata' in body) stored.metadata = body.metadata;
+      }
+      return json(stored);
     }
     return json({ error: `the mock has no ${method} ${path}` }, 404);
   }

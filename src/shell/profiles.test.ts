@@ -151,8 +151,11 @@ describe('loadProfile', () => {
     expect(calls[1].body).toEqual({ profile: { ...other, target_weight: 0 }, context: {} });
   });
 
-  it('knows the dose of the defaults only', () => {
+  it('knows the dose of a profile that carries its A-Flow parameters', () => {
     expect(doseOf(light)).toBe(16);
+    expect(doseOf(fromGateway(light))).toBe(16);
     expect(doseOf(other)).toBeUndefined();
+    // The plugin's notes: Decaid's bundled default is not an A-Flow 3.0 profile.
+    expect(doseOf({ ...light, notes: 'A-Flow: an alternative profile for D-Flow' })).toBeUndefined();
   });
 });

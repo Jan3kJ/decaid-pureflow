@@ -886,3 +886,51 @@ test were deleted (73 profiles and the one shot of 8.2 as before), the workflow'
 context are as they were, and no setting and no KV key was written. The workflow and the
 settings from before are in the rig's `log\d6-workflow-before.json` and
 `log\d6-settings-before.json`.
+
+## 11. Editor wired to the gateway (D7)
+
+Done on 2026-10-13 against Decaid v0.8.8 on the rig, started as in 8.8 step 2 (the machine
+state answered 200 within 3 s of the first check) and ended with `Stop-Process -Force`. Every
+claim is **seen running**; the probe's output is in the rig's `log\d7-profile-probe.txt`.
+
+### 11.1 What a profile's id is made of
+
+| Claim | Status |
+|---|---|
+| **The id is a hash of the steps and the target weight.** The same steps posted with another title, with other notes or with another author returned the existing record unchanged (its old title, notes and metadata), with status 201 and no error. The same steps with another `target_weight` gave a new id | seen running |
+| So Decaid holds one profile for each set of steps and stop weight: two names for the same values are not possible, and neither are two doses, because the dose is not in the profile | follows |
+| `PUT /api/v1/profiles/{id}` with another title and other notes changed both and kept the id; the `metadataHash` changed | seen running |
+| `PUT /api/v1/profiles/{id}` with other steps gave the record a new id and kept its `parentId` and metadata: the old id is gone | seen running |
+| The same `PUT` on a bundled default answers `400 {"error":"Invalid request","message":"Invalid argument(s): Cannot modify default profile content"}` | seen running |
+
+### 11.2 Lineage and visibility
+
+| Claim | Status |
+|---|---|
+| **A parent is recorded by `POST /api/v1/profiles` with `parentId`**; the new record returns it. A `PUT` does not take one | seen running; the second part read (`rest_v1.yml`) |
+| `PUT /api/v1/profiles/{id}/visibility` with `{"visibility":"hidden"}` takes the profile out of `GET /api/v1/profiles`; `?includeHidden=true` lists it | seen running |
+| `GET /api/v1/profiles/{id}/lineage` of the child returns the hidden parent and the child, oldest first | seen running |
+| A `POST` with the steps of a hidden record returns that record, still hidden | seen running |
+
+### 11.3 What the skin does with it
+
+- `writeParams` (`src/editor/storage.ts`): after the `POST`, a record with the wanted title
+  and other notes gets its notes by `PUT`; a hidden record is taken over (title, notes,
+  metadata) and made visible; a visible record with another title is left alone and the
+  save is refused with its title.
+- `saveEdit` (`src/editor/save.ts`): the `POST` carries `parentId`, and the parent is hidden
+  when the answer is another record. An edit of the dose alone has the same id: only its
+  notes change.
+- 'Load to machine' is `loadProfile` (`src/shell/profiles.ts`), the picker's function.
+
+### 11.4 Tests
+
+- `npm run e2e`: `e2e/editor-machine.spec.ts`, eight tests against the mocked gateway, which
+  now keeps profiles by the rule of 11.1.
+- `npm run e2e:rig`: `e2e-rig/editor.spec.ts`, acceptance item 3. Passed on 2026-10-13 with
+  the shot test of D6 (three tests, 2.1 min). A Playwright test imports the generator from
+  `src/`, so the JSON imports of the defaults carry `with { type: 'json' }`.
+
+What the run left in the rig: nothing. 73 profiles as before, hidden and deleted ones
+counted; the workflow's profile and context are as they were; no setting and no KV key was
+written.

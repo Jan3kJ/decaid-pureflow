@@ -205,6 +205,26 @@ describe('profiles', () => {
       metadata: { source: 'decaid-skin' },
     });
   });
+
+  it('changes a profile with PUT /api/v1/profiles/{id}', async () => {
+    const { client, calls } = clientWith({ body: { id: 'profile:1', profile: PROFILE } });
+    const record = await client.updateProfile('profile:1', { profile: PROFILE });
+    expect(record.id).toBe('profile:1');
+    expect(calls[0]).toMatchObject({ method: 'PUT', url: 'http://localhost:8080/api/v1/profiles/profile%3A1' });
+    expect(calls[0].body).toEqual({ profile: PROFILE });
+  });
+
+  it('hides a profile and reads its lineage', async () => {
+    const { client, calls } = clientWith({ body: { id: 'profile:1', visibility: 'hidden' } }, { body: [] });
+    expect((await client.setProfileVisibility('profile:1', 'hidden')).visibility).toBe('hidden');
+    expect(calls[0]).toMatchObject({
+      method: 'PUT',
+      url: 'http://localhost:8080/api/v1/profiles/profile%3A1/visibility',
+      body: { visibility: 'hidden' },
+    });
+    expect(await client.getProfileLineage('profile:1')).toEqual([]);
+    expect(calls[1]).toMatchObject({ method: 'GET', url: 'http://localhost:8080/api/v1/profiles/profile%3A1/lineage' });
+  });
 });
 
 describe('shots', () => {

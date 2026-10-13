@@ -1,13 +1,19 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import {
+    DEFAULT_AUTHOR,
     DEFAULT_PROFILES,
     hasSecondFill,
     paramRanges,
     resolveParams,
+    serializeParams,
     type AFlowParams,
     type NumberField,
   } from '../aflow';
+  import type { ProfileRecord } from '../api';
   import { loadSettings, saveSettings } from '../settings';
+  import { defaultProfile, loadProfile, sameProfile } from '../shell/profiles';
+  import type { Skin } from '../shell/skin.svelte';
   import { PHASE_LABEL, type EditField, type PhaseId } from './curve';
   import { dragValue, setValue, toggleFlow, toggleSecondFill } from './edit';
   import {
@@ -23,64 +29,196 @@
   import Graph from './Graph.svelte';
   import NameDialog from './NameDialog.svelte';
   import NumberPad from './NumberPad.svelte';
+  import { TITLE_PREFIX, buildProfile, nameOf, saveAs, saveEdit, titleOf } from './save';
   import StepList from './StepList.svelte';
+  import { readParams } from './storage';
   import ValueChip from './ValueChip.svelte';
 
-  interface PickerProfile {
-    id: string;
-    name: string;
-    title: string;
-    params: AFlowParams;
+  interface Props {
+    skin: Skin;
   }
 
-  const defaults: PickerProfile[] = DEFAULT_PROFILES.map((p) => ({
-    ...p,
-    name: p.id.replace('default-', ''),
-  }));
+  let { skin }: Props = $props();
 
-  // The prototype works on fixture data: nothing is loaded, saved or sent. A profile that was
-  // 'saved as' lives in this list until the page unloads.
-  let saved: PickerProfile[] = $state([]);
-  let profileId = $state(defaults[0].id);
-  let params: AFlowParams = $state({ ...defaults[0].params });
+  /** A profile the editor can open: a default, a saved A-Flow 3.0 profile, or the loaded one. */
+  interface Entry {
+    key: string;
+    name: string;
+    title: string;
+    author: string;
+    params: AFlowParams;
+    /** the gateway's record of it, where it has one */
+    record: ProfileRecord | null;
+    isDefault: boolean;
+  }
+
+  /** the key of the loaded profile when the gateway has no record under its title */
+  const LOADED = 'loaded';
+
+  let records: ProfileRecord[] = $state.raw([]);
+  /** the workflow's profile, when it is an A-Flow 3.0 profile */
+  let loaded: { title: string; author: string; params: AFlowParams } | null = $state.raw(null);
+  let originKey = $state(DEFAULT_PROFILES[0].id);
+  let params: AFlowParams = $state({ ...DEFAULT_PROFILES[0].params });
+  /** the user picked or changed something: what is read later does not replace it */
+  let touched = false;
   let mode: 'simple' | 'detail' = $state('simple');
   let selected: PhaseId = $state('fill');
   let naming = $state(false);
+  let busy = $state(false);
+  let notice: { tone: 'info' | 'warn'; text: string } | null = $state(null);
   /** the value the number pad is open for */
   let typing: EditField | null = $state(null);
-  // The settings page (D8c) will own this value; until then the button in the footer sets it.
+  // The settings page (D8c) will own these values; until then the button in the footer sets
+  // the one that shows the steps.
   let settings = $state(loadSettings());
 
-  const profiles = $derived([...defaults, ...saved]);
-  const profile = $derived(profiles.find((p) => p.id === profileId)!);
+  const entries: Entry[] = $derived.by(() => {
+    const defaults: Entry[] = DEFAULT_PROFILES.map((entry) => {
+      const profile = defaultProfile(entry);
+      return {
+        key: entry.id,
+        name: entry.id.replace('default-', ''),
+        title: entry.title,
+        author: DEFAULT_AUTHOR,
+        params: entry.params,
+        record: records.find((record) => sameProfile(record.profile, profile)) ?? null,
+        isDefault: true,
+      };
+    });
+    const saved: Entry[] = [];
+    for (const record of records) {
+      const read = readParams(record.profile);
+      if (!read || defaults.some((entry) => entry.title === record.profile.title)) continue;
+      saved.push({
+        key: record.id,
+        name: nameOf(record.profile.title),
+        title: record.profile.title,
+        author: record.profile.author ?? '',
+        params: read,
+        record,
+        isDefault: false,
+      });
+    }
+    const all = [...defaults, ...saved];
+    if (loaded && !all.some((entry) => entry.title === loaded!.title)) {
+      all.push({ key: LOADED, name: nameOf(loaded.title), ...loaded, record: null, isDefault: false });
+    }
+    return all;
+  });
+  const origin = $derived(entries.find((entry) => entry.key === originKey) ?? entries[0]);
+  const dirty = $derived(serializeParams(params) !== serializeParams(origin.params));
+  /** 'save' writes a new version of a saved profile; a default is saved under a new name. */
+  const canSave = $derived(!!origin.record && !origin.isDefault && dirty);
+  const taken = $derived([
+    ...entries.map((entry) => entry.name),
+    ...records
+      .map((record) => record.profile.title)
+      .filter((title) => title.startsWith(TITLE_PREFIX))
+      .map(nameOf),
+  ]);
   const resolved = $derived(resolveParams(params));
   const ranges = paramRanges();
   const phases = $derived(
     (Object.keys(PHASE_LABEL) as PhaseId[]).filter((id) => id !== 'secondFill' || hasSecondFill(params)),
   );
+  const message = (cause: unknown) => (cause instanceof Error ? cause.message : String(cause));
 
-  function pick(id: string) {
-    profileId = id;
-    params = { ...profiles.find((p) => p.id === id)!.params };
+  function open(key: string, values: AFlowParams) {
+    originKey = key;
+    params = { ...values };
     if (selected === 'secondFill' && !hasSecondFill(params)) selected = 'infuse';
   }
 
   /**
-   * What 'save as' does once a name is confirmed. Here it adds the profile to the picker for
-   * the session; D7 replaces this body with the real saving to Decaid.
+   * Opens the editor on the current profile, the workflow's, when it is an A-Flow 3.0 profile
+   * (spec 3.2). Any other profile is not edited: the editor says so and stays on a default.
    */
-  function saveAs(name: string) {
-    const id = `saved-${saved.length + 1}`;
-    saved.push({ id, name, title: `A-Flow / ${name}`, params: { ...params } });
-    profileId = id;
+  async function init() {
+    try {
+      if (!skin.workflow) await skin.refreshWorkflow();
+      records = await skin.client.listProfiles();
+    } catch (cause) {
+      notice = {
+        tone: 'warn',
+        text: `Decaid did not answer, so nothing can be saved or loaded now: ${message(cause)}`,
+      };
+      return;
+    }
+    const profile = skin.workflow?.profile;
+    if (!profile) return;
+    const read = readParams(profile);
+    if (!read) {
+      notice = {
+        tone: 'info',
+        text: `The loaded profile “${profile.title}” is not an A-Flow 3.0 profile: it can be loaded, but not edited. This is a default to start a new one from.`,
+      };
+      return;
+    }
+    if (touched) return;
+    // The record under its title is what 'save' continues; values that were loaded without
+    // being saved are open again as they were.
+    loaded = { title: profile.title, author: profile.author ?? '', params: read };
+    open(entries.find((entry) => entry.title === profile.title)?.key ?? LOADED, read);
   }
 
+  onMount(() => void init());
+
+  function pick(key: string) {
+    touched = true;
+    notice = null;
+    open(key, entries.find((entry) => entry.key === key)!.params);
+  }
+
+  async function act(failure: string, run: () => Promise<void>) {
+    busy = true;
+    notice = null;
+    try {
+      await run();
+    } catch (cause) {
+      notice = { tone: 'warn', text: `${failure}: ${message(cause)}` };
+    } finally {
+      busy = false;
+    }
+  }
+
+  /** The saved record is what the editor is on now. */
+  async function adopt(record: ProfileRecord, text: string) {
+    records = await skin.client.listProfiles();
+    open(record.id, readParams(record.profile) ?? params);
+    notice = { tone: 'info', text };
+  }
+
+  const saveUnder = (name: string) =>
+    act('The profile was not saved', async () => {
+      const about = { title: titleOf(name), author: origin.author };
+      const record = await saveAs(skin.client, params, about, settings.firstStepWorkaround);
+      await adopt(record, `Saved as “${name}”.`);
+    });
+
+  const save = () =>
+    act('The profile was not saved', async () => {
+      const name = origin.name;
+      const record = await saveEdit(skin.client, params, origin.record!, settings.firstStepWorkaround);
+      await adopt(record, `Saved “${name}”.`);
+    });
+
+  /** The values as they are now, saved or not, with the picker's loading function. */
+  const load = () =>
+    act('The profile was not loaded', async () => {
+      const profile = buildProfile(params, origin, settings.firstStepWorkaround);
+      skin.workflow = await loadProfile(skin.client, profile);
+      skin.go('home');
+    });
+
   function edit(field: EditField, value: number) {
+    touched = true;
     params = setValue(params, field, value);
     if (selected === 'secondFill' && !hasSecondFill(params)) selected = 'infuse';
   }
 
   function drag(field: NumberField, value: number) {
+    touched = true;
     params = dragValue(params, field, value);
   }
 
@@ -89,9 +227,15 @@
   }
 
   function switchSecondFill() {
+    touched = true;
     params = toggleSecondFill(params);
     if (hasSecondFill(params)) selected = mode === 'detail' ? 'secondFill' : selected;
     else if (selected === 'secondFill') selected = 'infuse';
+  }
+
+  function switchFlow() {
+    touched = true;
+    params = toggleFlow(params);
   }
 
   function showSteps(show: boolean) {
@@ -103,21 +247,27 @@
 <div class="editor" class:detail={mode === 'detail'}>
   <header>
     <div class="group picker" role="group" aria-label="profile" data-testid="picker">
-      {#each profiles as p (p.id)}
+      {#each entries as entry (entry.key)}
         <button
           class="seg"
-          aria-pressed={p.id === profileId}
-          data-testid="profile-{p.id}"
-          onclick={() => pick(p.id)}
+          aria-pressed={entry.key === origin.key}
+          data-testid="profile-{entry.key}"
+          onclick={() => pick(entry.key)}
         >
-          {p.name}
+          {entry.name}
         </button>
       {/each}
     </div>
     <div class="group">
-      <button class="seg action" data-testid="save-as" onclick={() => (naming = true)}>
-        save as
-      </button>
+      <div class="group" role="group" aria-label="profile actions">
+        <button class="seg action" data-testid="save" disabled={busy || !canSave} onclick={save}>save</button>
+        <button class="seg action" data-testid="save-as" disabled={busy} onclick={() => (naming = true)}>
+          save as
+        </button>
+        <button class="seg action load" data-testid="load-to-machine" disabled={busy} onclick={load}>
+          load to machine
+        </button>
+      </div>
       <div class="group" role="group" aria-label="editor mode">
         <button
           class="seg"
@@ -136,6 +286,9 @@
   </header>
 
   <section class="stage">
+    {#if notice}
+      <p class="notice {notice.tone}" data-testid="editor-notice">{notice.text}</p>
+    {/if}
     {#if mode === 'detail'}
       <div class="phases" role="group" aria-label="phase">
         {#each phases as id (id)}
@@ -199,7 +352,7 @@
       class="toggle"
       data-testid="toggle-flow"
       aria-label="flow direction"
-      onclick={() => (params = toggleFlow(params))}
+      onclick={switchFlow}
     >
       <span class="arrow" class:down={!params.flowUp}>↗</span>{params.flowUp
         ? 'flow up'
@@ -222,17 +375,17 @@
 
   {#if settings.showProfileSteps}
     <section class="steps">
-      <StepList {params} title={profile.title} />
+      <StepList {params} title={origin.title} firstStepWorkaround={settings.firstStepWorkaround} />
     </section>
   {/if}
 </div>
 
 {#if naming}
   <NameDialog
-    taken={profiles.map((p) => p.name)}
+    {taken}
     onconfirm={(name) => {
       naming = false;
-      saveAs(name);
+      void saveUnder(name);
     }}
     oncancel={() => (naming = false)}
   />
@@ -330,8 +483,38 @@
   }
 
   .seg.action {
+    min-width: 0;
     background: var(--raised);
     white-space: nowrap;
+  }
+
+  .seg.load {
+    background: var(--fg);
+    border-color: var(--fg);
+    color: var(--bg);
+    font-weight: 600;
+  }
+
+  .seg:disabled {
+    background: var(--panel);
+    border-color: var(--line);
+    color: var(--dim);
+    font-weight: 400;
+  }
+
+  /* One line: what the editor is on, and what a save or a load answered. */
+  .notice {
+    margin: 0;
+    padding: 0.5rem 0.9rem;
+    border: 1px solid var(--line);
+    border-radius: 0.9rem;
+    background: var(--raised);
+    color: var(--dim);
+    font-size: 0.95rem;
+  }
+
+  .notice.warn {
+    color: var(--warn);
   }
 
   .stage {

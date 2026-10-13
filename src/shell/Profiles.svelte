@@ -128,7 +128,12 @@
           <dd>{dose === undefined ? '–' : `${dose} g`}</dd>
         </div>
       </dl>
-      {#if profile.notes}<p class="notes">{profile.notes}</p>{/if}
+      {#if dose !== undefined}
+        <!-- Its notes hold the A-Flow parameters (editor/storage.ts), not a text to read. -->
+        <p class="notes">A-Flow 3.0: once it is loaded, the editor opens on it.</p>
+      {:else if profile.notes}
+        <p class="notes">{profile.notes}</p>
+      {/if}
       <button class="load" data-testid="load-profile" disabled={busy} onclick={() => load(selected)}>
         load
       </button>

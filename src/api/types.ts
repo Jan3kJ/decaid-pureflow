@@ -134,7 +134,7 @@ export interface Profile {
 
 export type ProfileVisibility = 'visible' | 'hidden' | 'deleted';
 
-/** A stored profile. The id is a hash of the profile's content: `profile:<20 hex>`. */
+/** A stored profile. The id is a hash of the steps and the target weight: `profile:<20 hex>`. */
 export interface ProfileRecord {
   id: string;
   profile: Profile;
@@ -157,6 +157,13 @@ export interface ListProfilesQuery {
 export interface SaveProfileOptions {
   /** The id of the profile this one was edited from; Decaid's lineage follows it. */
   parentId?: string | null;
+  metadata?: Record<string, unknown> | null;
+}
+
+/** The body of `PUT /api/v1/profiles/{id}`: what is left out keeps its value. */
+export interface ProfileUpdate {
+  profile?: Profile;
+  /** `null` clears the metadata */
   metadata?: Record<string, unknown> | null;
 }
 

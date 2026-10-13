@@ -5,9 +5,14 @@
 export interface Settings {
   /** the editor shows the generated profile steps under the graph */
   showProfileSteps: boolean;
+  /**
+   * 'first-step workaround' (spec 3.2): a profile the editor generates starts with the Pre
+   * Fill step. This is the one place it is read from; the settings page (D8c) shows it.
+   */
+  firstStepWorkaround: boolean;
 }
 
-export const DEFAULT_SETTINGS: Settings = { showProfileSteps: true };
+export const DEFAULT_SETTINGS: Settings = { showProfileSteps: true, firstStepWorkaround: false };
 
 export const SETTINGS_KEY = 'decaid-skin.settings';
 
