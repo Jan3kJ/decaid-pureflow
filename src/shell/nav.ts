@@ -21,8 +21,6 @@ export const PLACEHOLDERS: Partial<Record<Screen, { title: string; text: string 
     title: 'Shot history',
     text: 'The list of previous shots comes here, as an overlay from the left edge.',
   },
-  scale: { title: 'Scale', text: 'The connection of the scale and tare come here.' },
-  settings: { title: 'Settings', text: 'The settings of the skin come here: steam, profile and a few others.' },
 };
 
 export const SCREEN_KEY = 'decaid-skin.screen';

@@ -84,6 +84,8 @@ export interface MockOptions {
   gateway?: boolean;
   /** false: the gateway answers, no machine is connected */
   machine?: boolean;
+  /** false: Decaid cannot set this platform's brightness (`platformSupported.brightness`) */
+  brightness?: boolean;
 }
 
 export class MockGateway {
@@ -92,6 +94,19 @@ export class MockGateway {
   machineConnected: boolean;
   /** the machine's state outside a replay */
   state = 'idle';
+  /** Decaid's setting blockTareDuringShot is on and a shot runs: a tare answers 400 */
+  tareBlocked = false;
+  /** true: a stream is answered with an error frame and closed (research.md 9.4) */
+  refuseStreams = false;
+  /** `GET /api/v1/display` */
+  display: Json = {
+    wakeLockEnabled: true,
+    wakeLockOverride: false,
+    brightness: 100,
+    requestedBrightness: 100,
+    lowBatteryBrightnessActive: false,
+    platformSupported: { brightness: true, wakeLock: true },
+  };
   workflow: Json = {
     id: 'workflow',
     name: 'Workflow',
@@ -112,6 +127,7 @@ export class MockGateway {
   private readonly machineSockets = new Set<WebSocketRoute>();
   private readonly scaleSockets = new Set<WebSocketRoute>();
   private weight = 0;
+  private scaleConnected = true;
   private replaying = false;
   /** the frame a machine in the middle of a shot repeats */
   private held: Json | undefined;
@@ -120,20 +136,23 @@ export class MockGateway {
   constructor(options: MockOptions = {}) {
     this.up = options.gateway ?? true;
     this.machineConnected = options.machine ?? true;
+    this.display.platformSupported.brightness = options.brightness ?? true;
   }
 
   async install(page: Page): Promise<this> {
     await page.route(`${GATEWAY}/**`, (route) => this.answer(route));
     await page.routeWebSocket(/:8080\/ws\/v1\/machine\/snapshot/, (ws) => this.open(ws, this.machineSockets));
     await page.routeWebSocket(/:8080\/ws\/v1\/scale\/snapshot/, (ws) => {
-      this.open(ws, this.scaleSockets);
-      if (this.up) ws.send(JSON.stringify({ status: 'connected' }));
+      // The first frame is a status frame without a weight.
+      if (this.open(ws, this.scaleSockets)) {
+        ws.send(JSON.stringify({ status: this.scaleConnected ? 'connected' : 'disconnected' }));
+      }
     });
     // A connected machine sends frames all the time, a scale too.
     this.heartbeat = setInterval(() => {
       if (this.replaying) return;
       if (this.machineConnected) this.sendMachine(this.held ?? this.frame());
-      this.sendScale({ timestamp: new Date().toISOString(), weight: this.weight, weightFlow: 0, battery: 100, timerValue: null });
+      if (this.scaleConnected) this.putOnScale(this.weight);
     }, 300);
     page.on('close', () => clearInterval(this.heartbeat));
     return this;
@@ -151,6 +170,12 @@ export class MockGateway {
   putOnScale(grams: number): void {
     this.weight = grams;
     this.sendScale({ timestamp: new Date().toISOString(), weight: grams, weightFlow: 0, battery: 100, timerValue: null });
+  }
+
+  /** The scale connects or goes away: a status frame on the open socket, and no weights without it. */
+  connectScale(connected: boolean): void {
+    this.scaleConnected = connected;
+    this.sendScale({ status: connected ? 'connected' : 'disconnected' });
   }
 
   /**
@@ -216,13 +241,16 @@ export class MockGateway {
     for (const ws of this.scaleSockets) ws.send(JSON.stringify(frame));
   }
 
-  private open(ws: WebSocketRoute, sockets: Set<WebSocketRoute>): void {
-    if (!this.up) {
+  /** Whether the socket stays open. */
+  private open(ws: WebSocketRoute, sockets: Set<WebSocketRoute>): boolean {
+    if (this.up && this.refuseStreams) ws.send(JSON.stringify({ error: 'the mock refuses this stream' }));
+    if (!this.up || this.refuseStreams) {
       void ws.close();
-      return;
+      return false;
     }
     sockets.add(ws);
     ws.onClose(() => sockets.delete(ws));
+    return true;
   }
 
   private async answer(route: Route): Promise<void> {
@@ -244,8 +272,25 @@ export class MockGateway {
     }
     if (method === 'PUT' && path.startsWith('/api/v1/machine/state/')) {
       if (!this.machineConnected) return noMachine();
-      // The state itself changes when the test replays the shot or lets it end.
+      // The state itself changes when the test replays the shot or lets it end; only sleep
+      // and the wake from it are the mock's own.
+      const asked = path.split('/').pop();
+      if (asked === 'sleeping' || this.state === 'sleeping') this.state = asked!;
       return json(null);
+    }
+    if (method === 'PUT' && path === '/api/v1/scale/tare') {
+      if (this.tareBlocked) {
+        // As Decaid 0.8.8 answered on the rig (research.md 9.1).
+        return json({ details: 'Tare blocked: a shot is in progress', type: 'block_tare_during_shot' }, 400);
+      }
+      if (!this.scaleConnected) return json({ error: 'DeviceNotConnectedException: scale not connected' }, 500);
+      this.putOnScale(0);
+      return json(null);
+    }
+    if (method === 'GET' && path === '/api/v1/display') return json(this.display);
+    if (method === 'PUT' && path === '/api/v1/display/brightness') {
+      this.display = { ...this.display, brightness: body.brightness, requestedBrightness: body.brightness };
+      return json(this.display);
     }
     if (path === '/api/v1/workflow' && method === 'GET') return json(this.workflow);
     if (path === '/api/v1/workflow' && method === 'PUT') {

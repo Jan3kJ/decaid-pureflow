@@ -114,6 +114,8 @@ test('the steam settings come from the settings store and survive a reload', asy
       JSON.stringify({ steam: { mugSmall: 100, referenceSeconds: 30, referenceMilk: 100, favourites: [10, 20, 40] } }),
     );
   });
+  // The skin reads the store once, when it loads; afterwards the settings page changes it.
+  await page.reload();
   await page.getByTestId('open-steam').click();
   gateway.putOnScale(200);
 

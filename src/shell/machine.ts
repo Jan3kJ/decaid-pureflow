@@ -2,12 +2,17 @@
 // delivered. Nothing here is assumed: without a fresh frame there is no machine state.
 import type { MachineSnapshot, MachineState, StreamState } from '../api';
 
-/** Whether the gateway answers: not known until the stream opened or failed once. */
-export type Gateway = 'connecting' | 'connected' | 'lost';
+/**
+ * Whether the gateway answers: not known until the stream opened or failed once. `refused`:
+ * the gateway sent an error frame and closed the socket, and the stream does not try again
+ * by itself (research.md 9.4).
+ */
+export type Gateway = 'connecting' | 'connected' | 'lost' | 'refused';
 
 export function gatewayAfter(before: Gateway, stream: StreamState): Gateway {
   if (stream === 'open') return 'connected';
-  if (stream === 'waiting' || stream === 'failed') return 'lost';
+  if (stream === 'failed') return 'refused';
+  if (stream === 'waiting') return 'lost';
   // 'connecting' between two attempts keeps what the last attempt showed.
   return before;
 }
@@ -15,10 +20,11 @@ export function gatewayAfter(before: Gateway, stream: StreamState): Gateway {
 /**
  * - `connecting`: nothing is known yet
  * - `no-gateway`: the stream's socket does not open
+ * - `refused`: the gateway closed the stream with an error; only 'reconnect' opens it again
  * - `no-machine`: the socket is open and silent
  * - `machine`: frames arrive
  */
-export type Link = 'connecting' | 'no-gateway' | 'no-machine' | 'machine';
+export type Link = 'connecting' | 'no-gateway' | 'refused' | 'no-machine' | 'machine';
 
 /**
  * A machine sends at least 2 frames per second. Without a machine the gateway keeps the
@@ -34,6 +40,7 @@ export function linkOf(
   now: number,
 ): Link {
   if (gateway === 'connecting') return 'connecting';
+  if (gateway === 'refused') return 'refused';
   if (gateway === 'lost' || openedAt === null) return 'no-gateway';
   const fresh = lastFrameAt !== null && lastFrameAt >= openedAt;
   if (now - (fresh ? lastFrameAt : openedAt) > FRAME_STALE_MS) return 'no-machine';
@@ -88,6 +95,13 @@ export function statusOf(link: Link, snapshot: MachineSnapshot | null, gatewayUr
       tone: 'warn',
     };
   }
+  if (link === 'refused') {
+    return {
+      title: 'Decaid closed the connection',
+      detail: 'It answered with an error and is not asked again. Reconnect to try once more.',
+      tone: 'warn',
+    };
+  }
   if (link === 'no-machine' || !snapshot) {
     return {
       title: 'No machine connected',
@@ -105,8 +119,8 @@ export function statusOf(link: Link, snapshot: MachineSnapshot | null, gatewayUr
 
 /**
  * The one large button of home: start a shot from idle, stop whatever runs. In every other
- * state (asleep, heating, no machine) there is nothing to start; waking is the sleep button's
- * job (D8c).
+ * state (asleep, heating, no machine) there is nothing to start; a sleeping machine is woken
+ * by a touch (`isAsleep`).
  */
 export type HomeAction = 'start' | 'stop' | 'none';
 
@@ -115,3 +129,24 @@ export function homeAction(link: Link, snapshot: MachineSnapshot | null): HomeAc
   if (snapshot.state.state === 'idle') return 'start';
   return RUNNING.includes(snapshot.state.state) ? 'stop' : 'none';
 }
+
+/** The sleep button of home: a machine that is awake and runs nothing can be put to sleep. */
+export function canSleep(link: Link, snapshot: MachineSnapshot | null): boolean {
+  if (link !== 'machine' || !snapshot) return false;
+  const state = snapshot.state.state;
+  return state !== 'sleeping' && !RUNNING.includes(state);
+}
+
+/** The machine said that it sleeps: the skin goes dark and a touch anywhere wakes it. */
+export function isAsleep(link: Link, snapshot: MachineSnapshot | null): boolean {
+  return link === 'machine' && snapshot?.state.state === 'sleeping';
+}
+
+/** What the scale stream said last about the scale; `unknown` while the stream is not open. */
+export type ScaleLink = 'unknown' | 'connected' | 'disconnected';
+
+export const SCALE_LABEL: Record<ScaleLink, string> = {
+  unknown: 'Not known',
+  connected: 'Connected',
+  disconnected: 'Not connected',
+};

@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_SETTINGS, DEFAULT_STEAM_SETTINGS, SETTINGS_KEY, loadSettings, saveSettings } from './settings';
+import {
+  DEFAULT_SETTINGS,
+  DEFAULT_STEAM_SETTINGS,
+  SETTINGS_KEY,
+  STEAM_FIELDS,
+  loadSettings,
+  saveSettings,
+  steamValue,
+  withSteamValue,
+} from './settings';
 
 function fakeStore(initial?: string) {
   const data = new Map<string, string>(initial === undefined ? [] : [[SETTINGS_KEY, initial]]);
@@ -81,5 +90,54 @@ describe('settings', () => {
     };
     expect(loadSettings(broken)).toEqual(DEFAULT_SETTINGS);
     expect(() => saveSettings(DEFAULT_SETTINGS, broken)).not.toThrow();
+  });
+});
+
+describe('the steam values of the settings page', () => {
+  const fields = STEAM_FIELDS.flatMap((group) => group.fields);
+  const field = (id: string) => fields.find((candidate) => candidate.id === id)!;
+
+  it('lists every steam value once, each with a default inside its range', () => {
+    expect(fields.map((entry) => entry.id)).toEqual([
+      'mug-small',
+      'mug-medium',
+      'mug-large',
+      'reference-seconds',
+      'reference-milk',
+      'milk-per-drink',
+      'favourite-1',
+      'favourite-2',
+      'favourite-3',
+    ]);
+    expect(fields.map((entry) => steamValue(DEFAULT_STEAM_SETTINGS, entry))).toEqual([150, 225, 275, 26, 180, 150, 25, 50, 30]);
+    for (const entry of fields) {
+      const value = steamValue(DEFAULT_STEAM_SETTINGS, entry);
+      expect(value).toBeGreaterThanOrEqual(entry.min);
+      expect(value).toBeLessThanOrEqual(entry.max);
+    }
+  });
+
+  it('changes one value and leaves the given settings as they were', () => {
+    const changed = withSteamValue(DEFAULT_STEAM_SETTINGS, field('mug-medium'), 240.5);
+    expect(changed).toEqual({ ...DEFAULT_STEAM_SETTINGS, mugMedium: 240.5 });
+    expect(withSteamValue(changed, field('favourite-2'), 45).favourites).toEqual([25, 45, 30]);
+    expect(DEFAULT_STEAM_SETTINGS.mugMedium).toBe(225);
+    expect(DEFAULT_STEAM_SETTINGS.favourites).toEqual([25, 50, 30]);
+  });
+
+  it('holds a value inside its range and its step', () => {
+    // No calibration with 0 g of milk: the timer would divide by it.
+    expect(withSteamValue(DEFAULT_STEAM_SETTINGS, field('reference-milk'), 0).referenceMilk).toBe(1);
+    expect(withSteamValue(DEFAULT_STEAM_SETTINGS, field('mug-large'), 5000).mugLarge).toBe(1000);
+    expect(withSteamValue(DEFAULT_STEAM_SETTINGS, field('reference-seconds'), 26.4).referenceSeconds).toBe(26);
+    expect(withSteamValue(DEFAULT_STEAM_SETTINGS, field('mug-small'), 162.54).mugSmall).toBe(162.5);
+  });
+
+  it('is saved and read back through the store', () => {
+    const store = fakeStore();
+    const steam = withSteamValue(DEFAULT_STEAM_SETTINGS, field('favourite-3'), 35);
+    saveSettings({ ...DEFAULT_SETTINGS, steam }, store);
+    expect(steamValue(loadSettings(store).steam, field('favourite-3'))).toBe(35);
+    expect(JSON.parse(store.getItem(SETTINGS_KEY)!).steam.favourites).toEqual([25, 50, 35]);
   });
 });

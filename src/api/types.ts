@@ -330,6 +330,19 @@ export interface DecaidSettings {
   [key: string]: unknown;
 }
 
+/** `DisplayState` in rest_v1.yml: the tablet's screen, as Decaid controls it. */
+export interface DisplayState {
+  wakeLockEnabled?: boolean;
+  wakeLockOverride?: boolean;
+  /** 0-100, what is applied */
+  brightness?: number;
+  /** 0-100, what was asked for; 100 is the brightness the system manages */
+  requestedBrightness?: number;
+  lowBatteryBrightnessActive?: boolean;
+  /** What this platform can do. Brightness is only set where `brightness` is true (spec 3.1). */
+  platformSupported?: { brightness?: boolean; wakeLock?: boolean };
+}
+
 /** `GET /api/v1/webui/server/status`: where Decaid serves the skin. */
 export interface WebUiServerStatus {
   serving: boolean;

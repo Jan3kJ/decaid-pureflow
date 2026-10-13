@@ -2,6 +2,7 @@
 // parameters, so it runs in the skin, in Node and in tests.
 import type {
   DecaidSettings,
+  DisplayState,
   ListProfilesQuery,
   ListShotsQuery,
   MachineSnapshot,
@@ -191,6 +192,17 @@ export class DecaidClient {
   /** Throws `TareBlockedError` when Decaid refuses the tare during a shot. */
   async tareScale(): Promise<void> {
     await this.request('PUT', '/api/v1/scale/tare');
+  }
+
+  // --- display ---
+
+  getDisplay(): Promise<DisplayState> {
+    return this.request('GET', '/api/v1/display');
+  }
+
+  /** 0 to 99 sets the screen's brightness; 100 hands it back to the system. */
+  setBrightness(brightness: number): Promise<DisplayState> {
+    return this.request('PUT', '/api/v1/display/brightness', { brightness });
   }
 
   // --- settings ---

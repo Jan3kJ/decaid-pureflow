@@ -1,6 +1,5 @@
 <script lang="ts">
   import ShotGraph from '../graph/ShotGraph.svelte';
-  import { loadSettings } from '../settings';
   import type { Skin } from '../shell/skin.svelte';
   import { emptySteamSeries, steamSeconds } from './run';
   import { readScale } from './timer';
@@ -11,8 +10,8 @@
 
   let { skin }: Props = $props();
 
-  // The values are the settings page's (D8c); this page only reads them.
-  const settings = loadSettings().steam;
+  // The values are the settings page's; this page only reads them.
+  const settings = $derived(skin.settings.steam);
 
   const series = $derived(skin.steam?.series ?? emptySteamSeries());
   const steaming = $derived(skin.steam !== null && !skin.steam.ended);

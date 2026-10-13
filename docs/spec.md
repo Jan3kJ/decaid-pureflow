@@ -385,6 +385,29 @@ default's content cannot be changed with `PUT` (400).
   Profiles stored before it was switched on, and the defaults the picker adds, do not get
   the Pre Fill step until they are saved or loaded from the editor. Its switch is on the
   settings page (D8c). (owner)
+- Scale, settings, sleep (D8c, research.md section 13), choices the founder has not seen:
+  - The settings page shows its two categories, Steam and Profile, side by side on one
+    screen, without tabs. Grams take one decimal and go up to 1000 g; seconds are whole,
+    1 to 255. There is no 'back to defaults' action. (owner)
+  - The editor keeps its 'profile steps' button; it and the switch on the settings page are
+    one setting. (owner)
+  - Settings are in `localStorage` (`decaid-skin.settings`), so they belong to this tablet
+    and to the port Decaid gives the skin (4.1); the KV store would keep them over a
+    changed port. The screen the skin opens with is not a setting and has its own key
+    (`decaid-skin.screen`). (owner)
+  - While the machine sleeps the skin is a dark screen, 'Asleep, touch to wake', over every
+    page, whoever put the machine to sleep; a touch asks for `idle`. Where
+    `platformSupported.brightness` is true the brightness goes to 5 (`SLEEP_BRIGHTNESS` in
+    `src/shell/skin.svelte.ts`) and back to 100, the system's own, at the wake. Is 5 right,
+    and should the skin dim at all, or leave that to Decaid? (owner)
+  - Sleep is offered whenever the machine is awake and runs nothing, also while it heats.
+    (owner)
+  - A shot started in the seconds after a wake, before the scale is back, did not stop at
+    its weight on the rig (research.md section 13). The skin does not hold the start button
+    back for it. Should it, and does the real scale behave so? (owner)
+  - A stream the gateway closed with an error stays closed (4.1); the skin says 'Decaid
+    closed the connection' with a 'reconnect' button on every screen. Whether it should
+    retry by itself instead is still the founder's word (day record of 2026-10-12). (owner)
 - The ghost curve of the profile's last shot in the editor: asked of the founder on
   2026-10-13 (request 171), not answered, so it is not built. (owner)
 - Which call loads a profile: the skin uses `PUT /api/v1/workflow` (D6), because

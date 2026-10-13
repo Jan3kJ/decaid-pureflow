@@ -314,6 +314,21 @@ describe('settings', () => {
   });
 });
 
+describe('display', () => {
+  it('reads what the platform supports', async () => {
+    const { client, calls } = clientWith({ body: { brightness: 100, platformSupported: { brightness: false, wakeLock: true } } });
+    expect((await client.getDisplay()).platformSupported?.brightness).toBe(false);
+    expect(calls[0]).toMatchObject({ method: 'GET', url: 'http://localhost:8080/api/v1/display' });
+  });
+
+  it('sets the brightness with PUT', async () => {
+    const { client, calls } = clientWith({ body: { brightness: 5, requestedBrightness: 5 } });
+    expect((await client.setBrightness(5)).brightness).toBe(5);
+    expect(calls[0]).toMatchObject({ method: 'PUT', url: 'http://localhost:8080/api/v1/display/brightness' });
+    expect(calls[0].body).toEqual({ brightness: 5 });
+  });
+});
+
 describe('KV store', () => {
   it('lists the keys of the namespace decaid-skin', async () => {
     const { client, calls } = clientWith({ body: ['settings'] });

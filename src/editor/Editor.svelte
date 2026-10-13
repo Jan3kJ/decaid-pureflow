@@ -11,7 +11,6 @@
     type NumberField,
   } from '../aflow';
   import type { ProfileRecord } from '../api';
-  import { loadSettings, saveSettings } from '../settings';
   import { defaultProfile, loadProfile, sameProfile } from '../shell/profiles';
   import type { Skin } from '../shell/skin.svelte';
   import { PHASE_LABEL, type EditField, type PhaseId } from './curve';
@@ -69,9 +68,9 @@
   let notice: { tone: 'info' | 'warn'; text: string } | null = $state(null);
   /** the value the number pad is open for */
   let typing: EditField | null = $state(null);
-  // The settings page (D8c) will own these values; until then the button in the footer sets
-  // the one that shows the steps.
-  let settings = $state(loadSettings());
+  // The skin's one copy of the settings: the settings page sets both values, and the button
+  // in the footer the one that shows the steps.
+  const settings = $derived(skin.settings);
 
   const entries: Entry[] = $derived.by(() => {
     const defaults: Entry[] = DEFAULT_PROFILES.map((entry) => {
@@ -239,8 +238,7 @@
   }
 
   function showSteps(show: boolean) {
-    settings.showProfileSteps = show;
-    saveSettings(settings);
+    skin.setSettings({ showProfileSteps: show });
   }
 </script>
 

@@ -220,13 +220,13 @@ test('every screen is one tap from home and back, and the screen survives a relo
   await mockGateway(page);
   await page.goto('/');
 
-  for (const [button, title] of [
-    ['nav-history', 'Shot history'],
-    ['open-scale', 'Scale'],
-    ['open-settings', 'Settings'],
+  for (const [button, screen, title] of [
+    ['nav-history', 'history', 'Shot history'],
+    ['open-scale', 'scale', 'Scale'],
+    ['open-settings', 'settings', 'Settings'],
   ]) {
     await page.getByTestId(button).click();
-    await expect(page.getByTestId('placeholder').locator('h1')).toHaveText(title);
+    await expect(page.getByTestId(`screen-${screen}`).locator('h1')).toHaveText(title);
     await page.getByTestId('nav-home').click();
     await expect(page.getByTestId('screen-home')).toBeVisible();
   }

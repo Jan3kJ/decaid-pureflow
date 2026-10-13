@@ -31,6 +31,7 @@
       <span data-testid="scale-weight">{skin.weight === null ? 'none' : `${skin.weight.toFixed(1)} g`}</span>
     </button>
     <button class="chip" data-testid="open-settings" onclick={() => skin.go('settings')}>settings</button>
+    <button class="chip" data-testid="sleep" disabled={!skin.canSleep} onclick={() => skin.sleep()}>sleep</button>
   </div>
 
   <section class="last">
@@ -170,6 +171,10 @@
     gap: 0.5rem;
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
+  }
+
+  .chip:disabled {
+    color: var(--dim);
   }
 
   .last {

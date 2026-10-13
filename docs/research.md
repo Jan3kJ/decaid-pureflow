@@ -955,3 +955,27 @@ The rig suite passed on 2026-10-13 (four tests, 2.2 min); its output is in the r
 
 What the run left in the rig: nothing. The steam records the test made were deleted (two as
 before), and `steamSettings.duration` is 50 again.
+
+## 13. Scale, settings, sleep / wake (D8c)
+
+Done on 2026-10-13, against Decaid v0.8.8 started as in 8.8 step 2 (the gateway answered
+`GET /api/v1/machine/state` with 200 when it was first asked, about 2 minutes after the start).
+
+| Claim | Status |
+|---|---|
+| `GET /api/v1/display` on the Windows rig: `{"wakeLockEnabled":true,"wakeLockOverride":false,"brightness":100,"requestedBrightness":100,"lowBatteryBrightnessActive":false,"platformSupported":{"brightness":true,"wakeLock":true}}`. The field of spec 3.1 is `platformSupported.brightness` of `DisplayState` (`rest_v1.yml`) | seen running |
+| `PUT /api/v1/display/brightness` with `{"brightness":N}`: 0 to 99 is an explicit level, 100 "returns to OS-managed brightness" | read (`rest_v1.yml`); the skin's 5 and 100 were sent and answered 200 on the rig |
+| The skin's tare (`PUT /api/v1/scale/tare`) answers 200 and the next weight is 0.0 g | seen running |
+| With `blockTareDuringShot` on, the skin's tare during a simulated shot answers 400 `block_tare_during_shot`, and the skin shows it as a notice | seen running, in gateway mode `tracking` |
+| The skin's sleep button (`PUT /api/v1/machine/state/sleeping`) puts the machine into `sleeping`; a touch (`PUT /api/v1/machine/state/idle`) wakes it | seen running |
+| **After a wake the scale is away for a few seconds** (about 4 s on the rig, which has `scalePowerMode: "disconnect"`). A shot started in that time ran without a stop at weight: the next test's shot ended at 95 g instead of 42 g, and passed once the sleep test waited for the scale | seen running, once; not looked into further |
+| A stream that the gateway closes with an error frame | not seen on the rig; `npm run e2e` covers it with the mocked gateway |
+
+Tests: `npm run e2e` has `e2e/scale-settings-sleep.spec.ts` (nine tests, mocked gateway);
+`npm run e2e:rig` has `e2e-rig/scale-sleep.spec.ts` (three tests). The rig suite passed on
+2026-10-13 (seven tests, 2.5 min).
+
+What the run left in the rig: nothing. The shot of the blocked-tare test was deleted (one
+shot as before), `blockTareDuringShot` is `false` again, the brightness is back at 100 and
+the machine is `idle`. Decaid was ended with `Stop-Process -Force`; port 8080 was free
+afterwards.

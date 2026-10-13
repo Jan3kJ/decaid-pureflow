@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { MachineSnapshot, MachineState } from '../api';
 import { gatewayBaseUrl } from './gateway';
-import { FRAME_STALE_MS, gatewayAfter, homeAction, linkOf, stateLabel, statusOf } from './machine';
+import { FRAME_STALE_MS, canSleep, gatewayAfter, homeAction, isAsleep, linkOf, stateLabel, statusOf } from './machine';
 import { SCREEN_KEY, followMachine, loadScreen, saveScreen } from './nav';
 
 function frame(state: MachineState, over: Partial<MachineSnapshot> = {}): MachineSnapshot {
@@ -119,8 +119,15 @@ describe('the link to the machine', () => {
   it('has no gateway when the socket does not open, also between two attempts', () => {
     expect(gatewayAfter('connecting', 'waiting')).toBe('lost');
     expect(gatewayAfter('lost', 'connecting')).toBe('lost');
-    expect(gatewayAfter('connected', 'failed')).toBe('lost');
     expect(linkOf('lost', 1000, 1500, 2000)).toBe('no-gateway');
+  });
+
+  it('is refused when the stream failed, until it opens again', () => {
+    expect(gatewayAfter('connected', 'failed')).toBe('refused');
+    expect(gatewayAfter('refused', 'connecting')).toBe('refused');
+    expect(gatewayAfter('refused', 'waiting')).toBe('lost');
+    expect(gatewayAfter('refused', 'open')).toBe('connected');
+    expect(linkOf('refused', 1000, 1500, 1600)).toBe('refused');
   });
 
   it('has a machine while frames arrive', () => {
@@ -147,6 +154,13 @@ describe('statusOf', () => {
     const status = statusOf('no-gateway', frame('idle'), url);
     expect(status.title).toBe('Decaid is not reachable');
     expect(status.detail).toContain(url);
+    expect(status.tone).toBe('warn');
+  });
+
+  it('says that Decaid closed the connection, without a promise to try again', () => {
+    const status = statusOf('refused', frame('idle'), url);
+    expect(status.title).toBe('Decaid closed the connection');
+    expect(status.detail).not.toContain('Trying again');
     expect(status.tone).toBe('warn');
   });
 
@@ -187,5 +201,26 @@ describe('homeAction', () => {
     expect(homeAction('no-machine', frame('idle'))).toBe('none');
     expect(homeAction('no-gateway', frame('espresso'))).toBe('none');
     expect(homeAction('connecting', null)).toBe('none');
+  });
+});
+
+describe('sleep', () => {
+  it('is offered for a machine that is awake and runs nothing', () => {
+    expect(canSleep('machine', frame('idle'))).toBe(true);
+    expect(canSleep('machine', frame('heating'))).toBe(true);
+    expect(canSleep('machine', frame('sleeping'))).toBe(false);
+    expect(canSleep('machine', frame('espresso'))).toBe(false);
+    expect(canSleep('machine', frame('steam'))).toBe(false);
+    expect(canSleep('no-machine', frame('idle'))).toBe(false);
+    expect(canSleep('machine', null)).toBe(false);
+  });
+
+  it('is only what the machine said itself', () => {
+    expect(isAsleep('machine', frame('sleeping'))).toBe(true);
+    expect(isAsleep('machine', frame('idle'))).toBe(false);
+    // An old frame of a machine that is away says nothing.
+    expect(isAsleep('no-machine', frame('sleeping'))).toBe(false);
+    expect(isAsleep('refused', frame('sleeping'))).toBe(false);
+    expect(isAsleep('machine', null)).toBe(false);
   });
 });

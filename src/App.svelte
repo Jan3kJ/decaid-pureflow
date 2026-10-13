@@ -5,6 +5,8 @@
   import Home from './shell/Home.svelte';
   import Placeholder from './shell/Placeholder.svelte';
   import Profiles from './shell/Profiles.svelte';
+  import Scale from './shell/Scale.svelte';
+  import Settings from './shell/Settings.svelte';
   import { PLACEHOLDERS } from './shell/nav';
   import { Skin } from './shell/skin.svelte';
   import Steam from './steam/Steam.svelte';
@@ -39,11 +41,36 @@
       <Editor {skin} />
     {:else if skin.screen === 'steam'}
       <Steam {skin} />
+    {:else if skin.screen === 'scale'}
+      <Scale {skin} />
+    {:else if skin.screen === 'settings'}
+      <Settings {skin} />
     {:else if placeholder}
       <Placeholder title={placeholder.title} text={placeholder.text} />
     {/if}
   </div>
 </main>
+
+<!-- A stream the gateway closed with an error does not open again by itself (research.md 9.4). -->
+{#if skin.refused}
+  <div class="refused" role="alert" data-testid="stream-failed">
+    <span>
+      Decaid closed the connection{skin.streamError ? `: ${skin.streamError}` : ' with an error'}
+    </span>
+    <button data-testid="reconnect" onclick={() => skin.reconnect()}>reconnect</button>
+  </div>
+{/if}
+
+<!-- The machine sleeps: the skin is dark, and a touch anywhere wakes the machine (spec 3.1). -->
+{#if skin.asleep}
+  <button class="asleep" data-testid="asleep" onpointerdown={() => skin.wake()}>
+    <strong>Asleep</strong>
+    <span>touch to wake</span>
+    {#if skin.notice}
+      <span class="warn" data-testid="notice">{skin.notice}</span>
+    {/if}
+  </button>
+{/if}
 
 <style>
   main {
@@ -107,6 +134,73 @@
     min-width: 0;
     min-height: 0;
     height: 100%;
+  }
+
+  .refused {
+    position: fixed;
+    left: 50%;
+    bottom: 1rem;
+    transform: translateX(-50%);
+    z-index: 20;
+    max-width: 90%;
+    box-sizing: border-box;
+    padding: 0.6rem 0.6rem 0.6rem 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    color: var(--warn);
+    background: var(--raised);
+    border: 1px solid var(--warn);
+    border-radius: 0.9rem;
+    box-shadow: 0 0.6rem 2.4rem rgb(0 0 0 / 70%);
+  }
+
+  .refused span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .refused button {
+    flex: none;
+    min-height: 3.4rem;
+    padding: 0 1.6rem;
+    font: inherit;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--bg);
+    background: var(--fg);
+    border: 0;
+    border-radius: 0.7rem;
+    touch-action: manipulation;
+  }
+
+  .asleep {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    font: inherit;
+    color: var(--dim);
+    background: #000;
+    border: 0;
+    touch-action: manipulation;
+    user-select: none;
+  }
+
+  .asleep strong {
+    font-size: 2.2rem;
+    font-weight: 600;
+  }
+
+  .asleep .warn {
+    color: var(--warn);
   }
 
   /* v1 is landscape only: a tablet held upright still gets the landscape layout. */
