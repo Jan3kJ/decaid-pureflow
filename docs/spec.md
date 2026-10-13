@@ -112,9 +112,16 @@ Editor layout, from the founder's sketch (two modes on one graph):
   line is dragged, a small pop-up shows the current value. The infuse weight and the stop
   weight are value chips where they act (sketch: 6 g and 36 g). Two toggles sit under the
   graph: **2nd fill**, and one that reads **flow up** or **flow down** depending on its state.
+  - The flow line is not drawn during the infuse phase, and the flow line's label in the flow phase is left aligned, in both modes: it is the value at the left edge (founder, 2026-10-12).
+  - The time axis follows the set times: the fill is thin (3-4 s in practice, whatever its time limit), infuse is often the longest part, the 2nd fill with its pause is about as thin as the fill, and the flow phase takes the rest. Every column keeps a minimum width for a finger (founder, 2026-10-12).
+  - The temperature lines move together: fill with infuse and 2nd fill, pressurize with flow. A drag keeps the distances between the phases that detail mode set (founder, 2026-10-12).
 - **Detail mode.** The same graph. A row of phase buttons selects a phase, which is
   highlighted in the graph. A panel on the right lists every value that can be changed in that
   phase as an editable chip: the values of the table above (founder, 2026-10-12). Volume is left out.
+  - The same lines as in simple mode can be dragged, and the pause duration too (founder, 2026-10-12).
+  - Tapping a chip's value opens an on-screen number pad to type it, with the unit and the allowed range; plus and minus stay for small changes (founder, 2026-10-12).
+  - Each phase has its own temperature here; dose is one value of the shot (founder, 2026-10-12).
+- **Both modes.** A **save as** action sits next to the mode switch: it asks for a name and saves the edited profile under it (founder, 2026-10-12). The **profile steps** panel under the graph is shown by default, and a setting hides it (founder, 2026-10-12).
 
 Editor behaviour:
 - Edit the values, see the resulting curve update live, save as a named A-Flow profile, load

@@ -1,82 +1,137 @@
 <script lang="ts">
-  import { DEFAULT_PROFILES, hasSecondFill, type AFlowParams, type NumberField } from '../aflow';
-  import { PAUSE_SECONDS } from '../aflow/constants';
-  import { PHASE_LABEL, type LineId, type PhaseId } from './curve';
-  import { FIELD_LABEL, FIELD_STEP, PHASE_FIELDS, formatValue, snap } from './fields';
+  import {
+    DEFAULT_PROFILES,
+    hasSecondFill,
+    paramRanges,
+    resolveParams,
+    type AFlowParams,
+    type NumberField,
+  } from '../aflow';
+  import { loadSettings, saveSettings } from '../settings';
+  import { PHASE_LABEL, type EditField, type PhaseId } from './curve';
+  import { dragValue, setValue, toggleFlow, toggleSecondFill } from './edit';
+  import {
+    FIELD_LABEL,
+    FIELD_STEP,
+    FIELD_TONE,
+    PANEL_LABEL,
+    PHASE_FIELDS,
+    formatValue,
+    snap,
+    typedStep,
+  } from './fields';
   import Graph from './Graph.svelte';
+  import NameDialog from './NameDialog.svelte';
+  import NumberPad from './NumberPad.svelte';
   import StepList from './StepList.svelte';
   import ValueChip from './ValueChip.svelte';
 
-  // The prototype (D5) works on the default profiles only: nothing is loaded, saved or sent.
-  let profileId = $state(DEFAULT_PROFILES[0].id);
-  let params: AFlowParams = $state({ ...DEFAULT_PROFILES[0].params });
+  interface PickerProfile {
+    id: string;
+    name: string;
+    title: string;
+    params: AFlowParams;
+  }
+
+  const defaults: PickerProfile[] = DEFAULT_PROFILES.map((p) => ({
+    ...p,
+    name: p.id.replace('default-', ''),
+  }));
+
+  // The prototype works on fixture data: nothing is loaded, saved or sent. A profile that was
+  // 'saved as' lives in this list until the page unloads.
+  let saved: PickerProfile[] = $state([]);
+  let profileId = $state(defaults[0].id);
+  let params: AFlowParams = $state({ ...defaults[0].params });
   let mode: 'simple' | 'detail' = $state('simple');
   let selected: PhaseId = $state('fill');
-  let stepsOpen = $state(false);
+  let naming = $state(false);
+  /** the value the number pad is open for */
+  let typing: EditField | null = $state(null);
+  // The settings page (D8c) will own this value; until then the button in the footer sets it.
+  let settings = $state(loadSettings());
 
-  const profile = $derived(DEFAULT_PROFILES.find((p) => p.id === profileId)!);
+  const profiles = $derived([...defaults, ...saved]);
+  const profile = $derived(profiles.find((p) => p.id === profileId)!);
+  const resolved = $derived(resolveParams(params));
+  const ranges = paramRanges();
   const phases = $derived(
     (Object.keys(PHASE_LABEL) as PhaseId[]).filter((id) => id !== 'secondFill' || hasSecondFill(params)),
   );
 
-  const TONE: Partial<Record<NumberField, LineId>> = {
-    fillFlow: 'flow',
-    secondFillFlow: 'flow',
-    pourFlow: 'flow',
-    infusePressure: 'pressure',
-    pourPressure: 'pressure',
-    fillTemperature: 'temperature',
-    pourTemperature: 'temperature',
-  };
-
   function pick(id: string) {
     profileId = id;
-    params = { ...DEFAULT_PROFILES.find((p) => p.id === id)!.params };
+    params = { ...profiles.find((p) => p.id === id)!.params };
     if (selected === 'secondFill' && !hasSecondFill(params)) selected = 'infuse';
   }
 
-  function set(field: NumberField, value: number) {
-    params[field] = value;
+  /**
+   * What 'save as' does once a name is confirmed. Here it adds the profile to the picker for
+   * the session; D7 replaces this body with the real saving to Decaid.
+   */
+  function saveAs(name: string) {
+    const id = `saved-${saved.length + 1}`;
+    saved.push({ id, name, title: `A-Flow / ${name}`, params: { ...params } });
+    profileId = id;
   }
 
-  function step(field: NumberField, direction: 1 | -1) {
-    params[field] = snap(field, params[field] + direction * FIELD_STEP[field]);
+  function edit(field: EditField, value: number) {
+    params = setValue(params, field, value);
+    if (selected === 'secondFill' && !hasSecondFill(params)) selected = 'infuse';
   }
 
-  function toggleSecondFill() {
-    params.pauseDuration = hasSecondFill(params) ? 0 : PAUSE_SECONDS;
+  function drag(field: NumberField, value: number) {
+    params = dragValue(params, field, value);
+  }
+
+  function step(field: EditField, direction: 1 | -1) {
+    edit(field, snap(field, resolved[field] + direction * FIELD_STEP[field]));
+  }
+
+  function switchSecondFill() {
+    params = toggleSecondFill(params);
     if (hasSecondFill(params)) selected = mode === 'detail' ? 'secondFill' : selected;
     else if (selected === 'secondFill') selected = 'infuse';
+  }
+
+  function showSteps(show: boolean) {
+    settings.showProfileSteps = show;
+    saveSettings(settings);
   }
 </script>
 
 <div class="editor" class:detail={mode === 'detail'}>
   <header>
-    <div class="group" role="group" aria-label="start from a default profile">
-      {#each DEFAULT_PROFILES as p (p.id)}
+    <div class="group picker" role="group" aria-label="profile" data-testid="picker">
+      {#each profiles as p (p.id)}
         <button
           class="seg"
           aria-pressed={p.id === profileId}
           data-testid="profile-{p.id}"
           onclick={() => pick(p.id)}
         >
-          {p.id.replace('default-', '').replaceAll('-', ' ')}
+          {p.name}
         </button>
       {/each}
     </div>
-    <div class="group" role="group" aria-label="editor mode">
-      <button
-        class="seg"
-        aria-pressed={mode === 'simple'}
-        data-testid="mode-simple"
-        onclick={() => (mode = 'simple')}>simple</button
-      >
-      <button
-        class="seg"
-        aria-pressed={mode === 'detail'}
-        data-testid="mode-detail"
-        onclick={() => (mode = 'detail')}>detail</button
-      >
+    <div class="group">
+      <button class="seg action" data-testid="save-as" onclick={() => (naming = true)}>
+        save as
+      </button>
+      <div class="group" role="group" aria-label="editor mode">
+        <button
+          class="seg"
+          aria-pressed={mode === 'simple'}
+          data-testid="mode-simple"
+          onclick={() => (mode = 'simple')}>simple</button
+        >
+        <button
+          class="seg"
+          aria-pressed={mode === 'detail'}
+          data-testid="mode-detail"
+          onclick={() => (mode = 'detail')}>detail</button
+        >
+      </div>
     </div>
   </header>
 
@@ -96,7 +151,14 @@
       </div>
     {/if}
     <div class="plot">
-      <Graph {params} {mode} {selected} onchange={set} onselect={(id) => (selected = id)} />
+      <Graph
+        {params}
+        {mode}
+        {selected}
+        ondrag={drag}
+        onedit={edit}
+        onselect={(id) => (selected = id)}
+      />
     </div>
   </section>
 
@@ -105,19 +167,21 @@
       <h2>{PHASE_LABEL[selected]}</h2>
       {#each PHASE_FIELDS[selected] as field (field)}
         <ValueChip
-          label={FIELD_LABEL[field]}
-          value={formatValue(field, params[field])}
-          tone={TONE[field] ?? 'none'}
+          label={PANEL_LABEL[field]}
+          value={formatValue(field, resolved[field])}
+          tone={FIELD_TONE[field] ?? 'none'}
           testid={field}
           onstep={(d) => step(field, d)}
+          onedit={() => (typing = field)}
         />
       {/each}
       <h2 class="shot">shot</h2>
       <ValueChip
-        label={FIELD_LABEL.dose}
+        label={PANEL_LABEL.dose}
         value={formatValue('dose', params.dose)}
         testid="dose"
         onstep={(d) => step('dose', d)}
+        onedit={() => (typing = 'dose')}
       />
     </aside>
   {/if}
@@ -127,7 +191,7 @@
       class="toggle"
       aria-pressed={hasSecondFill(params)}
       data-testid="toggle-second-fill"
-      onclick={toggleSecondFill}
+      onclick={switchSecondFill}
     >
       <span class="lamp"></span>2nd fill
     </button>
@@ -135,7 +199,7 @@
       class="toggle"
       data-testid="toggle-flow"
       aria-label="flow direction"
-      onclick={() => (params.flowUp = !params.flowUp)}
+      onclick={() => (params = toggleFlow(params))}
     >
       <span class="arrow" class:down={!params.flowUp}>↗</span>{params.flowUp
         ? 'flow up'
@@ -147,37 +211,66 @@
       <span class="temperature">temperature °C</span>
     </div>
     <button
-      class="toggle fold"
-      aria-expanded={stepsOpen}
+      class="toggle setting"
+      aria-pressed={settings.showProfileSteps}
       data-testid="toggle-steps"
-      onclick={() => (stepsOpen = !stepsOpen)}
+      onclick={() => showSteps(!settings.showProfileSteps)}
     >
-      profile steps <span class="arrow" class:down={stepsOpen}>▾</span>
+      <span class="lamp"></span>profile steps
     </button>
   </footer>
 
-  {#if stepsOpen}
+  {#if settings.showProfileSteps}
     <section class="steps">
       <StepList {params} title={profile.title} />
     </section>
   {/if}
 </div>
 
+{#if naming}
+  <NameDialog
+    taken={profiles.map((p) => p.name)}
+    onconfirm={(name) => {
+      naming = false;
+      saveAs(name);
+    }}
+    oncancel={() => (naming = false)}
+  />
+{/if}
+
+{#if typing}
+  {@const field = typing}
+  <NumberPad
+    label={FIELD_LABEL[field]}
+    unit={ranges[field].unit}
+    min={ranges[field].min}
+    max={ranges[field].max}
+    decimals={typedStep(field) < 1}
+    current={formatValue(field, resolved[field]).replace(/ .*$/, '')}
+    onconfirm={(value) => {
+      edit(field, snap(field, value, undefined, typedStep(field)));
+      typing = null;
+    }}
+    oncancel={() => (typing = null)}
+  />
+{/if}
+
 <style>
   .editor {
     height: 100%;
     box-sizing: border-box;
-    padding: 0.8rem 1rem;
+    padding: 0.7rem 1rem;
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto minmax(0, 1fr) auto auto;
     grid-template-areas: 'header' 'stage' 'footer' 'steps';
-    gap: 0.7rem 1rem;
+    gap: 0.6rem 1rem;
   }
 
+  /* The panel runs down to the bottom edge: a phase has up to six values and the dose. */
   .editor.detail {
     grid-template-columns: minmax(0, 1fr) 19rem;
-    grid-template-areas: 'header header' 'stage panel' 'footer footer' 'steps steps';
+    grid-template-areas: 'header header' 'stage panel' 'footer panel' 'steps panel';
   }
 
   header {
@@ -193,6 +286,25 @@
     gap: 0.4rem;
   }
 
+  header > .group:last-child {
+    gap: 1rem;
+  }
+
+  /* Saved profiles are added on the right: the picker scrolls when they no longer fit. */
+  .picker {
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .picker .seg {
+    flex: none;
+    max-width: 14rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   button {
     font: inherit;
     color: var(--fg);
@@ -203,8 +315,8 @@
   }
 
   .seg {
-    min-height: 3.25rem;
-    min-width: 6.5rem;
+    min-height: 3rem;
+    min-width: 6rem;
     padding: 0 1.1rem;
     border-radius: 0.9rem;
     font-size: 1rem;
@@ -215,6 +327,11 @@
     border-color: var(--fg);
     color: var(--bg);
     font-weight: 600;
+  }
+
+  .seg.action {
+    background: var(--raised);
+    white-space: nowrap;
   }
 
   .stage {
@@ -228,6 +345,7 @@
   .phases .seg {
     flex: 1;
     min-width: 0;
+    padding: 0 0.4rem;
   }
 
   .plot {
@@ -243,12 +361,12 @@
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: 0.5rem;
   }
 
   h2 {
     margin: 0;
-    min-height: 3.25rem;
+    min-height: 3rem;
     display: flex;
     align-items: center;
     font-size: 1.3rem;
@@ -258,7 +376,7 @@
   h2.shot {
     min-height: 0;
     margin-top: auto;
-    padding-top: 0.6rem;
+    padding-top: 0.5rem;
     font-size: 0.9rem;
     font-weight: 400;
     color: var(--dim);
@@ -272,15 +390,16 @@
   }
 
   .toggle {
-    min-height: 3.5rem;
-    min-width: 9.5rem;
-    padding: 0 1.3rem;
-    border-radius: 1.75rem;
+    min-height: 3rem;
+    min-width: 9rem;
+    padding: 0 1.2rem;
+    border-radius: 1.5rem;
     font-size: 1.05rem;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.6rem;
+    white-space: nowrap;
   }
 
   .lamp {
@@ -310,22 +429,29 @@
     transform: scaleY(-1);
   }
 
-  .fold {
+  /* A setting, not a part of the profile: it is quieter than the two toggles. */
+  .setting {
     margin-left: auto;
     min-width: 0;
     color: var(--dim);
   }
 
-  .fold .arrow {
-    color: var(--dim);
+  .setting[aria-pressed='true'] {
+    border-color: var(--line);
+  }
+
+  .setting[aria-pressed='true'] .lamp {
+    background: var(--dim);
+    border-color: var(--dim);
   }
 
   .legend {
-    margin-left: 1rem;
+    margin-left: 0.6rem;
     display: flex;
-    gap: 1.2rem;
+    gap: 1rem;
     font-size: 0.85rem;
     color: var(--dim);
+    white-space: nowrap;
   }
 
   .legend span::before {
@@ -353,6 +479,6 @@
     grid-area: steps;
     background: var(--panel);
     border-radius: 1rem;
-    padding: 0.5rem 0.4rem;
+    padding: 0.4rem 0.4rem;
   }
 </style>

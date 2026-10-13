@@ -149,10 +149,11 @@ section 8).
 
 ## 5. Choices the founder has not seen
 
-1. **"Follows" is `null`**, not a copy of the other value (section 1). The other way would
-   be plain numbers that the editor moves together; then the founder's idea "keep the distance
-   between the lines" would live in the editor. With `null`, a value set in detail mode stays
-   where it is when its phase's line is dragged in simple mode.
+1. **"Follows" is `null`**, not a copy of the other value (section 1). The editor adds two
+   rules on top (`src/editor/edit.ts`): a drag in simple mode moves a temperature group as a
+   whole and keeps the distances between its phases (founder, 2026-10-12), and setting a
+   temperature in detail mode first gives the phase that followed it its own value, so that
+   each phase is edited by itself.
 2. **The flow gradient is an end flow in ml/s**, not a slope in ml/s per second and not a
    factor. With flow up, the end flow keeps following the start flow (2 x) until it is set.
 3. **The 2nd fill has no toggle value**; the pause time is the switch. Switching it off
@@ -172,9 +173,9 @@ section 8).
 9. **A derived end flow is not range-checked:** flow up with a start flow over half the
    maximum flow gives a target above it (start flow 5 gives 10), as in the plugin.
 10. **Ids and titles:** `default-floral` and `default-46mm`, "A-Flow / default-46mm".
-11. **In the editor prototype**, changed only to keep it running: it opens on floral (the
-    first default), its detail panel does not show the new values yet, and dragging the pause
-    border to 0 s switches the 2nd fill off. The editor's rework is the next task.
+11. **In the editor**, after its rework to the review (2026-10-13): it opens on floral (the
+    first default); the detail panel shows every value of section 1 except the pause's
+    move-on value (section 6); a pause of 0 s typed in detail mode switches the 2nd fill off.
 
 ## 6. Open for the founder
 

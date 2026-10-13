@@ -8,9 +8,11 @@
     /** shows the value alone until it is tapped (the chips on the graph) */
     compact?: boolean;
     onstep: (direction: 1 | -1) => void;
+    /** a tap on the value itself: the caller opens the number pad */
+    onedit?: () => void;
   }
 
-  let { label, value, testid, tone = 'none', compact = false, onstep }: Props = $props();
+  let { label, value, testid, tone = 'none', compact = false, onstep, onedit }: Props = $props();
 
   let open = $state(false);
   let root: HTMLDivElement | undefined = $state();
@@ -63,6 +65,11 @@
   {/if}
   {#if compact}
     <button class="body" aria-expanded={open} onclick={() => (open = !open)}>
+      <span class="label">{label}</span>
+      <span class="value" data-testid="chip-value-{testid}">{value}</span>
+    </button>
+  {:else if onedit}
+    <button class="body" aria-label="type {label}" data-testid="chip-edit-{testid}" onclick={onedit}>
       <span class="label">{label}</span>
       <span class="value" data-testid="chip-value-{testid}">{value}</span>
     </button>
@@ -138,7 +145,7 @@
 
   .step {
     width: 4rem;
-    min-height: 4rem;
+    min-height: 3.6rem;
     background: var(--raised);
     border: 0;
     color: var(--fg);

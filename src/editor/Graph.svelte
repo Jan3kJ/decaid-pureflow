@@ -3,6 +3,7 @@
     DEFAULT_MACHINE_LIMITS,
     TEMPERATURE_MAX,
     TEMPERATURE_MIN,
+    resolveParams,
     type AFlowParams,
     type NumberField,
   } from '../aflow';
@@ -11,9 +12,7 @@
     PHASE_LABEL,
     buildCurve,
     hitTest,
-    secondsToUnits,
-    unitsToSeconds,
-    type Hit,
+    type EditField,
     type LineId,
     type PhaseId,
     type Point,
@@ -26,11 +25,14 @@
     params: AFlowParams;
     mode: 'simple' | 'detail';
     selected: PhaseId;
-    onchange: (field: NumberField, value: number) => void;
+    /** a line or a border was dragged to a new value */
+    ondrag: (field: NumberField, value: number) => void;
+    /** a chip on the graph set one value */
+    onedit: (field: EditField, value: number) => void;
     onselect: (phase: PhaseId) => void;
   }
 
-  let { params, mode, selected, onchange, onselect }: Props = $props();
+  let { params, mode, selected, ondrag, onedit, onselect }: Props = $props();
 
   const limits = DEFAULT_MACHINE_LIMITS;
   /** Pressure and flow share one scale: 1 bar is as high as 1 ml/s. */
@@ -50,7 +52,13 @@
     rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
   });
 
+  const resolved = $derived(resolveParams(params));
   const curve = $derived(buildCurve(params, limits));
+  // The pause's border is dragged in detail mode only (founder, 2026-10-12).
+  const draggable = $derived({
+    levels: curve.levels,
+    borders: curve.borders.filter((b) => mode === 'detail' || !b.detailOnly),
+  });
 
   // The plot in pixels: a band for the temperature on top, a gap that holds the weight chips,
   // and the band of pressure and flow.
@@ -59,7 +67,7 @@
     const right = Math.max(left + 1, width - 1.2 * rem);
     const top = 1.8 * rem;
     const bottom = Math.max(top + 3, height - 3.4 * rem);
-    const gap = 3.6 * rem;
+    const gap = 3.4 * rem;
     const tempH = Math.max(1, Math.min(bottom - top - gap, Math.max((bottom - top - gap) * 0.22, 3.2 * rem)));
     const mainTop = top + tempH + gap;
     return {
@@ -98,14 +106,18 @@
   }
 
   interface Drag {
-    hit: Hit;
+    /** the value the drag changes */
     field: NumberField;
+    /** the value under the finger, which the pop-up shows */
+    shown: EditField;
+    /** a level line, or null for a border */
+    line: LineId | null;
     pointer: number;
     startX: number;
     startY: number;
     startValue: number;
-    /** pixels per graph unit of duration, as it was when the drag began */
-    pixelsPerUnit: number;
+    /** seconds per pixel to the right, as it was when the drag of a border began */
+    secondsPerPixel: number;
     x: number;
     y: number;
   }
@@ -120,26 +132,31 @@
   function down(event: PointerEvent) {
     if (!svg) return;
     const { x, y } = local(event);
+    // A finger covers about 9 mm: reach that far around a line, a little less around a border.
+    const hit = hitTest(draggable, x, y, projection, 1.8 * rem, 1.4 * rem);
     if (mode === 'detail') {
       const units = ((x - box.left) / box.plotW) * GRAPH_WIDTH;
-      const phase = curve.phases.find((c) => units >= c.x0 && units <= c.x1);
-      if (phase) onselect(phase.id);
-      return;
+      const phase = hit
+        ? hit.kind === 'level'
+          ? hit.level.phase
+          : hit.border.phase
+        : curve.phases.find((c) => units >= c.x0 && units <= c.x1)?.id;
+      if (phase) onselect(phase);
     }
-    // A finger covers about 9 mm: reach that far around a line, a little less around a border.
-    const hit = hitTest(curve, x, y, projection, 1.8 * rem, 1.4 * rem);
     if (!hit) return;
     event.preventDefault();
     svg.setPointerCapture(event.pointerId);
-    const field = hit.kind === 'level' ? hit.level.field : hit.border.field;
+    const field = hit.kind === 'level' ? hit.level.drags : hit.border.field;
     drag = {
-      hit,
       field,
+      shown: hit.kind === 'level' ? hit.level.field : hit.border.field,
+      line: hit.kind === 'level' ? hit.level.line : null,
       pointer: event.pointerId,
       startX: x,
       startY: y,
       startValue: params[field],
-      pixelsPerUnit: (box.plotW / GRAPH_WIDTH) * curve.scale,
+      secondsPerPixel:
+        hit.kind === 'border' ? hit.border.secondsPerUnit / (box.plotW / GRAPH_WIDTH) : 0,
       x,
       y,
     };
@@ -150,15 +167,11 @@
     const { x, y } = local(event);
     drag.x = x;
     drag.y = y;
-    let value: number;
-    if (drag.hit.kind === 'level') {
-      value = drag.startValue + (drag.startY - y) * valuePerPixel(drag.hit.level.line);
-    } else {
-      const units = secondsToUnits(drag.startValue) + (x - drag.startX) / drag.pixelsPerUnit;
-      value = unitsToSeconds(units);
-    }
+    const value = drag.line
+      ? drag.startValue + (drag.startY - y) * valuePerPixel(drag.line)
+      : drag.startValue + (x - drag.startX) * drag.secondsPerPixel;
     const next = snap(drag.field, value, limits);
-    if (next !== params[drag.field]) onchange(drag.field, next);
+    if (next !== params[drag.field]) ondrag(drag.field, next);
   }
 
   function up(event: PointerEvent) {
@@ -171,24 +184,31 @@
     >,
   );
 
-  // A temperature runs over several columns: its value is written in the column it is named for.
-  function middle(phase: PhaseId): number {
-    const column = curve.phases.find((c) => c.id === phase)!;
-    return projection.x((column.x0 + column.x1) / 2);
-  }
+  // The flow line has a gap (the infuse phase): one path, one stretch per subpath.
+  const flowPath = $derived(
+    curve.flow
+      .map(
+        (stretch) =>
+          'M' +
+          stretch
+            .map((pt) => `${projection.x(pt.x).toFixed(1)} ${projection.y('flow', pt.y).toFixed(1)}`)
+            .join(' L'),
+      )
+      .join(' '),
+  );
 
   const infuseEnd = $derived(curve.phases.find((c) => c.id === 'infuse')!.x1);
 
   // The pop-up stays on the graph and above the finger.
   const popup = $derived(
     drag && {
-      left: Math.min(Math.max(drag.x, 6 * rem), width - 6 * rem),
+      left: Math.min(Math.max(drag.x, 7 * rem), width - 7 * rem),
       top: Math.max(drag.y - 4.2 * rem, 0.2 * rem),
     },
   );
 
-  function step(field: NumberField, direction: 1 | -1) {
-    onchange(field, snap(field, params[field] + direction * FIELD_STEP[field], limits));
+  function step(field: EditField, direction: 1 | -1) {
+    onedit(field, snap(field, resolved[field] + direction * FIELD_STEP[field], limits));
   }
 </script>
 
@@ -210,17 +230,16 @@
       {@const x0 = projection.x(phase.x0)}
       {@const x1 = projection.x(phase.x1)}
       {@const duration = durationOf[phase.id]}
-      {#if mode === 'detail' && phase.id === selected}
-        <rect
-          class="selected"
-          data-testid="highlight-{phase.id}"
-          x={x0}
-          y={box.top - 0.6 * rem}
-          width={x1 - x0}
-          height={height - box.top}
-          rx={0.5 * rem}
-        />
-      {/if}
+      <rect
+        class="column"
+        class:selected={mode === 'detail' && phase.id === selected}
+        data-testid="column-{phase.id}"
+        x={x0}
+        y={box.top - 0.6 * rem}
+        width={x1 - x0}
+        height={Math.max(0, height - box.top)}
+        rx={0.5 * rem}
+      />
       <text class="phase" x={(x0 + x1) / 2} y={box.bottom + 1.35 * rem}>
         {PHASE_LABEL[phase.id]}
       </text>
@@ -258,12 +277,19 @@
     {/if}
 
     <polyline class="line temperature" points={polyline(curve.temperature, 'temperature')} />
+    {#if curve.pressureLimit}
+      <polyline
+        class="line pressure limit"
+        data-testid="line-pressure-limit"
+        points={polyline(curve.pressureLimit, 'pressure')}
+      />
+    {/if}
     <polyline
       class="line pressure"
       data-testid="line-pressure"
       points={polyline(curve.pressure, 'pressure')}
     />
-    <polyline class="line flow" data-testid="line-flow" points={polyline(curve.flow, 'flow')} />
+    <path class="line flow" data-testid="line-flow" d={flowPath} />
 
     <!-- The stretches that can be dragged. They are not drawn until one is held. -->
     {#each curve.levels as level (level.field)}
@@ -273,25 +299,28 @@
       {@const y2 = projection.y(level.line, level.to.y)}
       <line
         class="level {level.line}"
-        class:active={drag?.field === level.field}
+        class:active={drag?.line && drag.field === level.drags}
         data-field={level.field}
         {x1}
         {x2}
         {y1}
         {y2}
       />
-      <text
-        class="value {level.line}"
-        class:held={drag?.field === level.field}
-        data-testid="value-{level.field}"
-        x={level.line === 'temperature' ? middle(level.phase) : (x1 + x2) / 2}
-        y={(y1 + y2) / 2 - 0.6 * rem}
-      >
-        {formatValue(level.field, params[level.field])}
-      </text>
+      {#if level.label !== 'none'}
+        <text
+          class="value {level.line}"
+          class:start={level.label === 'start'}
+          class:held={drag?.shown === level.field}
+          data-testid="value-{level.field}"
+          x={level.label === 'start' ? x1 + 0.5 * rem : (x1 + x2) / 2}
+          y={level.label === 'start' ? y1 - 0.9 * rem : (y1 + y2) / 2 - 0.6 * rem}
+        >
+          {formatValue(level.field, resolved[level.field])}
+        </text>
+      {/if}
     {/each}
 
-    {#if drag?.hit.kind === 'border'}
+    {#if drag && !drag.line}
       {@const x = projection.x(curve.borders.find((b) => b.field === drag?.field)?.x ?? 0)}
       <line class="border active" x1={x} x2={x} y1={box.top} y2={box.bottom} />
     {/if}
@@ -318,8 +347,8 @@
 
   {#if drag && popup}
     <div class="popup" data-testid="popup" style:left="{popup.left}px" style:top="{popup.top}px">
-      <span>{FIELD_LABEL[drag.field]}</span>
-      <strong>{formatValue(drag.field, params[drag.field])}</strong>
+      <span>{FIELD_LABEL[drag.shown]}</span>
+      <strong>{formatValue(drag.shown, resolved[drag.shown])}</strong>
     </div>
   {/if}
 </div>
@@ -356,9 +385,14 @@
     text-anchor: middle;
   }
 
+  /* The start flow is the value at the left edge of its line. */
+  .value.start {
+    text-anchor: start;
+  }
+
   .phase {
     fill: var(--fg);
-    font-size: 0.95rem;
+    font-size: 0.9rem;
   }
 
   .duration.active {
@@ -394,7 +428,11 @@
     stroke-dasharray: none;
   }
 
-  .selected {
+  .column {
+    fill: none;
+  }
+
+  .column.selected {
     fill: var(--raised);
     stroke: var(--line);
   }
@@ -414,6 +452,13 @@
   }
   .temperature {
     stroke: var(--temperature);
+  }
+
+  /* The pour's pressure limiter, where it is not the target pressure. */
+  .line.limit {
+    stroke-width: 0.12rem;
+    stroke-dasharray: 0.5rem 0.5rem;
+    opacity: 0.7;
   }
 
   .level {
