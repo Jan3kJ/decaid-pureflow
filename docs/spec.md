@@ -41,6 +41,8 @@ Approved 2026-10-11
 **Design:** landscape only and dark theme only in v1. Portrait and a light theme wait for
 version 2.
 
+**Design target (founder, 2026-10-12):** a Lenovo IdeaPad tablet with an 11 inch display of 2560 x 1600 physical pixels, that is a 1280 x 800 CSS-pixel landscape viewport at device scale factor 2. The design is optimised for it first; every layout is relative to the viewport, because it must scale to other sizes later.
+
 | Area | v1 content |
 |---|---|
 | Home | machine state, start/stop, and one tap away: the **profile picker** and **steam**. Dose and target weight are shown; editing them sits one level down |
@@ -70,16 +72,18 @@ Phases and their editable values:
 
 | Phase | Values | Unit |
 |---|---|---|
-| (shot) | dose | g |
-| Fill | flow, temperature | ml/s, °C |
-| Infuse | pressure, time, weight (volume is not shown) | bar, s, g |
-| 2nd fill (optional, one phase with its pause) | fill flow, pause duration | ml/s, s |
-| Pressurize | pour pressure, ramp time | bar, s |
-| Flow | pour flow, pour temperature, stop at weight | ml/s, °C, g |
+| (shot) | dose, 16 g by default (founder, 2026-10-12) | g |
+| Fill | flow, move-on pressure, temperature, time (founder, 2026-10-12) | ml/s, bar, °C, s |
+| Infuse | pressure, time, move-on weight, temperature, flow limit; volume is not shown (founder, 2026-10-12) | bar, s, g, °C, ml/s |
+| 2nd fill (optional, one phase with its pause) | flow, move-on pressure, temperature, fill time, pause time, the pause's move-on value (which value that is, is open: section 8) (founder, 2026-10-12) | ml/s, bar, °C, s, s |
+| Pressurize | target pressure, time, temperature (founder, 2026-10-12) | bar, s, °C |
+| Flow | start flow, flow gradient, time, temperature, stop at weight, max. pressure (founder, 2026-10-12) | ml/s, ml/s, s, °C, g, bar |
 | Options | 2nd fill; flow up or flow down | toggles |
 
-Ranges follow the plugin (`code.tcl`): temperatures 80-105 °C, pressures and flows up to the
-machine's maximum, times 0-1000 s, weights 0-1000 g, dose 0-30 g in 0.1 steps.
+The pause duration and the fill's move-on pressure are edited in detail mode only (founder, 2026-10-12).
+
+Ranges: temperatures 50-105 °C and every time 0-127 s, each being one profile step (founder, 2026-10-12). The others follow the plugin (`code.tcl`): pressures and flows up to the
+machine's maximum, weights 0-1000 g, dose 0-30 g in 0.1 steps.
 
 Generated v2 profile, in order (the plugin's logic without ramp down; the exact mapping of
 the new values to steps is fixed in D3 and reviewed by the founder):
@@ -104,20 +108,22 @@ Editor layout, from the founder's sketch (two modes on one graph):
   same colours are used in the live shot graph and in history.
 - **Simple mode (default).** There are no visible handles. The user touches a line and drags
   it: a level line up or down changes that phase's flow, pressure or temperature, and a phase
-  border left or right changes a duration (infuse time, pause duration, ramp time). While a
+  border left or right changes a duration (infuse time, ramp time; not the pause duration (founder, 2026-10-12)). While a
   line is dragged, a small pop-up shows the current value. The infuse weight and the stop
   weight are value chips where they act (sketch: 6 g and 36 g). Two toggles sit under the
   graph: **2nd fill**, and one that reads **flow up** or **flow down** depending on its state.
 - **Detail mode.** The same graph. A row of phase buttons selects a phase, which is
   highlighted in the graph. A panel on the right lists every value that can be changed in that
-  phase as an editable chip. Volume is left out. Which other values are left out is decided on
-  a prototype.
+  phase as an editable chip: the values of the table above (founder, 2026-10-12). Volume is left out.
 
 Editor behaviour:
 - Edit the values, see the resulting curve update live, save as a named A-Flow profile, load
   it to the machine.
-- Start from the plugin's default A-Flow profiles, converted to 3.0 (supplied as JSON
-  fixtures).
+- Start from five default profiles (supplied as JSON fixtures), in this order: floral, light, medium, dark, 46mm (founder, 2026-10-12). light, medium and dark are the plugin's, converted to 3.0.
+  - floral is new: light with the 2nd fill on and infuse pressure 0 bar (founder, 2026-10-12).
+  - 46mm is the plugin's very-dark, renamed, with pour pressure 9 bar, ramp time 40 s and flow down (founder, 2026-10-12).
+  - The plugin's like-dflow is removed (founder, 2026-10-12).
+  - The 2nd fill is off in every default except floral, and the dose is 16 g in every default (founder, 2026-10-12).
 - A saved profile is a normal Decaid v2 profile (`POST /api/v1/profiles`). The A-Flow
   parameters and the version (3.0) travel with it so it re-opens in the editor (in the
   profile's `notes`, or the KV store; decided in the design task), and Decaid's profile
@@ -150,6 +156,7 @@ From the founder's sketch and daily use of this feature in DSx2:
   machine's steam settings.
 - **Settings, category Steam:** the three mug weights, the calibration (reference seconds and
   grams of milk), the milk of one drink, and the favourite timers.
+- **Defaults (founder, 2026-10-12):** mug weights s = 150 g, m = 225 g, l = 275 g; milk of one drink 150 g; calibration 26 s for 180 g of milk.
 
 ### 3.5 Shot history
 What the founder likes in DSx2: a list of previous shots, and one tap on an entry
@@ -304,13 +311,15 @@ Answered by the API client's rig check (D4, research.md section 9): the skin's p
 a tare during a shot answers 400 `block_tare_during_shot` only with Decaid's setting
 `blockTareDuringShot` on; the state for sleep is `sleeping`.
 
-- Which tablet model and screen size is the design target? (owner)
+Answered by the founder on 2026-10-12, in the channel and in the review of the editor
+prototype ([review-a-flow-editor-10-12-26.md](review-a-flow-editor-10-12-26.md)): the tablet
+(3.1); the steam defaults (3.4); the values of detail mode, the ranges, the default profiles
+and the points of the first mapping document (3.2, [a-flow-3.0.md](a-flow-3.0.md)). Answered
+in D3: Decaid's five default A-Flow profiles equal the plugin's `.tcl` files except for the
+Pause step, which has 0 s in the plugin and 15 s in Decaid.
+
 - What are the skin and the repository called? `decaid-skin` is provisional; decided before
   the first public release. (owner)
-- Steam page numbers: the three mug weights, the reference seconds and grams, and the milk of
-  one drink, as defaults. (owner)
-- Which values does the detail panel leave out besides volume? Decided on the editor
-  prototype (D5). (owner)
 - Steam test (acceptance 4) against the simulation: the simulated scale's weight cannot be
   set, and simulated steam does not end when the duration is over. Where do the mug weights
   come from in the test (for example WebSocket routing in Playwright), and is "the skin
@@ -318,11 +327,14 @@ a tare during a shot answers 400 `block_tare_during_shot` only with Decaid's set
   (owner)
 - Does the real DE1 stop steaming when `steamSettings.duration` is over? The simulation
   cannot show it; a check for the founder with item 7. (owner)
-- Answered in D3 ([a-flow-3.0.md](a-flow-3.0.md)): Decaid's five default A-Flow profiles
-  equal the plugin's `.tcl` files except for the Pause step, which has 0 s in the plugin and
-  15 s in Decaid, in all five. The 3.0 fixtures start from the plugin. What is left: the
-  choices and the points on 3.2 listed in that document, sections 5 and 6, for the founder's
-  review. (owner)
+- The pause's move-on value (3.2, "move on pressure pause" in the review): a v2 step has one
+  exit, and the Pause step ends when the flow is under 1 ml/s, as in the plugin. Asked on
+  2026-10-13, not answered yet; until then the exit is fixed and the pause has no such value.
+  (owner)
+- The maximum flow the editor allows: 8 ml/s is not from a source, de1app allows 20
+  ([a-flow-3.0.md](a-flow-3.0.md), section 2). (owner)
+- The choices made while building the review's changes, which the founder has not seen:
+  [a-flow-3.0.md](a-flow-3.0.md), section 5. (owner)
 - The byte format of a v2 profile file only matters for an export: the API takes and
   returns JSON numbers, the bundled files hold strings. Does v1 export files at all?
   (research)

@@ -3,18 +3,43 @@ import { parseParams, serializeParams } from './codec';
 import { DEFAULT_PROFILES } from './defaults';
 import type { AFlowParams } from './types';
 
-const medium: AFlowParams = DEFAULT_PROFILES[1].params;
+const medium: AFlowParams = DEFAULT_PROFILES.find((p) => p.id === 'default-medium')!.params;
 
 describe('serializeParams and parseParams', () => {
   it('reads back what was written, for every default profile and toggle state', () => {
     for (const { params } of DEFAULT_PROFILES) {
       for (const secondFill of [false, true]) {
         for (const flowUp of [false, true]) {
-          const p = { ...params, secondFill, flowUp, dose: 17.9, pauseDuration: 7 };
+          const p = { ...params, flowUp, dose: 17.9, pauseDuration: secondFill ? 7 : 0 };
           expect(parseParams(serializeParams(p))).toEqual({ ok: true, params: p });
         }
       }
     }
+  });
+
+  it('reads back values that are set instead of following', () => {
+    const p = { ...medium, infuseTemperature: 90, secondFillTemperature: 89.5, rampTemperature: 91, pourEndFlow: 0, pourPressureLimit: 7 };
+    expect(parseParams(serializeParams(p))).toEqual({ ok: true, params: p });
+  });
+
+  it('writes a value that follows another one as null', () => {
+    const written = JSON.parse(serializeParams(medium)).params;
+    for (const field of ['infuseTemperature', 'secondFillTemperature', 'rampTemperature', 'pourEndFlow', 'pourPressureLimit']) {
+      expect(written[field], field).toBeNull();
+    }
+  });
+
+  it('has no key for the 2nd fill: the pause says it', () => {
+    expect(Object.keys(JSON.parse(serializeParams(medium)).params)).not.toContain('secondFill');
+  });
+
+  // A clean break (2026-10-13): no 3.0 string was saved before the format changed.
+  it('rejects the 3.0 string of 2026-10-12, which lacks the new values', () => {
+    const old = { dose: 18, fillFlow: 8, fillTemperature: 93, infusePressure: 3, infuseTime: 60, infuseWeight: 3.6, secondFill: false, secondFillFlow: 8, pauseDuration: 15, pourPressure: 10, rampTime: 10, pourFlow: 2, pourTemperature: 93, stopWeight: 42, flowUp: true };
+    expect(parseParams(JSON.stringify({ aflow: '3.0', params: old }))).toEqual({
+      ok: false,
+      error: 'fillExitPressure is not a number',
+    });
   });
 
   it('writes the version 3.0', () => {
@@ -52,6 +77,15 @@ describe('serializeParams and parseParams', () => {
     expect(parseParams(JSON.stringify({ aflow: '3.0', params: { ...medium, dose: '18' } }))).toEqual({
       ok: false,
       error: 'dose is not a number',
+    });
+    expect(parseParams(JSON.stringify({ aflow: '3.0', params: { ...medium, pauseDuration: null } }))).toEqual({
+      ok: false,
+      error: 'pauseDuration is not a number',
+    });
+    const { pourEndFlow: _pourEndFlow, ...withoutEndFlow } = medium;
+    expect(parseParams(JSON.stringify({ aflow: '3.0', params: withoutEndFlow }))).toEqual({
+      ok: false,
+      error: 'pourEndFlow is not a number or null',
     });
     expect(parseParams(JSON.stringify({ aflow: '3.0', params: { ...medium, flowUp: 1 } }))).toEqual({
       ok: false,

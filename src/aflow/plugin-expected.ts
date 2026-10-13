@@ -1,6 +1,12 @@
 // Test data, written by hand from Jan3kJ/A_Flow (read 2026-10-12): proc update_A-Flow in
-// code.tcl and the five files in profiles/. Nothing here is computed by the generator or
+// code.tcl and the files in profiles/. Nothing here is computed by the generator or
 // taken from its constants.
+//
+// Only the 3.0 defaults that still equal a plugin file are regression cases: light, medium
+// and dark. default-floral has no plugin file (it is new in 3.0), and default-46mm is the
+// plugin's default-very-dark with a pour pressure, a ramp time and a flow direction the
+// founder changed on 2026-10-12, so the plugin never wrote either. Their expected steps are
+// fixtures in generator.test.ts.
 //
 // Each list is what the plugin writes for that default profile with ramp down off, the
 // 2nd fill off and Pre Fill present, in the form Decaid's API returns a profile in:
@@ -34,20 +40,10 @@ const dark: ProfileStep[] = [
   { name: 'Flow Extraction', pump: 'flow', transition: 'smooth', flow: 0, temperature: 88, seconds: 60, volume: 100, weight: 0, sensor: 'coffee', limiter: { value: 9, range: 0.6 } },
 ];
 
-// The file has ramp down on: Pressure Up 3 s with exit flow over 3.6, Pressure Decline 3 s.
-// The plugin's ramp value is their sum, 6 s. With ramp down off, update_A-Flow writes
-// ramp_up(seconds) = 6 and exit_flow_over = the pour flow, 1.8.
-const veryDark: ProfileStep[] = [
-  { name: 'Pre Fill', pump: 'flow', transition: 'fast', flow: 8, temperature: 93, seconds: 1, volume: 100, weight: 0, sensor: 'coffee', limiter: { value: 8, range: 0.6 } },
-  { name: 'Fill', pump: 'flow', transition: 'fast', flow: 8, temperature: 93, seconds: 15, volume: 100, weight: 0, sensor: 'coffee', exit: { type: 'pressure', condition: 'over', value: 3 }, limiter: { value: 8, range: 0.6 } },
-  { name: 'Infuse', pump: 'pressure', transition: 'fast', pressure: 3, temperature: 93, seconds: 6, volume: 100, weight: 2, sensor: 'coffee', limiter: { value: 1, range: 0.6 } },
-  { name: 'Pressure Up', pump: 'pressure', transition: 'smooth', pressure: 10, temperature: 88, seconds: 6, volume: 100, weight: 0, sensor: 'coffee', exit: { type: 'flow', condition: 'over', value: 1.8 }, limiter: { value: 0, range: 0.6 } },
-  { name: 'Flow Extraction', pump: 'flow', transition: 'smooth', flow: 3.6, temperature: 88, seconds: 60, volume: 100, weight: 0, sensor: 'coffee', limiter: { value: 10, range: 0.6 } },
-];
-
-// Ramp 0 s: Pressure Up stays with 0 seconds, and Flow Start is on (10 s, exit flow over
-// pour flow - 0.1).
-const likeDflow: ProfileStep[] = [
+// The plugin's default-like-dflow file. It is no longer a 3.0 default (founder, 2026-10-12),
+// but it is the plugin's one file with ramp 0 s: Pressure Up stays with 0 seconds, and Flow
+// Start is on (10 s, exit flow over pour flow - 0.1).
+export const PLUGIN_LIKE_DFLOW_STEPS: ProfileStep[] = [
   { name: 'Pre Fill', pump: 'flow', transition: 'fast', flow: 8, temperature: 93, seconds: 1, volume: 100, weight: 0, sensor: 'coffee', limiter: { value: 8, range: 0.6 } },
   { name: 'Fill', pump: 'flow', transition: 'fast', flow: 8, temperature: 93, seconds: 15, volume: 100, weight: 0, sensor: 'coffee', exit: { type: 'pressure', condition: 'over', value: 3 }, limiter: { value: 8, range: 0.6 } },
   { name: 'Infuse', pump: 'pressure', transition: 'fast', pressure: 3, temperature: 93, seconds: 60, volume: 100, weight: 4, sensor: 'coffee', limiter: { value: 1, range: 0.6 } },
@@ -60,8 +56,6 @@ export const PLUGIN_STEPS: Record<string, ProfileStep[]> = {
   'default-light': light,
   'default-medium': medium,
   'default-dark': dark,
-  'default-very-dark': veryDark,
-  'default-like-dflow': likeDflow,
 };
 
 /** `final_desired_shot_weight_advanced` of each file, the weight the plugin's editor sets. */
@@ -69,8 +63,6 @@ export const PLUGIN_STOP_WEIGHT: Record<string, number> = {
   'default-light': 48,
   'default-medium': 42,
   'default-dark': 36,
-  'default-very-dark': 32,
-  'default-like-dflow': 36,
 };
 
 /**

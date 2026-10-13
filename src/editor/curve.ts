@@ -4,6 +4,7 @@
 // No DOM and no Svelte here.
 import {
   DEFAULT_MACHINE_LIMITS,
+  hasSecondFill,
   type AFlowParams,
   type MachineLimits,
   type NumberField,
@@ -115,7 +116,7 @@ export function buildCurve(p: AFlowParams, limits: MachineLimits = DEFAULT_MACHI
     ['fill', FILL_UNITS],
     ['infuse', DURATION_MIN_UNITS + secondsToUnits(p.infuseTime)],
   ];
-  if (p.secondFill) {
+  if (hasSecondFill(p)) {
     widths.push([
       'secondFill',
       SECOND_FILL_UNITS + PAUSE_MIN_UNITS + secondsToUnits(p.pauseDuration),
@@ -163,7 +164,7 @@ export function buildCurve(p: AFlowParams, limits: MachineLimits = DEFAULT_MACHI
 
   let pauseX: number | undefined;
   let rampFrom = p.infusePressure;
-  if (p.secondFill) {
+  if (hasSecondFill(p)) {
     const second = col('secondFill');
     pauseX = second.x0 + SECOND_FILL_UNITS * scale;
     const from = { x: second.x0, y: p.secondFillFlow };

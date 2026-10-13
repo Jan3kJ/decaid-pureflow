@@ -6,12 +6,37 @@ import type {
   PressureStep,
   Profile,
   ProfileStep,
+  ResolvedParams,
   StepExit,
 } from './types';
 
 // The plugin's round_to_one_digits; it also keeps 3 * 0.1 from becoming 0.30000000000000004.
 function round1(value: number): number {
   return Math.round(value * 10) / 10;
+}
+
+/** The 2nd fill and its pause are on when the pause lasts longer than 0 s. */
+export function hasSecondFill(p: Pick<AFlowParams, 'pauseDuration'>): boolean {
+  return p.pauseDuration > 0;
+}
+
+/**
+ * Fills in every value that is null, the one place that says what follows what: the infuse
+ * temperature follows the fill temperature, the 2nd fill temperature the infuse temperature,
+ * the ramp temperature the pour temperature, the pressure limit of the pour the pour
+ * pressure, and the end flow the toggle (2 x pour flow with flow up, 0 with flow down).
+ */
+export function resolveParams(p: AFlowParams): ResolvedParams {
+  const infuseTemperature = p.infuseTemperature ?? p.fillTemperature;
+  return {
+    ...p,
+    infuseTemperature,
+    secondFillTemperature: p.secondFillTemperature ?? infuseTemperature,
+    rampTemperature: p.rampTemperature ?? p.pourTemperature,
+    pourEndFlow:
+      p.pourEndFlow ?? (p.flowUp ? round1(p.pourFlow * C.FLOW_UP_FACTOR) : C.FLOW_DOWN_TARGET),
+    pourPressureLimit: p.pourPressureLimit ?? p.pourPressure,
+  };
 }
 
 interface StepValues {
@@ -47,7 +72,8 @@ function pressureStep(pressure: number, v: StepValues): PressureStep {
 }
 
 /** The steps of spec 3.2, items 0 to 7. A step that is off is not in the list. */
-export function generateSteps(p: AFlowParams, firstStepWorkaround = false): ProfileStep[] {
+export function generateSteps(params: AFlowParams, firstStepWorkaround = false): ProfileStep[] {
+  const p = resolveParams(params);
   const steps: ProfileStep[] = [];
 
   if (firstStepWorkaround) {
@@ -67,34 +93,34 @@ export function generateSteps(p: AFlowParams, firstStepWorkaround = false): Prof
       name: C.STEP_NAME.fill,
       transition: 'fast',
       temperature: p.fillTemperature,
-      seconds: C.FILL_SECONDS,
-      exit: { type: 'pressure', condition: 'over', value: C.FILL_EXIT_PRESSURE_OVER },
+      seconds: p.fillTime,
+      exit: { type: 'pressure', condition: 'over', value: p.fillExitPressure },
       limiter: C.FILL_PRESSURE_LIMIT,
     }),
     pressureStep(p.infusePressure, {
       name: C.STEP_NAME.infuse,
       transition: 'fast',
-      temperature: p.fillTemperature,
+      temperature: p.infuseTemperature,
       seconds: p.infuseTime,
       weight: p.infuseWeight,
-      limiter: C.INFUSE_FLOW_LIMIT,
+      limiter: p.infuseFlowLimit,
     }),
   );
 
-  if (p.secondFill) {
+  if (hasSecondFill(p)) {
     steps.push(
       flowStep(p.secondFillFlow, {
         name: C.STEP_NAME.secondFill,
         transition: 'fast',
-        temperature: p.fillTemperature,
-        seconds: C.SECOND_FILL_SECONDS,
-        exit: { type: 'pressure', condition: 'over', value: C.SECOND_FILL_EXIT_PRESSURE_OVER },
+        temperature: p.secondFillTemperature,
+        seconds: p.secondFillTime,
+        exit: { type: 'pressure', condition: 'over', value: p.secondFillExitPressure },
         limiter: C.SECOND_FILL_PRESSURE_LIMIT,
       }),
       pressureStep(C.PAUSE_PRESSURE, {
         name: C.STEP_NAME.pause,
         transition: 'fast',
-        temperature: p.fillTemperature,
+        temperature: p.secondFillTemperature,
         seconds: p.pauseDuration,
         exit: { type: 'flow', condition: 'under', value: C.PAUSE_EXIT_FLOW_UNDER },
         limiter: C.PAUSE_FLOW_LIMIT,
@@ -106,7 +132,7 @@ export function generateSteps(p: AFlowParams, firstStepWorkaround = false): Prof
     pressureStep(p.pourPressure, {
       name: C.STEP_NAME.rampUp,
       transition: 'smooth',
-      temperature: p.pourTemperature,
+      temperature: p.rampTemperature,
       seconds: p.rampTime,
       exit: { type: 'flow', condition: 'over', value: round1(p.pourFlow) },
       limiter: C.NO_LIMITER,
@@ -132,12 +158,12 @@ export function generateSteps(p: AFlowParams, firstStepWorkaround = false): Prof
   }
 
   steps.push(
-    flowStep(p.flowUp ? round1(p.pourFlow * C.FLOW_UP_FACTOR) : C.FLOW_DOWN_TARGET, {
+    flowStep(p.pourEndFlow, {
       name: C.STEP_NAME.pouring,
       transition: 'smooth',
       temperature: p.pourTemperature,
-      seconds: C.POURING_SECONDS,
-      limiter: p.pourPressure,
+      seconds: p.pourTime,
+      limiter: p.pourPressureLimit,
     }),
   );
 

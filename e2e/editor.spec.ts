@@ -10,6 +10,8 @@ test.beforeEach(async ({ page }) => {
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/');
   await expect(page.getByTestId('graph')).toBeVisible();
+  // The tests start from default-light; the first default, floral, has the 2nd fill on.
+  await page.getByTestId('profile-default-light').click();
 });
 
 test.afterEach(() => {

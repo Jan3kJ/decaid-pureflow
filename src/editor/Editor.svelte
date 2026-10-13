@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { DEFAULT_PROFILES, type AFlowParams, type NumberField } from '../aflow';
+  import { DEFAULT_PROFILES, hasSecondFill, type AFlowParams, type NumberField } from '../aflow';
+  import { PAUSE_SECONDS } from '../aflow/constants';
   import { PHASE_LABEL, type LineId, type PhaseId } from './curve';
   import { FIELD_LABEL, FIELD_STEP, PHASE_FIELDS, formatValue, snap } from './fields';
   import Graph from './Graph.svelte';
@@ -15,7 +16,7 @@
 
   const profile = $derived(DEFAULT_PROFILES.find((p) => p.id === profileId)!);
   const phases = $derived(
-    (Object.keys(PHASE_LABEL) as PhaseId[]).filter((id) => id !== 'secondFill' || params.secondFill),
+    (Object.keys(PHASE_LABEL) as PhaseId[]).filter((id) => id !== 'secondFill' || hasSecondFill(params)),
   );
 
   const TONE: Partial<Record<NumberField, LineId>> = {
@@ -31,7 +32,7 @@
   function pick(id: string) {
     profileId = id;
     params = { ...DEFAULT_PROFILES.find((p) => p.id === id)!.params };
-    if (selected === 'secondFill' && !params.secondFill) selected = 'infuse';
+    if (selected === 'secondFill' && !hasSecondFill(params)) selected = 'infuse';
   }
 
   function set(field: NumberField, value: number) {
@@ -43,8 +44,8 @@
   }
 
   function toggleSecondFill() {
-    params.secondFill = !params.secondFill;
-    if (params.secondFill) selected = mode === 'detail' ? 'secondFill' : selected;
+    params.pauseDuration = hasSecondFill(params) ? 0 : PAUSE_SECONDS;
+    if (hasSecondFill(params)) selected = mode === 'detail' ? 'secondFill' : selected;
     else if (selected === 'secondFill') selected = 'infuse';
   }
 </script>
@@ -124,7 +125,7 @@
   <footer>
     <button
       class="toggle"
-      aria-pressed={params.secondFill}
+      aria-pressed={hasSecondFill(params)}
       data-testid="toggle-second-fill"
       onclick={toggleSecondFill}
     >

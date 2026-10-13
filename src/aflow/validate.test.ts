@@ -3,7 +3,7 @@ import { DEFAULT_PROFILES } from './defaults';
 import type { AFlowParams } from './types';
 import { paramRanges, validateParams } from './validate';
 
-const valid: AFlowParams = DEFAULT_PROFILES[1].params;
+const valid: AFlowParams = DEFAULT_PROFILES.find((p) => p.id === 'default-medium')!.params;
 
 const codes = (change: Partial<AFlowParams>, limits?: { maxPressure: number; maxFlow: number }) =>
   validateParams({ ...valid, ...change }, limits).map((p) => `${p.field}:${p.code}`);
@@ -21,15 +21,58 @@ describe('validateParams', () => {
     }
   });
 
-  it('temperatures are 80 to 105 °C', () => {
-    expect(codes({ fillTemperature: 79.9 })).toEqual(['fillTemperature:below-min']);
-    expect(codes({ pourTemperature: 105.1 })).toEqual(['pourTemperature:above-max']);
+  it('every temperature is 50 to 105 °C (founder, 2026-10-12)', () => {
+    const fields = ['fillTemperature', 'infuseTemperature', 'secondFillTemperature', 'rampTemperature', 'pourTemperature'] as const;
+    for (const field of fields) {
+      expect(paramRanges()[field]).toEqual({ min: 50, max: 105, unit: '°C' });
+      expect(codes({ [field]: 50 })).toEqual([]);
+      expect(codes({ [field]: 49.9 })).toEqual([`${field}:below-min`]);
+      expect(codes({ [field]: 105 })).toEqual([]);
+      expect(codes({ [field]: 105.1 })).toEqual([`${field}:above-max`]);
+    }
+    const temperatures = Object.entries(paramRanges()).filter(([, r]) => r.unit === '°C');
+    expect(temperatures.map(([field]) => field).sort()).toEqual([...fields].sort());
   });
 
-  it('times are 0 to 1000 s', () => {
-    expect(codes({ infuseTime: -1 })).toEqual(['infuseTime:below-min']);
-    expect(codes({ pauseDuration: 1001 })).toEqual(['pauseDuration:above-max']);
-    expect(codes({ rampTime: 1001 })).toEqual(['rampTime:above-max']);
+  it('every time is 0 to 127 s, one profile step each (founder, 2026-10-12)', () => {
+    const fields = ['fillTime', 'infuseTime', 'secondFillTime', 'pauseDuration', 'rampTime', 'pourTime'] as const;
+    for (const field of fields) {
+      expect(paramRanges()[field]).toEqual({ min: 0, max: 127, unit: 's' });
+      expect(codes({ [field]: 0 })).toEqual([]);
+      expect(codes({ [field]: -1 })).toEqual([`${field}:below-min`]);
+      expect(codes({ [field]: 127 })).toEqual([]);
+      expect(codes({ [field]: 127.5 })).toEqual([`${field}:above-max`]);
+    }
+    const times = Object.entries(paramRanges()).filter(([, r]) => r.unit === 's');
+    expect(times.map(([field]) => field).sort()).toEqual([...fields].sort());
+  });
+
+  it('a value that follows another one may be null, the others may not', () => {
+    const following = { infuseTemperature: null, secondFillTemperature: null, rampTemperature: null, pourEndFlow: null, pourPressureLimit: null };
+    expect(codes(following)).toEqual([]);
+    expect(codes({ fillTemperature: null } as unknown as Partial<AFlowParams>)).toEqual([
+      'fillTemperature:not-a-number',
+    ]);
+    expect(codes({ pauseDuration: null } as unknown as Partial<AFlowParams>)).toEqual([
+      'pauseDuration:not-a-number',
+    ]);
+  });
+
+  it('the move-on pressures and the max pressure are 0 to the maximum pressure', () => {
+    for (const field of ['fillExitPressure', 'secondFillExitPressure', 'pourPressureLimit'] as const) {
+      expect(codes({ [field]: 0 })).toEqual([]);
+      expect(codes({ [field]: -0.1 })).toEqual([`${field}:below-min`]);
+      expect(codes({ [field]: 12.1 })).toEqual([`${field}:above-max`]);
+    }
+  });
+
+  it('the flow limit and the end flow may be 0, a pump flow may not', () => {
+    for (const field of ['infuseFlowLimit', 'pourEndFlow'] as const) {
+      expect(codes({ [field]: 0 })).toEqual([]);
+      expect(codes({ [field]: -0.1 })).toEqual([`${field}:below-min`]);
+      expect(codes({ [field]: 8.1 })).toEqual([`${field}:above-max`]);
+    }
+    expect(codes({ fillFlow: 0 })).toEqual(['fillFlow:below-min']);
   });
 
   it('weights are 0 to 1000 g', () => {
@@ -66,12 +109,14 @@ describe('validateParams', () => {
       ...valid,
       dose: Number.NaN,
       rampTime: '10',
+      rampTemperature: '90',
       flowUp: 'yes',
       stopWeight: 2000,
     } as unknown as AFlowParams;
     expect(validateParams(broken).map((p) => `${p.field}:${p.code}`)).toEqual([
       'dose:not-a-number',
       'rampTime:not-a-number',
+      'rampTemperature:not-a-number',
       'stopWeight:above-max',
       'flowUp:not-a-boolean',
     ]);
