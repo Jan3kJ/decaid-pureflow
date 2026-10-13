@@ -18,5 +18,10 @@ Needs Node.js 22 or newer. The stack is TypeScript, Vite, Svelte and Vitest.
 `npm run dev` starts the Vite dev server on port 24800, and `npm run check` type-checks the
 TypeScript and Svelte sources.
 
+`npm run e2e` runs the Playwright tests on fixture data and a mocked gateway; `npm run e2e:rig`
+runs those that need a running Decaid with device simulation (docs/research.md 8.8). The
+result of the last full run is in [docs/acceptance.md](docs/acceptance.md), and how the ZIP is
+installed in Decaid in [docs/install.md](docs/install.md).
+
 The skin's version is set in two places that a test keeps equal: `package.json` and
 `public/manifest.json`.

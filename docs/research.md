@@ -1013,3 +1013,31 @@ What the run left in the rig: nothing. The shots of the probe and of the test we
 (one shot as before), the workflow equals `log\d8b-workflow-before.json` byte for byte, the
 settings equal `log\d8b-settings-before.json`, 73 profiles as before, no KV key was written.
 Decaid was ended with `Stop-Process -Force`; port 8080 was free afterwards.
+
+## 15. The ZIP and its install (D9)
+
+Done on 2026-10-13, against Decaid v0.8.8 started as in 8.8 step 2 (the gateway answered
+`GET /api/v1/machine/state` with 200 after 3 s). The requests and answers are in the rig's
+`log\d9-install.txt`, the check of the opened skin in `log\d9-installed-check.txt`, and
+`doc/Skins.md` at tag `v0.8.8` is in `log\Skins-v0.8.8.md`.
+
+| Claim | Status |
+|---|---|
+| The ZIP is `release/decaid-skin-1.0.0-rc.1.zip`: 51 133 bytes, four files (`index.html` 445 bytes and `manifest.json` at the root, one CSS and one JavaScript file in `assets/`), both asset paths in `index.html` start with `./`, no source map, no test file. `scripts/zip.mjs` checks this before it writes the ZIP | seen running |
+| On a device a ZIP is installed in Decaid's own screens: "open **Launcher → Skins**, tap the **+** (Install skin) button and choose **ZIP file**", and in another place "Open **Settings** → tap the skin selector dropdown", "Select **"Install from .zip..."**"; "The skin is extracted to app storage, set as default, and served immediately". Install from ZIP is listed for Android | read (`doc/Skins.md`); not seen: Decaid's window cannot be driven on the rig |
+| **The REST API has no upload of a ZIP.** `rest_v1.yml` has three installs: `install/github-release`, `install/github-branch` and `install/url` | read |
+| **`POST /api/v1/webui/skins/install/url` with a `file:///` URL fails**, although `doc/Skins.md` shows one ("Install from a local or remote URL"): `500 {"error":"Invalid argument(s): No host specified in URI file:///..."}` | seen running |
+| With the ZIP served on `http://127.0.0.1:24810/` for the one request, the same call answers `200 {"success":true,"message":"Skin installed successfully from URL",...}`. The skin is then in `GET /api/v1/webui/skins` with the manifest's id, name, description and version, `isBundled: false`, and its four files are in `%APPDATA%\net.tadel\Decaid\web-ui\decaid-skin\` | seen running |
+| An install by URL does not select the skin: the default stayed `streamline.js`. `PUT /api/v1/webui/skins/default` with `{"skinId":"decaid-skin"}` answers 200 and the server still serves the old skin; `POST /api/v1/webui/server/stop` and `.../start` switch it | seen running |
+| **Decaid gives this skin port 28881**: `GET /api/v1/webui/server/status` → `{"serving":true,"path":"...\web-ui\decaid-skin","port":28881,"ip":"localhost"}`. `http://localhost:3000/` answers 307 to `http://localhost:28881/` | seen running, one install; whether the tablet gives the same port was not seen |
+| Decaid adds two tags to the served `index.html`: a `meta name="reaprime-proxy-token"` and a script `/__decent/skin-api.js` from the skin's own origin. The skin uses neither | seen running |
+| Opened from that port at 1280 x 800, scale factor 2, dark: home shows 'Idle' from the machine's stream, the workflow's profile and the scale's weight; no console error, no page error, no failed request; the page is 1280 x 800 without scrolling. Screenshot: product/installed.png (screenshot in the team repository). `node scripts/rig-installed.mjs` is the check | seen running |
+| The gateway is called across origins from port 28881 as from the dev server's 24800 (10.5) | seen running |
+| `DELETE /api/v1/webui/skins/decaid-skin` answers `200 {"success":true,...}`; the skin's folder is gone and the id answers 404 | seen running |
+| Whether the port stays the same over a restart of Decaid and over a second install of the skin | not seen: not tried. `doc/Skins.md` says it is "derived from the skin's identity and remembered across restarts" |
+
+What the run left in the rig: nothing. The default skin is `streamline.js` on port 27906
+again, the skin is removed, and the settings equal `log\d9-before-settings.json` byte for
+byte. The run of all suites before it ([acceptance.md](acceptance.md)) left the workflow, the
+73 profiles and the one shot as they were. Decaid was ended with `Stop-Process -Force`; ports
+8080, 27906 and 28881 were free afterwards.

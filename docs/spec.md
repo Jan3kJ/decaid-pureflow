@@ -182,7 +182,8 @@ quickest way to repeat a good shot.
 A static web app (`index.html` at the root) served by Decaid from localhost, talking to the
 gateway's REST and WebSocket API on port 8080. Each installed skin has its own port, which
 Decaid assigns from 24800 upward and keeps over restarts; the bundled Streamline skin is on
-27906 on the test rig. The skin does not assume its port: `GET /api/v1/webui/server/status`
+27906 on the test rig, and this skin got 28881 there (research.md, section 15). The skin
+does not assume its port: `GET /api/v1/webui/server/status`
 returns it (research.md, section 9). Decent prescribes
 no framework and no design system. The **Streamline** skin is the reference implementation.
 Rules from `doc/Skins.md`:
@@ -238,7 +239,10 @@ Windows, Linux and macOS. What differs per platform is **Decaid itself**:
   2026-10-11). A-Flow is forked from Damian Brakel's D-Flow, which carries no licence file; the
   founder has Damian's approval to use that code.
 - **Version 1:** a local ZIP with `index.html` at its root, which the founder installs on the
-  tablet. No GitHub release.
+  tablet. No GitHub release. Built in D9: `npm run zip` writes
+  `release/decaid-skin-1.0.0-rc.1.zip`; the steps and the founder's checks are in
+  [install.md](install.md), the result of the automated items in
+  [acceptance.md](acceptance.md).
 - **Later releases:** the same ZIP attached to a GitHub release, installable by URL.
 
 ## 5. Acceptance (what "v1 done" means)
@@ -340,6 +344,17 @@ lineage by `POST /api/v1/profiles` with `parentId`, and
 `GET /api/v1/profiles/{id}/lineage` returns the versions, hidden ones too; a bundled
 default's content cannot be changed with `PUT` (400).
 
+Answered in D9 (research.md section 15), on the rig: the ZIP installs in Decaid 0.8.8 on
+Windows by URL and is served on port 28881; the REST API has no upload of a ZIP, and a
+`file:///` URL fails although `doc/Skins.md` shows one.
+
+- The ZIP and its install (D9), not seen on the tablet: which of the two ZIP installs of
+  `doc/Skins.md` the tablet's Decaid shows (Launcher → Skins → +, or the skin selector in
+  Settings); whether the skin's port is the same there and stays over a restart, which the
+  settings in `localStorage` depend on. The founder's checks are in
+  [install.md](install.md). (owner)
+- The version is `1.0.0-rc.1` until items 7 and 8 have passed, then `1.0.0`; it is in
+  `package.json` and `public/manifest.json`. Is that the numbering the founder wants? (owner)
 - What are the skin and the repository called? `decaid-skin` is provisional; decided before
   the first public release. (owner)
 - Steam test (acceptance 4), as built in D8a; the founder agreed to it on 2026-10-13

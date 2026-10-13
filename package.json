@@ -1,7 +1,7 @@
 {
   "name": "decaid-skin",
-  "version": "0.1.0",
-  "description": "A minimal skin for Decaid, built around an editor for A-Flow profiles.",
+  "version": "1.0.0-rc.1",
+  "description": "A minimal landscape, dark skin for the DE1: espresso with a live graph, an editor for A-Flow 3.0 profiles, a steam timer set from the milk's weight, and a shot history.",
   "private": true,
   "type": "module",
   "license": "GPL-3.0-only",
