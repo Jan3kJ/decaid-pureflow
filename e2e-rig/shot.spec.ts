@@ -123,6 +123,20 @@ test('a simulated shot: the state, an A-Flow profile, a live graph, the stop at 
     expect(shot.stopReason).toBe('targetWeight');
     expect(shot.workflow.profile.title).toBe(PROFILE);
     expect(shot.workflow.context.targetYield).toBe(TARGET);
+
+    // Its measurements carry the substate and the targets, so a shot from the history is cut
+    // at the water and drawn with its targets as the live one (src/history/entries.ts).
+    const measurements: { machine: { state: { substate: string }; targetFlow: number; targetPressure: number } }[] =
+      (await api('GET', `/api/v1/shots/${encodeURIComponent(shot.id)}`)).measurements;
+    const substates = [...new Set(measurements.map((measurement) => measurement.machine.state.substate))];
+    console.log(`rig shot: ${measurements.length} measurements, substates in order of first appearance: ${substates.join(', ')}`);
+    expect(substates).toContain('pouring');
+    expect(measurements.some((measurement) => measurement.machine.targetFlow > 0)).toBe(true);
+    expect(measurements.some((measurement) => measurement.machine.targetPressure > 0)).toBe(true);
+    // The graph and the timer start at the water: the first espresso frames of the simulation say preparingForShot.
+    expect(Number(await page.getByTestId('last-shot').getByTestId('shot-graph').getAttribute('data-points'))).toBeLessThanOrEqual(
+      measurements.length,
+    );
   } finally {
     const state = await api('GET', '/api/v1/machine/state').catch(() => undefined);
     if (state?.state.state === 'espresso') await api('PUT', '/api/v1/machine/state/idle');

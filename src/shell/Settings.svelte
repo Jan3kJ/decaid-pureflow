@@ -10,7 +10,8 @@
   let { skin }: Props = $props();
 
   // The few settings of the skin (spec 3.1); everything else stays in Decaid's own settings.
-  const SWITCHES: { key: 'firstStepWorkaround' | 'showProfileSteps'; id: string; title: string; hint: string }[] = [
+  type Switch = { key: 'firstStepWorkaround' | 'showProfileSteps' | 'showGraphLegend'; id: string; title: string; hint: string };
+  const SWITCHES: Switch[] = [
     {
       key: 'firstStepWorkaround',
       id: 'first-step-workaround',
@@ -22,6 +23,15 @@
       id: 'show-profile-steps',
       title: 'profile steps',
       hint: 'The editor shows the generated steps under the graph.',
+    },
+  ];
+
+  const GRAPH_SWITCHES: Switch[] = [
+    {
+      key: 'showGraphLegend',
+      id: 'show-graph-legend',
+      title: 'legend',
+      hint: 'The shot graph names its curves under it, and what a dashed line is.',
     },
   ];
 
@@ -66,24 +76,26 @@
     {/each}
   </section>
 
-  <section data-testid="settings-profile">
-    <h2>Profile</h2>
-    {#each SWITCHES as item (item.key)}
-      <button
-        class="row switch"
-        role="switch"
-        aria-checked={settings[item.key]}
-        data-testid="setting-{item.id}"
-        onclick={() => skin.setSettings({ [item.key]: !settings[item.key] })}
-      >
-        <span class="about">
-          <strong>{item.title}</strong>
-          <small>{item.hint}</small>
-        </span>
-        <span class="lever"><span></span></span>
-      </button>
-    {/each}
-  </section>
+  {#each [{ id: 'profile', title: 'Profile', switches: SWITCHES }, { id: 'graph', title: 'Shot graph', switches: GRAPH_SWITCHES }] as group (group.id)}
+    <section data-testid="settings-{group.id}">
+      <h2>{group.title}</h2>
+      {#each group.switches as item (item.key)}
+        <button
+          class="row switch"
+          role="switch"
+          aria-checked={settings[item.key]}
+          data-testid="setting-{item.id}"
+          onclick={() => skin.setSettings({ [item.key]: !settings[item.key] })}
+        >
+          <span class="about">
+            <strong>{item.title}</strong>
+            <small>{item.hint}</small>
+          </span>
+          <span class="lever"><span></span></span>
+        </button>
+      {/each}
+    </section>
+  {/each}
 </div>
 
 {#if typing}
@@ -106,8 +118,13 @@
     padding: 1rem 1.2rem;
     display: grid;
     grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
     gap: 1rem 1.2rem;
+  }
+
+  /* Steam fills the left column; the switches' categories are stacked in the right one. */
+  section:first-of-type {
+    grid-row: 2 / 4;
   }
 
   header {

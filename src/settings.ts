@@ -10,6 +10,8 @@ export interface Settings {
    * Fill step. This is the one place it is read from; the settings page shows it.
    */
   firstStepWorkaround: boolean;
+  /** the shot graph shows its legend under it: on home, on the espresso screen and for a shot of the history */
+  showGraphLegend: boolean;
   /** the category Steam (spec 3.4): what the steam page calculates with */
   steam: SteamSettings;
 }
@@ -43,6 +45,7 @@ export const DEFAULT_STEAM_SETTINGS: SteamSettings = {
 export const DEFAULT_SETTINGS: Settings = {
   showProfileSteps: true,
   firstStepWorkaround: false,
+  showGraphLegend: true,
   steam: DEFAULT_STEAM_SETTINGS,
 };
 

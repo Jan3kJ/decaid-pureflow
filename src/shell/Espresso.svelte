@@ -16,6 +16,8 @@
   const target = $derived(skin.workflow?.context?.targetYield || null);
   // The profile step that runs: the machine's frame number, not its substate (research 8.2).
   const step = $derived(brewing && snapshot ? profile?.steps[snapshot.profileFrame]?.name : undefined);
+  // In espresso before water moves: the graph and the timer wait (shot.ts).
+  const heating = $derived(brewing && series.t.length === 0);
   const value = (number: number | null | undefined, digits = 1) =>
     number === null || number === undefined ? '–' : number.toFixed(digits);
 </script>
@@ -23,11 +25,17 @@
 <div class="espresso">
   <header>
     <strong data-testid="espresso-profile">{profile?.title ?? '–'}</strong>
-    <span data-testid="espresso-step">{step ?? (brewing ? '' : skin.status.title)}</span>
+    <span data-testid="espresso-step">{heating ? 'heating' : (step ?? (brewing ? '' : skin.status.title))}</span>
   </header>
 
   <div class="plot">
-    <ShotGraph {...series} targetWeight={target} label="live shot" />
+    <ShotGraph
+      {...series}
+      targetWeight={target}
+      fit={skin.shot?.ended ?? false}
+      legend={skin.settings.showGraphLegend}
+      label="live shot"
+    />
   </div>
 
   <aside>

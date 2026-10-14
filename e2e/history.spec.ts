@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { MEASUREMENTS, mockGateway, profile, type MockGateway } from './mock-gateway';
+import { WATER_FRAMES, mockGateway, profile, type MockGateway } from './mock-gateway';
 
 // The shot history against a mocked gateway (D8b, acceptance item 5): an overlay on home,
 // opened by its tab or by a swipe from the left edge, closed by a selection or a tap outside.
@@ -181,7 +181,8 @@ test('tapping an entry closes the overlay, restores profile, bean and grinder se
   await expect(page.getByTestId('recalled-bean')).toHaveText('Square Mile · Red Brick');
   await expect(page.getByTestId('recalled-grinder')).toHaveText('grinder 4.8');
   expect(gateway.calls('GET', /^\/api\/v1\/shots\/./).map((call) => call.path)).toEqual(['/api/v1/shots/shot-2']);
-  expect(await points(page)).toBe(MEASUREMENTS.length);
+  // One point per measurement from the first one in which water moves.
+  expect(await points(page)).toBe(WATER_FRAMES);
   const graph = page.getByTestId('history-graph');
   for (const line of ['pressure', 'flow', 'weight', 'temperature']) {
     expect((await graph.getByTestId(`shot-line-${line}`).getAttribute('d'))!.length).toBeGreaterThan(100);

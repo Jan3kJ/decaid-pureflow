@@ -38,10 +38,16 @@ describe('settings', () => {
     const settings = {
       showProfileSteps: false,
       firstStepWorkaround: true,
+      showGraphLegend: false,
       steam: { ...DEFAULT_STEAM_SETTINGS, mugSmall: 162.5, referenceSeconds: 30, favourites: [20, 40, 60] },
     };
     saveSettings(settings, store);
     expect(loadSettings(store)).toEqual(settings);
+  });
+
+  it('shows the graph legend by default', () => {
+    expect(loadSettings(fakeStore()).showGraphLegend).toBe(true);
+    expect(loadSettings(fakeStore('{"showGraphLegend":false}')).showGraphLegend).toBe(false);
   });
 
   it('has the steam defaults of the founder', () => {

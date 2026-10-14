@@ -46,7 +46,7 @@ version 2.
 | Area | v1 content |
 |---|---|
 | Home | machine state, start/stop, and one tap away: the **profile picker** and **steam**. Dose and target weight are shown; editing them sits one level down |
-| Espresso | live graph (pressure, flow, weight, temperature) from `/ws/v1/machine/snapshot`, with the live weight from `/ws/v1/scale/snapshot`, timer, stop at weight |
+| Espresso | live graph (pressure, flow, weight, temperature) from `/ws/v1/machine/snapshot`, with the live weight from `/ws/v1/scale/snapshot`, timer, stop at weight. The graph and the timer start when water moves, not while the machine heats; the profile's targets are dashed lines with their quantity; an optional legend sits under the graph, on by default (founder, 2026-10-13) |
 | Steam | start/stop, a steam graph, and **the steam timer set from the milk's weight**: see 3.4 |
 | Scale | connect state, tare (a 400 `block_tare_during_shot` is a notice, not an error) |
 | Profiles | list, select, load to the machine (`PUT /api/v1/workflow`) (founder, 2026-10-13) |

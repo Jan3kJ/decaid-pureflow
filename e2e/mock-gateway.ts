@@ -13,7 +13,11 @@ interface RecordedEvent {
   scale?: Json;
 }
 
-/** A simulated shot recorded on the rig: Decaid 0.8.8, A-Flow / default-medium, target 36 g. */
+/**
+ * A simulated shot recorded on the rig: Decaid 0.8.8, A-Flow / default-medium, target 36 g.
+ * The simulated machine hardly heats, so 3.9 s of `preparingForShot` frames without flow are
+ * added before its first `preinfusion` frame: what a real DE1 does before water moves.
+ */
 export const RECORDING: RecordedEvent[] = JSON.parse(
   readFileSync(new URL('./fixtures/shot.json', import.meta.url), 'utf8'),
 );
@@ -22,6 +26,12 @@ const isEspresso = (event: RecordedEvent) => event.machine?.state.state === 'esp
 /** The recording from its first espresso frame on: what a replay sends. */
 export const SHOT_EVENTS = RECORDING.slice(RECORDING.findIndex(isEspresso));
 export const ESPRESSO_FRAMES = RECORDING.filter(isEspresso).length;
+/** The espresso frames from the first one in which water moves: the points of the shot's graph. */
+export const WATER_FRAMES = RECORDING.slice(
+  RECORDING.findIndex((event) => isEspresso(event) && event.machine!.state.substate !== 'preparingForShot'),
+).filter(isEspresso).length;
+/** s, the heating at the start of the recording: espresso frames in which no water moves */
+export const HEATING_SECONDS = 4.5;
 
 /** The recorded shot as a shot record's measurements: one per espresso frame, with the scale's latest weight. */
 export const MEASUREMENTS: Json[] = [];
@@ -31,6 +41,11 @@ export const MEASUREMENTS: Json[] = [];
     if (event.scale && 'weight' in event.scale) scale = event.scale;
     if (isEspresso(event)) MEASUREMENTS.push({ machine: event.machine, scale, volume: null });
   }
+}
+/** The measurements of a shorter shot: the recorded one, ended `seconds` after its first espresso frame. */
+export function measurementsOf(seconds: number): Json[] {
+  const start = Date.parse(MEASUREMENTS[0].machine.timestamp);
+  return MEASUREMENTS.filter((measurement) => Date.parse(measurement.machine.timestamp) - start <= seconds * 1000);
 }
 
 const CORS = {
@@ -157,6 +172,8 @@ export class MockGateway {
 
   /** the shot records, without measurements: `GET /api/v1/shots` */
   shots: Json[] = [];
+  /** the measurements of a shot that has not the whole recording, by the shot's id */
+  measurements: Record<string, Json[]> = {};
 
   private readonly up: boolean;
   private readonly machineSockets = new Set<WebSocketRoute>();
@@ -406,7 +423,7 @@ export class MockGateway {
     if (path.startsWith('/api/v1/shots/') && method === 'GET') {
       const shot = this.shots.find((candidate) => candidate.id === decodeURIComponent(path.split('/').pop()!));
       // Only this call has the measurements (research.md 8.4).
-      return shot ? json({ ...shot, measurements: MEASUREMENTS }) : json({ error: 'Shot not found' }, 404);
+      return shot ? json({ ...shot, measurements: this.measurements[shot.id] ?? MEASUREMENTS }) : json({ error: 'Shot not found' }, 404);
     }
     if (path === '/api/v1/profiles' && method === 'GET') {
       const hidden = url.searchParams.get('includeHidden') === 'true';

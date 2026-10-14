@@ -140,8 +140,8 @@ test('settings: the defaults, typed values and both switches survive a reload', 
   const steps = page.getByTestId('setting-show-profile-steps');
   await expect(workaround).toHaveAttribute('aria-checked', 'false');
   await expect(steps).toHaveAttribute('aria-checked', 'true');
-  // Two categories and nothing else.
-  await expect(page.locator('[data-testid="screen-settings"] h2')).toHaveText(['Steam', 'Profile']);
+  // Three categories and nothing else.
+  await expect(page.locator('[data-testid="screen-settings"] h2')).toHaveText(['Steam', 'Profile', 'Shot graph']);
   expect(await overflow(page)).toEqual({ scrolls: false, outside: 0 });
   await page.screenshot({ path: 'docs/product/settings.png' });
 
@@ -178,6 +178,7 @@ test('settings: the defaults, typed values and both switches survive a reload', 
     settings: {
       showProfileSteps: false,
       firstStepWorkaround: true,
+      showGraphLegend: true,
       steam: {
         mugSmall: 162.5,
         mugMedium: 225,

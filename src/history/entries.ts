@@ -10,7 +10,7 @@ import type {
   WorkflowContextPatch,
 } from '../api';
 import { loadProfile } from '../shell/profiles';
-import { TARE_SETTLE_S, emptySeries, frameTime, type ShotSeries } from '../shell/shot';
+import { TARE_SETTLE_S, emptySeries, frameTime, pushPoint, waterMoves, type ShotSeries } from '../shell/shot';
 
 /** A bean as the workflow holds it: two display strings and, from Decaid's catalogue, a batch id. */
 export interface Bean {
@@ -124,18 +124,26 @@ export function beanAndGrinder(shot: ShotRecordSummary): WorkflowContextPatch {
   };
 }
 
-/** The graph's series of a recorded shot: one point per measurement, as the live graph draws it. */
+/**
+ * The graph's series of a recorded shot, as the live graph draws it: one point per
+ * measurement from the first one in which water moved. A measurement's `machine` is a
+ * snapshot frame with its substate, so the heating before the water is cut as in the live
+ * shot (`waterMoves`). A record in which no measurement says that water moved is shown whole.
+ */
 export function seriesOf(record: Pick<ShotRecord, 'measurements'>): ShotSeries {
   const series = emptySeries();
-  const start = record.measurements[0] ? frameTime(record.measurements[0].machine.timestamp) : 0;
-  for (const { machine, scale } of record.measurements) {
-    const t = Math.max((frameTime(machine.timestamp) - start) / 1000, series.t.at(-1) ?? 0);
-    series.t.push(t);
-    series.pressure.push(machine.pressure);
-    series.flow.push(machine.flow);
-    // The first second still holds what stood on the scale before Decaid's tare.
-    series.weight.push(t < TARE_SETTLE_S || typeof scale?.weight !== 'number' ? null : scale.weight);
-    series.temperature.push(machine.groupTemperature);
+  const all = record.measurements;
+  if (all.length === 0) return series;
+  const first = all.findIndex(({ machine }) => waterMoves(machine));
+  const shown = first < 0 ? all : all.slice(first);
+  const entered = frameTime(all[0].machine.timestamp);
+  const start = frameTime(shown[0].machine.timestamp);
+  for (const { machine, scale } of shown) {
+    const at = frameTime(machine.timestamp);
+    const t = Math.max((at - start) / 1000, series.t.at(-1) ?? 0);
+    // The first second in espresso still holds what stood on the scale before Decaid's tare.
+    const settled = (at - entered) / 1000 >= TARE_SETTLE_S;
+    pushPoint(series, t, machine, settled && typeof scale?.weight === 'number' ? scale.weight : null);
   }
   return series;
 }

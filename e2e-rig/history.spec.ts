@@ -33,6 +33,14 @@ const shotIds = async (): Promise<string[]> =>
   (await api('GET', '/api/v1/shots?limit=100')).items.map((shot: { id: string }) => shot.id);
 const machineState = async (): Promise<string> => (await api('GET', '/api/v1/machine/state')).state.state;
 
+/** The points of a record's graph: its measurements from the first one in which water moves (src/shell/shot.ts). */
+function withWater(record: { measurements: { machine: { state: { substate: string } } }[] }): number {
+  const first = record.measurements.findIndex(
+    (measurement) => !['idle', 'preparingForShot'].includes(measurement.machine.state.substate),
+  );
+  return first < 0 ? record.measurements.length : record.measurements.length - first;
+}
+
 /** One simulated shot with the given workflow; returns its record, with measurements. */
 async function pull(page: Page, profile: unknown, context: Record<string, unknown>): Promise<any> {
   const known = await shotIds();
@@ -132,7 +140,7 @@ test('the history: shots with another profile or bean are entries, a tap restore
     expect(workflow.context.coffeeRoaster).toBe(ROASTER);
     expect(workflow.context.grinderSetting).toBe('4.8');
     const graph = page.getByTestId('history-graph');
-    await expect(graph.getByTestId('shot-graph')).toHaveAttribute('data-points', String(shotA.measurements.length));
+    await expect(graph.getByTestId('shot-graph')).toHaveAttribute('data-points', String(withWater(shotA)));
     for (const line of ['pressure', 'flow', 'temperature']) {
       expect((await graph.getByTestId(`shot-line-${line}`).getAttribute('d'))!.length).toBeGreaterThan(50);
     }
@@ -147,7 +155,7 @@ test('the history: shots with another profile or bean are entries, a tap restore
     await mine.first().tap();
     await expect(page.getByTestId('history')).toHaveCount(0);
     await expect(page.getByTestId('profile-name')).toHaveText(PROFILE_B);
-    await expect(graph.getByTestId('shot-graph')).toHaveAttribute('data-points', String(shotC.measurements.length));
+    await expect(graph.getByTestId('shot-graph')).toHaveAttribute('data-points', String(withWater(shotC)));
     workflow = await api('GET', '/api/v1/workflow');
     expect(workflow.profile).toEqual(shotC.workflow.profile);
     expect(workflow.context.coffeeName).toBe(BEAN_B);

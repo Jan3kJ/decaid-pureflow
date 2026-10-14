@@ -55,6 +55,8 @@
         <ShotGraph
           {...recalled.series}
           targetWeight={entry.latest.workflow?.context?.targetYield}
+          fit
+          legend={skin.settings.showGraphLegend}
           label="last shot of the history entry"
         />
       </div>
@@ -70,7 +72,13 @@
         <button class="chip" data-testid="dismiss-shot" onclick={() => skin.dismissShot()}>dismiss</button>
       </header>
       <div class="plot" data-testid="last-shot">
-        <ShotGraph {...last.series} targetWeight={context?.targetYield} label="last shot" />
+        <ShotGraph
+          {...last.series}
+          targetWeight={context?.targetYield}
+          fit
+          legend={skin.settings.showGraphLegend}
+          label="last shot"
+        />
       </div>
     {/if}
   </section>

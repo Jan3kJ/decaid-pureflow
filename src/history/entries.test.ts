@@ -294,6 +294,31 @@ describe('seriesOf', () => {
     expect(series.weight).toEqual([null, null, 0.4, null]);
   });
 
+  it('cuts the heating before the water, as the live graph does', () => {
+    const waiting = { state: { state: 'espresso' as const, substate: 'preparingForShot' } };
+    const heating = (seconds: number) => measurement(seconds, seconds < 0.5 ? 34.1 : 0, { pressure: 0, flow: 0, ...waiting });
+    const series = seriesOf({
+      measurements: [
+        ...[0, 0.5, 1, 2, 3, 4, 5].map(heating),
+        measurement(5.5, 0, { pressure: 0.4, flow: 4, targetFlow: 8, state: { state: 'espresso', substate: 'preinfusion' } }),
+        measurement(8, 2.1, { pressure: 3, targetPressure: 3 }),
+        measurement(20.5, 30),
+      ],
+    });
+    expect(series.t).toEqual([0, 2.5, 15]);
+    expect(series.pressure).toEqual([0.4, 3, 9]);
+    expect(series.weight).toEqual([0, 2.1, 30]);
+    expect(series.targetFlow).toEqual([8, null, null]);
+    expect(series.targetPressure).toEqual([null, 3, null]);
+    expect(series.targetTemperature).toEqual([93, 93, 93]);
+  });
+
+  it('shows a record whole when no measurement says that water moved', () => {
+    const waiting = { state: { state: 'espresso' as const, substate: 'preparingForShot' } };
+    const series = seriesOf({ measurements: [measurement(0, 0, waiting), measurement(3, 1, waiting)] });
+    expect(series.t).toEqual([0, 3]);
+  });
+
   it('is empty for a shot without measurements, and never steps back in time', () => {
     expect(seriesOf({ measurements: [] }).t).toEqual([]);
     expect(seriesOf({ measurements: [measurement(0, 0), measurement(2, 1), measurement(1, 2)] }).t).toEqual([0, 2, 2]);

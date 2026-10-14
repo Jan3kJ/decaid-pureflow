@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { ESPRESSO_FRAMES, mockGateway } from './mock-gateway';
+import { WATER_FRAMES, mockGateway } from './mock-gateway';
 
 // The shell against a mocked gateway: home, the profile picker and a replayed shot (D6).
 
@@ -130,9 +130,10 @@ test('a shot: start, the espresso screen opens by itself with a live graph, and 
   await expect(page.getByTestId('screen-home')).toBeVisible();
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
   await expect(page.getByTestId('last-shot')).toBeVisible();
-  // Every espresso frame is a point; the mock repeated its latest frame while the test looked.
-  expect(await points(page)).toBeGreaterThanOrEqual(ESPRESSO_FRAMES);
-  expect(await points(page)).toBeLessThan(ESPRESSO_FRAMES + 20);
+  // Every espresso frame from the first one with water is a point; the mock repeated its latest
+  // frame while the test looked.
+  expect(await points(page)).toBeGreaterThanOrEqual(WATER_FRAMES);
+  expect(await points(page)).toBeLessThan(WATER_FRAMES + 20);
   const seconds = parseFloat((await page.getByTestId('last-shot-time').textContent())!);
   expect(seconds).toBeGreaterThan(25);
   expect(seconds).toBeLessThan(31);
