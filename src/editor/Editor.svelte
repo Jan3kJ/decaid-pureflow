@@ -11,7 +11,7 @@
     type NumberField,
   } from '../aflow';
   import type { ProfileRecord } from '../api';
-  import { defaultProfile, loadProfile, sameProfile } from '../shell/profiles';
+  import { defaultProfile, sameProfile } from '../shell/profiles';
   import type { Skin } from '../shell/skin.svelte';
   import { PHASE_LABEL, type EditField, type PhaseId } from './curve';
   import { dragValue, setValue, toggleFlow, toggleSecondFill } from './edit';
@@ -28,7 +28,17 @@
   import Graph from './Graph.svelte';
   import NameDialog from './NameDialog.svelte';
   import NumberPad from './NumberPad.svelte';
-  import { TITLE_PREFIX, buildProfile, nameOf, saveAs, saveEdit, titleOf } from './save';
+  import {
+    TITLE_PREFIX,
+    changed,
+    loadOnLeave,
+    nameOf,
+    saveAs,
+    saveEdit,
+    storeAndLoad,
+    titleOf,
+    type Stored,
+  } from './save';
   import StepList from './StepList.svelte';
   import { readParams } from './storage';
   import ValueChip from './ValueChip.svelte';
@@ -59,6 +69,10 @@
   let loaded: { title: string; author: string; params: AFlowParams } | null = $state.raw(null);
   let originKey = $state(DEFAULT_PROFILES[0].id);
   let params: AFlowParams = $state({ ...DEFAULT_PROFILES[0].params });
+  /** the values on the machine as far as the editor knows: leaving loads what differs from them */
+  let openedWith: AFlowParams = DEFAULT_PROFILES[0].params;
+  /** the values a load on leaving failed for: a second 'back' with them leaves without loading */
+  let refused: string | null = null;
   /** the user picked or changed something: what is read later does not replace it */
   let touched = false;
   let mode: 'simple' | 'detail' = $state('simple');
@@ -68,8 +82,9 @@
   let notice: { tone: 'info' | 'warn'; text: string } | null = $state(null);
   /** the value the number pad is open for */
   let typing: EditField | null = $state(null);
-  // The skin's one copy of the settings: the settings page sets both values, and the button
-  // in the footer the one that shows the steps.
+  /** the profile steps are shown; closed whenever the editor opens (founder, 2026-10-13) */
+  let stepsOpen = $state(false);
+  // The skin's one copy of the settings, set on the settings page only.
   const settings = $derived(skin.settings);
 
   const entries: Entry[] = $derived.by(() => {
@@ -159,15 +174,43 @@
     // being saved are open again as they were.
     loaded = { title: profile.title, author: profile.author ?? '', params: read };
     open(entries.find((entry) => entry.title === profile.title)?.key ?? LOADED, read);
+    openedWith = read;
   }
 
-  onMount(() => void init());
-
-  function pick(key: string) {
-    touched = true;
+  /**
+   * Leaving the editor, by the back arrow or the shortcut to the picker (founder, 2026-10-13):
+   * changed values are loaded to the machine first. A failed load keeps the editor open and
+   * says so; 'back' again with the same values leaves without loading them.
+   */
+  async function leave(): Promise<boolean> {
+    if (busy) return false;
+    const now = serializeParams(params);
+    if (!changed(params, openedWith) || refused === now) return true;
+    busy = true;
     notice = null;
-    open(key, entries.find((entry) => entry.key === key)!.params);
+    try {
+      const workflow = await loadOnLeave(skin.client, params, openedWith, origin, settings.firstStepWorkaround);
+      if (workflow) skin.workflow = workflow;
+      return true;
+    } catch (cause) {
+      refused = now;
+      notice = {
+        tone: 'warn',
+        text: `The changes were not loaded: ${message(cause)}. Back again leaves without them.`,
+      };
+      return false;
+    } finally {
+      busy = false;
+    }
   }
+
+  onMount(() => {
+    void init();
+    skin.leaving = leave;
+    return () => {
+      if (skin.leaving === leave) skin.leaving = null;
+    };
+  });
 
   async function act(failure: string, run: () => Promise<void>) {
     busy = true;
@@ -181,33 +224,37 @@
     }
   }
 
-  /** The saved record is what the editor is on now. */
-  async function adopt(record: ProfileRecord, text: string) {
+  /** The saved record is what the editor is on now, and on the machine unless its load failed. */
+  async function adopt(stored: Stored, text: string) {
     records = await skin.client.listProfiles();
-    open(record.id, readParams(record.profile) ?? params);
-    notice = { tone: 'info', text };
+    open(stored.record.id, readParams(stored.record.profile) ?? params);
+    if ('workflow' in stored) {
+      skin.workflow = stored.workflow;
+      openedWith = { ...params };
+      notice = { tone: 'info', text: `${text} and loaded.` };
+    } else {
+      notice = { tone: 'warn', text: `${text}, but not loaded: ${message(stored.error)}` };
+    }
   }
 
+  // 'save' and 'save as' load what they stored (founder, 2026-10-13).
   const saveUnder = (name: string) =>
     act('The profile was not saved', async () => {
       const about = { title: titleOf(name), author: origin.author };
-      const record = await saveAs(skin.client, params, about, settings.firstStepWorkaround);
-      await adopt(record, `Saved as “${name}”.`);
+      const stored = await storeAndLoad(skin.client, () =>
+        saveAs(skin.client, params, about, settings.firstStepWorkaround),
+      );
+      await adopt(stored, `Saved as “${name}”`);
     });
 
   const save = () =>
     act('The profile was not saved', async () => {
       const name = origin.name;
-      const record = await saveEdit(skin.client, params, origin.record!, settings.firstStepWorkaround);
-      await adopt(record, `Saved “${name}”.`);
-    });
-
-  /** The values as they are now, saved or not, with the picker's loading function. */
-  const load = () =>
-    act('The profile was not loaded', async () => {
-      const profile = buildProfile(params, origin, settings.firstStepWorkaround);
-      skin.workflow = await loadProfile(skin.client, profile);
-      skin.go('home');
+      const parent = origin.record!;
+      const stored = await storeAndLoad(skin.client, () =>
+        saveEdit(skin.client, params, parent, settings.firstStepWorkaround),
+      );
+      await adopt(stored, `Saved “${name}”`);
     });
 
   function edit(field: EditField, value: number) {
@@ -236,34 +283,26 @@
     touched = true;
     params = toggleFlow(params);
   }
-
-  function showSteps(show: boolean) {
-    skin.setSettings({ showProfileSteps: show });
-  }
 </script>
 
 <div class="editor" class:detail={mode === 'detail'}>
   <header>
-    <div class="group picker" role="group" aria-label="profile" data-testid="picker">
-      {#each entries as entry (entry.key)}
-        <button
-          class="seg"
-          aria-pressed={entry.key === origin.key}
-          data-testid="profile-{entry.key}"
-          onclick={() => pick(entry.key)}
-        >
-          {entry.name}
-        </button>
-      {/each}
-    </div>
+    <!-- The shortcut to the profile picker (founder, 2026-10-13): a profile chosen there is loaded. -->
+    <button
+      class="seg name"
+      data-testid="editor-profile"
+      aria-label="choose another profile"
+      disabled={busy}
+      onclick={() => skin.leave('profiles')}
+    >
+      <span>{origin.name}</span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h9" /></svg>
+    </button>
     <div class="group">
       <div class="group" role="group" aria-label="profile actions">
         <button class="seg action" data-testid="save" disabled={busy || !canSave} onclick={save}>save</button>
         <button class="seg action" data-testid="save-as" disabled={busy} onclick={() => (naming = true)}>
           save as
-        </button>
-        <button class="seg action load" data-testid="load-to-machine" disabled={busy} onclick={load}>
-          load to machine
         </button>
       </div>
       <div class="group" role="group" aria-label="editor mode">
@@ -361,17 +400,20 @@
       <span class="pressure">pressure bar</span>
       <span class="temperature">temperature °C</span>
     </div>
-    <button
-      class="toggle setting"
-      aria-pressed={settings.showProfileSteps}
-      data-testid="toggle-steps"
-      onclick={() => showSteps(!settings.showProfileSteps)}
-    >
-      <span class="lamp"></span>profile steps
-    </button>
+    <!-- Hidden by the setting 'profile steps'; shown, it opens and closes the panel. -->
+    {#if settings.showProfileSteps}
+      <button
+        class="toggle setting"
+        aria-pressed={stepsOpen}
+        data-testid="toggle-steps"
+        onclick={() => (stepsOpen = !stepsOpen)}
+      >
+        <span class="lamp"></span>profile steps
+      </button>
+    {/if}
   </footer>
 
-  {#if settings.showProfileSteps}
+  {#if settings.showProfileSteps && stepsOpen}
     <section class="steps">
       <StepList {params} title={origin.title} firstStepWorkaround={settings.firstStepWorkaround} />
     </section>
@@ -441,19 +483,31 @@
     gap: 1rem;
   }
 
-  /* Saved profiles are added on the right: the picker scrolls when they no longer fit. */
-  .picker {
+  /* The profile's name, and the way to the picker. */
+  .name {
     min-width: 0;
-    overflow-x: auto;
-    scrollbar-width: none;
+    max-width: 24rem;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    font-size: 1.15rem;
+    font-weight: 600;
   }
 
-  .picker .seg {
-    flex: none;
-    max-width: 14rem;
+  .name span {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .name svg {
+    flex: none;
+    width: 1.3rem;
+    height: 1.3rem;
+    fill: none;
+    stroke: var(--dim);
+    stroke-width: 2.4;
+    stroke-linecap: round;
   }
 
   button {
@@ -484,13 +538,6 @@
     min-width: 0;
     background: var(--raised);
     white-space: nowrap;
-  }
-
-  .seg.load {
-    background: var(--fg);
-    border-color: var(--fg);
-    color: var(--bg);
-    font-weight: 600;
   }
 
   .seg:disabled {

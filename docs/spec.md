@@ -112,6 +112,7 @@ Editor layout, from the founder's sketch (two modes on one graph):
   line is dragged, a small pop-up shows the current value. The infuse weight and the stop
   weight are value chips where they act (sketch: 6 g and 36 g). Two toggles sit under the
   graph: **2nd fill**, and one that reads **flow up** or **flow down** depending on its state.
+  - The flow line falls to zero with a vertical edge at the end of the fill and rises from zero with a vertical edge at the start of the 2nd fill (founder, 2026-10-13).
   - The flow line is not drawn during the infuse phase, and the flow line's label in the flow phase is left aligned, in both modes: it is the value at the left edge (founder, 2026-10-12).
   - The time axis follows the set times: the fill is thin (3-4 s in practice, whatever its time limit), infuse is often the longest part, the 2nd fill with its pause is about as thin as the fill, and the flow phase takes the rest. Every column keeps a minimum width for a finger (founder, 2026-10-12).
   - The temperature lines move together: fill with infuse and 2nd fill, pressurize with flow. A drag keeps the distances between the phases that detail mode set (founder, 2026-10-12).
@@ -121,11 +122,13 @@ Editor layout, from the founder's sketch (two modes on one graph):
   - The same lines as in simple mode can be dragged, and the pause duration too (founder, 2026-10-12).
   - Tapping a chip's value opens an on-screen number pad to type it, with the unit and the allowed range; plus and minus stay for small changes (founder, 2026-10-12).
   - Each phase has its own temperature here; dose is one value of the shot (founder, 2026-10-12).
-- **Both modes.** A **save as** action sits next to the mode switch: it asks for a name and saves the edited profile under it (founder, 2026-10-12). The **profile steps** panel under the graph is shown by default, and a setting hides it (founder, 2026-10-12).
+- **Both modes.** A **save as** action sits next to the mode switch: it asks for a name and saves the edited profile under it (founder, 2026-10-12). The **profile steps** button opens a panel with the steps under the graph; the panel is closed whenever the editor opens, and with the setting 'profile steps' off the button is not shown (founder, 2026-10-13). The profile's name in the top bar opens the profile picker; a profile chosen there is loaded, and the editor comes back on it when it is an A-Flow profile (founder, 2026-10-13).
 
 Editor behaviour:
-- Edit the values, see the resulting curve update live, save as a named A-Flow profile, load
-  it to the machine.
+- Edit the values, see the resulting curve update live, save as a named A-Flow profile.
+  There is no 'load to machine': 'save' and 'save as' load the saved profile to the machine,
+  and leaving the editor loads the values on screen when they differ from those it opened
+  with (founder, 2026-10-13).
 - Start from five default profiles (supplied as JSON fixtures), in this order: floral, light, medium, dark, 46mm (founder, 2026-10-12). light, medium and dark are the plugin's, converted to 3.0.
   - floral is new: light with the 2nd fill on and infuse pressure 0 bar (founder, 2026-10-12).
   - 46mm is the plugin's very-dark, renamed, with pour pressure 9 bar, ramp time 40 s and flow down (founder, 2026-10-12).
@@ -414,11 +417,19 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
   the old one (`PUT /api/v1/profiles/{id}/visibility`), so the list shows a profile once and
   the lineage keeps every version. Hidden, soft-deleted or left visible: which should an
   older version be? A default has no 'save': it is saved under a new name. (owner)
-- 'Load to machine' loads the values on screen, saved or not, under the name of the profile
-  they started from, and goes back to home; the editor opens on them again. Unsaved edits
-  are lost when the editor is left without loading or saving. (owner)
+- Loading from the editor (founder, 2026-10-13, built in `fb-editor-flow`): there is no 'load to
+  machine'. 'Save' and 'save as' load the saved profile after saving. Leaving the editor,
+  by the back arrow or by the profile's name (the shortcut to the picker), loads the values
+  on screen when they differ from those it opened with, under the name of the profile they
+  started from, and loads nothing when nothing changed. Such unsaved edits are on the machine
+  but not stored as a profile: the editor opens on them again while they are the workflow's
+  profile, and they are gone once another profile is loaded. A failed load is shown and the
+  editor stays open; 'back' a second time with the same values leaves without loading them.
+  The editor is not asked when the machine itself opens the espresso screen or the page is
+  reloaded: those leave without loading. A tap in the picker loads the profile at once; the
+  picker's 'load' button is gone. (owner)
 - The setting "first-step workaround" is `firstStepWorkaround` in `src/settings.ts`, off by
-  default, and acts where the editor generates a profile (save, save as, load to machine).
+  default, and acts where the editor generates a profile (save, save as, leaving with changes).
   Profiles stored before it was switched on, and the defaults the picker adds, do not get
   the Pre Fill step until they are saved or loaded from the editor. Its switch is on the
   settings page (D8c). (owner)
@@ -426,8 +437,9 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
   - The settings page shows its two categories, Steam and Profile, side by side on one
     screen, without tabs. Grams take one decimal and go up to 1000 g; seconds are whole,
     1 to 255. There is no 'back to defaults' action. (owner)
-  - The editor keeps its 'profile steps' button; it and the switch on the settings page are
-    one setting. (owner)
+  - The switch on the settings page is the one place to set 'profile steps'; the editor's
+    button only opens and closes the panel, which is not stored (founder, 2026-10-13).
+    (answered)
   - Settings are in `localStorage` (`decaid-skin.settings`), so they belong to this tablet
     and to the port Decaid gives the skin (4.1); the KV store would keep them over a
     changed port. The screen the skin opens with is not a setting and has its own key

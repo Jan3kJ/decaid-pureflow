@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { ProfileRecord } from '../api';
+  import { readParams } from '../editor/storage';
   import {
     doseOf,
     isAFlow3,
@@ -59,10 +60,23 @@
       selectedId = added[0]?.id ?? selectedId;
     });
 
+  /**
+   * A tap loads the profile, as in other skins (founder, 2026-10-13), and goes back: to the
+   * editor when it opened the picker and can edit the profile, to home otherwise.
+   */
   const load = (record: ProfileRecord) =>
     act('The profile could not be loaded', async () => {
+      selectedId = record.id;
       skin.workflow = await loadProfile(skin.client, record.profile);
+      const fromEditor = skin.pickerReturn === 'editor';
+      if (fromEditor && readParams(record.profile)) {
+        skin.go('editor');
+        return;
+      }
       skin.go('home');
+      if (fromEditor) {
+        skin.notice = `“${record.profile.title}” is loaded. It is not an A-Flow 3.0 profile: it can be loaded, but not edited.`;
+      }
     });
 
   onMount(read);
@@ -95,7 +109,8 @@
             aria-pressed={record.id === selectedId}
             data-testid="profile-item"
             data-id={record.id}
-            onclick={() => (selectedId = record.id)}
+            disabled={busy}
+            onclick={() => load(record)}
           >
             <span class="title">{record.profile.title}</span>
             {#if isLoaded(record)}<span class="tag loaded">loaded</span>{/if}
@@ -134,11 +149,8 @@
       {:else if profile.notes}
         <p class="notes">{profile.notes}</p>
       {/if}
-      <button class="load" data-testid="load-profile" disabled={busy} onclick={() => load(selected)}>
-        load
-      </button>
     {:else}
-      <p class="hint">Select a profile to load it.</p>
+      <p class="hint">Tap a profile to load it.</p>
     {/if}
   </aside>
 </div>
@@ -320,22 +332,5 @@
     color: var(--dim);
     font-size: 0.95rem;
     white-space: pre-line;
-  }
-
-  .load {
-    margin-top: auto;
-    flex: none;
-    min-height: 6rem;
-    font-size: 2rem;
-    font-weight: 600;
-    background: var(--fg);
-    border-color: var(--fg);
-    color: var(--bg);
-  }
-
-  .load:disabled {
-    background: var(--panel);
-    border-color: var(--line);
-    color: var(--dim);
   }
 </style>

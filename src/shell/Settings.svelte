@@ -22,7 +22,7 @@
       key: 'showProfileSteps',
       id: 'show-profile-steps',
       title: 'profile steps',
-      hint: 'The editor shows the generated steps under the graph.',
+      hint: 'The editor has a button that shows the generated steps under the graph. It opens closed.',
     },
   ];
 

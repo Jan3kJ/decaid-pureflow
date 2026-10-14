@@ -2,7 +2,17 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULT_PROFILES, generateProfile, serializeParams, type AFlowParams } from '../aflow';
 import { loadProfile } from '../shell/profiles';
 import { fakeGateway } from './gateway.fake';
-import { SKIN_METADATA, buildProfile, nameOf, saveAs, saveEdit, titleOf } from './save';
+import {
+  SKIN_METADATA,
+  buildProfile,
+  changed,
+  loadOnLeave,
+  nameOf,
+  saveAs,
+  saveEdit,
+  storeAndLoad,
+  titleOf,
+} from './save';
 import { StepsTakenError, readParams } from './storage';
 
 const light = DEFAULT_PROFILES[1].params;
@@ -118,7 +128,7 @@ describe('saveEdit', () => {
   });
 });
 
-describe('load to machine', () => {
+describe('loading', () => {
   it('sends the built profile, its stop weight as the yield and its dose, with the picker\'s function', async () => {
     const gateway = fakeGateway();
     const profile = buildProfile(edited, about, false);
@@ -130,5 +140,84 @@ describe('load to machine', () => {
       context: { targetYield: 44, targetDoseWeight: 17.5 },
     });
     expect(profile.target_weight).toBe(44);
+  });
+
+  it('save as, then load: one POST, then one PUT of the workflow with the stored profile', async () => {
+    const gateway = fakeGateway();
+    const stored = await storeAndLoad(gateway.client, () => saveAs(gateway.client, edited, about, false));
+
+    expect(gateway.sent()).toEqual(['POST /api/v1/profiles', 'PUT /api/v1/workflow']);
+    expect(gateway.calls[1].body).toEqual({
+      profile: stored.record.profile,
+      context: { targetYield: 44, targetDoseWeight: 17.5 },
+    });
+    expect(gateway.calls[1].body.profile).toEqual(buildProfile(edited, about, false));
+    expect('workflow' in stored && stored.workflow.profile).toEqual(stored.record.profile);
+  });
+
+  it('save, then load: the new version is what the machine gets', async () => {
+    const gateway = fakeGateway();
+    const parent = await saveAs(gateway.client, edited, about, false);
+    gateway.calls.length = 0;
+    const next = { ...edited, pourPressure: 8.5 };
+
+    const stored = await storeAndLoad(gateway.client, () => saveEdit(gateway.client, next, parent, false));
+
+    expect(gateway.sent()).toEqual([
+      'POST /api/v1/profiles',
+      `PUT /api/v1/profiles/${parent.id}/visibility`,
+      'PUT /api/v1/workflow',
+    ]);
+    expect(gateway.calls[2].body.profile).toEqual(buildProfile(next, about, false));
+    expect(stored.record.id).not.toBe(parent.id);
+  });
+
+  it('a save that fails loads nothing', async () => {
+    const gateway = fakeGateway();
+    await saveAs(gateway.client, edited, about, false);
+    gateway.calls.length = 0;
+    const store = () => saveAs(gateway.client, { ...edited, dose: 18 }, { title: 'A-Flow / evening' }, false);
+    await expect(storeAndLoad(gateway.client, store)).rejects.toBeInstanceOf(StepsTakenError);
+    expect(gateway.sent()).toEqual(['POST /api/v1/profiles']);
+  });
+
+  it('a load that fails after the save keeps the record and says why', async () => {
+    const gateway = fakeGateway();
+    const record = gateway.make(buildProfile(edited, about, false));
+    const failing = Object.create(gateway.client);
+    failing.updateWorkflow = () => Promise.reject(new Error('no machine'));
+    const stored = await storeAndLoad(failing, async () => record);
+    expect(stored.record).toBe(record);
+    expect('error' in stored && (stored.error as Error).message).toBe('no machine');
+  });
+
+  it('leaving with changed values loads them once under the name they started from', async () => {
+    const gateway = fakeGateway();
+    const workflow = await loadOnLeave(gateway.client, edited, light, { title: 'A-Flow / default-light', author: 'Janek' }, false);
+
+    expect(gateway.sent()).toEqual(['PUT /api/v1/workflow']);
+    const profile = buildProfile(edited, { title: 'A-Flow / default-light', author: 'Janek' }, false);
+    expect(gateway.calls[0].body).toEqual({ profile, context: { targetYield: 44, targetDoseWeight: 17.5 } });
+    expect(workflow?.profile).toEqual(profile);
+    // Nothing is stored by leaving.
+    expect(gateway.records).toHaveLength(0);
+  });
+
+  it('leaving without a change loads nothing', async () => {
+    const gateway = fakeGateway();
+    expect(await loadOnLeave(gateway.client, { ...light }, light, about, false)).toBeNull();
+    expect(gateway.sent()).toEqual([]);
+  });
+
+  it('leaving with the first-step workaround on sends the Pre Fill step', async () => {
+    const gateway = fakeGateway();
+    await loadOnLeave(gateway.client, edited, light, about, true);
+    expect(gateway.calls[0].body.profile.steps[0].name).toBe('Pre Fill');
+  });
+
+  it('a change is a change of any value, the dose too', () => {
+    expect(changed({ ...light }, light)).toBe(false);
+    expect(changed({ ...light, dose: light.dose + 0.1 }, light)).toBe(true);
+    expect(changed({ ...light, flowUp: !light.flowUp }, light)).toBe(true);
   });
 });

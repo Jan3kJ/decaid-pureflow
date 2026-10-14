@@ -294,14 +294,10 @@ test('the picker lists the profiles of the gateway, offers the A-Flow 3.0 defaul
   await expect(items.first()).toContainText('A-Flow / default-floral');
   await expect(items.first()).toContainText('A-Flow 3.0');
 
-  const dark = items.filter({ hasText: 'A-Flow / default-dark' });
-  await dark.click();
-  await expect(dark).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByTestId('profile-detail')).toContainText('36 g');
-  await expect(page.getByTestId('profile-detail')).toContainText('16 g');
   await expectInsideViewport(page);
-
-  await page.getByTestId('load-profile').click();
+  // No 'load' button: a tap on a profile loads it (founder, 2026-10-13).
+  await expect(page.getByTestId('load-profile')).toHaveCount(0);
+  await items.filter({ hasText: 'A-Flow / default-dark' }).click();
   // Loading is one PUT of the workflow: the profile, its stop weight and its dose.
   await expect(page.getByTestId('screen-home')).toBeVisible();
   const puts = gateway.calls('PUT', '/api/v1/workflow');
@@ -317,7 +313,12 @@ test('the picker lists the profiles of the gateway, offers the A-Flow 3.0 defaul
   await page.getByTestId('open-profiles').click();
   await expect(items).toHaveCount(10);
   await expect(page.getByTestId('offer-defaults')).toHaveCount(0);
-  await expect(items.filter({ hasText: 'loaded' })).toContainText('A-Flow / default-dark');
+  const dark = items.filter({ hasText: 'loaded' });
+  await expect(dark).toContainText('A-Flow / default-dark');
+  // The loaded one is selected, with its stop weight and its dose.
+  await expect(dark).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('profile-detail')).toContainText('36 g');
+  await expect(page.getByTestId('profile-detail')).toContainText('16 g');
   expect(errors).toEqual([]);
 });
 

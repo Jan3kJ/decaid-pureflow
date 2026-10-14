@@ -2,6 +2,8 @@
 // http://localhost:8080 are answered here, so `npm run e2e` needs no Decaid.
 import { readFileSync } from 'node:fs';
 import type { Page, Route, WebSocketRoute } from '@playwright/test';
+import { DEFAULT_PROFILES } from '../src/aflow';
+import { defaultProfile } from '../src/shell/profiles';
 
 export const GATEWAY = 'http://localhost:8080';
 
@@ -218,6 +220,18 @@ export class MockGateway {
       if (this.scaleConnected) this.putOnScale(this.weight);
     }, 300);
     page.on('close', () => clearInterval(this.heartbeat));
+    return this;
+  }
+
+  /**
+   * The five A-Flow 3.0 defaults stored, as the picker's 'add' stores them, and `loaded` (a
+   * default's id without 'default-') as the workflow's profile.
+   */
+  withDefaults(loaded?: string): this {
+    for (const entry of DEFAULT_PROFILES) {
+      this.profiles.push(record(`profile:${entry.id}`, defaultProfile(entry), { source: 'decaid-skin', aflow: '3.0' }));
+    }
+    if (loaded) this.workflow.profile = defaultProfile(DEFAULT_PROFILES.find((entry) => entry.id === `default-${loaded}`)!);
     return this;
   }
 

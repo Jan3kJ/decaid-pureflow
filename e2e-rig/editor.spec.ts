@@ -5,7 +5,8 @@ import { buildProfile } from '../src/editor/save';
 import light from '../src/aflow/defaults/default-light.json' with { type: 'json' };
 
 // Acceptance item 3 (spec section 5) against the rig: in simple and in detail mode, changing a
-// value redraws the curve, and the profile the gateway holds after 'load to machine' equals the
+// value redraws the curve, and the profile the gateway holds after the back arrow and after
+// 'save as' (there is no 'load to machine' since the founder's notes of 2026-10-13) equals the
 // generator's output for those values; a saved profile re-opens in the editor with the same
 // parameters. The tests remove the profiles they create and put the workflow back as it was.
 
@@ -53,7 +54,7 @@ function paramsOf(profile: { notes: string }): AFlowParams {
   return parsed.params;
 }
 
-const pressed = (page: Page) => page.getByTestId('picker').locator('[aria-pressed="true"]');
+const pressed = (page: Page) => page.getByTestId('editor-profile');
 const pressurePoints = (page: Page) => page.getByTestId('line-pressure').getAttribute('points');
 
 async function type(page: Page, field: string, keys: string) {
@@ -62,24 +63,41 @@ async function type(page: Page, field: string, keys: string) {
   await page.getByTestId('numpad-confirm').click();
 }
 
+/** The editor on default-light: it opens on the workflow's profile, so that is put there first. */
 async function openEditor(page: Page) {
+  await api('PUT', '/api/v1/workflow', { profile: buildProfile(light, LIGHT, false) });
   await page.addInitScript(() => localStorage.setItem('decaid-skin.screen', 'editor'));
   await page.goto('/');
   await expect(page.getByTestId('graph')).toBeVisible();
   await expect(page.getByTestId('nav-status')).toBeVisible();
+  await expect(pressed(page)).toHaveText('light');
 }
 
-/** After 'load to machine': the workflow of the gateway, read back, against the generator. */
-async function expectLoaded(page: Page, about: { title: string; author: string }): Promise<AFlowParams> {
-  await expect(page.getByTestId('screen-home')).toBeVisible();
+/** The workflow of the gateway, read back, against the generator. */
+async function expectWorkflow(about: { title: string; author: string }): Promise<AFlowParams> {
   const workflow = await api('GET', '/api/v1/workflow');
   const params = paramsOf(workflow.profile);
   const expected = buildProfile(params, about, false);
   expect(held(workflow.profile, expected)).toEqual(canonical(expected));
   expect(workflow.context.targetYield).toBe(params.stopWeight);
   expect(workflow.context.targetDoseWeight).toBe(params.dose);
-  await expect(page.getByTestId('profile-name')).toHaveText(about.title);
   return params;
+}
+
+/** After the back arrow with changes: home, and the workflow read back. */
+async function expectLoaded(page: Page, about: { title: string; author: string }): Promise<AFlowParams> {
+  await expect(page.getByTestId('screen-home')).toBeVisible();
+  await expect(page.getByTestId('profile-name')).toHaveText(about.title);
+  return expectWorkflow(about);
+}
+
+/** 'save as' under a name; it loads what it stored. */
+async function saveAs(page: Page, name: string) {
+  await page.getByTestId('save-as').click();
+  await page.getByTestId('save-name').fill(name);
+  await page.getByTestId('save-confirm').click();
+  await expect(page.getByTestId('editor-notice')).toHaveText(`Saved as “${name}” and loaded.`);
+  await expect(pressed(page)).toHaveText(name);
 }
 
 let gatewayUp = false;
@@ -122,7 +140,6 @@ test('simple mode: a changed value redraws the curve, and the gateway holds the 
   page,
 }) => {
   await openEditor(page);
-  await page.getByTestId('profile-default-light').click();
   await expect(page.getByTestId('mode-simple')).toHaveAttribute('aria-pressed', 'true');
   const before = await pressurePoints(page);
 
@@ -144,13 +161,24 @@ test('simple mode: a changed value redraws the curve, and the gateway holds the 
   await expect(chip).toContainText('47 g');
   await page.getByTestId('toggle-second-fill').click();
 
-  await page.getByTestId('load-to-machine').click();
+  // Back with changes loads them.
+  await page.getByTestId('nav-home').click();
   const params = await expectLoaded(page, LIGHT);
   expect(params).toEqual({ ...light, infusePressure: pressure, stopWeight: 47, pauseDuration: 15 });
   // Dose and stop weight are not on home: the workflow holds them.
   expect((await api('GET', '/api/v1/workflow')).context).toMatchObject({ targetYield: 47, targetDoseWeight: 16 });
   // Loading saves nothing.
   expect(await profileIds()).toEqual(profilesBefore);
+
+  // Save as, in simple mode: the editor opens on the loaded values; a change and 'save as'
+  // stores them and loads them.
+  const name = `rig simple ${Date.now() % 100000}`;
+  const about = { title: `A-Flow / ${name}`, author: 'Janek' };
+  await page.getByTestId('open-editor').click();
+  await expect(page.getByTestId('chip-graph-stopWeight')).toContainText('47 g');
+  await page.getByTestId('toggle-flow').click();
+  await saveAs(page, name);
+  expect(await expectWorkflow(about)).toEqual({ ...params, flowUp: false });
 });
 
 test('detail mode: typed values are loaded; a saved profile re-opens with them and an edit keeps the lineage', async ({
@@ -160,7 +188,6 @@ test('detail mode: typed values are loaded; a saved profile re-opens with them a
   const about = { title: `A-Flow / ${name}`, author: 'Janek' };
 
   await openEditor(page);
-  await page.getByTestId('profile-default-light').click();
   await page.getByTestId('mode-detail').click();
   const before = await pressurePoints(page);
   await page.getByTestId('phase-pressurize').click();
@@ -181,11 +208,7 @@ test('detail mode: typed values are loaded; a saved profile re-opens with them a
   };
 
   // Save as: a new record of the gateway, with the parameters and no parent.
-  await page.getByTestId('save-as').click();
-  await page.getByTestId('save-name').fill(name);
-  await page.getByTestId('save-confirm').click();
-  await expect(page.getByTestId('editor-notice')).toHaveText(`Saved as “${name}”.`);
-  await expect(pressed(page)).toHaveText(name);
+  await saveAs(page, name);
   const saved = (await api('GET', '/api/v1/profiles')).find((record: any) => record.profile.title === about.title);
   expect(profilesBefore).not.toContain(saved.id);
   expect(saved.parentId).toBeNull();
@@ -194,13 +217,16 @@ test('detail mode: typed values are loaded; a saved profile re-opens with them a
   const expected = buildProfile(wanted, about, false);
   expect(held(saved.profile, expected)).toEqual(canonical(expected));
 
-  // Load to machine: the workflow holds the generator's profile for the typed values.
-  await page.getByTestId('load-to-machine').click();
-  expect(await expectLoaded(page, about)).toEqual(wanted);
+  // Save as loaded it: the workflow holds the generator's profile for the typed values.
+  expect(await expectWorkflow(about)).toEqual(wanted);
   expect((await api('GET', '/api/v1/workflow')).context).toMatchObject({ targetYield: 48, targetDoseWeight: 18.5 });
+  // Back has nothing more to load.
+  await page.getByTestId('nav-home').click();
+  await expect(page.getByTestId('profile-name')).toHaveText(about.title);
+  expect(await expectWorkflow(about)).toEqual(wanted);
 
   // The saved profile re-opens in the editor with the same parameters: as the current profile
-  // after a reload, and from the editor's picker.
+  // after a reload, and from the picker by the editor's shortcut.
   await page.getByTestId('open-editor').click();
   await page.reload();
   await expect(page.getByTestId('graph')).toBeVisible();
@@ -209,9 +235,11 @@ test('detail mode: typed values are loaded; a saved profile re-opens with them a
   await expect(page.getByTestId('value-pourPressure')).toHaveText('8.5 bar');
   await expect(page.getByTestId('value-rampTime')).toHaveText('7 s');
   await expect(page.getByTestId('value-infuseTemperature')).toHaveText('91 °C');
-  await page.getByTestId('profile-default-dark').click();
-  await expect(page.getByTestId('value-pourPressure')).toHaveText('9 bar');
-  await page.getByTestId('picker').getByRole('button', { name }).click();
+  await pressed(page).click();
+  await expect(page.getByTestId('screen-profiles')).toBeVisible();
+  await page.getByTestId('profile-item').filter({ hasText: about.title }).click();
+  await expect(page.getByTestId('screen-editor')).toBeVisible();
+  await expect(pressed(page)).toHaveText(name);
   await expect(page.getByTestId('value-pourPressure')).toHaveText('8.5 bar');
   await page.getByTestId('mode-detail').click();
   await expect(page.getByTestId('chip-value-dose')).toHaveText('18.5 g');
@@ -220,7 +248,7 @@ test('detail mode: typed values are loaded; a saved profile re-opens with them a
   // The dose alone: the same record, its notes changed with a PUT.
   await type(page, 'dose', '17');
   await page.getByTestId('save').click();
-  await expect(page.getByTestId('editor-notice')).toHaveText(`Saved “${name}”.`);
+  await expect(page.getByTestId('editor-notice')).toHaveText(`Saved “${name}” and loaded.`);
   const redosed = await api('GET', `/api/v1/profiles/${encodeURIComponent(saved.id)}`);
   expect(paramsOf(redosed.profile)).toEqual({ ...wanted, dose: 17 });
 
@@ -244,5 +272,12 @@ test('detail mode: typed values are loaded; a saved profile re-opens with them a
     [saved.id, 'hidden'],
     [listed[0].id, 'visible'],
   ]);
-  await expect(page.getByTestId('picker').getByRole('button', { name })).toHaveCount(1);
+  // The save loaded the new version.
+  expect(await expectWorkflow(about)).toEqual({ ...wanted, dose: 17, flowUp: false });
+
+  // Back with a change in detail mode loads it, unsaved, under the profile's name.
+  await page.getByTestId('phase-pressurize').click();
+  await type(page, 'pourPressure', '8');
+  await page.getByTestId('nav-home').click();
+  expect(await expectLoaded(page, about)).toEqual({ ...wanted, dose: 17, flowUp: false, pourPressure: 8 });
 });

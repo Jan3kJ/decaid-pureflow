@@ -43,7 +43,7 @@
         <span>history</span>
       </button>
     {:else}
-      <button class="back" data-testid="nav-home" aria-label="back to home" onclick={() => skin.go('home')}>
+      <button class="back" data-testid="nav-home" aria-label="back to home" onclick={() => skin.leave('home')}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4l-8 8 8 8" /></svg>
       </button>
       <span class="dot {skin.status.tone}" title={skin.status.title} data-testid="nav-status"></span>

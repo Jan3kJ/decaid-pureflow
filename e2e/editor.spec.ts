@@ -1,7 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
-import { mockGateway } from './mock-gateway';
+import { mockGateway, type MockGateway } from './mock-gateway';
 
 const errors: string[] = [];
+let gateway: MockGateway;
 
 test.beforeEach(async ({ page }) => {
   errors.length = 0;
@@ -10,17 +11,37 @@ test.beforeEach(async ({ page }) => {
   });
   page.on('pageerror', (error) => errors.push(error.message));
   // The editor is one screen of the shell: open the skin on it, with a gateway that answers.
-  await mockGateway(page);
+  // The five defaults are in Decaid; the tests start from default-light, the loaded one. The
+  // first default, floral, has the 2nd fill on.
+  gateway = (await mockGateway(page)).withDefaults('light');
   await page.addInitScript(() => localStorage.setItem('decaid-skin.screen', 'editor'));
   await page.goto('/');
   await expect(page.getByTestId('graph')).toBeVisible();
-  // The tests start from default-light; the first default, floral, has the 2nd fill on.
-  await page.getByTestId('profile-default-light').click();
+  await expect(page.getByTestId('editor-profile')).toHaveText('light');
 });
 
 test.afterEach(() => {
   expect(errors).toEqual([]);
 });
+
+/** The editor's shortcut: the picker, a tap on an A-Flow 3.0 default, and back in the editor on it. */
+async function pick(page: Page, id: string) {
+  await page.getByTestId('editor-profile').click();
+  await expect(page.getByTestId('screen-profiles')).toBeVisible();
+  await page
+    .getByTestId('profile-item')
+    .filter({ hasText: `A-Flow / default-${id}` })
+    .filter({ hasText: 'A-Flow 3.0' })
+    .click();
+  await expect(page.getByTestId('screen-editor')).toBeVisible();
+  await expect(page.getByTestId('editor-profile')).toHaveText(id);
+}
+
+/** The profile steps panel opens closed (founder, 2026-10-13). */
+async function openSteps(page: Page) {
+  await page.getByTestId('toggle-steps').click();
+  await expect(page.getByTestId('steps')).toBeVisible();
+}
 
 const pressurePoints = (page: Page) => page.getByTestId('line-pressure').getAttribute('points');
 const flowPath = (page: Page) => page.getByTestId('line-flow').getAttribute('d');
@@ -60,19 +81,31 @@ async function type(page: Page, field: string, keys: string) {
   for (const key of keys) await page.getByTestId(`numpad-key-${key === '.' ? 'dot' : key}`).click();
 }
 
-test('loads in simple mode with no console errors, the five defaults in order', async ({ page }) => {
+test('loads in simple mode with no console errors; its name leads to the picker, the five defaults in order', async ({
+  page,
+}) => {
   await expect(page.getByTestId('mode-simple')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByTestId('detail-panel')).toHaveCount(0);
   await expect(page.getByTestId('value-infusePressure')).toHaveText('3 bar');
-  await expect(page.getByTestId('picker').getByRole('button')).toHaveText([
-    'floral',
-    'light',
-    'medium',
-    'dark',
-    '46mm',
+  // No row of profiles and no 'load to machine': the name is the shortcut to the picker.
+  await expect(page.getByTestId('load-to-machine')).toHaveCount(0);
+  await page.getByTestId('editor-profile').click();
+  await expect(page.getByTestId('screen-profiles')).toBeVisible();
+  const aflow = page.getByTestId('profile-item').filter({ hasText: 'A-Flow 3.0' });
+  await expect(aflow.locator('.title')).toHaveText([
+    'A-Flow / default-floral',
+    'A-Flow / default-light',
+    'A-Flow / default-medium',
+    'A-Flow / default-dark',
+    'A-Flow / default-46mm',
   ]);
-  // floral is what the editor opens with.
-  await page.getByTestId('profile-default-floral').click();
+  // Nothing was changed, so leaving loaded nothing.
+  expect(gateway.calls('PUT', '/api/v1/workflow')).toHaveLength(0);
+  await page.getByTestId('nav-home').click();
+  await page.getByTestId('open-editor').click();
+  await pick(page, 'floral');
+  // The tap loaded it, once.
+  expect(gateway.calls('PUT', '/api/v1/workflow')).toHaveLength(1);
   await expect(page.getByTestId('value-pauseDuration')).toHaveText('pause 15 s');
   await page.screenshot({ path: 'docs/product/simple.png' });
 });
@@ -81,10 +114,11 @@ test('the layout stays inside the viewport and every column is wide enough for a
   page,
 }) => {
   const viewport = page.viewportSize()!;
-  for (const mode of ['simple', 'detail']) {
-    await page.getByTestId(`mode-${mode}`).click();
-    for (const id of ['floral', 'light', 'medium', 'dark', '46mm']) {
-      await page.getByTestId(`profile-default-${id}`).click();
+  for (const id of ['floral', 'light', 'medium', 'dark', '46mm']) {
+    await pick(page, id);
+    await openSteps(page);
+    for (const mode of ['simple', 'detail']) {
+      await page.getByTestId(`mode-${mode}`).click();
       const size = await page.evaluate(() => ({
         width: document.documentElement.scrollWidth,
         height: document.documentElement.scrollHeight,
@@ -112,7 +146,7 @@ test('the time axis follows the set times: thin fill, wide infusion, the rest fo
   );
   const lightFlow = (await column(page, 'flow')).width;
   // dark: 10 s of infusion and 5 s of ramp leave most of the graph to the flow phase.
-  await page.getByTestId('profile-default-dark').click();
+  await pick(page, 'dark');
   const infuse = (await column(page, 'infuse')).width;
   const pressurize = (await column(page, 'pressurize')).width;
   expect(infuse / pressurize).toBeCloseTo(2, 0);
@@ -179,7 +213,7 @@ test('simple mode: dragging a level line changes the value and the curve', async
 });
 
 test('simple mode: dragging a phase border changes a duration', async ({ page }) => {
-  await page.getByTestId('profile-default-dark').click();
+  await pick(page, 'dark');
   await expect(page.getByTestId('value-rampTime')).toHaveText('5 s');
   const before = await pressurePoints(page);
 
@@ -268,7 +302,8 @@ test('detail mode: the flow the pause ends under is a value of the 2nd fill, and
 }) => {
   const pauseRow = page.getByTestId('steps').locator('tr', { hasText: 'Pause' });
   // floral has the 2nd fill on. Simple mode has no control for the value.
-  await page.getByTestId('profile-default-floral').click();
+  await pick(page, 'floral');
+  await openSteps(page);
   await expect(pauseRow).toContainText('flow under 1 ml/s');
   await expect(page.getByTestId('chip-pauseExitFlow')).toHaveCount(0);
   await expect(page.getByTestId('value-pauseExitFlow')).toHaveCount(0);
@@ -388,6 +423,7 @@ test('temperatures: detail mode sets one phase, a drag in simple mode keeps the 
   await page.getByTestId('numpad-confirm').click();
   await expect(page.getByTestId('value-infuseTemperature')).toHaveText('90 °C');
   await expect(page.getByTestId('value-fillTemperature')).toHaveText('95 °C');
+  await openSteps(page);
   await expect(page.getByTestId('steps').locator('tr', { hasText: 'Infuse' })).toContainText('90 °C');
 
   await page.getByTestId('mode-simple').click();
@@ -402,7 +438,7 @@ test('temperatures: detail mode sets one phase, a drag in simple mode keeps the 
   await expect(page.getByTestId('value-pourTemperature')).toHaveText('95 °C');
 });
 
-test('save as adds the profile under its name to the picker', async ({ page }) => {
+test('save as stores the profile under its name, loads it, and the picker has it', async ({ page }) => {
   for (const mode of ['simple', 'detail']) {
     await page.getByTestId(`mode-${mode}`).click();
     await expect(page.getByTestId('save-as')).toBeVisible();
@@ -421,42 +457,73 @@ test('save as adds the profile under its name to the picker', async ({ page }) =
   await page.getByTestId('save-confirm').click();
 
   await expect(page.getByTestId('save-dialog')).toHaveCount(0);
-  const picker = page.getByTestId('picker').getByRole('button');
-  await expect(picker).toHaveText(['floral', 'light', 'medium', 'dark', '46mm', 'morning light']);
-  const saved = page.getByTestId('picker').getByRole('button', { name: 'morning light' });
-  await expect(saved).toHaveAttribute('aria-pressed', 'true');
-
-  // The default it started from is unchanged, and the saved profile has the changed value.
-  await page.getByTestId('profile-default-light').click();
-  await expect(page.getByTestId('toggle-flow')).toHaveText(/flow up/);
-  await saved.click();
-  await expect(page.getByTestId('toggle-flow')).toHaveText(/flow down/);
+  await expect(page.getByTestId('editor-notice')).toHaveText('Saved as “morning light” and loaded.');
+  await expect(page.getByTestId('editor-profile')).toHaveText('morning light');
+  expect(gateway.calls('PUT', '/api/v1/workflow').map((call) => call.body.profile.title)).toEqual([
+    'A-Flow / morning light',
+  ]);
 
   // Cancel saves nothing.
   await page.getByTestId('save-as').click();
   await page.getByTestId('save-name').fill('not this one');
   await page.getByTestId('save-cancel').click();
-  await expect(picker).toHaveCount(6);
+  await expect(page.getByTestId('save-dialog')).toHaveCount(0);
+
+  // The default it started from is unchanged, and the saved profile has the changed value.
+  await pick(page, 'light');
+  await expect(page.getByTestId('toggle-flow')).toHaveText(/flow up/);
+  await page.getByTestId('editor-profile').click();
+  await expect(page.getByTestId('profile-item').filter({ hasText: 'not this one' })).toHaveCount(0);
+  await page.getByTestId('profile-item').filter({ hasText: 'A-Flow / morning light' }).click();
+  await expect(page.getByTestId('editor-profile')).toHaveText('morning light');
+  await expect(page.getByTestId('toggle-flow')).toHaveText(/flow down/);
 });
 
-test('the profile steps are shown by default and stay hidden once hidden', async ({ page }) => {
+test('the profile steps are closed whenever the editor opens, and the panel is not stored', async ({ page }) => {
   const toggle = page.getByTestId('toggle-steps');
-  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByTestId('steps')).toBeVisible();
-  const withSteps = (await page.getByTestId('graph').boundingBox())!.height;
+  await expect(toggle).toBeVisible();
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.getByTestId('steps')).toHaveCount(0);
+  const without = (await page.getByTestId('graph').boundingBox())!.height;
 
   await toggle.click();
-  await expect(page.getByTestId('steps')).toHaveCount(0);
-  expect((await page.getByTestId('graph').boundingBox())!.height).toBeGreaterThan(withSteps);
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('steps')).toBeVisible();
+  expect((await page.getByTestId('graph').boundingBox())!.height).toBeLessThan(without);
 
+  // Open, then the editor opens again: by a reload, and by home and the pen.
   await page.reload();
   await expect(page.getByTestId('graph')).toBeVisible();
   await expect(page.getByTestId('toggle-steps')).toHaveAttribute('aria-pressed', 'false');
   await expect(page.getByTestId('steps')).toHaveCount(0);
-
   await page.getByTestId('toggle-steps').click();
-  await page.reload();
-  await expect(page.getByTestId('steps')).toBeVisible();
+  await page.getByTestId('nav-home').click();
+  await page.getByTestId('open-editor').click();
+  await expect(page.getByTestId('toggle-steps')).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.getByTestId('steps')).toHaveCount(0);
+  // The button is not the setting: it stays on.
+  expect(await page.evaluate(() => localStorage.getItem('decaid-skin.settings'))).toBeNull();
+});
+
+test('with the setting off, the profile steps button is not shown', async ({ page }) => {
+  await page.getByTestId('nav-home').click();
+  await page.getByTestId('menu').click();
+  await page.getByTestId('open-settings').click();
+  await page.getByTestId('setting-show-profile-steps').click();
+  await page.getByTestId('nav-home').click();
+  await page.getByTestId('open-editor').click();
+  await expect(page.getByTestId('graph')).toBeVisible();
+  await expect(page.getByTestId('toggle-steps')).toHaveCount(0);
+  await expect(page.getByTestId('steps')).toHaveCount(0);
+  // On again: the button is back, the panel closed.
+  await page.getByTestId('nav-home').click();
+  await page.getByTestId('menu').click();
+  await page.getByTestId('open-settings').click();
+  await page.getByTestId('setting-show-profile-steps').click();
+  await page.getByTestId('nav-home').click();
+  await page.getByTestId('open-editor').click();
+  await expect(page.getByTestId('toggle-steps')).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.getByTestId('steps')).toHaveCount(0);
 });
 
 test('both toggles work', async ({ page }) => {
@@ -478,6 +545,7 @@ test('both toggles work', async ({ page }) => {
   expect(await flowPath(page)).not.toBe(flowDown);
 
   // The step list is the generator's: it gains 2nd Fill and Pause.
+  await openSteps(page);
   await expect(page.getByTestId('steps')).toContainText('2nd Fill');
   await expect(page.getByTestId('steps')).toContainText('Pause');
   await second.click();

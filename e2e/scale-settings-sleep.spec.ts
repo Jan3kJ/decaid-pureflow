@@ -210,15 +210,25 @@ test('settings: the defaults, typed values and both switches survive a reload', 
   await expect(page.getByTestId('steam-milk')).toHaveText('200 g');
   await expect(page.getByTestId('steam-seconds')).toHaveText('60 s');
 
-  // The editor follows both switches: no steps panel, and a Pre Fill step when it is shown again.
+  // The editor follows both switches: no steps button while the setting is off (founder,
+  // 2026-10-13), and a Pre Fill step in the panel once it is on again.
   await page.getByTestId('nav-home').click();
   await page.getByTestId('open-editor').click();
   await expect(page.getByTestId('graph')).toBeVisible();
-  await expect(page.getByTestId('toggle-steps')).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.getByTestId('toggle-steps')).toHaveCount(0);
   await expect(page.getByTestId('steps')).toHaveCount(0);
+  await page.getByTestId('nav-home').click();
+  await page.getByTestId('menu').click();
+  await page.getByTestId('open-settings').click();
+  await steps.click();
+  await expect(steps).toHaveAttribute('aria-checked', 'true');
+  await page.getByTestId('nav-home').click();
+  await page.getByTestId('open-editor').click();
+  await expect(page.getByTestId('toggle-steps')).toHaveAttribute('aria-pressed', 'false');
   await page.getByTestId('toggle-steps').click();
   await expect(page.getByTestId('steps')).toContainText('Pre Fill');
-  // The editor's button and the settings page are one setting.
+  // The editor's button opens the panel; the setting stays the settings page's.
+  await page.getByTestId('toggle-steps').click();
   await page.getByTestId('nav-home').click();
   await page.getByTestId('menu').click();
   await page.getByTestId('open-settings').click();

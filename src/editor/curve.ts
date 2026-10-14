@@ -72,7 +72,11 @@ export interface Curve {
   phases: PhaseColumn[];
   borders: Border[];
   levels: Level[];
-  /** the stretches of the flow line; it is not drawn during the infuse phase */
+  /**
+   * the stretches of the flow line; it is not drawn during the infuse phase. It falls to 0 at
+   * the end of the fill and rises from 0 at the start of the 2nd fill, each with a vertical
+   * edge (founder, 2026-10-13); the edges are not levels, so they cannot be dragged
+   */
   flow: Point[][];
   pressure: Point[];
   temperature: Point[];
@@ -233,10 +237,12 @@ export function buildCurve(
   ) => levels.push({ line, field, drags, phase, from, to, label });
   const secondsPerUnit = 1 / axis.unitsPerSecond;
 
-  // Fill: flow at its target, the pressure builds to the step's exit.
+  // Fill: flow at its target, the pressure builds to the step's exit. The flow falls at its
+  // end: the infusion holds pressure, not flow.
   const fillFlow: Point[] = [
     { x: fill.x0, y: p.fillFlow },
     { x: fill.x1, y: p.fillFlow },
+    { x: fill.x1, y: 0 },
   ];
   pressure.push({ x: fill.x0, y: 0 }, { x: fill.x1, y: p.fillExitPressure });
   level('flow', 'fillFlow', 'fill', fillFlow[0], fillFlow[1]);
@@ -262,7 +268,9 @@ export function buildCurve(
     pauseX = column.x1 - axis.pauseWidth;
     const from = { x: column.x0, y: p.secondFillFlow };
     const to = { x: pauseX, y: p.secondFillFlow };
+    // The 2nd fill rises from no flow to its own.
     laterFlow.push(
+      { x: column.x0, y: 0 },
       from,
       to,
       { x: pauseX, y: Math.min(p.secondFillFlow, PAUSE_FLOW_LIMIT) },

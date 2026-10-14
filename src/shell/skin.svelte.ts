@@ -71,6 +71,13 @@ export class Skin {
   info: string | null = $state(null);
   /** the error frame of a stream the gateway closed */
   streamError: string | null = $state(null);
+  /** where the profile picker goes after a load: back to the editor when it was opened there */
+  pickerReturn: 'home' | 'editor' = $state('home');
+  /**
+   * What the open screen does before it is left with `leave`; false keeps it open. The editor
+   * loads changed values here (founder, 2026-10-13).
+   */
+  leaving: (() => Promise<boolean>) | null = null;
 
   private gateway: Gateway = $state('connecting');
   private openedAt: number | null = $state(null);
@@ -231,12 +238,19 @@ export class Skin {
   }
 
   go(screen: Screen): void {
+    if (screen === 'profiles') this.pickerReturn = this.screen === 'editor' ? 'editor' : 'home';
     this.screen = screen;
     this.historyOpen = false;
     this.notice = this.info = null;
     saveScreen(screen);
     // Another client, Decaid's own screen for one, may have changed the workflow meanwhile.
     if (screen === 'home' || screen === 'steam') void this.refreshWorkflow();
+  }
+
+  /** `go`, after the open screen's `leaving` agreed: the back arrow and the editor's shortcut. */
+  async leave(screen: Screen): Promise<void> {
+    if (this.leaving && !(await this.leaving())) return;
+    this.go(screen);
   }
 
   async refreshWorkflow(): Promise<void> {

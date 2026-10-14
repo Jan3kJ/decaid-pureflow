@@ -3,7 +3,7 @@
 // of it (`Skin.settings`), the settings page changes it, and every screen reads it there.
 
 export interface Settings {
-  /** the editor shows the generated profile steps under the graph */
+  /** the editor offers the generated profile steps under the graph; its panel opens closed (founder, 2026-10-13) */
   showProfileSteps: boolean;
   /**
    * 'first-step workaround' (spec 3.2): a profile the editor generates starts with the Pre

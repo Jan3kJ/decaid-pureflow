@@ -256,6 +256,58 @@ describe('buildCurve', () => {
     }
   });
 
+  it('drops the flow to 0 at the end of the fill with a vertical edge', () => {
+    for (const { params } of DEFAULT_PROFILES) {
+      for (const pauseDuration of [0, 15]) {
+        const p = { ...params, pauseDuration };
+        const curve = buildCurve(p);
+        const fill = curve.phases.find((c) => c.id === 'fill')!;
+        expect(curve.flow[0].slice(-2)).toEqual([
+          { x: fill.x1, y: resolveParams(p).fillFlow },
+          { x: fill.x1, y: 0 },
+        ]);
+      }
+    }
+  });
+
+  it('raises the flow from 0 at the start of the 2nd fill with a vertical edge, and only with it', () => {
+    for (const { params } of DEFAULT_PROFILES) {
+      const on = { ...params, pauseDuration: 15 };
+      const curve = buildCurve(on);
+      const column = curve.phases.find((c) => c.id === 'secondFill')!;
+      expect(curve.flow[1].slice(0, 2)).toEqual([
+        { x: column.x0, y: 0 },
+        { x: column.x0, y: resolveParams(on).secondFillFlow },
+      ]);
+      // Without the 2nd fill the flow starts again at the ramp, as before.
+      const off = buildCurve({ ...params, pauseDuration: 0 });
+      const pressurize = off.phases.find((c) => c.id === 'pressurize')!;
+      expect(off.flow[1][0].x).toBe(pressurize.x0);
+      expect(off.flow[1][0].y).toBeGreaterThan(0);
+    }
+  });
+
+  it('keeps the edges out of the draggable levels and out of the hit test', () => {
+    const p = { ...DEFAULT_PROFILES[0].params, pauseDuration: 15 };
+    const curve = buildCurve(p);
+    const fill = curve.phases.find((c) => c.id === 'fill')!;
+    const column = curve.phases.find((c) => c.id === 'secondFill')!;
+    const flows = curve.levels.filter((level) => level.line === 'flow');
+    // Every flow level is horizontal or the pour's slope: none is a vertical edge.
+    for (const level of flows) expect(level.to.x).toBeGreaterThan(level.from.x);
+    const fillLevel = flows.find((level) => level.field === 'fillFlow')!;
+    expect(fillLevel.from).toEqual({ x: fill.x0, y: resolveParams(p).fillFlow });
+    expect(fillLevel.to).toEqual({ x: fill.x1, y: resolveParams(p).fillFlow });
+    const secondLevel = flows.find((level) => level.field === 'secondFillFlow')!;
+    expect(secondLevel.from).toEqual({ x: column.x0, y: resolveParams(p).secondFillFlow });
+    // Halfway down the fill's edge, a finger finds no flow level to drag: the edge sits on
+    // the fill's border, and only the level's own height takes hold of it.
+    const projection = { x: (u: number) => u * 10, y: (_: string, v: number) => 1000 - v * 20 };
+    const y = projection.y('flow', resolveParams(p).fillFlow / 2);
+    const hit = hitTest(curve, fill.x1 * 10, y, projection, 5, 0);
+    expect(hit?.kind === 'level' && hit.level.line === 'flow').toBe(false);
+  });
+
   it('runs the pressure and the temperature left to right over the whole graph', () => {
     for (const { params } of DEFAULT_PROFILES) {
       for (const pauseDuration of [0, 15]) {
