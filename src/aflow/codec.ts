@@ -1,3 +1,4 @@
+import { PAUSE_EXIT_FLOW_UNDER } from './constants';
 import { AFLOW_VERSION, type AFlowParams } from './types';
 import {
   isFollowField,
@@ -11,6 +12,15 @@ import {
 
 const VALUE_FIELDS = Object.keys(paramRanges()) as (NumberField | FollowField)[];
 
+/**
+ * Values that came after the first saved 3.0 strings. A string without one reads as the value
+ * the generator had fixed, so it generates the steps it did; the version stays '3.0'.
+ */
+const ADDED_FIELDS: Partial<Record<NumberField | FollowField, number>> = {
+  // founder, 2026-10-13: the pause ends at a flow under an editable value
+  pauseExitFlow: PAUSE_EXIT_FLOW_UNDER,
+};
+
 export type ParseResult = { ok: true; params: AFlowParams } | { ok: false; error: string };
 
 /** Writes the parameters and the version '3.0' to a string. The key order is fixed. */
@@ -23,8 +33,8 @@ export function serializeParams(params: AFlowParams): string {
 
 /**
  * Reads a string written by serializeParams. It checks the version and the type of every
- * value, not the ranges (validateParams does that). Every key must be there: a value that
- * follows another one is written as null. Unknown keys are ignored.
+ * value, not the ranges (validateParams does that). Every key must be there, except those of
+ * ADDED_FIELDS: a value that follows another one is written as null. Unknown keys are ignored.
  */
 export function parseParams(text: string): ParseResult {
   let data: unknown;
@@ -44,7 +54,7 @@ export function parseParams(text: string): ParseResult {
   const source = params as Record<string, unknown>;
   const result: Partial<Record<keyof AFlowParams, number | boolean | null>> = {};
   for (const field of VALUE_FIELDS) {
-    const value = source[field];
+    const value = field in source ? source[field] : ADDED_FIELDS[field];
     if (value === null && isFollowField(field)) {
       result[field] = null;
     } else if (typeof value !== 'number' || !Number.isFinite(value)) {

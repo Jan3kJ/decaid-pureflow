@@ -47,6 +47,15 @@ describe('validateParams', () => {
     expect(times.map(([field]) => field).sort()).toEqual([...fields].sort());
   });
 
+  it('the flow the pause ends under has the range of the other flows (founder, 2026-10-13)', () => {
+    expect(paramRanges().pauseExitFlow).toEqual(paramRanges().secondFillFlow);
+    expect(paramRanges().pauseExitFlow).toEqual({ min: 0.1, max: 8, unit: 'ml/s' });
+    expect(codes({ pauseExitFlow: 1 })).toEqual([]);
+    expect(codes({ pauseExitFlow: 0 })).toEqual(['pauseExitFlow:below-min']);
+    expect(codes({ pauseExitFlow: 8.1 })).toEqual(['pauseExitFlow:above-max']);
+    expect(paramRanges({ maxPressure: 12, maxFlow: 6 }).pauseExitFlow.max).toBe(6);
+  });
+
   it('a value that follows another one may be null, the others may not', () => {
     const following = { infuseTemperature: null, secondFillTemperature: null, rampTemperature: null, pourEndFlow: null, pourPressureLimit: null };
     expect(codes(following)).toEqual([]);

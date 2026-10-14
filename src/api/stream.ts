@@ -1,10 +1,11 @@
 // The gateway's snapshot streams. One class for both: it parses the frames, keeps the latest
 // one and the connection state, and reconnects with a growing delay after the socket closed.
 // The WebSocket constructor and the timer are parameters, so tests need no network.
-import type { MachineSnapshot, ScaleFrame } from './types';
+import type { MachineSnapshot, ScaleFrame, ShotSettings } from './types';
 
 export const MACHINE_SNAPSHOT_PATH = '/ws/v1/machine/snapshot';
 export const SCALE_SNAPSHOT_PATH = '/ws/v1/scale/snapshot';
+export const MACHINE_SHOT_SETTINGS_PATH = '/ws/v1/machine/shotSettings';
 
 /**
  * - `idle`: not started, or closed by `close()`
@@ -218,6 +219,16 @@ export function machineSnapshotStream(
  */
 export function scaleSnapshotStream(options: StreamFactoryOptions<ScaleFrame> = {}): SnapshotStream<ScaleFrame> {
   return create(SCALE_SNAPSHOT_PATH, options);
+}
+
+/**
+ * `/ws/v1/machine/shotSettings`: the settings the machine holds, one frame when the socket
+ * opens and one after every change, whoever made it.
+ */
+export function machineShotSettingsStream(
+  options: StreamFactoryOptions<ShotSettings> = {},
+): SnapshotStream<ShotSettings> {
+  return create(MACHINE_SHOT_SETTINGS_PATH, options);
 }
 
 function create<Frame>(path: string, options: StreamFactoryOptions<Frame>): SnapshotStream<Frame> {

@@ -1041,3 +1041,59 @@ again, the skin is removed, and the settings equal `log\d9-before-settings.json`
 byte. The run of all suites before it ([acceptance.md](acceptance.md)) left the workflow, the
 73 profiles and the one shot as they were. Decaid was ended with `Stop-Process -Force`; ports
 8080, 27906 and 28881 were free afterwards.
+
+## 16. The steam timer that did not arrive (2026-10-14)
+
+The founder's note of 2026-10-13, from the real DE1 with Decaid on the tablet and the skin in
+Chrome on a PC: "selecting a favorite steam time, did not set the steam timer. I selected 25s
+and it was running 30s." Done against Decaid v0.8.8 started as in 8.8 step 2 (the gateway
+answered `GET /api/v1/machine/state` with 200 after 5 s). `node scripts/rig-steam-probe.mjs
+--streamline` is the probe; its output is in the rig's `log\t1-steam-probe.txt`.
+
+**Cause found on the rig: another client writes its own steam time back.** Streamline, the
+skin Decaid opens by default, keeps the steam time its user set last in the KV store
+(`streamline-app/last-steam-duration`). Its version 0.2.13, the one Decaid 0.8.8 installed on
+the rig, compares every frame of `/ws/v1/machine/shotSettings` with that value and, when they
+differ, sends `PUT /api/v1/workflow {"steamSettings":{"duration":<remembered>}}`
+(`resyncDriftedShotSettings` in its `app.js`, `resyncIfDrifted` in its `api.js`: "the
+remembered value wins"). With Streamline open in a browser and remembering 30 s, the skin's
+25 s lasted under 0.1 s. The skin showed 25 s all the time: it showed what it had written.
+
+| Claim | Status |
+|---|---|
+| Where the machine's own steam timer can be read: `targetSteamDuration` in the frames of `/ws/v1/machine/shotSettings`, one frame when the socket opens and one after every change. `GET /api/v1/machine/shotSettings` answers 404 (the path has only `POST`), and `GET /api/v1/machine/settings` has `steamFlow` and `steamPurgeMode` but no duration | seen running |
+| `PUT /api/v1/workflow {"steamSettings":{"duration":25}}`, the skin's call, with nothing else running: the workflow and the machine have 25 at once and keep it (read again 8 s later); the other steam fields keep their values. So a partial `steamSettings` resets nothing | seen running |
+| The favourite chip and 'set timer' take the same path: both call `setSteamTimer` in `src/shell/skin.svelte.ts`, one function, one request | read |
+| Decaid writes a workflow's steam settings to the machine in the same request, and only when temperature, duration or flow differ from the **workflow's** old values (`updateWorkflowSettings` in `lib/src/controllers/de1_controller.dart`, tag `v0.8.8`) | read |
+| So a machine whose timer was changed past the workflow keeps it: after `POST /api/v1/machine/shotSettings` with `targetSteamDuration` 30 (200; the workflow stays at 25), `PUT /api/v1/workflow` with duration 25 answers 200 and the machine still has 30 | seen running |
+| Decaid sends the workflow's steam settings to the machine again on every connect (`_setDe1DefaultsFor`; `defaultWorkflow` follows the current workflow, `lib/main.dart`), so a reconnect does not bring an old timer back | read, not tried |
+| Decaid's own steam screen, which it opens when steam starts where its window is in the foreground, has a +10 s action that writes the machine only (`extendSteamDuration`) | read, not tried |
+| With `streamline-app/last-steam-duration` set to 30 and no Streamline page open, the skin's 25 stays | seen running |
+| With that key at 30 and Streamline open in a headless browser (`http://localhost:27906/`): on opening it sends `PUT /api/v1/workflow {"steamSettings":{"duration":30}}` over the workflow's 25; 40 s later the probe's `PUT` of 25 is followed in the same 0.1 s by Streamline's `PUT` of 30. Workflow and machine have 30 and keep it | seen running |
+| Streamline at its newest commit (`564614e`, 2026-10-14) takes over a value another client wrote instead of writing its own back (`decideResync` in `resync-policy.js`: "adopt") | read; which version the founder's tablet has was not seen |
+| The real DE1 ending steam at `targetSteamDuration` | not seen: the simulated machine does not end steam (8.7) |
+
+Ruled out on the rig: a workflow that is written but not passed on (it is passed on at once
+when the value changes), a partial `steamSettings` that resets another field, and two code
+paths. Confirmed as possible: 30 s was a value another client held and wrote back.
+
+What the skin does now (`src/steam/apply.ts`, called by `setSteamTimer`):
+
+1. It reads Streamline's remembered steam time and, when there is one and it differs, changes
+   it to the seconds it is about to set, so both skins agree. It never creates the key.
+2. It writes the workflow as before.
+3. It reads the machine's own timer from `/ws/v1/machine/shotSettings`, a third stream the
+   skin now keeps open. If the machine does not show the seconds within 2 s, it writes the
+   machine's settings directly: the whole latest frame with the new `targetSteamDuration`.
+4. The steam page shows the machine's timer, not the workflow's, and a notice when the
+   machine's timer is no longer the one set there.
+
+Tests: `src/steam/apply.test.ts` (ten), three more in `e2e/steam.spec.ts` (the mocked gateway
+now has the settings' stream, Decaid's rule of item 4 of the table and Streamline's resync),
+and `e2e-rig/steam.spec.ts`, which runs with the real Streamline page open and remembering
+30 s, reads the workflow and the machine after each write, and ends with a control: a timer
+written into the workflow alone is replaced by Streamline within seconds.
+
+What the runs left in the rig: nothing. `steamSettings` is `{"targetTemperature":150,
+"duration":50,"flow":0.8,"stopAtTemperature":0}` and the machine has 50; the key
+`streamline-app/last-steam-duration` does not exist again; two steam records as before.

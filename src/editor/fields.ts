@@ -25,6 +25,7 @@ export const FIELD_LABEL: Record<EditField, string> = {
   secondFillTemperature: '2nd fill temperature',
   secondFillTime: '2nd fill time',
   pauseDuration: 'pause time',
+  pauseExitFlow: 'pause ends at flow under',
   pourPressure: 'target pressure',
   rampTime: 'pressurize time',
   rampTemperature: 'pressurize temperature',
@@ -53,6 +54,7 @@ export const PANEL_LABEL: Record<EditField, string> = {
   secondFillTemperature: 'temperature',
   secondFillTime: 'fill time',
   pauseDuration: 'pause time',
+  pauseExitFlow: 'pause ends at flow under',
   pourPressure: 'target pressure',
   rampTime: 'time',
   rampTemperature: 'temperature',
@@ -81,6 +83,7 @@ export const FIELD_STEP: Record<EditField, number> = {
   secondFillTemperature: 0.5,
   secondFillTime: 1,
   pauseDuration: 1,
+  pauseExitFlow: 0.1,
   pourPressure: 0.1,
   rampTime: 1,
   rampTemperature: 0.5,
@@ -97,6 +100,7 @@ export const FIELD_TONE: Partial<Record<EditField, LineId>> = {
   fillFlow: 'flow',
   infuseFlowLimit: 'flow',
   secondFillFlow: 'flow',
+  pauseExitFlow: 'flow',
   pourFlow: 'flow',
   pourEndFlow: 'flow',
   fillExitPressure: 'pressure',
@@ -113,8 +117,8 @@ export const FIELD_TONE: Partial<Record<EditField, LineId>> = {
 
 /**
  * The values of each phase in the detail panel, in the order of the founder's list 'values to
- * be changable' (review of 2026-10-12). Its 'move on pressure pause' is missing: that value
- * is an open question (spec, section 8) and no parameter yet. Dose is a value of the shot.
+ * be changable' (review of 2026-10-12). Its 'move on pressure pause' is `pauseExitFlow`, the
+ * flow the pause ends under (founder, 2026-10-13). Dose is a value of the shot.
  */
 export const PHASE_FIELDS: Record<PhaseId, readonly EditField[]> = {
   fill: ['fillFlow', 'fillExitPressure', 'fillTemperature', 'fillTime'],
@@ -125,6 +129,7 @@ export const PHASE_FIELDS: Record<PhaseId, readonly EditField[]> = {
     'secondFillTemperature',
     'secondFillTime',
     'pauseDuration',
+    'pauseExitFlow',
   ],
   pressurize: ['pourPressure', 'rampTime', 'rampTemperature'],
   flow: ['pourFlow', 'pourEndFlow', 'pourTime', 'pourTemperature', 'stopWeight', 'pourPressureLimit'],

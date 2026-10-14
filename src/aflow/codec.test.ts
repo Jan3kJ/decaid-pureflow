@@ -93,6 +93,32 @@ describe('serializeParams and parseParams', () => {
     });
   });
 
+  // founder, 2026-10-13 (request 169): the pause's exit flow came after the first saved strings.
+  it('reads a saved string without the pause\'s exit flow as 1 ml/s, the value that was fixed', () => {
+    for (const { id, params } of DEFAULT_PROFILES) {
+      const { pauseExitFlow: _pauseExitFlow, ...saved } = { ...params, pauseDuration: 12 };
+      const text = JSON.stringify({ aflow: '3.0', params: saved });
+      expect(parseParams(text), id).toEqual({ ok: true, params: { ...saved, pauseExitFlow: 1 } });
+    }
+  });
+
+  it('writes the pause\'s exit flow after the pause time and reads it back', () => {
+    const p = { ...medium, pauseDuration: 12, pauseExitFlow: 0.6 };
+    const text = serializeParams(p);
+    expect(text).toContain('"pauseDuration":12,"pauseExitFlow":0.6,');
+    expect(JSON.parse(text).aflow).toBe('3.0');
+    expect(parseParams(text)).toEqual({ ok: true, params: p });
+  });
+
+  it('rejects a pause exit flow that is there and is not a number', () => {
+    for (const value of [null, '1']) {
+      expect(parseParams(JSON.stringify({ aflow: '3.0', params: { ...medium, pauseExitFlow: value } }))).toEqual({
+        ok: false,
+        error: 'pauseExitFlow is not a number',
+      });
+    }
+  });
+
   it('ignores unknown keys', () => {
     const text = JSON.stringify({ aflow: '3.0', params: { ...medium, later: 1 }, other: true });
     expect(parseParams(text)).toEqual({ ok: true, params: medium });

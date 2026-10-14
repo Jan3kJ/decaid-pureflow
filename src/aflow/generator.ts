@@ -122,7 +122,7 @@ export function generateSteps(params: AFlowParams, firstStepWorkaround = false):
         transition: 'fast',
         temperature: p.secondFillTemperature,
         seconds: p.pauseDuration,
-        exit: { type: 'flow', condition: 'under', value: C.PAUSE_EXIT_FLOW_UNDER },
+        exit: { type: 'flow', condition: 'under', value: p.pauseExitFlow },
         limiter: C.PAUSE_FLOW_LIMIT,
       }),
     );

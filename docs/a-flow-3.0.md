@@ -34,6 +34,7 @@ fixed, so a profile that leaves these alone generates the steps it did before th
 | | `secondFillTemperature` (detail) | follows `infuseTemperature` | `temperature` of 2nd Fill and Pause |
 | | `secondFillTime` (fill time, detail) | 15 s | 2nd Fill: `seconds` |
 | | `pauseDuration` (pause time, detail) | 0 s (off); 15 s in floral and when switched on | Pause: `seconds`. Over 0: the steps 2nd Fill and Pause exist |
+| | `pauseExitFlow` (pause ends at flow under, detail) (founder, 2026-10-13) | 1 ml/s, the plugin's constant | Pause: `exit` flow under it |
 | Pressurize | `pourPressure` (target pressure) | | Pressure Up: `pressure` |
 | | `rampTime` | | Pressure Up: `seconds`. Under 1 s: the step Flow Start exists |
 | | `rampTemperature` (detail) | follows `pourTemperature` | Pressure Up: `temperature` |
@@ -74,7 +75,7 @@ profile files.
 | Fill (1) | flow, fast | limiter 8 bar |
 | Infuse (2) | pressure, fast | no exit |
 | 2nd Fill (3) | flow, fast | limiter 3 bar |
-| Pause (4) | pressure, fast | 1 bar, limiter 1 ml/s, exit flow under 1 ml/s |
+| Pause (4) | pressure, fast | 1 bar, limiter 1 ml/s |
 | Pressure Up (5) | pressure, smooth | no limiter (0) |
 | Flow Start (6) | flow, fast | 10 s, no limiter (0), on when ramp time < 1 s, exit margin 0.1 ml/s |
 | Flow Extraction (7) | flow, smooth | no exit |
@@ -147,8 +148,8 @@ version and the types, not the ranges. The format changed on 2026-10-13 and kept
 and is rejected. No 3.0 profile had been saved.
 
 **Where it is stored (D7, 2026-10-13): the string is the profile's `notes`**, the whole of
-them, as spec 3.2 allows; the founder's choice between the notes and the KV store (request
-166) was not answered. `src/editor/storage.ts` is the one module that knows the place:
+them, as spec 3.2 allows; the founder confirmed the notes on 2026-10-13 (request 166).
+`src/editor/storage.ts` is the one module that knows the place:
 
 - `readParams(profile)` gives the parameters, or nothing when the profile is not A-Flow 3.0:
   the notes are not this string, a value is out of its range, or the profile's steps and
@@ -192,16 +193,20 @@ the stop weight is the profile's `target_weight` and the workflow's `targetYield
    maximum flow gives a target above it (start flow 5 gives 10), as in the plugin.
 10. **Ids and titles:** `default-floral` and `default-46mm`, "A-Flow / default-46mm".
 11. **In the editor**, after its rework to the review (2026-10-13): it opens on floral (the
-    first default); the detail panel shows every value of section 1 except the pause's
-    move-on value (section 6); a pause of 0 s typed in detail mode switches the 2nd fill off.
+    first default); the detail panel shows every value of section 1; a pause of 0 s typed
+    in detail mode switches the 2nd fill off.
+12. **The pause ends at a flow under `pauseExitFlow`** (founder, 2026-10-13, request 169:
+    'Pause ends at flow under X (editable)'). It is the review's "move on pressure pause": a
+    v2 step has one exit, and the Pause step's is a flow. The value is 1 ml/s in every
+    default, the plugin's constant, so every existing profile generates the same steps. It is
+    edited in detail mode only, in the 2nd fill's panel, in steps of 0.1 ml/s, with the range
+    of the other flows (0.1 ml/s to the maximum flow). A saved string without the value reads
+    as 1 ml/s; the version stays '3.0' (`ADDED_FIELDS` in `src/aflow/codec.ts`).
 
 ## 6. Open for the founder
 
-- **Notes or KV store** for the saved string (section 4): built with the notes, which Decaid's
-  own screens then show as JSON text.
-
-- **The pause's move-on value** ("move on pressure pause" in the review). Asked on 2026-10-13
-  (request 169), not answered when this was built. A v2 step has one exit. The Pause step
-  keeps the plugin's exit, flow under 1 ml/s, as a constant and has no editable value.
+- **The pause's exit flow, choices of 2026-10-14:** its label is 'pause ends at flow under',
+  its step 0.1 ml/s, and it sits last in the 2nd fill's panel. The Pause step's 1 ml/s flow
+  limiter stays fixed, so an exit flow over 1 ml/s may end the pause as soon as it starts.
 - **The maximum flow.** 8 ml/s is not from a source; de1app allows 20 (section 2). Which cap
   should the editor use?

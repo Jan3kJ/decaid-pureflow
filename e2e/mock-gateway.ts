@@ -1,4 +1,4 @@
-// A gateway for the browser tests: the REST calls and the two snapshot WebSockets of
+// A gateway for the browser tests: the REST calls and the WebSockets of
 // http://localhost:8080 are answered here, so `npm run e2e` needs no Decaid.
 import { readFileSync } from 'node:fs';
 import type { Page, Route, WebSocketRoute } from '@playwright/test';
@@ -133,12 +133,35 @@ export class MockGateway {
     record('profile:dflow', profile('D-Flow / default', 36, 3), { source: 'bundled' }),
   ];
 
+  /**
+   * The settings the machine itself holds: `/ws/v1/machine/shotSettings`. Its steam timer is
+   * not the workflow's (research.md, section 16).
+   */
+  shotSettings: Json = {
+    steamSetting: 0,
+    targetSteamTemp: 150,
+    targetSteamDuration: 50,
+    targetHotWaterTemp: 75,
+    targetHotWaterVolume: 50,
+    targetHotWaterDuration: 30,
+    targetShotVolume: 36,
+    groupTemp: 94,
+  };
+  /** the KV store, as `namespace/key` */
+  store: Record<string, unknown> = {};
+  /**
+   * A Streamline page is open somewhere: it writes the steam time it remembers back over
+   * every other one the machine shows, as its version 0.2.13 does.
+   */
+  streamlineOpen = false;
+
   /** the shot records, without measurements: `GET /api/v1/shots` */
   shots: Json[] = [];
 
   private readonly up: boolean;
   private readonly machineSockets = new Set<WebSocketRoute>();
   private readonly scaleSockets = new Set<WebSocketRoute>();
+  private readonly settingsSockets = new Set<WebSocketRoute>();
   private weight = 0;
   private scaleConnected = true;
   private replaying = false;
@@ -155,6 +178,10 @@ export class MockGateway {
   async install(page: Page): Promise<this> {
     await page.route(`${GATEWAY}/**`, (route) => this.answer(route));
     await page.routeWebSocket(/:8080\/ws\/v1\/machine\/snapshot/, (ws) => this.open(ws, this.machineSockets));
+    await page.routeWebSocket(/:8080\/ws\/v1\/machine\/shotSettings/, (ws) => {
+      // The settings as they are, then one frame after every change.
+      if (this.open(ws, this.settingsSockets)) ws.send(JSON.stringify(this.shotSettings));
+    });
     await page.routeWebSocket(/:8080\/ws\/v1\/scale\/snapshot/, (ws) => {
       // The first frame is a status frame without a weight.
       if (this.open(ws, this.scaleSockets)) {
@@ -190,6 +217,29 @@ export class MockGateway {
       annotations: { actualDoseWeight: 18, actualYield: 34.1 },
       stopReason: 'targetWeight',
     });
+  }
+
+  /** Another client writes the machine's settings past the workflow, as `POST /api/v1/machine/shotSettings` does. */
+  setMachineSteamTimer(seconds: number): void {
+    this.shotSettings = { ...this.shotSettings, targetSteamDuration: seconds };
+    for (const ws of this.settingsSockets) ws.send(JSON.stringify(this.shotSettings));
+    this.streamlineResync();
+  }
+
+  /** Decaid's workflow write: the machine gets the steam timer only when the workflow's changes. */
+  private putWorkflowSteam(patch: Json | undefined): void {
+    const before = this.workflow.steamSettings.duration;
+    // What a patch leaves out keeps its value (research.md 8.3).
+    this.workflow = { ...this.workflow, steamSettings: { ...this.workflow.steamSettings, ...patch } };
+    const duration = this.workflow.steamSettings.duration;
+    if (duration !== before) this.setMachineSteamTimer(duration);
+  }
+
+  /** Streamline 0.2.13 on a frame with a steam time that is not the one it remembers. */
+  private streamlineResync(): void {
+    const remembered = this.store['streamline-app/last-steam-duration'];
+    if (!this.streamlineOpen || typeof remembered !== 'number') return;
+    if (remembered !== this.shotSettings.targetSteamDuration) this.putWorkflowSteam({ duration: remembered });
   }
 
   /** What stands on the scale, in g: the next weight frames say so. */
@@ -327,10 +377,25 @@ export class MockGateway {
         context: Object.fromEntries(
           Object.entries({ ...this.workflow.context, ...body.context }).filter(([, value]) => value !== null),
         ),
-        // What a patch leaves out keeps its value (research.md 8.3).
-        steamSettings: { ...this.workflow.steamSettings, ...body.steamSettings },
+        steamSettings: this.workflow.steamSettings,
       };
-      return json(this.workflow);
+      this.putWorkflowSteam(body.steamSettings);
+      // Each response describes the workflow resulting from that request (rest_v1.yml).
+      const answer = { ...this.workflow, steamSettings: { ...this.workflow.steamSettings, ...body.steamSettings } };
+      return json(answer);
+    }
+    if (method === 'POST' && path === '/api/v1/machine/shotSettings') {
+      if (!this.machineConnected) return noMachine();
+      this.shotSettings = body;
+      for (const ws of this.settingsSockets) ws.send(JSON.stringify(body));
+      this.streamlineResync();
+      return json(null);
+    }
+    const [, kvKey] = /^\/api\/v1\/store\/(.+\/.+)$/.exec(decodeURIComponent(path)) ?? [];
+    if (kvKey && method === 'GET') return json(this.store[kvKey] ?? null);
+    if (kvKey && method === 'POST') {
+      this.store[kvKey] = body;
+      return json(null);
     }
     if (path === '/api/v1/shots' && method === 'GET') {
       const limit = Number(url.searchParams.get('limit') ?? 20);

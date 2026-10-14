@@ -104,6 +104,7 @@ describe('the five default profiles', () => {
       secondFillExitPressure: 2.5,
       secondFillTemperature: null,
       secondFillTime: 15,
+      pauseExitFlow: 1,
       rampTemperature: null,
       pourEndFlow: null,
       pourTime: 60,
@@ -343,6 +344,8 @@ describe('what each parameter moves', () => {
     }],
     ['2nd fill time', { secondFillTime: 6 }, { '2nd Fill.seconds': 6 }],
     ['pause time', { pauseDuration: 7 }, { 'Pause.seconds': 7 }],
+    // founder, 2026-10-13: the pause ends at a flow under this value
+    ['pause ends at flow under', { pauseExitFlow: 0.4 }, { 'Pause.exit.value': 0.4 }],
     // pressurize
     ['pressurize target, with the max pressure following', { pourPressure: 8 }, {
       'Pressure Up.pressure': 8, 'Flow Extraction.limiter.value': 8,
@@ -467,8 +470,7 @@ describe('what 3.0 keeps from the plugin', () => {
     expect(steps[4]).toMatchObject({ flow: 0.6 });
   });
 
-  // Open (docs/a-flow-3.0.md): the pause's move-on value is not editable.
-  it('the Pause step keeps the plugin\'s 1 bar and its exit at flow under 1 ml/s', () => {
+  it('the Pause step keeps the plugin\'s 1 bar, and its exit at flow under 1 ml/s by default', () => {
     const pause = generateSteps({ ...base, pauseDuration: 9 })[3];
     expect(pause).toMatchObject({
       name: 'Pause',
@@ -476,5 +478,24 @@ describe('what 3.0 keeps from the plugin', () => {
       exit: { type: 'flow', condition: 'under', value: 1 },
       limiter: { value: 1, range: 0.6 },
     });
+  });
+
+  // founder, 2026-10-13 (request 169): 'pause ends at flow under X (editable)'.
+  it('the pause\'s exit flow moves exactly the Pause step\'s exit, with and without the Pre Fill step', () => {
+    for (const workaround of [false, true]) {
+      const on = { ...base, pauseDuration: 9 };
+      const before = generateSteps(on, workaround);
+      const after = generateSteps({ ...on, pauseExitFlow: 2.3 }, workaround);
+      const pause = before.findIndex((s) => s.name === 'Pause');
+      expect(after[pause].exit).toEqual({ type: 'flow', condition: 'under', value: 2.3 });
+      expect(after.map((s, i) => (i === pause ? { ...s, exit: before[pause].exit } : s))).toEqual(before);
+    }
+  });
+
+  it('the pause\'s exit flow changes nothing in a profile without a 2nd fill', () => {
+    for (const { id, params: p } of DEFAULT_PROFILES) {
+      const off = { ...p, pauseDuration: 0 };
+      expect(generateSteps({ ...off, pauseExitFlow: 0.3 }), id).toEqual(generateSteps(off));
+    }
   });
 });

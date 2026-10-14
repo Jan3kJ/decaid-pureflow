@@ -49,7 +49,7 @@ version 2.
 | Espresso | live graph (pressure, flow, weight, temperature) from `/ws/v1/machine/snapshot`, with the live weight from `/ws/v1/scale/snapshot`, timer, stop at weight |
 | Steam | start/stop, a steam graph, and **the steam timer set from the milk's weight**: see 3.4 |
 | Scale | connect state, tare (a 400 `block_tare_during_shot` is a notice, not an error) |
-| Profiles | list, select, load to the machine (`POST /api/v1/machine/profile`) |
+| Profiles | list, select, load to the machine (`PUT /api/v1/workflow`) (founder, 2026-10-13) |
 | Shot history | **an overlay, not a page:** a tab on the left edge of the screen (or a swipe from left to right) opens it; it closes when an item is selected or on a tap outside it. It holds **a list of previous shots; tapping one loads its profile, beans and grinder setting and shows its graph**: see 3.5 |
 | Settings | a settings page with categories. **Steam** is one (3.4), and **Profile** holds the first-step workaround (3.2); the others hold the few settings the founder needs. Everything else stays in Decaid's own settings |
 | Sleep / wake | sleep button, wake on touch; brightness only where `platformSupported.brightness` |
@@ -75,12 +75,12 @@ Phases and their editable values:
 | (shot) | dose, 16 g by default (founder, 2026-10-12) | g |
 | Fill | flow, move-on pressure, temperature, time (founder, 2026-10-12) | ml/s, bar, °C, s |
 | Infuse | pressure, time, move-on weight, temperature, flow limit; volume is not shown (founder, 2026-10-12) | bar, s, g, °C, ml/s |
-| 2nd fill (optional, one phase with its pause) | flow, move-on pressure, temperature, fill time, pause time, the pause's move-on value (which value that is, is open: section 8) (founder, 2026-10-12) | ml/s, bar, °C, s, s |
+| 2nd fill (optional, one phase with its pause) | flow, move-on pressure, temperature, fill time, pause time (founder, 2026-10-12), the flow the pause ends under: 'pause ends at flow under X', 1 ml/s by default, with the range of the other flows (founder, 2026-10-13) | ml/s, bar, °C, s, s, ml/s |
 | Pressurize | target pressure, time, temperature (founder, 2026-10-12) | bar, s, °C |
 | Flow | start flow, flow gradient, time, temperature, stop at weight, max. pressure (founder, 2026-10-12) | ml/s, ml/s, s, °C, g, bar |
 | Options | 2nd fill; flow up or flow down | toggles |
 
-The pause duration and the fill's move-on pressure are edited in detail mode only (founder, 2026-10-12).
+The pause duration and the fill's move-on pressure are edited in detail mode only (founder, 2026-10-12). So is the flow the pause ends under (founder, 2026-10-13).
 
 Ranges: temperatures 50-105 °C and every time 0-127 s, each being one profile step (founder, 2026-10-12). The others follow the plugin (`code.tcl`): pressures and flows up to the
 machine's maximum, weights 0-1000 g, dose 0-30 g in 0.1 steps.
@@ -146,6 +146,7 @@ Editor behaviour:
 - Rating a shot (Decaid's 0-10 enjoyment scale).
 - Portrait layout and a light theme.
 - Plugins, sensors, camera.
+- The ghost curve of the profile's last shot in the editor: version 2 (founder, 2026-10-13).
 - iOS.
 
 ### 3.4 Steam page
@@ -348,6 +349,19 @@ Answered in D9 (research.md section 15), on the rig: the ZIP installs in Decaid 
 Windows by URL and is served on port 28881; the REST API has no upload of a ZIP, and a
 `file:///` URL fails although `doc/Skins.md` shows one.
 
+Answered by the founder on 2026-10-13, in the channel: the A-Flow parameters live in the
+profile's notes (request 166); a profile is loaded with `PUT /api/v1/workflow` (request 167,
+3.1); the pause ends at a flow under an editable value (request 169, 3.2); the ghost curve of
+the last shot is for version 2 (request 171, 3.3).
+
+Answered on the rig after the founder's steam test of 2026-10-13, 25 s chosen and 30 s of
+steam (research.md section 16): the workflow's `steamSettings.duration` is not the machine's
+timer. The machine's own value is `targetSteamDuration` on `/ws/v1/machine/shotSettings`;
+Decaid writes the workflow's duration to the machine only when it differs from the workflow's
+old value; and Streamline 0.2.13, Decaid's default skin, writes the steam time it remembers
+(KV `streamline-app/last-steam-duration`) back over every other one while a page of it is
+open. With Streamline remembering 30 s the rig shows the founder's result exactly.
+
 - The ZIP and its install (D9), not seen on the tablet: which of the two ZIP installs of
   `doc/Skins.md` the tablet's Decaid shows (Launcher → Skins → +, or the skin selector in
   Settings); whether the skin's port is the same there and stays over a restart, which the
@@ -369,12 +383,22 @@ Windows by URL and is served on port 28881; the REST API has no upload of a ZIP,
   share is 1, one constant (`MUG_STEP_SHARE` in `src/steam/timer.ts`). With the founder's
   defaults the medium mug starts above 375 g and the large one above 425 g, so 180 g of
   milk is read right in each mug; DSx2's own share was not looked up. Is 1 right? (owner)
-- Does the real DE1 stop steaming when `steamSettings.duration` is over? The simulation
-  cannot show it; a check for the founder with item 7. (owner)
-- The pause's move-on value (3.2, "move on pressure pause" in the review): a v2 step has one
-  exit, and the Pause step ends when the flow is under 1 ml/s, as in the plugin. Asked on
-  2026-10-13, not answered yet; until then the exit is fixed and the pause has no such value.
-  (owner)
+- Does the real DE1 stop steaming when the timer is over, and after the seconds the steam
+  page shows? The simulation cannot show it. Since the fix of 2026-10-14 the page shows the
+  machine's own timer (`targetSteamDuration`), sets it so that Streamline does not write its
+  own back, and says so when another app changes it afterwards. Proven on the rig: the
+  machine's settings hold the chosen seconds, with a Streamline page open too. Not proven:
+  that Streamline on the tablet was the cause on 2026-10-13 (it is the one cause the rig
+  reproduces), and that the DE1 ends steam at `targetSteamDuration`. The founder's check:
+  tap 25 s, read 25 s on the steam page, steam, and time it. (owner)
+- The steam timer and Streamline, choices of the fix the founder has not seen: the skin
+  changes Streamline's remembered steam time (a key of Streamline's own KV namespace) to the
+  seconds it sets, and only when Streamline has one; when the workflow already has the seconds
+  and the machine another, the skin writes the machine's settings directly
+  (`POST /api/v1/machine/shotSettings`), after waiting 2 s for them (`MACHINE_WAIT_MS` in
+  `src/steam/apply.ts`); a timer changed in another app shows a notice on the steam page
+  until it is set again. Whether Decaid's own steam screen on the tablet, which opens when
+  steam starts and offers +10 s, played a part was not seen. (owner)
 - The maximum flow the editor allows: 8 ml/s is not from a source, de1app allows 20
   ([a-flow-3.0.md](a-flow-3.0.md), section 2). (owner)
 - The choices made while building the review's changes, which the founder has not seen:
@@ -382,12 +406,6 @@ Windows by URL and is served on port 28881; the REST API has no upload of a ZIP,
 - The byte format of a v2 profile file only matters for an export: the API takes and
   returns JSON numbers, the bundled files hold strings. Does v1 export files at all?
   (research)
-- Where are a profile's A-Flow parameters stored: the profile notes or the KV store? Asked of
-  the founder on 2026-10-13 (request 166), not answered when D7 was built. Built: the codec's
-  string is the profile's `notes`, and nothing else is in them, so Decaid's own screens show
-  that string as the profile's notes. One module knows the place (`readParams` and
-  `writeParams` in `src/editor/storage.ts`); the KV store can replace the notes there. The
-  five defaults carry their parameters the same way. (owner)
 - One profile for each set of steps (research.md 11.1): Decaid cannot hold the same steps and
   stop weight under two names. 'Save as' with values that a visible profile already has,
   for example a default with only another dose, saves nothing and says which profile has
@@ -445,13 +463,6 @@ Windows by URL and is served on port 28881; the REST API has no upload of a ZIP,
   - After a very fast flick the first tap outside may not close the overlay (seen with
     synthetic touch events only, research.md section 14): a check on the tablet with
     item 8. (owner)
-- The ghost curve of the profile's last shot in the editor: asked of the founder on
-  2026-10-13 (request 171), not answered, so it is not built. (owner)
-- Which call loads a profile: the skin uses `PUT /api/v1/workflow` (D6), because
-  `POST /api/v1/machine/profile` (still named in 3.1) leaves the workflow's profile as it was
-  and a shot record copies the workflow's profile (research.md 9.3). Asked of the founder on
-  2026-10-13 (request 167), not answered yet; the call is one function, `loadProfile` in
-  `src/shell/profiles.ts`. The row of 3.1 changes when the founder has answered. (owner)
 - Loading a profile also writes its `target_weight` as the workflow's `targetYield`, and the
   dose of an A-Flow 3.0 default as `targetDoseWeight`: Decaid stops at the workflow's yield,
   not at the profile's weight. Is that wanted, or does a yield set by hand survive a profile

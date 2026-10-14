@@ -27,6 +27,24 @@ export type MachineState =
   | 'error'
   | 'fwUpgrade';
 
+/**
+ * A frame of `/ws/v1/machine/shotSettings` and the body of `POST /api/v1/machine/shotSettings`:
+ * the settings the machine itself holds. `targetSteamDuration` is the steam timer the machine
+ * runs; it may differ from the workflow's `steamSettings.duration` (research.md, section 16).
+ */
+export interface ShotSettings {
+  steamSetting: number;
+  /** °C */
+  targetSteamTemp: number;
+  /** whole seconds */
+  targetSteamDuration: number;
+  targetHotWaterTemp: number;
+  targetHotWaterVolume: number;
+  targetHotWaterDuration: number;
+  targetShotVolume: number;
+  groupTemp: number;
+}
+
 /** The states version 1 of the skin asks for (spec 3.1). Sleep is `sleeping`. */
 export type RequestedMachineState = 'idle' | 'espresso' | 'steam' | 'sleeping';
 

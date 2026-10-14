@@ -52,15 +52,14 @@ export const SECOND_FILL_PRESSURE_LIMIT = 3;
 /** bar; default of `secondFillExitPressure` */
 export const SECOND_FILL_EXIT_PRESSURE_OVER = 2.5;
 
-// Pause: pressure, fast. Its exit is the plugin's and is not editable: which value the
-// founder wants there is an open question (docs/a-flow-3.0.md).
+// Pause: pressure, fast. It ends at a flow under `pauseExitFlow` (founder, 2026-10-13).
 /** s; the `pauseDuration` a 2nd fill starts with when it is switched on */
 export const PAUSE_SECONDS = 15;
 /** bar */
 export const PAUSE_PRESSURE = 1;
 /** ml/s */
 export const PAUSE_FLOW_LIMIT = 1;
-/** ml/s */
+/** ml/s; default of `pauseExitFlow`, and its value in a saved string without it */
 export const PAUSE_EXIT_FLOW_UNDER = 1;
 
 // Pressure Up: pressure, smooth, no limiter, exits when the flow is over the pour flow

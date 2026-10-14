@@ -91,6 +91,7 @@ export function paramRanges(
     secondFillTemperature: temperature,
     secondFillTime: time,
     pauseDuration: time,
+    pauseExitFlow: flow,
     pourPressure: pressure,
     rampTime: time,
     rampTemperature: temperature,

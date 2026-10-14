@@ -31,7 +31,7 @@ for (const mug of MUGS) {
     await page.goto('/');
     await page.getByTestId('open-steam').click();
     await expect(page.getByTestId('screen-steam')).toBeVisible();
-    // The timer the machine has, from the workflow.
+    // The timer the machine has.
     await expect(page.getByTestId('steam-timer')).toHaveText('50s');
 
     gateway.putOnScale(mug.weight);
@@ -102,6 +102,83 @@ test('a favourite chip writes its seconds directly, without a scale weight', asy
   await chips.nth(2).click();
   await expect(page.getByTestId('steam-timer')).toHaveText('30s');
   expect(written(gateway)).toEqual([{ steamSettings: { duration: 25 } }, { steamSettings: { duration: 30 } }]);
+  expect(errors).toEqual([]);
+});
+
+// The founder's test of 2026-10-13: a favourite of 25 s was followed by 30 s of steam. The
+// workflow's duration is not the machine's timer (research.md, section 16).
+
+test("the timer on screen is the machine's, and a chip writes the machine when the workflow already had its seconds", async ({
+  page,
+}) => {
+  const gateway = await mockGateway(page);
+  // The workflow says 25 s, the machine holds 30 s: Decaid passes a workflow write on only when the value changes.
+  gateway.workflow.steamSettings.duration = 25;
+  gateway.shotSettings.targetSteamDuration = 30;
+  await page.goto('/');
+  await page.getByTestId('open-steam').click();
+
+  const chips = page.getByTestId('steam-favourite');
+  await expect(page.getByTestId('steam-timer')).toHaveText('30s');
+  await expect(chips.nth(2)).toContainClass('on');
+
+  await chips.nth(0).click();
+  await expect(page.getByTestId('steam-timer')).toHaveText('25s');
+  await expect(chips.nth(0)).toContainClass('on');
+  expect(written(gateway)).toEqual([{ steamSettings: { duration: 25 } }]);
+  // The whole frame of the machine's settings, with the new timer.
+  expect(gateway.calls('POST', '/api/v1/machine/shotSettings').map((call) => call.body)).toEqual([
+    { ...gateway.shotSettings, targetSteamDuration: 25 },
+  ]);
+  expect(gateway.shotSettings.targetSteamDuration).toBe(25);
+  await expect(page.getByTestId('steam-mismatch')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test('with Streamline open and remembering 30 s, a chip of 25 s and the timer from the milk both stay', async ({ page }) => {
+  const gateway = await mockGateway(page);
+  gateway.streamlineOpen = true;
+  gateway.store['streamline-app/last-steam-duration'] = 30;
+  gateway.setMachineSteamTimer(50);
+  // Streamline has written its 30 s over the 50 s.
+  expect(gateway.shotSettings.targetSteamDuration).toBe(30);
+  await page.goto('/');
+  await page.getByTestId('open-steam').click();
+  await expect(page.getByTestId('steam-timer')).toHaveText('30s');
+
+  await page.getByTestId('steam-favourite').nth(0).click();
+  await expect(page.getByTestId('steam-timer')).toHaveText('25s');
+  expect(gateway.store['streamline-app/last-steam-duration']).toBe(25);
+
+  gateway.putOnScale(405);
+  await page.getByTestId('steam-set-timer').click();
+  await expect(page.getByTestId('steam-timer')).toHaveText('26s');
+  expect(gateway.store['streamline-app/last-steam-duration']).toBe(26);
+  // Both ways write the same call, and the machine keeps what they wrote.
+  expect(written(gateway)).toEqual([{ steamSettings: { duration: 25 } }, { steamSettings: { duration: 26 } }]);
+  expect(gateway.shotSettings.targetSteamDuration).toBe(26);
+  expect(gateway.workflow.steamSettings.duration).toBe(26);
+  await expect(page.getByTestId('steam-mismatch')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test('a timer another app changes afterwards is shown with a notice, until it is set again', async ({ page }) => {
+  const gateway = await mockGateway(page);
+  await page.goto('/');
+  await page.getByTestId('open-steam').click();
+  // No store key of Streamline: the skin does not create one.
+  await page.getByTestId('steam-favourite').nth(0).click();
+  await expect(page.getByTestId('steam-timer')).toHaveText('25s');
+  expect(gateway.store).toEqual({});
+  await expect(page.getByTestId('steam-mismatch')).toHaveCount(0);
+
+  gateway.setMachineSteamTimer(30);
+  await expect(page.getByTestId('steam-timer')).toHaveText('30s');
+  await expect(page.getByTestId('steam-mismatch')).toContainText("The machine's timer is 30 s, not the 25 s set here");
+
+  await page.getByTestId('steam-favourite').nth(0).click();
+  await expect(page.getByTestId('steam-timer')).toHaveText('25s');
+  await expect(page.getByTestId('steam-mismatch')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 

@@ -46,6 +46,8 @@ export interface AFlowParams {
   secondFillTime: number;
   /** s; the longest the Pause step lasts. 0 switches the 2nd fill and its pause off */
   pauseDuration: number;
+  /** ml/s; the Pause step moves on when the flow is under it */
+  pauseExitFlow: number;
 
   // Pressurize
   /** bar; the target of Pressure Up */

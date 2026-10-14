@@ -250,7 +250,7 @@ test('detail mode lists the values of the review per phase, and the dose once', 
   const expected: Record<string, string[]> = {
     fill: ['flow', 'move-on pressure', 'temperature', 'time'],
     infuse: ['pressure', 'time', 'move-on weight', 'temperature', 'flow limit'],
-    secondFill: ['flow', 'move-on pressure', 'temperature', 'fill time', 'pause time'],
+    secondFill: ['flow', 'move-on pressure', 'temperature', 'fill time', 'pause time', 'pause ends at flow under'],
     pressurize: ['target pressure', 'time', 'temperature'],
     flow: ['start flow', 'flow gradient to', 'time', 'temperature', 'stop at weight', 'max. pressure'],
   };
@@ -260,6 +260,43 @@ test('detail mode lists the values of the review per phase, and the dose once', 
     await expect(panel.locator('.label')).toHaveText([...labels, 'dose']);
   }
   await expect(page.getByTestId('chip-value-dose')).toHaveText('16 g');
+});
+
+// founder, 2026-10-13 (request 169): 'pause ends at flow under X (editable)', in ml/s, 1 by default.
+test('detail mode: the flow the pause ends under is a value of the 2nd fill, and moves the Pause step’s exit', async ({
+  page,
+}) => {
+  const pauseRow = page.getByTestId('steps').locator('tr', { hasText: 'Pause' });
+  // floral has the 2nd fill on. Simple mode has no control for the value.
+  await page.getByTestId('profile-default-floral').click();
+  await expect(pauseRow).toContainText('flow under 1 ml/s');
+  await expect(page.getByTestId('chip-pauseExitFlow')).toHaveCount(0);
+  await expect(page.getByTestId('value-pauseExitFlow')).toHaveCount(0);
+
+  await page.getByTestId('mode-detail').click();
+  await page.getByTestId('phase-secondFill').click();
+  const chip = page.getByTestId('chip-pauseExitFlow');
+  await expect(page.getByTestId('chip-value-pauseExitFlow')).toHaveText('1 ml/s');
+  const panel = page.getByTestId('detail-panel');
+  expect(await panel.evaluate((el) => el.scrollHeight <= el.clientHeight)).toBe(true);
+
+  const before = await page.getByTestId('steps').locator('tr').allTextContents();
+  await chip.locator('[data-step="minus"]').click();
+  await chip.locator('[data-step="minus"]').click();
+  await expect(page.getByTestId('chip-value-pauseExitFlow')).toHaveText('0.8 ml/s');
+  await expect(pauseRow).toContainText('flow under 0.8 ml/s');
+  // Only the Pause step's row changed.
+  const after = await page.getByTestId('steps').locator('tr').allTextContents();
+  expect(after.filter((row, i) => row !== before[i])).toHaveLength(1);
+
+  // The range of the other flows.
+  await type(page, 'pauseExitFlow', '2.5');
+  await expect(page.getByTestId('numpad')).toContainText('pause ends at flow under');
+  await expect(page.getByTestId('numpad-range')).toHaveText('0.1 to 8 ml/s');
+  await page.getByTestId('numpad-confirm').click();
+  await expect(page.getByTestId('chip-value-pauseExitFlow')).toHaveText('2.5 ml/s');
+  await expect(pauseRow).toContainText('flow under 2.5 ml/s');
+  await page.screenshot({ path: 'e2e/.results/pause-exit-flow.png' });
 });
 
 test('detail mode: the same lines are dragged as in simple mode', async ({ page }) => {

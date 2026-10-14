@@ -5,12 +5,14 @@ import {
   isScaleSnapshot,
   isScaleStatus,
   isTareBlocked,
+  machineShotSettingsStream,
   machineSnapshotStream,
   scaleSnapshotStream,
   type MachineSnapshot,
   type MachineState,
   type RequestedMachineState,
   type ScaleFrame,
+  type ShotSettings,
   type SnapshotStream,
   type StreamErrorFrame,
   type StreamState,
@@ -22,6 +24,7 @@ import { gatewayBaseUrl } from './gateway';
 import { canSleep, gatewayAfter, homeAction, isAsleep, linkOf, statusOf, type Gateway, type ScaleLink } from './machine';
 import { followMachine, loadScreen, saveScreen, type Screen } from './nav';
 import { recordFrame, type Shot, type ShotSeries } from './shot';
+import { applySteamTimer, timerMismatch } from '../steam/apply';
 import { recordSteamFrame, type SteamRun } from '../steam/run';
 
 const CLOCK_MS = 500;
@@ -44,6 +47,8 @@ export class Skin {
   /** the scale's latest weight in g, null without a connected scale */
   weight: number | null = $state(null);
   workflow: Workflow | null = $state.raw(null);
+  /** the settings the machine itself holds, null until its stream has sent them */
+  shotSettings: ShotSettings | null = $state.raw(null);
   /** the running shot, or the finished one until it is dismissed */
   shot: Shot | null = $state.raw(null);
   /** the shot history's overlay is open (spec 3.1); only home shows it */
@@ -67,6 +72,8 @@ export class Skin {
   private openedAt: number | null = $state(null);
   private lastFrameAt: number | null = $state(null);
   private now = $state(Date.now());
+  /** the steam timer this skin set last, in s */
+  private steamAsked: number | null = $state(null);
   private machineStream: StreamState = $state('idle');
   private scaleStream: StreamState = $state('idle');
 
@@ -81,7 +88,18 @@ export class Skin {
    */
   readonly refused = $derived(this.machineStream === 'failed' || this.scaleStream === 'failed');
 
+  /**
+   * The steam timer in s: the machine's own, and the workflow's `steamSettings.duration` only
+   * while the machine's settings are not known. The two can differ (research.md, section 16).
+   */
+  readonly steamTimer = $derived(
+    this.shotSettings?.targetSteamDuration ?? this.workflow?.steamSettings?.duration ?? null,
+  );
+  /** The machine's timer is not the one set here any more: what the steam page says about it. */
+  readonly steamMismatch = $derived(timerMismatch(this.steamAsked, this.shotSettings?.targetSteamDuration ?? null));
+
   private machine: SnapshotStream<MachineSnapshot> | undefined;
+  private machineSettings: SnapshotStream<ShotSettings> | undefined;
   private scale: SnapshotStream<ScaleFrame> | undefined;
   private clock: ReturnType<typeof setInterval> | undefined;
   private machineState: MachineState | undefined;
@@ -93,7 +111,7 @@ export class Skin {
     this.client = new DecaidClient({ baseUrl });
   }
 
-  /** Opens both streams. Returns what closes them again. */
+  /** Opens the streams. Returns what closes them again. */
   connect(): () => void {
     this.machine = machineSnapshotStream({
       baseUrl: this.baseUrl,
@@ -104,6 +122,8 @@ export class Skin {
           this.openedAt = Date.now();
           // The workflow may have changed while the gateway was away.
           void this.refreshWorkflow();
+          // The settings' stream ends with an error frame while no machine is connected.
+          this.machineSettings?.connect();
         } else {
           // What the machine did while the stream was closed is not known.
           this.machineState = undefined;
@@ -111,6 +131,14 @@ export class Skin {
       },
       onFrame: (frame) => this.onMachineFrame(frame),
       onError: (frame) => this.onStreamError(frame),
+    }).connect();
+    // Without this stream the steam page shows the workflow's timer, so its failure is silent.
+    this.machineSettings = machineShotSettingsStream({
+      baseUrl: this.baseUrl,
+      onState: (state) => {
+        if (state !== 'open') this.shotSettings = null;
+      },
+      onFrame: (frame) => (this.shotSettings = frame),
     }).connect();
     this.scale = scaleSnapshotStream({
       baseUrl: this.baseUrl,
@@ -136,6 +164,7 @@ export class Skin {
     this.clock = setInterval(() => (this.now = Date.now()), CLOCK_MS);
     return () => {
       this.machine?.close();
+      this.machineSettings?.close();
       this.scale?.close();
       clearInterval(this.clock);
     };
@@ -162,6 +191,7 @@ export class Skin {
   reconnect(): void {
     this.streamError = null;
     this.machine?.connect();
+    this.machineSettings?.connect();
     this.scale?.connect();
   }
 
@@ -211,11 +241,17 @@ export class Skin {
     return this.request('steam', 'Steam did not start');
   }
 
-  /** Writes the steam timer to the machine: `steamSettings.duration`, whole seconds (spec 3.4). */
+  /**
+   * Writes the steam timer, whole seconds (spec 3.4): to the workflow's `steamSettings.duration`,
+   * and to the machine's own settings where Decaid did not pass it on (`applySteamTimer`).
+   */
   async setSteamTimer(seconds: number): Promise<void> {
     this.notice = null;
+    this.steamAsked = null;
+    const asked = Math.max(0, Math.round(seconds));
     try {
-      this.workflow = await this.client.setSteamDuration(Math.max(0, Math.round(seconds)));
+      this.workflow = (await applySteamTimer(this.client, asked, () => this.shotSettings)).workflow;
+      this.steamAsked = asked;
     } catch (error) {
       this.notice = `The timer was not set: ${error instanceof Error ? error.message : String(error)}`;
     }

@@ -15,8 +15,8 @@
 
   const series = $derived(skin.steam?.series ?? emptySteamSeries());
   const steaming = $derived(skin.steam !== null && !skin.steam.ended);
-  /** s, the timer the machine has: `steamSettings.duration` of the workflow */
-  const timer = $derived(skin.workflow?.steamSettings?.duration ?? null);
+  /** s, the timer the machine has */
+  const timer = $derived(skin.steamTimer);
   const reading = $derived(skin.weight === null ? null : readScale(skin.weight, settings));
   const grams = (value: number) => `${+value.toFixed(1)} g`;
 </script>
@@ -100,6 +100,8 @@
 
     {#if skin.notice}
       <p class="notice" data-testid="notice">{skin.notice}</p>
+    {:else if skin.steamMismatch}
+      <p class="notice" data-testid="steam-mismatch">{skin.steamMismatch}</p>
     {/if}
 
     {#if skin.action === 'stop'}

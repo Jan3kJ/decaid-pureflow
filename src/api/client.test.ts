@@ -164,6 +164,14 @@ describe('workflow', () => {
     expect(calls[0].body).toEqual({ steamSettings: { duration: 42 } });
   });
 
+  it('writes the settings the machine itself holds as a whole frame, past the workflow', async () => {
+    const settings = { steamSetting: 0, targetSteamTemp: 150, targetSteamDuration: 25, targetHotWaterTemp: 75, targetHotWaterVolume: 50, targetHotWaterDuration: 30, targetShotVolume: 36, groupTemp: 94 };
+    const { client, calls } = clientWith({ body: null });
+    await client.setShotSettings(settings);
+    expect(calls[0]).toMatchObject({ method: 'POST', url: 'http://localhost:8080/api/v1/machine/shotSettings' });
+    expect(calls[0].body).toEqual(settings);
+  });
+
   it('sets the target weight as context.targetYield, and nothing else', async () => {
     const { client, calls } = clientWith({ body: {} });
     await client.setTargetYield(36);

@@ -31,6 +31,7 @@ export const DETAIL_DEFAULTS = {
   secondFillExitPressure: C.SECOND_FILL_EXIT_PRESSURE_OVER,
   secondFillTemperature: null,
   secondFillTime: C.SECOND_FILL_SECONDS,
+  pauseExitFlow: C.PAUSE_EXIT_FLOW_UNDER,
   rampTemperature: null,
   pourEndFlow: null,
   pourTime: C.POURING_SECONDS,

@@ -482,7 +482,7 @@ describe('fields', () => {
   });
 
   // The founder's list 'values to be changable' (review of 2026-10-12), value by value. Its
-  // 'move on pressure pause' is not a parameter yet (spec, section 8).
+  // 'move on pressure pause' is the flow the pause ends under (founder, 2026-10-13).
   it('lists per phase exactly the values of the review', () => {
     expect(PHASE_FIELDS).toEqual({
       fill: ['fillFlow', 'fillExitPressure', 'fillTemperature', 'fillTime'],
@@ -499,6 +499,7 @@ describe('fields', () => {
         'secondFillTemperature',
         'secondFillTime',
         'pauseDuration',
+        'pauseExitFlow',
       ],
       pressurize: ['pourPressure', 'rampTime', 'rampTemperature'],
       flow: [

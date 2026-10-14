@@ -15,6 +15,7 @@ import type {
   SaveProfileOptions,
   ShotRecord,
   ShotRecordSummary,
+  ShotSettings,
   WebUiServerStatus,
   Workflow,
   WorkflowPatch,
@@ -111,6 +112,15 @@ export class DecaidClient {
   /** Loads a profile to the machine without changing the rest of the workflow. */
   async loadProfileToMachine(profile: Profile): Promise<void> {
     await this.request('POST', '/api/v1/machine/profile', profile);
+  }
+
+  /**
+   * Writes the machine's own settings, past the workflow: Decaid sends the body to the machine
+   * as it is, so it must be a whole frame of `/ws/v1/machine/shotSettings` with the changed
+   * value.
+   */
+  async setShotSettings(settings: ShotSettings): Promise<void> {
+    await this.request('POST', '/api/v1/machine/shotSettings', settings);
   }
 
   // --- workflow ---
