@@ -1,6 +1,6 @@
 // What the skin says about the gateway and the machine, from what the snapshot stream
 // delivered. Nothing here is assumed: without a fresh frame there is no machine state.
-import type { MachineSnapshot, MachineState, StreamState } from '../api';
+import type { MachineSnapshot, MachineState, StreamState, WaterLevels } from '../api';
 
 /**
  * Whether the gateway answers: not known until the stream opened or failed once. `refused`:
@@ -118,19 +118,14 @@ export function statusOf(link: Link, snapshot: MachineSnapshot | null, gatewayUr
 }
 
 /**
- * The one large button of home: start a shot from idle, stop whatever runs. In every other
- * state (asleep, heating, no machine) there is nothing to start; a sleeping machine is woken
- * by a touch (`isAsleep`).
+ * The stop button: whatever runs can be stopped from the skin. Nothing is started from it: the
+ * DE1 is started at the machine (founder, 2026-10-13).
  */
-export type HomeAction = 'start' | 'stop' | 'none';
-
-export function homeAction(link: Link, snapshot: MachineSnapshot | null): HomeAction {
-  if (link !== 'machine' || !snapshot) return 'none';
-  if (snapshot.state.state === 'idle') return 'start';
-  return RUNNING.includes(snapshot.state.state) ? 'stop' : 'none';
+export function canStop(link: Link, snapshot: MachineSnapshot | null): boolean {
+  return link === 'machine' && snapshot !== null && RUNNING.includes(snapshot.state.state);
 }
 
-/** The sleep button of home: a machine that is awake and runs nothing can be put to sleep. */
+/** The sleep entry of home's menu: a machine that is awake and runs nothing can be put to sleep. */
 export function canSleep(link: Link, snapshot: MachineSnapshot | null): boolean {
   if (link !== 'machine' || !snapshot) return false;
   const state = snapshot.state.state;
@@ -150,3 +145,44 @@ export const SCALE_LABEL: Record<ScaleLink, string> = {
   connected: 'Connected',
   disconnected: 'Not connected',
 };
+
+/**
+ * One value of the state line: 'group 92.6 °C'. `warn`: the value is a warning, the scale that
+ * is not connected or a tank under its refill level.
+ */
+export interface StateValue {
+  key: 'group' | 'steam' | 'tank' | 'scale';
+  label: string;
+  value: string;
+  warn: boolean;
+}
+
+/**
+ * The state line of home and the steam page: the machine's values only from a fresh frame
+ * (principle 3), the tank's level only from its stream, the weight only from a connected scale.
+ * A value that was not read is '–'.
+ */
+export function stateLine(
+  link: Link,
+  snapshot: MachineSnapshot | null,
+  water: WaterLevels | null,
+  scaleLink: ScaleLink,
+  weight: number | null,
+): StateValue[] {
+  const machine = link === 'machine' ? snapshot : null;
+  const tank = link === 'machine' ? water : null;
+  const degrees = (value: number | undefined) => (value === undefined ? '–' : `${value.toFixed(0)} °C`);
+  return [
+    { key: 'group', label: 'group', value: machine ? `${machine.groupTemperature.toFixed(1)} °C` : '–', warn: false },
+    { key: 'steam', label: 'steam', value: degrees(machine?.steamTemperature), warn: false },
+    {
+      key: 'tank',
+      label: 'tank',
+      value: tank ? `${tank.currentLevel.toFixed(0)} mm` : '–',
+      warn: tank !== null && tank.currentLevel < tank.refillLevel,
+    },
+    scaleLink === 'connected'
+      ? { key: 'scale', label: 'scale', value: weight === null ? '–' : `${weight.toFixed(1)} g`, warn: false }
+      : { key: 'scale', label: 'scale', value: 'not connected', warn: true },
+  ];
+}

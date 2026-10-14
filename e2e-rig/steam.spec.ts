@@ -146,8 +146,11 @@ test('steam: the written timer is read back from the workflow and from the machi
     expect(await machineTimer()).toBe(SECONDS);
     expect(await steamSettings()).toEqual({ ...before, duration: SECONDS });
 
-    // Steam starts; the page shows the machine's state and draws its frames.
-    await page.getByTestId('steam-start').click();
+    // Steam is started at the machine, here through the gateway as the removed start button
+    // did; the page shows the machine's state and draws its frames.
+    await expect(page.getByRole('button', { name: /start/ })).toHaveCount(0);
+    await expect(page.getByTestId('state-tank')).toHaveText(/^\d+ mm$/);
+    await api('PUT', '/api/v1/machine/state/steam');
     await expect(page.getByTestId('steam-stop')).toBeVisible({ timeout: 15_000 });
     expect(await machineState()).toBe('steam');
     await expect
@@ -158,7 +161,7 @@ test('steam: the written timer is read back from the workflow and from the machi
 
     // The skin's stop button ends it.
     await page.getByTestId('steam-stop').click();
-    await expect(page.getByTestId('steam-start')).toBeEnabled({ timeout: 30_000 });
+    await expect(page.getByTestId('steam-stop')).toHaveCount(0, { timeout: 30_000 });
     expect(await machineState()).toBe('idle');
     await expect(page.getByTestId('steam-state')).toContainText('last steam');
 
@@ -173,7 +176,6 @@ test('steam: the written timer is read back from the workflow and from the machi
       remember(SECONDS),
       workflow(SECONDS),
       `POST /api/v1/machine/shotSettings ${JSON.stringify({ ...settings, targetSteamDuration: SECONDS })}`,
-      'PUT /api/v1/machine/state/steam',
       'PUT /api/v1/machine/state/idle',
     ]);
 

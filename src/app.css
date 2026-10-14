@@ -13,6 +13,8 @@
   /* Weight is the fourth line of a measured graph. */
   --weight: #e0b057;
   --warn: #ffb454;
+  /* The way back to home (founder, 2026-10-13): none of the colours that carry a meaning. */
+  --accent: #b794ff;
   font-family: system-ui, sans-serif;
   /* 16 px on the 1280 x 800 design target; every size is in rem and follows the viewport. */
   font-size: min(2vh, 1.25vw);

@@ -61,6 +61,12 @@ test('a simulated shot: the state, an A-Flow profile, a live graph, the stop at 
     await expect(page.getByTestId('status-title')).toHaveText('Idle', { timeout: 15_000 });
     await expect(page.getByTestId('status')).toHaveAttribute('data-link', 'machine');
     await expect(page.getByTestId('profile-name')).toHaveText(workflowBefore.profile.title);
+    // The state line: every value read from the gateway's streams, the tank from its own.
+    await expect(page.getByTestId('state-group')).toHaveText(/^\d+\.\d °C$/);
+    await expect(page.getByTestId('state-steam')).toHaveText(/^\d+ °C$/);
+    await expect(page.getByTestId('state-tank')).toHaveText(/^\d+ mm$/, { timeout: 15_000 });
+    await expect(page.getByTestId('state-scale')).toHaveText(/^-?\d+\.\d g$/, { timeout: 15_000 });
+    await page.screenshot({ path: 'e2e-rig/.results/home-idle-rig.png' });
 
     // The picker: the A-Flow 3.0 defaults are saved where Decaid lacks them, one is loaded.
     await page.getByTestId('open-profiles').click();
@@ -75,15 +81,17 @@ test('a simulated shot: the state, an A-Flow profile, a live graph, the stop at 
 
     await expect(page.getByTestId('screen-home')).toBeVisible();
     await expect(page.getByTestId('profile-name')).toHaveText(PROFILE);
-    await expect(page.getByTestId('target-weight')).toHaveText(`${TARGET} g`);
-    await expect(page.getByTestId('dose')).toHaveText('16 g');
+    // Dose and stop weight are not on home (founder, 2026-10-13): the workflow holds them.
     const workflow = await api('GET', '/api/v1/workflow');
     expect(workflow.profile.title).toBe(PROFILE);
     expect(workflow.profile.target_weight).toBe(TARGET);
     expect(workflow.context.targetYield).toBe(TARGET);
+    expect(workflow.context.targetDoseWeight).toBe(16);
 
-    // The shot: the espresso screen opens by itself and the graph grows while it runs.
-    await page.getByTestId('start').click();
+    // The shot: started at the machine, here through the gateway as the removed start button
+    // did; the espresso screen opens by itself and the graph grows while it runs.
+    await expect(page.getByRole('button', { name: /start/ })).toHaveCount(0);
+    await api('PUT', '/api/v1/machine/state/espresso');
     await expect(page.getByTestId('screen-espresso')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId('espresso-profile')).toHaveText(PROFILE);
     await expect.poll(() => points(page), { timeout: 15_000 }).toBeGreaterThan(20);
@@ -104,8 +112,8 @@ test('a simulated shot: the state, an A-Flow profile, a live graph, the stop at 
     expect(grams).toBeLessThan(TARGET + OVER);
     await page.screenshot({ path: 'e2e-rig/.results/home-rig.png' });
 
-    // Decaid stopped it, not the skin: the skin sent no stop and no tare.
-    expect(sent.filter((call) => call.includes('/machine/state/'))).toEqual(['PUT /api/v1/machine/state/espresso']);
+    // Decaid stopped it, not the skin: the skin sent no start, no stop and no tare.
+    expect(sent.filter((call) => call.includes('/machine/state/'))).toEqual([]);
     expect(sent.filter((call) => call.includes('/scale/'))).toEqual([]);
     expect(sent.filter((call) => call.includes('/machine/profile'))).toEqual([]);
 

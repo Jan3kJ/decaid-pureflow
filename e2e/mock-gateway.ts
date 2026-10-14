@@ -162,6 +162,8 @@ export class MockGateway {
     targetShotVolume: 36,
     groupTemp: 94,
   };
+  /** `/ws/v1/machine/waterLevels`: the tank, in mm */
+  water: Json = { currentLevel: 38, refillLevel: 5 };
   /** the KV store, as `namespace/key` */
   store: Record<string, unknown> = {};
   /**
@@ -179,6 +181,7 @@ export class MockGateway {
   private readonly machineSockets = new Set<WebSocketRoute>();
   private readonly scaleSockets = new Set<WebSocketRoute>();
   private readonly settingsSockets = new Set<WebSocketRoute>();
+  private readonly waterSockets = new Set<WebSocketRoute>();
   private weight = 0;
   private scaleConnected = true;
   private replaying = false;
@@ -198,6 +201,9 @@ export class MockGateway {
     await page.routeWebSocket(/:8080\/ws\/v1\/machine\/shotSettings/, (ws) => {
       // The settings as they are, then one frame after every change.
       if (this.open(ws, this.settingsSockets)) ws.send(JSON.stringify(this.shotSettings));
+    });
+    await page.routeWebSocket(/:8080\/ws\/v1\/machine\/waterLevels/, (ws) => {
+      if (this.open(ws, this.waterSockets)) ws.send(JSON.stringify(this.water));
     });
     await page.routeWebSocket(/:8080\/ws\/v1\/scale\/snapshot/, (ws) => {
       // The first frame is a status frame without a weight.
@@ -257,6 +263,12 @@ export class MockGateway {
     const remembered = this.store['streamline-app/last-steam-duration'];
     if (!this.streamlineOpen || typeof remembered !== 'number') return;
     if (remembered !== this.shotSettings.targetSteamDuration) this.putWorkflowSteam({ duration: remembered });
+  }
+
+  /** The tank's level changes, in mm. */
+  setWater(currentLevel: number): void {
+    this.water = { ...this.water, currentLevel };
+    for (const ws of this.waterSockets) ws.send(JSON.stringify(this.water));
   }
 
   /** What stands on the scale, in g: the next weight frames say so. */

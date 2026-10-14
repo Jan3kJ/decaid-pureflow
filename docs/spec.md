@@ -45,9 +45,9 @@ version 2.
 
 | Area | v1 content |
 |---|---|
-| Home | machine state, start/stop, and one tap away: the **profile picker** and **steam**. Dose and target weight are shown; editing them sits one level down |
+| Home | no start: the DE1 is started at the machine; a stop button while something runs. The machine's state in one line: the state, group and steam temperature, the tank's water level and the scale's weight, or a warning without a scale; the same line is on the steam page. Top right a menu with scale, settings and sleep, and left of it the current profile's name, which opens the **profile picker**, with a pen that opens the editor. **Steam** is a tab on the right edge, the mirror of the history's. Dose and target weight are not shown on home. The graph takes the rest of the screen (founder, 2026-10-13) |
 | Espresso | live graph (pressure, flow, weight, temperature) from `/ws/v1/machine/snapshot`, with the live weight from `/ws/v1/scale/snapshot`, timer, stop at weight. The graph and the timer start when water moves, not while the machine heats; the profile's targets are dashed lines with their quantity; an optional legend sits under the graph, on by default (founder, 2026-10-13) |
-| Steam | start/stop, a steam graph, and **the steam timer set from the milk's weight**: see 3.4 |
+| Steam | stop (steam is started at the machine) (founder, 2026-10-13), a steam graph, and **the steam timer set from the milk's weight**: see 3.4 |
 | Scale | connect state, tare (a 400 `block_tare_during_shot` is a notice, not an error) |
 | Profiles | list, select, load to the machine (`PUT /api/v1/workflow`) (founder, 2026-10-13) |
 | Shot history | **an overlay, not a page:** a tab on the left edge of the screen (or a swipe from left to right) opens it; it closes when an item is selected or on a tap outside it. It holds **a list of previous shots; tapping one loads its profile, beans and grinder setting and shows its graph**: see 3.5 |
@@ -377,8 +377,8 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
   mug with milk, and the test checks the detected size, the milk and the seconds on screen
   and that 'set timer' and a favourite chip send those seconds as `steamSettings.duration`.
   `npm run e2e:rig` checks on the running gateway that the written duration is read back and
-  that steam starts and is stopped by the skin's stop button; there only the scale's frames
-  are fake. Not tested anywhere: a timer that runs out (next question). (answered)
+  that steam, started through the gateway's API as at the machine, is stopped by the skin's
+  stop button; there only the scale's frames are fake. Not tested anywhere: a timer that runs out (next question). (answered)
 - Mug detection steps up above a mug's weight plus **the whole** milk of one drink: the
   share is 1, one constant (`MUG_STEP_SHARE` in `src/steam/timer.ts`). With the founder's
   defaults the medium mug starts above 375 g and the large one above 425 g, so 180 g of
@@ -440,8 +440,9 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
   - Sleep is offered whenever the machine is awake and runs nothing, also while it heats.
     (owner)
   - A shot started in the seconds after a wake, before the scale is back, did not stop at
-    its weight on the rig (research.md section 13). The skin does not hold the start button
-    back for it. Should it, and does the real scale behave so? (owner)
+    its weight on the rig (research.md section 13). The skin has no start button any more
+    (founder, 2026-10-13), so it cannot hold one back; the state line warns while the scale is
+    not connected. Does the real scale behave so? (owner)
   - A stream the gateway closed with an error stays closed (4.1); the skin says 'Decaid
     closed the connection' with a 'reconnect' button on every screen. Whether it should
     retry by itself instead is still the founder's word (day record of 2026-10-12). (owner)

@@ -45,6 +45,14 @@ export interface ShotSettings {
   groupTemp: number;
 }
 
+/** A frame of `/ws/v1/machine/waterLevels`: the water in the tank, both heights in mm. */
+export interface WaterLevels {
+  /** mm, the water's height in the tank */
+  currentLevel: number;
+  /** mm, the height under which the machine warns to refill */
+  refillLevel: number;
+}
+
 /** The states version 1 of the skin asks for (spec 3.1). Sleep is `sleeping`. */
 export type RequestedMachineState = 'idle' | 'espresso' | 'steam' | 'sleeping';
 

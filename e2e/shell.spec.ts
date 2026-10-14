@@ -29,37 +29,144 @@ async function expectInsideViewport(page: Page) {
   expect(overflow).toEqual({ scrolls: false, outside: [] });
 }
 
+/** The menu of home's top right corner: a tap opens it. */
+async function openMenu(page: Page) {
+  await page.getByTestId('menu').click();
+  await expect(page.getByTestId('menu-list')).toBeVisible();
+}
+
 const points = async (page: Page) => Number(await page.getByTestId('shot-graph').getAttribute('data-points'));
 
-test('home shows the state the machine sent, the profile, dose and target weight', async ({ page }) => {
-  await mockGateway(page);
+test('home shows the state line the machine sent, the profile, and no start: the DE1 is started at the machine', async ({
+  page,
+}) => {
+  const gateway = await mockGateway(page);
   await page.goto('/');
 
   await expect(page.getByTestId('screen-home')).toBeVisible();
+  // One line: the state, group, steam, tank and scale, each read from a stream.
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
-  await expect(page.getByTestId('status-detail')).toHaveText('group 92.6 °C, set to 93 °C');
+  await expect(page.getByTestId('state-group')).toHaveText('92.6 °C');
+  await expect(page.getByTestId('state-steam')).toHaveText('148 °C');
+  await expect(page.getByTestId('state-tank')).toHaveText('38 mm');
+  await expect(page.getByTestId('state-scale')).toHaveText('0.0 g');
+  const line = (await page.getByTestId('status').boundingBox())!;
+  expect(line.height).toBeLessThan(40);
+  gateway.setWater(31);
+  await expect(page.getByTestId('state-tank')).toHaveText('31 mm');
+
   await expect(page.getByTestId('profile-name')).toHaveText('A-Flow / default-medium');
-  await expect(page.getByTestId('dose')).toHaveText('18 g');
-  await expect(page.getByTestId('target-weight')).toHaveText('36 g');
-  await expect(page.getByTestId('scale-weight')).toHaveText('0.0 g');
-  await expect(page.getByTestId('start')).toBeEnabled();
-  // No finished shot, nothing to dismiss.
+  // Dose and stop weight are not on home; nothing starts a shot or steam here.
+  await expect(page.getByTestId('dose')).toHaveCount(0);
+  await expect(page.getByTestId('target-weight')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /start/ })).toHaveCount(0);
+  await expect(page.getByTestId('stop')).toHaveCount(0);
+  // No finished shot: the graph keeps its place, empty, and takes most of the screen.
   await expect(page.getByTestId('last-shot')).toHaveCount(0);
+  const graph = (await page.getByTestId('empty-graph').boundingBox())!;
+  expect(graph.width * graph.height).toBeGreaterThan(0.75 * 1280 * 800);
   await expectInsideViewport(page);
   expect(errors).toEqual([]);
 });
 
-test('home follows the machine: asleep offers no start, a running state offers stop', async ({ page }) => {
+test('the state line warns in place of the weight when the scale is not connected', async ({ page }) => {
+  const gateway = await mockGateway(page);
+  await page.goto('/');
+  await expect(page.getByTestId('state-scale')).toHaveText('0.0 g');
+
+  gateway.connectScale(false);
+  await expect(page.getByTestId('state-scale')).toHaveText('⚠ not connected');
+  gateway.connectScale(true);
+  gateway.putOnScale(12.3);
+  await expect(page.getByTestId('state-scale')).toHaveText('12.3 g');
+  expect(errors).toEqual([]);
+});
+
+test('the menu opens with scale, settings and sleep, and closes on a choice and on a tap outside', async ({ page }) => {
+  const gateway = await mockGateway(page);
+  await page.goto('/');
+  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('menu-list')).toHaveCount(0);
+
+  // A tap outside closes it and does nothing else.
+  await openMenu(page);
+  await expect(page.getByRole('menuitem')).toHaveText(['Scale', 'Settings', 'Sleep']);
+  await expectInsideViewport(page);
+  await page.screenshot({ path: 'docs/product/home-menu.png' });
+  await page.mouse.click(400, 500);
+  await expect(page.getByTestId('menu-list')).toHaveCount(0);
+  await expect(page.getByTestId('screen-home')).toBeVisible();
+
+  for (const [entry, screen] of [
+    ['open-scale', 'scale'],
+    ['open-settings', 'settings'],
+  ]) {
+    await openMenu(page);
+    await page.getByTestId(entry).click();
+    await expect(page.getByTestId(`screen-${screen}`)).toBeVisible();
+    await page.getByTestId('nav-home').click();
+    await expect(page.getByTestId('menu-list')).toHaveCount(0);
+  }
+
+  await openMenu(page);
+  await page.getByTestId('sleep').click();
+  await expect(page.getByTestId('menu-list')).toHaveCount(0);
+  await expect.poll(() => gateway.calls('PUT', '/api/v1/machine/state/sleeping').length).toBe(1);
+  expect(errors).toEqual([]);
+});
+
+test('the pen opens the editor, the name the picker, the right tab the steam page', async ({ page }) => {
+  await mockGateway(page);
+  await page.goto('/');
+
+  await page.getByTestId('open-editor').click();
+  await expect(page.getByTestId('screen-editor')).toBeVisible();
+  await page.getByTestId('nav-home').click();
+  await page.getByTestId('open-profiles').click();
+  await expect(page.getByTestId('screen-profiles')).toBeVisible();
+  await page.getByTestId('nav-home').click();
+
+  // The steam tab is the mirror of the history's: down the right edge.
+  const tab = (await page.getByTestId('open-steam').boundingBox())!;
+  const history = (await page.getByTestId('nav-history').boundingBox())!;
+  expect(tab.x + tab.width).toBeGreaterThan(1280 - 2);
+  expect(Math.abs(tab.height - history.height)).toBeLessThan(2);
+  await page.getByTestId('open-steam').click();
+  await expect(page.getByTestId('screen-steam')).toBeVisible();
+  // The steam page has the same state line.
+  await expect(page.getByTestId('state-tank')).toHaveText('38 mm');
+  expect(errors).toEqual([]);
+});
+
+test('the way back to home is a large target in the accent colour', async ({ page }) => {
+  await mockGateway(page);
+  await page.goto('/');
+  for (const button of ['open-profiles', 'open-editor', 'open-steam']) {
+    await page.getByTestId(button).click();
+    const back = page.getByTestId('nav-home');
+    const box = (await back.boundingBox())!;
+    expect(box.width).toBeGreaterThanOrEqual(56);
+    expect(box.height).toBeGreaterThanOrEqual(56);
+    // Not blue, green or red: they mean flow, pressure and temperature.
+    expect(await back.evaluate((element) => getComputedStyle(element).color)).toBe('rgb(183, 148, 255)');
+    await back.click();
+  }
+  expect(errors).toEqual([]);
+});
+
+test('home follows the machine: a running state offers stop, idle offers nothing', async ({ page }) => {
   const gateway = await mockGateway(page);
   gateway.state = 'sleeping';
   await page.goto('/');
   await expect(page.getByTestId('status-title')).toHaveText('Asleep');
-  await expect(page.getByTestId('start')).toBeDisabled();
+  await expect(page.getByTestId('stop')).toHaveCount(0);
 
   gateway.state = 'steam';
   await expect(page.getByTestId('status-title')).toHaveText('Steam');
   await page.getByTestId('stop').click();
   await expect.poll(() => gateway.calls('PUT', '/api/v1/machine/state/idle').length).toBe(1);
+  gateway.state = 'idle';
+  await expect(page.getByTestId('stop')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 
@@ -69,9 +176,9 @@ test('home says when Decaid is not reachable', async ({ page }) => {
 
   await expect(page.getByTestId('status-title')).toHaveText('Decaid is not reachable');
   await expect(page.getByTestId('status-detail')).toContainText('http://localhost:8080');
-  await expect(page.getByTestId('start')).toBeDisabled();
+  // Nothing was read, so no value is shown.
+  await expect(page.getByTestId('state-group')).toHaveCount(0);
   await expect(page.getByTestId('profile-name')).toHaveText('–');
-  await expect(page.getByTestId('scale-weight')).toHaveText('none');
 });
 
 test('home says when no machine is connected, and shows the machine when it comes', async ({ page }) => {
@@ -80,28 +187,25 @@ test('home says when no machine is connected, and shows the machine when it come
 
   // The gateway answers and its stream is silent.
   await expect(page.getByTestId('status-title')).toHaveText('No machine connected', { timeout: 8000 });
-  await expect(page.getByTestId('start')).toBeDisabled();
+  await expect(page.getByTestId('state-group')).toHaveCount(0);
   // The workflow is the gateway's, with or without a machine.
   await expect(page.getByTestId('profile-name')).toHaveText('A-Flow / default-medium');
 
   gateway.machineConnected = true;
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
-  await expect(page.getByTestId('start')).toBeEnabled();
+  await expect(page.getByTestId('state-group')).toHaveText('92.6 °C');
   expect(errors).toEqual([]);
 });
 
-test('a shot: start, the espresso screen opens by itself with a live graph, and home keeps the finished graph', async ({
+test('a shot started at the machine: the espresso screen opens by itself with a live graph, and home keeps the finished graph', async ({
   page,
 }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
 
-  await page.getByTestId('start').click();
-  await expect.poll(() => gateway.calls('PUT', '/api/v1/machine/state/espresso').length).toBe(1);
-  // The screen waits for the machine: nothing opens before a frame says espresso.
+  // The shot is started at the machine: the screen opens when a frame says espresso.
   await expect(page.getByTestId('screen-home')).toBeVisible();
-
   await gateway.replay(page, 0, 0.3);
   await expect(page.getByTestId('screen-espresso')).toBeVisible();
   const early = await points(page);
@@ -206,8 +310,8 @@ test('the picker lists the profiles of the gateway, offers the A-Flow 3.0 defaul
   expect(puts[0].body.context).toEqual({ targetYield: 36, targetDoseWeight: 16 });
   expect(gateway.calls('POST', '/api/v1/machine/profile')).toHaveLength(0);
   await expect(page.getByTestId('profile-name')).toHaveText('A-Flow / default-dark');
-  await expect(page.getByTestId('dose')).toHaveText('16 g');
-  await expect(page.getByTestId('target-weight')).toHaveText('36 g');
+  // Dose and stop weight are not on home: the gateway's workflow holds them.
+  expect(gateway.workflow.context).toMatchObject({ targetYield: 36, targetDoseWeight: 16 });
 
   // The gateway has the defaults now: no offer the next time.
   await page.getByTestId('open-profiles').click();
@@ -225,6 +329,7 @@ test('every screen is one tap from home and back, and the screen survives a relo
     ['open-scale', 'scale', 'Scale'],
     ['open-settings', 'settings', 'Settings'],
   ]) {
+    await openMenu(page);
     await page.getByTestId(button).click();
     await expect(page.getByTestId(`screen-${screen}`).locator('h1')).toHaveText(title);
     await page.getByTestId('nav-home').click();

@@ -31,7 +31,6 @@ async function home(page: Page) {
 test('a live shot starts its graph and timer when water moves, not while the machine heats', async ({ page }) => {
   const gateway = await mockGateway(page);
   await home(page);
-  await page.getByTestId('start').click();
 
   // Only the heating: espresso, and nothing drawn yet.
   await gateway.replay(page, 0, HEATING_SHARE);
@@ -58,7 +57,6 @@ test('the targets are dashed lines with their quantity, every scale has its unit
 }) => {
   const gateway = await mockGateway(page);
   await home(page);
-  await page.getByTestId('start').click();
   await gateway.replay(page, 0, 1);
   await expect(page.getByTestId('screen-home')).toBeVisible();
   const graph = page.getByTestId('last-shot');
@@ -153,7 +151,6 @@ test('the legend is under the graph by default, and the settings page switches i
 }) => {
   const gateway = await mockGateway(page);
   await home(page);
-  await page.getByTestId('start').click();
   await gateway.replay(page, 0, 0.5);
   const legend = page.getByTestId('shot-legend');
   await expect(legend).toBeVisible();
@@ -167,6 +164,8 @@ test('the legend is under the graph by default, and the settings page switches i
   await expect(page.getByTestId('screen-home')).toBeVisible();
   await expect(page.getByTestId('last-shot').getByTestId('shot-legend')).toBeVisible();
 
+  await page.getByTestId('menu').click();
+
   await page.getByTestId('open-settings').click();
   const lever = page.getByTestId('setting-show-graph-legend');
   await expect(lever).toHaveAttribute('aria-checked', 'true');
@@ -179,6 +178,7 @@ test('the legend is under the graph by default, and the settings page switches i
   // It is one stored setting: it survives a reload.
   await page.reload();
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await page.getByTestId('menu').click();
   await page.getByTestId('open-settings').click();
   await expect(page.getByTestId('setting-show-graph-legend')).toHaveAttribute('aria-checked', 'false');
   expect(errors).toEqual([]);

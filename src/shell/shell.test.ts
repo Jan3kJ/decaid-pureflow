@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { MachineSnapshot, MachineState } from '../api';
 import { gatewayBaseUrl } from './gateway';
-import { FRAME_STALE_MS, canSleep, gatewayAfter, homeAction, isAsleep, linkOf, stateLabel, statusOf } from './machine';
+import { FRAME_STALE_MS, canSleep, canStop, gatewayAfter, isAsleep, linkOf, stateLabel, stateLine, statusOf } from './machine';
 import { SCREEN_KEY, followMachine, loadScreen, saveScreen } from './nav';
 
 function frame(state: MachineState, over: Partial<MachineSnapshot> = {}): MachineSnapshot {
@@ -185,22 +185,53 @@ describe('statusOf', () => {
   });
 });
 
-describe('homeAction', () => {
-  it('starts from idle only', () => {
-    expect(homeAction('machine', frame('idle'))).toBe('start');
-    expect(homeAction('machine', frame('sleeping'))).toBe('none');
-    expect(homeAction('machine', frame('heating'))).toBe('none');
-  });
-
-  it('stops what runs', () => {
-    expect(homeAction('machine', frame('espresso'))).toBe('stop');
-    expect(homeAction('machine', frame('steam'))).toBe('stop');
+describe('canStop', () => {
+  it('stops what runs, and starts nothing: the DE1 is started at the machine', () => {
+    expect(canStop('machine', frame('espresso'))).toBe(true);
+    expect(canStop('machine', frame('steam'))).toBe(true);
+    expect(canStop('machine', frame('idle'))).toBe(false);
+    expect(canStop('machine', frame('sleeping'))).toBe(false);
+    expect(canStop('machine', frame('heating'))).toBe(false);
   });
 
   it('offers nothing without a machine', () => {
-    expect(homeAction('no-machine', frame('idle'))).toBe('none');
-    expect(homeAction('no-gateway', frame('espresso'))).toBe('none');
-    expect(homeAction('connecting', null)).toBe('none');
+    expect(canStop('no-machine', frame('steam'))).toBe(false);
+    expect(canStop('no-gateway', frame('espresso'))).toBe(false);
+    expect(canStop('connecting', null)).toBe(false);
+  });
+});
+
+describe('stateLine', () => {
+  const water = { currentLevel: 34.6, refillLevel: 5 };
+  const text = (values: ReturnType<typeof stateLine>) => values.map((v) => `${v.label} ${v.value}${v.warn ? '!' : ''}`);
+
+  it('reads every value from the streams', () => {
+    expect(text(stateLine('machine', frame('idle'), water, 'connected', 34))).toEqual([
+      'group 91.3 °C',
+      'steam 150 °C',
+      'tank 35 mm',
+      'scale 34.0 g',
+    ]);
+  });
+
+  it('warns in place of the weight when the scale is not connected', () => {
+    expect(text(stateLine('machine', frame('idle'), water, 'disconnected', null)).at(-1)).toBe('scale not connected!');
+    expect(text(stateLine('machine', frame('idle'), water, 'unknown', null)).at(-1)).toBe('scale not connected!');
+  });
+
+  it('warns when the tank is under its refill level', () => {
+    expect(text(stateLine('machine', frame('idle'), { currentLevel: 3, refillLevel: 5 }, 'connected', 0))[2]).toBe(
+      'tank 3 mm!',
+    );
+  });
+
+  it('assumes nothing without a fresh frame or a level', () => {
+    expect(text(stateLine('no-machine', frame('idle'), water, 'connected', 0)).slice(0, 3)).toEqual([
+      'group –',
+      'steam –',
+      'tank –',
+    ]);
+    expect(text(stateLine('machine', frame('idle'), null, 'connected', 0))[2]).toBe('tank –');
   });
 });
 

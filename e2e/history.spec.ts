@@ -121,9 +121,10 @@ test('a tap outside closes the overlay and changes nothing', async ({ page }) =>
 
   await page.getByTestId('nav-history').tap();
   await expect(page.getByTestId('history')).toBeVisible();
-  // Outside, where home has its start button: the tap closes the overlay and starts nothing.
-  const start = (await page.getByTestId('start').boundingBox())!;
-  await page.touchscreen.tap(start.x + start.width / 2, start.y + start.height / 2);
+  // Outside, on home's menu button: the tap closes the overlay and opens nothing.
+  const menu = (await page.getByTestId('menu').boundingBox())!;
+  await page.touchscreen.tap(menu.x + menu.width / 2, menu.y + menu.height / 2);
+  await expect(page.getByTestId('menu-list')).toHaveCount(0);
 
   await expect(page.getByTestId('history')).toHaveCount(0);
   await expect(page.getByTestId('screen-home')).toBeVisible();
@@ -175,7 +176,8 @@ test('tapping an entry closes the overlay, restores profile, bean and grinder se
 
   // Home shows what is current now, and the graph of the last shot made with the entry.
   await expect(page.getByTestId('profile-name')).toHaveText('A-Flow / default-light');
-  await expect(page.getByTestId('target-weight')).toHaveText('48 g');
+  // The stop weight is not on home: the workflow holds it.
+  expect(gateway.workflow.context.targetYield).toBe(48);
   await expect(page.getByTestId('history-graph')).toBeVisible();
   await expect(page.getByTestId('recalled-profile')).toHaveText('A-Flow / default-light');
   await expect(page.getByTestId('recalled-bean')).toHaveText('Square Mile · Red Brick');

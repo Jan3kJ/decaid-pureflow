@@ -64,7 +64,7 @@
     {#if skin.notice}
       <p class="notice" data-testid="notice">{skin.notice}</p>
     {/if}
-    <button data-testid="stop" disabled={skin.action !== 'stop'} onclick={() => skin.stop()}>stop</button>
+    <button data-testid="stop" disabled={!skin.canStop} onclick={() => skin.stop()}>stop</button>
   </aside>
 </div>
 

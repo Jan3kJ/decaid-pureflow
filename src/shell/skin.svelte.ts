@@ -7,6 +7,7 @@ import {
   isTareBlocked,
   machineShotSettingsStream,
   machineSnapshotStream,
+  machineWaterLevelsStream,
   scaleSnapshotStream,
   type MachineSnapshot,
   type MachineState,
@@ -16,12 +17,13 @@ import {
   type SnapshotStream,
   type StreamErrorFrame,
   type StreamState,
+  type WaterLevels,
   type Workflow,
 } from '../api';
 import { restoreEntry, seriesOf, type HistoryEntry } from '../history/entries';
 import { loadSettings, saveSettings, type Settings } from '../settings';
 import { gatewayBaseUrl } from './gateway';
-import { canSleep, gatewayAfter, homeAction, isAsleep, linkOf, statusOf, type Gateway, type ScaleLink } from './machine';
+import { canSleep, canStop, gatewayAfter, isAsleep, linkOf, stateLine, statusOf, type Gateway, type ScaleLink } from './machine';
 import { followMachine, loadScreen, saveScreen, type Screen } from './nav';
 import { recordFrame, type Shot, type ShotSeries } from './shot';
 import { applySteamTimer, timerMismatch } from '../steam/apply';
@@ -57,6 +59,8 @@ export class Skin {
   recalled: Recalled | null = $state.raw(null);
   /** the running steam, or the finished one until the next */
   steam: SteamRun | null = $state.raw(null);
+  /** the tank's water level, null while its stream is not open or has sent nothing */
+  water: WaterLevels | null = $state.raw(null);
   /** what the scale stream said about the scale */
   scaleLink: ScaleLink = $state('unknown');
   /** the skin's settings; changed with `setSettings` only, so they are stored */
@@ -79,9 +83,11 @@ export class Skin {
 
   readonly link = $derived(linkOf(this.gateway, this.openedAt, this.lastFrameAt, this.now));
   readonly status = $derived.by(() => statusOf(this.link, this.snapshot, this.baseUrl));
-  readonly action = $derived(homeAction(this.link, this.snapshot));
+  readonly canStop = $derived(canStop(this.link, this.snapshot));
   readonly canSleep = $derived(canSleep(this.link, this.snapshot));
   readonly asleep = $derived(isAsleep(this.link, this.snapshot));
+  /** the values of the state line, on home and on the steam page */
+  readonly stateValues = $derived(stateLine(this.link, this.snapshot, this.water, this.scaleLink, this.weight));
   /**
    * A stream stopped in the state `failed`: the gateway sent an error frame and closed the
    * socket, and the stream does not open again by itself (research.md 9.4). `reconnect` does.
@@ -100,6 +106,7 @@ export class Skin {
 
   private machine: SnapshotStream<MachineSnapshot> | undefined;
   private machineSettings: SnapshotStream<ShotSettings> | undefined;
+  private waterLevels: SnapshotStream<WaterLevels> | undefined;
   private scale: SnapshotStream<ScaleFrame> | undefined;
   private clock: ReturnType<typeof setInterval> | undefined;
   private machineState: MachineState | undefined;
@@ -124,6 +131,7 @@ export class Skin {
           void this.refreshWorkflow();
           // The settings' stream ends with an error frame while no machine is connected.
           this.machineSettings?.connect();
+          this.waterLevels?.connect();
         } else {
           // What the machine did while the stream was closed is not known.
           this.machineState = undefined;
@@ -139,6 +147,14 @@ export class Skin {
         if (state !== 'open') this.shotSettings = null;
       },
       onFrame: (frame) => (this.shotSettings = frame),
+    }).connect();
+    // The tank is only a value of the state line, so a failure of its stream is silent too.
+    this.waterLevels = machineWaterLevelsStream({
+      baseUrl: this.baseUrl,
+      onState: (state) => {
+        if (state !== 'open') this.water = null;
+      },
+      onFrame: (frame) => (this.water = frame),
     }).connect();
     this.scale = scaleSnapshotStream({
       baseUrl: this.baseUrl,
@@ -165,6 +181,7 @@ export class Skin {
     return () => {
       this.machine?.close();
       this.machineSettings?.close();
+      this.waterLevels?.close();
       this.scale?.close();
       clearInterval(this.clock);
     };
@@ -192,6 +209,7 @@ export class Skin {
     this.streamError = null;
     this.machine?.connect();
     this.machineSettings?.connect();
+    this.waterLevels?.connect();
     this.scale?.connect();
   }
 
@@ -227,18 +245,6 @@ export class Skin {
     } catch {
       // The gateway is away; the stream's state says so.
     }
-  }
-
-  /**
-   * Asks the machine for a shot. Decaid tares the scale and stops at the workflow's target
-   * yield by itself (research.md, section 10); the skin does neither.
-   */
-  start(): Promise<void> {
-    return this.request('espresso', 'The shot did not start');
-  }
-
-  startSteam(): Promise<void> {
-    return this.request('steam', 'Steam did not start');
   }
 
   /**

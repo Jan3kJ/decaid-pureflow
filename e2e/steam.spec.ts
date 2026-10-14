@@ -207,7 +207,9 @@ test('the steam settings come from the settings store and survive a reload', asy
   expect(errors).toEqual([]);
 });
 
-test('start and stop steam, with a graph of pressure and temperature', async ({ page }) => {
+test('steam started at the machine shows its graph of pressure and temperature, and stops from the page', async ({
+  page,
+}) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
   await page.getByTestId('open-steam').click();
@@ -215,14 +217,18 @@ test('start and stop steam, with a graph of pressure and temperature', async ({ 
   await page.getByTestId('steam-set-timer').click();
   await expect(page.getByTestId('steam-timer')).toHaveText('26s');
 
-  await expect(page.getByTestId('steam-start')).toBeEnabled();
   await expect(page.getByTestId('shot-graph')).toHaveAttribute('data-points', '0');
-  await page.getByTestId('steam-start').click();
-  await expect.poll(() => gateway.calls('PUT', '/api/v1/machine/state/steam').length).toBe(1);
-  // The page waits for the machine: no stop before a frame says steam.
-  await expect(page.getByTestId('steam-start')).toBeVisible();
+  // Steam is started at the machine: the page offers no start, and no stop before a frame says steam.
+  await expect(page.getByRole('button', { name: /start/ })).toHaveCount(0);
+  await expect(page.getByTestId('steam-stop')).toHaveCount(0);
+  // The machine's state line, as on home.
+  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('state-steam')).toHaveText('148 °C');
+  await expect(page.getByTestId('state-tank')).toHaveText('38 mm');
+  await expect(page.getByTestId('state-scale')).toHaveText('405.0 g');
 
   gateway.steamFor(18);
+  await expect(page.getByTestId('status-title')).toHaveText('Steam');
   await expect(page.getByTestId('steam-stop')).toBeVisible();
   await expect(page.getByTestId('steam-state')).toContainText('steaming');
   expect(Number(await page.getByTestId('shot-graph').getAttribute('data-points'))).toBeGreaterThanOrEqual(72);
@@ -249,7 +255,7 @@ test('start and stop steam, with a graph of pressure and temperature', async ({ 
   await page.getByTestId('steam-stop').click();
   await expect.poll(() => gateway.calls('PUT', '/api/v1/machine/state/idle').length).toBe(1);
   gateway.state = 'idle';
-  await expect(page.getByTestId('steam-start')).toBeEnabled();
+  await expect(page.getByTestId('steam-stop')).toHaveCount(0);
   // The finished graph stays until the next steam.
   await expect(page.getByTestId('steam-state')).toContainText('last steam');
   expect(Number(await page.getByTestId('shot-graph').getAttribute('data-points'))).toBeGreaterThanOrEqual(72);

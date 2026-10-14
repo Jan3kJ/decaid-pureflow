@@ -40,6 +40,7 @@ async function type(page: Page, testid: string, value: string) {
 test('scale: the connect state from the stream, and tare', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
+  await page.getByTestId('menu').click();
   await page.getByTestId('open-scale').click();
 
   await expect(page.getByTestId('scale-state')).toHaveAttribute('data-scale', 'connected');
@@ -72,6 +73,7 @@ test('scale: the status frame alone says connected, before any weight', async ({
   // A scale stream that sends its first frame and nothing else.
   await page.routeWebSocket(/:8080\/ws\/v1\/scale\/snapshot/, (ws) => ws.send(JSON.stringify({ status: 'connected' })));
   await page.goto('/');
+  await page.getByTestId('menu').click();
   await page.getByTestId('open-scale').click();
   await expect(page.getByTestId('scale-link')).toHaveText('Connected');
   await expect(page.getByTestId('scale-page-weight')).toHaveText('–');
@@ -86,6 +88,7 @@ test('scale: a tare Decaid blocks during a shot is a notice, another failure is 
   await gateway.replay(page, 0, 0.4);
   await expect(page.getByTestId('screen-espresso')).toBeVisible();
   await page.getByTestId('nav-home').click();
+  await page.getByTestId('menu').click();
   await page.getByTestId('open-scale').click();
 
   gateway.tareBlocked = true;
@@ -120,6 +123,7 @@ test('scale: a tare Decaid blocks during a shot is a notice, another failure is 
 test('settings: the defaults, typed values and both switches survive a reload', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
+  await page.getByTestId('menu').click();
   await page.getByTestId('open-settings').click();
 
   const values = (ids: string[]) => Promise.all(ids.map((id) => page.getByTestId(`setting-${id}`).locator('b').textContent()));
@@ -216,6 +220,7 @@ test('settings: the defaults, typed values and both switches survive a reload', 
   await expect(page.getByTestId('steps')).toContainText('Pre Fill');
   // The editor's button and the settings page are one setting.
   await page.getByTestId('nav-home').click();
+  await page.getByTestId('menu').click();
   await page.getByTestId('open-settings').click();
   await expect(steps).toHaveAttribute('aria-checked', 'true');
   expect(errors).toEqual([]);
@@ -228,6 +233,7 @@ test('settings: stored data that cannot be read gives the defaults, and the page
     sessionStorage.setItem('seeded', '1');
   });
   await page.goto('/');
+  await page.getByTestId('menu').click();
   await page.getByTestId('open-settings').click();
   await expect(page.getByTestId('setting-mug-small').locator('b')).toHaveText('150g');
   await type(page, 'setting-mug-large', '300');
@@ -243,6 +249,8 @@ test('sleep: the button sends the state sleeping, the skin goes dark, a touch an
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
   await expect(page.getByTestId('asleep')).toHaveCount(0);
   expect(gateway.calls('PUT', '/api/v1/display/brightness')).toHaveLength(0);
+
+  await page.getByTestId('menu').click();
 
   await page.getByTestId('sleep').click();
   await expect.poll(() => gateway.calls('PUT', '/api/v1/machine/state/sleeping').length).toBe(1);
@@ -274,6 +282,7 @@ test('sleep: the brightness is left alone where the platform does not support it
 
   await page.getByTestId('asleep').tap();
   await expect(page.getByTestId('asleep')).toHaveCount(0);
+  await page.getByTestId('menu').click();
   await expect(page.getByTestId('sleep')).toBeEnabled();
   await expect.poll(() => gateway.calls('GET', '/api/v1/display').length).toBe(2);
   expect(gateway.calls('PUT', '/api/v1/display/brightness')).toHaveLength(0);
@@ -283,6 +292,9 @@ test('sleep: the brightness is left alone where the platform does not support it
 test('sleep is not offered while something runs or without a machine', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
+  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  // The menu stays open while the machine changes: its sleep entry follows.
+  await page.getByTestId('menu').click();
   await expect(page.getByTestId('sleep')).toBeEnabled();
   gateway.steamFor(3);
   await expect(page.getByTestId('status-title')).toHaveText('Steam');
@@ -304,7 +316,8 @@ test('a stream the gateway closed with an error is shown with a reconnect action
   await expect(page.getByTestId('stream-failed')).toContainText('Decaid closed the connection: the mock refuses this stream');
   await expect(page.getByTestId('status-title')).toHaveText('Decaid closed the connection');
   await expect(page.getByTestId('status')).toHaveAttribute('data-link', 'refused');
-  await expect(page.getByTestId('start')).toBeDisabled();
+  await expect(page.getByTestId('stop')).toHaveCount(0);
+  await expect(page.getByTestId('state-group')).toHaveCount(0);
   expect(await overflow(page)).toEqual({ scrolls: false, outside: 0 });
 
   // The stream does not reconnect by itself (doc/Skins.md): it is still refused after a while.
@@ -317,6 +330,7 @@ test('a stream the gateway closed with an error is shown with a reconnect action
   await expect(page.getByTestId('status')).toHaveAttribute('data-link', 'refused');
 
   // The action is on every screen.
+  await page.getByTestId('menu').click();
   await page.getByTestId('open-settings').click();
   await expect(page.getByTestId('stream-failed')).toBeVisible();
   gateway.refuseStreams = false;
@@ -324,6 +338,6 @@ test('a stream the gateway closed with an error is shown with a reconnect action
   await expect(page.getByTestId('stream-failed')).toHaveCount(0);
   await page.getByTestId('nav-home').click();
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
-  await expect(page.getByTestId('scale-weight')).toHaveText('0.0 g');
+  await expect(page.getByTestId('state-scale')).toHaveText('0.0 g');
   expect(errors).toEqual([]);
 });

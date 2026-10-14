@@ -1,6 +1,7 @@
 <script lang="ts">
   import ShotGraph from '../graph/ShotGraph.svelte';
   import type { Skin } from '../shell/skin.svelte';
+  import StateLine from '../shell/StateLine.svelte';
   import { emptySteamSeries, steamSeconds } from './run';
   import { readScale } from './timer';
 
@@ -24,14 +25,13 @@
 <div class="steam">
   <header>
     <strong>Steam</strong>
-    <span data-testid="steam-state">
-      {#if skin.steam}
+    <StateLine {skin} />
+    {#if skin.steam}
+      <span class="run" data-testid="steam-state">
         {steaming ? 'steaming' : 'last steam'}
         <b data-testid="steam-elapsed">{steamSeconds(skin.steam).toFixed(0)} s</b>
-      {:else}
-        {skin.status.title}
-      {/if}
-    </span>
+      </span>
+    {/if}
   </header>
 
   <div class="plot">
@@ -104,12 +104,9 @@
       <p class="notice" data-testid="steam-mismatch">{skin.steamMismatch}</p>
     {/if}
 
-    {#if skin.action === 'stop'}
-      <button class="go stop" data-testid="steam-stop" onclick={() => skin.stop()}>stop</button>
-    {:else}
-      <button class="go" data-testid="steam-start" disabled={skin.action !== 'start'} onclick={() => skin.startSteam()}>
-        start steam
-      </button>
+    <!-- Steam is started at the machine (founder, 2026-10-13); it is stopped here. -->
+    {#if skin.canStop}
+      <button class="stop" data-testid="steam-stop" onclick={() => skin.stop()}>stop</button>
     {/if}
   </aside>
 </div>
@@ -122,31 +119,34 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr) 21rem;
     grid-template-rows: auto minmax(0, 1fr);
-    grid-template-areas: 'header side' 'plot side';
+    grid-template-areas: 'header header' 'plot side';
     gap: 0.8rem 1.2rem;
   }
 
   header {
     grid-area: header;
     display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 1rem;
+    align-items: center;
+    gap: 1.6rem;
     min-height: 2rem;
   }
 
-  header strong {
+  header > strong {
     font-size: 1.4rem;
     font-weight: 600;
   }
 
-  header span {
+  header > :global(.state) {
+    flex: 1;
+  }
+
+  .run {
     color: var(--dim);
     font-size: 1.1rem;
     white-space: nowrap;
   }
 
-  header b {
+  .run b {
     margin-left: 0.4rem;
     color: var(--fg);
     font-variant-numeric: tabular-nums;
@@ -272,8 +272,7 @@
     font-variant-numeric: tabular-nums;
   }
 
-  .set:disabled,
-  .go:disabled {
+  .set:disabled {
     background: var(--panel);
     border-color: var(--line);
     color: var(--dim);
@@ -285,17 +284,12 @@
     font-size: 0.95rem;
   }
 
-  .go {
+  .stop {
     margin-top: auto;
     min-height: 6rem;
     font-size: 2rem;
     font-weight: 600;
-    background: var(--fg);
-    border-color: var(--fg);
     color: var(--bg);
-  }
-
-  .go.stop {
     background: var(--temperature);
     border-color: var(--temperature);
   }

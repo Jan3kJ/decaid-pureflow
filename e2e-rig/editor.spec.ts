@@ -147,8 +147,8 @@ test('simple mode: a changed value redraws the curve, and the gateway holds the 
   await page.getByTestId('load-to-machine').click();
   const params = await expectLoaded(page, LIGHT);
   expect(params).toEqual({ ...light, infusePressure: pressure, stopWeight: 47, pauseDuration: 15 });
-  await expect(page.getByTestId('target-weight')).toHaveText('47 g');
-  await expect(page.getByTestId('dose')).toHaveText('16 g');
+  // Dose and stop weight are not on home: the workflow holds them.
+  expect((await api('GET', '/api/v1/workflow')).context).toMatchObject({ targetYield: 47, targetDoseWeight: 16 });
   // Loading saves nothing.
   expect(await profileIds()).toEqual(profilesBefore);
 });
@@ -197,8 +197,7 @@ test('detail mode: typed values are loaded; a saved profile re-opens with them a
   // Load to machine: the workflow holds the generator's profile for the typed values.
   await page.getByTestId('load-to-machine').click();
   expect(await expectLoaded(page, about)).toEqual(wanted);
-  await expect(page.getByTestId('dose')).toHaveText('18.5 g');
-  await expect(page.getByTestId('target-weight')).toHaveText('48 g');
+  expect((await api('GET', '/api/v1/workflow')).context).toMatchObject({ targetYield: 48, targetDoseWeight: 18.5 });
 
   // The saved profile re-opens in the editor with the same parameters: as the current profile
   // after a reload, and from the editor's picker.

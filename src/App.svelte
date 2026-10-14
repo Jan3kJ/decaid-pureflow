@@ -43,7 +43,9 @@
         <span>history</span>
       </button>
     {:else}
-      <button data-testid="nav-home" aria-label="back to home" onclick={() => skin.go('home')}>‹</button>
+      <button class="back" data-testid="nav-home" aria-label="back to home" onclick={() => skin.go('home')}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4l-8 8 8 8" /></svg>
+      </button>
       <span class="dot {skin.status.tone}" title={skin.status.title} data-testid="nav-status"></span>
     {/if}
   </nav>
@@ -65,6 +67,15 @@
       <Settings {skin} />
     {/if}
   </div>
+
+  <!-- The right edge of home: the tab of the steam page, the mirror of the history's (founder, 2026-10-13). -->
+  {#if home}
+    <nav class="right">
+      <button class="tab" data-testid="open-steam" onclick={() => skin.go('steam')}>
+        <span>steam</span>
+      </button>
+    </nav>
+  {/if}
 
   {#if home && skin.historyOpen}
     <History {skin} />
@@ -97,7 +108,11 @@
     position: relative;
     height: 100%;
     display: grid;
-    grid-template-columns: 3.4rem minmax(0, 1fr);
+    grid-template-columns: 4rem minmax(0, 1fr);
+  }
+
+  main.home {
+    grid-template-columns: 4rem minmax(0, 1fr) 4rem;
   }
 
   /* A finger that moves sideways on home is the history's swipe, not the browser's pan. */
@@ -115,9 +130,14 @@
     background: var(--panel);
   }
 
+  nav.right {
+    border-right: 0;
+    border-left: 1px solid var(--line);
+  }
+
   nav button {
     width: 100%;
-    min-height: 3.4rem;
+    min-height: 3.5rem;
     font: inherit;
     font-size: 2rem;
     line-height: 1;
@@ -127,7 +147,25 @@
     touch-action: manipulation;
   }
 
-  /* The history's tab runs down the edge. */
+  /* The way back: a finger's target of at least 56 CSS pixels, in the accent colour. */
+  nav .back {
+    height: 4rem;
+    display: grid;
+    place-items: center;
+    color: var(--accent);
+  }
+
+  nav .back svg {
+    width: 2.6rem;
+    height: 2.6rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  /* The tabs of the history and of steam run down the edges. */
   nav .tab {
     flex: 1;
     font-size: 0.9rem;
@@ -138,6 +176,10 @@
   nav .tab span {
     writing-mode: vertical-rl;
     transform: rotate(180deg);
+  }
+
+  nav.right .tab span {
+    transform: none;
   }
 
   .dot {

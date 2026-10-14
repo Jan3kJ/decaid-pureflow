@@ -39,6 +39,7 @@ test('scale: the rig says connected, and tare answers', async ({ page }) => {
 
   await page.goto('/');
   await expect(page.getByTestId('status-title')).toHaveText('Idle', { timeout: 15_000 });
+  await page.getByTestId('menu').click();
   await page.getByTestId('open-scale').click();
   await expect(page.getByTestId('scale-link')).toHaveText('Connected', { timeout: 15_000 });
   await expect(page.getByTestId('scale-page-weight')).toContainText('g');
@@ -62,10 +63,12 @@ test('scale: with blockTareDuringShot on, a tare during a simulated shot shows t
     await page.goto('/');
     await expect(page.getByTestId('status-title')).toHaveText('Idle', { timeout: 15_000 });
 
-    // The shot of whatever profile the workflow holds; the espresso screen opens by itself.
-    await page.getByTestId('start').click();
+    // The shot of whatever profile the workflow holds, started through the gateway as at the
+    // machine; the espresso screen opens by itself.
+    await api('PUT', '/api/v1/machine/state/espresso');
     await expect(page.getByTestId('screen-espresso')).toBeVisible({ timeout: 15_000 });
     await page.getByTestId('nav-home').click();
+    await page.getByTestId('menu').click();
     await page.getByTestId('open-scale').click();
     expect(await machineState()).toBe('espresso');
 
@@ -107,6 +110,8 @@ test('sleep: the button puts the machine into sleeping, a touch wakes it', async
     await page.goto('/');
     await expect(page.getByTestId('status-title')).toHaveText('Idle', { timeout: 30_000 });
 
+    // Sleep is an entry of home's menu.
+    await page.getByTestId('menu').click();
     await page.getByTestId('sleep').click();
     await expect.poll(machineState, { timeout: 15_000 }).toBe('sleeping');
     await expect(page.getByTestId('asleep')).toBeVisible({ timeout: 15_000 });
@@ -118,7 +123,7 @@ test('sleep: the button puts the machine into sleeping, a touch wakes it', async
     await expect(page.getByTestId('screen-home')).toBeVisible();
     // The rig drops the scale while the machine sleeps (scalePowerMode "disconnect",
     // research.md 9.1): it is back before the test ends, so the next one finds a scale.
-    await expect(page.getByTestId('scale-weight')).toContainText('g', { timeout: 30_000 });
+    await expect(page.getByTestId('state-scale')).toHaveText(/ g$/, { timeout: 30_000 });
 
     const states = sent.filter((call) => call.includes('/machine/state/'));
     expect(states).toEqual(['PUT /api/v1/machine/state/sleeping', 'PUT /api/v1/machine/state/idle']);

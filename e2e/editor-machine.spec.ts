@@ -179,10 +179,9 @@ test('simple mode: a changed value redraws the curve and load to machine sends t
   await expect(page.getByTestId('screen-home')).toBeVisible();
   const params = loadedProfile(gateway, 'A-Flow / default-light', 'Janek');
   expect(params).toEqual({ ...light, infusePressure: pressure, stopWeight: 47 });
-  // Home shows what the workflow got.
+  // Home shows what the workflow got; dose and stop weight are the workflow's, not on home.
   await expect(page.getByTestId('profile-name')).toHaveText('A-Flow / default-light');
-  await expect(page.getByTestId('target-weight')).toHaveText('47 g');
-  await expect(page.getByTestId('dose')).toHaveText('16 g');
+  expect(gateway.workflow.context).toMatchObject({ targetYield: 47, targetDoseWeight: 16 });
   // Nothing was saved by loading.
   expect(gateway.calls('POST', '/api/v1/profiles')).toHaveLength(0);
   expect(errors).toEqual([]);
@@ -208,7 +207,7 @@ test('detail mode: typed values redraw the curve, are loaded, and are open again
   const params = loadedProfile(gateway, 'A-Flow / default-light', 'Janek');
   // The 2nd fill followed the infuse temperature and keeps the value it had (docs/a-flow-3.0.md, 5).
   expect(params).toEqual({ ...light, pourPressure: 8.5, infuseTemperature: 91, secondFillTemperature: 95, dose: 18.5 });
-  await expect(page.getByTestId('dose')).toHaveText('18.5 g');
+  expect(gateway.workflow.context.targetDoseWeight).toBe(18.5);
 
   // The loaded values were not saved; the editor opens on them again, under the default they came from.
   await page.getByTestId('open-editor').click();
