@@ -144,10 +144,10 @@ test('settings: the defaults, typed values and both switches survive a reload', 
   const steps = page.getByTestId('setting-show-profile-steps');
   await expect(workaround).toHaveAttribute('aria-checked', 'false');
   await expect(steps).toHaveAttribute('aria-checked', 'true');
-  // Three categories and nothing else.
-  await expect(page.locator('[data-testid="screen-settings"] h2')).toHaveText(['Steam', 'Profile', 'Shot graph']);
+  // Three categories and the start row of the category Profile, nothing else.
+  await expect(page.locator('[data-testid="screen-settings"] h2')).toHaveText(['Steam', 'Profile', 'Shot graph', 'Profile: start row']);
+  await expect(page.getByTestId('settings-start').locator('b')).toHaveText(['floral', 'light', 'medium', 'dark', '46mm']);
   expect(await overflow(page)).toEqual({ scrolls: false, outside: 0 });
-  await page.screenshot({ path: 'docs/product/settings.png' });
 
   // The number pad of the editor, with the unit and the range.
   await page.getByTestId('setting-mug-small').click();
@@ -183,6 +183,7 @@ test('settings: the defaults, typed values and both switches survive a reload', 
       showProfileSteps: false,
       firstStepWorkaround: true,
       showGraphLegend: true,
+      startProfiles: ['A-Flow / default-floral', 'A-Flow / default-light', 'A-Flow / default-medium', 'A-Flow / default-dark', 'A-Flow / default-46mm'],
       steam: {
         mugSmall: 162.5,
         mugMedium: 225,

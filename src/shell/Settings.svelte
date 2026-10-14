@@ -1,6 +1,16 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
+  import type { ProfileRecord } from '../api';
   import NumberPad from '../editor/NumberPad.svelte';
-  import { STEAM_FIELDS, steamValue, withSteamValue, type Settings, type SteamField } from '../settings';
+  import { startChoices, startName } from '../editor/start';
+  import {
+    STEAM_FIELDS,
+    steamValue,
+    withStartProfile,
+    withSteamValue,
+    type Settings,
+    type SteamField,
+  } from '../settings';
   import type { Skin } from './skin.svelte';
 
   interface Props {
@@ -48,6 +58,35 @@
     if (typing) skin.setSettings({ steam: withSteamValue(settings.steam, typing, value) });
     typing = null;
   }
+
+  // The editor's start row (founder, 2026-10-13): what a slot can hold is read from the gateway.
+  let records: ProfileRecord[] | null = $state.raw(null);
+  let unread: string | null = $state(null);
+  /** the slot whose list is open */
+  let choosing: number | null = $state(null);
+  const choices = $derived(startChoices(records ?? []));
+  /** a chosen profile the editor no longer finds; unknown while the list is not read */
+  const isMissing = (title: string) => !!records && !choices.some((choice) => choice.title === title);
+  /** a slot's list: every profile that is not in another slot */
+  const offered = $derived(
+    choices.filter((choice) => !settings.startProfiles.some((title, i) => i !== choosing && title === choice.title)),
+  );
+
+  async function readProfiles() {
+    unread = null;
+    try {
+      records = await skin.client.listProfiles();
+    } catch (cause) {
+      unread = `The profiles could not be read: ${cause instanceof Error ? cause.message : String(cause)}`;
+    }
+  }
+
+  function choose(title: string | null) {
+    if (choosing !== null) skin.setSettings({ startProfiles: withStartProfile(settings.startProfiles, choosing, title) });
+    choosing = null;
+  }
+
+  onMount(readProfiles);
 </script>
 
 <div class="settings">
@@ -96,7 +135,69 @@
       {/each}
     </section>
   {/each}
+
+  <!-- Category Profile, in a block of its own: five slots do not fit beside Steam. -->
+  <section class="start" data-testid="settings-start">
+    <div class="row">
+      <div class="about">
+        <h2>Profile: start row</h2>
+        <small>The editor's profiles to start from, up to five. A tap on a slot chooses its profile.</small>
+      </div>
+      {#if unread}
+        <button class="retry" data-testid="start-retry" onclick={readProfiles}>{unread} Try again</button>
+      {/if}
+    </div>
+    <div class="slots">
+      {#each settings.startProfiles as title, index (index)}
+        <button
+          class="value slot"
+          class:missing={title !== null && isMissing(title)}
+          data-testid="start-slot-{index + 1}"
+          onclick={() => (choosing = index)}
+        >
+          <small>{index + 1}</small>
+          {#if title === null}
+            <span class="none">empty</span>
+          {:else}
+            <b>{startName(title)}</b>
+            {#if isMissing(title)}<small class="warn" data-testid="start-missing">missing</small>{/if}
+          {/if}
+        </button>
+      {/each}
+    </div>
+  </section>
 </div>
+
+{#if choosing !== null}
+  <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+  <div class="backdrop" onclick={(e) => e.target === e.currentTarget && (choosing = null)}>
+    <div class="dialog" role="dialog" aria-modal="true" aria-label="slot {choosing + 1}" data-testid="start-choices">
+      <h2>slot {choosing + 1}</h2>
+      <ul>
+        <li>
+          <button
+            class="choice"
+            aria-pressed={settings.startProfiles[choosing] === null}
+            data-testid="start-choice-empty"
+            onclick={() => choose(null)}><span class="none">empty</span></button
+          >
+        </li>
+        {#each offered as choice (choice.title)}
+          <li>
+            <button
+              class="choice"
+              aria-pressed={settings.startProfiles[choosing] === choice.title}
+              data-testid="start-choice"
+              data-title={choice.title}
+              onclick={() => choose(choice.title)}>{choice.name}</button
+            >
+          </li>
+        {/each}
+        {#if !records && !unread}<li class="none">Reading the profiles …</li>{/if}
+      </ul>
+    </div>
+  </div>
+{/if}
 
 {#if typing}
   <NumberPad
@@ -118,13 +219,121 @@
     padding: 1rem 1.2rem;
     display: grid;
     grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-rows: auto auto auto auto minmax(0, 1fr);
     gap: 1rem 1.2rem;
   }
 
   /* Steam fills the left column; the switches' categories are stacked in the right one. */
   section:first-of-type {
     grid-row: 2 / 4;
+  }
+
+  /* The start row's slots run under both. */
+  .start {
+    grid-column: 1 / -1;
+  }
+
+  .start h2 {
+    margin: 0;
+  }
+
+  .start > .row {
+    border-top: 0;
+  }
+
+  .slots {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.6rem;
+    padding-bottom: 0.4rem;
+  }
+
+  .value.slot {
+    width: auto;
+    min-width: 0;
+    padding: 0 0.6rem;
+  }
+
+  .slot b {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 1.25rem;
+  }
+
+  .slot.missing {
+    border-color: var(--temperature);
+  }
+
+  .warn {
+    color: var(--temperature);
+  }
+
+  .none {
+    color: var(--dim);
+    font-style: italic;
+  }
+
+  .retry {
+    flex: none;
+    min-height: 3rem;
+    padding: 0 1rem;
+    background: var(--raised);
+    border: 1px solid var(--line);
+    border-radius: 0.9rem;
+  }
+
+  .backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgb(0 0 0 / 55%);
+  }
+
+  .dialog {
+    width: 28rem;
+    max-height: 80vh;
+    box-sizing: border-box;
+    padding: 0.4rem 1.2rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 1.2rem;
+    box-shadow: 0 0.6rem 2.4rem rgb(0 0 0 / 70%);
+  }
+
+  ul {
+    min-height: 0;
+    margin: 0.6rem 0 0;
+    padding: 0;
+    list-style: none;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .choice {
+    width: 100%;
+    min-height: 3.4rem;
+    padding: 0 1rem;
+    text-align: left;
+    font-size: 1.1rem;
+    background: var(--raised);
+    border: 1px solid var(--line);
+    border-radius: 0.9rem;
+  }
+
+  .choice[aria-pressed='true'] {
+    background: var(--fg);
+    border-color: var(--fg);
+    color: var(--bg);
+    font-weight: 600;
   }
 
   header {

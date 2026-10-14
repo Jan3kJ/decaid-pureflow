@@ -87,8 +87,11 @@ test('loads in simple mode with no console errors; its name leads to the picker,
   await expect(page.getByTestId('mode-simple')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByTestId('detail-panel')).toHaveCount(0);
   await expect(page.getByTestId('value-infusePressure')).toHaveText('3 bar');
-  // No row of profiles and no 'load to machine': the name is the shortcut to the picker.
+  // No 'load to machine'. The row to start from holds the five defaults until the settings
+  // change it (founder, 2026-10-13); the name is the shortcut to the picker.
   await expect(page.getByTestId('load-to-machine')).toHaveCount(0);
+  await expect(page.getByTestId('start-row').locator('button')).toHaveText(['floral', 'light', 'medium', 'dark', '46mm']);
+  await expect(page.getByTestId('start-light')).toHaveAttribute('aria-pressed', 'true');
   await page.getByTestId('editor-profile').click();
   await expect(page.getByTestId('screen-profiles')).toBeVisible();
   const aflow = page.getByTestId('profile-item').filter({ hasText: 'A-Flow 3.0' });

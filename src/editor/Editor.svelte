@@ -39,6 +39,7 @@
     titleOf,
     type Stored,
   } from './save';
+  import { startRow } from './start';
   import StepList from './StepList.svelte';
   import { readParams } from './storage';
   import ValueChip from './ValueChip.svelte';
@@ -120,6 +121,8 @@
     }
     return all;
   });
+  /** the row to start from: the profiles chosen in the settings, in their order (founder, 2026-10-13) */
+  const row = $derived(startRow(settings.startProfiles, entries));
   const origin = $derived(entries.find((entry) => entry.key === originKey) ?? entries[0]);
   const dirty = $derived(serializeParams(params) !== serializeParams(origin.params));
   /** 'save' writes a new version of a saved profile; a default is saved under a new name. */
@@ -202,6 +205,13 @@
     } finally {
       busy = false;
     }
+  }
+
+  /** A profile of the row opens in the editor; leaving loads it, as any change (founder, 2026-10-13). */
+  function pick(key: string) {
+    touched = true;
+    notice = null;
+    open(key, entries.find((entry) => entry.key === key)!.params);
   }
 
   onMount(() => {
@@ -298,6 +308,20 @@
       <span>{origin.name}</span>
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h9" /></svg>
     </button>
+    <!-- The profiles to start from, chosen in the settings; 'save as' does not add to them. -->
+    <div class="group start" role="group" aria-label="start from" data-testid="start-row">
+      {#each row as entry (entry.key)}
+        <button
+          class="seg"
+          aria-pressed={entry.key === origin.key}
+          data-testid="start-{entry.name}"
+          disabled={busy}
+          onclick={() => pick(entry.key)}
+        >
+          {entry.name}
+        </button>
+      {/each}
+    </div>
     <div class="group">
       <div class="group" role="group" aria-label="profile actions">
         <button class="seg action" data-testid="save" disabled={busy || !canSave} onclick={save}>save</button>
@@ -485,8 +509,9 @@
 
   /* The profile's name, and the way to the picker. */
   .name {
+    flex: none;
     min-width: 0;
-    max-width: 24rem;
+    max-width: 16rem;
     display: flex;
     align-items: center;
     gap: 0.7rem;
@@ -508,6 +533,24 @@
     stroke: var(--dim);
     stroke-width: 2.4;
     stroke-linecap: round;
+  }
+
+  /* The row takes the room between the name and the actions and scrolls when it has no more. */
+  .start {
+    flex: 1;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .start .seg {
+    flex: none;
+    min-width: 4.5rem;
+    max-width: 11rem;
+    padding: 0 0.9rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   button {

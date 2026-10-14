@@ -1,6 +1,7 @@
 // The skin's own settings, one object under one localStorage key (spec 4.1: sessionStorage
 // does not survive the WebView). This is the only store of settings: the skin holds one copy
 // of it (`Skin.settings`), the settings page changes it, and every screen reads it there.
+import { DEFAULT_PROFILES } from './aflow/defaults';
 
 export interface Settings {
   /** the editor offers the generated profile steps under the graph; its panel opens closed (founder, 2026-10-13) */
@@ -12,6 +13,13 @@ export interface Settings {
   firstStepWorkaround: boolean;
   /** the shot graph shows its legend under it: on home, on the espresso screen and for a shot of the history */
   showGraphLegend: boolean;
+  /**
+   * The editor's row of profiles to start from (founder, 2026-10-13): five slots, each the
+   * title of an A-Flow 3.0 profile or null for an empty one. A title, not an id: the id is a
+   * hash of the steps and changes with every save (research.md 11), the title stays, as in
+   * the shot history.
+   */
+  startProfiles: (string | null)[];
   /** the category Steam (spec 3.4): what the steam page calculates with */
   steam: SteamSettings;
 }
@@ -42,10 +50,17 @@ export const DEFAULT_STEAM_SETTINGS: SteamSettings = {
   favourites: [25, 50, 30],
 };
 
+/** The editor's row holds up to five profiles. */
+export const START_SLOTS = 5;
+
+/** The five A-Flow 3.0 defaults in their order (spec 3.2): the row as it was before it could be chosen. */
+export const DEFAULT_START_PROFILES: (string | null)[] = DEFAULT_PROFILES.map((entry) => entry.title);
+
 export const DEFAULT_SETTINGS: Settings = {
   showProfileSteps: true,
   firstStepWorkaround: false,
   showGraphLegend: true,
+  startProfiles: DEFAULT_START_PROFILES,
   steam: DEFAULT_STEAM_SETTINGS,
 };
 
@@ -89,7 +104,29 @@ export function loadSettings(store: Store = localStorage): Settings {
   } catch {
     // no storage, or not JSON: the defaults
   }
-  return merged(DEFAULT_SETTINGS, stored);
+  const settings = merged(DEFAULT_SETTINGS, stored);
+  const values = (stored && typeof stored === 'object' ? stored : {}) as Record<string, unknown>;
+  return { ...settings, startProfiles: readStartProfiles(values.startProfiles) };
+}
+
+/**
+ * The stored slots of the start row: the first five, a title or null each, a title once.
+ * Anything that is not a list gives the defaults; a slot that is not a title is empty.
+ */
+export function readStartProfiles(stored: unknown): (string | null)[] {
+  if (!Array.isArray(stored)) return [...DEFAULT_START_PROFILES];
+  const slots: (string | null)[] = [];
+  for (const value of stored.slice(0, START_SLOTS)) {
+    const title = typeof value === 'string' && value.trim() !== '' ? value : null;
+    slots.push(title !== null && slots.includes(title) ? null : title);
+  }
+  while (slots.length < START_SLOTS) slots.push(null);
+  return slots;
+}
+
+/** The slots with one changed; a profile sits in one slot only, so it leaves the one it was in. */
+export function withStartProfile(slots: readonly (string | null)[], index: number, title: string | null): (string | null)[] {
+  return slots.map((slot, i) => (i === index ? title : title !== null && slot === title ? null : slot));
 }
 
 export function saveSettings(settings: Settings, store: Store = localStorage): void {

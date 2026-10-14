@@ -51,7 +51,7 @@ version 2.
 | Scale | connect state, tare (a 400 `block_tare_during_shot` is a notice, not an error) |
 | Profiles | list, select, load to the machine (`PUT /api/v1/workflow`) (founder, 2026-10-13) |
 | Shot history | **an overlay, not a page:** a tab on the left edge of the screen (or a swipe from left to right) opens it; it closes when an item is selected or on a tap outside it. It holds **a list of previous shots; tapping one loads its profile, beans and grinder setting and shows its graph**: see 3.5 |
-| Settings | a settings page with categories. **Steam** is one (3.4), and **Profile** holds the first-step workaround (3.2); the others hold the few settings the founder needs. Everything else stays in Decaid's own settings |
+| Settings | a settings page with categories. **Steam** is one (3.4), and **Profile** holds the first-step workaround (3.2) and the editor's row of profiles to start from, up to five (founder, 2026-10-13); the others hold the few settings the founder needs. Everything else stays in Decaid's own settings |
 | Sleep / wake | sleep button, wake on touch; brightness only where `platformSupported.brightness` |
 
 ### 3.2 The A-Flow profile editor (A-Flow 3.0)
@@ -130,6 +130,7 @@ Editor behaviour:
   and leaving the editor loads the values on screen when they differ from those it opened
   with (founder, 2026-10-13).
 - Start from five default profiles (supplied as JSON fixtures), in this order: floral, light, medium, dark, 46mm (founder, 2026-10-12). light, medium and dark are the plugin's, converted to 3.0.
+  - The row is configurable in the settings: up to five A-Flow profiles, the five defaults until it is changed. 'Save as' does not add a profile to it; a saved profile is reached through the profile picker (founder, 2026-10-13).
   - floral is new: light with the 2nd fill on and infuse pressure 0 bar (founder, 2026-10-12).
   - 46mm is the plugin's very-dark, renamed, with pour pressure 9 bar, ramp time 40 s and flow down (founder, 2026-10-12).
   - The plugin's like-dflow is removed (founder, 2026-10-12).
@@ -480,5 +481,15 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
   dose of an A-Flow 3.0 default as `targetDoseWeight`: Decaid stops at the workflow's yield,
   not at the profile's weight. Is that wanted, or does a yield set by hand survive a profile
   change? (owner)
+- The editor's start row (founder, 2026-10-13, request 175: the editor's row, not the picker's
+  list; built in `fb-editor-defaults`), choices the founder has not seen: a slot holds a
+  profile's title, not its id, because the id changes with every save (research.md 11), as
+  the shot history does; so a renamed profile is a new one. A slot offers the five defaults,
+  which the editor always has, and every A-Flow 3.0 profile the gateway lists. The slots keep
+  their place: an emptied slot stays empty and the row closes up. A chosen profile that is
+  gone is left out of the row and marked 'missing' on the settings page until its slot is
+  changed. The slots are a block of their own under Steam, Profile and Shot graph, since five
+  do not fit beside Steam. A tap on the row opens the profile in the editor without loading
+  it; leaving the editor loads it, as any change. (owner)
 - The flow-down defaults (dark, 46mm) pour nothing in their last step on the simulated
   machine (research.md 10.4). A check on the real DE1 with item 7. (owner)

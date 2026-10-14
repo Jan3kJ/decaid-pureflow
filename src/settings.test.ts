@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_SETTINGS,
+  DEFAULT_START_PROFILES,
   DEFAULT_STEAM_SETTINGS,
   SETTINGS_KEY,
   STEAM_FIELDS,
   loadSettings,
+  readStartProfiles,
   saveSettings,
   steamValue,
+  withStartProfile,
   withSteamValue,
 } from './settings';
 
@@ -39,6 +42,7 @@ describe('settings', () => {
       showProfileSteps: false,
       firstStepWorkaround: true,
       showGraphLegend: false,
+      startProfiles: ['A-Flow / mine', null, 'A-Flow / default-dark', null, null],
       steam: { ...DEFAULT_STEAM_SETTINGS, mugSmall: 162.5, referenceSeconds: 30, favourites: [20, 40, 60] },
     };
     saveSettings(settings, store);
@@ -96,6 +100,48 @@ describe('settings', () => {
     };
     expect(loadSettings(broken)).toEqual(DEFAULT_SETTINGS);
     expect(() => saveSettings(DEFAULT_SETTINGS, broken)).not.toThrow();
+  });
+});
+
+describe("the editor's start row (founder, 2026-10-13)", () => {
+  const FLORAL = 'A-Flow / default-floral';
+
+  it('holds the five A-Flow 3.0 defaults by default, in their order', () => {
+    expect(loadSettings(fakeStore()).startProfiles).toEqual([
+      'A-Flow / default-floral',
+      'A-Flow / default-light',
+      'A-Flow / default-medium',
+      'A-Flow / default-dark',
+      'A-Flow / default-46mm',
+    ]);
+  });
+
+  it('saves the chosen slots and reads them back after a reload', () => {
+    const store = fakeStore();
+    const startProfiles = withStartProfile(DEFAULT_START_PROFILES, 1, 'A-Flow / mine');
+    saveSettings({ ...DEFAULT_SETTINGS, startProfiles }, store);
+    expect(JSON.parse(store.getItem(SETTINGS_KEY)!).startProfiles).toEqual(startProfiles);
+    expect(loadSettings(store).startProfiles).toEqual([FLORAL, 'A-Flow / mine', 'A-Flow / default-medium', 'A-Flow / default-dark', 'A-Flow / default-46mm']);
+  });
+
+  it('keeps a title it cannot check: a profile that no longer exists stays until it is removed', () => {
+    expect(loadSettings(fakeStore('{"startProfiles":["A-Flow / gone"]}')).startProfiles).toEqual(['A-Flow / gone', null, null, null, null]);
+  });
+
+  it('takes bad stored data as the defaults, or as an empty slot', () => {
+    expect(loadSettings(fakeStore('{"startProfiles":"floral"}')).startProfiles).toEqual(DEFAULT_START_PROFILES);
+    expect(loadSettings(fakeStore('{"startProfiles":null}')).startProfiles).toEqual(DEFAULT_START_PROFILES);
+    expect(readStartProfiles([3, '', '  ', { title: FLORAL }, FLORAL])).toEqual([null, null, null, null, FLORAL]);
+    expect(readStartProfiles([])).toEqual([null, null, null, null, null]);
+  });
+
+  it('holds a profile once and five at the most', () => {
+    expect(readStartProfiles([FLORAL, 'b', FLORAL, 'c'])).toEqual([FLORAL, 'b', null, 'c', null]);
+    expect(readStartProfiles(['a', 'b', 'c', 'd', 'e', 'f', 'g'])).toEqual(['a', 'b', 'c', 'd', 'e']);
+    // a profile chosen for another slot leaves the one it was in
+    expect(withStartProfile(DEFAULT_START_PROFILES, 4, FLORAL)).toEqual([null, 'A-Flow / default-light', 'A-Flow / default-medium', 'A-Flow / default-dark', FLORAL]);
+    expect(withStartProfile(DEFAULT_START_PROFILES, 0, null)[0]).toBeNull();
+    expect(DEFAULT_START_PROFILES[0]).toBe(FLORAL);
   });
 });
 
