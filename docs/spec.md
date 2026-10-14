@@ -244,8 +244,9 @@ Windows, Linux and macOS. What differs per platform is **Decaid itself**:
   2026-10-11). A-Flow is forked from Damian Brakel's D-Flow, which carries no licence file; the
   founder has Damian's approval to use that code.
 - **Version 1:** a local ZIP with `index.html` at its root, which the founder installs on the
-  tablet. No GitHub release. Built in D9: `npm run zip` writes
-  `release/decaid-skin-1.0.0-rc.1.zip`; the steps and the founder's checks are in
+  tablet. No GitHub release. Built in D9, numbered 0.1.0 since 2026-10-14 (beta; founder,
+  2026-10-13): `npm run zip` writes `release/decaid-skin-0.1.0.zip`; the steps and the
+  founder's checks are in
   [install.md](install.md), the result of the automated items in
   [acceptance.md](acceptance.md).
 - **Later releases:** the same ZIP attached to a GitHub release, installable by URL.
@@ -371,8 +372,8 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
   Settings); whether the skin's port is the same there and stays over a restart, which the
   settings in `localStorage` depend on. The founder's checks are in
   [install.md](install.md). (owner)
-- The version is `1.0.0-rc.1` until items 7 and 8 have passed, then `1.0.0`; it is in
-  `package.json` and `public/manifest.json`. Is that the numbering the founder wants? (owner)
+- The version is `0.1.0`, a beta (founder, 2026-10-13); it is in `package.json` and
+  `public/manifest.json`. A later number is the founder's call. (answered)
 - What are the skin and the repository called? `decaid-skin` is provisional; decided before
   the first public release. (owner)
 - Steam test (acceptance 4), as built in D8a; the founder agreed to it on 2026-10-13
