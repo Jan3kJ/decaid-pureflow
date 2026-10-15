@@ -129,6 +129,7 @@ Editor behaviour:
   There is no 'load to machine': 'save' and 'save as' load the saved profile to the machine,
   and leaving the editor loads the values on screen when they differ from those it opened
   with (founder, 2026-10-13).
+- The temperature axis shows 80 to 100 °C. A temperature outside, set by a drag or typed in detail mode, widens it to the next 5 °C step with at least 1 °C of room, up to the allowed 50-105 °C; it is 80 to 100 again once no temperature is outside. A drag may pass the lane's edge, and the axis widens under it (founder, 2026-10-14).
 - Start from five default profiles (supplied as JSON fixtures), in this order: floral, light, medium, dark, 46mm (founder, 2026-10-12). light, medium and dark are the plugin's, converted to 3.0.
   - The row is configurable in the settings: up to five A-Flow profiles, the five defaults until it is changed. 'Save as' does not add a profile to it; a saved profile is reached through the profile picker (founder, 2026-10-13).
   - floral is new: light with the 2nd fill on and infuse pressure 0 bar (founder, 2026-10-12).

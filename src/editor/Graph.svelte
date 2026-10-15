@@ -1,8 +1,6 @@
 <script lang="ts">
   import {
     DEFAULT_MACHINE_LIMITS,
-    TEMPERATURE_MAX,
-    TEMPERATURE_MIN,
     resolveParams,
     type AFlowParams,
     type NumberField,
@@ -12,6 +10,7 @@
     PHASE_LABEL,
     buildCurve,
     hitTest,
+    temperatureAxis,
     type EditField,
     type LineId,
     type PhaseId,
@@ -38,7 +37,6 @@
   /** Pressure and flow share one scale: 1 bar is as high as 1 ml/s. */
   const yMax = Math.max(limits.maxPressure, limits.maxFlow);
   const mainTicks = [0, 3, 6, 9, 12].filter((v) => v <= yMax);
-  const temperatureTicks = [80, 100];
 
   let width = $state(0);
   let height = $state(0);
@@ -54,6 +52,10 @@
 
   const resolved = $derived(resolveParams(params));
   const curve = $derived(buildCurve(params, limits));
+  // 80 to 100 °C, wider while a temperature is outside (founder, 2026-10-14). It follows a
+  // drag as it goes: the line stays in its lane, the finger may leave it.
+  const temperature = $derived(temperatureAxis(curve.temperature.map((pt) => pt.y)));
+  const temperatureTicks = $derived([temperature.min, temperature.max]);
   // The pause's border is dragged in detail mode only (founder, 2026-10-12).
   const draggable = $derived({
     levels: curve.levels,
@@ -89,7 +91,7 @@
     y: (line, value) =>
       line === 'temperature'
         ? box.tempBottom -
-          ((value - TEMPERATURE_MIN) / (TEMPERATURE_MAX - TEMPERATURE_MIN)) * box.tempH
+          ((value - temperature.min) / (temperature.max - temperature.min)) * box.tempH
         : box.bottom - (value / yMax) * box.mainH,
   });
 
@@ -101,7 +103,7 @@
 
   function valuePerPixel(line: LineId): number {
     return line === 'temperature'
-      ? (TEMPERATURE_MAX - TEMPERATURE_MIN) / box.tempH
+      ? (temperature.max - temperature.min) / box.tempH
       : yMax / box.mainH;
   }
 
@@ -118,6 +120,11 @@
     startValue: number;
     /** seconds per pixel to the right, as it was when the drag of a border began */
     secondsPerPixel: number;
+    /**
+     * a line's value per pixel up, as it was when the drag began: the temperature axis widens
+     * under a drag, and the value keeps following the finger at the same pace
+     */
+    valuePerPixel: number;
     x: number;
     y: number;
   }
@@ -157,6 +164,7 @@
       startValue: params[field],
       secondsPerPixel:
         hit.kind === 'border' ? hit.border.secondsPerUnit / (box.plotW / GRAPH_WIDTH) : 0,
+      valuePerPixel: hit.kind === 'level' ? valuePerPixel(hit.level.line) : 0,
       x,
       y,
     };
@@ -168,7 +176,7 @@
     drag.x = x;
     drag.y = y;
     const value = drag.line
-      ? drag.startValue + (drag.startY - y) * valuePerPixel(drag.line)
+      ? drag.startValue + (drag.startY - y) * drag.valuePerPixel
       : drag.startValue + (x - drag.startX) * drag.secondsPerPixel;
     const next = snap(drag.field, value, limits);
     if (next !== params[drag.field]) ondrag(drag.field, next);
@@ -264,7 +272,7 @@
     {#each temperatureTicks as tick (tick)}
       {@const y = projection.y('temperature', tick)}
       <line class="grid" x1={box.left} x2={box.right} y1={y} y2={y} />
-      <text class="tick" x={box.left - 0.5 * rem} y={y + 0.3 * rem}>{tick}</text>
+      <text class="tick" data-testid="temperature-tick" x={box.left - 0.5 * rem} y={y + 0.3 * rem}>{tick}</text>
     {/each}
 
     {#each curve.phases.slice(1) as phase (phase.id)}

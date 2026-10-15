@@ -441,6 +441,52 @@ test('temperatures: detail mode sets one phase, a drag in simple mode keeps the 
   await expect(page.getByTestId('value-pourTemperature')).toHaveText('95 °C');
 });
 
+test('the temperature axis is 80 to 100 °C and widens for a temperature outside (founder, 2026-10-14)', async ({
+  page,
+}) => {
+  const ticks = page.getByTestId('temperature-tick');
+  await expect(ticks).toHaveText(['80', '100']);
+  /** pixels per °C of the axis on screen now */
+  const pixelsPerDegree = async () => {
+    const [low, high] = await ticks.evaluateAll((texts) =>
+      texts.map((t) => ({ value: Number(t.textContent), y: t.getBoundingClientRect().top })),
+    );
+    return (low.y - high.y) / (high.value - low.value);
+  };
+
+  // A drag of the flow temperature from 95 °C down past the lane's lower edge, to about 75 °C.
+  await expect(page.getByTestId('value-pourTemperature')).toHaveText('95 °C');
+  await dragBy(page, await middleOf(page, 'pourTemperature'), 0, 20 * (await pixelsPerDegree()));
+  await expect(page.getByTestId('popup')).toContainText('flow temperature');
+  await page.mouse.up();
+  const low = await number(page, 'value-pourTemperature');
+  expect(low).toBeLessThan(80);
+  expect(low).toBeGreaterThan(70);
+  await expect(ticks).toHaveText([String(Math.floor((low - 1) / 5) * 5), '100']);
+  // The line is drawn inside the lane, on the wider axis.
+  const lane = await ticks.evaluateAll((texts) => texts.map((t) => t.getBoundingClientRect().top));
+  const line = await middleOf(page, 'pourTemperature');
+  expect(line.y).toBeLessThan(lane[0] + 20);
+  expect(line.y).toBeGreaterThan(lane[1]);
+  await page.screenshot({ path: 'docs/product/temperature-axis.png' });
+
+  // Moved back above 80 °C, the axis narrows again and the value is kept.
+  await dragBy(page, line, 0, -(90 - low) * (await pixelsPerDegree()));
+  await page.mouse.up();
+  const back = await number(page, 'value-pourTemperature');
+  expect(back).toBeGreaterThan(80);
+  await expect(ticks).toHaveText(['80', '100']);
+
+  // A value typed in detail mode widens it the same way.
+  await page.getByTestId('mode-detail').click();
+  await page.getByTestId('phase-fill').click();
+  await type(page, 'fillTemperature', '102');
+  await page.getByTestId('numpad-confirm').click();
+  await expect(page.getByTestId('chip-value-fillTemperature')).toHaveText('102 °C');
+  await expect(ticks).toHaveText(['80', '105']);
+  await expect(page.getByTestId('value-pourTemperature')).toHaveText(`${back} °C`);
+});
+
 test('save as stores the profile under its name, loads it, and the picker has it', async ({ page }) => {
   for (const mode of ['simple', 'detail']) {
     await page.getByTestId(`mode-${mode}`).click();

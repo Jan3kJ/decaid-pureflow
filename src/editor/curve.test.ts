@@ -12,9 +12,11 @@ import {
   GRAPH_WIDTH,
   MIN_COLUMN_UNITS,
   PAUSE_MIN_UNITS,
+  TEMPERATURE_AXIS,
   buildCurve,
   expectedSeconds,
   hitTest,
+  temperatureAxis,
   timeAxis,
   type EditField,
   type PhaseId,
@@ -576,5 +578,41 @@ describe('fields', () => {
     expect(formatValue('pourFlow', 2)).toBe('2 ml/s');
     expect(formatValue('infuseTime', 60)).toBe('60 s');
     expect(formatValue('fillTemperature', 93)).toBe('93 °C');
+  });
+});
+
+describe('temperatureAxis', () => {
+  it('is 80 to 100 °C while every temperature is inside', () => {
+    expect(temperatureAxis([])).toEqual({ min: 80, max: 100 });
+    expect(temperatureAxis([80, 92, 100])).toEqual(TEMPERATURE_AXIS);
+  });
+
+  it('widens down to the next 5 °C step with room', () => {
+    expect(temperatureAxis([78, 94])).toEqual({ min: 75, max: 100 });
+    expect(temperatureAxis([75, 94])).toEqual({ min: 70, max: 100 });
+    expect(temperatureAxis([79.5])).toEqual({ min: 75, max: 100 });
+  });
+
+  it('widens up to the next 5 °C step with room', () => {
+    expect(temperatureAxis([90, 101])).toEqual({ min: 80, max: 105 });
+    expect(temperatureAxis([70, 102.5])).toEqual({ min: 65, max: 105 });
+  });
+
+  it('narrows back when no temperature is outside any more', () => {
+    expect(temperatureAxis([78])).toEqual({ min: 75, max: 100 });
+    expect(temperatureAxis([80.5])).toEqual({ min: 80, max: 100 });
+  });
+
+  it('stays within the allowed temperatures', () => {
+    expect(temperatureAxis([50, 105])).toEqual({ min: 50, max: 105 });
+    expect(temperatureAxis([52, 104])).toEqual({ min: 50, max: 105 });
+    expect(temperatureAxis([60], { min: 58, max: 100 })).toEqual({ min: 58, max: 100 });
+  });
+
+  it('fits every default profile in 80 to 100 °C', () => {
+    for (const { params } of DEFAULT_PROFILES) {
+      const values = buildCurve(params).temperature.map((pt) => pt.y);
+      expect(temperatureAxis(values)).toEqual(TEMPERATURE_AXIS);
+    }
   });
 });

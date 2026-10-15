@@ -5,6 +5,8 @@
 import {
   DEFAULT_MACHINE_LIMITS,
   FLOW_MIN,
+  TEMPERATURE_MAX,
+  TEMPERATURE_MIN,
   hasSecondFill,
   resolveParams,
   type AFlowParams,
@@ -405,4 +407,36 @@ export function hitTest(
   }
 
   return best;
+}
+
+// The temperature axis (founder, 2026-10-14): 80 to 100 °C, where a profile's temperatures
+// usually are. A temperature outside widens it to the next 5 °C step with at least 1 °C of
+// room, never beyond the allowed temperatures; when none is outside it is 80 to 100 again.
+export const TEMPERATURE_AXIS = { min: 80, max: 100 } as const;
+const TEMPERATURE_AXIS_STEP = 5;
+const TEMPERATURE_AXIS_ROOM = 1;
+
+export interface TemperatureAxis {
+  min: number;
+  max: number;
+}
+
+/** The temperature axis for the temperatures the graph draws. */
+export function temperatureAxis(
+  values: readonly number[],
+  allowed: TemperatureAxis = { min: TEMPERATURE_MIN, max: TEMPERATURE_MAX },
+): TemperatureAxis {
+  const step = TEMPERATURE_AXIS_STEP;
+  const low = Math.min(TEMPERATURE_AXIS.min, ...values);
+  const high = Math.max(TEMPERATURE_AXIS.max, ...values);
+  return {
+    min:
+      low < TEMPERATURE_AXIS.min
+        ? Math.max(allowed.min, Math.floor((low - TEMPERATURE_AXIS_ROOM) / step) * step)
+        : TEMPERATURE_AXIS.min,
+    max:
+      high > TEMPERATURE_AXIS.max
+        ? Math.min(allowed.max, Math.ceil((high + TEMPERATURE_AXIS_ROOM) / step) * step)
+        : TEMPERATURE_AXIS.max,
+  };
 }
