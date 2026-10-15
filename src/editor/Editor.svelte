@@ -152,6 +152,9 @@
    * (spec 3.2). Any other profile is not edited: the editor says so and stays on a default.
    */
   async function init() {
+    // The warning before a load asked for 'save as' on the machine's values (founder, 2026-10-14).
+    const saveAsNext = skin.saveAsNext;
+    skin.saveAsNext = false;
     try {
       if (!skin.workflow) await skin.refreshWorkflow();
       records = await skin.client.listProfiles();
@@ -178,6 +181,7 @@
     loaded = { title: profile.title, author: profile.author ?? '', params: read };
     open(entries.find((entry) => entry.title === profile.title)?.key ?? LOADED, read);
     openedWith = read;
+    if (saveAsNext) naming = true;
   }
 
   /**
@@ -207,8 +211,21 @@
     }
   }
 
-  /** A profile of the row opens in the editor; leaving loads it, as any change (founder, 2026-10-13). */
-  function pick(key: string) {
+  /**
+   * A profile of the row opens in the editor; leaving loads it, as any change (founder,
+   * 2026-10-13). Unsaved edits on the machine are asked about first (founder, 2026-10-14):
+   * 'Save as…' opens the editor on them again and asks for a name.
+   */
+  async function pick(key: string) {
+    busy = true;
+    const answer = await skin.mayLoad();
+    busy = false;
+    if (answer === 'save-as') {
+      skin.saveAsNext = true;
+      touched = false;
+      await init();
+    }
+    if (answer !== 'load') return;
     touched = true;
     notice = null;
     open(key, entries.find((entry) => entry.key === key)!.params);

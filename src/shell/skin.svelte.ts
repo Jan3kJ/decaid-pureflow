@@ -20,6 +20,7 @@ import {
   type WaterLevels,
   type Workflow,
 } from '../api';
+import { readUnsaved, type Unsaved } from '../editor/unsaved';
 import { restoreEntry, seriesOf, type HistoryEntry } from '../history/entries';
 import { loadSettings, saveSettings, type Settings } from '../settings';
 import { gatewayBaseUrl } from './gateway';
@@ -32,6 +33,9 @@ import { recordSteamFrame, type SteamRun } from '../steam/run';
 const CLOCK_MS = 500;
 /** The screen's brightness while the machine sleeps, 0-100; 100 is the system's own. */
 export const SLEEP_BRIGHTNESS = 5;
+
+/** The answer to the warning before a load (founder, 2026-10-14). */
+export type LoadAnswer = 'load' | 'cancel' | 'save-as';
 
 /** An entry of the shot history that was made the current one, with its latest shot's graph. */
 export interface Recalled {
@@ -80,6 +84,11 @@ export class Skin {
    * loads changed values here (founder, 2026-10-13).
    */
   leaving: (() => Promise<boolean>) | null = null;
+  /** the unsaved edits the warning before a load asks about, while it is open */
+  unsaved: Unsaved | null = $state.raw(null);
+  /** the editor opens its 'save as' on the machine's values: the warning's 'Save as…' */
+  saveAsNext = false;
+  private answerUnsaved: ((answer: LoadAnswer) => void) | null = null;
 
   private gateway: Gateway = $state('connecting');
   private openedAt: number | null = $state(null);
@@ -325,12 +334,48 @@ export class Skin {
   async restore(entry: HistoryEntry): Promise<void> {
     this.historyOpen = false;
     this.notice = this.info = null;
+    const answer = await this.mayLoad();
+    if (answer === 'save-as') this.openSaveAs();
+    if (answer !== 'load') return;
     try {
       this.workflow = await restoreEntry(this.client, entry);
       this.recalled = { entry, series: seriesOf(await this.client.getShot(entry.latest.id)) };
     } catch (error) {
       this.notice = `The entry was not restored: ${error instanceof Error ? error.message : String(error)}`;
     }
+  }
+
+  /**
+   * Asked before every load of the skin (founder, 2026-10-14): while the machine holds unsaved
+   * edits from the editor (`readUnsaved`), the warning is shown and nothing is loaded before its
+   * answer. 'load' when there are none, or when they could not be read: the load then says
+   * what went wrong. 'save-as' leaves the opening of the editor's save as to the caller
+   * (`openSaveAs`, or the editor itself).
+   */
+  async mayLoad(): Promise<LoadAnswer> {
+    let unsaved: Unsaved | null;
+    try {
+      unsaved = await readUnsaved(this.client);
+    } catch {
+      return 'load';
+    }
+    if (!unsaved) return 'load';
+    this.unsaved = unsaved;
+    const answer = await new Promise<LoadAnswer>((resolve) => (this.answerUnsaved = resolve));
+    this.unsaved = null;
+    this.answerUnsaved = null;
+    return answer;
+  }
+
+  /** The warning's buttons. */
+  answerLoad(answer: LoadAnswer): void {
+    this.answerUnsaved?.(answer);
+  }
+
+  /** The warning's 'Save as…' outside the editor: the editor opens on the machine's values and asks for a name. */
+  openSaveAs(): void {
+    this.saveAsNext = true;
+    this.go('editor');
   }
 
   dismissRecalled(): void {

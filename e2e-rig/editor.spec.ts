@@ -281,3 +281,28 @@ test('detail mode: typed values are loaded; a saved profile re-opens with them a
   await page.getByTestId('nav-home').click();
   expect(await expectLoaded(page, about)).toEqual({ ...wanted, dose: 17, flowUp: false, pourPressure: 8 });
 });
+
+test('unsaved edits on the machine: the picker asks before it loads (founder, 2026-10-14)', async ({ page }) => {
+  await openEditor(page);
+  await page.getByTestId('toggle-flow').click();
+  // Leaving by the name loads the change unsaved and opens the picker.
+  await pressed(page).click();
+  await expect(page.getByTestId('screen-profiles')).toBeVisible();
+  expect(await expectWorkflow(LIGHT)).toEqual({ ...light, flowUp: false });
+
+  const dialog = page.getByTestId('unsaved-dialog');
+  const other = page.getByTestId('profile-item').filter({ hasText: 'Best practice' }).first();
+  const title = (await other.locator('.title').textContent())!;
+  await other.click();
+  await expect(dialog).toContainText('light has unsaved changes on the machine');
+  await page.getByTestId('unsaved-cancel').click();
+  await expect(dialog).toHaveCount(0);
+  // Cancel loaded nothing: the gateway still holds the unsaved values.
+  expect(await expectWorkflow(LIGHT)).toEqual({ ...light, flowUp: false });
+
+  await other.click();
+  await page.getByTestId('unsaved-discard').click();
+  await expect(page.getByTestId('profile-name')).toHaveText(title);
+  expect((await api('GET', '/api/v1/workflow')).profile.title).toBe(title);
+  expect(await profileIds()).toEqual(profilesBefore);
+});

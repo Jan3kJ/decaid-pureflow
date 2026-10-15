@@ -10,6 +10,7 @@
   import Settings from './shell/Settings.svelte';
   import { Skin } from './shell/skin.svelte';
   import Steam from './steam/Steam.svelte';
+  import UnsavedDialog from './shell/UnsavedDialog.svelte';
 
   const skin = new Skin();
   onMount(() => skin.connect());
@@ -81,6 +82,11 @@
     <History {skin} />
   {/if}
 </main>
+
+<!-- Unsaved edits on the machine: asked before any load of the skin (founder, 2026-10-14). -->
+{#if skin.unsaved}
+  <UnsavedDialog unsaved={skin.unsaved} onanswer={(answer) => skin.answerLoad(answer)} />
+{/if}
 
 <!-- A stream the gateway closed with an error does not open again by itself (research.md 9.4). -->
 {#if skin.refused}

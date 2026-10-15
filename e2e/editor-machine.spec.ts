@@ -351,8 +351,10 @@ test('the name in the top bar opens the picker: changes are loaded first, a choi
   await expect(page.getByTestId('screen-profiles')).toBeVisible();
   expect(loadedProfile(gateway, 'A-Flow / default-light', 'Janek')).toEqual({ ...light, flowUp: false });
 
-  // An A-Flow 3.0 profile: loaded, and the editor is on it.
+  // An A-Flow 3.0 profile: the unsaved changes are asked about first (founder, 2026-10-14),
+  // then it is loaded, and the editor is on it.
   await page.getByTestId('profile-item').filter({ hasText: 'A-Flow / default-dark' }).filter({ hasText: 'A-Flow 3.0' }).click();
+  await page.getByTestId('unsaved-discard').click();
   await expect(page.getByTestId('screen-editor')).toBeVisible();
   await expect(pressed(page)).toHaveText('dark');
   const puts = gateway.calls('PUT', '/api/v1/workflow');

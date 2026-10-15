@@ -433,7 +433,17 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
   on screen when they differ from those it opened with, under the name of the profile they
   started from, and loads nothing when nothing changed. Such unsaved edits are on the machine
   but not stored as a profile: the editor opens on them again while they are the workflow's
-  profile, and they are gone once another profile is loaded. A failed load is shown and the
+  profile, and they are gone once another profile is loaded. Before the skin loads another
+  profile while they are on the machine (a tap in the picker, a restore from the history,
+  another profile of the editor's start row), it asks (founder, 2026-10-14): a dark dialog
+  names the profile, 'has unsaved changes on the machine', with 'Save as…' (the editor's save
+  as on those values), 'Discard and load' and 'Cancel'; nothing is loaded before the answer.
+  The skin reads it from Decaid alone, in one place (`unsavedOnMachine` in
+  `src/editor/unsaved.ts`): the workflow's profile is an A-Flow 3.0 profile and neither the
+  default of its title nor a stored record of its title, hidden ones too, has its values. So
+  it holds after a page reload, and an older version restored from the history counts as
+  saved. A load started outside the skin (Decaid's own screens, the machine) cannot be warned
+  about: the edits are then lost without a word. A failed load is shown and the
   editor stays open; 'back' a second time with the same values leaves without loading them.
   The editor is not asked when the machine itself opens the espresso screen or the page is
   reloaded: those leave without loading. A tap in the picker loads the profile at once; the

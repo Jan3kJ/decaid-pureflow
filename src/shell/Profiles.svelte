@@ -66,6 +66,10 @@
    */
   const load = (record: ProfileRecord) =>
     act('The profile could not be loaded', async () => {
+      // Unsaved edits on the machine are asked about first (founder, 2026-10-14).
+      const answer = await skin.mayLoad();
+      if (answer === 'save-as') skin.openSaveAs();
+      if (answer !== 'load') return;
       selectedId = record.id;
       skin.workflow = await loadProfile(skin.client, record.profile);
       const fromEditor = skin.pickerReturn === 'editor';
