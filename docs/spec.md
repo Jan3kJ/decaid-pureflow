@@ -246,7 +246,8 @@ Windows, Linux and macOS. What differs per platform is **Decaid itself**:
   founder has Damian's approval to use that code.
 - **Version 1:** a local ZIP with `index.html` at its root, which the founder installs on the
   tablet. No GitHub release. Built in D9, numbered 0.1.0 since 2026-10-14 (beta; founder,
-  2026-10-13): `npm run zip` writes `release/decaid-skin-0.1.0.zip`; the steps and the
+  2026-10-13), fix rounds 0.1.x; now 0.1.1 (2026-10-15): `npm run zip` writes
+  `release/decaid-skin-0.1.1.zip`; the steps and the
   founder's checks are in
   [install.md](install.md), the result of the automated items in
   [acceptance.md](acceptance.md).
@@ -373,8 +374,8 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
   Settings); whether the skin's port is the same there and stays over a restart, which the
   settings in `localStorage` depend on. The founder's checks are in
   [install.md](install.md). (owner)
-- The version is `0.1.0`, a beta (founder, 2026-10-13); it is in `package.json` and
-  `public/manifest.json`. A later number is the founder's call. (answered)
+- The version is `0.1.1`, a beta (founder, 2026-10-13; 0.1.x for fix rounds); it is in
+  `package.json` and `public/manifest.json`. A later number is the founder's call. (answered)
 - Other profiles (founder's question of 2026-10-14, [answers-2026-10-14.md](answers-2026-10-14.md)):
   Streamline 0.2.13's editor edits any v2 profile as its steps, but Decaid serves one skin at a
   time, so it is reached by switching skins. Is switching in Decaid's settings enough, or should
