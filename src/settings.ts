@@ -1,6 +1,7 @@
 // The skin's own settings, one object under one localStorage key (spec 4.1: sessionStorage
 // does not survive the WebView). This is the only store of settings: the skin holds one copy
 // of it (`Skin.settings`), the settings page changes it, and every screen reads it there.
+// A copy in Decaid's KV store is its backup (settings-backup.ts, founder, 2026-10-14).
 import { DEFAULT_PROFILES } from './aflow/defaults';
 
 export interface Settings {
@@ -104,9 +105,26 @@ export function loadSettings(store: Store = localStorage): Settings {
   } catch {
     // no storage, or not JSON: the defaults
   }
+  return readSettings(stored);
+}
+
+/**
+ * Settings from any value, field by field over the defaults: what localStorage holds and what
+ * a backup holds (founder, 2026-10-14) pass the same checks.
+ */
+export function readSettings(stored: unknown): Settings {
   const settings = merged(DEFAULT_SETTINGS, stored);
   const values = (stored && typeof stored === 'object' ? stored : {}) as Record<string, unknown>;
   return { ...settings, startProfiles: readStartProfiles(values.startProfiles) };
+}
+
+/** Whether this tablet and port hold settings at all: a new port or a cleared app does not. */
+export function hasSettings(store: Pick<Storage, 'getItem'> = localStorage): boolean {
+  try {
+    return store.getItem(SETTINGS_KEY) !== null;
+  } catch {
+    return false;
+  }
 }
 
 /**

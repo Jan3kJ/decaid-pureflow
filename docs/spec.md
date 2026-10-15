@@ -51,7 +51,7 @@ version 2.
 | Scale | connect state, tare (a 400 `block_tare_during_shot` is a notice, not an error) |
 | Profiles | list, select, load to the machine (`PUT /api/v1/workflow`) (founder, 2026-10-13) |
 | Shot history | **an overlay, not a page:** a tab on the left edge of the screen (or a swipe from left to right) opens it; it closes when an item is selected or on a tap outside it. It holds **a list of previous shots; tapping one loads its profile, beans and grinder setting and shows its graph**: see 3.5 |
-| Settings | a settings page with categories. **Steam** is one (3.4), and **Profile** holds the first-step workaround (3.2) and the editor's row of profiles to start from, up to five (founder, 2026-10-13); the others hold the few settings the founder needs. Everything else stays in Decaid's own settings |
+| Settings | a settings page with categories. **Steam** is one (3.4), and **Profile** holds the first-step workaround (3.2) and the editor's row of profiles to start from, up to five (founder, 2026-10-13); the others hold the few settings the founder needs. Everything else stays in Decaid's own settings. The settings stay in the tablet's localStorage; every change is backed up to Decaid's KV store (`decaid-skin/settings-backup`, with its time and the skin's version), a start without settings takes them from the backup and says so, and the page shows the backup's time with 'Restore from backup' (founder, 2026-10-14) |
 | Sleep / wake | sleep button, wake on touch; brightness only where `platformSupported.brightness` |
 
 ### 3.2 The A-Flow profile editor (A-Flow 3.0)
@@ -460,10 +460,11 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
   - The switch on the settings page is the one place to set 'profile steps'; the editor's
     button only opens and closes the panel, which is not stored (founder, 2026-10-13).
     (answered)
-  - Settings are in `localStorage` (`decaid-skin.settings`), so they belong to this tablet
-    and to the port Decaid gives the skin (4.1); the KV store would keep them over a
-    changed port. The screen the skin opens with is not a setting and has its own key
-    (`decaid-skin.screen`). (owner)
+  - Settings stay in `localStorage` (`decaid-skin.settings`) (founder, 2026-10-14), backed
+    up to the KV store (`decaid-skin/settings-backup`, `src/settings-backup.ts`): every save
+    writes it 1.5 s after the last change, a start without settings takes it back. The
+    screen the skin opens with is not a setting, has its own key (`decaid-skin.screen`) and
+    is not backed up. (answered)
   - While the machine sleeps the skin is a dark screen, 'Asleep, touch to wake', over every
     page, whoever put the machine to sleep; a touch asks for `idle`. Where
     `platformSupported.brightness` is true the brightness goes to 5 (`SLEEP_BRIGHTNESS` in

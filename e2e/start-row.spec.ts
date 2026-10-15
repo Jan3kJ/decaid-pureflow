@@ -68,6 +68,8 @@ test("'save as' does not change the row; a slot chosen in the settings does, and
   await expect(page.getByTestId('start-slot-2').locator('b')).toHaveText('morning');
   await expect(page.getByTestId('start-slot-5')).toContainText('empty');
   await expect(page.getByTestId('start-missing')).toHaveCount(0);
+  // the backup of the changed slots is written (founder, 2026-10-14)
+  await expect(page.getByTestId('backup-time')).toContainText('in Decaid');
   await page.screenshot({ path: 'docs/product/settings.png' });
 
   // The editor's row follows, in the slots' order.

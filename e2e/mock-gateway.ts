@@ -440,6 +440,10 @@ export class MockGateway {
       this.store[kvKey] = body;
       return json(null);
     }
+    if (kvKey && method === 'DELETE') {
+      delete this.store[kvKey];
+      return json(null);
+    }
     if (path === '/api/v1/shots' && method === 'GET') {
       const limit = Number(url.searchParams.get('limit') ?? 20);
       const offset = Number(url.searchParams.get('offset') ?? 0);

@@ -9,6 +9,7 @@
   import Scale from './shell/Scale.svelte';
   import Settings from './shell/Settings.svelte';
   import { Skin } from './shell/skin.svelte';
+  import { backupTime } from './settings-backup';
   import Steam from './steam/Steam.svelte';
   import UnsavedDialog from './shell/UnsavedDialog.svelte';
 
@@ -95,6 +96,16 @@
       Decaid closed the connection{skin.streamError ? `: ${skin.streamError}` : ' with an error'}
     </span>
     <button data-testid="reconnect" onclick={() => skin.reconnect()}>reconnect</button>
+  </div>
+{/if}
+
+<!-- A start without settings took them from the backup in Decaid, said once (founder, 2026-10-14). -->
+{#if skin.restoredFrom !== null && !skin.refused}
+  <div class="refused restored" role="status" data-testid="settings-restored">
+    <span>
+      Settings restored from the backup in Decaid{skin.restoredFrom ? ` of ${backupTime(skin.restoredFrom)}` : ''}.
+    </span>
+    <button data-testid="settings-restored-ok" onclick={() => (skin.restoredFrom = null)}>OK</button>
   </div>
 {/if}
 
@@ -227,6 +238,11 @@
     border: 1px solid var(--warn);
     border-radius: 0.9rem;
     box-shadow: 0 0.6rem 2.4rem rgb(0 0 0 / 70%);
+  }
+
+  .restored {
+    color: var(--fg);
+    border-color: var(--line);
   }
 
   .refused span {

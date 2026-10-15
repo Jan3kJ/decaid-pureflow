@@ -11,6 +11,7 @@
     type Settings,
     type SteamField,
   } from '../settings';
+  import { backupTime } from '../settings-backup';
   import type { Skin } from './skin.svelte';
 
   interface Props {
@@ -87,12 +88,29 @@
   }
 
   onMount(readProfiles);
+
+  // The backup in Decaid's KV store (founder, 2026-10-14): its time, and a restore with a confirm.
+  let confirming = $state(false);
+  /** what the last restore did */
+  let restored: string | null = $state(null);
+
+  async function restore() {
+    confirming = false;
+    try {
+      const backup = await skin.restoreBackup();
+      restored = backup
+        ? `Restored the backup${backup.savedAt ? ` of ${backupTime(backup.savedAt)}` : ''}.`
+        : 'There is no backup in Decaid.';
+    } catch (cause) {
+      restored = `The backup could not be read: ${cause instanceof Error ? cause.message : String(cause)}`;
+    }
+  }
 </script>
 
 <div class="settings">
   <header>
     <h1>Settings</h1>
-    <p>Kept on this tablet. Everything else is in Decaid's own settings.</p>
+    <p>Kept on this tablet, with a backup in Decaid. Everything else is in Decaid's own settings.</p>
   </header>
 
   <section data-testid="settings-steam">
@@ -166,7 +184,33 @@
       {/each}
     </div>
   </section>
+
+  <div class="backup" data-testid="settings-backup">
+    <span class="about">
+      <strong>Backup</strong>
+      <small data-testid="backup-time">
+        {skin.backupAt ? `in Decaid, ${backupTime(skin.backupAt)}` : 'none yet'}; every change is copied to Decaid
+      </small>
+    </span>
+    {#if skin.backupError}<small class="warn" data-testid="backup-error">{skin.backupError}</small>{/if}
+    {#if restored}<small data-testid="backup-restored">{restored}</small>{/if}
+    <button class="retry" data-testid="backup-restore" onclick={() => ((restored = null), (confirming = true))}>Restore from backup</button>
+  </div>
 </div>
+
+{#if confirming}
+  <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+  <div class="backdrop" onclick={(e) => e.target === e.currentTarget && (confirming = false)}>
+    <div class="dialog" role="dialog" aria-modal="true" aria-label="restore from backup" data-testid="backup-confirm">
+      <h2>Restore from backup?</h2>
+      <p>Every setting on this page becomes the backup's{skin.backupAt ? ` of ${backupTime(skin.backupAt)}` : ''}.</p>
+      <div class="actions">
+        <button class="retry" data-testid="backup-cancel" onclick={() => (confirming = false)}>Cancel</button>
+        <button class="retry primary" data-testid="backup-confirm-restore" onclick={restore}>Restore</button>
+      </div>
+    </div>
+  </div>
+{/if}
 
 {#if choosing !== null}
   <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
@@ -268,6 +312,38 @@
 
   .warn {
     color: var(--temperature);
+  }
+
+  /* The backup: one line under the blocks, across both columns. */
+  .backup {
+    grid-column: 1 / -1;
+    align-self: start;
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    padding: 0 1.2rem;
+  }
+
+  .backup .about {
+    flex: 1;
+  }
+
+  .backup > small {
+    max-width: 40%;
+  }
+
+  .actions {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+  }
+
+  .retry.primary {
+    color: var(--bg);
+    background: var(--fg);
+    border-color: var(--fg);
+    font-weight: 600;
   }
 
   .none {
