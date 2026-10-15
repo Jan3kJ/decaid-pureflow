@@ -217,11 +217,12 @@ test('a shot started at the machine: the espresso screen opens by itself with a 
   expect(parseFloat((await page.getByTestId('shot-timer').textContent())!)).toBeGreaterThan(15);
   expect(parseFloat((await page.getByTestId('shot-weight').textContent())!)).toBeGreaterThan(5);
   await expect(page.getByTestId('shot-pressure')).toContainText('bar');
-  for (const line of ['pressure', 'flow', 'weight', 'temperature']) {
+  for (const line of ['pressure', 'flow', 'weight-flow', 'temperature']) {
     expect((await page.getByTestId(`shot-line-${line}`).getAttribute('d'))!.length).toBeGreaterThan(100);
   }
-  // A horizontal line has no height, so it counts as hidden: it is there.
-  await expect(page.getByTestId('shot-target-weight')).toHaveCount(1);
+  // The graph draws the weight flow in g/s, the screen keeps the weight in g (founder, 2026-10-14).
+  await expect(page.getByTestId('shot-line-weight')).toHaveCount(0);
+  await expect(page.getByTestId('shot-unit-weight-flow')).toHaveText('g/s');
   await expectInsideViewport(page);
   await page.screenshot({ path: 'docs/product/espresso.png' });
 

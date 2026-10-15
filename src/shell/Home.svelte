@@ -11,7 +11,6 @@
 
   let { skin }: Props = $props();
 
-  const context = $derived(skin.workflow?.context);
   // The finished shot stays here until it is dismissed or the next one starts.
   const last = $derived(skin.shot?.ended ? skin.shot : null);
   const lastWeight = $derived(shotWeight(last));
@@ -74,7 +73,6 @@
       <div class="plot" data-testid="history-graph">
         <ShotGraph
           {...recalled.series}
-          targetWeight={entry.latest.workflow?.context?.targetYield}
           fit
           legend={skin.settings.showGraphLegend}
           label="last shot of the history entry"
@@ -94,7 +92,6 @@
       <div class="plot" data-testid="last-shot">
         <ShotGraph
           {...last.series}
-          targetWeight={context?.targetYield}
           fit
           legend={skin.settings.showGraphLegend}
           label="last shot"
@@ -103,7 +100,7 @@
     {:else}
       <!-- No shot yet: the graph keeps its place, empty. -->
       <div class="plot" data-testid="empty-graph">
-        <ShotGraph {...emptySeries()} targetWeight={context?.targetYield} legend={skin.settings.showGraphLegend} label="no shot yet" />
+        <ShotGraph {...emptySeries()} legend={skin.settings.showGraphLegend} label="no shot yet" />
       </div>
     {/if}
   </section>

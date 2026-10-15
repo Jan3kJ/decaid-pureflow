@@ -41,6 +41,7 @@ describe('recordFrame', () => {
       pressure: [0.5],
       flow: [3],
       weight: [null],
+      weightFlow: [null],
       temperature: [92],
       targetPressure: [null],
       targetFlow: [null],
@@ -74,10 +75,21 @@ describe('recordFrame', () => {
     expect(shotWeight(shot)).toBe(3.2);
   });
 
+  it('records the weight flow of the scale next to the weight, with the same gaps', () => {
+    let shot = recordFrame(null, frame('espresso', '10.000'), 34.1, -12);
+    shot = recordFrame(shot, frame('espresso', `${10 + TARE_SETTLE_S}.000`), 0, 0);
+    shot = recordFrame(shot, frame('espresso', '15.000'), 3.2, 1.8);
+    shot = recordFrame(shot, frame('espresso', '16.000'), null, 1.8);
+    // The weight flow is drawn, the weight stays the number (founder, 2026-10-14).
+    expect(shot!.series.weightFlow).toEqual([null, 0, 1.8, null]);
+    expect(shot!.series.weight).toEqual([null, 0, 3.2, null]);
+  });
+
   it('has no weight without a scale', () => {
     let shot = recordFrame(null, frame('espresso', '10.000'), null);
     shot = recordFrame(shot, frame('espresso', '13.000'), null);
     expect(shot!.series.weight).toEqual([null, null]);
+    expect(shot!.series.weightFlow).toEqual([null, null]);
     expect(shotWeight(shot)).toBeNull();
   });
 

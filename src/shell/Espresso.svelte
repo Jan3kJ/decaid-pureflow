@@ -31,7 +31,6 @@
   <div class="plot">
     <ShotGraph
       {...series}
-      targetWeight={target}
       fit={skin.shot?.ended ?? false}
       legend={skin.settings.showGraphLegend}
       label="live shot"

@@ -78,11 +78,32 @@ test('the targets are dashed lines with their quantity, every scale has its unit
   const temperatureUnit = await box(graph.getByTestId('shot-unit-temperature'));
   expect(temperatureTarget.y + temperatureTarget.height).toBeLessThan(mainUnit.y);
   expect(temperatureTarget.y).toBeGreaterThan(temperatureUnit.y);
-  await expect(graph.getByTestId('shot-unit-main')).toHaveText('bar ml/s');
   await expect(graph.getByTestId('shot-unit-temperature')).toHaveText('°C');
-  // The weight's scale is there because the weight is drawn.
-  await expect(graph.getByTestId('shot-unit-weight')).toHaveText('g');
-  await expect(graph.getByTestId('shot-weight-tick')).toHaveCount(3);
+  // The weight flow shares the scale of flow and pressure, so that scale names g/s too
+  // (founder, 2026-10-14); there is no scale in grams and no target weight on the graph.
+  await expect(graph.getByTestId('shot-unit-main')).toHaveText('bar ml/s · g/s');
+  await expect(graph.getByTestId('shot-unit-weight-flow')).toHaveText('g/s');
+  await expect(graph.getByTestId('shot-line-weight')).toHaveCount(0);
+  await expect(graph.getByTestId('shot-target-weight')).toHaveCount(0);
+  const weightFlow = graph.getByTestId('shot-line-weight-flow');
+  expect((await weightFlow.getAttribute('d'))!.length).toBeGreaterThan(100);
+  const colours = await weightFlow.evaluate((path) => {
+    const probe = document.createElement('i');
+    probe.style.color = 'var(--weight)';
+    document.body.append(probe);
+    const weight = getComputedStyle(probe).color;
+    probe.remove();
+    return { stroke: getComputedStyle(path).stroke, weight };
+  });
+  expect(colours.stroke).toBe(colours.weight);
+  // The recorded shot's weight flow peaks at about 2.3 g/s, under its flow's peak in ml/s:
+  // on the shared scale the yellow curve stays under the top of the blue one.
+  const [weightTop, flowTop] = await Promise.all(
+    ['weight-flow', 'flow'].map((line) =>
+      graph.getByTestId(`shot-line-${line}`).evaluate((path) => (path as SVGGraphicsElement).getBBox().y),
+    ),
+  );
+  expect(weightTop).toBeGreaterThan(flowTop);
 
   // The finished shot's last point is at the right end of the plot.
   const plot = await graph.locator('line.grid').first().evaluate((line) => Number(line.getAttribute('x2')));
@@ -94,7 +115,7 @@ test('the targets are dashed lines with their quantity, every scale has its unit
   expect(errors).toEqual([]);
 });
 
-test('a shot without a scale has no weight scale and no target weight', async ({ page }) => {
+test('a shot without a scale has no weight flow: nothing yellow, no g/s', async ({ page }) => {
   const gateway = await mockGateway(page);
   // As on 2026-10-13, when the founder's scale did not connect: measurements without a weight.
   gateway.addShot('no-scale', '2026-10-12T08:00:00.000000', profile('A-Flow / default-light', 48, 9), { targetYield: 48 });
@@ -104,10 +125,9 @@ test('a shot without a scale has no weight scale and no target weight', async ({
   await page.getByTestId('history-entry').first().tap();
   const graph = page.getByTestId('history-graph');
   await expect(graph.getByTestId('shot-line-pressure')).toHaveCount(1);
-  await expect(graph.getByTestId('shot-line-weight')).toHaveCount(0);
-  await expect(graph.getByTestId('shot-unit-weight')).toHaveCount(0);
-  await expect(graph.getByTestId('shot-weight-tick')).toHaveCount(0);
-  await expect(graph.getByTestId('shot-target-weight')).toHaveCount(0);
+  await expect(graph.getByTestId('shot-line-weight-flow')).toHaveCount(0);
+  await expect(graph.getByTestId('shot-unit-weight-flow')).toHaveCount(0);
+  await expect(graph.getByTestId('shot-unit-main')).toHaveText('bar ml/s');
   await expect(graph.getByTestId('shot-legend').locator('li')).toHaveText([
     'flow',
     'pressure',
@@ -154,7 +174,13 @@ test('the legend is under the graph by default, and the settings page switches i
   await gateway.replay(page, 0, 0.5);
   const legend = page.getByTestId('shot-legend');
   await expect(legend).toBeVisible();
-  await expect(legend.locator('li')).toHaveText(['flow', 'pressure', 'temperature', 'weight', "dashed: the profile's target"]);
+  await expect(legend.locator('li')).toHaveText([
+    'flow',
+    'pressure',
+    'temperature',
+    'weight flow (g/s)',
+    "dashed: the profile's target",
+  ]);
   // At the bottom left, under the plot.
   const plot = await box(page.getByTestId('shot-graph'));
   const shown = await box(legend);

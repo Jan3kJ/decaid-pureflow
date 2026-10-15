@@ -12,6 +12,12 @@ export interface ShotSeries {
   flow: number[];
   /** g, from the scale stream; null without a scale or while its weight is not the cup's yet */
   weight: (number | null)[];
+  /**
+   * g/s, the scale frame's `weightFlow`: the scale's own gravimetric flow, or Decaid's
+   * smoothed estimate from the weight (websocket_v1.yml). The graph draws this, not the
+   * weight (founder, 2026-10-14). Null where the weight is null.
+   */
+  weightFlow: (number | null)[];
   /** °C at the group */
   temperature: number[];
   /** bar, the profile's target; null while the step does not control the pressure */
@@ -63,6 +69,7 @@ export function emptySeries(): ShotSeries {
     pressure: [],
     flow: [],
     weight: [],
+    weightFlow: [],
     temperature: [],
     targetPressure: [],
     targetFlow: [],
@@ -74,11 +81,18 @@ export function emptySeries(): ShotSeries {
 const target = (value: number | undefined): number | null => (typeof value === 'number' && value > 0 ? value : null);
 
 /** Adds one point to a series, in place: what a frame gives the graph at the time `t`. */
-export function pushPoint(series: ShotSeries, t: number, frame: MachineSnapshot, weight: number | null): void {
+export function pushPoint(
+  series: ShotSeries,
+  t: number,
+  frame: MachineSnapshot,
+  weight: number | null,
+  weightFlow: number | null,
+): void {
   series.t.push(t);
   series.pressure.push(frame.pressure);
   series.flow.push(frame.flow);
   series.weight.push(weight);
+  series.weightFlow.push(weight === null ? null : weightFlow);
   series.temperature.push(frame.groupTemperature);
   series.targetPressure.push(target(frame.targetPressure));
   series.targetFlow.push(target(frame.targetFlow));
@@ -91,10 +105,15 @@ export function pushPoint(series: ShotSeries, t: number, frame: MachineSnapshot,
  * timer start with the first frame in which water moves (`waterMoves`): the frames of the
  * heating before it give no points. After that every espresso frame is a point, whatever its
  * substate (the simulated machine goes back to `preparingForShot` between two steps,
- * research.md 8.2). `weight` is the scale's latest weight, null without a scale. Nothing is
- * changed in place.
+ * research.md 8.2). `weight` is the scale's latest weight, null without a scale, and
+ * `weightFlow` its latest weight flow in g/s. Nothing is changed in place.
  */
-export function recordFrame(shot: Shot | null, frame: MachineSnapshot, weight: number | null): Shot | null {
+export function recordFrame(
+  shot: Shot | null,
+  frame: MachineSnapshot,
+  weight: number | null,
+  weightFlow: number | null = null,
+): Shot | null {
   if (frame.state.state !== 'espresso') {
     return shot && !shot.ended ? { ...shot, ended: true } : shot;
   }
@@ -111,12 +130,14 @@ export function recordFrame(shot: Shot | null, frame: MachineSnapshot, weight: n
     pressure: [...s.pressure],
     flow: [...s.flow],
     weight: [...s.weight],
+    weightFlow: [...s.weightFlow],
     temperature: [...s.temperature],
     targetPressure: [...s.targetPressure],
     targetFlow: [...s.targetFlow],
     targetTemperature: [...s.targetTemperature],
   };
-  pushPoint(series, t, frame, (at - running.enteredAt) / 1000 < TARE_SETTLE_S ? null : weight);
+  const settled = (at - running.enteredAt) / 1000 >= TARE_SETTLE_S;
+  pushPoint(series, t, frame, settled ? weight : null, weightFlow);
   return { ...running, startedAt, series };
 }
 

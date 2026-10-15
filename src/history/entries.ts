@@ -143,7 +143,8 @@ export function seriesOf(record: Pick<ShotRecord, 'measurements'>): ShotSeries {
     const t = Math.max((at - start) / 1000, series.t.at(-1) ?? 0);
     // The first second in espresso still holds what stood on the scale before Decaid's tare.
     const settled = (at - entered) / 1000 >= TARE_SETTLE_S;
-    pushPoint(series, t, machine, settled && typeof scale?.weight === 'number' ? scale.weight : null);
+    const weight = settled && typeof scale?.weight === 'number' ? scale.weight : null;
+    pushPoint(series, t, machine, weight, typeof scale?.weightFlow === 'number' ? scale.weightFlow : null);
   }
   return series;
 }

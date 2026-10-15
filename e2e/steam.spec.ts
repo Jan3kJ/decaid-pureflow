@@ -237,7 +237,7 @@ test('steam started at the machine shows its graph of pressure and temperature, 
   }
   // Steam has no flow and no weight line.
   await expect(page.getByTestId('shot-line-flow')).toHaveCount(0);
-  await expect(page.getByTestId('shot-line-weight')).toHaveCount(0);
+  await expect(page.getByTestId('shot-line-weight-flow')).toHaveCount(0);
   // The steam screen stays: only espresso opens a screen by itself.
   await expect(page.getByTestId('screen-steam')).toBeVisible();
 

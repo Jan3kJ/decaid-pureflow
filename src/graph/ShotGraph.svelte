@@ -1,9 +1,10 @@
 <script lang="ts">
   // A graph of measured values over time, fed with plain arrays: the live shot, steam and the
   // history. The colours and the drawing are the editor's (spec 3.2): blue is flow, green is
-  // pressure, red is temperature in its own band on top; weight has the scale on the right,
-  // and only while there is a weight to draw. The profile's targets are thin dashed lines in
-  // the colour and on the scale of their quantity. Every scale names its unit in its colour.
+  // pressure, red is temperature in its own band on top; yellow is the weight flow in g/s
+  // (founder, 2026-10-14), on the scale of flow and pressure, and only while there is a scale.
+  // The profile's targets are thin dashed lines in the colour and on the scale of their
+  // quantity. Every scale names its unit in its colour.
   import { timeAxis } from './axis';
 
   interface Props {
@@ -13,8 +14,8 @@
     pressure?: number[];
     /** ml/s */
     flow?: number[];
-    /** g; null is a gap */
-    weight?: (number | null)[];
+    /** g/s, the scale's weight flow; null is a gap */
+    weightFlow?: (number | null)[];
     /** °C */
     temperature?: number[];
     /** bar; null is a gap: the step does not control the pressure */
@@ -23,8 +24,6 @@
     targetFlow?: (number | null)[];
     /** °C; null is a gap */
     targetTemperature?: (number | null)[];
-    /** g; drawn as a dashed line on the weight's scale, with a weight curve only */
-    targetWeight?: number | null;
     /** a finished or stored shot: the time axis ends at the last sample, so the shot fills the width */
     fit?: boolean;
     /** a running graph's time axis is at least this long, and grows in steps of ten seconds */
@@ -40,12 +39,11 @@
     t,
     pressure,
     flow,
-    weight,
+    weightFlow,
     temperature,
     targetPressure,
     targetFlow,
     targetTemperature,
-    targetWeight = null,
     fit = false,
     minSeconds = 30,
     yMax = 12,
@@ -53,7 +51,10 @@
     label = 'shot graph',
   }: Props = $props();
 
-  /** Pressure and flow share one scale, as in the editor: 1 bar is as high as 1 ml/s. */
+  /**
+   * Pressure, flow and weight flow share one scale, as in the editor: 1 bar is as high as
+   * 1 ml/s and 1 g/s. A shot's weight flow stays under about 5 g/s, under the flow it follows.
+   */
   const mainTicks = $derived([0, 1, 2, 3, 4].map((tick) => (tick * yMax) / 4));
 
   let width = $state(0);
@@ -72,17 +73,11 @@
 
   const drawn = (values: readonly (number | null)[] | undefined) =>
     (values ?? []).filter((value): value is number => value !== null);
-  const weights = $derived(drawn(weight));
-  // Without a weight (no scale) there is no weight scale and no target on it.
-  const hasWeight = $derived(weights.length > 0);
+  // Without a scale there is no weight flow: nothing yellow is drawn.
+  const hasWeightFlow = $derived(drawn(weightFlow).length > 0);
   const hasTargets = $derived(
-    [targetPressure, targetFlow, targetTemperature].some((values) => drawn(values).length > 0) ||
-      (hasWeight && !!targetWeight),
+    [targetPressure, targetFlow, targetTemperature].some((values) => drawn(values).length > 0),
   );
-  const weightMax = $derived(
-    Math.max(40, Math.ceil((Math.max(targetWeight ?? 0, ...weights) * 1.1) / 10) * 10),
-  );
-  const weightTicks = $derived([0, weightMax / 2, weightMax]);
 
   // The temperature band covers 80 to 100 °C and opens for a colder or hotter group or target.
   const temperatureRange = $derived.by(() => {
@@ -96,7 +91,7 @@
   // each band is a line for its units.
   const box = $derived.by(() => {
     const left = 2.8 * rem;
-    const right = Math.max(left + 1, width - (hasWeight ? 3 : 1.2) * rem);
+    const right = Math.max(left + 1, width - 1.2 * rem);
     const top = 1.5 * rem;
     const bottom = Math.max(top + 3, height - 2 * rem);
     const gap = temperature ? 1.5 * rem : 0;
@@ -107,7 +102,6 @@
 
   const x = (time: number) => box.left + (time / seconds) * (box.right - box.left);
   const yMain = (value: number) => box.bottom - (Math.min(Math.max(value, 0), yMax) / yMax) * box.mainH;
-  const yWeight = (value: number) => box.bottom - (Math.min(Math.max(value, 0), weightMax) / weightMax) * box.mainH;
   const yTemperature = (value: number) =>
     box.tempBottom -
     ((value - temperatureRange.min) / (temperatureRange.max - temperatureRange.min)) * box.tempH;
@@ -146,6 +140,10 @@
       <text class="unit" data-testid="shot-unit-main" x={box.left} y={box.mainTop - 0.5 * rem}>
         {#if pressure}<tspan class="pressure">bar</tspan>{/if}
         {#if flow}<tspan class="flow" dx={pressure ? 0.3 * rem : 0}>ml/s</tspan>{/if}
+        {#if hasWeightFlow}
+          <tspan dx={0.3 * rem}>·</tspan>
+          <tspan class="weight" data-testid="shot-unit-weight-flow" dx={0.3 * rem}>g/s</tspan>
+        {/if}
       </text>
       {#if temperature}
         {#each [temperatureRange.min, temperatureRange.max] as tick (tick)}
@@ -154,28 +152,11 @@
         {/each}
         <text class="unit temperature" data-testid="shot-unit-temperature" x={box.left} y={box.top - 0.5 * rem}>°C</text>
       {/if}
-      {#if hasWeight}
-        {#each weightTicks as tick (tick)}
-          <text class="tick weight" data-testid="shot-weight-tick" x={box.right + 0.5 * rem} y={yWeight(tick) + 0.3 * rem}>
-            {tick}{#if tick === weightMax}<tspan class="unit" data-testid="shot-unit-weight" dx={0.25 * rem}>g</tspan>{/if}
-          </text>
-        {/each}
-      {/if}
       {#each axis.ticks as tick (tick)}
         <text class="time" x={x(tick)} y={box.bottom + 1.4 * rem}>{tick}{tick === 0 ? ' s' : ''}</text>
       {/each}
 
       <!-- The targets lie under the curves, each on the scale of its quantity. -->
-      {#if hasWeight && targetWeight}
-        <line
-          class="target weight"
-          data-testid="shot-target-weight"
-          x1={box.left}
-          x2={box.right}
-          y1={yWeight(targetWeight)}
-          y2={yWeight(targetWeight)}
-        />
-      {/if}
       {#if temperature && targetTemperature}
         <path class="target temperature" data-testid="shot-target-temperature" d={path(targetTemperature, yTemperature)} />
       {/if}
@@ -189,8 +170,8 @@
       {#if temperature}
         <path class="line temperature" data-testid="shot-line-temperature" d={path(temperature, yTemperature)} />
       {/if}
-      {#if hasWeight}
-        <path class="line weight" data-testid="shot-line-weight" d={path(weight, yWeight)} />
+      {#if hasWeightFlow}
+        <path class="line weight" data-testid="shot-line-weight-flow" d={path(weightFlow, yMain)} />
       {/if}
       {#if pressure}
         <path class="line pressure" data-testid="shot-line-pressure" d={path(pressure, yMain)} />
@@ -205,7 +186,7 @@
       {#if flow}<li><i class="flow"></i>flow</li>{/if}
       {#if pressure}<li><i class="pressure"></i>pressure</li>{/if}
       {#if temperature}<li><i class="temperature"></i>temperature</li>{/if}
-      {#if hasWeight}<li><i class="weight"></i>weight</li>{/if}
+      {#if hasWeightFlow}<li><i class="weight"></i>weight flow (g/s)</li>{/if}
       {#if hasTargets}<li data-testid="shot-legend-target"><i class="dashed"></i>dashed: the profile's target</li>{/if}
     </ul>
   {/if}
@@ -243,10 +224,6 @@
 
   .tick {
     text-anchor: end;
-  }
-
-  .tick.weight {
-    text-anchor: start;
   }
 
   .time {
@@ -294,7 +271,6 @@
   }
 
   text.temperature,
-  text.weight,
   tspan {
     stroke: none;
   }
@@ -307,7 +283,7 @@
   text.temperature {
     fill: var(--temperature);
   }
-  text.weight {
+  tspan.weight {
     fill: var(--weight);
   }
 

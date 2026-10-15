@@ -272,7 +272,7 @@ describe('seriesOf', () => {
         steamTemperature: 150,
         ...over,
       },
-      scale: weight === undefined ? null : { timestamp: '', weight, weightFlow: 0, battery: 100, timerValue: null },
+      scale: weight === undefined ? null : { timestamp: '', weight, weightFlow: weight / 10, battery: 100, timerValue: null },
     };
   }
 
@@ -292,6 +292,8 @@ describe('seriesOf', () => {
     expect(series.temperature).toEqual([92, 92, 93, 92]);
     // Before Decaid's tare has settled, and without a scale, the weight is a gap.
     expect(series.weight).toEqual([null, null, 0.4, null]);
+    // The graph's weight flow is the measurement's `weightFlow`, with the weight's gaps.
+    expect(series.weightFlow).toEqual([null, null, 0.04, null]);
   });
 
   it('cuts the heating before the water, as the live graph does', () => {

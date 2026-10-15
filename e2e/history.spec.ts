@@ -186,7 +186,7 @@ test('tapping an entry closes the overlay, restores profile, bean and grinder se
   // One point per measurement from the first one in which water moves.
   expect(await points(page)).toBe(WATER_FRAMES);
   const graph = page.getByTestId('history-graph');
-  for (const line of ['pressure', 'flow', 'weight', 'temperature']) {
+  for (const line of ['pressure', 'flow', 'weight-flow', 'temperature']) {
     expect((await graph.getByTestId(`shot-line-${line}`).getAttribute('d'))!.length).toBeGreaterThan(100);
   }
   // The same colours as the editor and the live graph (spec 3.2).
@@ -201,10 +201,12 @@ test('tapping an entry closes the overlay, restores profile, bean and grinder se
       return getComputedStyle(probe).color;
     };
     const result = ['flow', 'pressure', 'temperature'].map((line) => stroke(line) === rgb(`--${line}`));
+    // The weight flow is yellow, the weight's colour (founder, 2026-10-14).
+    result.push(stroke('weight-flow') === rgb('--weight'));
     probe.remove();
     return result;
   });
-  expect(colours).toEqual([true, true, true]);
+  expect(colours).toEqual([true, true, true, true]);
 
   // The overlay over home with the restored entry's graph: the product's picture.
   await page.getByTestId('nav-history').tap();

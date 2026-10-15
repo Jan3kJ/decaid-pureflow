@@ -48,6 +48,8 @@ export class Skin {
   snapshot: MachineSnapshot | null = $state.raw(null);
   /** the scale's latest weight in g, null without a connected scale */
   weight: number | null = $state(null);
+  /** g/s, the scale's latest weight flow; only the shot graph draws it, next to `weight` */
+  private weightFlow: number | null = null;
   workflow: Workflow | null = $state.raw(null);
   /** the settings the machine itself holds, null until its stream has sent them */
   shotSettings: ShotSettings | null = $state.raw(null);
@@ -176,6 +178,7 @@ export class Skin {
       onFrame: (frame) => {
         if (isScaleSnapshot(frame)) {
           this.weight = frame.weight;
+          this.weightFlow = typeof frame.weightFlow === 'number' ? frame.weightFlow : null;
           this.scaleLink = 'connected';
         } else if (isScaleStatus(frame)) {
           this.scaleLink = frame.status === 'connected' ? 'connected' : 'disconnected';
@@ -200,7 +203,7 @@ export class Skin {
     const state = frame.state.state;
     const next = followMachine(this.screen, this.machineState, state);
     this.machineState = state;
-    this.shot = recordFrame(this.shot, frame, this.weight);
+    this.shot = recordFrame(this.shot, frame, this.weight, this.weightFlow);
     if (this.shot && !this.shot.ended) this.recalled = null;
     this.steam = recordSteamFrame(this.steam, frame);
     if (next !== this.screen) this.go(next);
