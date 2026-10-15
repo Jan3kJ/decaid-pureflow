@@ -144,10 +144,11 @@ Editor behaviour:
 
 ### 3.3 Out of scope for v1
 - Import of de1app A-Flow `.tcl` profiles.
-- Editing non-A-Flow profiles.
+- Editing non-A-Flow profiles: moved to version 1.1 (3.6).
 - Managing a bean and grinder catalogue (Decaid has APIs; candidates for v2). v1 only records
   the bean and the grinder setting with a shot and restores them from history (3.5).
-- Hot water and flush / rinse: they stay in Decaid's default skin (candidates for v2).
+- Hot water and flush / rinse: they stay in Decaid's default skin (candidates for v2). A view
+  of them while they run is in version 1.1 (3.6).
 - Rating a shot (Decaid's 0-10 enjoyment scale).
 - Portrait layout and a light theme.
 - Plugins, sensors, camera.
@@ -162,8 +163,9 @@ From the founder's sketch and daily use of this feature in DSx2:
 - **Right, below:** the current steam timer, the live scale weight, **the detected mug size
   (s, m or l)** with its weight, and the milk (weight minus mug), then a **set timer** button.
 - **Three mug sizes, detected automatically** from the scale weight. Auto-detection is a must.
-  DSx2's rule is the starting point: the size steps up when the weight is above that mug's
-  weight plus a share of one drink's milk.
+  The size steps up at the midpoint between two full mugs, a mug of size n holding n drinks
+  (founder, 2026-10-15): medium above `((s + 1 drink) + (m + 2 drinks)) / 2`, large above
+  `((m + 2 drinks) + (l + 3 drinks)) / 2`. Built in version 1.1 (3.6).
 - **The calculation, as DSx2 does it:** `timer = reference seconds / reference milk grams x
   (scale weight - mug weight)`, rounded to whole seconds. The timer is written to the
   machine's steam settings.
@@ -181,6 +183,23 @@ profile creates a new entry. The grinder setting is optional and belongs to the 
 it updates the entry and does not create a new one (the founder has one grinder). So the list
 is as long as the number of combinations in use, not the number of shots, and it is the
 quickest way to repeat a good shot.
+
+### 3.6 Version 1.1
+
+Added by the founder on 2026-10-15, after version 1 was built.
+
+| Area | v1.1 content |
+|---|---|
+| Water view | While hot water or flush runs, Home shows what runs instead of only **stop**: a **countdown ring around the stop button** (elapsed time against the target duration of `hotWaterData` or `rinseData`, with "Flush 6 / 10 s" inside), and **an animated picture**: an SVG group head with a water stream whose speed and width follow the measured flow, so it stops when the machine stops. For hot water a cup below fills to the volume so far (flow added up over time) against the target volume, or to the scale's weight when a scale is connected; for flush the stream falls into the drip tray. The stream's colour follows the mix temperature. Starting stays at the machine |
+| Step editor for other profiles | Every profile that is not A-Flow opens in a **step editor ported from Streamline** (`decentespresso/streamline-js`, ISC): one card per step (pump flow or pressure, temperature, limiter, time, volume, weight, exit condition), adding, deleting and reordering steps, a curve preview, and the profile's settings (title, notes, target weight and volume, tank temperature). It saves through the skin's existing save path (lineage, the unsaved-edits warning). A-Flow profiles keep opening the A-Flow editor. Streamline's ISC copyright notice is kept |
+| Step editor: SCRIPT tab | Streamline's SCRIPT tab, ported with the step editor: the profile's steps as text, editable, with a graph preview; a text that does not parse is shown as an error and is not saved |
+| A-Flow values in `metadata` | The editor's A-Flow values move from the profile's `notes` to the profile record's `metadata` (founder, 2026-10-15), after a rig check that `metadata` survives `PUT`, `/api/v1/profiles/export` and the data export and import. Profiles that hold the values in `notes` are moved on their next save and their `notes` cleared of them. **Fallback, only if `metadata` does not hold:** every A-Flow step is kept in the profile and a disabled step gets the time 0, as the de1app A-Flow editor does, so the values travel in the steps |
+| Steam mug detection | the midpoint rule of 3.4 |
+| Maximum flow | the editor's maximum flow is a setting, 8 ml/s by default; newer Decent machines drive more |
+| Reconnect | when Decaid closes a stream with an error, the skin retries by itself for 30 s, then shows 'Decaid closed the connection' with the **reconnect** button |
+| Default dose | a default dose in the skin's settings; the dose of each shot is in Decaid's shot record and the history |
+
+Still out in 1.1: Streamline's `.tcl` import.
 
 ## 4. Technical approach
 
@@ -280,6 +299,31 @@ Windows or Linux. Items 7 and 8 are checks by the founder.
 8. **Install (founder).** A local ZIP of the build installs on the Android tablet and opens in
    landscape, dark. Version 1 has no GitHub release.
 
+Version 1.1 (3.6); items 9 to 11 run with Playwright against the mock gateway or the rig:
+
+9. **Water view.** In the hot-water and in the flush state, the ring shows the elapsed time
+   against the workflow's target duration; the stream moves while the flow is above 0 and
+   stands still at 0; the hot-water cup's level follows the volume so far, or the scale's
+   weight when a scale is connected.
+10. **Step editor.** A non-A-Flow profile opens in the step editor and an A-Flow profile in
+    the A-Flow editor. Changing a step's values, adding, deleting and moving a step, then
+    saving, gives a stored profile whose steps equal the edit, recorded in Decaid's lineage.
+11. **Preview and settings.** The curve preview changes with each step edit; title, notes,
+    target weight and tank temperature are saved with the profile.
+12. **Licence (founder).** The ported files carry Streamline's ISC copyright notice.
+13. **SCRIPT tab.** Editing a step's value in the text changes the graph preview and, saved,
+    the stored steps; a text that does not parse shows an error and saves nothing.
+14. **A-Flow values.** An A-Flow profile saved by the skin has its values in `metadata` and
+    none in `notes`, opens in the editor with every value as saved (the 2nd fill's values too
+    while it is off), and does so again after the data export and import on the rig. A
+    profile with the values in `notes` opens right and is moved on its next save. With the
+    fallback instead: the same, from the steps alone.
+15. **Settings and steam (test).** Mug detection switches at the midpoints of 3.4 (with the
+    defaults: medium above 412.5 g, large above 625 g); the maximum flow follows its setting;
+    a new shot without a set dose takes the default dose.
+16. **Reconnect (test).** After an error close the skin retries for 30 s and shows the
+    reconnect button only after that.
+
 ## 6. Constraints
 - **Budget:** one Claude Pro plan. This product may use all of it up to 90% of the weekly
   limit; the team plans by capacity.
@@ -312,6 +356,14 @@ The weeks are a capacity guess on one Pro plan.
 | 3 | D8b | shot history overlay: list, graph, restore profile, beans and grinder setting | D6 |
 | 3 | D8c | scale, settings, sleep / wake | D6 |
 | 3 | D9 | local ZIP + install on the tablet; profile check on the real machine | D7, D8a-c, founder |
+| 1 (Oct 16-18) | V1 | version 1.1: water view for hot water and flush (3.6) | D9 |
+| 1 | E1 | version 1.1: read Streamline's editor and write the port plan into research.md (files, data model, save path, what maps to which Svelte component) | D9 |
+| 1 | E2 | version 1.1: step editor for non-A-Flow profiles: step cards, add, delete, move, save | E1 |
+| 2 (Oct 19-25) | E3 | version 1.1: the step editor's curve preview and profile settings | E2 |
+| 1 | F1 | version 1.1: steam mug midpoints, maximum flow setting, default dose, reconnect retry for 30 s | D9 |
+| 1 | M1 | version 1.1: rig check of `metadata` (`PUT`, profile export, data export and import) | D9 |
+| 2 | M2 | version 1.1: A-Flow values in `metadata`, moving old profiles from `notes`; the time-0 fallback only if M1 fails | M1 |
+| 2 | E4 | version 1.1: the step editor's SCRIPT tab | E2 |
 
 ## 8. Open questions
 Answered by the first research task ([research.md](research.md)) and no longer open: Decaid
@@ -396,7 +448,8 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
 - Mug detection steps up above a mug's weight plus **the whole** milk of one drink: the
   share is 1, one constant (`MUG_STEP_SHARE` in `src/steam/timer.ts`). With the founder's
   defaults the medium mug starts above 375 g and the large one above 425 g, so 180 g of
-  milk is read right in each mug; DSx2's own share was not looked up. Is 1 right? (owner)
+  milk is read right in each mug; DSx2's own share was not looked up. Is 1 right? (answered:
+  the midpoint rule of 3.4, founder 2026-10-15)
 - Does the real DE1 stop steaming when the timer is over, and after the seconds the steam
   page shows? The simulation cannot show it. Since the fix of 2026-10-14 the page shows the
   machine's own timer (`targetSteamDuration`), sets it so that Streamline does not write its
@@ -414,7 +467,8 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
   until it is set again. Whether Decaid's own steam screen on the tablet, which opens when
   steam starts and offers +10 s, played a part was not seen. (owner)
 - The maximum flow the editor allows: 8 ml/s is not from a source, de1app allows 20
-  ([a-flow-3.0.md](a-flow-3.0.md), section 2). (owner)
+  ([a-flow-3.0.md](a-flow-3.0.md), section 2). (answered: 8 by default, a setting; founder
+  2026-10-15)
 - The choices made while building the review's changes, which the founder has not seen:
   [a-flow-3.0.md](a-flow-3.0.md), section 5. (owner)
 - The byte format of a v2 profile file only matters for an export: the API takes and
@@ -470,7 +524,8 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
     page, whoever put the machine to sleep; a touch asks for `idle`. Where
     `platformSupported.brightness` is true the brightness goes to 5 (`SLEEP_BRIGHTNESS` in
     `src/shell/skin.svelte.ts`) and back to 100, the system's own, at the wake. Is 5 right,
-    and should the skin dim at all, or leave that to Decaid? (owner)
+    and should the skin dim at all, or leave that to Decaid? (answered: keep 5 for now;
+    founder 2026-10-15)
   - Sleep is offered whenever the machine is awake and runs nothing, also while it heats.
     (owner)
   - A shot started in the seconds after a wake, before the scale is back, did not stop at
@@ -479,7 +534,8 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
     not connected. Does the real scale behave so? (owner)
   - A stream the gateway closed with an error stays closed (4.1); the skin says 'Decaid
     closed the connection' with a 'reconnect' button on every screen. Whether it should
-    retry by itself instead is still the founder's word (day record of 2026-10-12). (owner)
+    retry by itself instead is still the founder's word (day record of 2026-10-12). (answered:
+    retry for 30 s, then the button; founder 2026-10-15)
 - Shot history (D8b, research.md section 14), choices the founder has not seen:
   - A profile is taken by its title, not by its id: a shot record holds a copy of the
     profile and no id, and the id changes with every edit. A renamed profile starts a new
