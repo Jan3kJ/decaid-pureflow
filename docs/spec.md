@@ -137,7 +137,7 @@ Editor behaviour:
   - The 2nd fill is off in every default except floral, and the dose is 16 g in every default (founder, 2026-10-12).
 - A saved profile is a normal Decaid v2 profile (`POST /api/v1/profiles`). The A-Flow
   parameters and the version (3.0) travel with it so it re-opens in the editor (in the
-  profile's `notes`, or the KV store; decided in the design task), and Decaid's profile
+  profile's `notes` (founder, 2026-10-13, request 166)), and Decaid's profile
   lineage records edits.
 - Other profiles can be selected and loaded, but only A-Flow profiles are editable in v1.
 
@@ -374,6 +374,13 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
   [install.md](install.md). (owner)
 - The version is `0.1.0`, a beta (founder, 2026-10-13); it is in `package.json` and
   `public/manifest.json`. A later number is the founder's call. (answered)
+- Other profiles (founder's question of 2026-10-14, [answers-2026-10-14.md](answers-2026-10-14.md)):
+  Streamline 0.2.13's editor edits any v2 profile as its steps, but Decaid serves one skin at a
+  time, so it is reached by switching skins. Is switching in Decaid's settings enough, or should
+  the skin get a button that switches to Streamline's profile selector? (owner)
+- Where Decaid keeps its database (`streamline_bridge.sqlite`) on Android was not seen; the
+  app's private folder is likely, out of reach of a file manager. The founder's view is the
+  API in a browser on the tablet or `GET /api/v1/data/export`. (owner)
 - What are the skin and the repository called? `decaid-skin` is provisional; decided before
   the first public release. (owner)
 - Steam test (acceptance 4), as built in D8a; the founder agreed to it on 2026-10-13

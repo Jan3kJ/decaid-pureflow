@@ -1023,7 +1023,7 @@ Done on 2026-10-13, against Decaid v0.8.8 started as in 8.8 step 2 (the gateway 
 
 | Claim | Status |
 |---|---|
-| The ZIP is `release/decaid-skin-1.0.0-rc.1.zip`: 51 133 bytes, four files (`index.html` 445 bytes and `manifest.json` at the root, one CSS and one JavaScript file in `assets/`), both asset paths in `index.html` start with `./`, no source map, no test file. `scripts/zip.mjs` checks this before it writes the ZIP | seen running |
+| The ZIP is `release/decaid-skin-1.0.0-rc.1.zip` (the version of D9; the release is now `0.1.0`, founder, 2026-10-13): 51 133 bytes, four files (`index.html` 445 bytes and `manifest.json` at the root, one CSS and one JavaScript file in `assets/`), both asset paths in `index.html` start with `./`, no source map, no test file. `scripts/zip.mjs` checks this before it writes the ZIP | seen running |
 | On a device a ZIP is installed in Decaid's own screens: "open **Launcher → Skins**, tap the **+** (Install skin) button and choose **ZIP file**", and in another place "Open **Settings** → tap the skin selector dropdown", "Select **"Install from .zip..."**"; "The skin is extracted to app storage, set as default, and served immediately". Install from ZIP is listed for Android | read (`doc/Skins.md`); not seen: Decaid's window cannot be driven on the rig |
 | **The REST API has no upload of a ZIP.** `rest_v1.yml` has three installs: `install/github-release`, `install/github-branch` and `install/url` | read |
 | **`POST /api/v1/webui/skins/install/url` with a `file:///` URL fails**, although `doc/Skins.md` shows one ("Install from a local or remote URL"): `500 {"error":"Invalid argument(s): No host specified in URI file:///..."}` | seen running |
