@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { WATER_FRAMES, mockGateway } from './mock-gateway';
 
@@ -147,10 +148,32 @@ test('the way back to home is a large target in the accent colour', async ({ pag
     const box = (await back.boundingBox())!;
     expect(box.width).toBeGreaterThanOrEqual(56);
     expect(box.height).toBeGreaterThanOrEqual(56);
-    // Not blue, green or red: they mean flow, pressure and temperature.
-    expect(await back.evaluate((element) => getComputedStyle(element).color)).toBe('rgb(183, 148, 255)');
+    // Light blue (founder, 2026-10-14), paler than the flow curve's #4da3ff; not green or red.
+    expect(await back.evaluate((element) => getComputedStyle(element).color)).toBe('rgb(159, 212, 240)');
     await back.click();
   }
+  expect(errors).toEqual([]);
+});
+
+test("the settings page names the skin's version in its top right corner", async ({ page }) => {
+  const manifest = JSON.parse(readFileSync('public/manifest.json', 'utf8'));
+  await mockGateway(page);
+  await page.goto('/');
+  await page.getByTestId('menu').click();
+  await page.getByTestId('open-settings').click();
+  const version = page.getByTestId('skin-version');
+  await expect(version).toHaveText(`${manifest.name} ${manifest.version}`);
+
+  // At the right of the top line, clear of the title and its line, and inside the viewport.
+  const box = (await version.boundingBox())!;
+  const screen = (await page.getByTestId('screen-settings').boundingBox())!;
+  expect(box.y).toBeLessThan(screen.y + screen.height * 0.1);
+  expect(screen.x + screen.width - (box.x + box.width)).toBeLessThan(screen.width * 0.05);
+  for (const other of [page.locator('.settings h1'), page.locator('.settings header p')]) {
+    const near = (await other.boundingBox())!;
+    expect(near.x + near.width).toBeLessThanOrEqual(box.x);
+  }
+  await expectInsideViewport(page);
   expect(errors).toEqual([]);
 });
 

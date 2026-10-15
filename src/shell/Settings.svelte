@@ -11,6 +11,7 @@
     type Settings,
     type SteamField,
   } from '../settings';
+  import { PRODUCT_NAME, PRODUCT_VERSION } from '../product';
   import { backupTime } from '../settings-backup';
   import type { Skin } from './skin.svelte';
 
@@ -111,6 +112,8 @@
   <header>
     <h1>Settings</h1>
     <p>Kept on this tablet, with a backup in Decaid. Everything else is in Decaid's own settings.</p>
+    <!-- The skin's version, top right (founder, 2026-10-14); from the manifest, like the build. -->
+    <small class="version" data-testid="skin-version">{PRODUCT_NAME} {PRODUCT_VERSION}</small>
   </header>
 
   <section data-testid="settings-steam">
@@ -417,6 +420,12 @@
     display: flex;
     align-items: baseline;
     gap: 1.2rem;
+  }
+
+  .version {
+    margin-left: auto;
+    flex: none;
+    opacity: 0.7;
   }
 
   h1 {
