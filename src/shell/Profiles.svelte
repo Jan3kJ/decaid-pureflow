@@ -1,10 +1,11 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { ProfileRecord } from '../api';
+  import { notesText } from '../editor/storage';
   import {
     doseOf,
     isAFlow3,
-    loadProfile,
+    loadRecord,
     missingDefaults,
     sameProfile,
     saveDefaults,
@@ -71,7 +72,7 @@
       if (answer === 'save-as') skin.openSaveAs();
       if (answer !== 'load') return;
       selectedId = record.id;
-      skin.workflow = await loadProfile(skin.client, record.profile);
+      skin.workflow = await loadRecord(skin.client, record);
       skin.go(skin.pickerReturn === 'editor' ? 'editor' : 'home');
     });
 
@@ -122,7 +123,7 @@
   <aside data-testid="profile-detail">
     {#if selected}
       {@const profile = selected.profile}
-      {@const dose = doseOf(profile)}
+      {@const dose = doseOf(profile, selected.metadata)}
       <h1>{profile.title}</h1>
       {#if profile.author}<p class="author">by {profile.author}</p>{/if}
       <dl>
@@ -140,10 +141,11 @@
         </div>
       </dl>
       {#if dose !== undefined}
-        <!-- Its notes hold the A-Flow parameters (editor/storage.ts), not a text to read. -->
         <p class="notes">A-Flow 3.0: once it is loaded, the editor opens on it.</p>
-      {:else if profile.notes}
-        <p class="notes">{profile.notes}</p>
+      {/if}
+      <!-- Notes of version 1 hold the A-Flow parameters (editor/storage.ts): only the text shows. -->
+      {#if notesText(profile.notes)}
+        <p class="notes">{notesText(profile.notes)}</p>
       {/if}
     {:else}
       <p class="hint">Tap a profile to load it.</p>

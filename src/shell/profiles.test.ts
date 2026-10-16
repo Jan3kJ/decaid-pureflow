@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { DEFAULT_PROFILES } from '../aflow';
+import { DEFAULT_PROFILES, serializeParams } from '../aflow';
+import { paramsMetadata, workflowProfile } from '../editor/storage';
 import { DecaidClient, type Profile, type ProfileRecord } from '../api';
 import {
   defaultProfile,
@@ -7,6 +8,7 @@ import {
   doseToSet,
   isAFlow3,
   loadProfile,
+  loadRecord,
   missingDefaults,
   sameProfile,
   saveDefaults,
@@ -102,8 +104,9 @@ describe('saveDefaults', () => {
     ]);
     expect(calls[0].body).toEqual({
       profile: defaultProfile(DEFAULT_PROFILES[0]),
-      metadata: { source: 'decaid-skin', aflow: '3.0' },
+      metadata: { source: 'decaid-skin', ...paramsMetadata(DEFAULT_PROFILES[0].params) },
     });
+    expect((calls[0].body as { profile: Profile }).profile.notes).toBe('');
     expect(saved.map((item) => item.profile.title)).toEqual(['A-Flow / default-floral', 'A-Flow / default-light']);
   });
 });
@@ -133,15 +136,32 @@ describe('sortProfiles', () => {
 describe('loadProfile', () => {
   it('loads with PUT /api/v1/workflow: the profile, its stop weight as target yield and its dose', async () => {
     const { client: api, calls } = client(() => ({ profile: light }));
-    const workflow = await loadProfile(api, fromGateway(light));
+    const workflow = await loadProfile(api, fromGateway(light), {}, paramsMetadata(DEFAULT_PROFILES[1].params));
     expect(calls).toHaveLength(1);
     expect(calls[0].method).toBe('PUT');
     expect(calls[0].path).toBe('/api/v1/workflow');
+    // The workflow has no metadata: its copy carries the values in its notes.
     expect(calls[0].body).toEqual({
-      profile: fromGateway(light),
+      profile: workflowProfile(fromGateway(light), DEFAULT_PROFILES[1].params),
       context: { targetYield: 48, targetDoseWeight: 16 },
     });
     expect(workflow.profile?.title).toBe('A-Flow / default-light');
+  });
+
+  it('loads a record with the values in its metadata, one of version 1 with them in its notes, and a shot copy', async () => {
+    const params = DEFAULT_PROFILES[1].params;
+    const { client: api, calls } = client(() => ({}));
+    await loadRecord(api, record(light, { metadata: { source: 'decaid-skin', ...paramsMetadata(params) } }));
+    const v1 = { ...light, notes: `${serializeParams(params)}
+mine` };
+    await loadRecord(api, record(v1, { metadata: { source: 'decaid-skin', aflow: '3.0' } }));
+    await loadProfile(api, (calls[0].body as { profile: Profile }).profile);
+    expect(calls.map((call) => call.body)).toEqual([
+      { profile: workflowProfile(light, params), context: { targetYield: 48, targetDoseWeight: 16 } },
+      { profile: { ...light, notes: `${serializeParams(params)}
+mine` }, context: { targetYield: 48, targetDoseWeight: 16 } },
+      { profile: workflowProfile(light, params), context: { targetYield: 48, targetDoseWeight: 16 } },
+    ]);
   });
 
   it('leaves the dose alone for a profile that brings none, and the yield for one without a stop weight', async () => {
@@ -153,8 +173,11 @@ describe('loadProfile', () => {
   });
 
   it('knows the dose of a profile that carries its A-Flow parameters', () => {
-    expect(doseOf(light)).toBe(16);
-    expect(doseOf(fromGateway(light))).toBe(16);
+    const params = DEFAULT_PROFILES[1].params;
+    expect(doseOf(light)).toBeUndefined();
+    expect(doseOf(light, paramsMetadata(params))).toBe(16);
+    expect(doseOf(fromGateway(light), paramsMetadata(params))).toBe(16);
+    expect(doseOf(workflowProfile(light, params))).toBe(16);
     expect(doseOf(other)).toBeUndefined();
     // The plugin's notes: Decaid's bundled default is not an A-Flow 3.0 profile.
     expect(doseOf({ ...light, notes: 'A-Flow: an alternative profile for D-Flow' })).toBeUndefined();

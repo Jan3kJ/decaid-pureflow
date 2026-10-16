@@ -8,18 +8,14 @@ import {
   type DefaultProfile,
 } from '../aflow';
 import type { DecaidClient, Profile, ProfileRecord, Workflow, WorkflowContextPatch } from '../api';
-import { paramsNotes, readParams, sameSteps } from '../editor/storage';
+import { paramsMetadata, readParams, sameSteps, workflowProfile } from '../editor/storage';
 
 /** `metadata.source` of a profile this skin stored. */
 export const SKIN_SOURCE = 'decaid-skin';
 
-/** A default as the v2 profile the generator writes for it, with its parameters (editor/storage.ts). */
+/** A default as the v2 profile the generator writes for it; its parameters go into the metadata (`saveDefaults`). */
 export function defaultProfile(entry: DefaultProfile): Profile {
-  return generateProfile(entry.params, {
-    title: entry.title,
-    author: DEFAULT_AUTHOR,
-    notes: paramsNotes(entry.params),
-  }) as Profile;
+  return generateProfile(entry.params, { title: entry.title, author: DEFAULT_AUTHOR }) as Profile;
 }
 
 /** The same title and the same steps. A title alone is not enough: Decaid bundles the plugin's defaults under three of the 3.0 titles. */
@@ -44,7 +40,7 @@ export async function saveDefaults(
   for (const entry of entries) {
     records.push(
       await client.saveProfile(defaultProfile(entry), {
-        metadata: { source: SKIN_SOURCE, aflow: AFLOW_VERSION },
+        metadata: { source: SKIN_SOURCE, ...paramsMetadata(entry.params) },
       }),
     );
   }
@@ -73,8 +69,8 @@ export function sortProfiles(records: readonly ProfileRecord[]): ProfileRecord[]
 }
 
 /** The dose a profile brings, in g: an A-Flow 3.0 profile has one in its parameters. */
-export function doseOf(profile: Profile): number | undefined {
-  return readParams(profile)?.dose;
+export function doseOf(profile: Profile, metadata?: Record<string, unknown> | null): number | undefined {
+  return readParams(profile, metadata)?.dose;
 }
 
 /**
@@ -99,15 +95,25 @@ export function doseToSet(workflow: Workflow, defaultDose: number): number | nul
  * weight is written as the target yield here, and its dose where it has one. The picker, the
  * editor's 'load to machine' and the shot history all load with this function; the history
  * sends an entry's bean and grinder along as `more`, in the same call.
+ *
+ * The workflow holds a profile without its record, so an A-Flow 3.0 profile's parameters,
+ * read from `metadata` or the notes, go with it in its notes (`workflowProfile`); the stored
+ * record keeps them in its metadata alone.
  */
 export function loadProfile(
   client: DecaidClient,
   profile: Profile,
   more: WorkflowContextPatch = {},
+  metadata?: Record<string, unknown> | null,
 ): Promise<Workflow> {
   const context: WorkflowContextPatch = { ...more };
   if (profile.target_weight) context.targetYield = profile.target_weight;
-  const dose = doseOf(profile);
-  if (dose !== undefined) context.targetDoseWeight = dose;
-  return client.updateWorkflow({ profile, context });
+  const params = readParams(profile, metadata);
+  if (params) context.targetDoseWeight = params.dose;
+  return client.updateWorkflow({ profile: params ? workflowProfile(profile, params) : profile, context });
+}
+
+/** Loads a stored profile (`loadProfile`), its parameters read from its metadata. */
+export function loadRecord(client: DecaidClient, record: ProfileRecord, more: WorkflowContextPatch = {}): Promise<Workflow> {
+  return loadProfile(client, record.profile, more, record.metadata);
 }

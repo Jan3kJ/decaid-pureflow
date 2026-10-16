@@ -1779,3 +1779,51 @@ The skin's own steam checks before that step pass.
 What the run left in the rig: nothing. 73 profiles as before, hidden and deleted ones counted;
 the skin's KV namespace empty; Streamline is the default skin; no setting written. Decaid is
 stopped.
+
+### 18.5 Built (M2)
+
+The A-Flow values moved from the profile's `notes` to the record's `metadata` (spec 3.6,
+acceptance 14), all in `src/editor/storage.ts`; done on 2026-10-16.
+
+- **Stored record.** `writeParams` sends `metadata: { source: 'decaid-skin', aflow: '3.0', params }`
+  (`paramsMetadata`, the codec's object: `encodeParams` in `src/aflow/codec.ts`, the same 26
+  values as the string of version 1, the 2nd fill's kept while it is off) and the `notes`
+  without the values (`notesText`). `isAFlow3` reads `source` and `aflow` as before.
+  `writeProfile` now also `PUT`s when only the metadata differs (18.3: a `POST` of stored steps
+  answers with the old metadata), e.g. a dose edit or a 2nd fill value while it is off. The
+  A-Flow defaults the picker adds are stored the same way. The step editor drops `params` with
+  `aflow` from a parent's metadata (`stepMetadata`).
+- **Reading.** `readParams(profile, metadata?)` decodes `metadata` first (`decodeParams`), then
+  a line of the `notes` that is the codec's string (`splitNotes`), then checks the ranges and
+  that the steps are the generator's, as before. `readRecord(record)` is the short form; the
+  editor's list, the start row and the unsaved check read records with it.
+- **Moving version 1.** A record with the values in its `notes` opens as before. 'save' keeps
+  the parent's notes text (`About.notes`) and drops the values' line, so the new version, or
+  the same record by a `PUT` when the steps are unchanged, has them in `metadata` and only the
+  user's text in `notes`. A hidden older version keeps its old notes.
+- **The workflow.** `PUT /api/v1/workflow` takes a profile, not a record, and a shot copies
+  the workflow's profile (14). So `loadProfile` (and `loadRecord`, which passes the record's
+  metadata) sends a copy whose `notes` start with the codec's string (`workflowProfile`). This
+  keeps the editor's opening on the machine's profile, the unsaved-edits warning (17.5, the
+  values loaded on leaving are stored nowhere else) and the history's A-Flow entries working
+  from Decaid alone, across reloads and devices. The cost: another app that shows the loaded
+  profile's notes shows the values' line, as in version 1.
+- **The picker** shows the dose from the metadata and a user's notes text, never the values.
+
+Tests: Vitest (`codec.test.ts` encode and decode; `storage.test.ts` metadata before notes, the
+2nd fill while off, the notes split, the move by `PUT`; `save.test.ts` a version-1 parent moved
+on save; `profiles.test.ts` the loads), 504 tests. `npm run e2e`: 91, with a new mock test of a
+version-1 profile opened and moved. Rig, **seen running** in `e2e-rig/metadata.spec.ts`:
+
+| Test | Result |
+|---|---|
+| The skin saves an edit of default-light (2nd fill on, its flow 6.5 and time 12, off again; pour pressure, ramp time, dose) with 'save as' | the record's `metadata` equals `{ source, ...paramsMetadata(values) }`, `notes` empty; the workflow's copy holds the values in its notes |
+| Reload | the editor opens on it with every value, the 2nd fill off with its own values |
+| Data export, cut to this profile, purge, data import | `metadata` equal; loaded from the picker, the editor shows every value as saved |
+| A profile as version 1 stored it (values in `notes` beside "rig note", metadata `{source, aflow}`) loaded into the workflow | the editor opens on it with its values |
+| A dose edit and 'save' | the same id; `notes` "rig note"; `metadata` has the values; re-opened from the picker as saved |
+
+The full rig run (`..\decaid-rig\log\m2-e2e-rig.txt`): 16 passed, 1 failed, the same
+`steam.spec.ts` control step as in 18.4 (Streamline 0.2.14), not touched here. The rig ended
+with 73 profiles (none deleted), the skin's KV namespace empty, Streamline the default skin,
+the workflow as before; Decaid stopped, port 8080 free.

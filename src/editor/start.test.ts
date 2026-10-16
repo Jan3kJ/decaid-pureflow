@@ -3,11 +3,11 @@ import { DEFAULT_PROFILES, generateProfile } from '../aflow';
 import type { Profile, ProfileRecord } from '../api';
 import { DEFAULT_START_PROFILES } from '../settings';
 import { startChoices, startName, startRow } from './start';
-import { paramsNotes } from './storage';
+import { workflowNotes } from './storage';
 
 const params = DEFAULT_PROFILES[1].params;
 const aflow = (title: string) =>
-  generateProfile(params, { title, author: 'me', notes: paramsNotes(params) }) as Profile;
+  generateProfile(params, { title, author: 'me', notes: workflowNotes('', params) }) as Profile;
 const record = (id: string, profile: Profile) => ({ id, profile }) as ProfileRecord;
 const other = { ...aflow('Best practice'), notes: '' };
 

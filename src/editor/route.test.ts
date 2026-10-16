@@ -5,14 +5,19 @@ import bundled from '../steps/fixtures/bundled-profiles.json' with { type: 'json
 import { defaultProfile } from '../shell/profiles';
 import { editorFor } from './route';
 import { buildProfile } from './save';
+import { workflowProfile } from './storage';
 
 const bundledProfile = (title: string) => bundled.find((entry) => entry.title === title) as Profile;
 
 describe('editorFor', () => {
-  it('an A-Flow 3.0 default and a saved A-Flow 3.0 profile open in the A-Flow editor', () => {
-    for (const entry of DEFAULT_PROFILES) expect(editorFor(defaultProfile(entry))).toBe('aflow');
-    const saved = buildProfile({ ...DEFAULT_PROFILES[1].params, infusePressure: 2.4 }, { title: 'A-Flow / morning' }, true);
-    expect(editorFor(saved)).toBe('aflow');
+  // The workflow's copy carries the values in its notes (loadProfile, storage.ts).
+  it('an A-Flow 3.0 default and a saved A-Flow 3.0 profile, as loaded, open in the A-Flow editor', () => {
+    for (const entry of DEFAULT_PROFILES) expect(editorFor(workflowProfile(defaultProfile(entry), entry.params))).toBe('aflow');
+    const params = { ...DEFAULT_PROFILES[1].params, infusePressure: 2.4 };
+    const saved = buildProfile(params, { title: 'A-Flow / morning' }, true);
+    expect(editorFor(workflowProfile(saved, params))).toBe('aflow');
+    // The stored profile alone, without its record's metadata, is not readable.
+    expect(editorFor(saved)).toBe('steps');
   });
 
   it("Decaid's bundled de1app A-Flow profiles open in the step editor: A-Flow by name, not by values", () => {
@@ -20,7 +25,7 @@ describe('editorFor', () => {
   });
 
   it('an A-Flow 3.0 profile with one step changed elsewhere opens in the step editor', () => {
-    const profile = defaultProfile(DEFAULT_PROFILES[0]);
+    const profile = workflowProfile(defaultProfile(DEFAULT_PROFILES[0]), DEFAULT_PROFILES[0].params);
     const changed = { ...profile, steps: profile.steps.map((step, i) => (i === 1 ? { ...step, temperature: 80 } : step)) };
     expect(editorFor(changed)).toBe('steps');
   });

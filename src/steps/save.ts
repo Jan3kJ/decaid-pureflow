@@ -6,10 +6,10 @@ import { sameSteps, writeProfile } from '../editor/storage';
 import { SKIN_SOURCE, loadProfile } from '../shell/profiles';
 
 /**
- * The keys of `metadata` that say a profile holds A-Flow values (`aflow`, and those M2 adds
- * beside it): a profile saved from the step editor holds none, so the picker's tag goes.
+ * The keys of `metadata` that hold A-Flow values (`aflow` and `params`, editor/storage.ts): a
+ * profile saved from the step editor holds none, so the picker's tag goes.
  */
-const AFLOW_KEY = /^aflow/i;
+const AFLOW_KEY = /^(aflow|params$)/i;
 
 /** `metadata` of a profile the step editor stores: its parent's, marked as the skin's, without the A-Flow keys. */
 export function stepMetadata(parent: Record<string, unknown> | null | undefined): Record<string, unknown> {

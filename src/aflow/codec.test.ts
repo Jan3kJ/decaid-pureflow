@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseParams, serializeParams } from './codec';
+import { decodeParams, encodeParams, parseParams, serializeParams } from './codec';
 import { DEFAULT_PROFILES } from './defaults';
 import type { AFlowParams } from './types';
 
@@ -122,5 +122,34 @@ describe('serializeParams and parseParams', () => {
   it('ignores unknown keys', () => {
     const text = JSON.stringify({ aflow: '3.0', params: { ...medium, later: 1 }, other: true });
     expect(parseParams(text)).toEqual({ ok: true, params: medium });
+  });
+});
+
+describe('encodeParams and decodeParams (the record metadata)', () => {
+  it('reads back what was written, after JSON as the gateway answers, the 2nd fill off with its own values too', () => {
+    const off = { ...medium, pauseDuration: 0, secondFillFlow: 6.5, secondFillTemperature: 91.25, secondFillTime: 12 };
+    for (const p of [medium, off]) {
+      expect(decodeParams(encodeParams(p))).toEqual({ ok: true, params: p });
+      expect(decodeParams(JSON.parse(JSON.stringify(encodeParams(p))))).toEqual({ ok: true, params: p });
+    }
+  });
+
+  it('is the object of the string', () => {
+    expect(JSON.stringify(encodeParams(medium))).toBe(serializeParams(medium));
+    expect(encodeParams(medium).aflow).toBe('3.0');
+  });
+
+  it('reads a metadata object with other keys beside aflow and params', () => {
+    const metadata = { source: 'decaid-skin', ...encodeParams(medium), other: [1, 'x'] };
+    expect(decodeParams(metadata)).toEqual({ ok: true, params: medium });
+  });
+
+  it('refuses what is not the codec object', () => {
+    expect(decodeParams(null).ok).toBe(false);
+    expect(decodeParams(undefined).ok).toBe(false);
+    expect(decodeParams([]).ok).toBe(false);
+    expect(decodeParams('{"aflow":"3.0"}').ok).toBe(false);
+    expect(decodeParams({ source: 'decaid-skin', aflow: '3.0' })).toEqual({ ok: false, error: 'no params' });
+    expect(decodeParams({ source: 'bundled', filename: 'a.json' }).ok).toBe(false);
   });
 });

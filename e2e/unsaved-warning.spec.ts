@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { DEFAULT_PROFILES } from '../src/aflow';
 import { buildProfile } from '../src/editor/save';
+import { workflowProfile } from '../src/editor/storage';
 import { defaultProfile } from '../src/shell/profiles';
 import { mockGateway, type MockGateway } from './mock-gateway';
 
@@ -110,8 +111,14 @@ test('without unsaved edits a tap loads at once', async ({ page }) => {
 /** Unsaved edits of 'light' on the machine, as leaving the editor loads them, and the page on `screen`. */
 async function withUnsaved(page: Page, screen: string): Promise<MockGateway> {
   const gateway = (await mockGateway(page)).withDefaults();
-  gateway.workflow.profile = buildProfile({ ...light.params, flowUp: false }, { title: light.title }, false);
-  gateway.addShot('shot-1', '2026-10-14T07:00:00', defaultProfile(DEFAULT_PROFILES[0]), null);
+  const edited = { ...light.params, flowUp: false };
+  gateway.workflow.profile = workflowProfile(buildProfile(edited, { title: light.title }, false), edited);
+  gateway.addShot(
+    'shot-1',
+    '2026-10-14T07:00:00',
+    workflowProfile(defaultProfile(DEFAULT_PROFILES[0]), DEFAULT_PROFILES[0].params),
+    null,
+  );
   await page.addInitScript((value) => localStorage.setItem('decaid-skin.screen', value), screen);
   await page.goto('/');
   return gateway;

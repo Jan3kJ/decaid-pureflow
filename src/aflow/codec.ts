@@ -8,7 +8,8 @@ import {
   type NumberField,
 } from './validate';
 
-// Where the string is stored (profile notes or the KV store) is not decided here.
+// Where the values are stored (a record's `metadata`, a profile's `notes`) is decided in
+// src/editor/storage.ts, not here.
 
 const VALUE_FIELDS = Object.keys(paramRanges()) as (NumberField | FollowField)[];
 
@@ -23,19 +24,20 @@ const ADDED_FIELDS: Partial<Record<NumberField | FollowField, number>> = {
 
 export type ParseResult = { ok: true; params: AFlowParams } | { ok: false; error: string };
 
-/** Writes the parameters and the version '3.0' to a string. The key order is fixed. */
-export function serializeParams(params: AFlowParams): string {
+/** The parameters and the version '3.0' as an object, `{ aflow, params }`. The key order is fixed. */
+export function encodeParams(params: AFlowParams): { aflow: string; params: Record<string, number | boolean | null> } {
   const ordered: Record<string, number | boolean | null> = {};
   for (const field of VALUE_FIELDS) ordered[field] = params[field];
   for (const field of TOGGLE_FIELDS) ordered[field] = params[field];
-  return JSON.stringify({ aflow: AFLOW_VERSION, params: ordered });
+  return { aflow: AFLOW_VERSION, params: ordered };
 }
 
-/**
- * Reads a string written by serializeParams. It checks the version and the type of every
- * value, not the ranges (validateParams does that). Every key must be there, except those of
- * ADDED_FIELDS: a value that follows another one is written as null. Unknown keys are ignored.
- */
+/** Writes the parameters and the version '3.0' to a string (`encodeParams`). */
+export function serializeParams(params: AFlowParams): string {
+  return JSON.stringify(encodeParams(params));
+}
+
+/** Reads a string written by serializeParams (`decodeParams`). */
 export function parseParams(text: string): ParseResult {
   let data: unknown;
   try {
@@ -43,7 +45,17 @@ export function parseParams(text: string): ParseResult {
   } catch {
     return { ok: false, error: 'not JSON' };
   }
-  if (typeof data !== 'object' || data === null) return { ok: false, error: 'not an object' };
+  return decodeParams(data);
+}
+
+/**
+ * Reads an object written by encodeParams. It checks the version and the type of every
+ * value, not the ranges (validateParams does that). Every key must be there, except those of
+ * ADDED_FIELDS: a value that follows another one is written as null. Unknown keys are ignored,
+ * so an object with other keys beside `aflow` and `params` (a record's metadata) reads too.
+ */
+export function decodeParams(data: unknown): ParseResult {
+  if (typeof data !== 'object' || data === null || Array.isArray(data)) return { ok: false, error: 'not an object' };
 
   const { aflow, params } = data as { aflow?: unknown; params?: unknown };
   if (aflow !== AFLOW_VERSION) {

@@ -3,13 +3,18 @@ import { DEFAULT_PROFILES, type AFlowParams } from '../aflow';
 import { DecaidClient, type Profile } from '../api';
 import { defaultProfile } from '../shell/profiles';
 import { fakeGateway } from './gateway.fake';
-import { buildProfile, saveAs, saveEdit } from './save';
+import { buildProfile, saveAs, saveEdit, type About } from './save';
+import { paramsMetadata, workflowProfile } from './storage';
 import bundled from '../steps/fixtures/bundled-profiles.json' with { type: 'json' };
 import { readUnsaved, unsavedOnMachine } from './unsaved';
 
 const light = DEFAULT_PROFILES[1];
 const edited: AFlowParams = { ...light.params, infusePressure: 2.4 };
 const about = { title: 'A-Flow / morning', author: 'Janek' };
+
+/** The workflow's copy of these values, as `loadProfile` sends it: they are in its notes. */
+const loaded = (params: AFlowParams, on: About, firstStepWorkaround = false) =>
+  workflowProfile(buildProfile(params, on, firstStepWorkaround), params);
 
 describe('unsavedOnMachine', () => {
   it('nothing loaded: nothing unsaved', () => {
@@ -18,23 +23,23 @@ describe('unsavedOnMachine', () => {
 
   it('a default as the picker loads it: nothing unsaved, with or without its record', async () => {
     const gateway = fakeGateway();
-    const profile = defaultProfile(light);
+    const profile = workflowProfile(defaultProfile(light), light.params);
     expect(unsavedOnMachine(profile, [])).toBeNull();
-    const record = await gateway.client.saveProfile(profile);
-    expect(unsavedOnMachine(record.profile, gateway.records)).toBeNull();
+    const record = await gateway.client.saveProfile(defaultProfile(light), { metadata: paramsMetadata(light.params) });
+    expect(unsavedOnMachine(workflowProfile(record.profile, light.params), gateway.records)).toBeNull();
   });
 
   it('a default with an edited value, loaded on leaving the editor: unsaved, under its title', () => {
-    const profile = buildProfile(edited, { title: light.title }, false);
+    const profile = loaded(edited, { title: light.title });
     expect(unsavedOnMachine(profile, [])).toEqual({ title: light.title, params: edited, profile });
   });
 
   it('a saved profile: nothing unsaved; an edit of it loaded without saving: unsaved', async () => {
     const gateway = fakeGateway();
     const record = await saveAs(gateway.client, edited, about, false);
-    expect(unsavedOnMachine(record.profile, gateway.records)).toBeNull();
+    expect(unsavedOnMachine(workflowProfile(record.profile, edited), gateway.records)).toBeNull();
     const next = { ...edited, pourPressure: 8.5 };
-    const profile = buildProfile(next, about, false);
+    const profile = loaded(next, about);
     expect(unsavedOnMachine(profile, gateway.records)).toEqual({ title: about.title, params: next, profile });
   });
 
@@ -42,13 +47,13 @@ describe('unsavedOnMachine', () => {
     const gateway = fakeGateway();
     await saveAs(gateway.client, edited, about, false);
     const next = { ...edited, dose: 19 };
-    expect(unsavedOnMachine(buildProfile(next, about, false), gateway.records)?.params).toEqual(next);
+    expect(unsavedOnMachine(loaded(next, about), gateway.records)?.params).toEqual(next);
   });
 
   it('the same values under another title are not stored under this one', async () => {
     const gateway = fakeGateway();
     await saveAs(gateway.client, edited, about, false);
-    const profile = buildProfile(edited, { title: 'A-Flow / evening' }, false);
+    const profile = loaded(edited, { title: 'A-Flow / evening' });
     expect(unsavedOnMachine(profile, gateway.records)).not.toBeNull();
   });
 
@@ -57,13 +62,13 @@ describe('unsavedOnMachine', () => {
     const first = await saveAs(gateway.client, edited, about, false);
     await saveEdit(gateway.client, { ...edited, pourPressure: 8.5 }, first, false);
     const all = await gateway.client.listProfiles({ includeHidden: true });
-    expect(unsavedOnMachine(first.profile, all)).toBeNull();
+    expect(unsavedOnMachine(workflowProfile(first.profile, edited), all)).toBeNull();
   });
 
   it('the first-step workaround does not make saved values unsaved', async () => {
     const gateway = fakeGateway();
     await saveAs(gateway.client, edited, about, false);
-    expect(unsavedOnMachine(buildProfile(edited, about, true), gateway.records)).toBeNull();
+    expect(unsavedOnMachine(loaded(edited, about, true), gateway.records)).toBeNull();
   });
 });
 
@@ -101,7 +106,7 @@ describe('unsavedOnMachine, a profile that is not A-Flow 3.0', () => {
 describe('readUnsaved', () => {
   it('reads the workflow and every profile, hidden ones too', async () => {
     const asked: string[] = [];
-    const profile = buildProfile(edited, { title: light.title }, false);
+    const profile = loaded(edited, { title: light.title });
     const client = new DecaidClient({
       baseUrl: 'http://gateway',
       fetch: async (url) => {

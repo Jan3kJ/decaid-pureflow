@@ -3,6 +3,7 @@
 import { readFileSync } from 'node:fs';
 import type { Page, Route, WebSocketRoute } from '@playwright/test';
 import { DEFAULT_PROFILES } from '../src/aflow';
+import { paramsMetadata, workflowProfile } from '../src/editor/storage';
 import { defaultProfile } from '../src/shell/profiles';
 
 export const GATEWAY = 'http://localhost:8080';
@@ -226,14 +227,18 @@ export class MockGateway {
   }
 
   /**
-   * The five A-Flow 3.0 defaults stored, as the picker's 'add' stores them, and `loaded` (a
-   * default's id without 'default-') as the workflow's profile.
+   * The five A-Flow 3.0 defaults stored, as the picker's 'add' stores them (the values in the
+   * metadata), and `loaded` (a default's id without 'default-') as the workflow's profile, the
+   * copy `loadProfile` sends (the values in its notes).
    */
   withDefaults(loaded?: string): this {
     for (const entry of DEFAULT_PROFILES) {
-      this.profiles.push(record(`profile:${entry.id}`, defaultProfile(entry), { source: 'decaid-skin', aflow: '3.0' }));
+      this.profiles.push(
+        record(`profile:${entry.id}`, defaultProfile(entry), { source: 'decaid-skin', ...paramsMetadata(entry.params) }),
+      );
     }
-    if (loaded) this.workflow.profile = defaultProfile(DEFAULT_PROFILES.find((entry) => entry.id === `default-${loaded}`)!);
+    const entry = DEFAULT_PROFILES.find((candidate) => candidate.id === `default-${loaded}`);
+    if (entry) this.workflow.profile = workflowProfile(defaultProfile(entry), entry.params);
     return this;
   }
 

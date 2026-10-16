@@ -1,5 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
+import { DEFAULT_PROFILES } from '../src/aflow';
+import { paramsMetadata, workflowProfile } from '../src/editor/storage';
 import { WATER_FRAMES, mockGateway } from './mock-gateway';
 
 // The shell against a mocked gateway: home, the profile picker and a replayed shot (D6).
@@ -313,7 +315,9 @@ test('the picker lists the profiles of the gateway, offers the A-Flow 3.0 defaul
     'A-Flow / default-dark',
     'A-Flow / default-46mm',
   ]);
-  expect(posts[0].body.metadata).toEqual({ source: 'decaid-skin', aflow: '3.0' });
+  // The values go into the metadata, none into the notes (spec 3.6).
+  expect(posts[0].body.metadata).toEqual({ source: 'decaid-skin', ...paramsMetadata(DEFAULT_PROFILES[0].params) });
+  expect(posts[0].body.profile.notes).toBe('');
   await expect(items).toHaveCount(10);
   await expect(items.first()).toContainText('A-Flow / default-floral');
   await expect(items.first()).toContainText('A-Flow 3.0');
@@ -326,7 +330,8 @@ test('the picker lists the profiles of the gateway, offers the A-Flow 3.0 defaul
   await expect(page.getByTestId('screen-home')).toBeVisible();
   const puts = gateway.calls('PUT', '/api/v1/workflow');
   expect(puts).toHaveLength(1);
-  expect(puts[0].body.profile).toEqual(posts[3].body.profile);
+  // The workflow's copy carries the values in its notes: the workflow has no metadata.
+  expect(puts[0].body.profile).toEqual(workflowProfile(posts[3].body.profile, DEFAULT_PROFILES[3].params));
   expect(puts[0].body.context).toEqual({ targetYield: 36, targetDoseWeight: 16 });
   expect(gateway.calls('POST', '/api/v1/machine/profile')).toHaveLength(0);
   await expect(page.getByTestId('profile-name')).toHaveText('A-Flow / default-dark');

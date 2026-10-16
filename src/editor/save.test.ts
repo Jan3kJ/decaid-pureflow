@@ -13,7 +13,7 @@ import {
   storeAndLoad,
   titleOf,
 } from './save';
-import { StepsTakenError, readParams } from './storage';
+import { StepsTakenError, paramsMetadata, readParams, readRecord, workflowNotes } from './storage';
 
 const light = DEFAULT_PROFILES[1].params;
 const edited: AFlowParams = { ...light, infusePressure: 2.4, stopWeight: 44, dose: 17.5 };
@@ -28,10 +28,10 @@ describe('titles', () => {
 });
 
 describe('buildProfile', () => {
-  it('is the generator\'s output with the parameters in the notes', () => {
-    expect(buildProfile(edited, about, false)).toEqual(
-      generateProfile(edited, { ...about, notes: serializeParams(edited) }),
-    );
+  it("is the generator's output, the parameters not in the notes, a text of the user kept", () => {
+    expect(buildProfile(edited, about, false)).toEqual(generateProfile(edited, { ...about, notes: '' }));
+    const notes = `${serializeParams(light)}\nmine`;
+    expect(buildProfile(edited, { ...about, notes }, false).notes).toBe('mine');
   });
 
   it('adds the Pre Fill step with the first-step workaround, and only then', () => {
@@ -50,11 +50,13 @@ describe('saveAs', () => {
     expect(gateway.sent()).toEqual(['POST /api/v1/profiles']);
     expect(gateway.calls[0].body).toEqual({
       profile: buildProfile(edited, about, false),
-      metadata: SKIN_METADATA,
+      metadata: { ...SKIN_METADATA, ...paramsMetadata(edited) },
     });
+    expect(gateway.calls[0].body.profile.notes).toBe('');
     expect(record.profile.title).toBe('A-Flow / morning');
     expect(record.parentId).toBeNull();
-    expect(readParams(record.profile)).toEqual(edited);
+    expect(readParams(record.profile)).toBeNull();
+    expect(readRecord(record)).toEqual(edited);
   });
 
   it('refuses a new name for steps another visible profile has', async () => {
@@ -83,12 +85,13 @@ describe('saveEdit', () => {
     expect(gateway.calls[1].body).toEqual({ visibility: 'hidden' });
     expect(record.id).not.toBe(parent.id);
     expect(record.parentId).toBe(parent.id);
-    expect(readParams(record.profile)).toEqual(next);
+    expect(gateway.calls[0].body.metadata).toEqual({ ...SKIN_METADATA, ...paramsMetadata(next) });
+    expect(readRecord(record)).toEqual(next);
     // The list shows the profile once.
     expect((await gateway.client.listProfiles()).map((r) => r.id)).toEqual([record.id]);
   });
 
-  it('an edit of the dose alone: the same record, its notes changed, nothing hidden', async () => {
+  it('an edit of the dose alone: the same record, its metadata changed, nothing hidden', async () => {
     const gateway = fakeGateway();
     const parent = await saveAs(gateway.client, edited, about, false);
     gateway.calls.length = 0;
@@ -99,7 +102,35 @@ describe('saveEdit', () => {
     expect(gateway.sent()).toEqual(['POST /api/v1/profiles', `PUT /api/v1/profiles/${parent.id}`]);
     expect(record.id).toBe(parent.id);
     expect(record.visibility).toBe('visible');
-    expect(readParams(record.profile)).toEqual(next);
+    expect(readRecord(record)).toEqual(next);
+  });
+
+  it('a profile of version 1 is moved: the values go to the metadata, the notes keep only the text', async () => {
+    const gateway = fakeGateway();
+    const v1 = gateway.make(
+      generateProfile(edited, { ...about, notes: `${serializeParams(edited)}\nfor the morning` }),
+      { metadata: { source: 'decaid-skin', aflow: '3.0' } },
+    );
+    gateway.records.push(v1);
+    // It opens with its values, read from the notes.
+    expect(readRecord(v1)).toEqual(edited);
+
+    // A curve edit: a new version.
+    const next = { ...edited, pourPressure: 8.5 };
+    const record = await saveEdit(gateway.client, next, v1, false);
+    expect(record.id).not.toBe(v1.id);
+    expect(record.profile.notes).toBe('for the morning');
+    expect(record.metadata).toEqual({ ...SKIN_METADATA, ...paramsMetadata(next) });
+    expect(readRecord(record)).toEqual(next);
+
+    // A dose edit: the same id, changed with a PUT.
+    const other = gateway.make(generateProfile(light, { ...about, title: 'A-Flow / other', notes: serializeParams(light) }));
+    gateway.records.push(other);
+    const dose = { ...light, dose: 19 };
+    const same = await saveEdit(gateway.client, dose, other, false);
+    expect(same.id).toBe(other.id);
+    expect(same.profile.notes).toBe('');
+    expect(readRecord(same)).toEqual(dose);
   });
 
   it('an edit back to an earlier version: that record is shown again and the newer one hidden', async () => {
@@ -129,16 +160,18 @@ describe('saveEdit', () => {
 });
 
 describe('loading', () => {
-  it('sends the built profile, its stop weight as the yield and its dose, with the picker\'s function', async () => {
+  it("sends the built profile, its stop weight as the yield and its dose, with the picker's function", async () => {
     const gateway = fakeGateway();
     const profile = buildProfile(edited, about, false);
-    await loadProfile(gateway.client, profile);
+    await loadProfile(gateway.client, profile, {}, paramsMetadata(edited));
 
     expect(gateway.sent()).toEqual(['PUT /api/v1/workflow']);
+    // The workflow has no metadata: its copy carries the values in its notes.
     expect(gateway.calls[0].body).toEqual({
-      profile,
+      profile: { ...profile, notes: workflowNotes('', edited) },
       context: { targetYield: 44, targetDoseWeight: 17.5 },
     });
+    expect(readParams(gateway.calls[0].body.profile)).toEqual(edited);
     expect(profile.target_weight).toBe(44);
   });
 
@@ -147,12 +180,13 @@ describe('loading', () => {
     const stored = await storeAndLoad(gateway.client, () => saveAs(gateway.client, edited, about, false));
 
     expect(gateway.sent()).toEqual(['POST /api/v1/profiles', 'PUT /api/v1/workflow']);
+    const loaded = { ...stored.record.profile, notes: workflowNotes('', edited) };
     expect(gateway.calls[1].body).toEqual({
-      profile: stored.record.profile,
+      profile: loaded,
       context: { targetYield: 44, targetDoseWeight: 17.5 },
     });
-    expect(gateway.calls[1].body.profile).toEqual(buildProfile(edited, about, false));
-    expect('workflow' in stored && stored.workflow.profile).toEqual(stored.record.profile);
+    expect(stored.record.profile).toEqual(buildProfile(edited, about, false));
+    expect('workflow' in stored && stored.workflow.profile).toEqual(loaded);
   });
 
   it('save, then load: the new version is what the machine gets', async () => {
@@ -168,7 +202,7 @@ describe('loading', () => {
       `PUT /api/v1/profiles/${parent.id}/visibility`,
       'PUT /api/v1/workflow',
     ]);
-    expect(gateway.calls[2].body.profile).toEqual(buildProfile(next, about, false));
+    expect(gateway.calls[2].body.profile).toEqual({ ...buildProfile(next, about, false), notes: workflowNotes('', next) });
     expect(stored.record.id).not.toBe(parent.id);
   });
 
@@ -196,7 +230,8 @@ describe('loading', () => {
     const workflow = await loadOnLeave(gateway.client, edited, light, { title: 'A-Flow / default-light', author: 'Janek' }, false);
 
     expect(gateway.sent()).toEqual(['PUT /api/v1/workflow']);
-    const profile = buildProfile(edited, { title: 'A-Flow / default-light', author: 'Janek' }, false);
+    const built = buildProfile(edited, { title: 'A-Flow / default-light', author: 'Janek' }, false);
+    const profile = { ...built, notes: workflowNotes('', edited) };
     expect(gateway.calls[0].body).toEqual({ profile, context: { targetYield: 44, targetDoseWeight: 17.5 } });
     expect(workflow?.profile).toEqual(profile);
     // Nothing is stored by leaving.

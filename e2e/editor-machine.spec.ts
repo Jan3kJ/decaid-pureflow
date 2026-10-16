@@ -1,7 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
-import { parseParams } from '../src/aflow/codec';
+import { serializeParams } from '../src/aflow/codec';
 import type { AFlowParams } from '../src/aflow/types';
 import { buildProfile } from '../src/editor/save';
+import { paramsMetadata, splitNotes, workflowProfile } from '../src/editor/storage';
 import { mockGateway, type MockGateway } from './mock-gateway';
 import light from '../src/aflow/defaults/default-light.json' with { type: 'json' };
 
@@ -23,10 +24,14 @@ test.beforeEach(({ page }) => {
 const morning: AFlowParams = { ...light, infusePressure: 2.4, stopWeight: 44, dose: 17.5 };
 const MORNING = { title: 'A-Flow / morning', author: 'Janek' };
 
-/** A gateway that holds 'morning' as a saved profile and as the workflow's profile. */
-async function withMorning(page: Page): Promise<MockGateway> {
+/**
+ * A gateway that holds 'morning' as a saved profile and as the workflow's profile. The record
+ * has the values in its metadata; `v1` stores it as version 1 did, the values in its notes.
+ */
+async function withMorning(page: Page, v1 = false): Promise<MockGateway> {
   const gateway = await mockGateway(page);
-  const profile = buildProfile(morning, MORNING, false);
+  const built = buildProfile(morning, MORNING, false);
+  const profile = v1 ? { ...built, notes: `${serializeParams(morning)}\nfor the morning` } : built;
   gateway.profiles.push({
     id: 'profile:morning',
     profile,
@@ -37,9 +42,9 @@ async function withMorning(page: Page): Promise<MockGateway> {
     isDefault: false,
     createdAt: '2026-10-13T04:00:00Z',
     updatedAt: '2026-10-13T04:00:00Z',
-    metadata: { source: 'decaid-skin', aflow: '3.0' },
+    metadata: v1 ? { source: 'decaid-skin', aflow: '3.0' } : { source: 'decaid-skin', ...paramsMetadata(morning) },
   });
-  gateway.workflow.profile = profile;
+  gateway.workflow.profile = workflowProfile(profile, morning);
   return gateway;
 }
 
@@ -64,14 +69,15 @@ function loadedProfile(gateway: MockGateway, title: string, author: string, work
   const puts = gateway.calls('PUT', '/api/v1/workflow');
   expect(puts).toHaveLength(1);
   const { profile, context } = puts[0].body;
-  const parsed = parseParams(profile.notes);
-  if (!parsed.ok) throw new Error(parsed.error);
+  // The workflow has no metadata: its copy carries the values in its notes (storage.ts).
+  const params = splitNotes(profile.notes).params;
+  if (!params) throw new Error('the loaded profile carries no A-Flow values');
   // The profile sent to the machine equals the generator's output for the values (acceptance 3).
-  expect(profile).toEqual(buildProfile(parsed.params, { title, author }, workaround));
-  expect(context).toEqual({ targetYield: parsed.params.stopWeight, targetDoseWeight: parsed.params.dose });
-  expect(profile.target_weight).toBe(parsed.params.stopWeight);
+  expect(profile).toEqual(workflowProfile(buildProfile(params, { title, author }, workaround), params));
+  expect(context).toEqual({ targetYield: params.stopWeight, targetDoseWeight: params.dose });
+  expect(profile.target_weight).toBe(params.stopWeight);
   expect(gateway.calls('POST', '/api/v1/machine/profile')).toHaveLength(0);
-  return parsed.params;
+  return params;
 }
 
 test('a profile that is not A-Flow 3.0 opens in the step editor (spec 3.6)', async ({ page }) => {
@@ -112,8 +118,9 @@ test('the editor opens on the current A-Flow 3.0 profile and saves an edit with 
   const posts = gateway.calls('POST', '/api/v1/profiles');
   expect(posts).toHaveLength(1);
   expect(posts[0].body.parentId).toBe('profile:morning');
-  expect(posts[0].body.metadata).toEqual({ source: 'decaid-skin', aflow: '3.0' });
+  expect(posts[0].body.metadata).toEqual({ source: 'decaid-skin', ...paramsMetadata({ ...morning, flowUp: false }) });
   expect(posts[0].body.profile).toEqual(buildProfile({ ...morning, flowUp: false }, MORNING, false));
+  expect(posts[0].body.profile.notes).toBe('');
   expect(gateway.calls('PUT', /\/profiles\/profile%3Amorning\/visibility$/).map((call) => call.body)).toEqual([
     { visibility: 'hidden' },
   ]);
@@ -122,7 +129,9 @@ test('the editor opens on the current A-Flow 3.0 profile and saves an edit with 
   await expect(page.getByTestId('save')).toBeDisabled();
   // The save loaded the stored version: one PUT of the workflow, with the generator's profile.
   expect(loadedProfile(gateway, MORNING.title, MORNING.author)).toEqual({ ...morning, flowUp: false });
-  expect(gateway.calls('PUT', '/api/v1/workflow')[0].body.profile).toEqual(posts[0].body.profile);
+  expect(gateway.calls('PUT', '/api/v1/workflow')[0].body.profile).toEqual(
+    workflowProfile(posts[0].body.profile, { ...morning, flowUp: false }),
+  );
   // What is on the machine is what is on screen: back loads nothing more.
   await page.getByTestId('nav-home').click();
   await expect(page.getByTestId('screen-home')).toBeVisible();
@@ -130,7 +139,7 @@ test('the editor opens on the current A-Flow 3.0 profile and saves an edit with 
   expect(errors).toEqual([]);
 });
 
-test('an edit of the dose alone changes the notes of the same record', async ({ page }) => {
+test('an edit of the dose alone changes the metadata of the same record', async ({ page }) => {
   const gateway = await withMorning(page);
   await openEditor(page);
   await expect(pressed(page)).toHaveText('morning');
@@ -140,17 +149,49 @@ test('an edit of the dose alone changes the notes of the same record', async ({ 
   await page.getByTestId('save').click();
   await expect(page.getByTestId('editor-notice')).toHaveText('Saved “morning” and loaded.');
 
-  // The steps exist: the POST answers with the old record and its old notes, a PUT changes them.
+  // The steps exist: the POST answers with the old record and its old metadata, a PUT changes it.
   expect(gateway.calls('POST', '/api/v1/profiles')).toHaveLength(1);
   const puts = gateway.calls('PUT', /\/profiles\/profile%3Amorning$/);
   expect(puts).toHaveLength(1);
   expect(puts[0].body.profile).toEqual(buildProfile({ ...morning, dose: 18 }, MORNING, false));
+  expect(puts[0].body.metadata).toEqual({ source: 'decaid-skin', ...paramsMetadata({ ...morning, dose: 18 }) });
   expect(gateway.calls('PUT', /\/visibility$/)).toHaveLength(0);
   await expect(page.getByTestId('chip-value-dose')).toHaveText('18 g');
   expect(gateway.profiles.filter((record) => record.profile.title === MORNING.title)).toHaveLength(1);
   // The dose went to the workflow with the save.
   loadedProfile(gateway, MORNING.title, MORNING.author);
   expect(gateway.workflow.context.targetDoseWeight).toBe(18);
+  expect(errors).toEqual([]);
+});
+
+// Spec 3.6 and acceptance 14: a profile of version 1, its values in its notes.
+test('a profile with the values in its notes opens right and is moved on its next save', async ({ page }) => {
+  const gateway = await withMorning(page, true);
+  await openEditor(page);
+  await expect(pressed(page)).toHaveText('morning');
+  await expect(page.getByTestId('value-infusePressure')).toHaveText('2.4 bar');
+
+  await page.getByTestId('mode-detail').click();
+  await type(page, 'dose', '18');
+  await page.getByTestId('save').click();
+  await expect(page.getByTestId('editor-notice')).toHaveText('Saved “morning” and loaded.');
+
+  // The same steps: the record is changed in place, its values now in the metadata, and of its
+  // notes only the user's text is left.
+  const puts = gateway.calls('PUT', /\/profiles\/profile%3Amorning$/);
+  expect(puts).toHaveLength(1);
+  expect(puts[0].body.profile.notes).toBe('for the morning');
+  expect(puts[0].body.metadata).toEqual({ source: 'decaid-skin', ...paramsMetadata({ ...morning, dose: 18 }) });
+  const stored = gateway.profiles.find((record) => record.id === 'profile:morning')!;
+  expect(stored.profile.notes).toBe('for the morning');
+
+  // After a reload the editor opens on it with the values as saved.
+  await page.reload();
+  await expect(page.getByTestId('graph')).toBeVisible();
+  await expect(pressed(page)).toHaveText('morning');
+  await page.getByTestId('mode-detail').click();
+  await expect(page.getByTestId('chip-value-dose')).toHaveText('18 g');
+  await expect(page.getByTestId('save')).toBeDisabled();
   expect(errors).toEqual([]);
 });
 
@@ -250,7 +291,7 @@ test('save as stores a new named profile, loads it, and it re-opens with the sam
   expect(posts).toHaveLength(1);
   expect(posts[0].body).toEqual({
     profile: buildProfile(wanted, { title: 'A-Flow / morning light', author: 'Janek' }, false),
-    metadata: { source: 'decaid-skin', aflow: '3.0' },
+    metadata: { source: 'decaid-skin', ...paramsMetadata(wanted) },
   });
   await expect(pressed(page)).toHaveText('morning light');
   await expect(page.getByTestId('save')).toBeDisabled();

@@ -1,13 +1,21 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
+import { serializeParams } from '../src/aflow/codec';
+import type { AFlowParams } from '../src/aflow/types';
 import { buildProfile } from '../src/editor/save';
+import { paramsMetadata, splitNotes, workflowProfile } from '../src/editor/storage';
 import light from '../src/aflow/defaults/default-light.json' with { type: 'json' };
 
 // M1 (docs/research.md section 18): a profile record's `metadata` on the rig, the way the
 // skin's A-Flow values are to travel in it (spec 3.6). It holds through GET, PUT, the lineage,
 // the profile export and import, and Decaid's data export and import. The data import sends an
 // archive with this test's own profile only, so the rig's other data is not touched. Every
-// test purges the profiles it created.
+// test purges the profiles it created and puts the workflow back as it was.
+//
+// M2 (acceptance 14): the skin stores the A-Flow values in `metadata`, none in `notes`; a saved
+// profile re-opens with every value, the 2nd fill's while it is off too, also after the data
+// export and import (cut down as above); a profile of version 1 with the values in its notes
+// opens and is moved on its next save.
 
 const GATEWAY = 'http://localhost:8080';
 
@@ -71,6 +79,7 @@ function testProfile(shift = 0) {
 
 let gatewayUp = false;
 let profilesBefore: string[] = [];
+let workflowBefore: any;
 
 test.beforeAll(async () => {
   try {
@@ -83,6 +92,7 @@ test.beforeAll(async () => {
 test.beforeEach(async () => {
   test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
   profilesBefore = await profileIds();
+  workflowBefore = await api('GET', '/api/v1/workflow');
 });
 
 test.afterEach(async () => {
@@ -90,7 +100,17 @@ test.afterEach(async () => {
   for (const id of await profileIds()) {
     if (!profilesBefore.includes(id)) await api('DELETE', `${record(id)}/purge`);
   }
+  await api('PUT', '/api/v1/workflow', {
+    profile: workflowBefore.profile,
+    context: {
+      targetYield: workflowBefore.context?.targetYield ?? 0,
+      targetDoseWeight: workflowBefore.context?.targetDoseWeight ?? null,
+    },
+  });
   expect(await profileIds()).toEqual(profilesBefore);
+  const workflowAfter = await api('GET', '/api/v1/workflow');
+  expect(workflowAfter.profile).toEqual(workflowBefore.profile);
+  expect(workflowAfter.context).toEqual(workflowBefore.context);
 });
 
 test('metadata holds through GET, PUT and the lineage', async () => {
@@ -175,4 +195,151 @@ test('metadata takes a large object and refuses one that is not an object', asyn
   for (const [shift, value] of [[1, [1, 2, 3]], [2, 'text'], [3, 42]] as const) {
     expect((await call('POST', '/api/v1/profiles', { profile: testProfile(shift), metadata: value })).status).toBe(500);
   }
+});
+
+// --- M2: the skin's A-Flow values in metadata (acceptance 14) ---
+
+const LIGHT = { title: 'A-Flow / default-light', author: 'Janek' };
+const pressed = (page: Page) => page.getByTestId('editor-profile');
+
+async function type(page: Page, field: string, keys: string) {
+  await page.getByTestId(`chip-edit-${field}`).click();
+  for (const key of keys) await page.getByTestId(`numpad-key-${key === '.' ? 'dot' : key}`).click();
+  await page.getByTestId('numpad-confirm').click();
+}
+
+/** The skin on its editor, which opens on the workflow's profile. */
+async function openEditor(page: Page) {
+  await page.addInitScript(() => localStorage.setItem('decaid-skin.screen', 'editor'));
+  await page.goto('/');
+  await expect(page.getByTestId('graph')).toBeVisible();
+  await expect(page.getByTestId('nav-status')).toBeVisible();
+}
+
+/** What the editor shows of the values that differ from default-light. */
+async function expectOnScreen(page: Page, name: string) {
+  await expect(pressed(page)).toHaveText(name);
+  await expect(page.getByTestId('editor-notice')).toHaveCount(0);
+  await expect(page.getByTestId('value-pourPressure')).toHaveText('8.3 bar');
+  await expect(page.getByTestId('value-rampTime')).toHaveText('7 s');
+  await page.getByTestId('mode-detail').click();
+  await expect(page.getByTestId('chip-value-dose')).toHaveText('18.5 g');
+  // The 2nd fill is off and kept its values: on, they show; off again, nothing changed.
+  await expect(page.getByTestId('toggle-second-fill')).toHaveAttribute('aria-pressed', 'false');
+  await page.getByTestId('toggle-second-fill').click();
+  await page.getByTestId('phase-secondFill').click();
+  await expect(page.getByTestId('chip-value-secondFillFlow')).toContainText('6.5');
+  await expect(page.getByTestId('chip-value-secondFillTime')).toContainText('12');
+  await page.getByTestId('toggle-second-fill').click();
+  await expect(page.getByTestId('save')).toBeDisabled();
+}
+
+test('the skin saves the A-Flow values in metadata, none in notes; they re-open as saved, after the data export and import too', async ({
+  page,
+}) => {
+  await api('PUT', '/api/v1/workflow', { profile: workflowProfile(buildProfile(light, LIGHT, false), light) });
+  await openEditor(page);
+  await expect(pressed(page)).toHaveText('light');
+  await page.getByTestId('mode-detail').click();
+  // The 2nd fill on, values of its own, then off again.
+  await page.getByTestId('toggle-second-fill').click();
+  await page.getByTestId('phase-secondFill').click();
+  await type(page, 'secondFillFlow', '6.5');
+  await type(page, 'secondFillTime', '12');
+  await page.getByTestId('toggle-second-fill').click();
+  await page.getByTestId('phase-pressurize').click();
+  await type(page, 'pourPressure', '8.3');
+  await type(page, 'rampTime', '7');
+  await type(page, 'dose', '18.5');
+  const wanted: AFlowParams = {
+    ...light,
+    secondFillFlow: 6.5,
+    secondFillTime: 12,
+    pauseDuration: 0,
+    pourPressure: 8.3,
+    rampTime: 7,
+    dose: 18.5,
+  };
+
+  const name = `rig m2 ${Date.now() % 100000}`;
+  const title = `A-Flow / ${name}`;
+  await page.getByTestId('save-as').click();
+  await page.getByTestId('save-name').fill(name);
+  await page.getByTestId('save-confirm').click();
+  await expect(page.getByTestId('editor-notice')).toHaveText(`Saved as “${name}” and loaded.`);
+
+  // The record: the values in its metadata, its notes empty.
+  const saved = (await api('GET', '/api/v1/profiles')).find((stored: any) => stored.profile.title === title);
+  expect(profilesBefore).not.toContain(saved.id);
+  expect(saved.metadata).toEqual({ source: 'decaid-skin', ...paramsMetadata(wanted) });
+  expect(saved.profile.notes ?? '').toBe('');
+  // The workflow's copy carries them in its notes: the workflow has no metadata.
+  expect(splitNotes((await api('GET', '/api/v1/workflow')).profile.notes).params).toEqual(wanted);
+
+  // Re-opened after a reload, every value as saved.
+  await page.reload();
+  await expect(page.getByTestId('graph')).toBeVisible();
+  await expectOnScreen(page, name);
+
+  // Decaid's data export, cut down to this profile, purged and imported again.
+  const response = await call('GET', '/api/v1/data/export');
+  expect(response.status).toBe(200);
+  const entries = unzipSync(new Uint8Array(await response.arrayBuffer()));
+  const mine = JSON.parse(strFromU8(entries['profiles.json'])).find((stored: any) => stored.id === saved.id);
+  expect(mine.metadata).toEqual(saved.metadata);
+  const archive = zipSync({ 'metadata.json': entries['metadata.json'], 'profiles.json': strToU8(JSON.stringify([mine])) });
+  await api('DELETE', `${record(saved.id)}/purge`);
+  expect((await call('GET', record(saved.id))).status).toBe(404);
+  expect(await api('POST', '/api/v1/data/import', archive)).toMatchObject({ profiles: { imported: 1, status: 'complete' } });
+  expect((await api('GET', record(saved.id))).metadata).toEqual(saved.metadata);
+
+  // Loaded from the picker, the imported record opens in the editor with every value.
+  await page.reload();
+  await expect(page.getByTestId('graph')).toBeVisible();
+  await pressed(page).click();
+  await expect(page.getByTestId('screen-profiles')).toBeVisible();
+  await page.getByTestId('profile-item').filter({ hasText: title }).click();
+  await expect(page.getByTestId('screen-editor')).toBeVisible();
+  await expectOnScreen(page, name);
+  expect(splitNotes((await api('GET', '/api/v1/workflow')).profile.notes).params).toEqual(wanted);
+});
+
+test('a profile with the A-Flow values in its notes opens right and is moved on its next save', async ({ page }) => {
+  const name = `rig v1 ${Date.now() % 100000}`;
+  const title = `A-Flow / ${name}`;
+  const params: AFlowParams = { ...light, pourPressure: 8.2, rampTime: 6, dose: 17 };
+  // As version 1 of the skin stored it: the values in the notes, here beside a text of the user.
+  const profile = { ...buildProfile(params, { title, author: 'Janek' }, false), notes: `${serializeParams(params)}\nrig note` };
+  const v1 = await api('POST', '/api/v1/profiles', { profile, metadata: { source: 'decaid-skin', aflow: '3.0' } });
+  expect(profilesBefore).not.toContain(v1.id);
+  // Loaded as another skin loads it: the record's profile as it is.
+  await api('PUT', '/api/v1/workflow', { profile: v1.profile, context: { targetYield: params.stopWeight } });
+
+  await openEditor(page);
+  await expect(pressed(page)).toHaveText(name);
+  await expect(page.getByTestId('editor-notice')).toHaveCount(0);
+  await expect(page.getByTestId('value-pourPressure')).toHaveText('8.2 bar');
+  await page.getByTestId('mode-detail').click();
+  await expect(page.getByTestId('chip-value-dose')).toHaveText('17 g');
+
+  // The dose alone keeps the steps and so the id: the record is changed in place and moved.
+  await type(page, 'dose', '19');
+  await page.getByTestId('save').click();
+  await expect(page.getByTestId('editor-notice')).toHaveText(`Saved “${name}” and loaded.`);
+  const moved = await api('GET', record(v1.id));
+  expect(moved.profile.notes).toBe('rig note');
+  expect(moved.metadata).toEqual({ source: 'decaid-skin', aflow: '3.0', ...paramsMetadata({ ...params, dose: 19 }) });
+  expect(moved.visibility).toBe('visible');
+
+  // Re-opened after a reload, from the picker: the values as saved.
+  await page.reload();
+  await expect(page.getByTestId('graph')).toBeVisible();
+  await pressed(page).click();
+  await page.getByTestId('profile-item').filter({ hasText: title }).click();
+  await expect(page.getByTestId('screen-editor')).toBeVisible();
+  await expect(pressed(page)).toHaveText(name);
+  await expect(page.getByTestId('value-pourPressure')).toHaveText('8.2 bar');
+  await page.getByTestId('mode-detail').click();
+  await expect(page.getByTestId('chip-value-dose')).toHaveText('19 g');
+  await expect(page.getByTestId('save')).toBeDisabled();
 });

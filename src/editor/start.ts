@@ -4,7 +4,7 @@
 import { DEFAULT_PROFILES } from '../aflow';
 import type { ProfileRecord } from '../api';
 import { nameOf } from './save';
-import { readParams } from './storage';
+import { readRecord } from './storage';
 
 /** A profile the row can hold, by its title. */
 export interface StartChoice {
@@ -26,7 +26,7 @@ export function startName(title: string): string {
 export function startChoices(records: readonly ProfileRecord[]): StartChoice[] {
   const titles: string[] = DEFAULT_PROFILES.map((entry) => entry.title);
   const saved = records
-    .filter((record) => readParams(record.profile))
+    .filter((record) => readRecord(record))
     .map((record) => record.profile.title)
     .sort((a, b) => nameOf(a).localeCompare(nameOf(b)));
   for (const title of saved) if (!titles.includes(title)) titles.push(title);

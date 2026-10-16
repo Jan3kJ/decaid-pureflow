@@ -2,13 +2,16 @@
 // profile for the edited values, stored with its parameters (storage.ts).
 import { AFLOW_VERSION, generateProfile, serializeParams, type AFlowParams } from '../aflow';
 import type { DecaidClient, Profile, ProfileRecord, Workflow } from '../api';
-import { SKIN_SOURCE, loadProfile } from '../shell/profiles';
-import { paramsNotes, writeParams } from './storage';
+import { SKIN_SOURCE, loadProfile, loadRecord } from '../shell/profiles';
+import { notesText, paramsMetadata, writeParams } from './storage';
 
 /** Every profile the editor saves has this in front of its name, as the defaults have. */
 export const TITLE_PREFIX = 'A-Flow / ';
 
-/** `metadata` of a profile the skin stored; the picker's tag 'A-Flow 3.0' reads it. */
+/**
+ * `metadata` of a profile the skin stored, beside the parameters `writeParams` adds; the
+ * picker's tag 'A-Flow 3.0' reads it.
+ */
 export const SKIN_METADATA = { source: SKIN_SOURCE, aflow: AFLOW_VERSION };
 
 export function titleOf(name: string): string {
@@ -22,17 +25,20 @@ export function nameOf(title: string): string {
 export interface About {
   title: string;
   author?: string;
+  /** a text of the user's in the notes, kept by 'save' */
+  notes?: string;
 }
 
 /**
- * The profile for these values: the generator's output, with the parameters in its notes.
+ * The profile for these values: the generator's output, with the user's text as its notes;
+ * the parameters go into the record's metadata (`writeParams`).
  * `firstStepWorkaround` is the setting of that name (settings.ts).
  */
 export function buildProfile(params: AFlowParams, about: About, firstStepWorkaround: boolean): Profile {
   return generateProfile(params, {
     title: about.title,
     author: about.author ?? '',
-    notes: paramsNotes(params),
+    notes: notesText(about.notes),
     firstStepWorkaround,
   }) as Profile;
 }
@@ -54,7 +60,9 @@ export function saveAs(
  * record names the one it was edited from as its `parentId`, and that one is hidden, so the
  * list shows the profile once and `GET /api/v1/profiles/{id}/lineage` still has every version.
  * An edit that leaves the steps and the stop weight as they were (the dose) has the same id:
- * its notes are changed and nothing is hidden.
+ * its metadata is changed and nothing is hidden. A parent of version 1, with the parameters
+ * in its notes, is moved: the new version has them in its metadata, and of its notes only the
+ * user's text.
  */
 export async function saveEdit(
   client: DecaidClient,
@@ -62,7 +70,7 @@ export async function saveEdit(
   parent: ProfileRecord,
   firstStepWorkaround: boolean,
 ): Promise<ProfileRecord> {
-  const about = { title: parent.profile.title, author: parent.profile.author };
+  const about = { title: parent.profile.title, author: parent.profile.author, notes: parent.profile.notes };
   const record = await writeParams(client, buildProfile(params, about, firstStepWorkaround), params, {
     parentId: parent.id,
     metadata: SKIN_METADATA,
@@ -84,7 +92,7 @@ export type Stored = { record: ProfileRecord; workflow: Workflow } | { record: P
 export async function storeAndLoad(client: DecaidClient, store: () => Promise<ProfileRecord>): Promise<Stored> {
   const record = await store();
   try {
-    return { record, workflow: await loadProfile(client, record.profile) };
+    return { record, workflow: await loadRecord(client, record) };
   } catch (error) {
     return { record, error };
   }
@@ -107,5 +115,5 @@ export function loadOnLeave(
   firstStepWorkaround: boolean,
 ): Promise<Workflow | null> {
   if (!changed(params, openedWith)) return Promise.resolve(null);
-  return loadProfile(client, buildProfile(params, about, firstStepWorkaround));
+  return loadProfile(client, buildProfile(params, about, firstStepWorkaround), {}, paramsMetadata(params));
 }

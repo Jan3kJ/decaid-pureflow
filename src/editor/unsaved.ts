@@ -5,7 +5,7 @@
 // it is now; a marker in the skin would not know.
 import { DEFAULT_PROFILES, serializeParams, type AFlowParams } from '../aflow';
 import type { DecaidClient, Profile, ProfileRecord } from '../api';
-import { readParams, sameSteps } from './storage';
+import { readParams, readRecord, sameSteps } from './storage';
 
 /** The workflow's profile, when it holds edits that no profile has stored. */
 export interface Unsaved {
@@ -39,7 +39,7 @@ export function unsavedOnMachine(profile: Profile | null | undefined, records: r
   const values = serializeParams(params);
   const stored = [
     ...DEFAULT_PROFILES.filter((entry) => entry.title === profile.title).map((entry) => entry.params),
-    ...mine.map((record) => readParams(record.profile)),
+    ...mine.map(readRecord),
   ];
   if (stored.some((candidate) => candidate && serializeParams(candidate) === values)) return null;
   return { title: profile.title, params, profile };

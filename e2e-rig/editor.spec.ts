@@ -1,7 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
-import { parseParams } from '../src/aflow/codec';
+import { decodeParams } from '../src/aflow/codec';
 import type { AFlowParams } from '../src/aflow/types';
 import { buildProfile } from '../src/editor/save';
+import { paramsMetadata, splitNotes, workflowProfile } from '../src/editor/storage';
 import light from '../src/aflow/defaults/default-light.json' with { type: 'json' };
 
 // Acceptance item 3 (spec section 5) against the rig: in simple and in detail mode, changing a
@@ -48,9 +49,18 @@ function held(profile: Record<string, unknown>, expected: object): unknown {
   return canonical(Object.fromEntries(Object.keys(expected).map((key) => [key, profile[key]])));
 }
 
+/** The values of the workflow's copy of a profile: in its notes, as the workflow has no metadata. */
 function paramsOf(profile: { notes: string }): AFlowParams {
-  const parsed = parseParams(profile.notes);
-  if (!parsed.ok) throw new Error(`the notes hold no A-Flow parameters: ${parsed.error}`);
+  const params = splitNotes(profile.notes).params;
+  if (!params) throw new Error('the notes hold no A-Flow parameters');
+  return params;
+}
+
+/** The values of a stored record: in its metadata, none in its notes (spec 3.6). */
+function recordParams(record: { profile: { notes: string }; metadata: unknown }): AFlowParams {
+  expect(splitNotes(record.profile.notes).params).toBeNull();
+  const parsed = decodeParams(record.metadata);
+  if (!parsed.ok) throw new Error(`the metadata holds no A-Flow parameters: ${parsed.error}`);
   return parsed.params;
 }
 
@@ -65,7 +75,7 @@ async function type(page: Page, field: string, keys: string) {
 
 /** The editor on default-light: it opens on the workflow's profile, so that is put there first. */
 async function openEditor(page: Page) {
-  await api('PUT', '/api/v1/workflow', { profile: buildProfile(light, LIGHT, false) });
+  await api('PUT', '/api/v1/workflow', { profile: workflowProfile(buildProfile(light, LIGHT, false), light) });
   await page.addInitScript(() => localStorage.setItem('decaid-skin.screen', 'editor'));
   await page.goto('/');
   await expect(page.getByTestId('graph')).toBeVisible();
@@ -77,7 +87,7 @@ async function openEditor(page: Page) {
 async function expectWorkflow(about: { title: string; author: string }): Promise<AFlowParams> {
   const workflow = await api('GET', '/api/v1/workflow');
   const params = paramsOf(workflow.profile);
-  const expected = buildProfile(params, about, false);
+  const expected = workflowProfile(buildProfile(params, about, false), params);
   expect(held(workflow.profile, expected)).toEqual(canonical(expected));
   expect(workflow.context.targetYield).toBe(params.stopWeight);
   expect(workflow.context.targetDoseWeight).toBe(params.dose);
@@ -212,8 +222,8 @@ test('detail mode: typed values are loaded; a saved profile re-opens with them a
   const saved = (await api('GET', '/api/v1/profiles')).find((record: any) => record.profile.title === about.title);
   expect(profilesBefore).not.toContain(saved.id);
   expect(saved.parentId).toBeNull();
-  expect(saved.metadata).toEqual({ source: 'decaid-skin', aflow: '3.0' });
-  expect(paramsOf(saved.profile)).toEqual(wanted);
+  expect(saved.metadata).toEqual({ source: 'decaid-skin', ...paramsMetadata(wanted) });
+  expect(recordParams(saved)).toEqual(wanted);
   const expected = buildProfile(wanted, about, false);
   expect(held(saved.profile, expected)).toEqual(canonical(expected));
 
@@ -245,12 +255,12 @@ test('detail mode: typed values are loaded; a saved profile re-opens with them a
   await expect(page.getByTestId('chip-value-dose')).toHaveText('18.5 g');
   await expect(page.getByTestId('save')).toBeDisabled();
 
-  // The dose alone: the same record, its notes changed with a PUT.
+  // The dose alone: the same record, its metadata changed with a PUT.
   await type(page, 'dose', '17');
   await page.getByTestId('save').click();
   await expect(page.getByTestId('editor-notice')).toHaveText(`Saved “${name}” and loaded.`);
   const redosed = await api('GET', `/api/v1/profiles/${encodeURIComponent(saved.id)}`);
-  expect(paramsOf(redosed.profile)).toEqual({ ...wanted, dose: 17 });
+  expect(recordParams(redosed)).toEqual({ ...wanted, dose: 17 });
 
   // An edit of the curve: a new record with the old one as its parent; the old one is hidden.
   await page.getByTestId('toggle-flow').click();
@@ -266,7 +276,7 @@ test('detail mode: typed values are loaded; a saved profile re-opens with them a
   await expect(page.getByTestId('save')).toBeDisabled();
   expect(listed[0].id).not.toBe(saved.id);
   expect(listed[0].parentId).toBe(saved.id);
-  expect(paramsOf(listed[0].profile)).toEqual({ ...wanted, dose: 17, flowUp: false });
+  expect(recordParams(listed[0])).toEqual({ ...wanted, dose: 17, flowUp: false });
   const lineage = await api('GET', `/api/v1/profiles/${encodeURIComponent(listed[0].id)}/lineage`);
   expect(lineage.map((record: any) => [record.id, record.visibility])).toEqual([
     [saved.id, 'hidden'],

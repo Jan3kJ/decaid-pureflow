@@ -42,7 +42,7 @@
   } from './save';
   import { startRow } from './start';
   import StepList from './StepList.svelte';
-  import { readParams } from './storage';
+  import { readParams, readRecord } from './storage';
   import ValueChip from './ValueChip.svelte';
 
   interface Props {
@@ -104,7 +104,7 @@
     });
     const saved: Entry[] = [];
     for (const record of records) {
-      const read = readParams(record.profile);
+      const read = readRecord(record);
       if (!read || defaults.some((entry) => entry.title === record.profile.title)) continue;
       saved.push({
         key: record.id,
@@ -252,7 +252,7 @@
   /** The saved record is what the editor is on now, and on the machine unless its load failed. */
   async function adopt(stored: Stored, text: string) {
     records = await skin.client.listProfiles();
-    open(stored.record.id, readParams(stored.record.profile) ?? params);
+    open(stored.record.id, readRecord(stored.record) ?? params);
     if ('workflow' in stored) {
       skin.workflow = stored.workflow;
       openedWith = { ...params };

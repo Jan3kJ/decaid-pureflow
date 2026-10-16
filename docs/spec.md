@@ -221,6 +221,17 @@ backoff (1, 2, 4, 8, 16 s, the last one shortened to end at 30 s, `REFUSED_RETRY
 `src/api/stream.ts`); meanwhile home says 'Decaid is not reachable', and after 30 s 'Decaid
 closed the connection' with **reconnect**, which starts another 30 s.
 
+Built in M2 (2026-10-16), where 3.6 leaves the detail open: a stored record's `metadata` is
+`{ source: 'decaid-skin', aflow: '3.0', params }`, `params` the 26 values as the codec writes
+them (the 2nd fill's too while it is off), and its `notes` hold only what a user wrote there.
+Reading takes `metadata` first, then a line of the `notes` that is the codec's string, and the
+steps must still be the generator's for the values. A profile of version 1 is moved on its next
+save: the values go to `metadata`, the other lines of its `notes` stay. Decaid's workflow holds
+a profile without its record, so the copy the skin loads into the workflow (and so each shot's
+copy) carries the values as the first line of its `notes`; that is how the editor, the
+unsaved-edits warning and the history read what is on the machine. All of it is in
+`src/editor/storage.ts` ([research.md](research.md) 18.5).
+
 ## 4. Technical approach
 
 ### 4.1 What a Decaid skin is
@@ -435,7 +446,8 @@ gives a new id, the hidden versions of the lineage, `/api/v1/profiles/export` an
 `metadata` that is not an object is refused with 500. So M2 takes the `metadata` path of 3.6.
 
 Answered by the founder on 2026-10-13, in the channel: the A-Flow parameters live in the
-profile's notes (request 166); a profile is loaded with `PUT /api/v1/workflow` (request 167,
+profile's notes (request 166; moved to the record's `metadata` in version 1.1, 3.6, built in
+M2); a profile is loaded with `PUT /api/v1/workflow` (request 167,
 3.1); the pause ends at a flow under an editable value (request 169, 3.2); the ghost curve of
 the last shot is for version 2 (request 171, 3.3).
 
