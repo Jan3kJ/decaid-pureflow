@@ -29,16 +29,18 @@ export function canSaveOver(record: ProfileRecord | null | undefined): record is
 }
 
 /**
- * 'save': the edited profile under its title. Decaid's lineage records the edit: the new
- * record names the one it was edited from as its `parentId`, and that one is hidden, so the
- * list shows the profile once and `GET /api/v1/profiles/{id}/lineage` has both. An edit that
- * leaves the hashed content as it was keeps the id: the record is changed and nothing hidden.
+ * 'save': the edited profile under its title, the one the SETTINGS tab shows (a new title
+ * renames the profile). Decaid's lineage records the edit: the new record names the one it was
+ * edited from as its `parentId`, and that one is hidden, so the list shows the profile once and
+ * `GET /api/v1/profiles/{id}/lineage` has both. An edit that leaves the hashed content as it
+ * was keeps the id: the record is changed and nothing hidden.
  */
 export async function saveStepEdit(client: DecaidClient, profile: Profile, parent: ProfileRecord): Promise<ProfileRecord> {
   const record = await writeProfile(
     client,
-    { ...profile, title: parent.profile.title },
+    profile,
     { parentId: parent.id, metadata: stepMetadata(parent.metadata) },
+    parent.id,
   );
   if (record.id !== parent.id) await client.setProfileVisibility(parent.id, 'hidden');
   return record;

@@ -18,7 +18,9 @@ import {
   EXIT_STEP_MAP,
   EXIT_UNIT_MAP,
   FIELD_LIMITS,
+  SETTING_LIMITS,
   type Limit,
+  type SettingField,
 } from './limits';
 
 /** What a pump chip shows: the pump and how it reaches its target, in one. */
@@ -354,4 +356,35 @@ export function stepProblems(step: ProfileStep): string[] {
     }
   }
   return problems;
+}
+
+// --- the profile's settings (the SETTINGS tab) ---
+
+/** A setting of the profile, 0 where the profile has none. */
+export function settingOf(profile: Profile, field: SettingField): number {
+  return Number(num(profile[field]).toFixed(2)) || 0;
+}
+
+/** A setting with its unit; "off" at 0, as the step maxima. */
+export function formatSetting(profile: Profile, field: SettingField): string {
+  const limit = SETTING_LIMITS[field];
+  const v = settingOf(profile, field);
+  return v === 0 ? 'off' : `${v.toFixed(limit.step < 1 ? 1 : 0)} ${limit.unit}`;
+}
+
+/** Sets a setting inside its range; every other field of the profile stays as it is. */
+export function setSetting(profile: Profile, field: SettingField, to: number): Profile {
+  if (!Number.isFinite(to)) return profile;
+  return { ...profile, [field]: tidy(clamp(to, SETTING_LIMITS[field])) };
+}
+
+/** One step of ± from the setting as it is. */
+export function stepSetting(profile: Profile, field: SettingField, direction: 1 | -1): Profile {
+  return setSetting(profile, field, settingOf(profile, field) + direction * SETTING_LIMITS[field].step);
+}
+
+/** The title and the notes as typed; an empty title is not taken, so a profile keeps one. */
+export function setText(profile: Profile, field: 'title' | 'notes', text: string): Profile {
+  if (field === 'title' && !text.trim()) return profile;
+  return { ...profile, [field]: text };
 }

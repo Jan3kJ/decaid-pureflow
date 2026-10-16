@@ -9,14 +9,15 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   // The step editor (spec 3.6, research.md 17): every profile that is not A-Flow opens here,
   // on the workflow's profile, as the A-Flow editor does. One card per step; 'save' and 'save
   // as' store through the skin's one writer and load what they stored; leaving loads a changed
-  // profile. The tabs leave room for SETTINGS and SCRIPT, and the layout a band above the
-  // cards for the curve preview (E3, E4).
+  // profile. Above the cards, the curve preview draws the profile's targets and follows every
+  // edit (E3); the SETTINGS tab edits the profile's own values. SCRIPT joins the tabs in E4.
   import { onMount, tick } from 'svelte';
   import type { Profile, ProfileRecord } from '../api';
   import NameDialog from '../editor/NameDialog.svelte';
   import NumberPad from '../editor/NumberPad.svelte';
   import { storeAndLoad, type Stored } from '../editor/save';
   import { sameSteps } from '../editor/storage';
+  import ShotGraph from '../graph/ShotGraph.svelte';
   import type { Skin } from '../shell/skin.svelte';
   import {
     VALUE_LABEL,
@@ -35,6 +36,8 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     type StepValue,
   } from './model';
   import { canSaveOver, loadStepsOnLeave, profileChanged, saveStepAs, saveStepEdit } from './save';
+  import { stepCurve } from './curve';
+  import ProfileSettings from './ProfileSettings.svelte';
   import StepCard from './StepCard.svelte';
 
   interface Props {
@@ -64,10 +67,23 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   let busy = $state(false);
   let notice: { tone: 'info' | 'warn'; text: string } | null = $state(null);
   let row: HTMLDivElement | undefined = $state();
+  let tab: 'cards' | 'settings' = $state('cards');
 
-  const dirty = $derived(profileChanged(profile, origin));
-  const canSave = $derived(canSaveOver(record) && dirty && profile.steps.length > 0);
   const taken = $derived(records.map((entry) => entry.profile.title));
+  /** 'save' may rename the profile, but not to the title of another visible one. */
+  const titleProblem = $derived.by(() => {
+    const own: ProfileRecord | null = record;
+    if (!own || profile.title === own.profile.title || !taken.includes(profile.title)) return null;
+    return `Another profile is called “${profile.title}”: choose another title, or use save as.`;
+  });
+  const dirty = $derived(profileChanged(profile, origin));
+  const canSave = $derived(canSaveOver(record) && dirty && profile.steps.length > 0 && !titleProblem);
+
+  const curve = $derived(stepCurve(profile));
+  /** Pressure and flow share one scale, as on every graph of the skin; it reaches a target above 12. */
+  const previewMax = $derived(
+    Math.max(12, Math.ceil(Math.max(0, ...curve.pressure.map((v) => v ?? 0), ...curve.flow.map((v) => v ?? 0)) / 4) * 4),
+  );
   const message = (cause: unknown) => (cause instanceof Error ? cause.message : String(cause));
 
   /** What a record's id is made of: the steps and the target weight. */
@@ -167,7 +183,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     act('The profile was not saved', async () => {
       const parent = record!;
       const stored = await storeAndLoad(skin.client, () => saveStepEdit(skin.client, profile, parent));
-      await adopt(stored, `Saved “${parent.profile.title}”`);
+      await adopt(stored, `Saved “${stored.record.profile.title}”`);
     });
 
   const saveUnder = (title: string) =>
@@ -223,9 +239,10 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
       <span>{profile.title}</span>
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h9" /></svg>
     </button>
-    <!-- SETTINGS (E3) and SCRIPT (E4) join CARDS here. -->
+    <!-- SCRIPT (E4) joins CARDS and SETTINGS here. -->
     <div class="group tabs" role="group" aria-label="view">
-      <button class="seg" aria-pressed="true" data-testid="tab-cards">cards</button>
+      <button class="seg" aria-pressed={tab === 'cards'} data-testid="tab-cards" onclick={() => (tab = 'cards')}>cards</button>
+      <button class="seg" aria-pressed={tab === 'settings'} data-testid="tab-settings" onclick={() => (tab = 'settings')}>settings</button>
     </div>
     <span class="count" data-testid="step-count">{profile.steps.length} {profile.steps.length === 1 ? 'step' : 'steps'}</span>
     <div class="group" role="group" aria-label="profile actions">
@@ -240,7 +257,30 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     <p class="notice {notice.tone}" data-testid="editor-notice">{notice.text}</p>
   {/if}
 
-  <!-- The curve preview (E3) takes a band here, above the cards. -->
+  {#if tab === 'settings'}
+    <ProfileSettings {profile} {titleProblem} disabled={busy} onedit={edit} />
+  {:else}
+  <!-- The curve preview: the targets of the steps, redrawn with every edit. -->
+  <div class="preview" data-testid="step-preview" data-seconds={curve.seconds}>
+    <ShotGraph
+      t={curve.t}
+      pressure={[]}
+      flow={[]}
+      temperature={[]}
+      targetPressure={curve.pressure}
+      targetFlow={curve.flow}
+      targetTemperature={curve.temperature}
+      borders={curve.steps.slice(1).map((span) => span.start)}
+      shaded={curve.steps.filter((span) => span.untimed)}
+      yMax={previewMax}
+      fit
+      preview
+      label="curve preview"
+    />
+    {#if curve.steps.some((span) => span.untimed)}
+      <p class="untimed" data-testid="preview-untimed">shaded: a step without a time, drawn 10 s long</p>
+    {/if}
+  </div>
 
   <div class="cards" bind:this={row} data-testid="step-cards">
     {#each profile.steps as step, index (index)}
@@ -265,6 +305,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
       </button>
     {/each}
   </div>
+  {/if}
 </div>
 
 <svelte:window onkeydown={(e) => e.key === 'Escape' && deleting !== null && (deleting = null)} />
@@ -423,8 +464,27 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     color: var(--warn);
   }
 
-  /* A row of cards that scrolls sideways, one open at a time, as high as the open card: the
-     room above is the preview's (E3). */
+  /* The preview takes the room the cards leave, at least a fifth of the screen. */
+  .preview {
+    position: relative;
+    flex: 1 1 0;
+    min-height: 20vh;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 1rem;
+    overflow: hidden;
+  }
+
+  .untimed {
+    position: absolute;
+    top: 0.3rem;
+    right: 1rem;
+    margin: 0;
+    color: var(--dim);
+    font-size: 0.8rem;
+  }
+
+  /* A row of cards that scrolls sideways, one open at a time, as high as the open card. */
   .cards {
     flex: 0 1 auto;
     min-height: 0;

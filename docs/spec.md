@@ -206,6 +206,14 @@ A-Flow editor can read its A-Flow 3.0 values; every other profile, Decaid's bund
 "A-Flow / …" profiles too, opens in the step editor, from home, from the picker and from the
 unsaved-edits warning ([research.md](research.md) 17.5).
 
+Built in E3 (2026-10-16), where 3.6 leaves the detail open: the curve preview is a band above
+the step cards, drawn by the skin's shot graph from the steps (`src/steps/curve.ts`); a step is
+drawn as long as its time, and a step without a time 10 s long (Streamline's rule), whatever its
+volume, weight or exit, and is shaded. The settings are a SETTINGS tab beside the cards: title,
+notes, target weight (0-1000 g), target volume (0-500 ml), tank temperature (0-110 °C); 'save'
+stores the title shown there, so it renames the profile, and is off while another visible
+profile has that title ([research.md](research.md) 17.15).
+
 Built in F1 (2026-10-16), where 3.6 leaves the detail open: mug detection is `mugSteps` and
 `detectMug` in `src/steam/timer.ts`. The maximum flow is the setting `maxFlow`, 4 to 20 ml/s
 (de1app allows 20), on the settings page's Profile line; it sets every flow range of the

@@ -164,3 +164,79 @@ test('a bundled profile opens in the step editor; its edited copy is stored with
   expect(canonical(workflow.profile.steps)).toEqual(canonical(expected.steps));
   await expect(page.getByTestId('save')).toBeDisabled();
 });
+
+// Acceptance item 11 (research.md 17.11 E3) against the rig: the preview follows a step edit;
+// title, notes, target weight, target volume and tank temperature edited in SETTINGS are
+// stored with the profile and read back; a later change of the title alone, and of the notes
+// alone, is stored too. What Decaid hashes of them is written to the test's output.
+test('the profile settings are saved with the steps and read back', async ({ page }) => {
+  const source = (await api('GET', '/api/v1/profiles')).find((record: any) => record.profile.title === SOURCE);
+  expect(source, `the rig bundles “${SOURCE}”`).toBeTruthy();
+  await api('PUT', '/api/v1/workflow', { profile: source.profile });
+
+  await page.addInitScript(() => localStorage.setItem('decaid-skin.screen', 'editor'));
+  await page.goto('/');
+  await expect(page.getByTestId('step-cards')).toBeVisible();
+  const preview = page.getByTestId('step-preview');
+  await expect(preview.getByTestId('shot-border')).toHaveCount(source.profile.steps.length - 1);
+  const before = await preview.getByTestId('shot-target-flow').getAttribute('d');
+  await page.getByTestId('chip-0-seconds').locator('[data-step="plus"]').click();
+  await expect.poll(() => preview.getByTestId('shot-target-flow').getAttribute('d')).not.toBe(before);
+
+  // A copy first: a bundled profile is saved under a new name only.
+  const title = `E3 rig ${Date.now().toString(36)}`;
+  await page.getByTestId('save-as').click();
+  await page.getByTestId('save-name').fill(title);
+  await page.getByTestId('save-confirm').click();
+  await expect(notice(page)).toHaveText(`Saved as “${title}” and loaded.`);
+  const copy = (await api('GET', '/api/v1/profiles')).find((record: any) => record.profile.title === title);
+
+  // SETTINGS: every value, then 'save'.
+  const renamed = `${title} b`;
+  await page.getByTestId('tab-settings').click();
+  await page.getByTestId('setting-title').fill(renamed);
+  await page.getByTestId('setting-notes').fill('E3 rig notes');
+  await type(page, 'setting-target_weight', '40.5');
+  await type(page, 'setting-target_volume', '60');
+  await type(page, 'setting-tank_temperature', '35');
+  await page.getByTestId('save').click();
+  await expect(notice(page)).toHaveText(`Saved “${renamed}” and loaded.`);
+  const wanted = { title: renamed, notes: 'E3 rig notes', target_weight: 40.5, target_volume: 60, tank_temperature: 35 };
+  const listed = (await api('GET', '/api/v1/profiles')).filter((record: any) => record.profile.title === renamed);
+  expect(listed).toHaveLength(1);
+  const saved = listed[0];
+  expect(saved.profile).toMatchObject(wanted);
+  const read = await api('GET', `/api/v1/profiles/${encodeURIComponent(saved.id)}`);
+  expect(read.profile).toMatchObject(wanted);
+  expect(canonical(read.profile.steps)).toEqual(canonical(copy.profile.steps));
+  // The target weight is in the id (research.md 11): a new version, the copy hidden.
+  expect(saved.id).not.toBe(copy.id);
+  expect(saved.parentId).toBe(copy.id);
+  expect((await api('GET', `/api/v1/profiles/${encodeURIComponent(copy.id)}`)).visibility).toBe('hidden');
+  expect((await api('GET', '/api/v1/workflow')).profile).toMatchObject(wanted);
+
+  // The title alone, then the notes alone: the same record, changed.
+  const third = `${title} c`;
+  await page.getByTestId('setting-title').fill(third);
+  await page.getByTestId('save').click();
+  await expect(notice(page)).toHaveText(`Saved “${third}” and loaded.`);
+  await page.getByTestId('setting-notes').fill('E3 rig notes, again');
+  await page.getByTestId('save').click();
+  await expect(notice(page)).toHaveText(`Saved “${third}” and loaded.`);
+  const last = (await api('GET', '/api/v1/profiles')).filter((record: any) => record.profile.title === third);
+  expect(last).toHaveLength(1);
+  expect(last[0].profile).toMatchObject({ ...wanted, title: third, notes: 'E3 rig notes, again' });
+  expect(last[0].id).toBe(saved.id);
+  expect((await api('GET', '/api/v1/profiles')).some((record: any) => record.profile.title === renamed)).toBe(false);
+
+  // What Decaid hashes: does a change of the tank temperature, or of the target volume, alone give a new id?
+  const probe = async (change: Record<string, number>) => {
+    const answer = await api('POST', '/api/v1/profiles', { profile: { ...read.profile, ...change } });
+    const fresh = answer.id !== read.id;
+    if (fresh) await api('DELETE', `/api/v1/profiles/${encodeURIComponent(answer.id)}/purge`);
+    return fresh;
+  };
+  console.log(
+    `hashed: tank_temperature ${await probe({ tank_temperature: 36 })}, target_volume ${await probe({ target_volume: 61 })}`,
+  );
+});

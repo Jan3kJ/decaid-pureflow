@@ -4,7 +4,8 @@
   // pressure, red is temperature in its own band on top; yellow is the weight flow in g/s
   // (founder, 2026-10-14), on the scale of flow and pressure, and only while there is a scale.
   // The profile's targets are thin dashed lines in the colour and on the scale of their
-  // quantity. Every scale names its unit in its colour.
+  // quantity. Every scale names its unit in its colour. As the step editor's preview (`preview`)
+  // it draws a profile's targets alone, as solid lines, with its steps' borders.
   import { timeAxis } from './axis';
 
   interface Props {
@@ -33,6 +34,12 @@
     /** the legend under the graph: the curves, and what dashed means (the setting `showGraphLegend`) */
     legend?: boolean;
     label?: string;
+    /** the targets are the curves: solid lines, no measured values (the step editor's preview) */
+    preview?: boolean;
+    /** s, dashed lines across the plot: where a step starts */
+    borders?: number[];
+    /** s, stretches drawn shaded: steps whose drawn length is not their own */
+    shaded?: { start: number; end: number }[];
   }
 
   let {
@@ -49,6 +56,9 @@
     yMax = 12,
     legend = false,
     label = 'shot graph',
+    preview = false,
+    borders = [],
+    shaded = [],
   }: Props = $props();
 
   /**
@@ -156,15 +166,29 @@
         <text class="time" x={x(tick)} y={box.bottom + 1.4 * rem}>{tick}{tick === 0 ? ' s' : ''}</text>
       {/each}
 
+      {#each shaded as span, i (i)}
+        <rect
+          class="shaded"
+          data-testid="shot-shaded"
+          x={x(span.start)}
+          y={box.top}
+          width={Math.max(0, x(span.end) - x(span.start))}
+          height={box.bottom - box.top}
+        />
+      {/each}
+      {#each borders as border, i (i)}
+        <line class="border" data-testid="shot-border" x1={x(border)} x2={x(border)} y1={box.top} y2={box.bottom} />
+      {/each}
+
       <!-- The targets lie under the curves, each on the scale of its quantity. -->
       {#if temperature && targetTemperature}
-        <path class="target temperature" data-testid="shot-target-temperature" d={path(targetTemperature, yTemperature)} />
+        <path class="target temperature" class:solid={preview} data-testid="shot-target-temperature" d={path(targetTemperature, yTemperature)} />
       {/if}
       {#if pressure && targetPressure}
-        <path class="target pressure" data-testid="shot-target-pressure" d={path(targetPressure, yMain)} />
+        <path class="target pressure" class:solid={preview} data-testid="shot-target-pressure" d={path(targetPressure, yMain)} />
       {/if}
       {#if flow && targetFlow}
-        <path class="target flow" data-testid="shot-target-flow" d={path(targetFlow, yMain)} />
+        <path class="target flow" class:solid={preview} data-testid="shot-target-flow" d={path(targetFlow, yMain)} />
       {/if}
 
       {#if temperature}
@@ -255,6 +279,25 @@
     stroke-width: 0.09rem;
     stroke-dasharray: 0.4rem 0.3rem;
     opacity: 0.85;
+  }
+
+  .target.solid {
+    stroke-width: 0.2rem;
+    stroke-dasharray: none;
+    stroke-linecap: round;
+    opacity: 1;
+  }
+
+  .border {
+    stroke: var(--dim);
+    stroke-width: 1;
+    stroke-dasharray: 0.5rem 0.35rem;
+    opacity: 0.6;
+  }
+
+  .shaded {
+    fill: var(--line);
+    opacity: 0.35;
   }
 
   .flow {

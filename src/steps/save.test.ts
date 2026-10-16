@@ -62,6 +62,40 @@ describe('saveStepEdit', () => {
     expect(record.visibility).toBe('visible');
   });
 
+  it('a new title from SETTINGS renames the profile: a PUT of the same record, not StepsTakenError', async () => {
+    const { gateway, mine } = setup();
+    const record = await saveStepEdit(gateway.client, { ...mine.profile, title: 'Blooming, renamed' }, mine);
+    expect(gateway.sent()).toEqual(['POST /api/v1/profiles', 'PUT /api/v1/profiles/profile:mine']);
+    expect(record.id).toBe('profile:mine');
+    expect(record.profile.title).toBe('Blooming, renamed');
+    expect(record.visibility).toBe('visible');
+  });
+
+  it("the settings (title, notes, target weight and volume, tank temperature) are in what is stored", async () => {
+    const { gateway, mine } = setup();
+    const edited: Profile = {
+      ...mine.profile,
+      title: 'Blooming 40 g',
+      notes: 'longer bloom',
+      target_weight: 40,
+      target_volume: 60,
+      tank_temperature: 30,
+    };
+    const record = await saveStepEdit(gateway.client, edited, mine);
+    expect(gateway.calls[0].body.profile).toEqual(edited);
+    expect(record.profile).toEqual(edited);
+    // The target weight is in the id: a new record, the old one hidden.
+    expect(record.id).not.toBe('profile:mine');
+    expect(gateway.records.find((entry) => entry.id === 'profile:mine')!.visibility).toBe('hidden');
+  });
+
+  it('a new title with the steps of another visible profile is still refused', async () => {
+    const { gateway, mine, bundledRecord } = setup();
+    await expect(
+      saveStepEdit(gateway.client, { ...bundledRecord.profile, title: 'Elsewhere' }, mine),
+    ).rejects.toBeInstanceOf(StepsTakenError);
+  });
+
   it('a bundled default is not saved over: only save as', () => {
     const { bundledRecord, mine } = setup();
     expect(canSaveOver(bundledRecord)).toBe(false);

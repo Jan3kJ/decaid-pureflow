@@ -40,3 +40,15 @@ export const EXIT_MAX_MAP = { pressure: 12, flow: 8 } as const;
 
 /** A limiter's softness when the profile has no limiter to take it from. */
 export const DEFAULT_LIMITER_RANGE = 0.6;
+
+/** The profile's own values in the SETTINGS tab (Streamline's `renderSettingsTab`). */
+export const SETTING_LIMITS = {
+  /** the scale stops the shot here; 0 is off */
+  target_weight: { min: 0, max: 1000, step: 0.1, unit: 'g' },
+  /** the flow meter stops the shot here; 0 is off */
+  target_volume: { min: 0, max: 500, step: 1, unit: 'ml' },
+  /** the water tank is heated to this before the shot; 0 is off */
+  tank_temperature: { min: 0, max: 110, step: 1, unit: '°C' },
+} satisfies Record<string, Limit>;
+
+export type SettingField = keyof typeof SETTING_LIMITS;

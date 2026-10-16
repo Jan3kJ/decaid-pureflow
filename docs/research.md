@@ -1597,16 +1597,16 @@ Risks:
   taps. The text is written in Streamline's words, so it reads the same.
 - **The licence** of spec 3.6 and item 12 (ISC) is not what Streamline's repository says
   (17.9). Spec 5 is not changed here.
-- **What Decaid hashes.** Section 11.1 proved steps and target weight; tank temperature,
-  target volume and beverage type were not tried. `writeProfile` is right either way, but if
+- **What Decaid hashes.** Section 11.1 proved steps and target weight; tank temperature and
+  target volume are hashed too (seen in E3, 17.15); beverage type was not tried. `writeProfile` is right either way, but if
   they are not hashed, a change of only those is a `PUT` and leaves no new version in the
   lineage (as a change of notes does today).
 - **M2 changes the same functions today** (`readParams`, `writeParams`); 17.5 and 17.7 say
   how E2 meets it.
 - **Values out of range** that a profile brings from another app are kept, but cannot be
   typed: a SCRIPT text holding one does not parse until it is brought into range.
-- **0 s steps** (19 bundled) are drawn 10 s long by Streamline; the preview here draws them
-  0 s wide.
+- **0 s steps** (19 bundled) are drawn 10 s long by Streamline, and so by the preview here
+  (built in E3, 17.15).
 - **A load by another app** while an editor is open switches the editor (17.5).
 
 In Streamline, not in spec 3.6, so not in the port (listed, not added to the scope): the
@@ -1632,6 +1632,10 @@ refuses a taken name instead); the number pad's recent values; translations.
 5. 'Save as' in the step editor records its source as parent, unlike the A-Flow editor's;
    'save' of a bundled default is not offered; leaving loads changed steps, as in the A-Flow
    editor (17.7).
+6. The preview draws a step without a time 10 s long, as Streamline does, and shades it; volume
+   and weight do not change a step's drawn length (17.15).
+7. 'save' stores the title the SETTINGS tab shows, so it renames the profile; it is off while
+   another visible profile has that title (17.15).
 
 ### 17.14 Built (E2)
 
@@ -1697,6 +1701,72 @@ model's edit, the lineage holds the copy hidden and the edit visible, the bundle
 unchanged; everything made is purged and the workflow restored). `e2e-rig/editor.spec.ts`'s
 unsaved test now expects the step editor after the picker. Full `npm run e2e:rig`: 14 passed,
 1 failed: the known steam control step (Streamline 0.2.14, 18.4), as before E2.
+
+### 17.15 Built (E3)
+
+Built on 2026-10-16 (acceptance 11). Files: `src/steps/curve.ts` (+ `curve.test.ts`),
+`src/steps/ProfileSettings.svelte`, the settings' ranges (`SETTING_LIMITS` in
+`src/steps/limits.ts`) and operations (`settingOf`, `formatSetting`, `setSetting`,
+`stepSetting`, `setText` in `src/steps/model.ts`), the preview band and the SETTINGS tab in
+`StepEditor.svelte`, a preview mode of `src/graph/ShotGraph.svelte`, and a rename in the save
+path. Screenshots: `docs/product/step-editor.png` (cards with the preview),
+`docs/product/step-settings.png`.
+
+**The preview.** `stepCurve(profile)` gives two points per step (its start and end) for the
+target pressure, flow and temperature, with `null` where a step does not drive that pump; the
+graph is the skin's one chart, `ShotGraph`, so pressure is green, flow blue and temperature red
+in its own band on top, on the same scales as the shot graph (the main scale grows past 12 in
+steps of 4 for a higher target). `preview` draws the targets as solid lines without measured
+values; `borders` draws a dashed line where each step starts; `shaded` greys a stretch.
+`fast` jumps to the target and holds, `smooth` ramps from the previous step's target over the
+whole step, and a pump the previous step did not drive counts as 0 for the ramp
+(Streamline's `pushChannel`, ported with its four tests). `Graph.svelte` and `editor/curve.ts`
+were not reused: they draw and drag A-Flow phases, not steps (17.10). The preview is a band
+between the top bar and the cards and takes the height the open card leaves (at least 20 % of
+the screen; about 43 % at 1280 x 800); it is redrawn from the profile on screen, so every edit
+of a card (a value, a pump or exit switch, add, delete, move) changes it.
+
+**Drawn length of a step: Streamline's rule.** A step is drawn as long as its `seconds`; a step
+with 0 s is drawn 10 s long (`UNTIMED_STEP_SECONDS`). Its volume, weight and exit do not change
+the length: how soon they end a step depends on the coffee, which a preview of targets cannot
+know. So a step that ends on volume or weight is drawn as long as its time, or 10 s when it has
+none; such a 0 s step is shaded, with the line "shaded: a step without a time, drawn 10 s long".
+This replaces 17.12's plan to draw 0 s steps 0 s wide (the task asked for Streamline's rule).
+
+**SETTINGS.** A tab beside `cards` (the cards and the preview make way for it): the title (a
+text field; an empty field is not taken, the profile keeps its title and the field says so),
+the notes (a plain text area), and target weight (0-1000 g in 0.1), target volume (0-500 ml in
+1) and tank temperature (0-110 °C in 1) as `ValueChip`s with ± and the `NumberPad`, 0 is off,
+Streamline's ranges. Every other field of the profile goes back as it came.
+
+**Saving the settings.** They are fields of the profile and go through `saveStepEdit` and
+`saveStepAs` unchanged. One change was needed: 'save' used to store the profile under its
+parent's title; it now stores the title on screen, so a new title in SETTINGS renames the
+profile. `writeProfile` takes the id of the record a 'save' continues (`renaming`): when Decaid
+answers a `POST` with that very record (the same steps and target weight), its title may change
+and it gets the `PUT`; any other visible record with the same content still throws
+`StepsTakenError`. 'save' is off while the title is that of another visible profile ("Another
+profile is called …: choose another title, or use save as."). 'save as' asks a name as before.
+
+**What Decaid hashes (17.12, settled on the rig).** A `POST` of a stored profile with only the
+tank temperature changed, or only the target volume, gave a new id: both are in the id, beside
+the steps and the target weight. Title and notes are not. So a change of any number of SETTINGS
+is a new version in the lineage (parent hidden); a change of the title or notes alone is a `PUT`
+of the same record.
+
+**Tests.** Vitest: `steps/curve.test.ts` (13: Streamline's four, the other pump a gap, smooth
+from 0 after the other pump, durations add up, 0 s steps 10 s whatever their volume, weight or
+exit, no steps, string numbers, Blooming Espresso, all 73 bundled profiles, every kind of edit
+changes the curve), 3 in `model.test.ts` (the settings), 3 in `save.test.ts` (a rename is a
+`PUT` of the same record; the five settings in the body; another profile's steps under a new
+title still refused). Playwright, mocked gateway, `e2e/step-preview.spec.ts` (3): the preview's
+paths change with a value by ± and by pad, a time, two pump switches, add, move and delete; a
+0 s step is shaded; the five settings in the `POST` body and the stored record; the title alone
+and the notes alone are saved (a `PUT`); a title in use turns 'save' off; an empty title is not
+taken. Rig, `e2e-rig/step-editor.spec.ts`, a second test: the preview follows a time edit; a
+copy of Blooming Espresso, then all five settings and 'save': `GET` reads them back, a new
+version with the copy hidden, the workflow holds them; the title alone, then the notes alone:
+the same record; the hash probe above; all made is purged.
 
 ## 18. Profile metadata on the rig (M1)
 

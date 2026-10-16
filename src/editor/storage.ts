@@ -118,16 +118,18 @@ export class StepsTakenError extends Error {
  *   changed with `PUT /api/v1/profiles/{id}`;
  * - a hidden record, an older version of some profile: it is taken over, with the title and
  *   the rest, and made visible;
- * - a visible profile with another title: nothing is changed and a `StepsTakenError` is thrown.
+ * - a visible profile with another title: nothing is changed and a `StepsTakenError` is thrown,
+ *   unless it is `renaming`, the record a 'save' continues: that one takes the new title.
  */
 export async function writeProfile(
   client: DecaidClient,
   wanted: Profile,
   options: SaveProfileOptions = {},
+  renaming?: string,
 ): Promise<ProfileRecord> {
   let record = await client.saveProfile(wanted, options);
   const renamed = record.profile.title !== wanted.title;
-  if (renamed && record.visibility === 'visible') throw new StepsTakenError(record);
+  if (renamed && record.visibility === 'visible' && record.id !== renaming) throw new StepsTakenError(record);
   // The metadata is outside the id: a POST of stored steps answers with the old one (research.md 18.3).
   const metadataDiffers = !!options.metadata && !sameSteps(record.metadata ?? {}, options.metadata);
   if (renamed || !sameSteps(record.profile, wanted) || metadataDiffers) {

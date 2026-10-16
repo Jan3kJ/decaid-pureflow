@@ -16,6 +16,7 @@ import {
   cyclePump,
   cycleSensor,
   exitCycleIndex,
+  formatSetting,
   formatValue,
   insertStepAfter,
   moveStep,
@@ -27,6 +28,10 @@ import {
   setExit,
   setName,
   setPump,
+  setSetting,
+  setText,
+  settingOf,
+  stepSetting,
   setValue,
   stepProblems,
   stepValue,
@@ -326,5 +331,34 @@ describe('nothing is lost', () => {
     expect(edited.steps[0]).toEqual({ ...profile.steps[0], temperature: 91 });
     expect(edited.steps[1]).toBe(profile.steps[1]);
     expect(sameSteps(edited.steps[2], { ...profile.steps[2], seconds: profile.steps[2].seconds + 1 })).toBe(true);
+  });
+});
+
+describe('the profile settings', () => {
+  const blooming = openProfile((bundled as unknown as Profile[]).find((p) => p.title === 'Blooming Espresso')!);
+
+  it('set inside their ranges, with ± steps of 0.1 g, 1 ml and 1 °C; the steps stay the same objects', () => {
+    const weighed = setSetting(blooming, 'target_weight', 36.04);
+    expect(weighed.target_weight).toBe(36.04);
+    expect(weighed.steps).toBe(blooming.steps);
+    expect(stepSetting({ ...blooming, target_weight: 36 }, 'target_weight', 1).target_weight).toBe(36.1);
+    expect(stepSetting({ ...blooming, target_volume: 0 }, 'target_volume', 1).target_volume).toBe(1);
+    expect(setSetting(blooming, 'tank_temperature', 200).tank_temperature).toBe(110);
+    expect(setSetting(blooming, 'target_volume', -5).target_volume).toBe(0);
+    expect(setSetting(blooming, 'target_weight', NaN)).toBe(blooming);
+  });
+
+  it('read 0 where the profile has none, and show it as off', () => {
+    const none = { ...blooming, target_weight: null, target_volume: undefined, tank_temperature: 0 };
+    expect(settingOf(none, 'target_weight')).toBe(0);
+    expect(formatSetting(none, 'target_volume')).toBe('off');
+    expect(formatSetting({ ...none, target_weight: 36 }, 'target_weight')).toBe('36.0 g');
+    expect(formatSetting({ ...none, tank_temperature: 35 }, 'tank_temperature')).toBe('35 °C');
+  });
+
+  it('take the title and the notes as typed; an empty title is not taken', () => {
+    expect(setText(blooming, 'title', 'Mine').title).toBe('Mine');
+    expect(setText(blooming, 'title', '  ')).toBe(blooming);
+    expect(setText(blooming, 'notes', '').notes).toBe('');
   });
 });
