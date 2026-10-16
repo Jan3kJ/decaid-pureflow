@@ -179,7 +179,9 @@ the reliable evidence.)
 
 **The actual, live Streamline repository**, found via the `decentespresso` org's repo list and
 confirmed directly (not summarized — decoded raw base64 `package.json` content):
-**https://github.com/decentespresso/streamline-js**, version 0.2.12, licence `ISC`. Its own
+**https://github.com/decentespresso/streamline-js**, version 0.2.12, licence `ISC` (the
+`package.json` field only; the repository itself is GPL-3.0-or-later since 2026-09-17, see
+17.9). Its own
 description: "A modern web UI skin for the Decent Espresso DE1, built on top of
 [Streamline-Bridge (reaprime)](https://github.com/tadelv/reaprime). This is a full rewrite of the
 original TCL-based Streamline skin into a browser-native web application — **no framework, no
@@ -1097,3 +1099,536 @@ written into the workflow alone is replaced by Streamline within seconds.
 What the runs left in the rig: nothing. `steamSettings` is `{"targetTemperature":150,
 "duration":50,"flow":0.8,"stopAtTemperature":0}` and the machine has 50; the key
 `streamline-app/last-steam-duration` does not exist again; two steam records as before.
+
+## 17. Step editor port plan (E1)
+
+Written on 2026-10-16 for the milestones E2 to E4 (spec 3.6, acceptance items 10 to 13). No
+product code was written. "Read" means read in Streamline's source; "seen" means checked in a
+file or in the rig's data. Every choice made here is the simplest one that meets 3.6 and
+section 5; those the founder has not seen are collected in 17.13.
+
+### 17.1 What was read
+
+- **Streamline:** `git clone https://github.com/decentespresso/streamline-js ../streamline-js`,
+  head `3a4bd23` (2026-10-15, "chore(release): v0.2.14"), version **0.2.14**. The rig serves
+  0.2.13 (tag `v0.2.13`, `072e525`). Between the two, the editor's files
+  (`profile_editor.js`, `profile-field-limits.js`, `profile_editor.html`, `notes-modal.js`,
+  `echarts-renderer.js`) and its tests are identical; `api.js` and `numpad-modal.js` changed,
+  but not in the profile functions this plan uses (seen with `git diff v0.2.13 HEAD`). So the
+  plan holds for the rig's version too. The clone is a reference only: not a dependency, not
+  in this repository.
+- **The rig's profiles:** Decaid was not started. The rig's 73 profiles are Decaid's bundled
+  files, `../decaid-rig/decaid-0.8.8/data/flutter_assets/assets/defaultProfiles/*.json`
+  (73 files besides `manifest.json`), read with a short Node script; 17.4 has what they hold.
+- **This skin:** `src/editor/*` (start, save, storage, unsaved, curve, Graph, NumberPad,
+  ValueChip, StepList, NameDialog), `src/shell/{profiles.ts,nav.ts,skin.svelte.ts,Profiles.svelte,UnsavedDialog.svelte}`,
+  `src/App.svelte`, `src/graph/*`, `src/api/types.ts` and sections 2, 9 and 11 above.
+
+### 17.2 Streamline's editor: files and what each does
+
+| File (0.2.14) | Lines | What it does for the editor | In the port |
+|---|---|---|---|
+| `src/modules/profile_editor.js` | 3646 | The whole editor: state (`editorState`), the CARDS tab (`renderStepCards`, l. 867-1547), the SETTINGS tab (`renderSettingsTab`, l. 1920-2320), the SCRIPT tab (`buildStepScript`, `renderScriptLine`, `renderScriptTab`, l. 2329-2806), the graph preview (`pushChannel`, `renderScriptGraph`, l. 2640-2754), save routing (`saveProfile` and its pure helpers, l. 2881-3334), closing with the unsaved warning (`cancelEditor`), version history (`openVersionHistory`), `normalizeLegacySteps` | the step model, the cards, the curve, the script's wording |
+| `src/modules/profile-field-limits.js` | 50 | `FIELD_LIMITS` (every range and step of a step field), the exit types, units and maxima, `DEFAULT_LIMITER_RANGE` = 0.6 | ported whole |
+| `src/profiles/profile_editor.html` | 121 | the page: title and CLOSE / SAVE AS NEW / SAVE on top, the tab switch CARDS / SCRIPT / SETTINGS, card paging arrows, three panels (SCRIPT: "Steps Overview" left, "Graph Preview" right) | the layout |
+| `src/modules/api.js` | 3201 | `sanitizeProfileForRea` (l. 1286: drops legacy top-level fields, folds a `weight` exit into the step's `weight`, any other exit type to `null`), `uploadProfileWithParent` (`POST /api/v1/profiles` with `{profile, parentId}`), `updateProfile` (`PUT /api/v1/profiles/{id}`), `updateProfileVisibility`, `getProfileLineage`, `deleteProfile` | the skin's client has all of them (`src/api/client.ts`) |
+| `src/modules/numpad-modal.js` | 571 | full-screen number pad with recent values per field | not ported: `NumberPad.svelte` |
+| `src/modules/notes-modal.js` | 273 | the notes in a full-screen Markdown editor (EasyMDE) | not ported: a plain text field |
+| `src/modules/echarts-renderer.js` | 372 | draws the preview with ECharts | not ported: `ShotGraph.svelte` (no chart library, spec 6) |
+| `src/modules/profileManager.js` | 1484 | profile list, drafts, favourites, `validateProfileStructure` (used only for an uploaded file), the selector's way into the editor (`window.__pendingEditProfile`) | not ported |
+| `src/modules/tcl-profile.js` | 298 | de1app `.tcl` import | out (spec 3.6: "Still out in 1.1") |
+| `src/modules/profile-overrides.js`, `flow-calibration.js` | 161, 183 | per-profile dose, yield, grind and flow calibration in the KV store | not ported (17.12) |
+| `test/profile-editor.test.mjs` | 432 | `pushChannel`, `readExitDef`, limiter ranges, `buildStepScript` wording | tests ported with the functions |
+| `test/profile-editor-cards.test.mjs` | 284 | pump and exit cycles, chevrons, `resolveSaveTarget`, `resolveFinalTitle` | cycle tests ported |
+| `test/step-index-bookkeeping.test.mjs` | 133 | `target_volume_count_start` through insert, delete, move | ported |
+| `test/profile-save-routing.test.mjs` | 350 | Streamline's save routing | not ported: the skin's own save path |
+
+How the editor works (read):
+
+- **CARDS.** A horizontal row of cards, one per step, with a sticky label column (Temp, Pump,
+  Maximum, Move on if). One card is open at a time; the others are read-only and open on a
+  tap. An open card has a header with the step number, its name as a text field and two
+  chevrons that move the step left or right; **Temp**: a chip that cycles Coffee / Water
+  (`sensor`) and a ± stepper for the temperature; **Pump**: a chip that cycles Flow quickly /
+  Flow slowly / Pressure quickly / Pressure slowly (`pump` and `transition` in one) with a ±
+  stepper for the target, and "Limit to" with a ± stepper for the limiter (0 reads "Off");
+  **Maximum**: weight (g), time (s) and volume (ml), each a ± stepper, 0 is off; **Move on
+  if**: a chip that cycles pressure over / pressure under / flow over / flow under / off,
+  with a ± stepper for the value. Every card's footer has a trash button (asks "Delete Step
+  n?") and a plus that inserts a copy of this step after it, named "New Step". A profile
+  without steps shows one plus. A tap on a stepper's value opens the number pad.
+- **Pump switch.** Flow to pressure seeds 6.0 bar when the step had none and deletes `flow`;
+  the other way seeds 6.0 ml/s and deletes `pressure`.
+- **Exit memory.** Switching the exit off and on again, or between pressure and flow,
+  restores the step's last value of that type (a `WeakMap` per step), else 9.0 bar or
+  6.0 ml/s. A live "pressure over 0" would end the step at once, so 0 is never seeded.
+- **Limiter range.** A new limiter takes the range of the first live limiter of the same
+  pump type in the profile, else 0.6. SETTINGS edits the ranges ("Flow Range", "Pressure
+  Range") of every limited step of a pump type at once.
+- **`target_volume_count_start`** ("pre-infusion ends after step N", 1-based, 0 = none)
+  moves with the steps on insert, delete and move (`insertStepAfter`, `removeStepAt`,
+  `moveStep`).
+- **SETTINGS.** Tank preheat (0-110 °C), "Pre-infusion ends at" (a step cycler), Flow and
+  Pressure Range, Stop At weight (0-1000 g in 0.1) and volume (0-500 ml), beverage type
+  tiles, a file upload (JSON or `.tcl`), an import by Visualizer share code, flow
+  calibration, the notes (Markdown modal) and the author. The title is edited in the top bar.
+- **SCRIPT.** Not a text editor: each step is its name and a list of sentences ("Set Coffee
+  temperature to 93.0 °C", "Flow Quickly at a rate of 4.0 mL/s", "Limit to 8.6 bar", "For a
+  maximum of 2.0 sec or 500.0 ml", "Move on if Pressure is over 4.0 bar") whose numbers are
+  tappable pills (number pad) and whose state words are chips that cycle. Nothing is typed,
+  so nothing can fail to parse; no version of the file has a text parser (`git log -G` over
+  the editor's history). The preview on the right draws the targets: each step lasts its
+  `seconds` (10 s when 0), `fast` jumps to the target and holds, `smooth` ramps from the
+  previous step's target over the whole step, the pump a step does not control is drawn at
+  0, the temperature is scaled to the 0-10 axis (°C / 10), step borders are dashed lines.
+- **Save.** SAVE and SAVE AS NEW (`saveProfile`, l. 3094): no title or no step is refused; an
+  untouched profile saves nothing; a change of title, author or notes alone is a `PUT` (the
+  id is a hash of the execution fields); a default with changed steps is forked with `POST
+  {profile, parentId}`; SAVE AS NEW posts with `parentId` and leaves the source; SAVE of a
+  user profile posts with `parentId`, makes the answer visible and hides the source. A
+  `POST` that answers with another record (the same content exists) is reported as "matches
+  an existing profile" and nothing else is done. A colliding title gets " (2)".
+- **Close.** "Undo changes?" when the profile differs from the one it opened with; nothing
+  is loaded to the machine.
+
+### 17.3 The data model and `src/api/types.ts`
+
+Streamline edits the v2 profile as the gateway returns it, and the skin's types
+(`ProfileStep`, `Profile`, `ProfileRecord`, section 2) already hold every field it touches:
+no new profile type is needed. Field by field:
+
+| Streamline (card / setting) | v2 field | `src/api/types.ts` | Note |
+|---|---|---|---|
+| step name | `name` | `ProfileStep.name: string` | |
+| Coffee / Water chip | `sensor` | `'coffee' \| 'water'` | 42 bundled steps use `water` (seen), which settles section 2's "unverified" |
+| pump chip | `pump`, `transition` | `'pressure' \| 'flow'`, `'fast' \| 'smooth'` | |
+| pump target | `flow` or `pressure` | `flow?`, `pressure?` | the other one is deleted, as `normalizeLegacySteps` does |
+| Temp | `temperature` | `number` | |
+| Limit to | `limiter.value`, `limiter.range` | `limiter?: {value, range} \| null` | value 0 is stored as `null` |
+| Maximum weight / time / volume | `weight`, `seconds`, `volume` | `weight?: number \| null`, `seconds`, `volume` | 0 is off; `weight: null` reads as 0 |
+| Move on if | `exit` | `exit?: StepExit \| null` (`'pressure' \| 'flow'`) | off is `null`; Decaid takes no other type |
+| title (top bar) | `title` | `Profile.title` | |
+| notes | `notes` | `notes?` | |
+| Stop At weight / volume | `target_weight`, `target_volume` | `target_weight?`, `target_volume?` | |
+| Preheat Water Tank | `tank_temperature` | `tank_temperature: number` | |
+| Pre-infusion ends at | `target_volume_count_start` | `number` | kept right by the step operations; set only in SCRIPT (17.8) |
+| Beverage type | `beverage_type` | `'espresso' \| 'calibrate' \| 'cleaning' \| 'manual' \| 'pourover'` | Streamline also offers `filter`, `tea`, `tea_portafilter`; not edited here (17.12) |
+| author | `author` | `author?` | kept, not edited |
+
+The profile is kept whole: every field the editor does not show (author, beverage type,
+`version`) goes back as it came.
+
+### 17.4 The non-A-Flow profiles on the rig (seen, 73 bundled files)
+
+- 481 steps, up to 20 in one profile (`adaptive_allonge`); 47 espresso, 22 pourover, 2
+  cleaning and 2 manual profiles. Every number is a JSON string in the files; the API
+  returns numbers (section 8.6).
+- 176 exits (105 pressure, 71 flow, no other type); 72 live limiters, whose range is the
+  same within each pump type of a profile in all 73 (0.6 in 47); 15 steps with a weight, 373
+  with a volume (often 500 ml as "no limit"), 62 smooth, 42 on the water sensor, 19 with
+  0 s; 57 profiles with `target_volume_count_start` > 0, 4 with a tank temperature.
+- Every value fits Streamline's `FIELD_LIMITS` (17.6): flow up to 12 ml/s, pressure 11 bar,
+  temperatures 10 to 105 °C, seconds up to 127, volume 500, step weight 150; target weight
+  up to 225 g, target volume 295 ml, tank 35 °C. One value has two decimals (a limiter of
+  0.75 bar in `baseline_hc`), all others at most one.
+- Five are A-Flow by title: `A-Flow / default-dark`, `-light`, `-like-dflow`, `-medium` and
+  `-very-dark`, the de1app plugin's. Their notes do not hold this skin's values, so they are
+  **not** A-Flow 3.0 profiles (17.5).
+
+### 17.5 Which editor opens: the routing
+
+The rule, in one place: **a profile opens in the A-Flow editor exactly when the A-Flow editor
+can read its A-Flow 3.0 values** (`readParams` in `src/editor/storage.ts` answers non-null);
+every other profile opens in the step editor (spec 3.6). Concretely:
+
+| Profile | Opens in |
+|---|---|
+| the five A-Flow 3.0 defaults (floral, light, medium, dark, 46mm) and every A-Flow 3.0 profile the skin saved whose steps are still the generator's for its values | A-Flow editor |
+| unsaved A-Flow edits on the machine (the workflow's profile with readable values) | A-Flow editor, as today |
+| Decaid's bundled de1app A-Flow profiles (`A-Flow / default-medium` and the four others): A-Flow by name, not by values the skin can read; importing them is out of scope (3.2) | step editor |
+| an A-Flow 3.0 profile whose steps were changed in another app (Streamline): `readParams` already refuses it, because its steps no longer match its values | step editor |
+| every other profile (the other 68 bundled ones, the user's own) | step editor |
+| no profile in the workflow, or Decaid does not answer | A-Flow editor on a default, as today |
+
+A title starting with "A-Flow" (used only for the picker's order in `sortProfiles`) and the
+metadata tag (`isAFlow3`) do **not** decide: a title says nothing about the values, and a
+profile saved by another app has no tag. Spec 3.6's "A-Flow profiles keep opening the A-Flow
+editor" is met: these are the profiles that open it today.
+
+How it is wired (E2):
+
+- `src/editor/route.ts`, new: `editorFor(profile: Profile | null | undefined): 'aflow' | 'steps'`,
+  `'steps'` when there is a profile and `readParams(profile)` is null. M2 (today) moves the
+  values to `metadata` and may change `readParams`; `editorFor` calls whatever reads them, so
+  that change stays in `storage.ts`. If M2's reader needs the record (the workflow's profile
+  carries no `metadata`), `editorFor` takes `(profile, records)` and finds the record as
+  `unsavedOnMachine` already does (same title, same steps).
+- The screen stays one: `Screen` keeps `'editor'` (`src/shell/nav.ts` unchanged), so the
+  stored screen and every `skin.go('editor')` (home's pen, the picker, the warning's "Save
+  as…") work for both editors. `App.svelte` shows `StepEditor` for `'editor'` when
+  `editorFor(skin.workflow?.profile)` is `'steps'`, `Editor` otherwise.
+- Both editors open on the workflow's profile, as the A-Flow editor does: home's pen edits
+  what is loaded. The picker opened from the editor returns to the editor for **every**
+  profile (`Profiles.svelte`, `load`): its notice "not an A-Flow 3.0 profile: it can be
+  loaded, but not edited" goes, and so does the same notice in `Editor.svelte`'s `init`.
+- The routing follows the workflow while the screen is shown, so a profile loaded by another
+  app while an editor is open switches the editor and drops its edits, as such a load
+  already drops the A-Flow editor's (spec 8: "a load started outside the skin cannot be
+  warned about").
+
+### 17.6 Ranges (the step editor's, in one place)
+
+Streamline's `FIELD_LIMITS` and settings ranges, unchanged, in `src/steps/limits.ts`:
+
+| Field | Range | Step of ± |
+|---|---|---|
+| temperature | 0-105 °C | 0.5 |
+| flow (target) | 0-15 ml/s | 0.1 |
+| pressure (target) | 0-12 bar | 0.1 |
+| flow limit (on a pressure step) | 0-8 ml/s | 0.1 |
+| pressure limit (on a flow step) | 0-12 bar | 0.1 |
+| exit on pressure / on flow | 0-12 bar / 0-8 ml/s | 0.1 |
+| step weight, step volume | 0-500 g, 0-500 ml | 1 |
+| seconds | 0-127 s (the protocol's limit) | 1 |
+| target weight | 0-1000 g | 0.1 |
+| target volume | 0-500 ml | 1 |
+| tank temperature | 0-110 °C | 1 |
+
+The maximum-flow setting of spec 3.6 (F1, 8 ml/s by default) is the A-Flow editor's: spec 8
+asked it about the A-Flow editor's 8 ml/s, and a bundled profile drives 12 ml/s, which a
+step editor capped at 8 could not keep. A value outside its range that a profile brings is
+shown and kept; ± and the number pad move only inside the range.
+
+### 17.7 Save path, lineage and the unsaved warning
+
+The step editor saves as the A-Flow editor does (spec 3.6: "through the skin's existing save
+path"), with the profile in place of the values:
+
+- **One writer.** `writeParams` (`src/editor/storage.ts`) becomes `writeProfile(client,
+  profile, options)`: `POST /api/v1/profiles`; an answer with the wanted title that differs
+  in anything outside the hash (notes, author, and whatever else Decaid does not hash; compared
+  in `sameSteps`' canonical form over the whole profile) gets a `PUT` with the wanted profile;
+  a hidden answer is taken over and made visible; a visible answer with another title throws
+  `StepsTakenError` (the same message). `writeParams` becomes `writeProfile` with its notes.
+  M2 changes `writeParams` today too: whichever of M2 and E2 lands second merges the two.
+- **'save'** (`saveStepEdit(client, profile, parent)`, `src/steps/save.ts`): `writeProfile`
+  with `parentId: parent.id`, then the parent is hidden when the answer has another id, as
+  `saveEdit` does; Decaid's lineage then holds both (acceptance 10). Not offered for a
+  bundled default (`record.isDefault`: Decaid refuses to change its content, 400) nor while
+  nothing changed, as in the A-Flow editor.
+- **'save as'** (`saveStepAs`): asks a name with `NameDialog` (taken: every visible title);
+  the title is the name as typed, without the "A-Flow / " prefix; `writeProfile` with
+  `parentId` of the profile it came from (so a default's copy is in the lineage too, as in
+  Streamline); the source stays visible.
+- **metadata.** Both send `metadata: { ...parent.metadata, source: 'decaid-skin' }` without
+  the A-Flow keys (`aflow`, and M2's values): a profile that was A-Flow 3.0 and is saved from
+  the step editor loses the picker's tag 'A-Flow 3.0'. The notes are saved as shown.
+- **Loading.** 'save' and 'save as' load what they stored with `storeAndLoad` (already generic
+  over its `store` callback) and `loadProfile`. Leaving the editor (the back arrow, the name
+  to the picker) loads the profile on screen when it differs from the one the editor opened
+  with, saved or not, and loads nothing otherwise, as the A-Flow editor does (spec 3.2,
+  'Editor behaviour'; `skin.leaving`). "Differs" is the same canonical comparison.
+- **The unsaved warning.** `unsavedOnMachine` (`src/editor/unsaved.ts`) stays the one place.
+  It gains the step case: the workflow's profile is not A-Flow 3.0, and no record of its
+  title, hidden ones too, has its content (the same comparison). `Unsaved` gets
+  `profile: Profile` beside `params` (null for a step profile). `UnsavedDialog` names the
+  title as before; its "Save as…" goes to the editor, which the routing makes the step
+  editor, and that opens its 'save as' on the machine's profile (`skin.saveAsNext`, as
+  `Editor.svelte` does). A profile whose record was deleted after it was loaded is unsaved
+  too: those steps are in no stored profile.
+
+### 17.8 The SCRIPT tab
+
+Spec 3.6 and acceptance 13 ask for the steps **as text, editable**, with a text that does not
+parse shown as an error and not saved. Streamline has no such text (17.2): its SCRIPT tab is
+sentences with tappable values. The port keeps Streamline's sentences, word for word, and
+makes them a text the user types, with a parser of the skin's own. The pills and chips are
+not ported (17.12).
+
+The tab: the text in a text field on the left ("Steps"), the preview on the right (17.10's
+curve in `ShotGraph`), the errors under the text. Every change of the text is parsed at once.
+A text that parses replaces the editor's steps (and the start of the volume count), which the
+preview and the other tabs then show. A text that does not parse lists its errors with their
+line numbers, the preview keeps the last text that parsed, and 'save', 'save as' and leaving
+with changes are refused while it is so ("The script has errors: nothing is saved").
+Opening the tab writes the text from the editor's profile, so the tabs never disagree, and a
+text that was not changed is never parsed back into the profile.
+
+**Grammar.** Keywords are case-insensitive; words may be separated by one or more spaces;
+blank lines are ignored; a leading `-` or `•` on a sentence is optional.
+
+```
+script      = step { step } ;                        (at least one step)
+step        = header NL { sentence NL } ;
+header      = integer ":" [ name ] ;                 (the number is not read: steps take the order of the text)
+name        = any text to the end of the line, trimmed ;
+sentence    = [ "-" | "•" ] ( marker | temperature | pump | limit | maximum | exit ) ;
+marker      = "Start tracking water volume" ;
+temperature = verb sensor "temperature" ( "to" | "at" ) number "°C" ;
+verb        = "Set" | "Maintain" | "Increase" | "Decrease" ;
+sensor      = "coffee" | "water" ;
+pump        = ( "Flow" | "Pressure" ) ( "quickly" | "slowly" ) ( "at a rate of" | "to" ) number unit ;
+limit       = "Limit to" number unit ;
+maximum     = "For a maximum of" amount { "or" amount } ;
+amount      = number ( "g" | "sec" | "ml" ) ;
+exit        = "Move on if" ( "pressure" | "flow" ) ( "is over" | "is under" ) number unit ;
+number      = digit { digit } [ "." digit { digit } ] ;
+unit        = "mL/s" | "bar" ;
+```
+
+Rules the grammar does not say:
+
+1. A step has exactly one temperature and one pump sentence, and at most one each of limit,
+   maximum and exit, in any order; weight, sec and ml at most once each in a maximum.
+2. Units follow the pump: a flow step's target is "Flow … at a rate of … mL/s" and its
+   limit is in bar; a pressure step's target is "Pressure … to … bar" and its limit is in
+   mL/s. An exit on pressure is in bar, on flow in mL/s. `ml/s` is read as `mL/s`, `s` as
+   `sec`.
+3. Every number is in its range of 17.6.
+4. The marker is at most once in the text and not in the first step: on the step numbered
+   *m* (by order, from 1) it sets `target_volume_count_start` = *m* − 1; no marker sets 0.
+5. The verb is not read: the stored temperature is absolute. The writer chooses it as
+   Streamline does (`temperatureVerb`: Set on step 1, then Increase, Decrease or Maintain
+   against the previous step; "at" after Maintain, "to" otherwise).
+6. What a step leaves out is off: no limit is `limiter: null`, no maximum sets weight,
+   seconds and volume to 0, an amount left out is 0, no exit is `exit: null`.
+7. What the text does not hold comes from the editor's profile: every top-level field, and a
+   limiter's range, which is the range of the first live limiter of the same pump type in
+   that profile, else 0.6 (Streamline's `newLimiterRange`; all 73 bundled profiles have one
+   range per pump type, 17.4, so this loses nothing there).
+8. The writer prints the sentences in Streamline's order (marker, temperature, pump, limit,
+   maximum, exit) and a maximum's amounts as weight, sec, ml; it leaves out a limit, an
+   amount and an exit that is 0 or off, and prints a number with one decimal, or two when it
+   has a second (0.75). So `parseScript(writeScript(p), p)` gives `p`'s steps back.
+9. An error names the line and what is wrong: "line 3: flow is 0 to 15 mL/s",
+   "line 7: not understood: 'Flow fast at 4 mL/s'", "step 2 has no pump sentence",
+   "line 1: a step starts with 'number: name'", "the script has no step".
+
+**Worked example 1: "Trendy 6 bar low pressure shot"** (bundled
+`Trendy_6_bar_low_pressure_shot.json`, `target_volume_count_start` 2, no limiter):
+
+```
+1: preinfusion temp boost
+- Set coffee temperature to 92.0 °C
+- Flow quickly at a rate of 8.0 mL/s
+- For a maximum of 2.0 sec
+- Move on if pressure is over 4.0 bar
+2: preinfusion
+- Maintain coffee temperature at 92.0 °C
+- Flow quickly at a rate of 8.0 mL/s
+- For a maximum of 18.0 sec
+- Move on if pressure is over 4.0 bar
+3: forced rise without limit
+- Start tracking water volume
+- Maintain coffee temperature at 92.0 °C
+- Pressure quickly to 6.0 bar
+- For a maximum of 3.0 sec
+4: rise and hold
+- Maintain coffee temperature at 92.0 °C
+- Pressure quickly to 6.0 bar
+- For a maximum of 32.0 sec
+```
+
+Parsed, step 1 is `{name: "preinfusion temp boost", temperature: 92, sensor: "coffee",
+pump: "flow", transition: "fast", flow: 8, limiter: null, seconds: 2, volume: 0, weight: 0,
+exit: {type: "pressure", condition: "over", value: 4}}`, and the marker on step 3 gives
+`target_volume_count_start: 2`, as in the file. Typing `6.5` for the `6.0` on line 18 sets
+step 4's `pressure` to 6.5 and moves the preview's last level; typing `13.0` there gives
+"line 18: pressure is 0 to 12 bar" and changes nothing.
+
+**Worked example 2: "Blooming Espresso"** (bundled `Blooming_espresso.json`, count start 2,
+a smooth ramp, a pressure limit, 500 ml volume limits, a flow of 0 for the bloom):
+
+```
+1: preinfusion start
+- Set coffee temperature to 97.5 °C
+- Flow quickly at a rate of 4.0 mL/s
+- For a maximum of 2.0 sec or 500.0 ml
+2: preinfusion
+- Maintain coffee temperature at 97.5 °C
+- Flow quickly at a rate of 4.0 mL/s
+- For a maximum of 23.0 sec or 500.0 ml
+- Move on if pressure is over 4.0 bar
+3: pause
+- Start tracking water volume
+- Decrease coffee temperature to 90.0 °C
+- Flow quickly at a rate of 0.0 mL/s
+- For a maximum of 30.0 sec or 500.0 ml
+4: ramp
+- Increase coffee temperature to 92.0 °C
+- Flow slowly at a rate of 2.2 mL/s
+- For a maximum of 5.0 sec or 500.0 ml
+5: flat flow
+- Maintain coffee temperature at 92.0 °C
+- Flow quickly at a rate of 2.2 mL/s
+- Limit to 8.6 bar
+- For a maximum of 20.0 sec or 500.0 ml
+6: reset temperature
+- Increase coffee temperature to 98.0 °C
+- Flow quickly at a rate of 0.0 mL/s
+- For a maximum of 1.0 sec or 500.0 ml
+```
+
+Step 1's limiter `{value: 0, range: 0.6}` is off and has no sentence (stored as `null` on
+opening, as `normalizeLegacySteps` does); step 5's limiter comes back as `{value: 8.6,
+range: 0.6}`, its range by rule 7. The flow steps' `pressure` fields in the file ("1.0",
+"6.0", "4.0") are the unused pump's leftovers and are dropped on opening, as in Streamline.
+
+### 17.9 Licence
+
+**Streamline is not ISC.** Its `package.json` says `"license": "ISC"` (npm's default), but
+the repository is licensed **GPL-3.0-or-later** since commit `54bf1d7` (2026-09-17, "docs:
+add license, contributing guide and codeowners", which says "Adopt Decaid's GPL-3.0-or-later
+terms"): see `LICENSE.txt` and `CONTRIBUTING.md` ("Streamline.js is licensed under the GNU
+General Public License v3.0 or later, the same terms as Decaid"). There is no ISC notice
+anywhere in the repository, and no source file has a header of its own. GPL-3.0-or-later
+code may be used in this skin, which is GPL-3.0 (`package.json`: `GPL-3.0-only`; spec 4.4),
+and Streamline's `CONTRIBUTING.md` asks derived code to credit the source in the file. Spec
+3.6 and acceptance 12 say "ISC copyright notice"; the notice there is to keep is this one,
+the opening lines of `LICENSE.txt`, exactly:
+
+```
+Streamline.js - A browser-native skin for Decent Espresso machines
+Copyright (C) 2025-2026 Decent Espresso
+```
+
+Where it goes: at the top of every file that takes code, constants, wording or layout from
+Streamline (marked "ported" in 17.10), before anything else; in a `.ts` file as `//` lines,
+in a `.svelte` file as the same lines in an HTML comment above `<script>`:
+
+```
+// Ported from Streamline.js (https://github.com/decentespresso/streamline-js), v0.2.14,
+// src/modules/<file>.js.
+// Streamline.js - A browser-native skin for Decent Espresso machines
+// Copyright (C) 2025-2026 Decent Espresso
+// Licensed under the GNU General Public License v3.0 or later; used here under GPL-3.0.
+```
+
+E2 adds a line to the README's credits naming Streamline and its licence. Item 12 is the
+founder's check; `grep -L "Copyright (C) 2025-2026 Decent Espresso"` over the ported files
+must list none.
+
+### 17.10 Files: what is reused, what is new
+
+Reused as they are: `NumberPad.svelte` (every number, with its unit and range),
+`ValueChip.svelte` (the ± stepper with its value; a tap opens the pad; tones flow, pressure,
+temperature, none), `NameDialog.svelte` ('save as'), `ShotGraph.svelte` (the preview: it
+takes target series with `null` gaps and draws flow blue, pressure green and temperature red
+in its own band; `fit` ends the axis at the last point), `UnsavedDialog.svelte`,
+`loadProfile`, `storeAndLoad`, `StepsTakenError`, `sameSteps` and the client's profile calls.
+Not reused: `Graph.svelte`, `curve.ts`, `edit.ts`, `fields.ts` and `StepList.svelte`, which
+are about A-Flow phases, not steps.
+
+New files, all under `src/steps/` (the step editor) except the route:
+
+| File | Job | Ported? | Milestone |
+|---|---|---|---|
+| `src/editor/route.ts` (+ test) | `editorFor`: which editor a profile opens in (17.5) | new | E2 |
+| `src/steps/limits.ts` | the ranges and steps of 17.6, the exit maps, `DEFAULT_LIMITER_RANGE` | ported (`profile-field-limits.js`) | E2 |
+| `src/steps/model.ts` (+ test) | pure step operations, each returning a new profile: `openProfile` (`normalizeLegacySteps`), `newStep`, `insertStepAfter`, `removeStepAt`, `moveStep` (each with the count start), `setPump` (the seeds), `setExit` with the remembered values (a map per step object, as in Streamline), `setLimiter` (`newLimiterRange`), `setValue`; `readExitDef`; the pump and exit cycles | ported (`profile_editor.js` l. 138-248, 404-421, 555-607, 784-814, 3418-3430) | E2 |
+| `src/steps/save.ts` (+ test) | `saveStepEdit`, `saveStepAs`, `stepMetadata`, `profileChanged`, the load on leaving (17.7); `writeProfile` itself goes into `src/editor/storage.ts` | new | E2 |
+| `src/steps/StepEditor.svelte` | the screen: top bar (title, tab switch, 'save', 'save as'), the tabs, the editor's state (the profile, the one it opened with, the open card), saving, leaving (`skin.leaving`), notices, the question before a delete | ported (layout of `profile_editor.html`) | E2; tabs added in E3 and E4 |
+| `src/steps/StepCard.svelte` | one card, closed (read-only lines) or open (name field, chevrons, the five rows, trash and plus) | ported (`renderStepCards`) | E2 |
+| `src/steps/CycleChip.svelte` | a chip that cycles its states on a tap: sensor, pump, exit | ported (`createCycleChip`) | E2 |
+| `src/steps/curve.ts` (+ test) | the preview's series from the steps: times, and target pressure, flow and temperature with `null` where a step does not control that pump; `fast` and `smooth` as in `pushChannel` | ported (`pushChannel`, `renderScriptGraph`) | E3 |
+| `src/steps/ProfileSettings.svelte` | the SETTINGS tab: title, notes (a text field), target weight, target volume, tank temperature | ported (part of `renderSettingsTab`) | E3 |
+| `src/steps/script.ts` (+ test) | `writeScript(profile)` and `parseScript(text, profile)` of 17.8 | ported wording (`buildStepScript`, `temperatureVerb`, `scriptValueFormat`); the parser is new | E4 |
+| `src/steps/ScriptTab.svelte` | the SCRIPT tab: text field, errors, preview | ported (layout of the SCRIPT panel) | E4 |
+
+Changed: `src/App.svelte` (the routing), `src/shell/Profiles.svelte` (back to the editor for
+every profile), `src/editor/Editor.svelte` (the non-A-Flow notice goes),
+`src/editor/storage.ts` (`writeProfile`), `src/editor/unsaved.ts` and
+`src/shell/UnsavedDialog.svelte` (17.7). There is no new setting, so `src/settings.ts` and
+its KV backup stay as they are.
+
+Layout at 1280 x 800, every size relative to the viewport as in the rest of the skin: the top
+bar as the A-Flow editor's; CARDS a row of cards that scrolls sideways with snap, about three
+and a half cards wide, one open at a time; E3 puts the preview as a band above the cards
+(about a third of the height), so that a step edit and the preview's change are seen on one
+screen (acceptance 11); SETTINGS and SCRIPT fill the panel.
+
+### 17.11 The milestones and their tests
+
+Each builds on the one before, and none changes what an earlier one tested.
+
+**E2: step cards, add, delete, move, save** (acceptance 10). Builds `route.ts`, `limits.ts`,
+`model.ts`, `save.ts`, `writeProfile`, `StepEditor.svelte` with the CARDS tab only,
+`StepCard.svelte`, `CycleChip.svelte`, the licence headers and the README line, and the
+changes of 17.10. Tests:
+- Vitest: `route.test.ts` (an A-Flow 3.0 default and a saved 3.0 profile → A-Flow; Decaid's
+  `A-Flow / default-medium`, a 3.0 profile with one step changed and "Blooming Espresso" →
+  steps; no profile → A-Flow); `model.test.ts` (Streamline's `step-index-bookkeeping` and
+  cycle tests ported; the pump seeds; an exit switched off and on gets its value back; a new
+  limiter's range; no operation changes its input); `save.test.ts` with `gateway.fake.ts`
+  ('save' posts with `parentId` and hides the parent; a change of title or notes alone is a
+  `PUT`; a default has 'save as' only; the metadata loses `aflow`; `StepsTakenError`);
+  `unsaved.test.ts` (an edited step profile on the machine is unsaved, a stored one is not,
+  hidden versions count).
+- Playwright, mocked gateway, `e2e/step-editor.spec.ts`: a non-A-Flow profile opens the step
+  editor and an A-Flow 3.0 profile the A-Flow editor; change a value with ± and with the
+  pad, add a step, delete one, move one, save: the `POST` body's steps equal the edit and it
+  carries `parentId`; leaving with changes loads them; the warning comes before another load.
+- Rig, `e2e-rig/step-editor.spec.ts`: the same edits on a copy ('save as' of a bundled
+  profile), then 'save'; `GET /api/v1/profiles/{id}/lineage` holds both versions; the test
+  deletes what it made and restores the workflow.
+
+**E3: curve preview and profile settings** (acceptance 11). Builds `curve.ts`, the preview
+band in `StepEditor.svelte` and the SETTINGS tab. Tests: Vitest `curve.test.ts` (Streamline's
+four `pushChannel` tests; a pressure step leaves the flow series `null`; durations add up;
+0 s steps); Playwright: each kind of step edit (a value, add, delete, move, a pump switch)
+changes the preview's paths; title, notes, target weight, target volume and tank
+temperature edited in SETTINGS are in the stored profile (the `POST` or `PUT` body), also
+when only the title or the notes changed.
+
+**E4: SCRIPT tab** (acceptance 13). Builds `script.ts` and `ScriptTab.svelte` and uses E3's
+`curve.ts` for the preview (if E3 is not in yet, E4 writes `curve.ts` as 17.10 says). Tests:
+Vitest `script.test.ts` with the two worked examples of 17.8 as fixtures (the profile JSON
+and the exact text): `writeScript` gives the text and `parseScript` the steps; every rule of
+17.8 and every error message with its line number; `parseScript(writeScript(p), p)` equals
+`p`'s steps. Playwright: editing a number in the text changes the preview and, saved, the
+stored step; a text that does not parse shows its error and 'save' sends nothing. Rig
+(read-only): the round trip of every profile `GET /api/v1/profiles` lists.
+
+### 17.12 Risks, and what Streamline does that 3.6 leaves out
+
+Risks:
+- **The SCRIPT tab is not Streamline's.** Spec 3.6 says "ported", but the typed text and its
+  parser are new (17.8), and typing on the tablet's keyboard is slower than Streamline's
+  taps. The text is written in Streamline's words, so it reads the same.
+- **The licence** of spec 3.6 and item 12 (ISC) is not what Streamline's repository says
+  (17.9). Spec 5 is not changed here.
+- **What Decaid hashes.** Section 11.1 proved steps and target weight; tank temperature,
+  target volume and beverage type were not tried. `writeProfile` is right either way, but if
+  they are not hashed, a change of only those is a `PUT` and leaves no new version in the
+  lineage (as a change of notes does today).
+- **M2 changes the same functions today** (`readParams`, `writeParams`); 17.5 and 17.7 say
+  how E2 meets it.
+- **Values out of range** that a profile brings from another app are kept, but cannot be
+  typed: a SCRIPT text holding one does not parse until it is brought into range.
+- **0 s steps** (19 bundled) are drawn 10 s long by Streamline; the preview here draws them
+  0 s wide.
+- **A load by another app** while an editor is open switches the editor (17.5).
+
+In Streamline, not in spec 3.6, so not in the port (listed, not added to the scope): the
+SCRIPT tab's tappable pills and cycling words; the limiter ranges (SETTINGS "Flow Range",
+"Pressure Range"; they are kept as they are); "Pre-infusion ends at" in SETTINGS (the count
+start is kept by every step operation and set by the SCRIPT marker); beverage type tiles;
+the author field; notes as Markdown; upload of a JSON or `.tcl` file; import by Visualizer
+share code; flow calibration per profile; dose, yield and grind overrides in the KV store;
+local drafts and favourites; version history and revert from the lineage; a new profile
+from a blank template; renaming on 'save' with a " (2)" suffix (the skin's `NameDialog`
+refuses a taken name instead); the number pad's recent values; translations.
+
+### 17.13 Choices the founder has not seen
+
+1. A profile is A-Flow when the A-Flow editor can read its 3.0 values; Decaid's five bundled
+   de1app A-Flow profiles open in the step editor (17.5).
+2. The SCRIPT tab is a typed text in Streamline's sentences with a parser of the skin's own,
+   since Streamline's tab has no text (17.8).
+3. Streamline is GPL-3.0-or-later, not ISC; the notice kept is its `LICENSE.txt` header
+   (17.9).
+4. The step editor keeps Streamline's ranges (flow up to 15 ml/s); the maximum-flow setting
+   is the A-Flow editor's (17.6).
+5. 'Save as' in the step editor records its source as parent, unlike the A-Flow editor's;
+   'save' of a bundled default is not offered; leaving loads changed steps, as in the A-Flow
+   editor (17.7).
