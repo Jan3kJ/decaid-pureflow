@@ -10,14 +10,14 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   // on the workflow's profile, as the A-Flow editor does. One card per step; 'save' and 'save
   // as' store through the skin's one writer and load what they stored; leaving loads a changed
   // profile. Above the cards, the curve preview draws the profile's targets and follows every
-  // edit (E3); the SETTINGS tab edits the profile's own values. SCRIPT joins the tabs in E4.
+  // edit (E3); the SETTINGS tab edits the profile's own values; the SCRIPT tab edits the steps
+  // as text, and while its text does not parse nothing is saved and leaving is refused (E4).
   import { onMount, tick } from 'svelte';
   import type { Profile, ProfileRecord } from '../api';
   import NameDialog from '../editor/NameDialog.svelte';
   import NumberPad from '../editor/NumberPad.svelte';
   import { storeAndLoad, type Stored } from '../editor/save';
   import { sameSteps } from '../editor/storage';
-  import ShotGraph from '../graph/ShotGraph.svelte';
   import type { Skin } from '../shell/skin.svelte';
   import {
     VALUE_LABEL,
@@ -36,9 +36,10 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     type StepValue,
   } from './model';
   import { canSaveOver, loadStepsOnLeave, profileChanged, saveStepAs, saveStepEdit } from './save';
-  import { stepCurve } from './curve';
   import ProfileSettings from './ProfileSettings.svelte';
+  import ScriptTab from './ScriptTab.svelte';
   import StepCard from './StepCard.svelte';
+  import StepPreview from './StepPreview.svelte';
 
   interface Props {
     skin: Skin;
@@ -67,7 +68,9 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   let busy = $state(false);
   let notice: { tone: 'info' | 'warn'; text: string } | null = $state(null);
   let row: HTMLDivElement | undefined = $state();
-  let tab: 'cards' | 'settings' = $state('cards');
+  let tab: 'cards' | 'settings' | 'script' = $state('cards');
+  /** the SCRIPT tab's errors: its text does not parse, so nothing is saved */
+  let scriptErrors: string[] = $state.raw([]);
 
   const taken = $derived(records.map((entry) => entry.profile.title));
   /** 'save' may rename the profile, but not to the title of another visible one. */
@@ -77,13 +80,8 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     return `Another profile is called “${profile.title}”: choose another title, or use save as.`;
   });
   const dirty = $derived(profileChanged(profile, origin));
-  const canSave = $derived(canSaveOver(record) && dirty && profile.steps.length > 0 && !titleProblem);
-
-  const curve = $derived(stepCurve(profile));
-  /** Pressure and flow share one scale, as on every graph of the skin; it reaches a target above 12. */
-  const previewMax = $derived(
-    Math.max(12, Math.ceil(Math.max(0, ...curve.pressure.map((v) => v ?? 0), ...curve.flow.map((v) => v ?? 0)) / 4) * 4),
-  );
+  const broken = $derived(scriptErrors.length > 0);
+  const canSave = $derived(canSaveOver(record) && dirty && profile.steps.length > 0 && !titleProblem && !broken);
   const message = (cause: unknown) => (cause instanceof Error ? cause.message : String(cause));
 
   /** What a record's id is made of: the steps and the target weight. */
@@ -130,6 +128,10 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
    */
   async function leave(): Promise<boolean> {
     if (busy) return false;
+    if (broken) {
+      notice = { tone: 'warn', text: 'The script has errors: nothing is saved or loaded. Correct it, or open cards to keep the steps that last parsed.' };
+      return false;
+    }
     if (!profileChanged(profile, openedWith) || (refused && !profileChanged(profile, refused))) return true;
     busy = true;
     notice = null;
@@ -203,6 +205,13 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     profile = next;
   }
 
+  /** Leaving SCRIPT drops a text that does not parse: the other tabs show the steps that last parsed. */
+  function open(next: typeof tab) {
+    tab = next;
+    scriptErrors = [];
+    openIndex = Math.min(openIndex, Math.max(0, profile.steps.length - 1));
+  }
+
   function move(index: number, direction: 1 | -1) {
     edit(moveStep(profile, index, index + direction));
     openIndex = index + direction;
@@ -239,15 +248,15 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
       <span>{profile.title}</span>
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h9" /></svg>
     </button>
-    <!-- SCRIPT (E4) joins CARDS and SETTINGS here. -->
     <div class="group tabs" role="group" aria-label="view">
-      <button class="seg" aria-pressed={tab === 'cards'} data-testid="tab-cards" onclick={() => (tab = 'cards')}>cards</button>
-      <button class="seg" aria-pressed={tab === 'settings'} data-testid="tab-settings" onclick={() => (tab = 'settings')}>settings</button>
+      <button class="seg" aria-pressed={tab === 'cards'} data-testid="tab-cards" onclick={() => open('cards')}>cards</button>
+      <button class="seg" aria-pressed={tab === 'script'} data-testid="tab-script" onclick={() => open('script')}>script</button>
+      <button class="seg" aria-pressed={tab === 'settings'} data-testid="tab-settings" onclick={() => open('settings')}>settings</button>
     </div>
     <span class="count" data-testid="step-count">{profile.steps.length} {profile.steps.length === 1 ? 'step' : 'steps'}</span>
     <div class="group" role="group" aria-label="profile actions">
       <button class="seg action" data-testid="save" disabled={busy || !canSave} onclick={save}>save</button>
-      <button class="seg action" data-testid="save-as" disabled={busy || profile.steps.length === 0} onclick={() => (naming = true)}>
+      <button class="seg action" data-testid="save-as" disabled={busy || broken || profile.steps.length === 0} onclick={() => (naming = true)}>
         save as
       </button>
     </div>
@@ -259,28 +268,11 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
 
   {#if tab === 'settings'}
     <ProfileSettings {profile} {titleProblem} disabled={busy} onedit={edit} />
+  {:else if tab === 'script'}
+    <ScriptTab {profile} errors={scriptErrors} disabled={busy} onedit={edit} onerrors={(errors) => (scriptErrors = errors)} />
   {:else}
   <!-- The curve preview: the targets of the steps, redrawn with every edit. -->
-  <div class="preview" data-testid="step-preview" data-seconds={curve.seconds}>
-    <ShotGraph
-      t={curve.t}
-      pressure={[]}
-      flow={[]}
-      temperature={[]}
-      targetPressure={curve.pressure}
-      targetFlow={curve.flow}
-      targetTemperature={curve.temperature}
-      borders={curve.steps.slice(1).map((span) => span.start)}
-      shaded={curve.steps.filter((span) => span.untimed)}
-      yMax={previewMax}
-      fit
-      preview
-      label="curve preview"
-    />
-    {#if curve.steps.some((span) => span.untimed)}
-      <p class="untimed" data-testid="preview-untimed">shaded: a step without a time, drawn 10 s long</p>
-    {/if}
-  </div>
+  <StepPreview {profile} />
 
   <div class="cards" bind:this={row} data-testid="step-cards">
     {#each profile.steps as step, index (index)}
@@ -462,26 +454,6 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
 
   .notice.warn {
     color: var(--warn);
-  }
-
-  /* The preview takes the room the cards leave, at least a fifth of the screen. */
-  .preview {
-    position: relative;
-    flex: 1 1 0;
-    min-height: 20vh;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 1rem;
-    overflow: hidden;
-  }
-
-  .untimed {
-    position: absolute;
-    top: 0.3rem;
-    right: 1rem;
-    margin: 0;
-    color: var(--dim);
-    font-size: 0.8rem;
   }
 
   /* A row of cards that scrolls sideways, one open at a time, as high as the open card. */

@@ -249,6 +249,16 @@ it, g as ml. The stream's colour runs from the flow blue at 20 °C to the temper
 does not open by itself when hot water or flush starts on another screen
 ([research.md](research.md) 19).
 
+Built in E4 (2026-10-16), where 3.6 leaves the detail open: SCRIPT is a tab between cards and
+settings, the text on the left and the curve preview on the right. The text is Streamline's
+sentences, typed, read by the skin's own parser (`src/steps/script.ts`, grammar in
+[research.md](research.md) 17.8): it is written from the profile when the tab opens and parsed on
+every change; a text that parses is the editor's profile at once (preview, cards, 'save'). A text
+that does not parse lists its errors with their lines, keeps the preview on the last text that
+parsed, turns 'save' and 'save as' off and refuses leaving the editor; opening another tab drops
+the broken text and shows the steps that last parsed. A value out of its range is an error unless
+the profile's step at that place already has it, as on a card ([research.md](research.md) 17.16).
+
 ## 4. Technical approach
 
 ### 4.1 What a Decaid skin is

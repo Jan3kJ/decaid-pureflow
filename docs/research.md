@@ -1636,6 +1636,8 @@ refuses a taken name instead); the number pad's recent values; translations.
    and weight do not change a step's drawn length (17.15).
 7. 'save' stores the title the SETTINGS tab shows, so it renames the profile; it is off while
    another visible profile has that title (17.15).
+8. The SCRIPT parser keeps every field the text does not hold and prints an exit of 0; a broken
+   text turns saving off, refuses leaving, and is dropped when another tab opens (17.16).
 
 ### 17.14 Built (E2)
 
@@ -1767,6 +1769,62 @@ taken. Rig, `e2e-rig/step-editor.spec.ts`, a second test: the preview follows a 
 copy of Blooming Espresso, then all five settings and 'save': `GET` reads them back, a new
 version with the copy hidden, the workflow holds them; the title alone, then the notes alone:
 the same record; the hash probe above; all made is purged.
+
+### 17.16 Built (E4)
+
+Built on 2026-10-16 (acceptance 13). Files: `src/steps/script.ts` (+ `script.test.ts`, 24
+tests), `src/steps/ScriptTab.svelte`, `src/steps/StepPreview.svelte` (E3's preview moved out of
+`StepEditor.svelte` unchanged, so that the cards and the script draw it alike), the tab and the
+error state in `StepEditor.svelte`. All carry Streamline's notice (17.9). Screenshot:
+`docs/product/step-script.png`.
+
+**The text.** `writeScript(profile)` prints 17.8's format exactly; both worked examples are
+fixtures and come out word for word. `parseScript(text, profile)` reads it by 17.8's grammar and
+rules 1 to 9, with the error messages 17.8 gives ("line 18: pressure is 0 to 12 bar", "line 3:
+not understood: '…'", "step 2 has no pump sentence", "line 1: a step starts with 'number: name'",
+"the script has no step") and a few more of the same shape (a second sentence of a kind, units
+that do not follow the pump, the marker on step 1 or twice, an amount it cannot read). All errors
+of a text are listed at once.
+
+**Nothing is lost, unlike 17.8 planned.** 17.8 had the parser build each step from its text, which
+would drop what the text does not hold (E2's rule, 17.14, is that the editor drops nothing). So the
+parser compares: a parsed step whose sentences say what a step of the profile says *is* that step,
+unchanged (at its own place first, else the first unused one, so moving or deleting a block keeps
+the steps' own fields); a step that differs is the profile's step at that place with only the
+changed values set, as a card edit does: the unused pump's value, a limiter's range or a limiter of
+0, a `weight: null`, an exit type Decaid does not take, and fields of other apps stay. A new limit
+takes `newLimiterRange` (rule 7). Numbers are compared as printed (two decimals), so float noise in
+the files (9.999999999999993, -4e-16) comes back as it was. Tests: the round trip
+`parseScript(writeScript(p), p)` equals `p` for all 73 bundled profiles, and on the rig for every
+profile `GET /api/v1/profiles` lists; the text alone (on a profile without steps) prints the same
+text again.
+
+Where it differs from 17.8: an exit of 0 is printed (rule 8 left it out): Streamline prints it, and
+"pressure is over 0 bar" ends a step at once, so leaving it out would hide what the step does (5
+bundled steps have one). A value out of its range is an error (rule 3) unless the profile's step at
+that place already has that value, as a card keeps it (17.12's risk "cannot be typed" is so gone).
+The temperature also reads without "°" ("92 C"), and a number may be written without decimals.
+
+**The tab.** SCRIPT sits between cards and settings. The text is written from the profile when the
+tab opens; every input is parsed at once (a text that was not changed is never parsed back). A text
+that parses is the editor's profile, so the preview beside it moves, the step count changes, and
+cards and 'save' have it. A text that does not parse: the errors under the text ("The script has
+errors: nothing is saved."), the preview on the last text that parsed, 'save' and 'save as' off,
+and leaving the editor (back, the picker) refused with a notice. Opening cards or settings drops the
+broken text: they show the steps that last parsed, and SCRIPT writes its text from them again.
+
+**Tests.** Vitest `script.test.ts` (24): both worked examples both ways, number printing, every
+sentence kind, the 73-profile round trip, a one-value change touches that value only, fields kept,
+the new limiter's range, reorder and delete, loose spelling, the verb not read, left-out sentences,
+a pump switch, every error with its line. Playwright `e2e/step-script.spec.ts` (2): a flow changed in
+the text moves the preview, 'save' posts exactly that step changed (parent hidden, loaded), the cards
+show it; a broken text lists its errors with lines, the preview stays, save and save as are off,
+back is refused, no POST, PUT or workflow write, the cards show the steps that last parsed. Rig,
+`e2e-rig/step-editor.spec.ts`, a third test: the round trip of all listed profiles; Blooming
+Espresso's flat flow changed in the text, a range error turns 'save as' off, then 'save as' from
+the tab: `GET` reads exactly that change back, the workflow holds it; all made is purged. Full
+`npm run e2e:rig`: 19 passed, 1 failed, the known steam control step (18.4); log
+`..\decaid-rig\log\e4-e2e-rig.txt`.
 
 ## 18. Profile metadata on the rig (M1)
 
