@@ -240,6 +240,15 @@ copy) carries the values as the first line of its `notes`; that is how the edito
 unsaved-edits warning and the history read what is on the machine. All of it is in
 `src/editor/storage.ts` ([research.md](research.md) 18.5).
 
+Built in V1 (2026-10-16), where 3.6 leaves the detail open: the water view replaces home's
+graph while hot water or flush runs, the picture on the left, the ring with **stop** inside on
+the right (`src/shell/Water.svelte`, numbers in `src/shell/water.ts`). The ring counts whole
+seconds and stays full past the duration. The cup takes the scale's weight as the scale sends
+it, g as ml. The stream's colour runs from the flow blue at 20 °C to the temperature red at
+90 °C, linear between; it stands still at 0.05 ml/s and below and is full at 10 ml/s. Home
+does not open by itself when hot water or flush starts on another screen
+([research.md](research.md) 19).
+
 ## 4. Technical approach
 
 ### 4.1 What a Decaid skin is

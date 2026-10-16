@@ -4,6 +4,7 @@
   import { emptySeries, shotSeconds, shotWeight } from './shot';
   import type { Skin } from './skin.svelte';
   import StateLine from './StateLine.svelte';
+  import Water from './Water.svelte';
 
   interface Props {
     skin: Skin;
@@ -16,6 +17,8 @@
   const lastWeight = $derived(shotWeight(last));
   // An entry restored from the shot history, with the graph of its latest shot (spec 3.5).
   const recalled = $derived(skin.recalled);
+  // Hot water or flush runs: home shows it in place of the graph, with stop in its ring (spec 3.6).
+  const water = $derived(skin.canStop && skin.waterRun && !skin.waterRun.ended ? skin.waterRun : null);
 
   /**
    * The menu of the top right corner (founder, 2026-10-13): what is rarely used. A list, so
@@ -56,60 +59,64 @@
     </button>
   </header>
 
-  <section class="last">
-    {#if recalled}
-      {@const entry = recalled.entry}
-      <header>
-        <span class="recalled" data-testid="recalled">
-          last shot with
-          <strong data-testid="recalled-profile">{entry.profileTitle}</strong>
-          <strong data-testid="recalled-bean">{beanLabel(entry.bean)}</strong>
-          {#if entry.grinderSetting}
-            <strong data-testid="recalled-grinder">grinder {entry.grinderSetting}</strong>
-          {/if}
-        </span>
-        <button class="chip" data-testid="dismiss-recalled" onclick={() => skin.dismissRecalled()}>dismiss</button>
-      </header>
-      <div class="plot" data-testid="history-graph">
-        <ShotGraph
-          {...recalled.series}
-          fit
-          legend={skin.settings.showGraphLegend}
-          label="last shot of the history entry"
-        />
-      </div>
-    {:else if last}
-      <header>
-        <span>
-          last shot
-          <strong data-testid="last-shot-time">{shotSeconds(last).toFixed(1)} s</strong>
-          {#if lastWeight !== null}
-            <strong class="weight" data-testid="last-shot-weight">{lastWeight.toFixed(1)} g</strong>
-          {/if}
-        </span>
-        <button class="chip" data-testid="dismiss-shot" onclick={() => skin.dismissShot()}>dismiss</button>
-      </header>
-      <div class="plot" data-testid="last-shot">
-        <ShotGraph
-          {...last.series}
-          fit
-          legend={skin.settings.showGraphLegend}
-          label="last shot"
-        />
-      </div>
-    {:else}
-      <!-- No shot yet: the graph keeps its place, empty. -->
-      <div class="plot" data-testid="empty-graph">
-        <ShotGraph {...emptySeries()} legend={skin.settings.showGraphLegend} label="no shot yet" />
-      </div>
-    {/if}
-  </section>
+  {#if water}
+    <Water {skin} run={water} />
+  {:else}
+    <section class="last">
+      {#if recalled}
+        {@const entry = recalled.entry}
+        <header>
+          <span class="recalled" data-testid="recalled">
+            last shot with
+            <strong data-testid="recalled-profile">{entry.profileTitle}</strong>
+            <strong data-testid="recalled-bean">{beanLabel(entry.bean)}</strong>
+            {#if entry.grinderSetting}
+              <strong data-testid="recalled-grinder">grinder {entry.grinderSetting}</strong>
+            {/if}
+          </span>
+          <button class="chip" data-testid="dismiss-recalled" onclick={() => skin.dismissRecalled()}>dismiss</button>
+        </header>
+        <div class="plot" data-testid="history-graph">
+          <ShotGraph
+            {...recalled.series}
+            fit
+            legend={skin.settings.showGraphLegend}
+            label="last shot of the history entry"
+          />
+        </div>
+      {:else if last}
+        <header>
+          <span>
+            last shot
+            <strong data-testid="last-shot-time">{shotSeconds(last).toFixed(1)} s</strong>
+            {#if lastWeight !== null}
+              <strong class="weight" data-testid="last-shot-weight">{lastWeight.toFixed(1)} g</strong>
+            {/if}
+          </span>
+          <button class="chip" data-testid="dismiss-shot" onclick={() => skin.dismissShot()}>dismiss</button>
+        </header>
+        <div class="plot" data-testid="last-shot">
+          <ShotGraph
+            {...last.series}
+            fit
+            legend={skin.settings.showGraphLegend}
+            label="last shot"
+          />
+        </div>
+      {:else}
+        <!-- No shot yet: the graph keeps its place, empty. -->
+        <div class="plot" data-testid="empty-graph">
+          <ShotGraph {...emptySeries()} legend={skin.settings.showGraphLegend} label="no shot yet" />
+        </div>
+      {/if}
+    </section>
+  {/if}
 
   {#if skin.notice}
     <p class="notice" data-testid="notice">{skin.notice}</p>
   {/if}
   <!-- Nothing is started here: the DE1 is started at the machine. What runs can be stopped. -->
-  {#if skin.canStop}
+  {#if skin.canStop && !water}
     <button class="stop" data-testid="stop" onclick={() => skin.stop()}>stop</button>
   {/if}
 </div>

@@ -30,6 +30,7 @@ import { canSleep, canStop, gatewayAfter, isAsleep, linkOf, stateLine, statusOf,
 import { followMachine, loadScreen, saveScreen, type Screen } from './nav';
 import { doseToSet } from './profiles';
 import { recordFrame, type Shot, type ShotSeries } from './shot';
+import { recordWaterFrame, type WaterRun } from './water';
 import { applySteamTimer, timerMismatch } from '../steam/apply';
 import { recordSteamFrame, type SteamRun } from '../steam/run';
 
@@ -68,6 +69,8 @@ export class Skin {
   recalled: Recalled | null = $state.raw(null);
   /** the running steam, or the finished one until the next */
   steam: SteamRun | null = $state.raw(null);
+  /** the running hot water or flush, or the finished one until the next (spec 3.6) */
+  waterRun: WaterRun | null = $state.raw(null);
   /** the tank's water level, null while its stream is not open or has sent nothing */
   water: WaterLevels | null = $state.raw(null);
   /** what the scale stream said about the scale */
@@ -237,6 +240,7 @@ export class Skin {
     this.shot = recordFrame(this.shot, frame, this.weight, this.weightFlow);
     if (this.shot && !this.shot.ended) this.recalled = null;
     this.steam = recordSteamFrame(this.steam, frame);
+    this.waterRun = recordWaterFrame(this.waterRun, frame);
     if (next !== this.screen) this.go(next);
     void this.dim(state === 'sleeping');
   }

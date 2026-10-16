@@ -1897,3 +1897,56 @@ The full rig run (`..\decaid-rig\log\m2-e2e-rig.txt`): 16 passed, 1 failed, the 
 `steam.spec.ts` control step as in 18.4 (Streamline 0.2.14), not touched here. The rig ended
 with 73 profiles (none deleted), the skin's KV namespace empty, Streamline the default skin,
 the workflow as before; Decaid stopped, port 8080 free.
+
+## 19. Hot water and flush on the rig (V1)
+
+Done on 2026-10-16 against Decaid v0.8.8 with device simulation (8.8; the gateway answered at
+once). Asked through the API with `PUT /api/v1/machine/state/hotWater` and `.../flush`, as
+the DE1's own buttons would start them; the skin starts neither (spec 3.6). Frames from
+`/ws/v1/machine/snapshot` and `/ws/v1/scale/snapshot` are in the rig's
+`log\v1-hotwater-probe.txt`, `v1-hotwater-scale.txt` and `v1-flush-probe.txt`.
+
+| Claim | Status |
+|---|---|
+| Hot water is state `hotWater`, substate `pouring`, from its first frame to its last | seen running |
+| Simulated hot water pours: flow 5.8, 9.5, then 10.0 ml/s (the workflow's `hotWaterData.flow`), pressure 2.5 bar, a frame every 0.5 s | seen running |
+| It ends by itself after about 5.5 s, near the 50 ml of `hotWaterData.volume`, long before its `duration` of 30 s; the machine is `idle` again | seen running |
+| The mock scale is tared when hot water starts (47.6 g to 3.9 g within 0.8 s) and weighs the water: 47.6 g at the end, `weightFlow` about 8 g/s | seen running |
+| `targetMixTemperature` is the hot-water temperature (75) while it runs; `mixTemperature` stays at the cold machine's 16 °C. `rest_v1.yml` says `mixTemperature` is not a reliable outlet temperature during `hotWater` on a classic DE1 | seen running; the real DE1 not seen |
+| Flush is state `flush`, substate `idle`; the simulated flush has flow 0 and pressure 0 throughout and does not end by itself (still running after 20 s against `rinseData.duration` 10 s), as simulated steam (8.7); `PUT .../state/idle` ends it | seen running |
+| Neither leaves a shot or steam record (`/api/v1/shots/ids` and `/steams/ids` unchanged) | seen running |
+| A real flush's flow and the real machine ending flush at its duration | not seen: the founder's check on the real DE1 |
+
+### 19.1 Built (V1)
+
+Home shows a running hot water or flush in place of the graph (`src/shell/Water.svelte`):
+on the left an SVG group head whose stream falls into a cup (hot water) or onto the drip
+tray (flush); on the right the countdown ring with the stop button inside it, which carries
+the label, e.g. 'Flush 6 / 10 s'. The numbers are in `src/shell/water.ts`:
+
+- **The run** (`recordWaterFrame`) starts at the first frame in `hotWater` or `flush` and ends
+  at the first frame of another state; time is the frames' own timestamps, as for a shot.
+- **The ring** (`ringOf`): whole seconds since the run's first frame against the workflow's
+  `hotWaterData.duration` or `rinseData.duration`; full at the duration, the seconds go on
+  past it; without a duration only the seconds and an empty ring.
+- **The volume** adds the mean flow of two frames times the time between them; the cup
+  (`cupOf`) fills to it against `hotWaterData.volume`, or to the scale's weight (g as ml)
+  when a scale is connected, as the skin's scale line says. The weight is taken as the scale
+  sends it: Decaid tares the mock scale at the start (above).
+- **The stream** (`streamOf`): stroke width and the speed of its running dashes grow with the
+  measured flow, full at 10 ml/s; at 0.05 ml/s and below it stands still, drawn thin and pale.
+  A CSS animation of `stroke-dashoffset`, no library.
+- **The colour** (`waterColour`): the mix temperature on a cold-to-hot scale from the skin's
+  flow blue (`#4da3ff`) at 20 °C and below to its temperature red (`#ff6b6b`) at 90 °C and
+  above, linear in RGB between. The flow, the amount (blue in ml, yellow in g) and the
+  temperature are written under the picture in the skin's colours.
+
+Tests: Vitest `src/shell/water.test.ts` (18). `npm run e2e`: `e2e/water.spec.ts`, three tests
+with mocked frames (flush with flow and at 0, past its duration, stop; hot water without a
+scale at 8, 2 and 0 ml/s; hot water with a scale); screenshots `docs/product/water-flush.png`
+and `water-hot.png`. Rig: `e2e-rig/water.spec.ts`, seen running: hot water shows the ring
+against 30 s, a moving stream and a cup following the mock scale in g, and leaves home when
+the machine ends it; flush shows a still stream (flow 0) and 'Flush 2 / 10 s', and the skin's
+stop ends it. The full rig run (`log\v1-e2e-rig.txt`): 18 passed, 1 failed, the same
+`steam.spec.ts` control step as in 18.4 and 18.5; it fails on the commit before this task as
+well (`log\v1-e2e-rig-steam-baseline.txt`), not touched here.

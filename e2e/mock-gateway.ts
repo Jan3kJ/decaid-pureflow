@@ -144,6 +144,9 @@ export class MockGateway {
     profile: profile('A-Flow / default-medium', 42, 9),
     context: { targetDoseWeight: 18, targetYield: 36, grinderSetting: '5.2' },
     steamSettings: { targetTemperature: 150, duration: 50, flow: 0.8, stopAtTemperature: 0 },
+    // As on the rig (research.md 8.6).
+    hotWaterData: { targetTemperature: 75, duration: 30, volume: 50, flow: 10 },
+    rinseData: { targetTemperature: 90, duration: 10, flow: 6 },
   };
   profiles: Json[] = [
     record('profile:best', profile('Best practice', 40, 4), { source: 'bundled' }),
@@ -320,10 +323,38 @@ export class MockGateway {
     }
   }
 
+  /**
+   * Hot water or flush has run for `seconds` at `flow` ml/s: a frame every 0.5 s, sent at once.
+   * The machine then repeats its latest frame, so the time on screen stands still; `waterFlow`
+   * sends the next one. As on the rig, hot water's substate is `pouring`, flush's `idle`.
+   */
+  waterFor(kind: 'hotWater' | 'flush', seconds: number, flow: number, mixTemperature = 75): void {
+    this.state = kind;
+    const now = Date.now();
+    for (let t = 0; t <= seconds; t += 0.5) {
+      this.held = { ...this.frame(now - (seconds - t) * 1000), flow, mixTemperature };
+      this.sendMachine(this.held);
+    }
+  }
+
+  /** The running hot water or flush, `after` s later, at another flow. */
+  waterFlow(flow: number, after = 1): void {
+    const at = Date.parse(`${this.held!.timestamp.slice(0, 23)}Z`) + after * 1000;
+    this.held = { ...this.held!, timestamp: new Date(at).toISOString().replace('Z', '000'), flow };
+    this.sendMachine(this.held);
+  }
+
+  /** The machine has left hot water or flush. */
+  waterEnded(): void {
+    this.held = undefined;
+    this.state = 'idle';
+    this.sendMachine(this.frame());
+  }
+
   frame(at = Date.now()): Json {
     return {
       timestamp: new Date(at).toISOString().replace('Z', '000'),
-      state: { state: this.state, substate: 'idle' },
+      state: { state: this.state, substate: this.state === 'hotWater' ? 'pouring' : 'idle' },
       flow: 0,
       pressure: this.state === 'steam' ? 1.6 : 0,
       targetFlow: 0,
