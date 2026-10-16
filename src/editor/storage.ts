@@ -7,6 +7,7 @@ import {
   parseParams,
   serializeParams,
   validateParams,
+  WIDEST_MACHINE_LIMITS,
   type AFlowParams,
 } from '../aflow';
 import type { DecaidClient, Profile, ProfileRecord, SaveProfileOptions } from '../api';
@@ -35,7 +36,7 @@ export function paramsNotes(params: AFlowParams): string {
 
 /**
  * The A-Flow 3.0 parameters of a profile, or null when it is not an A-Flow 3.0 profile: its
- * notes are not the codec's string, a value is out of range, or its steps are not what the
+ * notes are not the codec's string, a value is out of range (`WIDEST_MACHINE_LIMITS`), or its steps are not what the
  * generator writes for these parameters (with or without the first-step workaround). The last
  * check keeps a profile whose steps were changed elsewhere from opening with old parameters.
  */
@@ -43,7 +44,8 @@ export function readParams(profile: Pick<Profile, 'notes' | 'steps' | 'target_we
   const parsed = parseParams(profile.notes ?? '');
   if (!parsed.ok) return null;
   const { params } = parsed;
-  if (validateParams(params).length > 0) return null;
+  // Within the widest maximum flow, not the setting's: lowering it hides no profile.
+  if (validateParams(params, WIDEST_MACHINE_LIMITS).length > 0) return null;
   if ((profile.target_weight ?? 0) !== params.stopWeight) return null;
   const generated = [false, true].some((workaround) => sameSteps(generateSteps(params, workaround), profile.steps));
   return generated ? params : null;

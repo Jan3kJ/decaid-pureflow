@@ -3,6 +3,7 @@
 // of it (`Skin.settings`), the settings page changes it, and every screen reads it there.
 // A copy in Decaid's KV store is its backup (settings-backup.ts, founder, 2026-10-14).
 import { DEFAULT_PROFILES } from './aflow/defaults';
+import { DOSE_MAX, MAX_FLOW_RANGE } from './aflow/validate';
 
 export interface Settings {
   /** the editor offers the generated profile steps under the graph; its panel opens closed (founder, 2026-10-13) */
@@ -21,6 +22,16 @@ export interface Settings {
    * the shot history.
    */
   startProfiles: (string | null)[];
+  /**
+   * ml/s, the highest pump flow the A-Flow editor offers (founder, 2026-10-15: newer machines
+   * drive more than 8). Read through `machineLimits`, which holds it in `MAX_FLOW_RANGE`.
+   */
+  maxFlow: number;
+  /**
+   * g, the dose a shot takes when neither its profile nor the user set one (founder,
+   * 2026-10-15). Written to the workflow by `doseToSet` (src/shell/profiles.ts).
+   */
+  defaultDose: number;
   /** the category Steam (spec 3.4): what the steam page calculates with */
   steam: SteamSettings;
 }
@@ -62,6 +73,8 @@ export const DEFAULT_SETTINGS: Settings = {
   firstStepWorkaround: false,
   showGraphLegend: true,
   startProfiles: DEFAULT_START_PROFILES,
+  maxFlow: 8,
+  defaultDose: 18,
   steam: DEFAULT_STEAM_SETTINGS,
 };
 
@@ -229,4 +242,27 @@ export function withSteamValue(steam: SteamSettings, field: SteamField, value: n
   const before = steam[field.key];
   const next = Array.isArray(before) ? before.map((item, i) => (i === (field.index ?? 0) ? held : item)) : held;
   return { ...steam, [field.key]: next };
+}
+
+/** One number of the category Profile: a value of the settings object itself. */
+export interface ProfileField {
+  /** the name in the tests */
+  id: string;
+  label: string;
+  key: 'maxFlow' | 'defaultDose';
+  unit: string;
+  min: number;
+  max: number;
+}
+
+/** The category Profile's numbers, one decimal each (founder, 2026-10-15). */
+export const PROFILE_FIELDS: ProfileField[] = [
+  { id: 'max-flow', label: 'max flow', key: 'maxFlow', unit: 'ml/s', ...MAX_FLOW_RANGE },
+  // The editor's dose range from 5 g up: a dose below that is no shot.
+  { id: 'default-dose', label: 'default dose', key: 'defaultDose', unit: 'g', min: 5, max: DOSE_MAX },
+];
+
+/** A value of the category Profile, held inside its range and to one decimal. */
+export function profileValue(settings: Settings, field: ProfileField, value: number = settings[field.key]): number {
+  return Math.min(field.max, Math.max(field.min, Math.round(value * 10) / 10));
 }

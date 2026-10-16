@@ -4,10 +4,13 @@
   import NumberPad from '../editor/NumberPad.svelte';
   import { startChoices, startName } from '../editor/start';
   import {
+    PROFILE_FIELDS,
     STEAM_FIELDS,
+    profileValue,
     steamValue,
     withStartProfile,
     withSteamValue,
+    type ProfileField,
     type Settings,
     type SteamField,
   } from '../settings';
@@ -59,6 +62,15 @@
   function confirm(value: number) {
     if (typing) skin.setSettings({ steam: withSteamValue(settings.steam, typing, value) });
     typing = null;
+  }
+
+  /** the value of the category Profile the number pad is open for */
+  let typingProfile: ProfileField | null = $state.raw(null);
+  const shownProfile = (field: ProfileField) => `${profileValue(settings, field)}`;
+
+  function confirmProfile(value: number) {
+    if (typingProfile) skin.setSettings({ [typingProfile.key]: profileValue(settings, typingProfile, value) });
+    typingProfile = null;
   }
 
   // The editor's start row (founder, 2026-10-13): what a slot can hold is read from the gateway.
@@ -138,7 +150,23 @@
 
   {#each [{ id: 'profile', title: 'Profile', switches: SWITCHES }, { id: 'graph', title: 'Shot graph', switches: GRAPH_SWITCHES }] as group (group.id)}
     <section data-testid="settings-{group.id}">
-      <h2>{group.title}</h2>
+      {#if group.id === 'profile'}
+        <!-- founder, 2026-10-15: the editor's maximum flow and the dose of a shot that has none; on
+             the category's title line, so the page still fits the screen -->
+        <div class="titled">
+          <h2>{group.title}</h2>
+          <div class="values">
+            {#each PROFILE_FIELDS as field (field.id)}
+              <button class="value" data-testid="setting-{field.id}" onclick={() => (typingProfile = field)}>
+                <small>{field.label}</small>
+                <b>{shownProfile(field)}<i>{field.unit}</i></b>
+              </button>
+            {/each}
+          </div>
+        </div>
+      {:else}
+        <h2>{group.title}</h2>
+      {/if}
       {#each group.switches as item (item.key)}
         <button
           class="row switch"
@@ -259,6 +287,19 @@
   />
 {/if}
 
+{#if typingProfile}
+  <NumberPad
+    label={typingProfile.label}
+    unit={typingProfile.unit}
+    min={typingProfile.min}
+    max={typingProfile.max}
+    decimals={true}
+    current={shownProfile(typingProfile)}
+    onconfirm={confirmProfile}
+    oncancel={() => (typingProfile = null)}
+  />
+{/if}
+
 <style>
   .settings {
     height: 100%;
@@ -273,6 +314,13 @@
   /* Steam fills the left column; the switches' categories are stacked in the right one. */
   section:first-of-type {
     grid-row: 2 / 4;
+  }
+
+  .titled {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
   }
 
   /* The start row's slots run under both. */
@@ -535,7 +583,8 @@
     border-color: var(--line);
   }
 
-  h2 + .switch {
+  h2 + .switch,
+  .titled + .switch {
     border-top-color: transparent;
   }
 

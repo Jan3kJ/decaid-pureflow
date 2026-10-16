@@ -63,6 +63,13 @@ describe('readParams', () => {
     const params = { ...light, fillTemperature: 120 };
     expect(readParams(profileOf(params))).toBeNull();
   });
+
+  it('reads a flow above the default maximum, up to the widest the setting allows (20 ml/s)', () => {
+    // Saved with the maximum flow set to 12, read after it went back to 8.
+    const fast = { ...light, pourFlow: 12 };
+    expect(readParams(profileOf(fast))).toEqual(fast);
+    expect(readParams(profileOf({ ...light, pourFlow: 20.5 }))).toBeNull();
+  });
 });
 
 describe('sameSteps', () => {

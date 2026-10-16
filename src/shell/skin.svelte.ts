@@ -28,6 +28,7 @@ import { SettingsBackup, atStart, type ReadBackup, type Written } from '../setti
 import { gatewayBaseUrl } from './gateway';
 import { canSleep, canStop, gatewayAfter, isAsleep, linkOf, stateLine, statusOf, type Gateway, type ScaleLink } from './machine';
 import { followMachine, loadScreen, saveScreen, type Screen } from './nav';
+import { doseToSet } from './profiles';
 import { recordFrame, type Shot, type ShotSeries } from './shot';
 import { applySteamTimer, timerMismatch } from '../steam/apply';
 import { recordSteamFrame, type SteamRun } from '../steam/run';
@@ -119,7 +120,8 @@ export class Skin {
   readonly stateValues = $derived(stateLine(this.link, this.snapshot, this.water, this.scaleLink, this.weight));
   /**
    * A stream stopped in the state `failed`: the gateway sent an error frame and closed the
-   * socket, and the stream does not open again by itself (research.md 9.4). `reconnect` does.
+   * socket, and did so again while the stream tried for 30 s (founder, 2026-10-15). It does
+   * not try again by itself after that; `reconnect` does.
    */
   readonly refused = $derived(this.machineStream === 'failed' || this.scaleStream === 'failed');
 
@@ -285,9 +287,15 @@ export class Skin {
     this.go(screen);
   }
 
+  /**
+   * Reads the workflow; one without a dose takes the default dose of the settings (`doseToSet`),
+   * so a shot pulled next has one. Read at every open of the stream and on home.
+   */
   async refreshWorkflow(): Promise<void> {
     try {
-      this.workflow = await this.client.getWorkflow();
+      const workflow = await this.client.getWorkflow();
+      const dose = doseToSet(workflow, this.settings.defaultDose);
+      this.workflow = dose === null ? workflow : await this.client.updateWorkflow({ context: { targetDoseWeight: dose } });
     } catch {
       // The gateway is away; the stream's state says so.
     }

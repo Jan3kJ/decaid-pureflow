@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_STEAM_SETTINGS, type SteamSettings } from '../settings';
-import { MUG_STEP_SHARE, detectMug, milkWeight, mugs, readScale, timerSeconds } from './timer';
+import { detectMug, milkWeight, mugSteps, mugs, readScale, timerSeconds } from './timer';
 
 const settings = DEFAULT_STEAM_SETTINGS;
-const step = MUG_STEP_SHARE * settings.milkPerDrink;
 const size = (weight: number, from: SteamSettings = settings) => detectMug(weight, from).size;
 
 describe('mug detection', () => {
@@ -15,37 +14,39 @@ describe('mug detection', () => {
     ]);
   });
 
-  it('steps up above a mug\'s weight plus the share of one drink\'s milk', () => {
-    // The borders with the founder's defaults: 225 + 150 and 275 + 150 with a share of 1.
-    expect(225 + step).toBe(375);
-    expect(275 + step).toBe(425);
-    expect(size(375)).toBe('s');
-    expect(size(375.1)).toBe('m');
-    expect(size(425)).toBe('m');
-    expect(size(425.1)).toBe('l');
+  it('steps up at the midpoints between two full mugs (spec 3.4), 412.5 g and 625 g with the defaults', () => {
+    // ((150 + 150) + (225 + 300)) / 2 and ((225 + 300) + (275 + 450)) / 2
+    expect(mugSteps(settings)).toEqual({ medium: 412.5, large: 625 });
+    expect(size(412.4)).toBe('s');
+    expect(size(412.5)).toBe('s');
+    expect(size(412.6)).toBe('m');
+    expect(size(624.9)).toBe('m');
+    expect(size(625)).toBe('m');
+    expect(size(625.1)).toBe('l');
   });
 
   it('is the small mug below every step: an empty scale, an empty mug, a negative weight', () => {
-    for (const weight of [-3, 0, 12, 150, 225, 275, 330]) expect(size(weight)).toBe('s');
+    for (const weight of [-3, 0, 12, 150, 225, 275, 330, 412]) expect(size(weight)).toBe('s');
   });
 
   it('is the large mug for everything above its step', () => {
-    for (const weight of [426, 600, 2000]) expect(size(weight)).toBe('l');
+    for (const weight of [626, 800, 2000]) expect(size(weight)).toBe('l');
   });
 
-  it('reads the calibration\'s milk right in each mug', () => {
-    for (const mug of mugs(settings)) {
-      expect(detectMug(mug.weight + settings.referenceMilk, settings)).toEqual(mug);
-    }
+  it('reads a full mug right: a mug of size n with n drinks of milk', () => {
+    mugs(settings).forEach((mug, i) => {
+      expect(detectMug(mug.weight + (i + 1) * settings.milkPerDrink, settings)).toEqual(mug);
+    });
   });
 
   it('follows the settings', () => {
     const other: SteamSettings = { ...settings, mugSmall: 100, mugMedium: 300, mugLarge: 500, milkPerDrink: 100 };
-    const otherStep = MUG_STEP_SHARE * 100;
-    expect(size(300 + otherStep, other)).toBe('s');
-    expect(size(300 + otherStep + 1, other)).toBe('m');
-    expect(size(500 + otherStep, other)).toBe('m');
-    expect(size(500 + otherStep + 1, other)).toBe('l');
+    // ((100 + 100) + (300 + 200)) / 2 = 350, ((300 + 200) + (500 + 300)) / 2 = 650
+    expect(mugSteps(other)).toEqual({ medium: 350, large: 650 });
+    expect(size(350, other)).toBe('s');
+    expect(size(350.1, other)).toBe('m');
+    expect(size(650, other)).toBe('m');
+    expect(size(650.1, other)).toBe('l');
     expect(detectMug(700, other).weight).toBe(500);
   });
 });
@@ -91,8 +92,8 @@ describe('the timer', () => {
 describe('a scale weight', () => {
   it('gives the mug, the milk and the seconds', () => {
     expect(readScale(300, settings)).toEqual({ mug: { size: 's', weight: 150 }, milk: 150, seconds: 22 });
-    expect(readScale(405, settings)).toEqual({ mug: { size: 'm', weight: 225 }, milk: 180, seconds: 26 });
-    expect(readScale(575, settings)).toEqual({ mug: { size: 'l', weight: 275 }, milk: 300, seconds: 43 });
+    expect(readScale(525, settings)).toEqual({ mug: { size: 'm', weight: 225 }, milk: 300, seconds: 43 });
+    expect(readScale(725, settings)).toEqual({ mug: { size: 'l', weight: 275 }, milk: 450, seconds: 65 });
   });
 
   it('gives no milk and no seconds for an empty scale', () => {

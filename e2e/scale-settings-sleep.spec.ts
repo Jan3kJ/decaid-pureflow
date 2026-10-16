@@ -164,6 +164,14 @@ test('settings: the defaults, typed values and both switches survive a reload', 
   await type(page, 'setting-reference-seconds', '30');
   await type(page, 'setting-reference-milk', '100');
   await type(page, 'setting-favourite-2', '45');
+  // The category Profile's numbers (founder, 2026-10-15): the maximum flow, 4 to 20 ml/s, and the default dose.
+  expect(await values(['max-flow', 'default-dose'])).toEqual(['8ml/s', '18g']);
+  await page.getByTestId('setting-max-flow').click();
+  await expect(page.getByTestId('numpad-range')).toHaveText('4 to 20 ml/s');
+  await page.getByTestId('numpad-cancel').click();
+  await type(page, 'setting-max-flow', '12');
+  await type(page, 'setting-default-dose', '17.5');
+  expect(await values(['max-flow', 'default-dose'])).toEqual(['12ml/s', '17.5g']);
   await workaround.click();
   await steps.click();
   const changed = ['162.5g', '225g', '275g', '30s', '100g', '150g', '25s', '45s', '30s'];
@@ -184,6 +192,8 @@ test('settings: the defaults, typed values and both switches survive a reload', 
       firstStepWorkaround: true,
       showGraphLegend: true,
       startProfiles: ['A-Flow / default-floral', 'A-Flow / default-light', 'A-Flow / default-medium', 'A-Flow / default-dark', 'A-Flow / default-46mm'],
+      maxFlow: 12,
+      defaultDose: 17.5,
       steam: {
         mugSmall: 162.5,
         mugMedium: 225,
@@ -199,6 +209,7 @@ test('settings: the defaults, typed values and both switches survive a reload', 
   await page.reload();
   await expect(page.getByTestId('screen-settings')).toBeVisible();
   expect(await values(STEAM)).toEqual(changed);
+  expect(await values(['max-flow', 'default-dose'])).toEqual(['12ml/s', '17.5g']);
   await expect(workaround).toHaveAttribute('aria-checked', 'true');
   await expect(steps).toHaveAttribute('aria-checked', 'false');
 
@@ -318,12 +329,50 @@ test('sleep is not offered while something runs or without a machine', async ({ 
   expect(errors).toEqual([]);
 });
 
-test('a stream the gateway closed with an error is shown with a reconnect action', async ({ page }) => {
+test('a workflow without a dose takes the default dose; one with a dose keeps it', async ({ page }) => {
+  const gateway = await mockGateway(page);
+  gateway.workflow = { ...gateway.workflow, context: { targetYield: 36 } };
+  await page.goto('/');
+  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect.poll(() => gateway.workflow.context.targetDoseWeight).toBe(18);
+  expect(gateway.calls('PUT', '/api/v1/workflow').map((call) => call.body)).toContainEqual({ context: { targetDoseWeight: 18 } });
+
+  // A dose the user set elsewhere stays, also after a change of the default.
+  gateway.workflow = { ...gateway.workflow, context: { targetYield: 36, targetDoseWeight: 20 } };
+  await page.getByTestId('menu').click();
+  await page.getByTestId('open-settings').click();
+  await type(page, 'setting-default-dose', '16');
+  await page.getByTestId('nav-home').click();
+  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await page.waitForTimeout(500);
+  expect(gateway.workflow.context.targetDoseWeight).toBe(20);
+  expect(errors).toEqual([]);
+});
+
+test('a stream the gateway closed with an error is tried again for 30 s, then shown with a reconnect action', async ({ page }) => {
   const gateway = await mockGateway(page);
   gateway.refuseStreams = true;
+  await page.clock.install();
   await page.goto('/');
 
-  // Not a dead screen and not 'trying again': the skin says what happened and offers the way on.
+  // The skin tries again by itself for 30 s (founder, 2026-10-15): no reconnect button yet.
+  await expect(page.getByTestId('status-title')).toHaveText('Decaid is not reachable');
+  const failed = page.getByTestId('stream-failed');
+  let seconds = 0;
+  for (; seconds < 40 && !(await failed.isVisible()); seconds++) {
+    if (seconds < 29) await expect(failed).toHaveCount(0);
+    await page.clock.runFor(1000);
+    await page.waitForTimeout(30);
+  }
+  expect(seconds).toBeGreaterThanOrEqual(30);
+  expect(seconds).toBeLessThan(34);
+  // Every stream was asked again, with the growing delay: not once a second.
+  const machineAttempts = gateway.refused;
+  expect(machineAttempts).toBeGreaterThan(8);
+  expect(machineAttempts).toBeLessThan(40);
+  await page.clock.resume();
+
+  // Then the skin says what happened and offers the way on.
   await expect(page.getByTestId('stream-failed')).toContainText('Decaid closed the connection: the mock refuses this stream');
   await expect(page.getByTestId('status-title')).toHaveText('Decaid closed the connection');
   await expect(page.getByTestId('status')).toHaveAttribute('data-link', 'refused');
@@ -331,12 +380,20 @@ test('a stream the gateway closed with an error is shown with a reconnect action
   await expect(page.getByTestId('state-group')).toHaveCount(0);
   expect(await overflow(page)).toEqual({ scrolls: false, outside: 0 });
 
-  // The stream does not reconnect by itself (doc/Skins.md): it is still refused after a while.
-  await page.waitForTimeout(2500);
+  // After the 30 s it does not try again by itself: it is still refused after a while.
+  const attempts = gateway.refused;
+  await page.clock.runFor(60_000);
   await expect(page.getByTestId('stream-failed')).toBeVisible();
+  expect(gateway.refused).toBe(attempts);
 
-  // Reconnect while the gateway still refuses: the same state again.
+  // Reconnect while the gateway still refuses: the skin tries again, then the same state again.
   await page.getByTestId('reconnect').click();
+  await expect(page.getByTestId('stream-failed')).toHaveCount(0);
+  await expect.poll(() => gateway.refused).toBeGreaterThan(attempts);
+  for (let i = 0; i < 40 && !(await failed.isVisible()); i++) {
+    await page.clock.runFor(1000);
+    await page.waitForTimeout(30);
+  }
   await expect(page.getByTestId('stream-failed')).toBeVisible();
   await expect(page.getByTestId('status')).toHaveAttribute('data-link', 'refused');
 

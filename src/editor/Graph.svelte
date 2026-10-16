@@ -3,6 +3,7 @@
     DEFAULT_MACHINE_LIMITS,
     resolveParams,
     type AFlowParams,
+    type MachineLimits,
     type NumberField,
   } from '../aflow';
   import {
@@ -22,6 +23,8 @@
 
   interface Props {
     params: AFlowParams;
+    /** the machine's maxima, the maximum flow from the settings */
+    limits?: MachineLimits;
     mode: 'simple' | 'detail';
     selected: PhaseId;
     /** a line or a border was dragged to a new value */
@@ -31,12 +34,18 @@
     onselect: (phase: PhaseId) => void;
   }
 
-  let { params, mode, selected, ondrag, onedit, onselect }: Props = $props();
+  let { params, limits = DEFAULT_MACHINE_LIMITS, mode, selected, ondrag, onedit, onselect }: Props = $props();
 
-  const limits = DEFAULT_MACHINE_LIMITS;
-  /** Pressure and flow share one scale: 1 bar is as high as 1 ml/s. */
-  const yMax = Math.max(limits.maxPressure, limits.maxFlow);
-  const mainTicks = [0, 3, 6, 9, 12].filter((v) => v <= yMax);
+  const resolved = $derived(resolveParams(params));
+  const curve = $derived(buildCurve(params, limits));
+  /**
+   * Pressure and flow share one scale: 1 bar is as high as 1 ml/s. It reaches the maxima, and
+   * a saved flow above a lowered maximum flow, so that one is drawn where it is.
+   */
+  const yMax = $derived(
+    Math.max(limits.maxPressure, limits.maxFlow, ...curve.pressure.map((pt) => pt.y), ...curve.flow.flat().map((pt) => pt.y)),
+  );
+  const mainTicks = $derived(Array.from({ length: Math.floor(yMax / 3) + 1 }, (_, i) => i * 3));
 
   let width = $state(0);
   let height = $state(0);
@@ -50,8 +59,6 @@
     rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
   });
 
-  const resolved = $derived(resolveParams(params));
-  const curve = $derived(buildCurve(params, limits));
   // 80 to 100 °C, wider while a temperature is outside (founder, 2026-10-14). It follows a
   // drag as it goes: the line stays in its lane, the finger may leave it.
   const temperature = $derived(temperatureAxis(curve.temperature.map((pt) => pt.y)));

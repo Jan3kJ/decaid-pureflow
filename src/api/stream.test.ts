@@ -76,6 +76,13 @@ function machineStream(backoff = { initialMs: 1000, factor: 2, maxMs: 8000 }) {
   return { stream, frames, states, errors };
 }
 
+/** The gateway refuses the latest socket: it opens, sends an error frame and closes. */
+function refuse(): void {
+  FakeSocket.last.serverOpens();
+  FakeSocket.last.serverSends({ error: 'refused' });
+  FakeSocket.last.serverDrops();
+}
+
 beforeEach(() => {
   FakeSocket.instances = [];
   vi.useFakeTimers();
@@ -305,19 +312,72 @@ describe('connection-error frames', () => {
     stream.close();
   });
 
-  it('does not reconnect when the gateway closes the socket after an error frame', () => {
+  it('tries a stream the gateway closed with an error again for 30 s, with the backoff, then fails', () => {
     const { stream, states, errors } = machineStream();
     stream.connect();
-    FakeSocket.last.serverOpens();
-    FakeSocket.last.serverSends({ e: 'Sensor not found', st: '#0 ...' });
-    FakeSocket.last.serverDrops();
+    refuse();
+    // Not failed yet: the skin tries again by itself (founder, 2026-10-15).
+    expect(stream.state).toBe('waiting');
 
+    // 1, 2, 4 and 8 s (the backoff's maximum here), then 8 s, and the last delay ends at 30 s.
+    const attemptsAt: number[] = [];
+    let elapsed = 0;
+    const state = (): StreamState => stream.state;
+    while (state() === 'waiting') {
+      vi.advanceTimersByTime(100);
+      elapsed += 100;
+      if (state() === 'connecting') {
+        attemptsAt.push(elapsed);
+        refuse();
+      }
+    }
+    expect(attemptsAt).toEqual([1000, 3000, 7000, 15000, 23000, 30000]);
     expect(stream.state).toBe('failed');
+    expect(errors).toHaveLength(7);
+    expect(states.at(-1)).toBe('failed');
+    expect(states).not.toContain('idle');
+
+    // And then it waits for connect().
     expect(vi.getTimerCount()).toBe(0);
     vi.advanceTimersByTime(120_000);
-    expect(FakeSocket.instances).toHaveLength(1);
-    expect(errors).toHaveLength(1);
-    expect(states).toEqual(['connecting', 'open', 'failed']);
+    expect(FakeSocket.instances).toHaveLength(7);
+  });
+
+  it('shows no failure before the 30 s are over', () => {
+    const { stream, states } = machineStream();
+    stream.connect();
+    refuse();
+    for (let elapsed = 0; elapsed < 29_900; elapsed += 100) {
+      vi.advanceTimersByTime(100);
+      if ((stream.state as StreamState) === 'connecting') refuse();
+      expect(stream.state).not.toBe('failed');
+    }
+    expect(states).not.toContain('failed');
+    vi.advanceTimersByTime(100);
+    refuse();
+    expect(stream.state).toBe('failed');
+  });
+
+  it('ends the refusal when the gateway sends frames again within the 30 s', () => {
+    const { stream, frames } = machineStream();
+    stream.connect();
+    refuse();
+    vi.advanceTimersByTime(1000);
+    refuse();
+    vi.advanceTimersByTime(2000);
+    FakeSocket.last.serverOpens();
+    FakeSocket.last.serverSends(MACHINE_FRAME);
+    expect(stream.state).toBe('open');
+    expect(frames).toHaveLength(1);
+
+    // A refusal much later has its own 30 s, starting with the first delay again.
+    vi.advanceTimersByTime(60_000);
+    FakeSocket.last.serverSends({ error: 'refused' });
+    FakeSocket.last.serverDrops();
+    expect(stream.state).toBe('waiting');
+    vi.advanceTimersByTime(1000);
+    expect(stream.state).toBe('connecting');
+    stream.close();
   });
 
   it('reconnects after a drop when frames followed the error frame', () => {
@@ -333,16 +393,25 @@ describe('connection-error frames', () => {
     stream.close();
   });
 
-  it('connect() starts a failed stream again', () => {
-    const { stream } = machineStream();
+  it('connect() starts a failed stream again, with another 30 s of tries', () => {
+    const { stream } = machineStream({ initialMs: 1000, factor: 2, maxMs: 30_000 });
     stream.connect();
-    FakeSocket.last.serverOpens();
-    FakeSocket.last.serverSends({ error: 'refused' });
-    FakeSocket.last.serverDrops();
+    refuse();
+    // 1, 2, 4, 8, then 15 s up to the end of the 30 s
+    for (let i = 0; i < 5; i++) {
+      vi.runOnlyPendingTimers();
+      refuse();
+    }
     expect(stream.state).toBe('failed');
+    const tried = FakeSocket.instances.length;
+    expect(tried).toBe(6);
 
     stream.connect();
-    expect(FakeSocket.instances).toHaveLength(2);
+    expect(FakeSocket.instances).toHaveLength(tried + 1);
+    refuse();
+    expect(stream.state).toBe('waiting');
+    vi.advanceTimersByTime(1000);
+    expect(FakeSocket.instances).toHaveLength(tried + 2);
     FakeSocket.last.serverOpens();
     expect(stream.state).toBe('open');
     stream.close();

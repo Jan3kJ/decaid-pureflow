@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_PROFILES } from './defaults';
 import type { AFlowParams } from './types';
-import { paramRanges, validateParams } from './validate';
+import { DEFAULT_MACHINE_LIMITS, MAX_FLOW_RANGE, machineLimits, paramRanges, validateParams } from './validate';
 
 const valid: AFlowParams = DEFAULT_PROFILES.find((p) => p.id === 'default-medium')!.params;
 
@@ -130,5 +130,26 @@ describe('validateParams', () => {
       'flowUp:not-a-boolean',
     ]);
     expect(validateParams(broken).every((p) => p.message.includes(p.field))).toBe(true);
+  });
+});
+
+describe('machineLimits', () => {
+  it('takes the maximum flow of the settings, 4 to 20 ml/s, and keeps 12 bar', () => {
+    expect(DEFAULT_MACHINE_LIMITS).toEqual({ maxPressure: 12, maxFlow: 8 });
+    expect(MAX_FLOW_RANGE).toEqual({ min: 4, max: 20 });
+    expect(machineLimits(8)).toEqual({ maxPressure: 12, maxFlow: 8 });
+    expect(machineLimits(12.5)).toEqual({ maxPressure: 12, maxFlow: 12.5 });
+    expect(machineLimits(2)).toEqual({ maxPressure: 12, maxFlow: 4 });
+    expect(machineLimits(50)).toEqual({ maxPressure: 12, maxFlow: 20 });
+    expect(machineLimits(NaN)).toEqual(DEFAULT_MACHINE_LIMITS);
+  });
+
+  it('sets the ranges of every flow the editor offers', () => {
+    const ranges = paramRanges(machineLimits(12));
+    expect(ranges.pourFlow.max).toBe(12);
+    expect(ranges.fillFlow.max).toBe(12);
+    expect(ranges.pourEndFlow.max).toBe(12);
+    expect(ranges.infuseFlowLimit.max).toBe(12);
+    expect(ranges.pourPressure.max).toBe(12);
   });
 });

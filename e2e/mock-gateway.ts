@@ -125,6 +125,8 @@ export class MockGateway {
   tareBlocked = false;
   /** true: a stream is answered with an error frame and closed (research.md 9.4) */
   refuseStreams = false;
+  /** sockets refused with an error frame, every stream counted */
+  refused = 0;
   /** `GET /api/v1/display` */
   display: Json = {
     wakeLockEnabled: true,
@@ -362,7 +364,10 @@ export class MockGateway {
 
   /** Whether the socket stays open. */
   private open(ws: WebSocketRoute, sockets: Set<WebSocketRoute>): boolean {
-    if (this.up && this.refuseStreams) ws.send(JSON.stringify({ error: 'the mock refuses this stream' }));
+    if (this.up && this.refuseStreams) {
+      this.refused++;
+      ws.send(JSON.stringify({ error: 'the mock refuses this stream' }));
+    }
     if (!this.up || this.refuseStreams) {
       void ws.close();
       return false;

@@ -21,8 +21,8 @@ const written = (gateway: MockGateway) => gateway.calls('PUT', '/api/v1/workflow
 // With the founder's defaults: mugs 150, 225 and 275 g, 26 s for 180 g of milk.
 const MUGS = [
   { name: 'a small mug', weight: 300, size: 's', mug: '150 g', milk: '150 g', seconds: 22 },
-  { name: 'a medium mug', weight: 405, size: 'm', mug: '225 g', milk: '180 g', seconds: 26 },
-  { name: 'a large mug', weight: 575.4, size: 'l', mug: '275 g', milk: '300.4 g', seconds: 43 },
+  { name: 'a medium mug', weight: 525, size: 'm', mug: '225 g', milk: '300 g', seconds: 43 },
+  { name: 'a large mug', weight: 725.4, size: 'l', mug: '275 g', milk: '450.4 g', seconds: 65 },
 ];
 
 for (const mug of MUGS) {
@@ -67,17 +67,18 @@ test('the mug follows the scale, and an empty scale offers no timer', async ({ p
   await expect(page.getByTestId('steam-set-timer')).toBeDisabled();
   await expect(page.getByTestId('steam-seconds')).toHaveCount(0);
 
-  // The borders of the founder's defaults: above 375 g it is the medium mug, above 425 g the large one.
+  // The midpoints of the founder's defaults (spec 3.4): above 412.5 g it is the medium mug,
+  // above 625 g the large one.
   const borders = [
-    [375, 's'],
-    [376, 'm'],
-    [425, 'm'],
-    [426, 'l'],
+    [412.5, 's'],
+    [412.6, 'm'],
+    [625, 'm'],
+    [625.1, 'l'],
     [150, 's'],
   ] as const;
   for (const [weight, size] of borders) {
     gateway.putOnScale(weight);
-    await expect(page.getByTestId('steam-weight')).toHaveText(`${weight}.0 g`);
+    await expect(page.getByTestId('steam-weight')).toHaveText(`${weight.toFixed(1)} g`);
     await expect(page.getByTestId('steam-mug')).toHaveText(size);
   }
   // An empty small mug: no milk, nothing to set.
@@ -150,14 +151,14 @@ test('with Streamline open and remembering 30 s, a chip of 25 s and the timer fr
   await expect(page.getByTestId('steam-timer')).toHaveText('25s');
   expect(gateway.store['streamline-app/last-steam-duration']).toBe(25);
 
-  gateway.putOnScale(405);
+  gateway.putOnScale(525);
   await page.getByTestId('steam-set-timer').click();
-  await expect(page.getByTestId('steam-timer')).toHaveText('26s');
-  expect(gateway.store['streamline-app/last-steam-duration']).toBe(26);
+  await expect(page.getByTestId('steam-timer')).toHaveText('43s');
+  expect(gateway.store['streamline-app/last-steam-duration']).toBe(43);
   // Both ways write the same call, and the machine keeps what they wrote.
-  expect(written(gateway)).toEqual([{ steamSettings: { duration: 25 } }, { steamSettings: { duration: 26 } }]);
-  expect(gateway.shotSettings.targetSteamDuration).toBe(26);
-  expect(gateway.workflow.steamSettings.duration).toBe(26);
+  expect(written(gateway)).toEqual([{ steamSettings: { duration: 25 } }, { steamSettings: { duration: 43 } }]);
+  expect(gateway.shotSettings.targetSteamDuration).toBe(43);
+  expect(gateway.workflow.steamSettings.duration).toBe(43);
   await expect(page.getByTestId('steam-mismatch')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
@@ -213,9 +214,9 @@ test('steam started at the machine shows its graph of pressure and temperature, 
   const gateway = await mockGateway(page);
   await page.goto('/');
   await page.getByTestId('open-steam').click();
-  gateway.putOnScale(405);
+  gateway.putOnScale(525);
   await page.getByTestId('steam-set-timer').click();
-  await expect(page.getByTestId('steam-timer')).toHaveText('26s');
+  await expect(page.getByTestId('steam-timer')).toHaveText('43s');
 
   await expect(page.getByTestId('shot-graph')).toHaveAttribute('data-points', '0');
   // Steam is started at the machine: the page offers no start, and no stop before a frame says steam.
@@ -225,7 +226,7 @@ test('steam started at the machine shows its graph of pressure and temperature, 
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
   await expect(page.getByTestId('state-steam')).toHaveText('148 °C');
   await expect(page.getByTestId('state-tank')).toHaveText('38 mm');
-  await expect(page.getByTestId('state-scale')).toHaveText('405.0 g');
+  await expect(page.getByTestId('state-scale')).toHaveText('525.0 g');
 
   gateway.steamFor(18);
   await expect(page.getByTestId('status-title')).toHaveText('Steam');

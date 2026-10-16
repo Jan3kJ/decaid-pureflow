@@ -4,8 +4,9 @@ import type { MachineSnapshot, MachineState, StreamState, WaterLevels } from '..
 
 /**
  * Whether the gateway answers: not known until the stream opened or failed once. `refused`:
- * the gateway sent an error frame and closed the socket, and the stream does not try again
- * by itself (research.md 9.4).
+ * the gateway sent an error frame and closed the socket, and still did so after the stream
+ * tried again for 30 s (`REFUSED_RETRY_MS`, founder 2026-10-15); while it tries the gateway
+ * is `lost`.
  */
 export type Gateway = 'connecting' | 'connected' | 'lost' | 'refused';
 
@@ -98,7 +99,7 @@ export function statusOf(link: Link, snapshot: MachineSnapshot | null, gatewayUr
   if (link === 'refused') {
     return {
       title: 'Decaid closed the connection',
-      detail: 'It answered with an error and is not asked again. Reconnect to try once more.',
+      detail: 'It answered with an error for 30 s of tries. Reconnect to try again.',
       tone: 'warn',
     };
   }

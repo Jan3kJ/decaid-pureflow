@@ -3,9 +3,11 @@ import {
   DEFAULT_SETTINGS,
   DEFAULT_START_PROFILES,
   DEFAULT_STEAM_SETTINGS,
+  PROFILE_FIELDS,
   SETTINGS_KEY,
   STEAM_FIELDS,
   loadSettings,
+  profileValue,
   readStartProfiles,
   saveSettings,
   steamValue,
@@ -43,10 +45,26 @@ describe('settings', () => {
       firstStepWorkaround: true,
       showGraphLegend: false,
       startProfiles: ['A-Flow / mine', null, 'A-Flow / default-dark', null, null],
+      maxFlow: 12,
+      defaultDose: 17.5,
       steam: { ...DEFAULT_STEAM_SETTINGS, mugSmall: 162.5, referenceSeconds: 30, favourites: [20, 40, 60] },
     };
     saveSettings(settings, store);
     expect(loadSettings(store)).toEqual(settings);
+  });
+
+  it('has a maximum flow of 8 ml/s and a default dose of 18 g, in their ranges', () => {
+    const settings = loadSettings(fakeStore());
+    expect(settings.maxFlow).toBe(8);
+    expect(settings.defaultDose).toBe(18);
+    expect(loadSettings(fakeStore('{"maxFlow":12,"defaultDose":"x"}'))).toMatchObject({ maxFlow: 12, defaultDose: 18 });
+    const [flow, dose] = PROFILE_FIELDS;
+    expect([flow.key, flow.min, flow.max]).toEqual(['maxFlow', 4, 20]);
+    expect([dose.key, dose.min, dose.max]).toEqual(['defaultDose', 5, 30]);
+    expect(profileValue(settings, flow, 25)).toBe(20);
+    expect(profileValue(settings, flow, 9.94)).toBe(9.9);
+    expect(profileValue(settings, dose, 2)).toBe(5);
+    expect(profileValue(settings, dose)).toBe(18);
   });
 
   it('shows the graph legend by default', () => {

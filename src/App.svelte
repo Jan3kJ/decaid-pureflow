@@ -96,7 +96,7 @@
   <UnsavedDialog unsaved={skin.unsaved} onanswer={(answer) => skin.answerLoad(answer)} />
 {/if}
 
-<!-- A stream the gateway closed with an error does not open again by itself (research.md 9.4). -->
+<!-- A stream the gateway closed with an error is tried again for 30 s by itself, then waits for this button. -->
 {#if skin.refused}
   <div class="refused" role="alert" data-testid="stream-failed">
     <span>

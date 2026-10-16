@@ -206,6 +206,21 @@ A-Flow editor can read its A-Flow 3.0 values; every other profile, Decaid's bund
 "A-Flow / …" profiles too, opens in the step editor, from home, from the picker and from the
 unsaved-edits warning ([research.md](research.md) 17.5).
 
+Built in F1 (2026-10-16), where 3.6 leaves the detail open: mug detection is `mugSteps` and
+`detectMug` in `src/steam/timer.ts`. The maximum flow is the setting `maxFlow`, 4 to 20 ml/s
+(de1app allows 20), on the settings page's Profile line; it sets every flow range of the
+A-Flow editor and its graph (`machineLimits` in `src/aflow/validate.ts`); the step editor
+keeps Streamline's own ranges. A profile is read within 20 ml/s, so one saved with a flow
+above a lowered maximum still opens: the editor shows the saved value, the graph's scale
+reaches it, and ± or the number pad bring it into the range. The default dose is the setting
+`defaultDose`, 18 g, 5 to 30 g: when the skin reads the workflow (the stream opens, home or
+steam opens) and it has no dose, the skin writes the default (`doseToSet` in
+`src/shell/profiles.ts`); a dose the profile brought on its load, or the user set, is kept.
+Reconnect: a stream the gateway closes after an error frame is tried again with the stream's
+backoff (1, 2, 4, 8, 16 s, the last one shortened to end at 30 s, `REFUSED_RETRY_MS` in
+`src/api/stream.ts`); meanwhile home says 'Decaid is not reachable', and after 30 s 'Decaid
+closed the connection' with **reconnect**, which starts another 30 s.
+
 ## 4. Technical approach
 
 ### 4.1 What a Decaid skin is
@@ -455,11 +470,9 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
   `npm run e2e:rig` checks on the running gateway that the written duration is read back and
   that steam, started through the gateway's API as at the machine, is stopped by the skin's
   stop button; there only the scale's frames are fake. Not tested anywhere: a timer that runs out (next question). (answered)
-- Mug detection steps up above a mug's weight plus **the whole** milk of one drink: the
-  share is 1, one constant (`MUG_STEP_SHARE` in `src/steam/timer.ts`). With the founder's
-  defaults the medium mug starts above 375 g and the large one above 425 g, so 180 g of
-  milk is read right in each mug; DSx2's own share was not looked up. Is 1 right? (answered:
-  the midpoint rule of 3.4, founder 2026-10-15)
+- Mug detection: the midpoint rule of 3.4 (founder, 2026-10-15), built in F1
+  (`mugSteps` in `src/steam/timer.ts`); with the defaults the medium mug starts above
+  412.5 g and the large one above 625 g. (answered, built)
 - Does the real DE1 stop steaming when the timer is over, and after the seconds the steam
   page shows? The simulation cannot show it. Since the fix of 2026-10-14 the page shows the
   machine's own timer (`targetSteamDuration`), sets it so that Streamline does not write its
@@ -476,9 +489,8 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
   `src/steam/apply.ts`); a timer changed in another app shows a notice on the steam page
   until it is set again. Whether Decaid's own steam screen on the tablet, which opens when
   steam starts and offers +10 s, played a part was not seen. (owner)
-- The maximum flow the editor allows: 8 ml/s is not from a source, de1app allows 20
-  ([a-flow-3.0.md](a-flow-3.0.md), section 2). (answered: 8 by default, a setting; founder
-  2026-10-15)
+- The maximum flow the editor allows: a setting, 8 ml/s by default (founder, 2026-10-15),
+  built in F1 with a range of 4 to 20 ml/s (3.6). (answered, built)
 - The choices made while building the review's changes, which the founder has not seen:
   [a-flow-3.0.md](a-flow-3.0.md), section 5. (owner)
 - The byte format of a v2 profile file only matters for an export: the API takes and
@@ -542,10 +554,9 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
     its weight on the rig (research.md section 13). The skin has no start button any more
     (founder, 2026-10-13), so it cannot hold one back; the state line warns while the scale is
     not connected. Does the real scale behave so? (owner)
-  - A stream the gateway closed with an error stays closed (4.1); the skin says 'Decaid
-    closed the connection' with a 'reconnect' button on every screen. Whether it should
-    retry by itself instead is still the founder's word (day record of 2026-10-12). (answered:
-    retry for 30 s, then the button; founder 2026-10-15)
+  - A stream the gateway closed with an error is tried again by the skin for 30 s, then it
+    says 'Decaid closed the connection' with a 'reconnect' button on every screen (founder,
+    2026-10-15; built in F1, 3.6). (answered, built)
 - Shot history (D8b, research.md section 14), choices the founder has not seen:
   - A profile is taken by its title, not by its id: a shot record holds a copy of the
     profile and no id, and the id changes with every edit. A renamed profile starts a new

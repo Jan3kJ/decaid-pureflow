@@ -11,9 +11,25 @@ export interface MachineLimits {
   maxFlow: number;
 }
 
-// 12 bar is de1app's `set ::de1(maxpressure) 12` (de1plus/machine.tcl). 8 ml/s is not from a
-// source: de1app has `max_flowrate_v11 20` today. It is kept until the founder decides.
+// 12 bar is de1app's `set ::de1(maxpressure) 12` (de1plus/machine.tcl). The maximum flow is
+// the skin's setting `maxFlow`, 8 ml/s by default (founder, 2026-10-15): `machineLimits`.
 export const DEFAULT_MACHINE_LIMITS: MachineLimits = { maxPressure: 12, maxFlow: 8 };
+
+/** ml/s, what the setting `maxFlow` may be: de1app's `max_flowrate_v11` is 20. */
+export const MAX_FLOW_RANGE = { min: 4, max: 20 } as const;
+
+/** The machine's maxima with the maximum flow of the settings, held in `MAX_FLOW_RANGE`. */
+export function machineLimits(maxFlow: number): MachineLimits {
+  if (!Number.isFinite(maxFlow)) return DEFAULT_MACHINE_LIMITS;
+  const held = Math.min(MAX_FLOW_RANGE.max, Math.max(MAX_FLOW_RANGE.min, maxFlow));
+  return { ...DEFAULT_MACHINE_LIMITS, maxFlow: held };
+}
+
+/**
+ * The widest maxima the setting allows: a profile is read with these, so one saved under a
+ * higher maximum flow still opens after the setting was lowered.
+ */
+export const WIDEST_MACHINE_LIMITS: MachineLimits = machineLimits(MAX_FLOW_RANGE.max);
 
 export const TEMPERATURE_MIN = 50;
 export const TEMPERATURE_MAX = 105;

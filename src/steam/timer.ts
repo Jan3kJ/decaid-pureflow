@@ -10,13 +10,6 @@ export interface Mug {
   weight: number;
 }
 
-/**
- * DSx2's rule (spec 3.4): the size steps up when the weight is above that mug's weight plus
- * this share of one drink's milk. With 1, a larger mug is recognised once it holds more than
- * one drink's milk, and the calibration's 180 g is read right in each of the founder's mugs.
- */
-export const MUG_STEP_SHARE = 1;
-
 /** The three mugs of the settings, smallest first. */
 export function mugs(settings: SteamSettings): Mug[] {
   return [
@@ -27,13 +20,24 @@ export function mugs(settings: SteamSettings): Mug[] {
 }
 
 /**
+ * The weights the size steps up above (founder, 2026-10-15, spec 3.4): the midpoint between
+ * two full mugs, a mug of size n holding n drinks. With the defaults 412.5 g and 625 g.
+ */
+export function mugSteps(settings: SteamSettings): { medium: number; large: number } {
+  const drink = settings.milkPerDrink;
+  const full = [settings.mugSmall + drink, settings.mugMedium + 2 * drink, settings.mugLarge + 3 * drink];
+  return { medium: (full[0] + full[1]) / 2, large: (full[1] + full[2]) / 2 };
+}
+
+/**
  * The mug on the scale: the largest one whose step the weight is above, and the small one
  * below every step, also for an empty scale.
  */
 export function detectMug(weight: number, settings: SteamSettings): Mug {
-  const [small, ...larger] = mugs(settings);
-  const step = MUG_STEP_SHARE * settings.milkPerDrink;
-  return larger.reduce((found, mug) => (weight > mug.weight + step ? mug : found), small);
+  const [small, medium, large] = mugs(settings);
+  const steps = mugSteps(settings);
+  if (weight > steps.large) return large;
+  return weight > steps.medium ? medium : small;
 }
 
 /** g of milk: the weight without the mug, never negative. */

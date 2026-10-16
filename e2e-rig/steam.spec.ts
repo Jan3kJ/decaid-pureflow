@@ -12,9 +12,9 @@ import { expect, test } from '@playwright/test';
 // 30 s: without the skin's fix Streamline writes its 30 s back over every timer the skin sets.
 
 const GATEWAY = 'http://localhost:8080';
-/** A medium mug of 225 g with 180 g of milk: 26 s with the founder's defaults. */
-const WEIGHT = 405;
-const SECONDS = 26;
+/** A medium mug of 225 g with two drinks, 300 g of milk: 43 s with the founder's defaults. */
+const WEIGHT = 525;
+const SECONDS = 43;
 /** Where Streamline remembers the steam time its user set. */
 const STREAMLINE_STORE = '/api/v1/store/streamline-app';
 const REMEMBERED = `${STREAMLINE_STORE}/last-steam-duration`;
@@ -122,7 +122,7 @@ test('steam: the written timer is read back from the workflow and from the machi
 
     // The timer from the milk's weight.
     await expect(page.getByTestId('steam-mug')).toHaveText('m');
-    await expect(page.getByTestId('steam-milk')).toHaveText('180 g');
+    await expect(page.getByTestId('steam-milk')).toHaveText('300 g');
     await expect(page.getByTestId('steam-seconds')).toHaveText(`${SECONDS} s`);
     await page.getByTestId('steam-set-timer').click();
     await expect(page.getByTestId('steam-timer')).toHaveText(`${SECONDS}s`);
@@ -181,7 +181,7 @@ test('steam: the written timer is read back from the workflow and from the machi
 
     // The control: Streamline is alive in its page. A timer written the old way, into the
     // workflow alone, is replaced by the seconds Streamline remembers.
-    await api('PUT', '/api/v1/workflow', { steamSettings: { duration: 44 } });
+    await api('PUT', '/api/v1/workflow', { steamSettings: { duration: 26 } });
     await expect.poll(machineTimer, { timeout: 15_000 }).toBe(SECONDS);
   } finally {
     await streamline.close();

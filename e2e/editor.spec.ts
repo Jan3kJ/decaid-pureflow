@@ -600,3 +600,32 @@ test('both toggles work', async ({ page }) => {
   await second.click();
   await expect(page.getByTestId('steps')).not.toContainText('Pause');
 });
+
+// founder, 2026-10-15: the maximum flow is a setting, 8 ml/s by default.
+test('the flows of the editor follow the maximum flow of the settings', async ({ page }) => {
+  await page.getByTestId('mode-detail').click();
+  await page.getByTestId('phase-flow').click();
+  await type(page, 'pourFlow', '15');
+  await expect(page.getByTestId('numpad-range')).toHaveText('0.1 to 8 ml/s');
+  await page.getByTestId('numpad-cancel').click();
+
+  await page.evaluate(() => {
+    const settings = JSON.parse(localStorage.getItem('decaid-skin.settings') ?? '{}');
+    localStorage.setItem('decaid-skin.settings', JSON.stringify({ ...settings, maxFlow: 12 }));
+  });
+  await page.reload();
+  await expect(page.getByTestId('graph')).toBeVisible();
+  await page.getByTestId('mode-detail').click();
+  await page.getByTestId('phase-flow').click();
+  await type(page, 'pourFlow', '11.5');
+  await expect(page.getByTestId('numpad-range')).toHaveText('0.1 to 12 ml/s');
+  await page.getByTestId('numpad-confirm').click();
+  await expect(page.getByTestId('chip-value-pourFlow')).toHaveText('11.5 ml/s');
+  // + stops at the new maximum.
+  for (let i = 0; i < 8; i++) await page.getByTestId('chip-pourFlow').locator('[data-step="plus"]').click();
+  await expect(page.getByTestId('chip-value-pourFlow')).toHaveText('12 ml/s');
+  // The graph's scale reaches the new maximum: no line leaves the plot.
+  const graph = (await page.getByTestId('graph').boundingBox())!;
+  const flow = (await page.getByTestId('line-flow').boundingBox())!;
+  expect(flow.y).toBeGreaterThanOrEqual(graph.y);
+});

@@ -78,6 +78,17 @@ export function doseOf(profile: Profile): number | undefined {
 }
 
 /**
+ * The dose to write to the workflow, or null for none (founder, 2026-10-15): a workflow that
+ * holds a dose keeps it, whether a profile brought it (`loadProfile`) or the user set it in
+ * Decaid; one without takes the default of the settings. A shot record copies the workflow,
+ * so the next shot has a dose either way.
+ */
+export function doseToSet(workflow: Workflow, defaultDose: number): number | null {
+  const dose = workflow.context?.targetDoseWeight;
+  return typeof dose === 'number' && dose > 0 ? null : defaultDose;
+}
+
+/**
  * Loads a profile: the one place that decides how (spec section 8).
  *
  * `PUT /api/v1/workflow` sets the workflow's profile and sends it to the machine. A shot

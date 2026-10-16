@@ -4,6 +4,7 @@
     DEFAULT_AUTHOR,
     DEFAULT_PROFILES,
     hasSecondFill,
+    machineLimits,
     paramRanges,
     resolveParams,
     serializeParams,
@@ -135,7 +136,10 @@
       .map(nameOf),
   ]);
   const resolved = $derived(resolveParams(params));
-  const ranges = paramRanges();
+  // The maximum flow is a setting (founder, 2026-10-15). A saved value above it is shown as it
+  // is and kept until it is edited: ±, the number pad and a drag bring it into the range.
+  const limits = $derived(machineLimits(settings.maxFlow));
+  const ranges = $derived(paramRanges(limits));
   const phases = $derived(
     (Object.keys(PHASE_LABEL) as PhaseId[]).filter((id) => id !== 'secondFill' || hasSecondFill(params)),
   );
@@ -290,7 +294,7 @@
   }
 
   function step(field: EditField, direction: 1 | -1) {
-    edit(field, snap(field, resolved[field] + direction * FIELD_STEP[field]));
+    edit(field, snap(field, resolved[field] + direction * FIELD_STEP[field], limits));
   }
 
   function switchSecondFill() {
@@ -378,6 +382,7 @@
     <div class="plot">
       <Graph
         {params}
+        {limits}
         {mode}
         {selected}
         ondrag={drag}
@@ -476,7 +481,7 @@
     decimals={typedStep(field) < 1}
     current={formatValue(field, resolved[field]).replace(/ .*$/, '')}
     onconfirm={(value) => {
-      edit(field, snap(field, value, undefined, typedStep(field)));
+      edit(field, snap(field, value, limits, typedStep(field)));
       typing = null;
     }}
     oncancel={() => (typing = null)}

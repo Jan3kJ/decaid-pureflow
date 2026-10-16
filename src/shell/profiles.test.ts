@@ -4,6 +4,7 @@ import { DecaidClient, type Profile, type ProfileRecord } from '../api';
 import {
   defaultProfile,
   doseOf,
+  doseToSet,
   isAFlow3,
   loadProfile,
   missingDefaults,
@@ -157,5 +158,19 @@ describe('loadProfile', () => {
     expect(doseOf(other)).toBeUndefined();
     // The plugin's notes: Decaid's bundled default is not an A-Flow 3.0 profile.
     expect(doseOf({ ...light, notes: 'A-Flow: an alternative profile for D-Flow' })).toBeUndefined();
+  });
+});
+
+describe('doseToSet', () => {
+  it('gives the default dose to a workflow without one', () => {
+    expect(doseToSet({}, 18)).toBe(18);
+    expect(doseToSet({ context: {} }, 18)).toBe(18);
+    expect(doseToSet({ context: { targetDoseWeight: null } }, 18.5)).toBe(18.5);
+    expect(doseToSet({ context: { targetDoseWeight: 0 } }, 18)).toBe(18);
+  });
+
+  it('keeps the dose a profile or the user set', () => {
+    expect(doseToSet({ context: { targetDoseWeight: 16 } }, 18)).toBeNull();
+    expect(doseToSet({ context: { targetDoseWeight: 20.5, targetYield: 40 } }, 18)).toBeNull();
   });
 });

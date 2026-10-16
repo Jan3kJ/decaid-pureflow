@@ -13,7 +13,8 @@ export const MACHINE_WATER_LEVELS_PATH = '/ws/v1/machine/waterLevels';
  * - `connecting`: a socket is being opened
  * - `open`: the socket is open; frames may arrive
  * - `waiting`: the socket closed; a reconnect is scheduled
- * - `failed`: the gateway sent an error frame and closed the socket; no reconnect
+ * - `failed`: the gateway sent an error frame and closed the socket, and did so again for
+ *   `refusedRetryMs`; no reconnect
  */
 export type StreamState = 'idle' | 'connecting' | 'open' | 'waiting' | 'failed';
 
@@ -44,6 +45,12 @@ export interface Backoff {
 /** The values of the example in Decaid's doc/Skins.md. */
 export const DEFAULT_BACKOFF: Backoff = { initialMs: 1000, factor: 2, maxMs: 30000 };
 
+/**
+ * ms: how long a stream the gateway closed with an error is tried again, with the backoff,
+ * before it stops in `failed` (founder, 2026-10-15).
+ */
+export const REFUSED_RETRY_MS = 30000;
+
 export interface SnapshotStreamOptions<Frame> {
   /** The whole URL, `ws://...`. */
   url: string;
@@ -54,9 +61,13 @@ export interface SnapshotStreamOptions<Frame> {
   /** An error frame, or a frame that is not JSON. */
   onError?: (error: StreamErrorFrame) => void;
   backoff?: Partial<Backoff>;
+  /** ms; default `REFUSED_RETRY_MS` */
+  refusedRetryMs?: number;
   WebSocket?: SocketConstructor;
   setTimeout?: (callback: () => void, ms: number) => unknown;
   clearTimeout?: (handle: any) => void;
+  /** The clock, in ms; default `Date.now`. */
+  now?: () => number;
 }
 
 /**
@@ -66,9 +77,11 @@ export interface SnapshotStreamOptions<Frame> {
  * closed, with a delay that grows up to a maximum and starts again after a successful open.
  * A frame never makes it reconnect: the gateway keeps the socket open while a scale or a
  * machine is away and reports that in the stream, for the scale as `{"status":"disconnected"}`.
- * And when the gateway sends an error frame and then closes the socket, the stream stops in
- * the state `failed`, because the gateway refused it and would refuse it again. `connect()`
- * starts it again.
+ * When the gateway sends an error frame and then closes the socket, it refused the stream:
+ * the stream tries again with the same growing delay for `refusedRetryMs` from the first
+ * refusal (founder, 2026-10-15), and stops in the state `failed` when the gateway still
+ * refuses it then. A frame that is not an error ends the refusal. `connect()` starts a
+ * failed stream again, with another `refusedRetryMs`.
  */
 export class SnapshotStream<Frame> {
   readonly url: string;
@@ -78,6 +91,8 @@ export class SnapshotStream<Frame> {
   private timer: unknown;
   private delayMs: number;
   private errorFrameSeen = false;
+  /** when the gateway first refused the stream, by `now()`; null while it does not */
+  private refusedAt: number | null = null;
   private currentState: StreamState = 'idle';
   private latestFrame: Frame | undefined;
 
@@ -101,6 +116,7 @@ export class SnapshotStream<Frame> {
   connect(): this {
     if (this.currentState === 'idle' || this.currentState === 'failed') {
       this.delayMs = this.backoff.initialMs;
+      this.refusedAt = null;
       this.open();
     }
     return this;
@@ -132,7 +148,8 @@ export class SnapshotStream<Frame> {
 
     socket.addEventListener('open', () => {
       if (!current()) return;
-      this.delayMs = this.backoff.initialMs;
+      // A refusing gateway opens the socket too: the delay keeps growing until a frame came.
+      if (this.refusedAt === null) this.delayMs = this.backoff.initialMs;
       this.setState('open');
     });
     socket.addEventListener('message', (event: { data: unknown }) => {
@@ -142,7 +159,7 @@ export class SnapshotStream<Frame> {
     socket.addEventListener('close', () => {
       if (!current()) return;
       this.socket = undefined;
-      if (this.errorFrameSeen) this.setState('failed');
+      if (this.errorFrameSeen) this.refused();
       else this.scheduleReconnect();
     });
   }
@@ -162,12 +179,30 @@ export class SnapshotStream<Frame> {
     }
     // A frame after an error frame shows that the stream goes on.
     this.errorFrameSeen = false;
+    if (this.refusedAt !== null) {
+      this.refusedAt = null;
+      this.delayMs = this.backoff.initialMs;
+    }
     this.latestFrame = frame as Frame;
     this.options.onFrame?.(this.latestFrame);
   }
 
-  private scheduleReconnect(): void {
-    const delay = this.delayMs;
+  /** The gateway closed the socket after an error frame: again while the time lasts, else `failed`. */
+  private refused(): void {
+    const now = (this.options.now ?? Date.now)();
+    this.refusedAt ??= now;
+    const left = this.refusedAt + (this.options.refusedRetryMs ?? REFUSED_RETRY_MS) - now;
+    if (left > 0) {
+      this.scheduleReconnect(left);
+    } else {
+      this.refusedAt = null;
+      this.setState('failed');
+    }
+  }
+
+  /** The next attempt after the backoff's delay, and not after `latest` ms. */
+  private scheduleReconnect(latest: number = Infinity): void {
+    const delay = Math.min(this.delayMs, latest);
     this.delayMs = Math.min(delay * this.backoff.factor, this.backoff.maxMs);
     this.setState('waiting');
     const schedule = this.options.setTimeout ?? ((callback, ms) => globalThis.setTimeout(callback, ms));
