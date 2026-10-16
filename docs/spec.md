@@ -48,7 +48,7 @@ version 2.
 | Home | no start: the DE1 is started at the machine; a stop button while something runs. The machine's state in one line: the state, group and steam temperature, the tank's water level and the scale's weight, or a warning without a scale; the same line is on the steam page. Top right a menu with scale, settings and sleep, and left of it the current profile's name, which opens the **profile picker**, with a pen that opens the editor. **Steam** is a tab on the right edge, the mirror of the history's. Dose and target weight are not shown on home. The graph takes the rest of the screen (founder, 2026-10-13) |
 | Espresso | live graph (pressure, flow, weight flow, temperature) from `/ws/v1/machine/snapshot`, with the live weight from `/ws/v1/scale/snapshot`, timer, stop at weight. The graph and the timer start when water moves, not while the machine heats; the profile's targets are dashed lines with their quantity; an optional legend sits under the graph, on by default (founder, 2026-10-13). The graph, live and in the history, draws the weight flow in g/s (the scale frame's `weightFlow`) in yellow instead of the weight, on the scale of flow and pressure ('ml/s · g/s'), with no target weight line; the screen keeps the weight in g as a number (founder, 2026-10-14) |
 | Steam | stop (steam is started at the machine) (founder, 2026-10-13), a steam graph, and **the steam timer set from the milk's weight**: see 3.4 |
-| Scale | connect state, tare (a 400 `block_tare_during_shot` is a notice, not an error) |
+| Scale | connect state, tare (a 400 `block_tare_during_shot` is a notice, not an error). The page is removed in 3.7 (founder, 2026-10-16) |
 | Profiles | list, select, load to the machine (`PUT /api/v1/workflow`) (founder, 2026-10-13) |
 | Shot history | **an overlay, not a page:** a tab on the left edge of the screen (or a swipe from left to right) opens it; it closes when an item is selected or on a tap outside it. It holds **a list of previous shots; tapping one loads its profile, beans and grinder setting and shows its graph**: see 3.5 |
 | Settings | a settings page with categories. **Steam** is one (3.4), and **Profile** holds the first-step workaround (3.2) and the editor's row of profiles to start from, up to five (founder, 2026-10-13); the others hold the few settings the founder needs. Everything else stays in Decaid's own settings. The settings stay in the tablet's localStorage; every change is backed up to Decaid's KV store (`decaid-skin/settings-backup`, with its time and the skin's version), a start without settings takes them from the backup and says so, and the page shows the backup's time with 'Restore from backup' (founder, 2026-10-14). The page names the skin's version, from its manifest, small in its top right corner (founder, 2026-10-14) |
@@ -148,7 +148,7 @@ Editor behaviour:
 - Managing a bean and grinder catalogue (Decaid has APIs; candidates for v2). v1 only records
   the bean and the grinder setting with a shot and restores them from history (3.5).
 - Hot water and flush / rinse: they stay in Decaid's default skin (candidates for v2). A view
-  of them while they run is in version 1.1 (3.6).
+  of them while they run is in version 1.1 (3.6); hot water gets its own page in 3.7.
 - Rating a shot (Decaid's 0-10 enjoyment scale).
 - Portrait layout and a light theme.
 - Plugins, sensors, camera.
@@ -259,6 +259,22 @@ parsed, turns 'save' and 'save as' off and refuses leaving the editor; opening a
 the broken text and shows the steps that last parsed. A value out of its range is an error unless
 the profile's step at that place already has it, as on a card ([research.md](research.md) 17.16).
 
+### 3.7 Founder's review of 2026-10-16
+
+From the founder's review of the built version 1.1 ([review-10-16-26.md](review-10-16-26.md)).
+
+| Area | Change |
+|---|---|
+| Steam page | **Bugs:** the steam graph stops when steam stops, and the last steam time (top right) is the steam's own time, not longer. **Layout:** the steam timer sits in the centre of the right column, in line with **set timer**. **Countdown:** while steam runs the timer counts down from the set seconds. **Adjust buttons:** above **set timer**, three buttons, by default −8 s, −4 s and +5 s, configurable in the settings (Steam); a selected one adds its amount to the calculated timer or to the selected favourite (use case: the milk's temperature changes what the calculation needs). **Graph:** the temperature scale is 140 to 170 °C. **Swipe:** a swipe from the right edge opens the steam page, as the swipe from the left edge opens the history |
+| Home menu | two shortcuts in the menu: **steam off** (the steam heater off, and on again) and **machine off** (sleep if the DE1 cannot be switched off through Decaid) |
+| Water view | the animated group head and stream go, for flush and hot water; the countdown ring stays, and the values sit inside the stop button: temperature, flow, time, and for hot water the weight in g |
+| Hot water page | a page of its own, opened from home by a button of its own: the steam tab is split, steam keeps most of it and hot water takes the rest, at the bottom. Its settings are temperature, flow, time and **stop at weight**. Stop at weight can be set from the last measured espresso shot by a ratio: a shot of 40 g and 1:2 give 80 g. Three ratio favourites, configurable, by default 1:2, 1:2.5 and 1:3. A **tare** button. Starting stays at the machine |
+| Scale page | removed completely. **Tare** moves: a tap on the weight in the state line tares the scale when one is connected, and the steam and hot water pages have a tare button |
+| Settings | Streamline's settings page is ported, so that almost everything in it can be set without switching the skin; the skin's own settings go into its skin category, as Streamline has one |
+| A-Flow editor, detail mode | "flow gradient to" is called **end flow**. The flow line of the last step is split: dragging its left half changes the start flow, its right half the end flow. The buttons above the graph go: a tap on a step is enough |
+| A-Flow editor, infuse | the infuse phase is drawn by its move-on weight, not its time, because the weight ends it long before a time of 60 s; the founder's estimate is 1 g ≈ 5 s, 6 g ≈ 25 s. The **infuse to** weight can be dragged; a tap still shows the +/− buttons |
+| A-Flow editor, disabled phase | a phase dragged to 0 s is off: it collapses (today it stays as wide as the fill phase), and a button re-enables it with 5 s |
+
 ## 4. Technical approach
 
 ### 4.1 What a Decaid skin is
@@ -350,7 +366,7 @@ Windows or Linux. Items 7 and 8 are checks by the founder.
 5. **History.** Two simulated shots with a different profile or bean give two entries; tapping
    one restores profile, bean and grinder setting and shows its graph; the overlay closes on
    selection and on a tap outside it.
-6. **Scale, settings, sleep.** Tare works and a 400 during a shot shows a notice; settings
+6. **Scale, settings, sleep.** (The scale page is removed by 3.7; tare is a tap on the weight.) Tare works and a 400 during a shot shows a notice; settings
    survive a reload; the sleep button puts the machine to sleep.
 7. **Real machine (founder, by eye).** With a profile made in the editor loaded on the real
    DE1, all phases are set correctly and the target values are as expected.
@@ -381,6 +397,38 @@ Version 1.1 (3.6); items 9 to 11 run with Playwright against the mock gateway or
     a new shot without a set dose takes the default dose.
 16. **Reconnect (test).** After an error close the skin retries for 30 s and shows the
     reconnect button only after that.
+
+The founder's review of 2026-10-16 (3.7); items 17 to 23 are tests, 24 and 25 the founder's:
+
+17. **Steam page (test).** After steam ends the graph adds no more points and the last steam
+    time equals the steam's duration; while steam runs the timer counts down from the set
+    seconds; a selected adjust button adds its amount to the calculated timer and to a
+    favourite, and the seconds sent to the machine include it; the three amounts come from
+    the settings; the temperature axis is 140 to 170 °C; a swipe from the right edge opens
+    the steam page; its tare button tares the scale.
+18. **Home menu (test).** Steam off and machine off send the gateway's requests for them (on
+    the rig: the steam heater is off, the machine is off), and steam off can be turned on
+    again.
+19. **Water view (test).** In the hot-water and flush states there is no group head picture;
+    the ring counts down and the stop button shows temperature, flow and time, and for hot
+    water the weight.
+20. **Hot water page (test).** Temperature, flow, time and stop at weight are written to the
+    workflow's `hotWaterData`; a ratio favourite with a last shot of 40 g sets 80 g for 1:2;
+    the favourites come from the settings; hot water stops at the weight; the split steam tab's hot water part opens the page, and its
+    tare button tares the scale.
+21. **Scale page (test).** There is no scale page and no menu entry for it; the weight still
+    shows in the state line, and a tap on it tares the scale when one is connected (nothing
+    happens without one).
+22. **Settings (test).** The ported settings page holds Streamline's settings and the skin's
+    own in a skin category; a changed Decaid setting is read back from the gateway.
+23. **A-Flow editor (test).** The label says "end flow"; in detail mode a drag on the left
+    half of the last step's flow line changes the start flow and on the right half the end
+    flow; there are no buttons above the graph; the infuse phase is as wide as its move-on
+    weight's estimate; a drag changes the infuse-to weight; a phase dragged to 0 s collapses
+    and its button sets it to 5 s.
+24. **Steam on the real DE1 (founder).** The countdown and the adjust buttons are right in use.
+25. **Hand-over (founder).** The next ZIP installs on the tablet; the checks of
+    [install.md](install.md) not ticked by 2026-10-16 are asked again with the new ones.
 
 ## 6. Constraints
 - **Budget:** one Claude Pro plan. This product may use all of it up to 90% of the weekly
@@ -422,6 +470,16 @@ The weeks are a capacity guess on one Pro plan.
 | 1 | M1 | version 1.1: rig check of `metadata` (`PUT`, profile export, data export and import) | D9 |
 | 2 | M2 | version 1.1: A-Flow values in `metadata`, moving old profiles from `notes`; the time-0 fallback only if M1 fails | M1 |
 | 2 | E4 | version 1.1: the step editor's SCRIPT tab | E2 |
+| 1 (Oct 17-18) | R1 | review 2026-10-16: steam page (graph and time bugs, timer in the centre, countdown, adjust buttons, tare button, 140-170 °C, right-edge swipe) (3.7) | D9 |
+| 1 | R2 | review: remove the scale page; tare by a tap on the weight | D9 |
+| 1 | R3 | review: water view without the group head, values in the stop button | V1 |
+| 1 | A1 | review: A-Flow editor detail mode ("end flow", split last flow line, no buttons above the graph) | D9 |
+| 1 | A2 | review: A-Flow editor infuse drawn by weight, drag the infuse-to weight, collapse a phase at 0 s with a re-enable button | A1 |
+| 2 (Oct 19-25) | R4 | review: home menu shortcuts steam off and machine off (rig check of the requests first) | R2 |
+| 2 | R5 | review: hot water page with stop at weight, ratio favourites and tare, opened from the split steam tab | R3 |
+| 2 | S1 | review: read Streamline's settings page, write the port plan into research.md | D9 |
+| 2 | S2 | review: the settings page ported from Streamline, the skin's settings in its skin category | S1, R1, R2, R5 |
+| 2 | H1 | review: hand-over ZIP, install.md with the new checks and the open ones of 2026-10-16 | R1-R5, S2, A2 |
 
 ## 8. Open questions
 Answered by the first research task ([research.md](research.md)) and no longer open: Decaid
@@ -492,7 +550,9 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
   settings in `localStorage` depend on. The founder's checks are in
   [install.md](install.md). (owner)
 - The version is `0.1.1`, a beta (founder, 2026-10-13; 0.1.x for fix rounds); it is in
-  `package.json` and `public/manifest.json`. A later number is the founder's call. (answered)
+  `package.json` and `public/manifest.json`. Versions are semantic (founder, 2026-10-16): a
+  hand-over raises the minor version, so H1 builds `0.2.0`; a major version (such as the
+  reverted 1.1.0, commit `ad378f9`) only after asking the founder. (answered)
 - Other profiles (founder's question of 2026-10-14, [answers-2026-10-14.md](answers-2026-10-14.md)):
   answered by version 1.1: they open in the skin's own step editor, ported from Streamline
   (3.6; built in E2, [research.md](research.md) 17), so no switch of skins is needed. (answered)
@@ -630,3 +690,16 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
   it; leaving the editor loads it, as any change. (owner)
 - The flow-down defaults (dark, 46mm) pour nothing in their last step on the simulated
   machine (research.md 10.4). A check on the real DE1 with item 7. (owner)
+- The review of 2026-10-16 (3.7), choices the team will make unless the founder says
+  otherwise (owner):
+  - Adjust buttons: one is selected at a time; a tap on the selected one clears it; the
+    selection is cleared after steam.
+  - Right-edge swipe: it opens the steam page as it is today (a page), not an overlay.
+  - Steam off: the steam heater off until it is turned on again from the same menu entry;
+    machine off: the DE1's own off, if the gateway has one, else sleep (founder,
+    2026-10-16).
+  - Hot water page: stop at weight is stopped by the skin from the
+    scale's weight if Decaid does not stop hot water at a weight itself; "the last measured
+    shot" is the newest shot record's final weight.
+  - Infuse width: the estimated time is 4 s per gram plus 1 s (the founder's 1 g ≈ 5 s and
+    6 g ≈ 25 s), never longer than the phase's time.
