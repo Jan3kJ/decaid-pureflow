@@ -347,7 +347,7 @@ test('the picker lists the profiles of the gateway, offers the A-Flow 3.0 defaul
 });
 
 test('every screen is one tap from home and back, and the screen survives a reload', async ({ page }) => {
-  await mockGateway(page);
+  (await mockGateway(page)).withDefaults('light');
   await page.goto('/');
 
   for (const [button, screen, title] of [

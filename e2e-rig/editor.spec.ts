@@ -302,7 +302,9 @@ test('unsaved edits on the machine: the picker asks before it loads (founder, 20
 
   await other.click();
   await page.getByTestId('unsaved-discard').click();
-  await expect(page.getByTestId('profile-name')).toHaveText(title);
+  // Not A-Flow 3.0: the picker opened from the editor comes back to the step editor on it (spec 3.6).
+  await expect(page.getByTestId('step-cards')).toBeVisible();
+  await expect(pressed(page)).toHaveText(title);
   expect((await api('GET', '/api/v1/workflow')).profile.title).toBe(title);
   expect(await profileIds()).toEqual(profilesBefore);
 });

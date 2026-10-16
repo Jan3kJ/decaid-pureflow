@@ -25,3 +25,12 @@ installed in Decaid in [docs/install.md](docs/install.md).
 
 The skin's version, 0.1.1 (a beta), is set in two places that a test keeps equal:
 `package.json` and `public/manifest.json`. The ZIP is `release/decaid-skin-0.1.1.zip`.
+
+## Credits
+
+The step editor (`src/steps/`) is ported from
+[Streamline.js](https://github.com/decentespresso/streamline-js) v0.2.14, "A browser-native
+skin for Decent Espresso machines", Copyright (C) 2025-2026 Decent Espresso, licensed under
+the GNU General Public License v3.0 or later; it is used here under GPL-3.0. Each ported file
+carries that notice. `src/steps/fixtures/bundled-profiles.json` holds the 73 profiles Decaid
+0.8.8 bundles (GPL-3.0), with their numbers as numbers, as test data.

@@ -261,7 +261,7 @@ test('a shot that starts closes the overlay, and its graph takes the place of th
 });
 
 test('the history is on home only: the editor has no tab, and its drags never open the overlay', async ({ page }) => {
-  const gateway = await mockGateway(page);
+  const gateway = (await mockGateway(page)).withDefaults('light');
   fourShots(gateway);
   await home(page);
   await page.getByTestId('open-editor').tap();

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import Editor from './editor/Editor.svelte';
+  import { editorFor } from './editor/route';
   import History from './history/History.svelte';
   import { isOpeningSwipe, startsAtEdge, type Point } from './history/swipe';
   import Espresso from './shell/Espresso.svelte';
@@ -11,6 +12,7 @@
   import { Skin } from './shell/skin.svelte';
   import { backupTime } from './settings-backup';
   import Steam from './steam/Steam.svelte';
+  import StepEditor from './steps/StepEditor.svelte';
   import UnsavedDialog from './shell/UnsavedDialog.svelte';
 
   const skin = new Skin();
@@ -60,7 +62,12 @@
     {:else if skin.screen === 'profiles'}
       <Profiles {skin} />
     {:else if skin.screen === 'editor'}
-      <Editor {skin} />
+      <!-- Every profile that is not A-Flow opens in the step editor (spec 3.6, research.md 17.5). -->
+      {#if editorFor(skin.workflow?.profile) === 'steps'}
+        <StepEditor {skin} />
+      {:else}
+        <Editor {skin} />
+      {/if}
     {:else if skin.screen === 'steam'}
       <Steam {skin} />
     {:else if skin.screen === 'scale'}

@@ -74,17 +74,17 @@ function loadedProfile(gateway: MockGateway, title: string, author: string, work
   return parsed.params;
 }
 
-test('a profile that is not A-Flow is not edited, and the editor says so', async ({ page }) => {
+test('a profile that is not A-Flow 3.0 opens in the step editor (spec 3.6)', async ({ page }) => {
   const gateway = await mockGateway(page);
-  await openEditor(page);
+  await page.addInitScript(() => localStorage.setItem('decaid-skin.screen', 'editor'));
+  await page.goto('/');
 
-  // The mock's workflow holds the plugin's default as Decaid bundles it.
-  await expect(page.getByTestId('editor-notice')).toContainText('“A-Flow / default-medium” is not an A-Flow 3.0 profile');
-  await expect(page.getByTestId('editor-notice')).toContainText('not edited');
-  // A new profile starts from the first default.
-  await expect(pressed(page)).toHaveText('floral');
+  // The mock's workflow holds the plugin's default as Decaid bundles it: A-Flow by name only.
+  await expect(page.getByTestId('step-cards')).toBeVisible();
+  await expect(page.getByTestId('graph')).toHaveCount(0);
+  await expect(pressed(page)).toHaveText('A-Flow / default-medium');
+  await expect(page.getByTestId('editor-notice')).toHaveCount(0);
   await expect(page.getByTestId('save')).toBeDisabled();
-  await expect(page.getByTestId('load-to-machine')).toHaveCount(0);
   // Back without a change loads nothing: the machine keeps its profile.
   await page.getByTestId('nav-home').click();
   await expect(page.getByTestId('screen-home')).toBeVisible();
@@ -362,13 +362,15 @@ test('the name in the top bar opens the picker: changes are loaded first, a choi
   expect(puts[1].body.profile.title).toBe('A-Flow / default-dark');
   await expect(page.getByTestId('editor-notice')).toHaveCount(0);
 
-  // Another profile: loaded, and home says why the editor did not open on it.
+  // A profile that is not A-Flow 3.0: loaded, and the picker comes back to the step editor on it.
   await pressed(page).click();
   await page.getByTestId('profile-item').filter({ hasText: 'Best practice' }).click();
-  await expect(page.getByTestId('screen-home')).toBeVisible();
-  await expect(page.getByTestId('notice')).toContainText('“Best practice” is loaded');
-  await expect(page.getByTestId('notice')).toContainText('not an A-Flow 3.0 profile');
-  await expect(page.getByTestId('profile-name')).toHaveText('Best practice');
+  await expect(page.getByTestId('screen-editor')).toBeVisible();
+  await expect(page.getByTestId('step-cards')).toBeVisible();
+  await expect(pressed(page)).toHaveText('Best practice');
   expect(gateway.calls('PUT', '/api/v1/workflow')).toHaveLength(3);
+  await page.getByTestId('nav-home').click();
+  await expect(page.getByTestId('profile-name')).toHaveText('Best practice');
+  await expect(page.getByTestId('notice')).toHaveCount(0);
   expect(errors).toEqual([]);
 });

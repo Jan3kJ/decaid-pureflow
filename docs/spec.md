@@ -201,6 +201,11 @@ Added by the founder on 2026-10-15, after version 1 was built.
 
 Still out in 1.1: Streamline's `.tcl` import.
 
+Built in E2 (2026-10-16), where 3.6 leaves the detail open: a profile is "A-Flow" when the
+A-Flow editor can read its A-Flow 3.0 values; every other profile, Decaid's bundled de1app
+"A-Flow / …" profiles too, opens in the step editor, from home, from the picker and from the
+unsaved-edits warning ([research.md](research.md) 17.5).
+
 ## 4. Technical approach
 
 ### 4.1 What a Decaid skin is
@@ -435,9 +440,8 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
 - The version is `0.1.1`, a beta (founder, 2026-10-13; 0.1.x for fix rounds); it is in
   `package.json` and `public/manifest.json`. A later number is the founder's call. (answered)
 - Other profiles (founder's question of 2026-10-14, [answers-2026-10-14.md](answers-2026-10-14.md)):
-  Streamline 0.2.13's editor edits any v2 profile as its steps, but Decaid serves one skin at a
-  time, so it is reached by switching skins. Is switching in Decaid's settings enough, or should
-  the skin get a button that switches to Streamline's profile selector? (owner)
+  answered by version 1.1: they open in the skin's own step editor, ported from Streamline
+  (3.6; built in E2, [research.md](research.md) 17), so no switch of skins is needed. (answered)
 - Where Decaid keeps its database (`streamline_bridge.sqlite`) on Android was not seen; the
   app's private folder is likely, out of reach of a file manager. The founder's view is the
   API in a browser on the tablet or `GET /api/v1/data/export`. (owner)

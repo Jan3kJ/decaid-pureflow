@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { ProfileRecord } from '../api';
-  import { readParams } from '../editor/storage';
   import {
     doseOf,
     isAFlow3,
@@ -62,7 +61,8 @@
 
   /**
    * A tap loads the profile, as in other skins (founder, 2026-10-13), and goes back: to the
-   * editor when it opened the picker and can edit the profile, to home otherwise.
+   * editor when it opened the picker, which opens the profile in its editor (spec 3.6), to
+   * home otherwise.
    */
   const load = (record: ProfileRecord) =>
     act('The profile could not be loaded', async () => {
@@ -72,15 +72,7 @@
       if (answer !== 'load') return;
       selectedId = record.id;
       skin.workflow = await loadProfile(skin.client, record.profile);
-      const fromEditor = skin.pickerReturn === 'editor';
-      if (fromEditor && readParams(record.profile)) {
-        skin.go('editor');
-        return;
-      }
-      skin.go('home');
-      if (fromEditor) {
-        skin.notice = `“${record.profile.title}” is loaded. It is not an A-Flow 3.0 profile: it can be loaded, but not edited.`;
-      }
+      skin.go(skin.pickerReturn === 'editor' ? 'editor' : 'home');
     });
 
   onMount(read);

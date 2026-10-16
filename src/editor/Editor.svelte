@@ -149,7 +149,7 @@
 
   /**
    * Opens the editor on the current profile, the workflow's, when it is an A-Flow 3.0 profile
-   * (spec 3.2). Any other profile is not edited: the editor says so and stays on a default.
+   * (spec 3.2); without one it stays on a default.
    */
   async function init() {
     // The warning before a load asked for 'save as' on the machine's values (founder, 2026-10-14).
@@ -167,15 +167,9 @@
     }
     const profile = skin.workflow?.profile;
     if (!profile) return;
+    // Any other profile opens in the step editor (App.svelte, route.ts).
     const read = readParams(profile);
-    if (!read) {
-      notice = {
-        tone: 'info',
-        text: `The loaded profile “${profile.title}” is not an A-Flow 3.0 profile: it can be loaded, but not edited. This is a default to start a new one from.`,
-      };
-      return;
-    }
-    if (touched) return;
+    if (!read || touched) return;
     // The record under its title is what 'save' continues; values that were loaded without
     // being saved are open again as they were.
     loaded = { title: profile.title, author: profile.author ?? '', params: read };

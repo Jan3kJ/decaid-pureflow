@@ -1633,6 +1633,71 @@ refuses a taken name instead); the number pad's recent values; translations.
    'save' of a bundled default is not offered; leaving loads changed steps, as in the A-Flow
    editor (17.7).
 
+### 17.14 Built (E2)
+
+Built on 2026-10-16 (acceptance 10, 12's headers). Files as 17.10 lists them for E2:
+`src/editor/route.ts`, `src/steps/{limits,model,save}.ts`, `src/steps/{StepEditor,StepCard,CycleChip}.svelte`,
+`writeProfile` in `src/editor/storage.ts` (`writeParams` is now `writeProfile` with the
+parameters in the notes; its PUT is sent when the answer differs from the wanted profile in
+anything, not only in the notes), the step case of `unsavedOnMachine` (`Unsaved` has
+`profile`, and `params` is null for a step profile), and the routing in `App.svelte` and
+`Profiles.svelte` (the picker opened from the editor returns to the editor for every
+profile; both "not an A-Flow 3.0 profile" notices are gone). The README has a Credits section.
+`grep -L "Copyright (C) 2025-2026 Decent Espresso"` over the six ported files lists none.
+
+**Layout.** Top bar: the title (the way to the picker), the tab group with `cards` alone (E3
+and E4 add theirs there), the number of steps, 'save', 'save as'. Below, a row of cards that
+scrolls sideways: closed cards (13.5 rem) list a step's values in their colours, the open one
+(46 rem) has the sensor and pump chips that cycle, temperature, target, limit, exit and the
+three maxima as the A-Flow editor's `ValueChip` (± and the `NumberPad`), the name as a text
+field, arrows to move it, 'delete step' (asks "Delete step n?") and '+ step after' (a copy
+named "New Step", as in Streamline). The row is as high as the open card, about 45 % of the
+screen at 1280 x 800: the room above it is E3's preview band. The only step of a profile cannot
+be deleted, so no profile is saved without steps. Screenshot: `docs/product/step-editor.png`.
+
+**Nothing is lost on save.** The model does not normalise: `openProfile` is a copy, every
+operation returns a new profile in which the steps it did not touch are the same objects and
+an edited step is the old one with only the edited fields changed (`{...old, field}`), and
+every top-level field is spread through. So a field the editor does not show (the bundled
+files' `legacy_profile_type`, `lang`, `reference_file`, …; the unused pump's value; a limiter
+of 0 with its range; an exit type Decaid does not take) goes back as it came. Unlike 17.2 and
+17.8 say for Streamline, the unused pump's value is not dropped on opening, and a pump switch
+keeps it (switching back gives it again); a limiter set to 0 keeps its range. Tests:
+`src/steps/model.test.ts` ('nothing is lost': all 73 bundled profiles open unchanged; one
+edited value changes that value alone and setting it back gives the profile as it came; add,
+move and delete back give it unchanged; a profile with unknown top-level and step fields and a
+`weight` exit keeps them through edits) and `src/steps/save.test.ts` (the body sent for such a
+profile holds them). The fixture is `src/steps/fixtures/bundled-profiles.json`: the rig's 73
+bundled files with their numbers as numbers, as the API returns them.
+
+**Validation.** `stepProblems` checks a step against 17.6's ranges (and an unknown pump or exit
+type); ± and the pad cannot leave a range. A value a profile brings outside its range is shown
+on its card in the warning colour with "Kept as the profile has it: …" and saved unchanged
+unless edited. 17.4 is not quite right: three steps of "Cleaning/Forward Flush x5" hold a
+pressure of -4e-16 bar (float noise in the file); values within 1e-6 of a bound count as
+inside, and such a value reads 0.0.
+
+**Unsaved warning.** A profile that is not A-Flow 3.0 is unsaved when no record of its title,
+hidden ones too, has its steps and target weight (what Decaid hashes); notes or author of the
+workflow's copy do not count.
+
+**Metadata.** `stepMetadata`: the parent's metadata, `source: 'decaid-skin'`, without any key
+starting with `aflow` (M2's key was not known yet). A copy of a bundled profile so keeps the
+bundled record's `metadata.filename` (seen on the rig).
+
+**Tests.** Vitest: `route.test.ts` (4), `steps/model.test.ts` (18), `steps/save.test.ts` (10),
+5 new in `unsaved.test.ts`; 486 in all. `e2e/step-editor.spec.ts` (4): routing both ways, a
+value by ± and by pad, add, delete, move, 'save' (POST body equals the model's edit, `parentId`,
+parent hidden, loaded), leaving loads, the warning and its 'Save as…', a bundled default by
+'save as' only. Five older e2e tests changed: three that test the A-Flow editor now load an
+A-Flow 3.0 profile first (the mock's workflow profile is not A-Flow 3.0), two expect the step
+editor where the notice was. Rig: `e2e-rig/step-editor.spec.ts` (edits of Blooming Espresso
+saved as a copy, parent the bundled record; one more edit and 'save': the stored steps equal the
+model's edit, the lineage holds the copy hidden and the edit visible, the bundled record is
+unchanged; everything made is purged and the workflow restored). `e2e-rig/editor.spec.ts`'s
+unsaved test now expects the step editor after the picker. Full `npm run e2e:rig`: 14 passed,
+1 failed: the known steam control step (Streamline 0.2.14, 18.4), as before E2.
+
 ## 18. Profile metadata on the rig (M1)
 
 **Verdict: metadata holds.**

@@ -4,6 +4,7 @@ import { DecaidClient, type Profile } from '../api';
 import { defaultProfile } from '../shell/profiles';
 import { fakeGateway } from './gateway.fake';
 import { buildProfile, saveAs, saveEdit } from './save';
+import bundled from '../steps/fixtures/bundled-profiles.json' with { type: 'json' };
 import { readUnsaved, unsavedOnMachine } from './unsaved';
 
 const light = DEFAULT_PROFILES[1];
@@ -11,10 +12,8 @@ const edited: AFlowParams = { ...light.params, infusePressure: 2.4 };
 const about = { title: 'A-Flow / morning', author: 'Janek' };
 
 describe('unsavedOnMachine', () => {
-  it('nothing loaded, or a profile that is not A-Flow 3.0: nothing unsaved', () => {
+  it('nothing loaded: nothing unsaved', () => {
     expect(unsavedOnMachine(undefined, [])).toBeNull();
-    const other = { title: 'Best practice', notes: 'a classic', steps: [], target_weight: 36 } as unknown as Profile;
-    expect(unsavedOnMachine(other, [])).toBeNull();
   });
 
   it('a default as the picker loads it: nothing unsaved, with or without its record', async () => {
@@ -27,7 +26,7 @@ describe('unsavedOnMachine', () => {
 
   it('a default with an edited value, loaded on leaving the editor: unsaved, under its title', () => {
     const profile = buildProfile(edited, { title: light.title }, false);
-    expect(unsavedOnMachine(profile, [])).toEqual({ title: light.title, params: edited });
+    expect(unsavedOnMachine(profile, [])).toEqual({ title: light.title, params: edited, profile });
   });
 
   it('a saved profile: nothing unsaved; an edit of it loaded without saving: unsaved', async () => {
@@ -35,10 +34,8 @@ describe('unsavedOnMachine', () => {
     const record = await saveAs(gateway.client, edited, about, false);
     expect(unsavedOnMachine(record.profile, gateway.records)).toBeNull();
     const next = { ...edited, pourPressure: 8.5 };
-    expect(unsavedOnMachine(buildProfile(next, about, false), gateway.records)).toEqual({
-      title: about.title,
-      params: next,
-    });
+    const profile = buildProfile(next, about, false);
+    expect(unsavedOnMachine(profile, gateway.records)).toEqual({ title: about.title, params: next, profile });
   });
 
   it('the dose alone counts as a change', async () => {
@@ -70,6 +67,37 @@ describe('unsavedOnMachine', () => {
   });
 });
 
+// The step editor's profiles (research.md 17.7): judged by their steps and target weight.
+describe('unsavedOnMachine, a profile that is not A-Flow 3.0', () => {
+  const blooming = bundled.find((entry) => entry.title === 'Blooming Espresso') as Profile;
+  const stored = (profile: Profile, visibility: 'visible' | 'hidden' = 'visible') => {
+    const gateway = fakeGateway();
+    return gateway.make(profile, { visibility, isDefault: true });
+  };
+
+  it('a stored one, as the picker loads it: nothing unsaved', () => {
+    expect(unsavedOnMachine(blooming, [stored(blooming)])).toBeNull();
+  });
+
+  it("notes or author of the workflow's copy do not count: Decaid does not hash them", () => {
+    expect(unsavedOnMachine({ ...blooming, notes: 'other' }, [stored(blooming)])).toBeNull();
+  });
+
+  it('an edited step loaded on leaving the step editor: unsaved, under its title', () => {
+    const profile = { ...blooming, steps: blooming.steps.map((step, i) => (i === 0 ? { ...step, temperature: 90 } : step)) };
+    expect(unsavedOnMachine(profile, [stored(blooming)])).toEqual({ title: blooming.title, params: null, profile });
+  });
+
+  it('a hidden older version counts as saved; a profile whose record is gone is unsaved', () => {
+    expect(unsavedOnMachine(blooming, [stored(blooming, 'hidden')])).toBeNull();
+    expect(unsavedOnMachine(blooming, [])).toEqual({ title: blooming.title, params: null, profile: blooming });
+  });
+
+  it('the same steps under another title are not stored under this one', () => {
+    expect(unsavedOnMachine({ ...blooming, title: 'Best of all' }, [stored(blooming)])).not.toBeNull();
+  });
+});
+
 describe('readUnsaved', () => {
   it('reads the workflow and every profile, hidden ones too', async () => {
     const asked: string[] = [];
@@ -82,7 +110,7 @@ describe('readUnsaved', () => {
         return new Response(JSON.stringify(body), { status: 200 });
       },
     });
-    expect(await readUnsaved(client)).toEqual({ title: light.title, params: edited });
+    expect(await readUnsaved(client)).toEqual({ title: light.title, params: edited, profile });
     expect(asked).toContain('http://gateway/api/v1/profiles?includeHidden=true');
   });
 });

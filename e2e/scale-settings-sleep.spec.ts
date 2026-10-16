@@ -121,7 +121,7 @@ test('scale: a tare Decaid blocks during a shot is a notice, another failure is 
 });
 
 test('settings: the defaults, typed values and both switches survive a reload', async ({ page }) => {
-  const gateway = await mockGateway(page);
+  const gateway = (await mockGateway(page)).withDefaults('light');
   await page.goto('/');
   await page.getByTestId('menu').click();
   await page.getByTestId('open-settings').click();

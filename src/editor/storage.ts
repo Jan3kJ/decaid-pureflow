@@ -63,28 +63,26 @@ export class StepsTakenError extends Error {
 }
 
 /**
- * Stores a profile with its parameters and returns its record.
+ * Stores a profile and returns its record: the one writer of both editors (research.md 17.7).
  *
  * A profile's id is a hash of its steps and its target weight (research.md 9.2 and 11). For
  * new steps `POST /api/v1/profiles` makes a record and that is all. For steps that exist it
  * answers with the existing record as it is, and then:
- * - the same title, other notes (another dose, or notes without parameters): the notes are
+ * - the same title, other content outside the hash (notes, author, …): the profile is
  *   changed with `PUT /api/v1/profiles/{id}`;
  * - a hidden record, an older version of some profile: it is taken over, with the title and
- *   the notes, and made visible;
+ *   the rest, and made visible;
  * - a visible profile with another title: nothing is changed and a `StepsTakenError` is thrown.
  */
-export async function writeParams(
+export async function writeProfile(
   client: DecaidClient,
-  profile: Profile,
-  params: AFlowParams,
+  wanted: Profile,
   options: SaveProfileOptions = {},
 ): Promise<ProfileRecord> {
-  const wanted: Profile = { ...profile, notes: paramsNotes(params) };
   let record = await client.saveProfile(wanted, options);
   const renamed = record.profile.title !== wanted.title;
   if (renamed && record.visibility === 'visible') throw new StepsTakenError(record);
-  if (renamed || record.profile.notes !== wanted.notes) {
+  if (renamed || !sameSteps(record.profile, wanted)) {
     record = await client.updateProfile(record.id, {
       profile: wanted,
       ...(options.metadata ? { metadata: options.metadata } : {}),
@@ -92,4 +90,14 @@ export async function writeParams(
   }
   if (record.visibility !== 'visible') record = await client.setProfileVisibility(record.id, 'visible');
   return record;
+}
+
+/** Stores a profile with its parameters in its notes (`writeProfile`). */
+export function writeParams(
+  client: DecaidClient,
+  profile: Profile,
+  params: AFlowParams,
+  options: SaveProfileOptions = {},
+): Promise<ProfileRecord> {
+  return writeProfile(client, { ...profile, notes: paramsNotes(params) }, options);
 }
