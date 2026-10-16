@@ -408,6 +408,12 @@ Answered in D9 (research.md section 15), on the rig: the ZIP installs in Decaid 
 Windows by URL and is served on port 28881; the REST API has no upload of a ZIP, and a
 `file:///` URL fails although `doc/Skins.md` shows one.
 
+Answered in M1 (research.md section 18), on the rig: a profile record's `metadata` holds, as
+sent, through `GET`, `PUT` (kept when left out, replaced whole when supplied), a `PUT` that
+gives a new id, the hidden versions of the lineage, `/api/v1/profiles/export` and import, and
+`/api/v1/data/export` and import; a child posted with `parentId` does not inherit it, and a
+`metadata` that is not an object is refused with 500. So M2 takes the `metadata` path of 3.6.
+
 Answered by the founder on 2026-10-13, in the channel: the A-Flow parameters live in the
 profile's notes (request 166); a profile is loaded with `PUT /api/v1/workflow` (request 167,
 3.1); the pause ends at a flow under an editable value (request 169, 3.2); the ghost curve of

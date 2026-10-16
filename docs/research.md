@@ -1632,3 +1632,85 @@ refuses a taken name instead); the number pad's recent values; translations.
 5. 'Save as' in the step editor records its source as parent, unlike the A-Flow editor's;
    'save' of a bundled default is not offered; leaving loads changed steps, as in the A-Flow
    editor (17.7).
+
+## 18. Profile metadata on the rig (M1)
+
+**Verdict: metadata holds.**
+
+Done on 2026-10-16 against Decaid v0.8.8 on the rig, started as in 8.8 step 2 (the machine
+state answered 200 within a minute) and ended with `Stop-Process -Force`. Every claim is
+**seen running**: by `node scripts/rig-metadata-probe.mjs <backup folder>` (output in the
+rig's `log\m1-metadata-probe.txt`) and again by `e2e-rig/metadata.spec.ts`. The API text is
+Decaid's `assets/api/rest_v1.yml`.
+
+### 18.1 What was sent
+
+A `POST /api/v1/profiles` with `{ profile, metadata }`, the way `saveProfile` in
+`src/api/client.ts` sends it. The profile had steps of its own (a default's steps at a
+temperature no stored profile has), since the id is a hash of the steps (11.1). The
+`metadata` was shaped like the A-Flow values: `source` and `aflow` as the skin writes them
+today, `params` with all 26 values of `AFlowParams` (decimals, `null` for the values that
+follow another one, `flowUp: false`) and the 2nd fill off (`pauseDuration: 0`) with its own
+values set (`secondFillFlow: 6.5`, `secondFillTemperature: 91.25`, `secondFillTime: 12`), plus
+a boolean, a nested object, an array of mixed values, a string with umlaut, quotes, emoji and
+a line break, 0, a negative number, 0.000123 and 123456789012.
+
+### 18.2 What came back
+
+| Step | Endpoint | Result |
+|---|---|---|
+| Create | `POST /api/v1/profiles` | 201; the answer's `metadata` equals what was sent (deep, every type and `null`, key order kept) |
+| Read | `GET /api/v1/profiles/{id}` | equal |
+| Title and notes | `PUT /api/v1/profiles/{id}` with `profile` and no `metadata` field | same id, metadata **kept** |
+| Other steps | `PUT /api/v1/profiles/{id}` with `profile` and no `metadata` field | new id, the old id answers 404, metadata **kept** in the new record |
+| Metadata alone | `PUT /api/v1/profiles/{id}` with `{ metadata }` only | supplied metadata **replaces** the stored one, no merge (as `rest_v1.yml` says); `metadata: null` clears it (doc) |
+| Lineage | `POST /api/v1/profiles` with `parentId` | the child has only the metadata it is sent: without one it is `null`, **not inherited** from the parent. With one, equal |
+| Hidden | `PUT .../visibility` hidden, then `GET` and `GET .../lineage` | the hidden parent keeps its metadata, in the lineage too |
+| Profile export | `GET /api/v1/profiles/export?includeHidden=true` | every record carries `metadata`, equal; without `includeHidden` the hidden ones are left out |
+| Profile import | purge, then `POST /api/v1/profiles/import` with the exported record | `{"imported":1,...}`; metadata, `parentId` equal |
+| Data export | `GET /api/v1/data/export` (ZIP: `metadata.json`, `profiles.json`, `shots.json`, `steams.json`, `workflow.json`, `settings.json`, `store.json`, `beans.json`, `grinders.json`) | `profiles.json` holds every record, hidden and deleted too, with `metadata` equal |
+| Data import | purge, then `POST /api/v1/data/import` (`Content-Type: application/zip`) with the export's `metadata.json` and a `profiles.json` holding this profile alone | 200 `{"profiles":{"imported":1,"skipped":0,"status":"complete"}}`; metadata equal |
+| Data import over a stored record | the stored record changed to `{ other: 1 }` | `onConflict=skip` (the default) keeps `{ other: 1 }`; `onConflict=overwrite` takes the archive's, equal |
+| Large | `metadata` with a 100 KB and a 1 MB string | 201, read back equal |
+| Not an object | an array, a string, a number | **500** `type 'List<dynamic>' is not a subtype of type 'Map<String, dynamic>?'`, nothing stored |
+| Empty | `{}` and `null` | 201, read back `{}` and `null` |
+
+What the import did not touch: the data import sent only one profile, so the rig's other
+sections were never imported. Before it, the rig's whole data export was written outside the
+repository (`..\decaid-rig\log\m1-backup\m1-data-export-before-2026-10-16T04-21-55-795Z.zip`,
+53 025 bytes, 73 profiles) so that a restore would have been possible; it was not needed.
+Every bundled profile already carries metadata (`{"source":"bundled","filename":...}`).
+
+### 18.3 What M2 has to mind
+
+- `metadata` is not part of the id: the id hashes the steps and the target weight (11.1),
+  and `metadataHash` is documented to cover title, author and notes only. So a `POST` of steps
+  a record already has returns that record with **its old metadata** (11.1): when the save
+  path takes over an existing record (`writeParams` in `src/editor/storage.ts`), it has to
+  `PUT` the new metadata, as it does the notes today.
+- A `PUT` with supplied metadata replaces it whole: send the full object every time.
+- A child posted with `parentId` gets no metadata from its parent: the skin's `POST` must
+  carry it (`saveEdit` in `src/editor/save.ts` does today).
+- The skin must only ever send an object (or `null`): anything else is a 500.
+
+### 18.4 Tests
+
+`npm run e2e:rig`: `e2e-rig/metadata.spec.ts`, four tests (GET, PUT and the lineage; the
+profile export and import; the data export and an import of an archive with the test's own
+profile alone; large and non-object metadata). M2 can swap its `METADATA` for the shape it
+stores. Each test purges what it created and checks that the rig holds the profiles it
+started with.
+
+The full rig run of 2026-10-16 (`log\m1-e2e-rig.txt`): 13 passed, 1 failed, not in this
+work's spec: the last 'control' step of `e2e-rig/steam.spec.ts` ("a timer written into the
+workflow alone is replaced by the seconds Streamline remembers") waits in vain, twice. Decaid
+updated Streamline itself at today's start (`automaticUpdateCheck`, `.rea_metadata.json`:
+0.2.13 → **0.2.14**, released 2026-10-15). 0.2.14 reworked the write-back of its
+remembered values (`resyncIfDrifted` and `decideResync` in `src/modules/api.js`, which can now
+**adopt** an outside value into its KV key instead of pushing its own back), so the write-back
+of section 16 that the control step relies on was not seen. Read, not run further: outside M1.
+The skin's own steam checks before that step pass.
+
+What the run left in the rig: nothing. 73 profiles as before, hidden and deleted ones counted;
+the skin's KV namespace empty; Streamline is the default skin; no setting written. Decaid is
+stopped.
