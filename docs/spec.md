@@ -192,7 +192,7 @@ Added by the founder on 2026-10-15, after version 1 was built.
 |---|---|
 | Water view | While hot water or flush runs, Home shows what runs instead of only **stop**: a **countdown ring around the stop button** (elapsed time against the target duration of `hotWaterData` or `rinseData`, with "Flush 6 / 10 s" inside), and **an animated picture**: an SVG group head with a water stream whose speed and width follow the measured flow, so it stops when the machine stops. For hot water a cup below fills to the volume so far (flow added up over time) against the target volume, or to the scale's weight when a scale is connected; for flush the stream falls into the drip tray. The stream's colour follows the mix temperature. Starting stays at the machine |
 | Step editor for other profiles | Every profile that is not A-Flow opens in a **step editor ported from Streamline** (`decentespresso/streamline-js`, ISC): one card per step (pump flow or pressure, temperature, limiter, time, volume, weight, exit condition), adding, deleting and reordering steps, a curve preview, and the profile's settings (title, notes, target weight and volume, tank temperature). It saves through the skin's existing save path (lineage, the unsaved-edits warning). A-Flow profiles keep opening the A-Flow editor. Streamline's ISC copyright notice is kept |
-| Step editor: SCRIPT tab | Streamline's SCRIPT tab, ported with the step editor: the profile's steps as text, editable, with a graph preview; a text that does not parse is shown as an error and is not saved |
+| Step editor: SCRIPT tab | Streamline's SCRIPT tab, ported with the step editor: the profile's steps as text, editable, with a graph preview; a text that does not parse is shown as an error and is not saved. Replaced by 3.7: values as toggles and pickers, as in Streamline |
 | A-Flow values in `metadata` | The editor's A-Flow values move from the profile's `notes` to the profile record's `metadata` (founder, 2026-10-15), after a rig check that `metadata` survives `PUT`, `/api/v1/profiles/export` and the data export and import. Profiles that hold the values in `notes` are moved on their next save and their `notes` cleared of them. **Fallback, only if `metadata` does not hold:** every A-Flow step is kept in the profile and a disabled step gets the time 0, as the de1app A-Flow editor does, so the values travel in the steps |
 | Steam mug detection | the midpoint rule of 3.4 |
 | Maximum flow | the editor's maximum flow is a setting, 8 ml/s by default; newer Decent machines drive more |
@@ -274,6 +274,8 @@ From the founder's review of the built version 1.1 ([review-10-16-26.md](review-
 | A-Flow editor, detail mode | "flow gradient to" is called **end flow**. The flow line of the last step is split: dragging its left half changes the start flow, its right half the end flow. The buttons above the graph go: a tap on a step is enough |
 | A-Flow editor, infuse | the infuse phase is drawn by its move-on weight, not its time, because the weight ends it long before a time of 60 s; the founder's estimate is 1 g ≈ 5 s, 6 g ≈ 25 s. The **infuse to** weight can be dragged; a tap still shows the +/− buttons |
 | A-Flow editor, disabled phase | a phase dragged to 0 s is off: it collapses (today it stays as wide as the fill phase), and a button re-enables it with 5 s |
+| Step editor, cards (low priority) | the arrow buttons go: a tap on the next card selects it, and the selected card always moves to the centre |
+| Step editor, SCRIPT (low priority) | as in Streamline: the steps' sentences are not edited as text; each value is a toggle (a chip that cycles) or opens a value picker (the number pad). This replaces the editable text of 3.6 and E4's parser |
 
 ## 4. Technical approach
 
@@ -386,7 +388,8 @@ Version 1.1 (3.6); items 9 to 11 run with Playwright against the mock gateway or
     target weight and tank temperature are saved with the profile.
 12. **Licence (founder).** The ported files carry Streamline's ISC copyright notice.
 13. **SCRIPT tab.** Editing a step's value in the text changes the graph preview and, saved,
-    the stored steps; a text that does not parse shows an error and saves nothing.
+    the stored steps; a text that does not parse shows an error and saves nothing. (Replaced
+    by item 26 once E6 is built.)
 14. **A-Flow values.** An A-Flow profile saved by the skin has its values in `metadata` and
     none in `notes`, opens in the editor with every value as saved (the 2nd fill's values too
     while it is off), and does so again after the data export and import on the rig. A
@@ -398,7 +401,7 @@ Version 1.1 (3.6); items 9 to 11 run with Playwright against the mock gateway or
 16. **Reconnect (test).** After an error close the skin retries for 30 s and shows the
     reconnect button only after that.
 
-The founder's review of 2026-10-16 (3.7); items 17 to 23 are tests, 24 and 25 the founder's:
+The founder's review of 2026-10-16 (3.7); items 17 to 23 and 26 are tests, 24 and 25 the founder's:
 
 17. **Steam page (test).** After steam ends the graph adds no more points and the last steam
     time equals the steam's duration; while steam runs the timer counts down from the set
@@ -429,6 +432,10 @@ The founder's review of 2026-10-16 (3.7); items 17 to 23 are tests, 24 and 25 th
 24. **Steam on the real DE1 (founder).** The countdown and the adjust buttons are right in use.
 25. **Hand-over (founder).** The next ZIP installs on the tablet; the checks of
     [install.md](install.md) not ticked by 2026-10-16 are asked again with the new ones.
+26. **Step editor (test, low priority).** In card mode there are no arrow buttons; a tap on
+    a card selects it and moves it to the centre. In SCRIPT a tap on a state word cycles it
+    and a tap on a number opens the picker; either changes the preview and, saved, the stored
+    steps; there is no text field.
 
 ## 6. Constraints
 - **Budget:** one Claude Pro plan. This product may use all of it up to 90% of the weekly
@@ -479,6 +486,8 @@ The weeks are a capacity guess on one Pro plan.
 | 2 | R5 | review: hot water page with stop at weight, ratio favourites and tare, opened from the split steam tab | R3 |
 | 2 | S1 | review: read Streamline's settings page, write the port plan into research.md | D9 |
 | 2 | S2 | review: the settings page ported from Streamline, the skin's settings in its skin category | S1, R1, R2, R5 |
+| 3 (Oct 26-Nov 1) | E5 | review, low priority: step editor cards without arrows, the selected card centred | E2 |
+| 3 | E6 | review, low priority: SCRIPT as in Streamline, toggles and value pickers instead of text | E4 |
 | 2 | H1 | review: hand-over ZIP, install.md with the new checks and the open ones of 2026-10-16 | R1-R5, S2, A2 |
 
 ## 8. Open questions
