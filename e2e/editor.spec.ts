@@ -149,12 +149,13 @@ test('the time axis follows the set times: thin fill, wide infusion, the rest fo
     4 * (await column(page, 'fill')).width,
   );
   const lightFlow = (await column(page, 'flow')).width;
-  // dark: 10 s of infusion and 5 s of ramp leave most of the graph to the flow phase.
+  // dark: 9 s of infusion (10 s, but 2 g) and 5 s of ramp leave most of the graph to the
+  // flow phase; light infuses for 25 s (6 g) and ramps for 10 s.
   await pick(page, 'dark');
   const infuse = (await column(page, 'infuse')).width;
   const pressurize = (await column(page, 'pressurize')).width;
-  expect(infuse / pressurize).toBeCloseTo(2, 0);
-  expect((await column(page, 'flow')).width).toBeGreaterThan(2 * lightFlow);
+  expect(infuse / pressurize).toBeCloseTo(1.8, 1);
+  expect((await column(page, 'flow')).width).toBeGreaterThan(1.5 * lightFlow);
   // The 2nd fill with its pause is about as thin as the fill.
   await page.getByTestId('toggle-second-fill').click();
   expect((await column(page, 'secondFill')).width).toBeLessThanOrEqual(
@@ -422,6 +423,89 @@ test('detail mode: the left half of the last flow line drags the start flow, the
   await page.getByTestId('mode-simple').click();
   await expect(page.locator('line.level[data-field="pourEndFlow"]')).toHaveCount(0);
   await expect(page.getByTestId('value-pourEndFlow')).toHaveCount(0);
+});
+
+// founder, 2026-10-16 (acceptance 23, second half): the infuse is as wide as its move-on
+// weight's estimate (1 g ≈ 5 s, 6 g ≈ 25 s); the infuse-to weight is dragged; a phase dragged
+// to 0 s collapses and its button sets it to 5 s.
+test('the infuse is drawn by its weight, and the infuse-to chip is dragged or tapped', async ({
+  page,
+}) => {
+  // light: 60 s but 6 g, so 25 s; pressurize 10 s.
+  await expect(page.getByTestId('value-infuseTime')).toHaveText('60 s');
+  const ratio = async () => (await column(page, 'infuse')).width / (await column(page, 'pressurize')).width;
+  expect(await ratio()).toBeCloseTo(2.5, 1);
+
+  // A drag to the right: more grams, and the border follows the chip.
+  const chip = page.getByTestId('chip-graph-infuseWeight');
+  await expect(chip).toContainText('6 g');
+  const before = (await column(page, 'infuse')).width;
+  const body = (await chip.locator('.body').boundingBox())!;
+  await dragBy(page, { x: body.x + body.width / 2, y: body.y + body.height / 2 }, 80, 0);
+  await expect(page.getByTestId('popup')).toContainText('infuse move-on weight');
+  await page.screenshot({ path: 'docs/product/infuse-weight.png' });
+  await page.mouse.up();
+  const weight = await number(page, 'chip-value-graph-infuseWeight');
+  expect(weight).toBeGreaterThan(6);
+  expect((await column(page, 'infuse')).width - before).toBeCloseTo(80, -1);
+  // A drag does not open the chip, and leaves the time limit alone.
+  await expect(chip.locator('[data-step="plus"]')).toHaveCount(0);
+  await expect(page.getByTestId('value-infuseTime')).toHaveText('60 s');
+  expect(await ratio()).toBeCloseTo((1 + 4 * weight) / 10, 1);
+
+  // A drag to the left: fewer grams.
+  const at = (await chip.locator('.body').boundingBox())!;
+  await dragBy(page, { x: at.x + at.width / 2, y: at.y + at.height / 2 }, -120, 0);
+  await page.mouse.up();
+  expect(await number(page, 'chip-value-graph-infuseWeight')).toBeLessThan(weight);
+
+  // A tap still opens its plus and minus.
+  const now = await number(page, 'chip-value-graph-infuseWeight');
+  await chip.locator('.body').click();
+  await chip.locator('[data-step="plus"]').click();
+  await expect(chip.locator('.value')).toHaveText(`${(now + 0.1).toFixed(1).replace(/\.0$/, '')} g`);
+});
+
+test('a phase dragged to 0 s collapses, and its button turns it on with 5 s', async ({ page }) => {
+  const fillBefore = (await column(page, 'fill')).width;
+  const infuse = await column(page, 'infuse');
+  // Touching the border of an infuse drawn by its weight does not cut its time limit.
+  await dragBy(page, await borderOf(page, 'infuse'), 0, 0);
+  await page.mouse.up();
+  await expect(page.getByTestId('value-infuseTime')).toHaveText('60 s');
+
+  await dragBy(page, await borderOf(page, 'infuse'), -(infuse.width + 40), 0);
+  await expect(page.getByTestId('popup')).toContainText('0 s');
+  await page.mouse.up();
+  expect((await column(page, 'infuse')).width).toBe(0);
+  expect((await column(page, 'fill')).width).toBeCloseTo(fillBefore, 0);
+  await expect(page.getByTestId('chip-graph-infuseWeight')).toHaveCount(0);
+  await expect(page.getByTestId('enable-infuse')).toBeVisible();
+  await expect(page.getByTestId('value-infusePressure')).toHaveCount(0);
+
+  // pressurize too; both buttons sit where their phases collapsed.
+  const pressurize = await column(page, 'pressurize');
+  await dragBy(page, await borderOf(page, 'pressurize'), -(pressurize.width + 40), 0);
+  await page.mouse.up();
+  expect((await column(page, 'pressurize')).width).toBe(0);
+  await expect(page.getByTestId('enable-pressurize')).toBeVisible();
+  await page.screenshot({ path: 'docs/product/phase-off.png' });
+
+  await page.getByTestId('enable-infuse').click();
+  await expect(page.getByTestId('enable-infuse')).toHaveCount(0);
+  await expect(page.getByTestId('value-infuseTime')).toHaveText('5 s');
+  // As wide as a finger, as the fill is.
+  expect((await column(page, 'infuse')).width).toBeGreaterThanOrEqual(fillBefore - 1);
+  await expect(page.getByTestId('chip-graph-infuseWeight')).toBeVisible();
+
+  // In detail mode the button selects the phase it turned on.
+  await page.getByTestId('mode-detail').click();
+  await page.getByTestId('enable-pressurize').click();
+  await expect(page.getByTestId('column-pressurize')).toHaveClass(/selected/);
+  await expect(page.getByTestId('chip-value-rampTime')).toHaveText('5 s');
+  expect((await column(page, 'pressurize')).width).toBeGreaterThanOrEqual(
+    (await column(page, 'fill')).width - 1,
+  );
 });
 
 test('detail mode: the number pad types a value and respects the range', async ({ page }) => {

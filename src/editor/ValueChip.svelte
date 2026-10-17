@@ -10,9 +10,22 @@
     onstep: (direction: 1 | -1) => void;
     /** a tap on the value itself: the caller opens the number pad */
     onedit?: () => void;
+    /**
+     * a compact chip dragged left or right: `dx` pixels since it was pressed. A press that
+     * moves less than DRAG_SLOP is still a tap
+     */
+    ondrag?: (dx: number, event: PointerEvent) => void;
+    /** the drag has ended */
+    ondrop?: () => void;
   }
 
-  let { label, value, testid, tone = 'none', compact = false, onstep, onedit }: Props = $props();
+  let { label, value, testid, tone = 'none', compact = false, onstep, onedit, ondrag, ondrop }: Props =
+    $props();
+
+  /** px; how far a finger may move on a press that is a tap */
+  const DRAG_SLOP = 10;
+  let press0: { pointer: number; x: number } | null = null;
+  let dragging = $state(false);
 
   let open = $state(false);
   let root: HTMLDivElement | undefined = $state();
@@ -41,6 +54,38 @@
     }
   }
 
+  function grab(event: PointerEvent) {
+    if (!ondrag) return;
+    press0 = { pointer: event.pointerId, x: event.clientX };
+    (event.currentTarget as Element).setPointerCapture(event.pointerId);
+  }
+
+  function slide(event: PointerEvent) {
+    if (!press0 || event.pointerId !== press0.pointer) return;
+    const dx = event.clientX - press0.x;
+    if (!dragging && Math.abs(dx) < DRAG_SLOP) return;
+    dragging = true;
+    open = false;
+    ondrag?.(dx, event);
+  }
+
+  function drop(event: PointerEvent) {
+    if (!press0 || event.pointerId !== press0.pointer) return;
+    press0 = null;
+    if (!dragging) return;
+    dragging = false;
+    ondrop?.();
+    // The click that follows the end of a drag is not a tap.
+    swallow = true;
+    setTimeout(() => (swallow = false));
+  }
+
+  let swallow = false;
+
+  function tap() {
+    if (!swallow) open = !open;
+  }
+
   function outside(event: PointerEvent) {
     if (open && root && !root.contains(event.target as Node)) open = false;
   }
@@ -50,7 +95,7 @@
 
 <svelte:window onpointerdown={outside} />
 
-<div class="chip {tone}" class:compact class:open bind:this={root} data-testid="chip-{testid}">
+<div class="chip {tone}" class:compact class:open class:dragging bind:this={root} data-testid="chip-{testid}">
   {#if !compact || open}
     <button
       class="step"
@@ -64,7 +109,15 @@
     >
   {/if}
   {#if compact}
-    <button class="body" aria-expanded={open} onclick={() => (open = !open)}>
+    <button
+      class="body"
+      aria-expanded={open}
+      onpointerdown={grab}
+      onpointermove={slide}
+      onpointerup={drop}
+      onpointercancel={drop}
+      onclick={tap}
+    >
       <span class="label">{label}</span>
       <span class="value" data-testid="chip-value-{testid}">{value}</span>
     </button>
@@ -177,6 +230,10 @@
   .compact .step {
     width: 3.5rem;
     min-height: 3.5rem;
+  }
+
+  .compact.dragging {
+    border-color: var(--fg);
   }
 
   .compact.open {

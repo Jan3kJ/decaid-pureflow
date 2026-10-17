@@ -51,6 +51,12 @@ export interface Border {
   secondsPerUnit: number;
   /** dragged in detail mode only (the pause, founder 2026-10-12) */
   detailOnly: boolean;
+  /** the duration a drag starts from: the seconds the phase is drawn with, or the pause's time */
+  start: number;
+  /** the infuse's move-on weight as seconds (infuseWeightSeconds), when it has one */
+  weightSeconds?: number;
+  /** the phase is off (0 s) and collapsed: its border cannot be taken hold of */
+  off: boolean;
 }
 
 /** A stretch of a line that can be dragged up or down. */
@@ -91,6 +97,8 @@ export interface Curve {
   pressureLimit?: [Point, Point];
   /** where the pause begins inside the 2nd fill column; only with the 2nd fill on */
   pauseX?: number;
+  /** the phases that are off, collapsed to no width (phaseOff) */
+  off: PhaseId[];
 }
 
 export const GRAPH_WIDTH = 100;
@@ -127,6 +135,45 @@ export interface TimeAxis {
   unitsPerSecond: number;
 }
 
+// The infuse ends on its move-on weight long before a time limit of 60 s, so it is drawn by
+// the weight (founder, 2026-10-16): his estimate is 1 g ≈ 5 s and 6 g ≈ 25 s, and the line
+// through the two points gives every other weight.
+/** s per g of the infuse's move-on weight */
+export const INFUSE_SECONDS_PER_GRAM = 4;
+/** s; where that line meets 0 g */
+export const INFUSE_SECONDS_AT_NO_WEIGHT = 1;
+
+/** The seconds an infuse is expected to take until its move-on weight. */
+export function infuseWeightSeconds(weight: number): number {
+  return INFUSE_SECONDS_AT_NO_WEIGHT + INFUSE_SECONDS_PER_GRAM * weight;
+}
+
+/**
+ * The infuse weight a drag of its chip sets: the finger has moved `seconds` along the time
+ * axis, and the weight moves as far as keeps its estimate under the finger. Not yet brought
+ * into the value's range (fields.ts, snap).
+ */
+export function weightTarget(startWeight: number, seconds: number): number {
+  return startWeight + seconds / INFUSE_SECONDS_PER_GRAM;
+}
+
+// A phase dragged to 0 s is off (founder, 2026-10-16): it collapses to no width, and a button
+// turns it on again with REENABLE_SECONDS. Only infuse and pressurize have a border that can
+// reach 0 s; the 2nd fill is off with its pause and has its own toggle.
+/** The time that turns each of these phases off at 0 s. */
+export const PHASE_TIME: Partial<Record<PhaseId, NumberField>> = {
+  infuse: 'infuseTime',
+  pressurize: 'rampTime',
+};
+/** s; the time of a phase turned on again */
+export const REENABLE_SECONDS = 5;
+
+/** Whether the phase is off: its time is 0 s. */
+export function phaseOff(p: AFlowParams, phase: PhaseId): boolean {
+  const field = PHASE_TIME[phase];
+  return field !== undefined && p[field] <= 0;
+}
+
 /** The seconds each phase is expected to take, from its parameters. */
 export function expectedSeconds(p: AFlowParams): {
   fill: number;
@@ -140,7 +187,10 @@ export function expectedSeconds(p: AFlowParams): {
   const second = hasSecondFill(p);
   return {
     fill: pumping(FILL_VOLUME, p.fillFlow, p.fillTime),
-    infuse: Math.max(0, p.infuseTime),
+    infuse: Math.max(
+      0,
+      p.infuseWeight > 0 ? Math.min(p.infuseTime, infuseWeightSeconds(p.infuseWeight)) : p.infuseTime,
+    ),
     secondFill: second ? pumping(SECOND_FILL_VOLUME, p.secondFillFlow, p.secondFillTime) : 0,
     pause: second ? p.pauseDuration * PAUSE_SHOWN : 0,
     pressurize: Math.max(0, p.rampTime),
@@ -149,14 +199,15 @@ export function expectedSeconds(p: AFlowParams): {
 
 /**
  * The widths of the columns: every phase as wide as its expected seconds on one linear scale,
- * the flow phase with the rest of AXIS_SECONDS, and none under its minimum width.
+ * the flow phase with the rest of AXIS_SECONDS, and none under its minimum width. A phase
+ * that is off has no width.
  */
 export function timeAxis(p: AFlowParams): TimeAxis {
   const seconds = expectedSeconds(p);
   type Part = { id: PhaseId | 'pause'; seconds: number; min: number };
   const parts: Part[] = [
     { id: 'fill', seconds: seconds.fill, min: MIN_COLUMN_UNITS },
-    { id: 'infuse', seconds: seconds.infuse, min: MIN_COLUMN_UNITS },
+    { id: 'infuse', seconds: seconds.infuse, min: phaseOff(p, 'infuse') ? 0 : MIN_COLUMN_UNITS },
   ];
   if (hasSecondFill(p)) {
     parts.push(
@@ -164,7 +215,11 @@ export function timeAxis(p: AFlowParams): TimeAxis {
       { id: 'pause', seconds: seconds.pause, min: PAUSE_MIN_UNITS },
     );
   }
-  parts.push({ id: 'pressurize', seconds: seconds.pressurize, min: MIN_COLUMN_UNITS });
+  parts.push({
+    id: 'pressurize',
+    seconds: seconds.pressurize,
+    min: phaseOff(p, 'pressurize') ? 0 : MIN_COLUMN_UNITS,
+  });
   const timed = parts.reduce((sum, part) => sum + part.seconds, 0);
   parts.push({ id: 'flow', seconds: Math.max(0, AXIS_SECONDS - timed), min: FLOW_MIN_UNITS });
 
@@ -211,6 +266,24 @@ export function timeAxis(p: AFlowParams): TimeAxis {
  */
 export function dragTarget(level: Pick<Level, 'gain'>, startValue: number, rise: number): number {
   return startValue + rise * level.gain;
+}
+
+/**
+ * The duration a drag of a border sets: `seconds` is where the finger has moved it, from the
+ * border's start; `time` is the duration as it was when the drag began. While the border is at
+ * or past the move-on weight's estimate the weight ends the infuse, so the time set before
+ * stays unless the drag goes beyond it: a touch does not cut a time limit of 60 s to 25 s.
+ * Not yet brought into the value's range (fields.ts, snap).
+ */
+export function borderTarget(
+  border: Pick<Border, 'weightSeconds'>,
+  time: number,
+  seconds: number,
+): number {
+  if (border.weightSeconds !== undefined && seconds > border.weightSeconds - 0.5) {
+    return Math.max(time, seconds);
+  }
+  return seconds;
 }
 
 /**
@@ -278,6 +351,9 @@ export function buildCurve(
     phase: 'infuse',
     secondsPerUnit,
     detailOnly: false,
+    start: expectedSeconds(params).infuse,
+    weightSeconds: p.infuseWeight > 0 ? infuseWeightSeconds(p.infuseWeight) : undefined,
+    off: phaseOff(params, 'infuse'),
   });
 
   // The flow line starts again after the infusion.
@@ -309,6 +385,8 @@ export function buildCurve(
       phase: 'secondFill',
       secondsPerUnit: secondsPerUnit / PAUSE_SHOWN,
       detailOnly: true,
+      start: p.pauseDuration,
+      off: false,
     });
     rampFrom = PAUSE_PRESSURE;
   } else {
@@ -324,6 +402,8 @@ export function buildCurve(
     phase: 'pressurize',
     secondsPerUnit,
     detailOnly: false,
+    start: p.rampTime,
+    off: phaseOff(params, 'pressurize'),
   });
 
   // Flow: the flow moves from the start flow toward its end flow over the flow time; the
@@ -385,6 +465,7 @@ export function buildCurve(
     temperature,
     pressureLimit,
     pauseX,
+    off: order.filter((id) => phaseOff(params, id)),
   };
 }
 

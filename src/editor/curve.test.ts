@@ -14,9 +14,15 @@ import {
   MIN_COLUMN_UNITS,
   PAUSE_MIN_UNITS,
   TEMPERATURE_AXIS,
+  INFUSE_SECONDS_PER_GRAM,
+  REENABLE_SECONDS,
+  borderTarget,
   buildCurve,
   dragTarget,
   expectedSeconds,
+  infuseWeightSeconds,
+  phaseOff,
+  weightTarget,
   hitTest,
   temperatureAxis,
   timeAxis,
@@ -86,18 +92,20 @@ describe('timeAxis', () => {
 
   it('gives the flow phase the rest: more when the phases before it are short', () => {
     expect(width(dark, 'flow')).toBeGreaterThan(width(light, 'flow'));
-    expect(width({ ...dark, infuseTime: 20 }, 'flow')).toBeLessThan(width(dark, 'flow'));
-    // dark: 3.5 + 10 + 5 s of 60 s are taken, the flow phase has the other 41.5 s.
+    expect(width({ ...dark, infuseTime: 20, infuseWeight: 0 }, 'flow')).toBeLessThan(
+      width(dark, 'flow'),
+    );
+    // dark: 3.5 + 9 (its 2 g) + 5 s of 60 s are taken, the flow phase has the other 42.5 s.
     const axis = timeAxis(dark);
     expect(axis.unitsPerSecond).toBeCloseTo(
       (GRAPH_WIDTH - MIN_COLUMN_UNITS) / (AXIS_SECONDS - 3.5),
       6,
     );
-    expect(axis.widths.flow).toBeCloseTo(41.5 * axis.unitsPerSecond, 6);
+    expect(axis.widths.flow).toBeCloseTo(42.5 * axis.unitsPerSecond, 6);
   });
 
   it('draws the set times on one linear scale', () => {
-    const axis = timeAxis({ ...dark, infuseTime: 20, rampTime: 10 });
+    const axis = timeAxis({ ...dark, infuseTime: 20, infuseWeight: 0, rampTime: 10 });
     expect(axis.widths.infuse).toBeCloseTo(20 * axis.unitsPerSecond, 9);
     expect(axis.widths.pressurize).toBeCloseTo(10 * axis.unitsPerSecond, 9);
     expect(axis.widths.infuse! / axis.widths.pressurize!).toBeCloseTo(2, 9);
@@ -106,17 +114,17 @@ describe('timeAxis', () => {
   it('widens a column with its time', () => {
     let last = 0;
     for (const infuseTime of [10, 20, 30, 40]) {
-      const w = width({ ...dark, infuseTime }, 'infuse');
+      const w = width({ ...dark, infuseTime, infuseWeight: 0 }, 'infuse');
       expect(w).toBeGreaterThan(last);
       last = w;
     }
     // Once every other column is at its minimum, the column has all the room there is.
     const most = GRAPH_WIDTH - 2 * MIN_COLUMN_UNITS - FLOW_MIN_UNITS;
-    expect(width({ ...dark, infuseTime: 60 }, 'infuse')).toBeCloseTo(most, 9);
-    expect(width({ ...dark, infuseTime: 127 }, 'infuse')).toBeCloseTo(most, 9);
+    expect(width({ ...dark, infuseTime: 60, infuseWeight: 0 }, 'infuse')).toBeCloseTo(most, 9);
+    expect(width({ ...dark, infuseTime: 127, infuseWeight: 0 }, 'infuse')).toBeCloseTo(most, 9);
   });
 
-  it('never makes a column narrower than a finger, at any times', () => {
+  it('never makes a column narrower than a finger, at any times, unless its phase is off', () => {
     const extremes: Partial<AFlowParams>[] = [
       { fillTime: 0, infuseTime: 0, rampTime: 0, pauseDuration: 0 },
       { fillTime: 0, infuseTime: 0, rampTime: 0, secondFillTime: 0, pauseDuration: 1 },
@@ -130,8 +138,10 @@ describe('timeAxis', () => {
       const { widths, pauseWidth, unitsPerSecond } = timeAxis(p);
       expect(unitsPerSecond).toBeGreaterThan(0);
       expect(widths.fill).toBeGreaterThanOrEqual(MIN_COLUMN_UNITS);
-      expect(widths.infuse).toBeGreaterThanOrEqual(MIN_COLUMN_UNITS);
-      expect(widths.pressurize).toBeGreaterThanOrEqual(MIN_COLUMN_UNITS);
+      if (p.infuseTime > 0) expect(widths.infuse).toBeGreaterThanOrEqual(MIN_COLUMN_UNITS);
+      else expect(widths.infuse).toBe(0);
+      if (p.rampTime > 0) expect(widths.pressurize).toBeGreaterThanOrEqual(MIN_COLUMN_UNITS);
+      else expect(widths.pressurize).toBe(0);
       expect(widths.flow).toBeGreaterThanOrEqual(FLOW_MIN_UNITS);
       if (p.pauseDuration > 0) {
         expect(pauseWidth).toBeGreaterThanOrEqual(PAUSE_MIN_UNITS);
@@ -430,8 +440,8 @@ describe('buildCurve', () => {
     ]);
   });
 
-  it('keeps a column for a ramp of 0 s', () => {
-    const curve = buildCurve({ ...light, rampTime: 0 });
+  it('keeps a column as wide as a finger for a ramp of 1 s', () => {
+    const curve = buildCurve({ ...light, rampTime: 1 });
     const pressurize = curve.phases.find((c) => c.id === 'pressurize')!;
     expect(pressurize.x1 - pressurize.x0).toBeGreaterThanOrEqual(MIN_COLUMN_UNITS);
   });
@@ -697,5 +707,137 @@ describe('the split flow line of detail mode', () => {
     expect(down).toMatchObject({ pourEndFlow: 1, flowUp: false, pourFlow: light.pourFlow });
     const up = dragValue({ ...light, flowUp: false }, 'pourEndFlow', 5);
     expect(up).toMatchObject({ pourEndFlow: 5, flowUp: true });
+  });
+});
+
+// Review of 2026-10-16, A2: the infuse is drawn by its move-on weight, the weight is dragged,
+// and a phase dragged to 0 s collapses.
+describe('the infuse drawn by its weight', () => {
+  it("is the founder's estimate: 1 g is 5 s, 6 g is 25 s, on one straight line", () => {
+    expect(infuseWeightSeconds(1)).toBe(5);
+    expect(infuseWeightSeconds(6)).toBe(25);
+    expect(infuseWeightSeconds(3.6)).toBeCloseTo(15.4, 9);
+    expect(infuseWeightSeconds(2) - infuseWeightSeconds(1)).toBe(INFUSE_SECONDS_PER_GRAM);
+  });
+
+  it('takes the weight, not a time limit of 60 s; the time where it is shorter', () => {
+    expect(expectedSeconds(light).infuse).toBe(25); // 60 s, 6 g
+    expect(expectedSeconds({ ...light, infuseWeight: 1 }).infuse).toBe(5);
+    expect(expectedSeconds(dark).infuse).toBe(9); // 10 s, 2 g
+    expect(expectedSeconds({ ...light, infuseTime: 12 }).infuse).toBe(12);
+    // Without a move-on weight the time ends the infuse.
+    expect(expectedSeconds({ ...light, infuseWeight: 0 }).infuse).toBe(60);
+  });
+
+  it('draws the infuse column as wide as the estimate, on the scale of the other times', () => {
+    const axis = timeAxis(light);
+    expect(axis.widths.infuse).toBeCloseTo(25 * axis.unitsPerSecond, 9);
+    const twelve = timeAxis({ ...light, infuseWeight: 2.75 }); // 12 s
+    expect(twelve.widths.infuse).toBeCloseTo(12 * twelve.unitsPerSecond, 9);
+    expect(twelve.widths.infuse! / twelve.widths.pressurize!).toBeCloseTo(12 / 10, 9);
+    // A heavier weight is a wider column, up to the time limit.
+    expect(width({ ...light, infuseWeight: 8 }, 'infuse')).toBeGreaterThan(width(light, 'infuse'));
+    expect(width({ ...light, infuseWeight: 30 }, 'infuse')).toBeCloseTo(
+      width({ ...light, infuseWeight: 0 }, 'infuse'),
+      9,
+    );
+  });
+
+  it('starts the drag of the infuse border where it is drawn', () => {
+    const infuse = buildCurve(light).borders.find((b) => b.field === 'infuseTime')!;
+    expect(infuse.start).toBe(25);
+    expect(infuse.weightSeconds).toBe(25);
+    expect(buildCurve({ ...light, infuseWeight: 0 }).borders[0].weightSeconds).toBeUndefined();
+    expect(buildCurve({ ...light, infuseWeight: 0 }).borders[0].start).toBe(60);
+    const ramp = buildCurve(light).borders.find((b) => b.field === 'rampTime')!;
+    expect(ramp.start).toBe(light.rampTime);
+  });
+
+  it('cuts the time only where the border goes left of the weight; a touch keeps 60 s', () => {
+    const border = { weightSeconds: 25 };
+    expect(borderTarget(border, 60, 25)).toBe(60);
+    expect(borderTarget(border, 60, 24.7)).toBe(60);
+    expect(borderTarget(border, 60, 20)).toBe(20);
+    expect(borderTarget(border, 60, 0)).toBe(0);
+    // Back to the right of the weight: the time limit returns.
+    expect(borderTarget(border, 60, 30)).toBe(60);
+    expect(borderTarget(border, 60, 70)).toBe(70);
+    // A time shorter than the estimate ends the infuse: the border is the time.
+    expect(borderTarget(border, 12, 15)).toBe(15);
+    expect(borderTarget(border, 12, 30)).toBe(30);
+    // Without a weight, and for the other borders, the drag is the time.
+    expect(borderTarget({}, 60, 40)).toBe(40);
+  });
+});
+
+describe('the drag of the infuse-to weight', () => {
+  it('keeps the estimate under the finger: 4 s to the right is 1 g more', () => {
+    expect(weightTarget(6, 4)).toBe(7);
+    expect(weightTarget(6, -20)).toBe(1);
+    expect(infuseWeightSeconds(weightTarget(3.6, 7))).toBeCloseTo(infuseWeightSeconds(3.6) + 7, 9);
+  });
+
+  it('moves the infuse border by as much as the finger', () => {
+    const before = buildCurve(light);
+    const value = snap('infuseWeight', weightTarget(light.infuseWeight, 8));
+    expect(value).toBe(8);
+    const after = buildCurve(dragValue(light, 'infuseWeight', value));
+    const x = (c: typeof before) => c.borders.find((b) => b.field === 'infuseTime')!.x;
+    const unitsPerSecond = timeAxis(light).unitsPerSecond;
+    expect(x(after) - x(before)).toBeCloseTo(8 * unitsPerSecond, 1);
+  });
+
+  it('stays in the weight range', () => {
+    expect(snap('infuseWeight', weightTarget(1, -60))).toBe(paramRanges().infuseWeight.min);
+    expect(snap('infuseWeight', weightTarget(999, 60))).toBe(paramRanges().infuseWeight.max);
+  });
+});
+
+describe('a phase dragged to 0 s', () => {
+  it('is off: infuse and pressurize, not the fill', () => {
+    expect(phaseOff({ ...light, infuseTime: 0 }, 'infuse')).toBe(true);
+    expect(phaseOff({ ...light, rampTime: 0 }, 'pressurize')).toBe(true);
+    expect(phaseOff(light, 'infuse')).toBe(false);
+    expect(phaseOff({ ...light, fillTime: 0 }, 'fill')).toBe(false);
+  });
+
+  it('collapses to no width, and the others keep the graph filled', () => {
+    for (const change of [{ infuseTime: 0 }, { rampTime: 0 }, { infuseTime: 0, rampTime: 0 }]) {
+      for (const p of [{ ...light, ...change }, { ...floral, ...change }]) {
+        const curve = buildCurve(p);
+        for (const id of ['infuse', 'pressurize'] as const) {
+          const column = curve.phases.find((c) => c.id === id)!;
+          expect(column.x1 - column.x0 === 0).toBe(phaseOff(p, id));
+          expect(curve.off.includes(id)).toBe(phaseOff(p, id));
+          expect(curve.borders.find((b) => b.phase === id)!.off).toBe(phaseOff(p, id));
+        }
+        expect(curve.phases.at(-1)!.x1).toBe(GRAPH_WIDTH);
+        const sum = Object.values(timeAxis(p).widths).reduce((a, b) => a + b, 0);
+        expect(sum).toBeCloseTo(GRAPH_WIDTH, 9);
+      }
+    }
+    // The fill is as wide as before: the room goes to the flow phase.
+    const off = timeAxis({ ...light, infuseTime: 0 });
+    expect(off.widths.fill).toBe(timeAxis(light).widths.fill);
+    expect(off.widths.flow).toBeGreaterThan(timeAxis(light).widths.flow!);
+    expect(buildCurve(light).off).toEqual([]);
+  });
+
+  it('cannot be taken hold of at its border while it is off', () => {
+    const curve = buildCurve({ ...light, infuseTime: 0 });
+    const projection: Projection = { x: (u) => u * 10, y: (_l, v) => 1000 - v * 20 };
+    const draggable = { levels: curve.levels, borders: curve.borders.filter((b) => !b.off) };
+    const fillEnd = curve.phases.find((c) => c.id === 'fill')!.x1;
+    const hit = hitTest(draggable, fillEnd * 10, 500, projection, 0, 20);
+    expect(hit?.kind === 'border' && hit.border.field === 'infuseTime').toBe(false);
+  });
+
+  it('is turned on again with 5 s, which draws it again', () => {
+    expect(REENABLE_SECONDS).toBe(5);
+    const p = dragValue({ ...light, infuseTime: 0 }, 'infuseTime', REENABLE_SECONDS);
+    expect(phaseOff(p, 'infuse')).toBe(false);
+    expect(width(p, 'infuse')).toBeGreaterThanOrEqual(MIN_COLUMN_UNITS);
+    const ramp = dragValue({ ...light, rampTime: 0 }, 'rampTime', REENABLE_SECONDS);
+    expect(width(ramp, 'pressurize')).toBeGreaterThanOrEqual(MIN_COLUMN_UNITS);
   });
 });

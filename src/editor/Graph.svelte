@@ -9,10 +9,15 @@
   import {
     GRAPH_WIDTH,
     PHASE_LABEL,
+    PHASE_TIME,
+    REENABLE_SECONDS,
+    borderTarget,
     buildCurve,
     dragTarget,
+    weightTarget,
     hitTest,
     temperatureAxis,
+    type Border,
     type EditField,
     type LineId,
     type PhaseId,
@@ -67,7 +72,7 @@
   // The pause's border is dragged in detail mode only (founder, 2026-10-12).
   const draggable = $derived({
     levels: curve.levels,
-    borders: curve.borders.filter((b) => mode === 'detail' || !b.detailOnly),
+    borders: curve.borders.filter((b) => !b.off && (mode === 'detail' || !b.detailOnly)),
   });
 
   // The plot in pixels: a band for the temperature on top, a gap that holds the weight chips,
@@ -120,13 +125,17 @@
     field: EditField;
     /** the value under the finger, which the pop-up shows */
     shown: EditField;
-    /** a level line, or null for a border */
+    /** a level line, or null for a border and the infuse weight */
     line: LineId | null;
+    /** the border that is dragged, or that moves with the infuse weight */
+    border: Border | null;
+    /** the duration as it was when the drag of a border began (curve.ts, borderTarget) */
+    time: number;
     pointer: number;
     startX: number;
     startY: number;
     startValue: number;
-    /** seconds per pixel to the right, as it was when the drag of a border began */
+    /** seconds per pixel to the right, as it was when the drag of a border or the weight began */
     secondsPerPixel: number;
     /**
      * a line's value per pixel up, as it was when the drag began: the temperature axis widens
@@ -168,11 +177,14 @@
       field,
       shown: hit.kind === 'level' ? hit.level.field : hit.border.field,
       line: hit.kind === 'level' ? hit.level.line : null,
+      border: hit.kind === 'border' ? hit.border : null,
+      time: resolved[field],
       pointer: event.pointerId,
       startX: x,
       startY: y,
       // The end flow may follow the toggle: its drag starts from the value the toggle gives.
-      startValue: resolved[field],
+      // A border starts where it is drawn: the infuse may be drawn by its weight.
+      startValue: hit.kind === 'border' ? hit.border.start : resolved[field],
       secondsPerPixel:
         hit.kind === 'border' ? hit.border.secondsPerUnit / (box.plotW / GRAPH_WIDTH) : 0,
       valuePerPixel: hit.kind === 'level' ? valuePerPixel(hit.level.line) : 0,
@@ -187,11 +199,46 @@
     const { x, y } = local(event);
     drag.x = x;
     drag.y = y;
+    const seconds = (x - drag.startX) * drag.secondsPerPixel;
     const value = drag.line
       ? dragTarget(drag, drag.startValue, (drag.startY - y) * drag.valuePerPixel)
-      : drag.startValue + (x - drag.startX) * drag.secondsPerPixel;
+      : drag.field === 'infuseWeight'
+        ? weightTarget(drag.startValue, seconds)
+        : borderTarget(drag.border!, drag.time, drag.startValue + seconds);
     const next = snap(drag.field, value, limits);
     if (next !== params[drag.field]) ondrag(drag.field, next);
+  }
+
+  // The infuse-to chip is dragged left or right (founder, 2026-10-16): the weight moves with
+  // the finger as the infuse's border would, through the weight's estimate (curve.ts). A tap
+  // still opens its plus and minus.
+  function weightDrag(dx: number, event: PointerEvent) {
+    const border = curve.borders.find((b) => b.phase === 'infuse')!;
+    if (!drag) {
+      if (mode === 'detail') onselect('infuse');
+      const { x, y } = local(event);
+      drag = {
+        field: 'infuseWeight',
+        shown: 'infuseWeight',
+        line: null,
+        border,
+        time: resolved.infuseWeight,
+        pointer: event.pointerId,
+        startX: x - dx,
+        startY: y,
+        startValue: resolved.infuseWeight,
+        secondsPerPixel: border.secondsPerUnit / (box.plotW / GRAPH_WIDTH),
+        valuePerPixel: 0,
+        gain: 1,
+        x,
+        y,
+      };
+    }
+    move(event);
+  }
+
+  function weightDrop() {
+    drag = null;
   }
 
   function up(event: PointerEvent) {
@@ -218,6 +265,22 @@
   );
 
   const infuseEnd = $derived(curve.phases.find((c) => c.id === 'infuse')!.x1);
+  const infuseOff = $derived(curve.off.includes('infuse'));
+
+  // The phases that are off, by where they collapsed: two may collapse at one place.
+  const offAt = $derived.by(() => {
+    const groups = new Map<number, PhaseId[]>();
+    for (const id of curve.off) {
+      const x = curve.phases.find((c) => c.id === id)!.x0;
+      groups.set(x, [...(groups.get(x) ?? []), id]);
+    }
+    return [...groups];
+  });
+
+  function reenable(phase: PhaseId) {
+    onedit(PHASE_TIME[phase]!, REENABLE_SECONDS);
+    if (mode === 'detail') onselect(phase);
+  }
 
   // The pop-up stays on the graph and above the finger.
   const popup = $derived(
@@ -260,10 +323,12 @@
         height={Math.max(0, height - box.top)}
         rx={0.5 * rem}
       />
-      <text class="phase" x={(x0 + x1) / 2} y={box.bottom + 1.35 * rem}>
-        {PHASE_LABEL[phase.id]}
-      </text>
-      {#if duration}
+      {#if x1 > x0}
+        <text class="phase" x={(x0 + x1) / 2} y={box.bottom + 1.35 * rem}>
+          {PHASE_LABEL[phase.id]}
+        </text>
+      {/if}
+      {#if duration && x1 > x0}
         <text
           class="duration"
           class:active={drag?.field === duration}
@@ -326,7 +391,8 @@
         {y1}
         {y2}
       />
-      {#if level.label !== 'none'}
+      <!-- A phase that is off has no width, and its values are not written. -->
+      {#if level.label !== 'none' && level.to.x > level.from.x}
         <text
           class="value {level.line}"
           class:start={level.label === 'start'}
@@ -341,21 +407,40 @@
       {/if}
     {/each}
 
-    {#if drag && !drag.line}
-      {@const x = projection.x(curve.borders.find((b) => b.field === drag?.field)?.x ?? 0)}
+    {#if drag?.border}
+      {@const x = projection.x(curve.borders.find((b) => b.phase === drag?.border?.phase)?.x ?? 0)}
       <line class="border active" x1={x} x2={x} y1={box.top} y2={box.bottom} />
     {/if}
   </svg>
 
-  <div class="on-graph" style:left="{projection.x(infuseEnd)}px" style:top="{box.gapMiddle}px">
-    <ValueChip
-      compact
-      label="infuse to"
-      value={formatValue('infuseWeight', params.infuseWeight)}
-      testid="graph-infuseWeight"
-      onstep={(d) => step('infuseWeight', d)}
-    />
-  </div>
+  {#if !infuseOff}
+    <div class="on-graph" style:left="{projection.x(infuseEnd)}px" style:top="{box.gapMiddle}px">
+      <ValueChip
+        compact
+        label="infuse to"
+        value={formatValue('infuseWeight', params.infuseWeight)}
+        testid="graph-infuseWeight"
+        onstep={(d) => step('infuseWeight', d)}
+        ondrag={weightDrag}
+        ondrop={weightDrop}
+      />
+    </div>
+  {/if}
+  <!-- A phase that is off has no width; its button turns it on again with 5 s (founder, 2026-10-16). -->
+  {#each offAt as [x, ids] (x)}
+    <div class="on-graph off" style:left="{projection.x(x)}px" style:top="{box.gapMiddle}px">
+      {#each ids as id (id)}
+        <button
+          class="enable"
+          data-testid="enable-{id}"
+          aria-label="turn {PHASE_LABEL[id]} on with {REENABLE_SECONDS} s"
+          onclick={() => reenable(id)}
+        >
+          <span class="plus">+</span>{PHASE_LABEL[id]}
+        </button>
+      {/each}
+    </div>
+  {/each}
   <div class="on-graph end" style:left="{box.right}px" style:top="{box.gapMiddle}px">
     <ValueChip
       compact
@@ -521,6 +606,32 @@
 
   .on-graph.end {
     transform: translate(-100%, -50%);
+  }
+
+  .on-graph.off {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .enable {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 2.75rem;
+    padding: 0 0.9rem;
+    background: var(--panel);
+    border: 1px dashed var(--dim);
+    border-radius: 1.4rem;
+    color: var(--dim);
+    font: inherit;
+    font-size: 0.9rem;
+    white-space: nowrap;
+  }
+
+  .enable .plus {
+    color: var(--fg);
+    font-size: 1.2rem;
+    line-height: 1;
   }
 
   .popup {

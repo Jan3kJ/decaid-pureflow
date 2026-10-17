@@ -319,3 +319,55 @@ test('unsaved edits on the machine: the picker asks before it loads (founder, 20
   expect((await api('GET', '/api/v1/workflow')).profile.title).toBe(title);
   expect(await profileIds()).toEqual(profilesBefore);
 });
+
+// Review of 2026-10-16, A2 (acceptance 23, second half): a phase dragged to 0 s collapses, its
+// button turns it on with 5 s, the infuse-to weight is dragged; the saved profile is the
+// generator's for those values and reads back with them.
+test('a phase turned off and on again at 5 s, and a dragged infuse weight, save and read back', async ({ page }) => {
+  const name = `rig a2 ${Date.now() % 100000}`;
+  const about = { title: `A-Flow / ${name}`, author: 'Janek' };
+  await openEditor(page);
+
+  const graph = (await page.getByTestId('graph').boundingBox())!;
+  const infuse = (await page.getByTestId('column-infuse').boundingBox())!;
+  const border = { x: infuse.x + infuse.width, y: graph.y + graph.height * 0.62 };
+  await page.mouse.move(border.x, border.y);
+  await page.mouse.down();
+  await page.mouse.move(border.x - infuse.width / 2, border.y, { steps: 4 });
+  await page.mouse.move(border.x - infuse.width - 40, border.y, { steps: 4 });
+  await page.mouse.up();
+  expect((await page.getByTestId('column-infuse').boundingBox())!.width).toBe(0);
+  await page.getByTestId('enable-infuse').click();
+  await expect(page.getByTestId('value-infuseTime')).toHaveText('5 s');
+
+  // 5 s is shorter than the 6 g's estimate: the weight's drag leaves the time alone.
+  const chip = page.getByTestId('chip-graph-infuseWeight');
+  const body = (await chip.locator('.body').boundingBox())!;
+  const at = { x: body.x + body.width / 2, y: body.y + body.height / 2 };
+  await page.mouse.move(at.x, at.y);
+  await page.mouse.down();
+  await page.mouse.move(at.x + 40, at.y, { steps: 4 });
+  await page.mouse.move(at.x + 80, at.y, { steps: 4 });
+  await page.mouse.up();
+  const weight = parseFloat((await chip.locator('.value').textContent())!);
+  expect(weight).toBeGreaterThan(6);
+  await expect(page.getByTestId('value-infuseTime')).toHaveText('5 s');
+
+  const wanted: AFlowParams = { ...light, infuseTime: 5, infuseWeight: weight };
+  await saveAs(page, name);
+  const saved = (await api('GET', '/api/v1/profiles')).find((record: any) => record.profile.title === about.title);
+  expect(recordParams(saved)).toEqual(wanted);
+  const expected = buildProfile(wanted, about, false);
+  expect(held(saved.profile, expected)).toEqual(canonical(expected));
+  const read = await api('GET', `/api/v1/profiles/${encodeURIComponent(saved.id)}`);
+  expect(recordParams(read)).toEqual(wanted);
+  expect(await expectWorkflow(about)).toEqual(wanted);
+
+  // It re-opens with them: the infuse drawn again, no button.
+  await page.reload();
+  await expect(page.getByTestId('graph')).toBeVisible();
+  await expect(pressed(page)).toHaveText(name);
+  await expect(page.getByTestId('value-infuseTime')).toHaveText('5 s');
+  await expect(chip).toContainText(`${weight} g`);
+  await expect(page.getByTestId('enable-infuse')).toHaveCount(0);
+});
