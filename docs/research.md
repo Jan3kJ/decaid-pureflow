@@ -2052,3 +2052,418 @@ Tests: Vitest `src/shell/water.test.ts` (15). `npm run e2e`: `e2e/water.spec.ts`
 for hot water with a scale); screenshots `docs/product/water-flush.png` and `water-hot.png`.
 Rig (Streamline 0.2.14 served): `e2e-rig/water.spec.ts` checks the same against the simulation;
 the full run (`log\r3-e2e-rig.txt`): 21 passed.
+
+## 20. Settings page port plan (S1)
+
+Written on 2026-10-17 for the milestone S2 (spec 3.7 'Settings', acceptance 22). No product
+code was written. "Read" means read in Streamline's source; "seen" means run on the rig. The
+founder's goal: "almost all of this should be accessible without switching the skin, except
+skin specific things" ([review-10-16-26.md](review-10-16-26.md)). Every choice made here is the
+simplest one that meets it; those the founder has not seen are collected in 20.11.
+
+### 20.1 What was read
+
+- **Streamline:** the clone of E1, `../streamline-js`, head **`3a4bd23`** (tag `v0.2.14`,
+  "chore(release): v0.2.14"). The rig serves **0.2.14** (`web-ui/.rea_metadata.json`:
+  `github_release:allofmeng/streamline_project@v0.2.14`, installed 2026-10-16, checked again
+  at this start; `GET /api/v1/webui/skins/default` says `0.2.14`), so the clone is not behind
+  what the rig serves and was read as it is. `git fetch` shows `origin/main` 7 commits ahead
+  (`c006dac`, not released): among them **Settings > Connections > Grinder**
+  (`src/settings/categories/connections.js`, 208 new lines, Decaid's `preferredGrinderDeviceId`)
+  and small changes to `settings.js`, `settings-tree.js` and `settings-shell.js`. Not in this
+  plan; S2 may add the grinder page if a release carries it by then (20.9).
+- **Streamline's settings files** (0.2.14): `src/settings/settings-tree.js` (107 lines, the
+  navigation), `settings.html` (62, the page), `settings-shell.js` (381, renders the navigation
+  before the big module loads), `settings.js` (11 000, every category), `settings-data.js` (148),
+  `settings-restore.js` (118), `settings-location.js` (18), `plugin-view.js` (214),
+  `categories/maintenance.js` (371), `categories/quick-adjustments.js` (104),
+  `categories/legacy-category.js` (12); and the setters they call in `src/modules/api.js`,
+  `eco-steam.js`, `steam-mode.js`, `sensor-cal.js`, `units.js`, `i18n.js`.
+- **Decaid's API:** the rig's `assets/api/rest_v1.yml` and `websocket_v1.yml` (schemas
+  `ReaSettings`, `De1SettingsRequest`, `De1AdvancedSettingsRequest`, `WaterLevels`) and the
+  rig's answers (20.4).
+- **This skin:** `src/settings.ts`, `src/settings-backup.ts`, `src/shell/Settings.svelte`,
+  `src/api/client.ts`, `src/api/types.ts`, and section 16 (Streamline's remembered values).
+
+### 20.2 Streamline's page: layout and how it saves
+
+`settings.html` at 1920 px: a header ('Settings', **CANCEL**, **SAVE**), a search field, and
+three columns: the 11 numbered main categories, the chosen category's subcategories, and the
+content of one subcategory. The tree (`SETTINGS_TREE`) is the one source of the navigation;
+the last place opened is kept (`streamline.settings.location`). Every control is a ± stepper
+around a text field (a tap opens Streamline's number pad), a segmented row of buttons, a
+switch or a `<select>`.
+
+Saving is staged: a change goes into `pendingChanges` (`rea`, `de1`, `de1Advanced`,
+`workflow`) and only **SAVE** writes them (`flushPendingChanges`): `POST /api/v1/settings`,
+`POST /api/v1/machine/settings`, `POST /api/v1/machine/settings/advanced`, `PUT
+/api/v1/workflow` for `steamSettings` and `hotWaterData`, and with them Streamline's own
+remembered values in KV `streamline-app` (`last-steam-duration`, `last-steam-flow`,
+`last-steam-temp`, `last-milk-stop`, `last-hot-water-volume`, `last-hot-water-temp`; section
+16). Some controls write at once instead (presence, devices, plugins, brightness, wake lock,
+night mode, water alert, maintenance, firmware). After a machine write Streamline re-reads the
+machine and records what it holds (`userMachineSettings` in its IndexedDB); on the next visit
+of its settings page it **puts the recorded values back** where the machine reports others
+(`checkMachineSettingsDrift`, `settings-restore.js`: "what the user chose in this skin takes
+priority over a value changed in Decaid, in another skin, or on the machine itself";
+`heaterVoltage` excluded). That is a risk for the port (20.9).
+
+### 20.3 Every setting, grouped as Streamline groups them
+
+Columns: what Streamline shows (its label, range, step); where it is read and written; **G** =
+a gateway setting any skin can read and write; **S** = Streamline's own (its `localStorage` or
+IndexedDB, on its own origin, so another skin cannot reach it, and it only steers Streamline);
+**B** = Bengle only (the rig's DE1 answers 404); **X** = an outside service. The last column
+says what S2 does: **port**, **skin** (the skin category has its own), or **out**.
+
+**1. Quick Adjustments**
+
+| Subcategory | Setting (Streamline's range) | Read / write | | S2 |
+|---|---|---|---|---|
+| Flow calibration | Weight flow multiplier (step 0.1, from 0; default 1.0) | `GET`/`POST /api/v1/settings` `weightFlowMultiplier` | G, seen | port |
+| | Volume flow multiplier (s, step 0.05, from 0; default 0.3) | same, `volumeFlowMultiplier` | G | port |
+| Steam | Steam temperature (0, or 135-165 °C, step 1; "the lowest setting turns the steam heater off") | `PUT /api/v1/workflow` `steamSettings.targetTemperature`; KV `last-steam-temp` when > 0 | G, seen (0 kept) | port |
+| | Eco steam (switch) | `localStorage` `streamline.ecoSteam`; Streamline's own idle timer lowers the boiler | S | out |
+| | Flow (0.4-2.5 ml/s, step 0.1) | workflow `steamSettings.flow`; KV `last-steam-flow` | G | port |
+| | Steam stop: Off / Time / Milk temp | `localStorage` `streamline.steamStopMode`; milk temp writes `steamSettings.stopAtTemperature` (B, milk probe) | S / B | out |
+| | Duration (10-120 s, step 5, under 'Time') | workflow `steamSettings.duration`; KV `last-steam-duration` | G | skin: the steam page owns it (3.4) |
+| | Steam purge mode: Normal / Two Tap Stop | `GET`/`POST /api/v1/machine/settings` `steamPurgeMode` 0/1 | G, seen | port |
+| Hot Water | Target temperature (50-95 °C) | workflow `hotWaterData.targetTemperature`; KV `last-hot-water-temp` | G | port (with R5) |
+| | Volume (10-500 ml, step 10) | `hotWaterData.volume`; KV `last-hot-water-volume` | G | port (with R5) |
+| | Duration (5-120 s, step 5) | `hotWaterData.duration` | G | port (with R5) |
+| | Flow (0.1-8.0 ml/s, step 0.1) | `hotWaterData.flow` | G | port (with R5) |
+| | Stop at weight (switch, needs a scale) | `/api/v1/settings` `stopHotWaterAtWeight` | G, seen | port (with R5) |
+| | Flow multiplier, "lookahead for stop-at-weight" (s, step 0.05) | `/api/v1/settings` `hotWaterFlowMultiplier` | G | port (with R5) |
+| Water Tank | Tank temperature (10-40 °C) | `/api/v1/machine/settings` `tankTemp` | G, not kept by the simulation | port |
+| | Water level alert (0-30 mm in steps of 5; default 15) | `POST /api/v1/machine/waterLevels` `{refillLevel}`; read on `ws/v1/machine/waterLevels`; Streamline also keeps `localStorage` `waterRefillLevel` | G, not kept by the simulation | port |
+| | Measurement units mm / mL (home's tank level) | `localStorage` `waterTankUnit` | S | out (the skin shows mm) |
+| Flush | Flush temperature (5-95 °C, step 5) | `/api/v1/machine/settings` `flushTemp` | G, not kept by the simulation | port |
+| | Flush flow (1-8 ml/s, step 1) | same, `flushFlow` | G, seen | port |
+| Machine Advanced Settings ("Before espresso starts") | Idle temperature (0-99 °C) | `GET`/`POST /api/v1/machine/settings/advanced` `heaterIdleTemp` | G, seen | port |
+| | Heater warmup flow (0-10 ml/s, 0.1) | same, `heaterPh1Flow` | G | port |
+| | Heater test flow (0-10 ml/s, 0.1) | same, `heaterPh2Flow` | G | port |
+| | Heater test time-out (0-60 s) | same, `heaterPh2Timeout` | G | port |
+| | Fast Start Defaults (Apply: 99 °C, 2, 4 ml/s, 1 s; insight-js's cafe preset) | the four above in one `POST` | G | port |
+
+Streamline's flush page has no duration: the flush time is the workflow's `rinseData.duration`
+(KV `last-flush-duration`), set on its home page. `rinseData` also has `targetTemperature` and
+`flow` (seen: 90 °C, 10 s, 6 ml/s, next to the machine's `flushTemp` 25 and `flushFlow` 6).
+`renderQuickAdjustmentsSettings` (fixed numbers, no handlers) is dead code and not ported.
+
+**2. Connections**
+
+| Subcategory | Setting | Read / write | | S2 |
+|---|---|---|---|---|
+| 1. Machine | the machine list (name, state, battery), scan, connect / disconnect, forget, "connect automatically" (preferred) | `GET /api/v1/devices` and `ws/v1/devices`; `GET /api/v1/devices/scan[?connect=true]`; `PUT /api/v1/devices/connect?deviceId=`; `PUT /api/v1/devices/forget {deviceId}`; `/api/v1/settings` `preferredMachineId` | G | port |
+| 2. Scale | the scale list, scan, connect, forget, preferred | the same; `preferredScaleId` | G | port |
+| | Scale power mode: Disabled / Display off / Disconnect (when the machine sleeps) | `/api/v1/settings` `scalePowerMode` | G, seen | port |
+| | Scale required (block a shot without a scale) | `/api/v1/settings` `blockOnNoScale` | G | port |
+| | Wi-Fi scales: add by host, remove | `GET`/`POST`/`DELETE /api/v1/devices/wifi` | G | port |
+
+**3. Calibration**
+
+| Subcategory | Setting | Read / write | | S2 |
+|---|---|---|---|---|
+| Default load settings | Reset: fan, idle temperature, heater flows and time-out, refill kit, flow multiplier, steam purge to the factory's | `DELETE /api/v1/machine/settings/reset` | G | port, behind a confirm |
+| Refill Kit | Auto-detect / Force on / Force off | advanced `refillKitSetting` 2 / 1 / 0 | G, seen | port |
+| Voltage | 110 V / 220 V ("restart the machine after changing") | advanced `heaterVoltage` 120 / 230 (a value above 1000 is read minus 1000) | G | port, behind a confirm |
+| Fan | Fan threshold (0-50 °C) | `/api/v1/machine/settings` `fan` | G, seen | port |
+| Steam | Steam temperature (135-170 °C) | workflow `steamSettings.targetTemperature`, as Quick Adjustments | G | one field, shown once (Quick Adjustments) |
+| Sensor Calibration | temperature (offset), pressure and flow (ratio): the machine's reading, a measured value, a correction; the previous one remembered | `GET /api/v1/machine/calibration[/{target}]`, `POST /api/v1/machine/calibration/{target}`; previous value in Streamline's IndexedDB | G (the previous value S) | port, last part |
+| Load Cells | four-step wizard with a reference weight | `GET`/`POST /api/v1/machine/scaleCalibration` | B | out |
+
+**4. Machine**
+
+| Subcategory | Setting | Read / write | | S2 |
+|---|---|---|---|---|
+| USB | USB charger on / off | `/api/v1/machine/settings` `usb`: write `'enable'` / `'disable'`, read back as a boolean | G, seen | port |
+| | Charging mode (disabled and Decaid's smart modes) | `/api/v1/settings` `chargingMode` | G | port |
+| | Night mode on / off, sleep and morning time (minutes since midnight) | `nightModeEnabled`, `nightModeSleepTime`, `nightModeMorningTime` | G, seen | port |
+| | Dim the screen on low battery | `lowBatteryBrightnessLimit` | G | port |
+| | Charging status (battery, phase, USB) | `/api/v1/settings` `chargingState`, read only (absent on the rig) | G | port, read only |
+| Cup Warmer, Lighting | temperature, schedules, pre-warm; LED colours and sequences | `/api/v1/machine/cupWarmer`, `/api/v1/machine/ledStrip` (404 on the rig) | B | out |
+| Machine Information | model, firmware version, serial (copy), GHC, extras | `GET /api/v1/machine/info` | G, read only | port |
+
+**5. Maintenance**
+
+| Subcategory | Action | Request | | S2 |
+|---|---|---|---|---|
+| Clean | instructions, Start, Cancel | `PUT /api/v1/machine/state/cleaning`, back with `.../idle` | G | port |
+| Machine Descaling | instructions and a link to Decent's descaling page, Start, Cancel | `.../state/descaling` | G | port |
+| Transport Mode | air purge (empties the machine for transport), Start | `.../state/airPurge` | G | port |
+
+**6. Skin**
+
+| Subcategory | Setting | Read / write | | S2 |
+|---|---|---|---|---|
+| Theme | light / dark | `localStorage` `theme` | S | out (the skin is dark only, 3.1) |
+| Active Skin | the installed skins, switch, update | `GET /api/v1/webui/skins`, `PUT /api/v1/webui/skins/default`, `POST .../update` | G, switches the skin | out; **this category becomes the skin's own (20.6)** |
+
+**7. Language:** Streamline's translations (`setLanguage`, its own `i18n`). S, out: the skin is
+in English.
+
+**8. Extensions**
+
+| Subcategory | Setting | Read / write | | S2 |
+|---|---|---|---|---|
+| Visualizer | user name, password, auto upload, length threshold, back sync and its interval; verify; Streamline's own server form | `GET`/`POST /api/v1/plugins/visualizer.reaplugin/settings`, `POST .../verifyCredentials` | G (the account is X) | port through the plugin card |
+| Shot Uploader | auto upload, length threshold; upload the latest shot | `/api/v1/plugins/shot-upload.reaplugin/settings` | G | port through the plugin card |
+| Plugins | every plugin Decaid reports: enable / disable, version and update, its manifest settings (a generic control per type: string, number, boolean, secure) | `GET /api/v1/plugins`, `PUT /api/v1/plugins/{id}/enable` / `disable`, `GET`/`POST /api/v1/plugins/{id}/settings`, `POST /api/v1/plugins/update`, `.../update/approve` | G, seen | port |
+
+The rig has 7 plugins: dcamp, decent-profile (12 settings), dye2, settings (1), shot-upload
+(2), time-to-ready (1), visualizer (6).
+
+**9. Miscellaneous**
+
+| Subcategory | Setting | Read / write | | S2 |
+|---|---|---|---|---|
+| Decaid Settings | Gateway mode: Disabled / Tracking / Full | `/api/v1/settings` `gatewayMode` | G | port, behind a confirm |
+| | Log level (ALL ... OFF) | `logLevel` | G | port |
+| | Automatic update checks | `automaticUpdateCheck` | G | port |
+| | Decaid's version and build; update check and install | `GET /api/v1/info`; `GET`/`POST /api/v1/update` (seen: `phase idle`, `installable false`) | G | port |
+| | Web UI path (read only) | `webUiPath` | G | port, read only |
+| | Go to dashboard | `window.decentApp.exitToDashboard()` (the host, not the gateway) | host | port |
+| Brightness | screen brightness slider, auto | `ws/v1/display` command `setBrightness` (the skin uses `PUT /api/v1/display/brightness`); KV `last-brightness` | G | port |
+| Wake Lock | keep the screen on | `POST` / `DELETE /api/v1/display/wakelock` (`wakeLockOverride`); Decaid's `keepAwake` setting | G, seen | port |
+| | Load a profile on wake | `localStorage` `wakeProfileEnabled`, `wakeProfileId` | S | out |
+| Presence Detection | presence on / off, sleep after (1-120 min), wake schedules (time, days, keep awake for) | `GET`/`POST /api/v1/presence/settings`; `GET`/`POST /api/v1/presence/schedules`, `PUT`/`DELETE .../{id}` | G, seen | port |
+| Display Size, Temperature unit, Screen Saver, Keyboard Shortcuts | zoom and line width, °C / °F, images, clock, black saver, keys | `localStorage` (`uiZoom`, `chartLineWidth`, the temperature unit, `screensaver*`, `keyboardBindings`) | S | out |
+| Home Assistant | YAML snippets for a host | `localStorage` | S | out |
+
+**10. Updates:** Firmware Update: the machine's version, the bundled firmware with its
+eligibility (`GET /api/v1/machine/firmware`, seen: builds 1352 and 1358, `applicable` for the
+mock DE1Pro), apply a bundled one (`POST /api/v1/machine/firmware/apply`), upload a file
+(`POST /api/v1/machine/firmware`, NDJSON progress), cancel (`DELETE`). G; S2 ports the status
+and the apply of a bundled build behind a confirm, not the file upload.
+
+**11. User Manual:** Quick Start Guide (Streamline's own text), Talk to Decent (a Decent account,
+`/api/v1/account/...`), Send Feedback (`POST /api/v1/feedback`). S and X; out (spec 6: no new
+outside services).
+
+Decaid settings no page of Streamline shows, so not ported either: `blockTareDuringShot`
+(the skin reads it, section 9), `keepAwake`, `themeMode` (Decaid's own screens), `defaultSkinId`,
+`simulatedDevices`, `preferredGrinderDeviceId` (until the grinder page is released).
+
+### 20.4 Checked on the rig
+
+Decaid 0.8.8 with the simulated DE1 and scale, Streamline 0.2.14 served, 2026-10-17. Each
+setting was read, changed, read again 1.5 to 2 s later, set back and read once more
+(`log\s1-settings-probe.txt`; the probe was a script outside the repository):
+
+| Request | Changed | Read back | Restored |
+|---|---|---|---|
+| `POST /api/v1/settings` (200) | `weightFlowMultiplier` 1 → 1.1, `stopHotWaterAtWeight` true → false, `scalePowerMode` disconnect → displayOff, `nightModeSleepTime` 1320 → 1300, `themeMode` system → dark | each as written | yes |
+| `POST /api/v1/machine/settings` (202) | `fan` 55 → 50, `steamPurgeMode` 0 → 1, `flushFlow` 6 → 5, `hotWaterFlow` 10 → 8 | each as written | yes |
+| | `usb` `"enable"` | `true` | yes (`"disable"` → `false`) |
+| | `usb` `true` (a boolean) | still `false`: accepted (202), not applied | - |
+| | `flushTemp` 25 → 30 and → 80, `flushTimeout` 10 → 12, `tankTemp` 20 → 25 | unchanged: the simulated DE1 does not keep them | - |
+| `POST /api/v1/machine/settings/advanced` (202) | `heaterIdleTemp` 98 → 97, `refillKitSetting` 2 → 0 | as written | yes |
+| `POST /api/v1/presence/settings` (200) | `sleepTimeoutMinutes` 30 → 31 | 31 | yes |
+| `POST /api/v1/plugins/time-to-ready.reaplugin/settings` (200) | `Stabilisation` (unset) → 7 | 7 | `{"Stabilisation": null}` → `{}` as before |
+| `POST` / `DELETE /api/v1/display/wakelock` (200) | `wakeLockOverride` false → true | true, then false | yes |
+| `PUT /api/v1/workflow` (200) | `rinseData.duration` 10 → 12; `steamSettings.targetTemperature` 150 → 0 | as written (0 is kept: the heater off) | yes |
+| `POST /api/v1/machine/waterLevels` (202) | `refillLevel` 5 → 10 | still 5 on `ws/v1/machine/waterLevels` (the simulation) | - |
+
+So every gateway setting of 20.3 can be set from this skin without switching skins, and the
+simulation proves most of them; `flushTemp`, `flushTimeout`, `tankTemp` and `refillLevel` are
+accepted but not kept by the simulated DE1, so S2's rig test reads them back only where the
+simulation keeps them, and the founder checks those four on the real DE1 (20.10). A `202` is
+not a proof: S2 always reads back after a write (acceptance 22). The rig was left as found:
+every value above as before, `streamline-app` KV holding only `favorite-profiles`, the skin's KV
+namespace empty, Streamline the default skin. The full `npm run e2e:rig` after the probe: 21
+passed (`log\s1-e2e-rig.txt`).
+
+Seen in `rest_v1.yml`, for R5: Decaid stops hot water at a weight itself. With
+`stopHotWaterAtWeight` on (the default) and a scale connected, "hot water dispensing tares the
+scale and stops at the configured hot-water volume target treated as grams", with
+`hotWaterFlowMultiplier` as lookahead. R5's stop at weight can be the workflow's
+`hotWaterData.volume` in grams rather than a stop by the skin; not run here.
+
+### 20.5 What a skin can set without switching skins
+
+Everything marked G: Decaid's settings, the machine's settings and advanced settings, the
+workflow's steam, hot water and flush values, devices, presence, display, plugins, maintenance
+states, calibration and firmware are all gateway requests, and Decaid takes them from any
+origin (section 10). What is S lives in Streamline's own storage and only changes how
+Streamline itself behaves (its theme, language, screen saver, eco steam timer, keys, zoom, tank
+unit, steam stop mode, wake profile); that is the founder's "skin specific things", and the skin
+has its own where it needs one. B needs a Bengle. Of Streamline's 41 subcategories, S2 ports 27
+in full or part (all of Quick Adjustments, Connections, Maintenance, the Decaid settings,
+brightness, wake lock, presence, plugins, machine info, firmware status, and 6 of the 7
+calibration pages), leaves 14 out (Bengle 3, Streamline's own 7, the user manual 3, the skin
+switch 1), and adds its own Skin category.
+
+### 20.6 The Skin category: the skin's own settings
+
+Streamline's category 6 'Skin' holds its theme and the skin switch. In the port it holds the
+skin's own settings, everything in `src/settings.ts`, in that one object, so the KV backup
+(`src/settings-backup.ts`) carries them as before. Subcategories, from today's page
+(`src/shell/Settings.svelte`) and the review:
+
+| Subcategory | Settings (`Settings` field) |
+|---|---|
+| Steam | the mugs (`steam.mugSmall`, `mugMedium`, `mugLarge`), the calibration and one drink (`referenceSeconds`, `referenceMilk`, `milkPerDrink`), the favourite timers (`steam.favourites`), **the adjust amounts of R1** (`steam.adjustments`, −60 to 60 s) |
+| Hot water | **the ratio favourites R5 adds** (three ratios, by default 1:2, 1:2.5, 1:3; R5 names the field, a group `hotWater` beside `steam` is the simplest) |
+| Profile | `maxFlow`, `defaultDose`, `firstStepWorkaround`, `showProfileSteps`, the start row (`startProfiles`) |
+| Shot graph | `showGraphLegend` |
+| Backup and version | the backup's time and 'Restore from backup'; the skin's name and version (also kept small in the page's top right corner, 3.1) |
+
+Streamline's Steam and Hot Water pages (category 1) hold the machine's steam and hot water
+values; the skin's Steam and Hot water subcategories hold what the skin's pages calculate with.
+Each subcategory names the other in its hint, so the two steam pages are not taken for one.
+The settings page shows Streamline's numbering and order; the skin's category stays at
+Streamline's place (6), with the name **Skin**.
+
+### 20.7 Files: what is ported, what maps to what
+
+The page replaces `src/shell/Settings.svelte`. New files under `src/settings-page/` (not
+`src/settings/`, which would sit beside `src/settings.ts`):
+
+| File | Job | Ported from | Part |
+|---|---|---|---|
+| `tree.ts` (+ test) | the categories and subcategories shown, in Streamline's order and numbering, each with the component or field list that renders it; the left-out ones are absent | `settings-tree.js` | S2a |
+| `fields.ts` (+ test) | every numeric, choice and switch field of 20.3: id, label, hint, source (`decaid`, `machine`, `advanced`, `workflow.steamSettings`, `workflow.hotWaterData`, `workflow.rinseData`, `presence`), key, unit, range, step, decimals, options; the `usb` mapping; the Fast Start preset | the ranges and wording of `settings.js` | S2a (S2b, S2c add theirs) |
+| `gateway.ts` (+ test) | read every source once when the page opens; `writeField(field, value)`: one request, then a read of that source, and the value the gateway holds is shown; the Streamline KV keys of 20.2 for a workflow field, written only when Streamline already holds one (as `src/steam/apply.ts` does for `last-steam-duration`) | `flushPendingChanges`, `api.js` setters | S2a |
+| `SettingsPage.svelte` | the page: header ('Settings', the version), the category column and the subcategory list, the content panel; the last place opened kept in `localStorage` `decaid-skin.settings-location` (not a setting, not backed up, as `decaid-skin.screen`) | `settings.html`, `settings-shell.js`, `settings-location.js` | S2a |
+| `FieldRow.svelte` | one row: label, hint, and a value button (opens `NumberPad.svelte`), a row of choice chips, or a switch; a write in flight, a failed write's message, and "not supported by this machine" | the row markup of `settings.js` (`settings_ui.md`) | S2a |
+| `SkinCategory.svelte` | 20.6: the skin's settings moved from `Settings.svelte`, with their `data-testid`s | today's `Settings.svelte` | S2a |
+| `Devices.svelte` | Connections: machine and scale lists from `ws/v1/devices`, scan, connect, forget, preferred, scale power mode, scale required, Wi-Fi scales | `renderBluetoothMachineSettings`, `renderBluetoothScaleSettings`, `renderDeviceList` | S2b |
+| `Maintenance.svelte` | clean, descale, transport mode: the instructions, Start with a confirm, Cancel | `categories/maintenance.js` | S2b |
+| `MachineInfo.svelte` | machine info and the USB page's charging status, read only | `renderMachineInformationSettings`, `renderUsbChargerModeSettings` | S2b |
+| `Plugins.svelte` | the plugin cards: enable / disable, version and update, settings from each manifest's schema (string, number, boolean, secure) | `renderPluginManagerSettings`, `renderPluginCard`, `renderPluginSettingControl`, `bindPluginSettingControls`, `plugin-view.js` | S2c |
+| `Presence.svelte` | presence, sleep after, the wake schedules (add, edit, delete) | `renderPresenceSettings`, the schedule handlers | S2c |
+| `Firmware.svelte` | the firmware status and the apply of a bundled build; Decaid's own update | `renderFirmwareUpdateSettings`, `renderAppUpdateBlock` | S2c |
+| `SensorCalibration.svelte` | the three sensors' readings and corrections | `renderSensorCalSettings`, `sensor-cal.js` | S2c |
+
+Changed: `src/api/client.ts` and `src/api/types.ts` (the requests of 20.3 that the client lacks:
+machine settings and advanced settings, reset, water levels, presence and schedules, wake
+lock, devices, Wi-Fi scales, plugins, machine info, calibration, firmware, Decaid's update;
+`DecaidSettings` names the fields of 20.3), `src/App.svelte` (the screen `settings` renders
+`SettingsPage`), `e2e/mock-gateway.ts` (answers for the new requests). Reused as they are:
+`NumberPad.svelte`, the client's KV calls, `Skin.setSettings`, `SettingsBackup`. Not ported:
+Streamline's search field (the page is small enough to see), the resizable columns, the
+fullscreen button, the translations, the staging with CANCEL / SAVE (20.11), the drift restore.
+
+Layout at 1280 x 800, every size relative to the viewport: a header line; under it a left
+column of about a fifth of the width with the numbered categories and, under the chosen one,
+its subcategories (Streamline's second column folded into the first, since three columns do
+not fit 1280 px); the content panel takes the rest and scrolls. Fields as today's settings
+page draws them: a row with name and hint on the left, the value buttons on the right.
+
+### 20.8 Licence
+
+As 17.9: Streamline is GPL-3.0-or-later (its `LICENSE.txt` at `3a4bd23` starts with the two
+lines below, unchanged since E1), this skin is GPL-3.0. Every file of 20.7 that takes code,
+constants, wording or layout from Streamline (all of them except `SkinCategory.svelte`, which is
+the skin's own page moved) starts with:
+
+```
+// Ported from Streamline.js (https://github.com/decentespresso/streamline-js), v0.2.14,
+// src/settings/<file>.js.
+// Streamline.js - A browser-native skin for Decent Espresso machines
+// Copyright (C) 2025-2026 Decent Espresso
+// Licensed under the GNU General Public License v3.0 or later; used here under GPL-3.0.
+```
+
+in a `.svelte` file as an HTML comment above `<script>`. The README's credit line of E2
+already names Streamline; S2 adds "and its settings page". `grep -L "Copyright (C) 2025-2026
+Decent Espresso" src/settings-page/*` lists only `SkinCategory.svelte`.
+
+### 20.9 Risks
+
+- **Streamline puts its values back.** A value of the machine's settings that the user set
+  in Streamline once and later in this skin is set back by Streamline at its next settings
+  page visit (20.2). Nothing in this skin can stop it; S2 says it in the hint of the machine
+  categories, and the founder knows it from 20.11.
+- **Streamline's remembered workflow values** (section 16): Streamline 0.2.13 writes its
+  remembered steam and hot water values back over others while a page of it is open; 0.2.14
+  adopts an outside value (18.4). The settings page writes Streamline's keys too, as the steam
+  page does, so either version agrees.
+- **The simulation does not keep** `flushTemp`, `flushTimeout`, `tankTemp` and `refillLevel`
+  (20.4): unproven until the founder's check on the real DE1. A value that does not stick shows
+  the machine's value after the read-back, not the typed one.
+- **Settings that can do harm:** the heater voltage (a wrong one affects heating; takes effect
+  after a restart), the factory reset, the gateway mode (Disabled stops Decaid's stop at weight,
+  Full hands the shot to a skin that does not run one), firmware apply, transport mode (empties
+  the machine). Each has a confirm that says what it does; S2 tests the confirm, not the effect,
+  except where the simulation shows it.
+- **Overlap with other pages:** steam temperature and flow are also the steam page's machine
+  values, hot water's are R5's page. One field definition each (`fields.ts`), used by both, so a
+  range lives in one place. S2 needs R5 merged first (roadmap: S2 needs R5).
+- **Unreleased Streamline changes:** `origin/main` adds a Grinder page and changes
+  `settings.js`; if 0.2.15 is out when S2 starts, S2 diffs its settings files against
+  `3a4bd23` first.
+- **Size:** `settings.js` is 11 000 lines of string templates; the port takes its fields and
+  wording, not its code. The e2e specs that use today's settings page
+  (`e2e/scale-settings-sleep.spec.ts`, `settings-backup.spec.ts`, `start-row.spec.ts`,
+  `steam.spec.ts`; `e2e-rig/scale-sleep.spec.ts`, `settings-backup.spec.ts`, `steam.spec.ts`,
+  `step-editor.spec.ts`) keep working when `SkinCategory.svelte` keeps the `data-testid`s
+  (`setting-*`, `start-slot-*`, `backup-*`, `skin-version`) and the tests first open the
+  Skin category; S2 greps `e2e/` and `e2e-rig/` before it renames one.
+
+### 20.10 What S2 builds, in three parts
+
+E2, a ported multi-file UI, took 2.54M tokens on 2026-10-16; this page is larger, so S2 is
+three tasks, each one committable and tested on its own:
+
+**S2a: the page, its fields and the Skin category** (about 2.5M tokens). `tree.ts`,
+`fields.ts`, `gateway.ts`, `SettingsPage.svelte`, `FieldRow.svelte`, `SkinCategory.svelte`, the
+client's machine-settings requests; categories 1 (Quick Adjustments, all six subcategories),
+3 without sensor calibration (default load, refill kit, voltage, fan), 4's USB, 6 (the skin's
+own) and 9's Decaid settings, brightness and wake lock. Tests:
+- Vitest: `fields.test.ts` (every field's range, step and source as 20.3; the `usb` mapping;
+  the Fast Start preset; no field is in two places), `gateway.test.ts` with a fake gateway (one
+  request per write with only that key; the read-back's value is the one shown; a failed write
+  keeps the read value and gives the message; a workflow field writes Streamline's key only
+  when it exists), `tree.test.ts` (Streamline's order; the left-out subcategories are absent).
+- Playwright, mocked gateway, `e2e/settings-page.spec.ts`: each category opens; a number typed
+  on the pad is `POST`ed to its endpoint with that key alone and the page shows the value the
+  next `GET` returns; a confirm comes before voltage, reset and gateway mode; the skin's own
+  settings are in Skin and still saved and backed up (the existing specs pass, opening Skin
+  first); the page fits 1280 x 800 without a horizontal scroll.
+- Rig, `e2e-rig/settings-page.spec.ts` (acceptance 22): through the page, change
+  `weightFlowMultiplier`, `steamPurgeMode`, `heaterIdleTemp`, `stopHotWaterAtWeight` and the
+  steam flow, read each back with the client, restore each; the test records the values before
+  and checks them after.
+
+**S2b: connections, maintenance, machine information** (about 1.8M tokens). `Devices.svelte`
+(category 2), `Maintenance.svelte` (5), `MachineInfo.svelte` (4); the device, Wi-Fi scale and
+machine-info requests. Tests: Vitest for the device list's order and states; Playwright with
+fake `ws/v1/devices` frames (scan, connect, preferred, forget, scale power mode, scale
+required); maintenance's confirm sends `PUT .../state/cleaning` and Cancel `.../idle`. Rig:
+the device list shows `MockDe1` and `MockScale` connected; `scalePowerMode` and
+`blockOnNoScale` read back and restored; clean started and cancelled on the simulation, the
+state read back (if the simulation refuses it, the test records that and checks the request).
+No forget or disconnect on the rig: the rig's preferred devices stay.
+
+**S2c: plugins, presence, firmware status, sensor calibration** (about 2.0M tokens).
+`Plugins.svelte` (8), `Presence.svelte` (9), `Firmware.svelte` (10, status and apply of a
+bundled build behind a confirm, Decaid's own update status), `SensorCalibration.svelte` (3).
+Tests: Vitest for the plugin schema controls (each type, a secure value never shown);
+Playwright for a plugin setting written and read back, enable / disable, a schedule added,
+edited and deleted, the firmware confirm; rig: a plugin setting changed and restored (as 20.4),
+`sleepTimeoutMinutes` changed and restored, a schedule created and deleted, the firmware
+catalog shown; no firmware is applied on the rig.
+
+Together about 6.3M tokens. If only one task can be planned, S2a alone meets acceptance 22's
+words (Streamline's settings, the skin's in its category, a changed Decaid setting read back);
+S2b and S2c bring the rest of "almost everything". The founder's checks on the real DE1 (for
+H1's install.md): tank temperature, flush temperature, water level alert and USB charger take
+effect; Streamline's settings page, opened afterwards, does not set them back unexpectedly
+(20.9).
+
+### 20.11 Choices the founder has not seen
+
+1. **What is left out:** Streamline's own settings (theme, language, screen saver, eco steam,
+   steam stop mode, display size, temperature unit, keyboard, Home Assistant, wake profile,
+   tank unit), the Bengle pages (cup warmer, lighting, load cells), the skin switch, the user
+   manual, Talk to Decent and feedback (outside services), firmware upload from a file (20.3).
+2. **One save model:** every change is written at once and read back, as the skin's own
+   settings save at once; Streamline's CANCEL / SAVE staging is not ported.
+3. **The Skin category** is Streamline's category 6 renamed, holding the skin's settings in
+   five subcategories (20.6); R5's ratio favourites go under Hot water.
+4. **The steam duration** stays on the steam page; the settings page has no second place for it.
+5. **Two columns, not three:** subcategories are listed under their category (20.7).
+6. **Confirms** before voltage, factory reset, gateway mode, firmware apply and the maintenance
+   procedures.
+7. **Three tasks** (S2a, S2b, S2c) instead of one S2 (20.10).
