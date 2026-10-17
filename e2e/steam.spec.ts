@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { mockGateway, type MockGateway } from './mock-gateway';
+import { swipe } from './touch';
 
 // The steam page against a mocked gateway (D8a, acceptance item 4): the scale's frames are
 // the mock's, because the simulated scale's weight cannot be set (research.md 8.7). The
@@ -260,5 +261,163 @@ test('steam started at the machine shows its graph of pressure and temperature, 
   // The finished graph stays until the next steam.
   await expect(page.getByTestId('steam-state')).toContainText('last steam');
   expect(Number(await page.getByTestId('shot-graph').getAttribute('data-points'))).toBeGreaterThanOrEqual(72);
+  expect(errors).toEqual([]);
+});
+
+// The founder's review of 2026-10-16 (spec 3.7, acceptance item 17).
+
+test('a selected adjust button adds its amount to the calculated timer and to a favourite, and the seconds written include it', async ({
+  page,
+}) => {
+  const gateway = await mockGateway(page);
+  await page.goto('/');
+  await page.getByTestId('open-steam').click();
+  gateway.putOnScale(525);
+  await expect(page.getByTestId('steam-seconds')).toHaveText('43 s');
+
+  // The defaults, none selected.
+  const adjust = page.getByTestId('steam-adjust');
+  const selected = page.locator('[data-testid="steam-adjust"][aria-pressed="true"]');
+  await expect(adjust).toHaveText(['−8 s', '−4 s', '+5 s']);
+  await expect(selected).toHaveCount(0);
+  await expect(page.getByTestId('steam-favourite')).toHaveText(['25 s', '50 s', '30 s']);
+
+  // +5 s: the calculated 43 s become 48 s, the favourites 30, 55 and 35 s. The selection writes nothing.
+  await adjust.nth(2).click();
+  await expect(adjust.nth(2)).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('steam-seconds')).toHaveText('48 s');
+  await expect(page.getByTestId('steam-favourite')).toHaveText(['30 s', '55 s', '35 s']);
+  expect(written(gateway)).toEqual([]);
+  await page.getByTestId('steam-set-timer').click();
+  await expect(page.getByTestId('steam-timer')).toHaveText('48s');
+  expect(gateway.shotSettings.targetSteamDuration).toBe(48);
+
+  // One at a time: −8 s replaces +5 s; the favourite of 25 s sends 17 s.
+  await adjust.nth(0).click();
+  await expect(selected).toHaveCount(1);
+  await expect(page.getByTestId('steam-seconds')).toHaveText('35 s');
+  await page.getByTestId('steam-favourite').nth(0).click();
+  await expect(page.getByTestId('steam-timer')).toHaveText('17s');
+  await expect(page.getByTestId('steam-favourite').nth(0)).toHaveClass(/on/);
+
+  // A tap on the selected one clears it.
+  await adjust.nth(0).click();
+  await expect(selected).toHaveCount(0);
+  await expect(page.getByTestId('steam-seconds')).toHaveText('43 s');
+  expect(written(gateway)).toEqual([{ steamSettings: { duration: 48 } }, { steamSettings: { duration: 17 } }]);
+  expect(gateway.shotSettings.targetSteamDuration).toBe(17);
+  expect(errors).toEqual([]);
+});
+
+test('the adjust amounts come from the settings, and the settings page changes them, below 0 too', async ({ page }) => {
+  const gateway = await mockGateway(page);
+  await page.goto('/');
+  await page.evaluate(() => {
+    localStorage.setItem('decaid-skin.settings', JSON.stringify({ steam: { adjustments: [-3, 2, 10] } }));
+  });
+  await page.reload();
+  await page.getByTestId('open-steam').click();
+  await expect(page.getByTestId('steam-adjust')).toHaveText(['−3 s', '+2 s', '+10 s']);
+  gateway.putOnScale(525);
+  await page.getByTestId('steam-adjust').nth(2).click();
+  await expect(page.getByTestId('steam-seconds')).toHaveText('53 s');
+
+  // The settings page, category Steam: −6 s typed on the number pad with its sign key.
+  await page.getByTestId('nav-home').click();
+  await page.getByTestId('menu').click();
+  await page.getByTestId('open-settings').click();
+  await expect(page.getByTestId('setting-adjust-1')).toContainText('-3');
+  await page.getByTestId('setting-adjust-1').click();
+  await expect(page.getByTestId('numpad-range')).toHaveText('-60 to 60 s');
+  await page.getByTestId('numpad-key-6').click();
+  await page.getByTestId('numpad-key-sign').click();
+  await expect(page.getByTestId('numpad-display')).toHaveText('-6');
+  await page.getByTestId('numpad-confirm').click();
+  await expect(page.getByTestId('setting-adjust-1')).toContainText('-6');
+  await page.getByTestId('nav-home').click();
+  await page.getByTestId('open-steam').click();
+  await expect(page.getByTestId('steam-adjust')).toHaveText(['−6 s', '+2 s', '+10 s']);
+  expect(errors).toEqual([]);
+});
+
+test("while steam runs the timer counts down; after the steam the graph adds no points, its time is the steam's, and the selection is cleared", async ({
+  page,
+}) => {
+  const gateway = await mockGateway(page);
+  await page.goto('/');
+  await page.getByTestId('open-steam').click();
+  gateway.putOnScale(525);
+  await page.getByTestId('steam-adjust').nth(2).click();
+  await page.getByTestId('steam-set-timer').click();
+  await expect(page.getByTestId('steam-timer')).toHaveText('48s');
+  // The temperature axis of the steam graph (spec 3.7).
+  await expect(page.getByTestId('shot-tick-temperature')).toHaveText(['140', '170']);
+
+  // 10 s of steam: 38 s are left, then fewer as the machine's frames go on.
+  gateway.steamFor(10);
+  await expect(page.getByTestId('steam-state')).toContainText('steaming');
+  const left = async () => parseInt((await page.getByTestId('steam-timer').textContent())!, 10);
+  await expect.poll(left).toBeLessThanOrEqual(38);
+  const first = await left();
+  expect(first).toBeGreaterThanOrEqual(35);
+  await expect.poll(left, { timeout: 5000 }).toBeLessThan(first);
+
+  // The real DE1 stays in state steam while it purges: the steam has ended there.
+  gateway.substate = 'puffing';
+  await expect(page.getByTestId('steam-state')).toContainText('last steam');
+  const points = (await page.getByTestId('shot-graph').getAttribute('data-points'))!;
+  const elapsed = (await page.getByTestId('steam-elapsed').textContent())!;
+  await page.waitForTimeout(1500);
+  await expect(page.getByTestId('shot-graph')).toHaveAttribute('data-points', points);
+  await expect(page.getByTestId('steam-elapsed')).toHaveText(elapsed);
+  // The page shows the set timer again, and the selection of +5 s is gone.
+  await expect(page.getByTestId('steam-timer')).toHaveText('48s');
+  await expect(page.locator('[data-testid="steam-adjust"][aria-pressed="true"]')).toHaveCount(0);
+  await expect(page.getByTestId('steam-seconds')).toHaveText('43 s');
+
+  gateway.substate = null;
+  gateway.state = 'idle';
+  await page.waitForTimeout(700);
+  await expect(page.getByTestId('shot-graph')).toHaveAttribute('data-points', points);
+  await expect(page.getByTestId('steam-elapsed')).toHaveText(elapsed);
+  expect(errors).toEqual([]);
+});
+
+test('a swipe from the right edge to the left opens the steam page, and no other swipe does', async ({ page }) => {
+  const gateway = await mockGateway(page);
+  await page.goto('/');
+  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+
+  // From the middle, to the right, and down along the edge: nothing.
+  await swipe(page, { x: 700, y: 400 }, { x: 400, y: 400 });
+  await swipe(page, { x: 1100, y: 400 }, { x: 1270, y: 400 });
+  await swipe(page, { x: 1250, y: 200 }, { x: 1220, y: 600 });
+  await page.waitForTimeout(200);
+  await expect(page.getByTestId('screen-home')).toBeVisible();
+
+  await swipe(page, { x: 1180, y: 400 }, { x: 930, y: 420 });
+  await expect(page.getByTestId('screen-steam')).toBeVisible();
+  // The history's swipe still opens the history, not the steam page.
+  await page.getByTestId('nav-home').click();
+  await swipe(page, { x: 10, y: 400 }, { x: 260, y: 420 });
+  await expect(page.getByTestId('history')).toBeVisible();
+  await expect(page.getByTestId('screen-home')).toBeVisible();
+  expect(gateway.requests.filter((request) => request.method !== 'GET')).toEqual([]);
+  expect(errors).toEqual([]);
+});
+
+test("the steam page's tare button tares the scale, and does nothing without one", async ({ page }) => {
+  const gateway = await mockGateway(page);
+  await page.goto('/');
+  await page.getByTestId('open-steam').click();
+  gateway.putOnScale(300);
+  await expect(page.getByTestId('steam-weight')).toHaveText('300.0 g');
+  await page.getByTestId('steam-tare').click();
+  await expect(page.getByTestId('steam-weight')).toHaveText('0.0 g');
+  expect(gateway.calls('PUT', '/api/v1/scale/tare')).toHaveLength(1);
+
+  gateway.connectScale(false);
+  await expect(page.getByTestId('steam-tare')).toBeDisabled();
+  expect(gateway.calls('PUT', '/api/v1/scale/tare')).toHaveLength(1);
   expect(errors).toEqual([]);
 });

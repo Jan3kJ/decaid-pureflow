@@ -6,7 +6,7 @@
   // The profile's targets are thin dashed lines in the colour and on the scale of their
   // quantity. Every scale names its unit in its colour. As the step editor's preview (`preview`)
   // it draws a profile's targets alone, as solid lines, with its steps' borders.
-  import { timeAxis } from './axis';
+  import { inBand, temperatureBand, timeAxis, type TemperatureBand } from './axis';
 
   interface Props {
     /** s, one entry per sample; every other array is as long */
@@ -31,6 +31,8 @@
     minSeconds?: number;
     /** the top of the scale of pressure and flow; steam stays far under a shot's 12 */
     yMax?: number;
+    /** °C, a temperature band that does not follow the values (the steam page's 140 to 170) */
+    temperatureScale?: TemperatureBand;
     /** the legend under the graph: the curves, and what dashed means (the setting `showGraphLegend`) */
     legend?: boolean;
     label?: string;
@@ -54,6 +56,7 @@
     fit = false,
     minSeconds = 30,
     yMax = 12,
+    temperatureScale,
     legend = false,
     label = 'shot graph',
     preview = false,
@@ -90,12 +93,9 @@
   );
 
   // The temperature band covers 80 to 100 °C and opens for a colder or hotter group or target.
-  const temperatureRange = $derived.by(() => {
-    const values = [...(temperature ?? []), ...drawn(targetTemperature)];
-    const low = values.length ? Math.min(...values) : 80;
-    const high = values.length ? Math.max(...values) : 100;
-    return { min: Math.min(80, Math.floor(low / 10) * 10), max: Math.max(100, Math.ceil(high / 10) * 10) };
-  });
+  const temperatureRange = $derived(
+    temperatureBand([...(temperature ?? []), ...drawn(targetTemperature)], temperatureScale),
+  );
 
   // The plot in pixels: a band for the temperature on top, a gap, and the main band. Over
   // each band is a line for its units.
@@ -114,7 +114,7 @@
   const yMain = (value: number) => box.bottom - (Math.min(Math.max(value, 0), yMax) / yMax) * box.mainH;
   const yTemperature = (value: number) =>
     box.tempBottom -
-    ((value - temperatureRange.min) / (temperatureRange.max - temperatureRange.min)) * box.tempH;
+    ((inBand(value, temperatureRange) - temperatureRange.min) / (temperatureRange.max - temperatureRange.min)) * box.tempH;
 
   /** One path; a null starts a new stretch. */
   function path(values: readonly (number | null)[] | undefined, y: (value: number) => number): string {
@@ -158,7 +158,7 @@
       {#if temperature}
         {#each [temperatureRange.min, temperatureRange.max] as tick (tick)}
           <line class="grid" x1={box.left} x2={box.right} y1={yTemperature(tick)} y2={yTemperature(tick)} />
-          <text class="tick temperature" x={box.left - 0.5 * rem} y={yTemperature(tick) + 0.3 * rem}>{tick}</text>
+          <text class="tick temperature" data-testid="shot-tick-temperature" x={box.left - 0.5 * rem} y={yTemperature(tick) + 0.3 * rem}>{tick}</text>
         {/each}
         <text class="unit temperature" data-testid="shot-unit-temperature" x={box.left} y={box.top - 0.5 * rem}>°C</text>
       {/if}

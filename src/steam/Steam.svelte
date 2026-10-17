@@ -2,8 +2,8 @@
   import ShotGraph from '../graph/ShotGraph.svelte';
   import type { Skin } from '../shell/skin.svelte';
   import StateLine from '../shell/StateLine.svelte';
-  import { emptySteamSeries, steamSeconds } from './run';
-  import { readScale } from './timer';
+  import { emptySteamSeries, secondsLeft, steamSeconds } from './run';
+  import { adjustedSeconds, readScale } from './timer';
 
   interface Props {
     skin: Skin;
@@ -20,6 +20,16 @@
   const timer = $derived(skin.steamTimer);
   const reading = $derived(skin.weight === null ? null : readScale(skin.weight, settings));
   const grams = (value: number) => `${+value.toFixed(1)} g`;
+  /** s, a timer with the selected adjust button's amount (spec 3.7): what a tap sends */
+  const adjusted = (seconds: number) => adjustedSeconds(seconds, skin.steamAdjustment);
+  const calculated = $derived(reading ? adjusted(reading.seconds) : 0);
+  /** While steam runs the timer counts down from the set seconds (spec 3.7). */
+  const shown = $derived(
+    timer === null ? null : steaming && skin.steam ? secondsLeft(timer, steamSeconds(skin.steam)) : timer,
+  );
+  const signed = (amount: number) => `${amount > 0 ? '+' : amount < 0 ? '−' : '±'}${Math.abs(amount)} s`;
+  /** One adjust button at a time; a tap on the selected one clears it. */
+  const select = (index: number) => (skin.steamAdjust = skin.steamAdjust === index ? null : index);
 </script>
 
 <div class="steam">
@@ -40,6 +50,7 @@
       pressure={series.pressure}
       temperature={series.temperature}
       yMax={4}
+      temperatureScale={{ min: 140, max: 170 }}
       minSeconds={Math.max(30, timer ?? 0)}
       label="steam graph"
     />
@@ -47,27 +58,38 @@
 
   <aside>
     <div class="favourites">
+      <!-- A chip shows the seconds it sends: its own with the selected adjust button's amount. -->
       {#each settings.favourites as seconds, i (i)}
         <button
           class="chip"
-          class:on={seconds === timer}
+          class:on={adjusted(seconds) === timer}
           data-testid="steam-favourite"
-          onclick={() => skin.setSteamTimer(seconds)}
+          onclick={() => skin.setSteamTimer(adjusted(seconds))}
         >
-          {seconds} s
+          {adjusted(seconds)} s
         </button>
       {/each}
     </div>
 
+    <!-- In the centre of the column, in line with 'set timer' (spec 3.7). -->
     <div class="big">
-      <small>steam timer</small>
-      <b data-testid="steam-timer">{timer ?? '–'}<i>s</i></b>
+      <small>{steaming ? 'steam left' : 'steam timer'}</small>
+      <b data-testid="steam-timer">{shown ?? '–'}<i>s</i></b>
     </div>
 
     <dl>
       <div class="weight">
         <dt>scale</dt>
-        <dd data-testid="steam-weight">{skin.weight === null ? '–' : `${skin.weight.toFixed(1)} g`}</dd>
+        <dd>
+          <span data-testid="steam-weight">{skin.weight === null ? '–' : `${skin.weight.toFixed(1)} g`}</span>
+          <!-- The one tare of the skin (Skin.tare, spec 3.7); without a scale there is nothing to tare. -->
+          <button
+            class="tare"
+            data-testid="steam-tare"
+            disabled={skin.scaleLink !== 'connected'}
+            onclick={() => skin.tare()}>tare</button
+          >
+        </dd>
       </div>
       <div>
         <dt>mug</dt>
@@ -86,15 +108,30 @@
       </div>
     </dl>
 
+    <!-- The adjust buttons (spec 3.7): for milk colder or warmer than the calibration's. -->
+    <div class="adjust">
+      {#each settings.adjustments as amount, i (i)}
+        <button
+          class="chip"
+          class:on={skin.steamAdjust === i}
+          aria-pressed={skin.steamAdjust === i}
+          data-testid="steam-adjust"
+          onclick={() => select(i)}
+        >
+          {signed(amount)}
+        </button>
+      {/each}
+    </div>
+
     <button
       class="set"
       data-testid="steam-set-timer"
-      disabled={!reading || reading.seconds === 0}
-      onclick={() => reading && skin.setSteamTimer(reading.seconds)}
+      disabled={calculated === 0}
+      onclick={() => calculated > 0 && skin.setSteamTimer(calculated)}
     >
       set timer
-      {#if reading && reading.seconds > 0}
-        <b data-testid="steam-seconds">{reading.seconds} s</b>
+      {#if calculated > 0}
+        <b data-testid="steam-seconds">{calculated} s</b>
       {/if}
     </button>
 
@@ -180,9 +217,15 @@
     user-select: none;
   }
 
-  .favourites {
+  .favourites,
+  .adjust {
     display: flex;
     gap: 0.6rem;
+  }
+
+  .adjust .chip {
+    min-height: 3.4rem;
+    font-size: 1.15rem;
   }
 
   .chip {
@@ -215,6 +258,7 @@
   .big {
     display: flex;
     flex-direction: column;
+    align-items: center;
   }
 
   .big b {
@@ -245,7 +289,22 @@
   }
 
   .weight dd {
+    display: flex;
+    align-items: baseline;
+    gap: 0.8rem;
     color: var(--weight);
+  }
+
+  .tare {
+    align-self: center;
+    min-height: 2.6rem;
+    padding: 0 1rem;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .tare:disabled {
+    color: var(--dim);
   }
 
   .size {

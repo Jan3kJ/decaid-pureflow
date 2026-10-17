@@ -3,7 +3,7 @@
   import Editor from './editor/Editor.svelte';
   import { editorFor } from './editor/route';
   import History from './history/History.svelte';
-  import { isOpeningSwipe, startsAtEdge, type Point } from './history/swipe';
+  import { isOpeningSwipe, startsAtEdge, type Edge, type Point } from './history/swipe';
   import Espresso from './shell/Espresso.svelte';
   import Home from './shell/Home.svelte';
   import Profiles from './shell/Profiles.svelte';
@@ -18,20 +18,24 @@
   onMount(() => skin.connect());
 
   // The shot history opens by its tab or by a swipe from the left edge, on home only: the
-  // editor's drags and every other screen never see the gesture (spec 3.1).
+  // editor's drags and every other screen never see the gesture (spec 3.1). Its mirror from
+  // the right edge opens the steam page, as the steam tab does (spec 3.7).
   const home = $derived(skin.screen === 'home');
-  let swipe: (Point & { id: number }) | null = null;
+  let swipe: (Point & { id: number; edge: Edge }) | null = null;
 
   function onpointerdown(event: PointerEvent) {
     const start = { x: event.clientX, y: event.clientY };
-    swipe = home && !skin.historyOpen && startsAtEdge(start, innerWidth) ? { ...start, id: event.pointerId } : null;
+    const edge = (['left', 'right'] as const).find((side) => startsAtEdge(start, innerWidth, side));
+    swipe = home && !skin.historyOpen && edge ? { ...start, id: event.pointerId, edge } : null;
   }
 
   function onpointermove(event: PointerEvent) {
     if (!swipe || event.pointerId !== swipe.id) return;
-    if (isOpeningSwipe(swipe, { x: event.clientX, y: event.clientY }, innerWidth)) {
+    if (isOpeningSwipe(swipe, { x: event.clientX, y: event.clientY }, innerWidth, swipe.edge)) {
+      const edge = swipe.edge;
       swipe = null;
-      skin.historyOpen = true;
+      if (edge === 'left') skin.historyOpen = true;
+      else skin.go('steam');
     }
   }
 
@@ -136,7 +140,7 @@
     grid-template-columns: 4rem minmax(0, 1fr) 4rem;
   }
 
-  /* A finger that moves sideways on home is the history's swipe, not the browser's pan. */
+  /* A finger that moves sideways on home is a swipe of the history or the steam page, not the browser's pan. */
   main.home {
     touch-action: pan-y;
   }

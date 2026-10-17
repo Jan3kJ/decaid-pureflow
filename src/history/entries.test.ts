@@ -350,3 +350,23 @@ describe('the opening swipe', () => {
     expect(isOpeningSwipe({ x: 20, y: 100 }, { x: 70, y: 100 }, 1280)).toBe(false);
   });
 });
+
+describe("the steam page's swipe, the mirror from the right edge (spec 3.7)", () => {
+  const width = 1280;
+  const edge = width - width * SWIPE_EDGE;
+  const far = width * SWIPE_DISTANCE;
+
+  it('is a move to the left that starts near the right edge', () => {
+    expect(isOpeningSwipe({ x: 1260, y: 400 }, { x: 1260 - far - 1, y: 400 }, width, 'right')).toBe(true);
+    expect(isOpeningSwipe({ x: edge, y: 400 }, { x: edge - far - 40, y: 430 }, width, 'right')).toBe(true);
+  });
+
+  it("is not a short move, a move to the right, a move down, one from the middle, or the history's swipe", () => {
+    expect(isOpeningSwipe({ x: 1260, y: 400 }, { x: 1260 - far + 1, y: 400 }, width, 'right')).toBe(false);
+    expect(isOpeningSwipe({ x: 1100, y: 400 }, { x: 1100 + far, y: 400 }, width, 'right')).toBe(false);
+    expect(isOpeningSwipe({ x: 1260, y: 400 }, { x: 1260 - far, y: 400 + far }, width, 'right')).toBe(false);
+    expect(isOpeningSwipe({ x: edge - 1, y: 400 }, { x: edge - 1 - 2 * far, y: 400 }, width, 'right')).toBe(false);
+    expect(isOpeningSwipe({ x: 20, y: 400 }, { x: 20 + far, y: 400 }, width, 'right')).toBe(false);
+    expect(isOpeningSwipe({ x: 1260, y: 400 }, { x: 1260 - far, y: 400 }, width)).toBe(false);
+  });
+});

@@ -1908,6 +1908,32 @@ What the run left in the rig: nothing. 73 profiles as before, hidden and deleted
 the skin's KV namespace empty; Streamline is the default skin; no setting written. Decaid is
 stopped.
 
+**Confirmed on 2026-10-17 (R1), with Streamline 0.2.14 served by the rig** (`.rea_metadata.json`:
+`github_release:allofmeng/streamline_project@v0.2.14`, installed 2026-10-16, checked again at
+this start). With a Streamline page open and remembering 43 s, `PUT /api/v1/workflow
+{"steamSettings":{"duration":26}}` is not answered by a push: within 15 s Streamline writes 26
+into `streamline-app/last-steam-duration`, and 5 s later the workflow and the machine
+(`targetSteamDuration`) still have 26. That is `decideResync`'s `adopt` (`resync-policy.js`
+at `3a4bd23`): the remembered value wins only for Streamline's own pushes not yet seen in the
+workflow (and within 10 s of them, `ECHO_WINDOW_MS`); a value someone else wrote is taken over.
+So the write-back of section 16 no longer happens with 0.2.14. The control step of
+`e2e-rig/steam.spec.ts` now checks the adoption (KV key 26, workflow and machine 26) instead of
+the write-back. The skin's own steps are unchanged and still needed for a tablet on 0.2.13:
+the skin changes Streamline's key before it writes the workflow, so either version agrees.
+Full rig run: 21 passed (`log1-e2e-rig.txt`). The rig was left as found: 73 profiles, the
+skin's KV namespace empty, `last-steam-duration` absent, steam settings as before (50 s),
+Streamline the default skin.
+
+**Steam's substates (R1, spec 3.7).** The simulated steam is `steam`/`idle` from its first
+frame to its last and goes straight to `idle`/`idle` (seen running, `PUT .../state/steam`, 6 s,
+`PUT .../state/idle`; the steam record it wrote was deleted). The real DE1 stays in state
+`steam` after the steam itself: Decaid's `MachineSubstate` (rest_v1.yml) has `pouringDone`,
+`puffing` and `pausedSteam` for the end, the purge and the pause of the two-tap purge. The
+skin ended its steam run only on a frame of another state, so on the real machine the graph
+went on and the last steam time took in the purge or the pause: the founder's bug of
+2026-10-16. The run now ends on those substates too (`steams` in `src/steam/run.ts`); proven
+with Vitest and the mocked gateway, not on the rig, whose simulation has no such tail.
+
 ### 18.5 Built (M2)
 
 The A-Flow values moved from the profile's `notes` to the record's `metadata` (spec 3.6,

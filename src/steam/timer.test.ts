@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_STEAM_SETTINGS, type SteamSettings } from '../settings';
-import { detectMug, milkWeight, mugSteps, mugs, readScale, timerSeconds } from './timer';
+import { adjustedSeconds, detectMug, milkWeight, mugSteps, mugs, readScale, timerSeconds } from './timer';
 
 const settings = DEFAULT_STEAM_SETTINGS;
 const size = (weight: number, from: SteamSettings = settings) => detectMug(weight, from).size;
@@ -99,5 +99,30 @@ describe('a scale weight', () => {
   it('gives no milk and no seconds for an empty scale', () => {
     expect(readScale(0, settings)).toEqual({ mug: { size: 's', weight: 150 }, milk: 0, seconds: 0 });
     expect(readScale(-1.2, settings).seconds).toBe(0);
+  });
+});
+
+describe('the adjust buttons (spec 3.7)', () => {
+  it('add their amount to the calculated timer', () => {
+    // A medium mug with 300 g of milk: 43 s with the founder's defaults.
+    const { seconds } = readScale(525, settings);
+    expect(seconds).toBe(43);
+    expect(settings.adjustments.map((amount) => adjustedSeconds(seconds, amount))).toEqual([35, 39, 48]);
+  });
+
+  it('add their amount to a favourite', () => {
+    expect(settings.favourites.map((seconds) => adjustedSeconds(seconds, 5))).toEqual([30, 55, 35]);
+    expect(settings.favourites.map((seconds) => adjustedSeconds(seconds, -8))).toEqual([17, 42, 22]);
+  });
+
+  it('leave the seconds as they are when none is selected', () => {
+    expect(adjustedSeconds(43, null)).toBe(43);
+    expect(adjustedSeconds(43, 0)).toBe(43);
+  });
+
+  it('keep the timer between 1 and 255 s, and an empty scale at 0', () => {
+    expect(adjustedSeconds(5, -8)).toBe(1);
+    expect(adjustedSeconds(253, 5)).toBe(255);
+    expect(adjustedSeconds(0, 5)).toBe(0);
   });
 });

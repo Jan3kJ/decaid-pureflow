@@ -265,7 +265,7 @@ From the founder's review of the built version 1.1 ([review-10-16-26.md](review-
 
 | Area | Change |
 |---|---|
-| Steam page | **Bugs:** the steam graph stops when steam stops, and the last steam time (top right) is the steam's own time, not longer. **Layout:** the steam timer sits in the centre of the right column, in line with **set timer**. **Countdown:** while steam runs the timer counts down from the set seconds. **Adjust buttons:** above **set timer**, three buttons, by default −8 s, −4 s and +5 s, configurable in the settings (Steam); a selected one adds its amount to the calculated timer or to the selected favourite (use case: the milk's temperature changes what the calculation needs). **Graph:** the temperature scale is 140 to 170 °C. **Swipe:** a swipe from the right edge opens the steam page, as the swipe from the left edge opens the history |
+| Steam page | **Bugs:** the steam graph stops when steam stops, and the last steam time (top right) is the steam's own time, not longer. **Layout:** the steam timer sits in the centre of the right column, in line with **set timer**. **Countdown:** while steam runs the timer counts down from the set seconds. **Adjust buttons:** above **set timer**, three buttons, by default −8 s, −4 s and +5 s, configurable in the settings (Steam); a selected one adds its amount to the calculated timer or to the selected favourite (use case: the milk's temperature changes what the calculation needs). **Graph:** the temperature scale is 140 to 170 °C. **Swipe:** a swipe from the right edge opens the steam page, as the swipe from the left edge opens the history. *Built (R1):* the steam run ends with the first frame that does not steam: another state, or the substates `pouringDone`, `puffing` and `pausedSteam` in which the real DE1 stays in steam after it (`steams` in `src/steam/run.ts`). The countdown is the machine's timer minus the run's time, labelled "steam left". The adjust amounts are the setting `steam.adjustments`, whole seconds from −60 to 60, typed with a sign key on the number pad; the milk of one drink moved into the calibration's row so that the settings page still fits. One adjust button is selected at a time, a tap on it clears it, and it is cleared when a steam ends; selecting writes nothing: the chips and 'set timer' show and send the seconds with the amount, held within 1 to 255 s. The tare button sits beside the scale weight. The swipe is on home only, from the right fifth, as the history's |
 | Home menu | two shortcuts in the menu: **steam off** (the steam heater off, and on again) and **machine off** (sleep if the DE1 cannot be switched off through Decaid) |
 | Water view | the animated group head and stream go, for flush and hot water; the countdown ring stays, and the values sit inside the stop button: temperature, flow, time, and for hot water the weight in g |
 | Hot water page | a page of its own, opened from home by a button of its own: the steam tab is split, steam keeps most of it and hot water takes the rest, at the bottom. Its settings are temperature, flow, time and **stop at weight**. Stop at weight can be set from the last measured espresso shot by a ratio: a shot of 40 g and 1:2 give 80 g. Three ratio favourites, configurable, by default 1:2, 1:2.5 and 1:3. A **tare** button. Starting stays at the machine |
@@ -701,9 +701,10 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
   machine (research.md 10.4). A check on the real DE1 with item 7. (owner)
 - The review of 2026-10-16 (3.7), choices the team will make unless the founder says
   otherwise (owner):
-  - Adjust buttons: one is selected at a time; a tap on the selected one clears it; the
-    selection is cleared after steam.
-  - Right-edge swipe: it opens the steam page as it is today (a page), not an overlay.
+  - Adjust buttons, built in R1 as planned: one is selected at a time; a tap on the selected
+    one clears it; the selection is cleared after steam. Selecting one writes nothing; the
+    next tap on a chip or 'set timer' sends the seconds with it.
+  - Right-edge swipe, built in R1: it opens the steam page as it is (a page), not an overlay.
   - Steam off: the steam heater off until it is turned on again from the same menu entry;
     machine off: the DE1's own off, if the gateway has one, else sleep (founder,
     2026-10-16).

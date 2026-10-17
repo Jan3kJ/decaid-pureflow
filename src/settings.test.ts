@@ -8,6 +8,8 @@ import {
   STEAM_FIELDS,
   loadSettings,
   profileValue,
+  readAdjustments,
+  readSettings,
   readStartProfiles,
   saveSettings,
   steamValue,
@@ -81,6 +83,7 @@ describe('settings', () => {
       referenceSeconds: 26,
       referenceMilk: 180,
       favourites: [25, 50, 30],
+      adjustments: [-8, -4, 5],
     });
   });
 
@@ -178,8 +181,13 @@ describe('the steam values of the settings page', () => {
       'favourite-1',
       'favourite-2',
       'favourite-3',
+      'adjust-1',
+      'adjust-2',
+      'adjust-3',
     ]);
-    expect(fields.map((entry) => steamValue(DEFAULT_STEAM_SETTINGS, entry))).toEqual([150, 225, 275, 26, 180, 150, 25, 50, 30]);
+    expect(fields.map((entry) => steamValue(DEFAULT_STEAM_SETTINGS, entry))).toEqual([
+      150, 225, 275, 26, 180, 150, 25, 50, 30, -8, -4, 5,
+    ]);
     for (const entry of fields) {
       const value = steamValue(DEFAULT_STEAM_SETTINGS, entry);
       expect(value).toBeGreaterThanOrEqual(entry.min);
@@ -209,5 +217,34 @@ describe('the steam values of the settings page', () => {
     saveSettings({ ...DEFAULT_SETTINGS, steam }, store);
     expect(steamValue(loadSettings(store).steam, field('favourite-3'))).toBe(35);
     expect(JSON.parse(store.getItem(SETTINGS_KEY)!).steam.favourites).toEqual([25, 50, 35]);
+  });
+});
+
+describe('the adjust buttons of the steam page (spec 3.7)', () => {
+  const field = (id: string) => STEAM_FIELDS.flatMap((group) => group.fields).find((entry) => entry.id === id)!;
+
+  it('are -8 s, -4 s and +5 s by default, and stored and read back with the other settings', () => {
+    expect(DEFAULT_STEAM_SETTINGS.adjustments).toEqual([-8, -4, 5]);
+    const store = fakeStore();
+    const changed = withSteamValue(DEFAULT_STEAM_SETTINGS, field('adjust-1'), -10);
+    saveSettings({ ...DEFAULT_SETTINGS, steam: changed }, store);
+    expect(loadSettings(store).steam.adjustments).toEqual([-10, -4, 5]);
+    // The backup passes the same reading (settings-backup.ts).
+    expect(readSettings({ steam: { adjustments: [-3, 2, 7] } }).steam.adjustments).toEqual([-3, 2, 7]);
+  });
+
+  it('take whole seconds from -60 to 60, below 0 too', () => {
+    expect(withSteamValue(DEFAULT_STEAM_SETTINGS, field('adjust-2'), -90).adjustments).toEqual([-8, -60, 5]);
+    expect(withSteamValue(DEFAULT_STEAM_SETTINGS, field('adjust-3'), 7.4).adjustments).toEqual([-8, -4, 7]);
+  });
+
+  it('fall back to the defaults when the stored ones are not three amounts in range', () => {
+    for (const stored of [undefined, 'x', [1, 2], [1, 2, 3, 4], [1, 2, 99], [1, 2.5, 3], [1, '2', 3]]) {
+      expect(readAdjustments(stored)).toEqual([-8, -4, 5]);
+    }
+    expect(readSettings({ steam: { favourites: [20, 40, 60] } }).steam).toEqual({
+      ...DEFAULT_STEAM_SETTINGS,
+      favourites: [20, 40, 60],
+    });
   });
 });

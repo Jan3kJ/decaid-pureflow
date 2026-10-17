@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { timeAxis } from './axis';
+import { inBand, temperatureBand, timeAxis } from './axis';
 
 describe('timeAxis', () => {
   it('ends at the last sample of a stored shot, short or long', () => {
@@ -25,5 +25,19 @@ describe('timeAxis', () => {
 
   it('has the running axis for a shot without a sample', () => {
     expect(timeAxis(0, true)).toEqual({ seconds: 30, ticks: [0, 10, 20, 30] });
+  });
+});
+
+describe('temperatureBand', () => {
+  it('is 80 to 100 °C and opens in steps of ten for the values', () => {
+    expect(temperatureBand([])).toEqual({ min: 80, max: 100 });
+    expect(temperatureBand([92, 93])).toEqual({ min: 80, max: 100 });
+    expect(temperatureBand([74, 103])).toEqual({ min: 70, max: 110 });
+  });
+
+  it("is the steam page's 140 to 170 °C whatever the values (spec 3.7), and holds them inside", () => {
+    const steam = { min: 140, max: 170 };
+    expect(temperatureBand([95, 152, 181], steam)).toEqual(steam);
+    expect([95, 152, 181].map((value) => inBand(value, steam))).toEqual([140, 152, 170]);
   });
 });

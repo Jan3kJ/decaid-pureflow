@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { WATER_FRAMES, mockGateway, profile, type MockGateway } from './mock-gateway';
+import { swipe } from './touch';
 
 // The shot history against a mocked gateway (D8b, acceptance item 5): an overlay on home,
 // opened by its tab or by a swipe from the left edge, closed by a selection or a tap outside.
@@ -27,23 +28,6 @@ function fourShots(gateway: MockGateway) {
   gateway.addShot('shot-2', '2026-10-11T08:00:00.000000', LIGHT, { ...RED_BRICK, targetYield: 48, grinderSetting: '4.8' });
   gateway.addShot('shot-3', '2026-10-12T08:00:00.000000', LIGHT, { ...YIRGACHEFFE, targetYield: 48, grinderSetting: '6.0' });
   gateway.addShot('shot-4', '2026-10-12T09:00:00.000000', BEST, { targetDoseWeight: 18, targetYield: 40 });
-}
-
-/**
- * A finger's swipe, as the tablet's screen sends it: touch events through the browser's input,
- * over a quarter of a second. Sent with no time between them they are a fling so fast that
- * Chromium drops the tap that follows it (research.md, section 14).
- */
-async function swipe(page: Page, from: { x: number; y: number }, to: { x: number; y: number }) {
-  const cdp = await page.context().newCDPSession(page);
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [from] });
-  for (let i = 1; i <= 8; i += 1) {
-    const at = { x: from.x + ((to.x - from.x) * i) / 8, y: from.y + ((to.y - from.y) * i) / 8 };
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [at] });
-    await page.waitForTimeout(30);
-  }
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-  await cdp.detach();
 }
 
 const written = (gateway: MockGateway) => gateway.calls('PUT', '/api/v1/workflow').map((call) => call.body);

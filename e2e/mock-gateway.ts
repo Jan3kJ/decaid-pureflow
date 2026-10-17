@@ -190,6 +190,11 @@ export class MockGateway {
   private readonly scaleSockets = new Set<WebSocketRoute>();
   private readonly settingsSockets = new Set<WebSocketRoute>();
   private readonly waterSockets = new Set<WebSocketRoute>();
+  /**
+   * The machine's substate, where a test sets one: a real DE1 stays in state steam after the
+   * steam, in `pouringDone`, `puffing` or `pausedSteam` (spec 3.7). Else the rig's.
+   */
+  substate: string | null = null;
   private weight = 0;
   private scaleConnected = true;
   private replaying = false;
@@ -354,7 +359,7 @@ export class MockGateway {
   frame(at = Date.now()): Json {
     return {
       timestamp: new Date(at).toISOString().replace('Z', '000'),
-      state: { state: this.state, substate: this.state === 'hotWater' ? 'pouring' : 'idle' },
+      state: { state: this.state, substate: this.substate ?? (this.state === 'hotWater' ? 'pouring' : 'idle') },
       flow: 0,
       pressure: this.state === 'steam' ? 1.6 : 0,
       targetFlow: 0,

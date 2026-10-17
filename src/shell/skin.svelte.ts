@@ -69,6 +69,11 @@ export class Skin {
   recalled: Recalled | null = $state.raw(null);
   /** the running steam, or the finished one until the next */
   steam: SteamRun | null = $state.raw(null);
+  /**
+   * The adjust button selected on the steam page (spec 3.7): its place in the settings'
+   * list, null for none. One at a time; it is cleared when a steam ends.
+   */
+  steamAdjust: number | null = $state(null);
   /** the running hot water or flush, or the finished one until the next (spec 3.6) */
   waterRun: WaterRun | null = $state.raw(null);
   /** the tank's water level, null while its stream is not open or has sent nothing */
@@ -136,6 +141,10 @@ export class Skin {
     this.shotSettings?.targetSteamDuration ?? this.workflow?.steamSettings?.duration ?? null,
   );
   /** The machine's timer is not the one set here any more: what the steam page says about it. */
+  /** s, the amount of the selected adjust button, null without one */
+  readonly steamAdjustment = $derived(
+    this.steamAdjust === null ? null : (this.settings.steam.adjustments[this.steamAdjust] ?? null),
+  );
   readonly steamMismatch = $derived(timerMismatch(this.steamAsked, this.shotSettings?.targetSteamDuration ?? null));
 
   private machine: SnapshotStream<MachineSnapshot> | undefined;
@@ -239,7 +248,9 @@ export class Skin {
     this.machineState = state;
     this.shot = recordFrame(this.shot, frame, this.weight, this.weightFlow);
     if (this.shot && !this.shot.ended) this.recalled = null;
+    const steaming = this.steam !== null && !this.steam.ended;
     this.steam = recordSteamFrame(this.steam, frame);
+    if (steaming && this.steam?.ended) this.steamAdjust = null;
     this.waterRun = recordWaterFrame(this.waterRun, frame);
     if (next !== this.screen) this.go(next);
     void this.dim(state === 'sleeping');

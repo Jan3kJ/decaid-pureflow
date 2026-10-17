@@ -18,7 +18,10 @@
   const MAX_LENGTH = 5;
   let typed = $state('');
 
-  const value = $derived(typed === '' || typed === '.' ? null : Number(typed));
+  /** a range below 0 (the steam page's adjust amounts): the sign key takes the decimal key's place */
+  const signed = $derived(min < 0 && !decimals);
+  const digits = $derived(typed.replace('-', ''));
+  const value = $derived(digits === '' || digits === '.' ? null : Number(typed));
   const inRange = $derived(value !== null && value >= min && value <= max);
 
   function key(k: string) {
@@ -29,8 +32,12 @@
     }
     // One decimal is the finest step of any value.
     if (typed.includes('.') && typed.split('.')[1].length >= 1) return;
-    if (typed.length >= MAX_LENGTH) return;
-    typed = typed === '0' ? k : typed + k;
+    if (digits.length >= MAX_LENGTH) return;
+    typed = digits === '0' ? typed.replace('0', k) : typed + k;
+  }
+
+  function sign() {
+    if (signed) typed = typed.startsWith('-') ? typed.slice(1) : `-${typed}`;
   }
 
   function confirm() {
@@ -41,6 +48,7 @@
   function keydown(event: KeyboardEvent) {
     if (/^[0-9]$/.test(event.key)) key(event.key);
     else if (event.key === '.' || event.key === ',') key('.');
+    else if (event.key === '-') sign();
     else if (event.key === 'Backspace') typed = typed.slice(0, -1);
     else if (event.key === 'Enter') confirm();
     else if (event.key === 'Escape') oncancel();
@@ -75,7 +83,11 @@
       {#each ['7', '8', '9', '4', '5', '6', '1', '2', '3'] as k (k)}
         <button data-testid="numpad-key-{k}" onclick={() => key(k)}>{k}</button>
       {/each}
-      <button data-testid="numpad-key-dot" disabled={!decimals} onclick={() => key('.')}>.</button>
+      {#if signed}
+        <button aria-label="change the sign" data-testid="numpad-key-sign" onclick={sign}>±</button>
+      {:else}
+        <button data-testid="numpad-key-dot" disabled={!decimals} onclick={() => key('.')}>.</button>
+      {/if}
       <button data-testid="numpad-key-0" onclick={() => key('0')}>0</button>
       <button
         aria-label="delete the last digit"

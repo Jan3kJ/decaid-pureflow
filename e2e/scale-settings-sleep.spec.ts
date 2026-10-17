@@ -146,9 +146,12 @@ test('settings: the defaults, typed values and both switches survive a reload', 
     'favourite-1',
     'favourite-2',
     'favourite-3',
+    'adjust-1',
+    'adjust-2',
+    'adjust-3',
   ];
-  // The founder's defaults of 2026-10-12.
-  expect(await values(STEAM)).toEqual(['150g', '225g', '275g', '26s', '180g', '150g', '25s', '50s', '30s']);
+  // The founder's defaults of 2026-10-12, and the adjust buttons of 2026-10-16 (spec 3.7).
+  expect(await values(STEAM)).toEqual(['150g', '225g', '275g', '26s', '180g', '150g', '25s', '50s', '30s', '-8s', '-4s', '5s']);
   const workaround = page.getByTestId('setting-first-step-workaround');
   const steps = page.getByTestId('setting-show-profile-steps');
   await expect(workaround).toHaveAttribute('aria-checked', 'false');
@@ -167,7 +170,7 @@ test('settings: the defaults, typed values and both switches survive a reload', 
   await expect(page.getByTestId('numpad-range')).toHaveText('1 to 255 s');
   await expect(page.getByTestId('numpad-key-dot')).toBeDisabled();
   await page.getByTestId('numpad-cancel').click();
-  expect(await values(STEAM)).toEqual(['150g', '225g', '275g', '26s', '180g', '150g', '25s', '50s', '30s']);
+  expect(await values(STEAM)).toEqual(['150g', '225g', '275g', '26s', '180g', '150g', '25s', '50s', '30s', '-8s', '-4s', '5s']);
 
   await type(page, 'setting-mug-small', '162.5');
   await type(page, 'setting-reference-seconds', '30');
@@ -183,7 +186,7 @@ test('settings: the defaults, typed values and both switches survive a reload', 
   expect(await values(['max-flow', 'default-dose'])).toEqual(['12ml/s', '17.5g']);
   await workaround.click();
   await steps.click();
-  const changed = ['162.5g', '225g', '275g', '30s', '100g', '150g', '25s', '45s', '30s'];
+  const changed = ['162.5g', '225g', '275g', '30s', '100g', '150g', '25s', '45s', '30s', '-8s', '-4s', '5s'];
   expect(await values(STEAM)).toEqual(changed);
 
   // One store in localStorage, nothing in sessionStorage (spec 4.1: the WebView unloads).
@@ -211,6 +214,7 @@ test('settings: the defaults, typed values and both switches survive a reload', 
         referenceSeconds: 30,
         referenceMilk: 100,
         favourites: [25, 45, 30],
+        adjustments: [-8, -4, 5],
       },
     },
   });

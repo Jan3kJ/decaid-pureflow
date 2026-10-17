@@ -9,7 +9,8 @@ import { expect, test } from '@playwright/test';
 // Since the founder's test of 2026-10-13 (25 s chosen, 30 s of steam; research.md section 16)
 // it reads the machine's own timer too, `targetSteamDuration` on `/ws/v1/machine/shotSettings`,
 // and runs with Decaid's default skin, Streamline, open in a second page and remembering
-// 30 s: without the skin's fix Streamline writes its 30 s back over every timer the skin sets.
+// 30 s: without the skin's fix Streamline 0.2.13 writes its 30 s back over every timer the skin
+// sets. 0.2.14, on the rig since 2026-10-16, adopts another client's timer instead (research.md 18.4).
 
 const GATEWAY = 'http://localhost:8080';
 /** A medium mug of 225 g with two drinks, 300 g of milk: 43 s with the founder's defaults. */
@@ -131,6 +132,23 @@ test('steam: the written timer is read back from the workflow and from the machi
     expect(await machineTimer()).toBe(SECONDS);
     await expect(page.getByTestId('steam-mismatch')).toHaveCount(0);
 
+    // An adjust button (spec 3.7, item 17): +5 s, the default third one, is in the seconds the
+    // machine gets; selected again it is cleared.
+    const adjust = page.getByTestId('steam-adjust');
+    await expect(adjust).toHaveText(['−8 s', '−4 s', '+5 s']);
+    await adjust.nth(2).click();
+    await expect(page.getByTestId('steam-seconds')).toHaveText(`${SECONDS + 5} s`);
+    await page.getByTestId('steam-set-timer').click();
+    await expect(page.getByTestId('steam-timer')).toHaveText(`${SECONDS + 5}s`);
+    await page.waitForTimeout(4000);
+    expect(await steamSettings()).toEqual({ ...before, duration: SECONDS + 5 });
+    expect(await machineTimer()).toBe(SECONDS + 5);
+    await adjust.nth(2).click();
+    await page.getByTestId('steam-set-timer').click();
+    await expect(page.getByTestId('steam-timer')).toHaveText(`${SECONDS}s`);
+    await page.waitForTimeout(4000);
+    expect(await machineTimer()).toBe(SECONDS);
+
     // The machine's timer changes past the workflow, which keeps its seconds: the page shows
     // the machine's and says so. Decaid passes the same seconds on to no machine, so 'set
     // timer' writes the machine's settings itself.
@@ -173,16 +191,26 @@ test('steam: the written timer is read back from the workflow and from the machi
       workflow(favourites[favourite]),
       remember(SECONDS),
       workflow(SECONDS),
+      remember(SECONDS + 5),
+      workflow(SECONDS + 5),
+      remember(SECONDS),
+      workflow(SECONDS),
       remember(SECONDS),
       workflow(SECONDS),
       `POST /api/v1/machine/shotSettings ${JSON.stringify({ ...settings, targetSteamDuration: SECONDS })}`,
       'PUT /api/v1/machine/state/idle',
     ]);
 
-    // The control: Streamline is alive in its page. A timer written the old way, into the
-    // workflow alone, is replaced by the seconds Streamline remembers.
+    // The control: Streamline is alive in its page. Its version 0.2.13 replaced a timer
+    // written into the workflow alone by the seconds it remembered; 0.2.14 (on the rig since
+    // 2026-10-16) adopts it into its KV key instead and pushes nothing (`decideResync` in its
+    // `resync-policy.js`; research.md 18.4). So the workflow and the machine keep 26 s, and
+    // Streamline remembers 26 s.
     await api('PUT', '/api/v1/workflow', { steamSettings: { duration: 26 } });
-    await expect.poll(machineTimer, { timeout: 15_000 }).toBe(SECONDS);
+    await expect.poll(() => api('GET', REMEMBERED), { timeout: 15_000 }).toBe(26);
+    await streamline.waitForTimeout(5000);
+    expect(await machineTimer()).toBe(26);
+    expect((await steamSettings()).duration).toBe(26);
   } finally {
     await streamline.close();
     if ((await machineState().catch(() => undefined)) === 'steam') await api('PUT', '/api/v1/machine/state/idle');
@@ -205,4 +233,22 @@ test('steam: the written timer is read back from the workflow and from the machi
   expect(await machineTimer()).toBe(before.duration);
   expect(await api('GET', REMEMBERED)).toBe(rememberedBefore);
   expect(await api('GET', STREAMLINE_STORE)).toEqual(storeBefore);
+});
+
+test("steam: the page's tare button tares the simulated scale (item 17)", async ({ page }) => {
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  const tares: number[] = [];
+  page.on('response', (response) => {
+    if (response.url() === `${GATEWAY}/api/v1/scale/tare`) tares.push(response.status());
+  });
+  await page.goto('/');
+  await expect(page.getByTestId('status-title')).toHaveText('Idle', { timeout: 15_000 });
+  await page.getByTestId('open-steam').click();
+  // The simulated scale, its own frames: connected, with a weight.
+  await expect(page.getByTestId('steam-tare')).toBeEnabled({ timeout: 30_000 });
+  await expect(page.getByTestId('steam-weight')).toHaveText(/^-?\d+\.\d g$/);
+  await page.getByTestId('steam-tare').click();
+  await expect.poll(() => tares).toEqual([200]);
+  await expect(page.getByTestId('steam-weight')).toHaveText(/^-?0\.\d g$/, { timeout: 5000 });
+  await expect(page.getByTestId('notice')).toHaveCount(0);
 });

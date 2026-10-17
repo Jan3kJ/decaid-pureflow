@@ -49,6 +49,11 @@ export interface SteamSettings {
   referenceMilk: number;
   /** s, the three timer chips */
   favourites: number[];
+  /**
+   * s, the three adjust buttons above 'set timer' (spec 3.7): a selected one is added to the
+   * calculated timer or to a favourite. The one list of numbers that may be negative.
+   */
+  adjustments: number[];
 }
 
 /** The founder's values of 2026-10-12; the favourites are the sketch's. */
@@ -60,7 +65,11 @@ export const DEFAULT_STEAM_SETTINGS: SteamSettings = {
   referenceSeconds: 26,
   referenceMilk: 180,
   favourites: [25, 50, 30],
+  adjustments: [-8, -4, 5],
 };
+
+/** s, what an adjust button may add or take off */
+export const ADJUST_RANGE = { min: -60, max: 60 };
 
 /** The editor's row holds up to five profiles. */
 export const START_SLOTS = 5;
@@ -128,7 +137,20 @@ export function loadSettings(store: Store = localStorage): Settings {
 export function readSettings(stored: unknown): Settings {
   const settings = merged(DEFAULT_SETTINGS, stored);
   const values = (stored && typeof stored === 'object' ? stored : {}) as Record<string, unknown>;
-  return { ...settings, startProfiles: readStartProfiles(values.startProfiles) };
+  const steam = (values.steam && typeof values.steam === 'object' ? values.steam : {}) as Record<string, unknown>;
+  return {
+    ...settings,
+    steam: { ...settings.steam, adjustments: readAdjustments(steam.adjustments) },
+    startProfiles: readStartProfiles(values.startProfiles),
+  };
+}
+
+/** The stored adjust amounts: three whole seconds in their range, else the defaults. */
+export function readAdjustments(stored: unknown): number[] {
+  const fits = (value: unknown) =>
+    Number.isInteger(value) && (value as number) >= ADJUST_RANGE.min && (value as number) <= ADJUST_RANGE.max;
+  const defaults = DEFAULT_STEAM_SETTINGS.adjustments;
+  return Array.isArray(stored) && stored.length === defaults.length && stored.every(fits) ? [...stored] : [...defaults];
 }
 
 /** Whether this tablet and port hold settings at all: a new port or a cleared app does not. */
@@ -203,7 +225,18 @@ const seconds = (id: string, label: string, key: keyof SteamSettings, index?: nu
   decimals: false,
 });
 
-/** The category Steam of the settings page, in the groups it shows (spec 3.4). */
+/** One adjust button's amount: whole seconds, below 0 too. */
+const amount = (index: number): SteamField => ({
+  id: `adjust-${index + 1}`,
+  label: `${index + 1}`,
+  key: 'adjustments',
+  index,
+  unit: 's',
+  ...ADJUST_RANGE,
+  decimals: false,
+});
+
+/** The category Steam of the settings page, in the groups it shows (spec 3.4, 3.7). */
 export const STEAM_FIELDS: { title: string; hint: string; fields: SteamField[] }[] = [
   {
     title: 'mugs',
@@ -214,20 +247,25 @@ export const STEAM_FIELDS: { title: string; hint: string; fields: SteamField[] }
       grams('mug-large', 'l', 'mugLarge', 0),
     ],
   },
+  // One row with the milk of one drink, so the adjust buttons fit the page (spec 3.7).
   {
     title: 'calibration',
-    hint: 'this many seconds steam this much milk',
-    fields: [seconds('reference-seconds', 'seconds', 'referenceSeconds'), grams('reference-milk', 'milk', 'referenceMilk', 1)],
-  },
-  {
-    title: 'milk of one drink',
-    hint: 'what the mug detection steps by',
-    fields: [grams('milk-per-drink', 'milk', 'milkPerDrink', 1)],
+    hint: 'this many seconds steam this much milk; one drink is what the mug detection steps by',
+    fields: [
+      seconds('reference-seconds', 'seconds', 'referenceSeconds'),
+      grams('reference-milk', 'milk', 'referenceMilk', 1),
+      grams('milk-per-drink', 'one drink', 'milkPerDrink', 1),
+    ],
   },
   {
     title: 'favourite timers',
     hint: 'the three chips of the steam page',
     fields: [0, 1, 2].map((index) => seconds(`favourite-${index + 1}`, `${index + 1}`, 'favourites', index)),
+  },
+  {
+    title: 'adjust buttons',
+    hint: 'added to the timer or a favourite, when selected',
+    fields: [0, 1, 2].map(amount),
   },
 ];
 
