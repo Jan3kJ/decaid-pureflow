@@ -1,6 +1,6 @@
-// Hot water and flush on home (spec 3.6, the water view): snapshot frames in, the run's time
-// and volume out, and the numbers the ring, the stream and the cup are drawn from. Pure: time
-// comes from the frames' own timestamps, as in shot.ts and steam/run.ts.
+// Hot water and flush on home (spec 3.6, 3.7: the water view): snapshot frames in, the run's
+// time out, and the countdown ring and the values the stop button shows. Pure: time comes from
+// the frames' own timestamps, as in shot.ts and steam/run.ts.
 import type { MachineSnapshot, Workflow } from '../api';
 import { frameTime } from './shot';
 
@@ -23,8 +23,6 @@ export interface WaterRun {
   flow: number;
   /** °C, the latest frame's mix temperature */
   temperature: number;
-  /** ml, the flow added up over the frames so far */
-  volume: number;
   /** the machine has left the state */
   ended: boolean;
 }
@@ -32,8 +30,7 @@ export interface WaterRun {
 /**
  * The run after one machine frame. A frame in hot water or flush starts a run (and replaces a
  * finished one or one of the other kind) or adds to it; the first frame of another state ends
- * it. The volume adds each interval between two frames as the mean of their flows (trapezoid);
- * a clock that steps back adds nothing. Nothing is changed in place.
+ * it. A clock that steps back does not move the run's time back. Nothing is changed in place.
  */
 export function recordWaterFrame(run: WaterRun | null, frame: MachineSnapshot): WaterRun | null {
   const kind = waterKindOf(frame.state.state);
@@ -42,16 +39,9 @@ export function recordWaterFrame(run: WaterRun | null, frame: MachineSnapshot): 
   const flow = Math.max(0, frame.flow);
   const temperature = frame.mixTemperature;
   if (!run || run.ended || run.kind !== kind) {
-    return { kind, startedAt: at, at, flow, temperature, volume: 0, ended: false };
+    return { kind, startedAt: at, at, flow, temperature, ended: false };
   }
-  const dt = Math.max(0, (at - run.at) / 1000);
-  return {
-    ...run,
-    at: Math.max(at, run.at),
-    flow,
-    temperature,
-    volume: run.volume + ((run.flow + flow) / 2) * dt,
-  };
+  return { ...run, at: Math.max(at, run.at), flow, temperature };
 }
 
 /** s from the run's first frame to its latest */
@@ -59,23 +49,13 @@ export function waterSeconds(run: WaterRun): number {
   return Math.max(0, (run.at - run.startedAt) / 1000);
 }
 
-export interface WaterTarget {
-  /** s; null when the workflow has none */
-  duration: number | null;
-  /** ml, hot water only; null for flush or when the workflow has none */
-  volume: number | null;
-}
-
-const positive = (value: number | undefined): number | null =>
-  typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : null;
-
-/** The workflow's targets: `hotWaterData` for hot water, `rinseData` for flush. */
-export function waterTarget(kind: WaterKind, workflow: Workflow | null): WaterTarget {
-  if (kind === 'hotWater') {
-    const data = workflow?.hotWaterData;
-    return { duration: positive(data?.duration), volume: positive(data?.volume) };
-  }
-  return { duration: positive(workflow?.rinseData?.duration), volume: null };
+/**
+ * s, the workflow's target duration: `hotWaterData` for hot water, `rinseData` for flush; null
+ * when the workflow has none (or 0).
+ */
+export function waterDuration(kind: WaterKind, workflow: Workflow | null): number | null {
+  const value = kind === 'hotWater' ? workflow?.hotWaterData?.duration : workflow?.rinseData?.duration;
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : null;
 }
 
 export interface Ring {
@@ -85,68 +65,43 @@ export interface Ring {
   elapsed: number;
   /** whole seconds of the target, null without one */
   duration: number | null;
-  /** e.g. 'Flush 6 / 10 s' */
-  label: string;
+  /** e.g. '6 / 10 s', or '6 s' without a target */
+  time: string;
 }
 
 /** The countdown ring around the stop button: the time so far against the target duration. */
-export function ringOf(kind: WaterKind, seconds: number, duration: number | null): Ring {
+export function ringOf(seconds: number, duration: number | null): Ring {
   const elapsed = Math.floor(Math.max(0, seconds));
   const whole = duration === null ? null : Math.round(duration);
   const share = duration === null ? 0 : Math.min(1, Math.max(0, seconds / duration));
-  const label = `${WATER_LABEL[kind]} ${elapsed}${whole === null ? '' : ` / ${whole}`} s`;
-  return { share, elapsed, duration: whole, label };
+  const time = `${elapsed}${whole === null ? '' : ` / ${whole}`} s`;
+  return { share, elapsed, duration: whole, time };
 }
 
-export interface Cup {
-  /** ml so far, or g with a scale */
-  amount: number;
-  unit: 'ml' | 'g';
-  /** 0 to 1, how full the cup is drawn; 0 without a target volume */
-  level: number;
+export interface WaterValues {
+  /** e.g. '75 °C', the mix temperature */
+  temperature: string;
+  /** e.g. '6.0 ml/s' */
+  flow: string;
+  /** e.g. '6 / 10 s', the ring's time */
+  time: string;
+  /** e.g. '31.4 g', the scale's weight; hot water with a connected scale only */
+  weight: string | null;
 }
+
+const shown = (value: number, digits: number): string => (Number.isFinite(value) ? value.toFixed(digits) : '–');
 
 /**
- * The hot-water cup: the scale's weight when a scale is connected (g is taken as ml), else the
- * volume added up from the flow, against the target volume.
+ * What the stop button shows inside the ring (spec 3.7): temperature, flow and time, and for
+ * hot water the scale's weight in g when a scale sends one (`weight` is null without a scale).
+ * Flow and weight below 0 (sensor noise at rest, a weight after a tare) show as 0; a value the
+ * machine did not send as '–'.
  */
-export function cupOf(volume: number, weight: number | null, target: number | null): Cup {
-  const amount = Math.max(0, weight ?? volume);
-  const level = target === null ? 0 : Math.min(1, amount / target);
-  return { amount, unit: weight === null ? 'ml' : 'g', level };
-}
-
-/** ml/s from which the stream is drawn at full width and speed. */
-export const FULL_FLOW = 10;
-/** ml/s under which the stream stands still: the sensor's noise at rest. */
-export const STILL_FLOW = 0.05;
-
-export interface Stream {
-  moving: boolean;
-  /** 0 to 1 of the stream's full width; at least a thin line while it moves */
-  width: number;
-  /** s for one cycle of the stream's dashes; faster with more flow */
-  period: number;
-}
-
-/** How the stream is drawn from the measured flow: wider and faster with more, still at 0. */
-export function streamOf(flow: number): Stream {
-  if (!(flow > STILL_FLOW)) return { moving: false, width: 0, period: 0 };
-  const share = Math.min(1, flow / FULL_FLOW);
-  return { moving: true, width: 0.15 + 0.85 * share, period: 0.25 + 1.75 * (1 - share) };
-}
-
-/**
- * The stream's colour from the mix temperature: the skin's flow blue at `COLD_C` and below,
- * its temperature red at `HOT_C` and above, mixed linearly in RGB in between.
- */
-export const COLD_C = 20;
-export const HOT_C = 90;
-const COLD_RGB = [0x4d, 0xa3, 0xff];
-const HOT_RGB = [0xff, 0x6b, 0x6b];
-
-export function waterColour(celsius: number): string {
-  const share = Number.isFinite(celsius) ? Math.min(1, Math.max(0, (celsius - COLD_C) / (HOT_C - COLD_C))) : 0;
-  const rgb = COLD_RGB.map((cold, i) => Math.round(cold + (HOT_RGB[i] - cold) * share));
-  return `rgb(${rgb.join(' ')})`;
+export function waterValues(run: WaterRun, ring: Ring, weight: number | null): WaterValues {
+  return {
+    temperature: `${shown(run.temperature, 0)} °C`,
+    flow: `${shown(Math.max(0, run.flow), 1)} ml/s`,
+    time: ring.time,
+    weight: run.kind === 'hotWater' && weight !== null ? `${shown(Math.max(0, weight), 1)} g` : null,
+  };
 }

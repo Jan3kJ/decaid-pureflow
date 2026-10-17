@@ -2034,3 +2034,21 @@ the machine ends it; flush shows a still stream (flow 0) and 'Flush 2 / 10 s', a
 stop ends it. The full rig run (`log\v1-e2e-rig.txt`): 18 passed, 1 failed, the same
 `steam.spec.ts` control step as in 18.4 and 18.5; it fails on the commit before this task as
 well (`log\v1-e2e-rig-steam-baseline.txt`), not touched here.
+
+### 19.2 Built (R3)
+
+Built on 2026-10-17 (spec 3.7, acceptance 19). The picture is gone: the group head, the
+stream, the cup and their numbers (`cupOf`, `streamOf`, `waterColour`, the run's volume and
+the target volume) are removed with their tests. The view is the countdown ring alone, centred
+in the panel, as V1 drew it (whole seconds against the duration, full past it). The stop button
+inside it is dark, edged and labelled in the temperature red, and shows the kind ('Flush'), the
+time ('6 / 10 s'), the mix temperature ('90 °C', red), the flow ('6.0 ml/s', blue) and, for hot
+water with a scale, the scale's weight ('31.4 g', yellow) as the scale stream sends it; flush
+shows no weight, hot water without a scale none. The strings come from `waterValues` in
+`src/shell/water.ts`; the duration from `waterDuration`.
+
+Tests: Vitest `src/shell/water.test.ts` (15). `npm run e2e`: `e2e/water.spec.ts`, three tests
+(no picture in either state, the ring's share and time, the values inside stop, the weight only
+for hot water with a scale); screenshots `docs/product/water-flush.png` and `water-hot.png`.
+Rig (Streamline 0.2.14 served): `e2e-rig/water.spec.ts` checks the same against the simulation;
+the full run (`log\r3-e2e-rig.txt`): 21 passed.
