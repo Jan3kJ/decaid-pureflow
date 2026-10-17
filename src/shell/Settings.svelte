@@ -5,9 +5,11 @@
   import { startChoices, startName } from '../editor/start';
   import {
     PROFILE_FIELDS,
+    RATIO_RANGE,
     STEAM_FIELDS,
     profileValue,
     steamValue,
+    withRatio,
     withStartProfile,
     withSteamValue,
     type ProfileField,
@@ -71,6 +73,15 @@
   function confirmProfile(value: number) {
     if (typingProfile) skin.setSettings({ [typingProfile.key]: profileValue(settings, typingProfile, value) });
     typingProfile = null;
+  }
+
+  /** the ratio favourite of the hot water page the number pad is open for (spec 3.7) */
+  let typingRatio: number | null = $state(null);
+  const shownRatio = (index: number) => `${+settings.hotWater.ratios[index].toFixed(1)}`;
+
+  function confirmRatio(value: number) {
+    if (typingRatio !== null) skin.setSettings({ hotWater: withRatio(settings.hotWater, typingRatio, value) });
+    typingRatio = null;
   }
 
   // The editor's start row (founder, 2026-10-13): what a slot can hold is read from the gateway.
@@ -216,6 +227,24 @@
     </div>
   </section>
 
+  <!-- Category Hot water (spec 3.7): the hot water page's ratio favourites, on the title line. -->
+  <section class="hot-water" data-testid="settings-hot-water">
+    <div class="titled">
+      <div class="about">
+        <h2>Hot water</h2>
+        <small>ratios: last shot × ratio is the stop at weight</small>
+      </div>
+      <div class="values">
+        {#each settings.hotWater.ratios as _, index (index)}
+          <button class="value" data-testid="setting-ratio-{index + 1}" onclick={() => (typingRatio = index)}>
+            <small>{index + 1}</small>
+            <b><i class="lead">1:</i>{shownRatio(index)}</b>
+          </button>
+        {/each}
+      </div>
+    </div>
+  </section>
+
   <div class="backup" data-testid="settings-backup">
     <span class="about">
       <strong>Backup</strong>
@@ -287,6 +316,19 @@
   />
 {/if}
 
+{#if typingRatio !== null}
+  <NumberPad
+    label="hot water: ratio {typingRatio + 1} (1:n)"
+    unit=""
+    min={RATIO_RANGE.min}
+    max={RATIO_RANGE.max}
+    decimals={true}
+    current={shownRatio(typingRatio)}
+    onconfirm={confirmRatio}
+    oncancel={() => (typingRatio = null)}
+  />
+{/if}
+
 {#if typingProfile}
   <NumberPad
     label={typingProfile.label}
@@ -314,6 +356,10 @@
   /* Steam fills the left column; the switches' categories are stacked in the right one. */
   section:first-of-type {
     grid-row: 2 / 4;
+  }
+
+  .value .lead {
+    margin: 0 0.1em 0 0;
   }
 
   .titled {
@@ -365,9 +411,23 @@
     color: var(--temperature);
   }
 
-  /* The backup: one line under the blocks, across both columns. */
+  /* The last line: Hot water's ratios on the left, the backup on the right (spec 3.7). */
+  .hot-water {
+    grid-column: 1;
+    padding-top: 0.2rem;
+    padding-bottom: 0.4rem;
+  }
+
+  .hot-water h2 {
+    margin: 0;
+  }
+
+  .hot-water .value {
+    min-height: 3.8rem;
+  }
+
   .backup {
-    grid-column: 1 / -1;
+    grid-column: 2;
     align-self: start;
     display: flex;
     align-items: center;

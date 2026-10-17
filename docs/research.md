@@ -2467,3 +2467,70 @@ effect; Streamline's settings page, opened afterwards, does not set them back un
 6. **Confirms** before voltage, factory reset, gateway mode, firmware apply and the maintenance
    procedures.
 7. **Three tasks** (S2a, S2b, S2c) instead of one S2 (20.10).
+
+## 21. Hot water page and stop at weight on the rig (R5)
+
+Done on 2026-10-17 against Decaid v0.8.8 with device simulation (8.8); the rig served
+Streamline **0.2.14** (`GET /api/v1/webui/skins/default`, `reaMetadata.commitHash` `v0.2.14`,
+installed 2026-10-16). The probe frames are in the rig's `log\r5-hotwater-weight-on.txt` and
+`r5-hotwater-weight-off.txt`, the full rig run in `log\r5-e2e-rig.txt`.
+
+### 21.1 The fields
+
+`hotWaterData` of the workflow (`rest_v1.yml`, schema `HotWaterData`, all four required):
+
+| Field | Type | Unit | The page's value | Range on the page |
+|---|---|---|---|---|
+| `targetTemperature` | integer | °C | temperature | 50-95 (Streamline's) |
+| `flow` | number | ml/s | flow | 0.1-10 (Streamline's 8 raised to the rig's own 10) |
+| `duration` | integer | s | time | 5-120 (Streamline's) |
+| `volume` | integer | ml, or g with a scale (below) | stop at weight | 10-500 (Streamline's) |
+
+`PUT /api/v1/workflow` with `{"hotWaterData": {...}}` answered 200 and the same values on the
+next `GET` (seen running). The skin sends all four, the three it does not change as it read them.
+Streamline's ranges are from `src/settings/settings.js` lines 64-67 (v0.2.14); numbers only, no
+code was ported.
+
+### 21.2 Does Decaid stop hot water at a weight? Yes, by itself
+
+| Claim | Status |
+|---|---|
+| Decaid's setting `stopHotWaterAtWeight` (`rest_v1.yml`): "When true (default) and a scale is connected, hot water dispensing tares the scale and stops at the configured hot-water volume target treated as grams. The machine's own volume/time stop remains a backstop. Ignored in full gateway mode." Its look-ahead is `hotWaterFlowMultiplier` (default 0.3 s) | read |
+| The rig has `stopHotWaterAtWeight: true`, `hotWaterFlowMultiplier: 0.3`, `gatewayMode: "tracking"` | seen running |
+| With it on, volume 30 and flow 4: the scale is tared at the start (0 g), hot water ends after 7.5 s at 29.4 g, far before its duration of 60 s | seen running |
+| With it off, the same values: the scale is not tared (it starts at 29.4 g) and hot water runs 63 s, to its duration; the simulated machine has no volume stop of its own. So the stop at 30 g above, and the one near 50 g in 19, are Decaid's weight stop | seen running |
+| Through the skin (`e2e-rig/hot-water.spec.ts`): volume 80 from 1:2 of a 40 g shot, flow 4, duration 60: stopped after 20.1 s at 79.1 g | seen running |
+| A real DE1 with a scale stops the same way; without a scale it stops at `volume` ml by its own flow meter, or at `duration` | not seen: the founder's check on the real DE1 |
+
+So **stop at weight is `hotWaterData.volume`**, and the skin needs no stop of its own. The
+team's choice in spec section 8 (the skin stops from the scale's weight if Decaid does not) is
+not needed. In full gateway mode Decaid ignores the setting: the skin never sets that mode.
+
+### 21.3 The last measured shot
+
+The newest shot record (`GET /api/v1/shots?limit=1&order=desc`) carries the final weight as
+`annotations.actualYield` (8.4; seen on the rig: 34.3 g for a simulated shot that stopped at
+36 g). The page reads it once when it opens; a record without it (a shot without a scale) gives
+no ratio. A shot that has just ended is in the list a few seconds later (10.1).
+
+### 21.4 Built (R5)
+
+Home's right tab is split (spec 3.7): steam keeps three quarters of it, **hot water** the
+bottom quarter, under a line (`App.svelte`); the right-edge swipe still opens steam. The page
+(`src/hotwater/HotWater.svelte`): on the left four large values, temperature (red), flow (blue),
+time and stop at weight (yellow), each a tap that opens the number pad and writes the value
+(`Skin.setHotWater`, `writeHotWater` in `src/hotwater/hot-water.ts`). On the right the last
+shot's weight, three ratio chips ('1:2' over '80 g'; the one equal to the current stop at
+weight is marked), the scale's weight with a **tare** button (`Skin.tare`, R2), a line saying
+that hot water is started at the machine and who stops it, notices, and stop while something
+runs (as on the steam page). There is no start button. The ratio is held to whole grams in
+10-500 (`ratioWeight`). The favourites are the setting `hotWater.ratios` (default 2, 2.5, 3;
+0.5-10, one decimal), in the settings object and so in its KV backup; the settings page shows
+them as the category **Hot water** on its last line, left of the backup, the one place left
+without scrolling. S2 moves them into the Skin category (20.11).
+
+Tests: Vitest `src/hotwater/hot-water.test.ts` (11: the ratios, the last shot, the write) and
+four more in `src/settings.test.ts`. `npm run e2e`: `e2e/hot-water.spec.ts`, four tests (the
+split tab, the four values written, 1:2 of 40 g is 80 g and tare, the favourites from the
+settings and their backup); screenshots `docs/product/hot-water.png` and `home-tabs.png`.
+Rig: `e2e-rig/hot-water.spec.ts` (above); the full run: 22 passed, the steam control step too.

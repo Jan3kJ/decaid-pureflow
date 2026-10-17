@@ -31,6 +31,7 @@ import { followMachine, loadScreen, saveScreen, type Screen } from './nav';
 import { doseToSet } from './profiles';
 import { recordFrame, type Shot, type ShotSeries } from './shot';
 import { recordWaterFrame, type WaterRun } from './water';
+import { writeHotWater, type HotWaterField } from '../hotwater/hot-water';
 import { applySteamTimer, timerMismatch } from '../steam/apply';
 import { recordSteamFrame, type SteamRun } from '../steam/run';
 
@@ -293,7 +294,7 @@ export class Skin {
     this.notice = this.info = null;
     saveScreen(screen);
     // Another client, Decaid's own screen for one, may have changed the workflow meanwhile.
-    if (screen === 'home' || screen === 'steam') void this.refreshWorkflow();
+    if (screen === 'home' || screen === 'steam' || screen === 'hot-water') void this.refreshWorkflow();
   }
 
   /** `go`, after the open screen's `leaving` agreed: the back arrow and the editor's shortcut. */
@@ -329,6 +330,24 @@ export class Skin {
       this.steamAsked = asked;
     } catch (error) {
       this.notice = `The timer was not set: ${error instanceof Error ? error.message : String(error)}`;
+    }
+  }
+
+  /**
+   * Writes one value of the hot water page to the workflow's `hotWaterData` (spec 3.7). Hot
+   * water itself is started at the machine.
+   */
+  async setHotWater(field: HotWaterField, value: number): Promise<void> {
+    this.notice = this.info = null;
+    const current = this.workflow?.hotWaterData;
+    if (!current) {
+      this.notice = 'The hot water values were not set: the workflow has none yet.';
+      return;
+    }
+    try {
+      this.workflow = await writeHotWater(this.client, current, field, value);
+    } catch (error) {
+      this.notice = `The hot water values were not set: ${error instanceof Error ? error.message : String(error)}`;
     }
   }
 

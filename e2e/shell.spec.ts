@@ -126,11 +126,14 @@ test('the pen opens the editor, the name the picker, the right tab the steam pag
   await expect(page.getByTestId('screen-profiles')).toBeVisible();
   await page.getByTestId('nav-home').click();
 
-  // The steam tab is the mirror of the history's: down the right edge.
+  // The steam tab is the mirror of the history's: down the right edge. Since R5 (spec 3.7) the
+  // hot water tab takes the bottom of it: together they are as long as the history's.
   const tab = (await page.getByTestId('open-steam').boundingBox())!;
+  const water = (await page.getByTestId('open-hot-water').boundingBox())!;
   const history = (await page.getByTestId('nav-history').boundingBox())!;
   expect(tab.x + tab.width).toBeGreaterThan(1280 - 2);
-  expect(Math.abs(tab.height - history.height)).toBeLessThan(2);
+  expect(tab.height).toBeGreaterThan(history.height / 2);
+  expect(Math.abs(water.y + water.height - (history.y + history.height))).toBeLessThan(20);
   await page.getByTestId('open-steam').click();
   await expect(page.getByTestId('screen-steam')).toBeVisible();
   // The steam page has the same state line.

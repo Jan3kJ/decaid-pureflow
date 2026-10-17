@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  DEFAULT_HOT_WATER_SETTINGS,
   DEFAULT_SETTINGS,
   DEFAULT_START_PROFILES,
   DEFAULT_STEAM_SETTINGS,
@@ -8,11 +9,13 @@ import {
   STEAM_FIELDS,
   loadSettings,
   profileValue,
+  RATIO_RANGE,
   readAdjustments,
   readSettings,
   readStartProfiles,
   saveSettings,
   steamValue,
+  withRatio,
   withStartProfile,
   withSteamValue,
 } from './settings';
@@ -50,6 +53,7 @@ describe('settings', () => {
       maxFlow: 12,
       defaultDose: 17.5,
       steam: { ...DEFAULT_STEAM_SETTINGS, mugSmall: 162.5, referenceSeconds: 30, favourites: [20, 40, 60] },
+      hotWater: { ratios: [1.5, 2, 4] },
     };
     saveSettings(settings, store);
     expect(loadSettings(store)).toEqual(settings);
@@ -246,5 +250,34 @@ describe('the adjust buttons of the steam page (spec 3.7)', () => {
       ...DEFAULT_STEAM_SETTINGS,
       favourites: [20, 40, 60],
     });
+  });
+});
+
+describe('the ratio favourites of the hot water page (spec 3.7)', () => {
+  it('are 1:2, 1:2.5 and 1:3 by default', () => {
+    expect(DEFAULT_HOT_WATER_SETTINGS.ratios).toEqual([2, 2.5, 3]);
+    expect(loadSettings(fakeStore()).hotWater).toEqual({ ratios: [2, 2.5, 3] });
+  });
+
+  it('are stored and read back with the other settings, so the KV backup carries them', () => {
+    const store = fakeStore();
+    const settings = { ...DEFAULT_SETTINGS, hotWater: { ratios: [1.8, 2.2, 4] } };
+    saveSettings(settings, store);
+    expect(loadSettings(store).hotWater.ratios).toEqual([1.8, 2.2, 4]);
+    expect(readSettings(JSON.parse(JSON.stringify(settings))).hotWater.ratios).toEqual([1.8, 2.2, 4]);
+  });
+
+  it('fall back to the defaults when the stored ones are not three ratios in range', () => {
+    for (const ratios of [[2, 3], [2, 3, 20], [0, 2, 3], [2, 'x', 3], null]) {
+      expect(readSettings({ hotWater: { ratios } }).hotWater.ratios).toEqual([2, 2.5, 3]);
+    }
+  });
+
+  it('change one ratio, held inside the range and to one decimal', () => {
+    const hotWater = DEFAULT_HOT_WATER_SETTINGS;
+    expect(withRatio(hotWater, 1, 2.25).ratios).toEqual([2, 2.3, 3]);
+    expect(withRatio(hotWater, 0, 50).ratios[0]).toBe(RATIO_RANGE.max);
+    expect(withRatio(hotWater, 2, 0.1).ratios[2]).toBe(RATIO_RANGE.min);
+    expect(hotWater.ratios).toEqual([2, 2.5, 3]);
   });
 });

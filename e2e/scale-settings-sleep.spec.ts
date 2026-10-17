@@ -156,8 +156,14 @@ test('settings: the defaults, typed values and both switches survive a reload', 
   const steps = page.getByTestId('setting-show-profile-steps');
   await expect(workaround).toHaveAttribute('aria-checked', 'false');
   await expect(steps).toHaveAttribute('aria-checked', 'true');
-  // Three categories and the start row of the category Profile, nothing else.
-  await expect(page.locator('[data-testid="screen-settings"] h2')).toHaveText(['Steam', 'Profile', 'Shot graph', 'Profile: start row']);
+  // Four categories and the start row of the category Profile, nothing else (Hot water: spec 3.7).
+  await expect(page.locator('[data-testid="screen-settings"] h2')).toHaveText([
+    'Steam',
+    'Profile',
+    'Shot graph',
+    'Profile: start row',
+    'Hot water',
+  ]);
   await expect(page.getByTestId('settings-start').locator('b')).toHaveText(['floral', 'light', 'medium', 'dark', '46mm']);
   expect(await overflow(page)).toEqual({ scrolls: false, outside: 0 });
 
@@ -216,6 +222,7 @@ test('settings: the defaults, typed values and both switches survive a reload', 
         favourites: [25, 45, 30],
         adjustments: [-8, -4, 5],
       },
+      hotWater: { ratios: [2, 2.5, 3] },
     },
   });
 

@@ -34,7 +34,23 @@ export interface Settings {
   defaultDose: number;
   /** the category Steam (spec 3.4): what the steam page calculates with */
   steam: SteamSettings;
+  /** the category Hot water (spec 3.7): what the hot water page offers */
+  hotWater: HotWaterSettings;
 }
+
+export interface HotWaterSettings {
+  /**
+   * The three ratio favourites of the hot water page: the shot's weight times the ratio is the
+   * stop at weight, 2.5 for 1:2.5.
+   */
+  ratios: number[];
+}
+
+/** The founder's, 2026-10-16: 1:2, 1:2.5 and 1:3. */
+export const DEFAULT_HOT_WATER_SETTINGS: HotWaterSettings = { ratios: [2, 2.5, 3] };
+
+/** what a ratio may be, one decimal: 1:0.5 to 1:10 */
+export const RATIO_RANGE = { min: 0.5, max: 10 };
 
 /** Every value is a number, or a list of numbers of a fixed length: the settings page can show them as they are. */
 export interface SteamSettings {
@@ -85,6 +101,7 @@ export const DEFAULT_SETTINGS: Settings = {
   maxFlow: 8,
   defaultDose: 18,
   steam: DEFAULT_STEAM_SETTINGS,
+  hotWater: DEFAULT_HOT_WATER_SETTINGS,
 };
 
 export const SETTINGS_KEY = 'decaid-skin.settings';
@@ -141,6 +158,7 @@ export function readSettings(stored: unknown): Settings {
   return {
     ...settings,
     steam: { ...settings.steam, adjustments: readAdjustments(steam.adjustments) },
+    hotWater: { ratios: readRatios(settings.hotWater.ratios) },
     startProfiles: readStartProfiles(values.startProfiles),
   };
 }
@@ -151,6 +169,18 @@ export function readAdjustments(stored: unknown): number[] {
     Number.isInteger(value) && (value as number) >= ADJUST_RANGE.min && (value as number) <= ADJUST_RANGE.max;
   const defaults = DEFAULT_STEAM_SETTINGS.adjustments;
   return Array.isArray(stored) && stored.length === defaults.length && stored.every(fits) ? [...stored] : [...defaults];
+}
+
+/** The ratio favourites: three amounts in their range, else the defaults. */
+export function readRatios(stored: readonly number[]): number[] {
+  const fits = (value: number) => value >= RATIO_RANGE.min && value <= RATIO_RANGE.max;
+  return stored.every(fits) ? [...stored] : [...DEFAULT_HOT_WATER_SETTINGS.ratios];
+}
+
+/** One ratio favourite changed, held inside the range and to one decimal. */
+export function withRatio(hotWater: HotWaterSettings, index: number, value: number): HotWaterSettings {
+  const held = Math.min(RATIO_RANGE.max, Math.max(RATIO_RANGE.min, Math.round(value * 10) / 10));
+  return { ...hotWater, ratios: hotWater.ratios.map((ratio, i) => (i === index ? held : ratio)) };
 }
 
 /** Whether this tablet and port hold settings at all: a new port or a cleared app does not. */

@@ -3,6 +3,7 @@
   import Editor from './editor/Editor.svelte';
   import { editorFor } from './editor/route';
   import History from './history/History.svelte';
+  import HotWater from './hotwater/HotWater.svelte';
   import { isOpeningSwipe, startsAtEdge, type Edge, type Point } from './history/swipe';
   import Espresso from './shell/Espresso.svelte';
   import Home from './shell/Home.svelte';
@@ -73,16 +74,22 @@
       {/if}
     {:else if skin.screen === 'steam'}
       <Steam {skin} />
+    {:else if skin.screen === 'hot-water'}
+      <HotWater {skin} />
     {:else if skin.screen === 'settings'}
       <Settings {skin} />
     {/if}
   </div>
 
-  <!-- The right edge of home: the tab of the steam page, the mirror of the history's (founder, 2026-10-13). -->
+  <!-- The right edge of home: the tab of the steam page, the mirror of the history's (founder, 2026-10-13).
+       It is split (spec 3.7): steam keeps most of it, hot water takes the rest at the bottom. -->
   {#if home}
     <nav class="right">
       <button class="tab" data-testid="open-steam" onclick={() => skin.go('steam')}>
         <span>steam</span>
+      </button>
+      <button class="tab water" data-testid="open-hot-water" onclick={() => skin.go('hot-water')}>
+        <span>hot water</span>
       </button>
     </nav>
   {/if}
@@ -205,6 +212,20 @@
 
   nav.right .tab span {
     transform: none;
+  }
+
+  /* A quarter of the edge, under a line: steam's tab above it stays the larger target. */
+  nav.right {
+    padding-bottom: 0;
+  }
+
+  nav.right .tab {
+    flex: 3;
+  }
+
+  nav.right .tab.water {
+    flex: 1;
+    border-top: 1px solid var(--line);
   }
 
   .dot {
