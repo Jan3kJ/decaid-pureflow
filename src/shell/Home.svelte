@@ -25,7 +25,6 @@
    * that an entry is one more line here.
    */
   const MENU: { id: string; label: string; disabled?: () => boolean; choose: () => void }[] = [
-    { id: 'open-scale', label: 'Scale', choose: () => skin.go('scale') },
     { id: 'open-settings', label: 'Settings', choose: () => skin.go('settings') },
     { id: 'sleep', label: 'Sleep', disabled: () => !skin.canSleep, choose: () => void skin.sleep() },
   ];
@@ -114,6 +113,8 @@
 
   {#if skin.notice}
     <p class="notice" data-testid="notice">{skin.notice}</p>
+  {:else if skin.info}
+    <p class="notice info" data-testid="tare-notice">{skin.info}</p>
   {/if}
   <!-- Nothing is started here: the DE1 is started at the machine. What runs can be stopped. -->
   {#if skin.canStop && !water}
@@ -276,6 +277,10 @@
     margin: 0;
     color: var(--warn);
     font-size: 0.95rem;
+  }
+
+  .info {
+    color: var(--fg);
   }
 
   .stop {

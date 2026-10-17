@@ -335,10 +335,13 @@ export class Skin {
   }
 
   /**
-   * Tares the scale. Decaid refuses it during a shot when its setting `blockTareDuringShot`
-   * is on: that is what the user asked Decaid for, so it is a notice and not an error.
+   * Tares the scale: a tap on the weight in the state line, and the tare buttons of the steam
+   * and hot water pages (spec 3.7). Without a connected scale it does nothing. Decaid refuses
+   * it during a shot when its setting `blockTareDuringShot` is on: that is what the user asked
+   * Decaid for, so it is a notice and not an error.
    */
   async tare(): Promise<void> {
+    if (this.scaleLink !== 'connected') return;
     this.notice = this.info = null;
     try {
       await this.client.tareScale();

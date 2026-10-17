@@ -7,7 +7,6 @@
   import Espresso from './shell/Espresso.svelte';
   import Home from './shell/Home.svelte';
   import Profiles from './shell/Profiles.svelte';
-  import Scale from './shell/Scale.svelte';
   import Settings from './shell/Settings.svelte';
   import { Skin } from './shell/skin.svelte';
   import { backupTime } from './settings-backup';
@@ -70,8 +69,6 @@
       {/if}
     {:else if skin.screen === 'steam'}
       <Steam {skin} />
-    {:else if skin.screen === 'scale'}
-      <Scale {skin} />
     {:else if skin.screen === 'settings'}
       <Settings {skin} />
     {/if}

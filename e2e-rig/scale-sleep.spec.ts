@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
-// Acceptance item 6 (spec section 5) against the rig: tare answers; with Decaid's setting
+// Acceptance items 6 and 21 (spec section 5) against the rig: a tap on the weight in the state
+// line tares, and the scale stream reads about 0 after it; with Decaid's setting
 // blockTareDuringShot on, a tare during a simulated shot shows the notice; the sleep button
 // puts the machine into `sleeping` and a touch wakes it. The tests delete the shot they
 // create and put the setting and the screen's brightness back. That settings survive a reload
@@ -24,6 +25,24 @@ const machineState = async (): Promise<string> => (await api('GET', '/api/v1/mac
 const shotIds = async (): Promise<string[]> =>
   (await api('GET', '/api/v1/shots?limit=100')).items.map((shot: { id: string }) => shot.id);
 
+/** The next weight of the scale stream, read outside the skin. */
+function scaleWeight(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const socket = new WebSocket(`${GATEWAY.replace('http', 'ws')}/ws/v1/scale/snapshot`);
+    const timer = setTimeout(() => {
+      socket.close();
+      reject(new Error('no weight from /ws/v1/scale/snapshot in 10 s'));
+    }, 10_000);
+    socket.onmessage = (event) => {
+      const frame = JSON.parse(String(event.data));
+      if (typeof frame.weight !== 'number') return;
+      clearTimeout(timer);
+      socket.close();
+      resolve(frame.weight);
+    };
+  });
+}
+
 let gatewayUp = false;
 
 test.beforeAll(async () => {
@@ -34,20 +53,22 @@ test.beforeAll(async () => {
   }
 });
 
-test('scale: the rig says connected, and tare answers', async ({ page }) => {
+test('scale: no scale page; a tap on the weight tares, and the scale reads about 0 (item 21)', async ({ page }) => {
   test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
 
   await page.goto('/');
   await expect(page.getByTestId('status-title')).toHaveText('Idle', { timeout: 15_000 });
   await page.getByTestId('menu').click();
-  await page.getByTestId('open-scale').click();
-  await expect(page.getByTestId('scale-link')).toHaveText('Connected', { timeout: 15_000 });
-  await expect(page.getByTestId('scale-page-weight')).toContainText('g');
+  await expect(page.getByTestId('menu-list')).toBeVisible();
+  await expect(page.getByTestId('open-scale')).toHaveCount(0);
+  await page.getByTestId('menu-backdrop').click();
+  await expect(page.getByTestId('state-scale')).toHaveText(/^-?\d+\.\d g$/, { timeout: 15_000 });
 
   const answer = page.waitForResponse((response) => response.url().endsWith('/api/v1/scale/tare'));
-  await page.getByTestId('tare').click();
+  await page.getByTestId('state-scale').click();
   expect((await answer).status()).toBe(200);
-  await expect(page.getByTestId('scale-page-weight')).toHaveText('0.0g', { timeout: 10_000 });
+  await expect(page.getByTestId('state-scale')).toHaveText(/^-?0\.\d g$/, { timeout: 10_000 });
+  await expect.poll(async () => Math.abs(await scaleWeight()), { timeout: 10_000 }).toBeLessThan(0.5);
   await expect(page.getByTestId('tare-notice')).toHaveCount(0);
   await expect(page.getByTestId('notice')).toHaveCount(0);
 });
@@ -68,12 +89,10 @@ test('scale: with blockTareDuringShot on, a tare during a simulated shot shows t
     await api('PUT', '/api/v1/machine/state/espresso');
     await expect(page.getByTestId('screen-espresso')).toBeVisible({ timeout: 15_000 });
     await page.getByTestId('nav-home').click();
-    await page.getByTestId('menu').click();
-    await page.getByTestId('open-scale').click();
     expect(await machineState()).toBe('espresso');
 
     const answer = page.waitForResponse((response) => response.url().endsWith('/api/v1/scale/tare'));
-    await page.getByTestId('tare').click();
+    await page.getByTestId('state-scale').click();
     const response = await answer;
     expect(response.status()).toBe(400);
     expect((await response.json()).type).toBe('block_tare_during_shot');

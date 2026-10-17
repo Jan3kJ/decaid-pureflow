@@ -1,9 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mockGateway } from './mock-gateway';
 
-// Scale, settings and sleep / wake against a mocked gateway (D8c, acceptance item 6), and the
-// stream the gateway closed with an error. The same against the running gateway:
-// e2e-rig/scale-sleep.spec.ts.
+// Tare by a tap on the weight (3.7, acceptance items 6 and 21), settings and sleep / wake
+// against a mocked gateway (D8c), and the stream the gateway closed with an error. The same
+// against the running gateway: e2e-rig/scale-sleep.spec.ts.
 
 const errors: string[] = [];
 
@@ -37,46 +37,57 @@ async function type(page: Page, testid: string, value: string) {
   await expect(page.getByTestId('numpad')).toHaveCount(0);
 }
 
-test('scale: the connect state from the stream, and tare', async ({ page }) => {
+test('scale: there is no scale page and no menu entry; a tap on the weight tares (item 21)', async ({ page }) => {
   const gateway = await mockGateway(page);
+  // A skin that showed the scale page before opens home.
+  await page.addInitScript(() => localStorage.setItem('decaid-skin.screen', 'scale'));
   await page.goto('/');
+  await expect(page.getByTestId('screen-home')).toBeVisible();
+  await expect(page.getByTestId('screen-scale')).toHaveCount(0);
   await page.getByTestId('menu').click();
-  await page.getByTestId('open-scale').click();
+  await expect(page.getByRole('menuitem')).toHaveText(['Settings', 'Sleep']);
+  await expect(page.getByTestId('open-scale')).toHaveCount(0);
+  await page.getByTestId('menu-backdrop').click();
 
-  await expect(page.getByTestId('scale-state')).toHaveAttribute('data-scale', 'connected');
-  await expect(page.getByTestId('scale-link')).toHaveText('Connected');
+  // The weight shows in the state line, and a tap on it tares.
   gateway.putOnScale(212.4);
-  await expect(page.getByTestId('scale-page-weight')).toHaveText('212.4g');
-
-  await page.getByTestId('tare').click();
-  await expect(page.getByTestId('scale-page-weight')).toHaveText('0.0g');
+  await expect(page.getByTestId('state-scale')).toHaveText('212.4 g');
+  // The weight is a finger's target, larger than its text, and a tap in its margin tares too.
+  const target = (await page.getByTestId('tare').boundingBox())!;
+  expect(target.height).toBeGreaterThanOrEqual(44);
+  await page.mouse.click(target.x + target.width / 2, target.y + 4);
+  await expect(page.getByTestId('state-scale')).toHaveText('0.0 g');
   expect(gateway.calls('PUT', '/api/v1/scale/tare')).toHaveLength(1);
+  gateway.putOnScale(212.4);
+  await expect(page.getByTestId('state-scale')).toHaveText('212.4 g');
+  await page.getByTestId('state-scale').click();
+  await expect(page.getByTestId('state-scale')).toHaveText('0.0 g');
+  expect(gateway.calls('PUT', '/api/v1/scale/tare')).toHaveLength(2);
   await expect(page.getByTestId('tare-notice')).toHaveCount(0);
   await expect(page.getByTestId('notice')).toHaveCount(0);
-
-  // The scale goes away: a status frame on the open socket, no weight, nothing to tare.
-  gateway.connectScale(false);
-  await expect(page.getByTestId('scale-state')).toHaveAttribute('data-scale', 'disconnected');
-  await expect(page.getByTestId('scale-link')).toHaveText('Not connected');
-  await expect(page.getByTestId('scale-page-weight')).toHaveText('–');
-  await expect(page.getByTestId('tare')).toBeDisabled();
   expect(await overflow(page)).toEqual({ scrolls: false, outside: 0 });
 
+  // The scale goes away: the warning is not a button, and a tap on it sends nothing.
+  gateway.connectScale(false);
+  await expect(page.getByTestId('state-scale')).toHaveText('⚠ not connected');
+  await expect(page.getByTestId('tare')).toHaveCount(0);
+  await page.getByTestId('state-scale').click();
+  await page.waitForTimeout(300);
+  expect(gateway.calls('PUT', '/api/v1/scale/tare')).toHaveLength(2);
+  await expect(page.getByTestId('notice')).toHaveCount(0);
+
   gateway.connectScale(true);
-  await expect(page.getByTestId('scale-link')).toHaveText('Connected');
-  await expect(page.getByTestId('tare')).toBeEnabled();
+  await expect(page.getByTestId('tare')).toBeVisible();
   expect(errors).toEqual([]);
 });
 
-test('scale: the status frame alone says connected, before any weight', async ({ page }) => {
+test('scale: the status frame alone makes the weight a tare button, before any weight', async ({ page }) => {
   const gateway = await mockGateway(page);
   // A scale stream that sends its first frame and nothing else.
   await page.routeWebSocket(/:8080\/ws\/v1\/scale\/snapshot/, (ws) => ws.send(JSON.stringify({ status: 'connected' })));
   await page.goto('/');
-  await page.getByTestId('menu').click();
-  await page.getByTestId('open-scale').click();
-  await expect(page.getByTestId('scale-link')).toHaveText('Connected');
-  await expect(page.getByTestId('scale-page-weight')).toHaveText('–');
+  await expect(page.getByTestId('state-scale')).toHaveText('–');
+  await expect(page.getByTestId('tare')).toBeVisible();
   expect(gateway.calls('PUT', '/api/v1/scale/tare')).toHaveLength(0);
   expect(errors).toEqual([]);
 });
@@ -84,12 +95,10 @@ test('scale: the status frame alone says connected, before any weight', async ({
 test('scale: a tare Decaid blocks during a shot is a notice, another failure is an error', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
-  // A shot runs; the user leaves the espresso screen for the scale.
+  // A shot runs; the user leaves the espresso screen for home.
   await gateway.replay(page, 0, 0.4);
   await expect(page.getByTestId('screen-espresso')).toBeVisible();
   await page.getByTestId('nav-home').click();
-  await page.getByTestId('menu').click();
-  await page.getByTestId('open-scale').click();
 
   gateway.tareBlocked = true;
   await page.getByTestId('tare').click();

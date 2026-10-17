@@ -17,10 +17,18 @@
   <strong data-testid="status-title">{skin.status.title}</strong>
   {#if machine}
     {#each skin.stateValues as item (item.key)}
-      <span class="value {item.key}" class:warn={item.warn}>
-        <small>{item.label}</small>
-        <b data-testid="state-{item.key}">{item.warn && item.key === 'scale' ? `⚠ ${item.value}` : item.value}</b>
-      </span>
+      {#if item.key === 'scale' && skin.scaleLink === 'connected'}
+        <!-- A tap on the weight tares the scale (founder, 2026-10-16); without a scale it is not a button. -->
+        <button class="value scale" data-testid="tare" aria-label="tare the scale" onclick={() => skin.tare()}>
+          <small>{item.label}</small>
+          <b data-testid="state-scale">{item.value}</b>
+        </button>
+      {:else}
+        <span class="value {item.key}" class:warn={item.warn}>
+          <small>{item.label}</small>
+          <b data-testid="state-{item.key}">{item.warn && item.key === 'scale' ? `⚠ ${item.value}` : item.value}</b>
+        </span>
+      {/if}
     {/each}
   {:else}
     <span class="detail" data-testid="status-detail">{skin.status.detail}</span>
@@ -35,7 +43,8 @@
     gap: 1.1rem;
     font-size: 1.1rem;
     white-space: nowrap;
-    overflow: hidden;
+    /* Clipped sideways only: the weight's tap target reaches above and below the line. */
+    overflow-x: clip;
   }
 
   .dot {
@@ -78,6 +87,23 @@
 
   .scale b {
     color: var(--weight);
+  }
+
+  /* The weight as a tare button: the line's text, with a finger's target around it. */
+  button.value {
+    margin: -0.9rem -0.6rem;
+    padding: 0.9rem 0.6rem;
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    border-radius: 0.6rem;
+    touch-action: manipulation;
+    user-select: none;
+  }
+
+  button.value:active {
+    background: var(--raised);
   }
 
   .value.warn b {

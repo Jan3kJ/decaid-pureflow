@@ -100,6 +100,8 @@
 
     {#if skin.notice}
       <p class="notice" data-testid="notice">{skin.notice}</p>
+    {:else if skin.info}
+      <p class="notice info" data-testid="tare-notice">{skin.info}</p>
     {:else if skin.steamMismatch}
       <p class="notice" data-testid="steam-mismatch">{skin.steamMismatch}</p>
     {/if}
@@ -282,6 +284,10 @@
     margin: 0;
     color: var(--warn);
     font-size: 0.95rem;
+  }
+
+  .info {
+    color: var(--fg);
   }
 
   .stop {

@@ -141,12 +141,6 @@ export function isAsleep(link: Link, snapshot: MachineSnapshot | null): boolean 
 /** What the scale stream said last about the scale; `unknown` while the stream is not open. */
 export type ScaleLink = 'unknown' | 'connected' | 'disconnected';
 
-export const SCALE_LABEL: Record<ScaleLink, string> = {
-  unknown: 'Not known',
-  connected: 'Connected',
-  disconnected: 'Not connected',
-};
-
 /**
  * One value of the state line: 'group 92.6 °C'. `warn`: the value is a warning, the scale that
  * is not connected or a tank under its refill level.

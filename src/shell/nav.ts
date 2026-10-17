@@ -9,7 +9,6 @@ export const SCREENS = [
   'profiles',
   'editor',
   'steam',
-  'scale',
   'settings',
 ] as const;
 
