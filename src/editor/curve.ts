@@ -62,12 +62,17 @@ export interface Level {
    * the value a drag changes. It is `field`, except for the temperatures: a phase's
    * temperature line moves its whole group (edit.ts, TEMPERATURE_GROUPS)
    */
-  drags: NumberField;
+  drags: EditField;
+  /**
+   * how far the value moves for each unit the finger moves up: 1, except for the end flow,
+   * whose line is drawn only part of the way to it; there the line's end follows the finger
+   */
+  gain: number;
   phase: PhaseId;
   from: Point;
   to: Point;
-  /** where the value is written: over the middle, at the left end, or not at all */
-  label: 'middle' | 'start' | 'none';
+  /** where the value is written: over the middle, at the left or the right end, or not at all */
+  label: 'middle' | 'start' | 'end' | 'none';
 }
 
 export interface Curve {
@@ -200,9 +205,22 @@ export function timeAxis(p: AFlowParams): TimeAxis {
   return { widths, pauseWidth, unitsPerSecond };
 }
 
+/**
+ * The value a drag of a level line sets: where it began, moved by the rise of the finger in
+ * the line's unit. Not yet brought into the value's range (fields.ts, snap).
+ */
+export function dragTarget(level: Pick<Level, 'gain'>, startValue: number, rise: number): number {
+  return startValue + rise * level.gain;
+}
+
+/**
+ * The editor's graph. In detail mode the flow phase's flow line is split (founder,
+ * 2026-10-16): its left half drags the start flow, its right half the end flow.
+ */
 export function buildCurve(
   params: AFlowParams,
   limits: MachineLimits = DEFAULT_MACHINE_LIMITS,
+  mode: 'simple' | 'detail' = 'simple',
 ): Curve {
   const p = resolveParams(params);
   const axis = timeAxis(params);
@@ -235,8 +253,9 @@ export function buildCurve(
     from: Point,
     to: Point,
     label: Level['label'] = 'middle',
-    drags: NumberField = field as NumberField,
-  ) => levels.push({ line, field, drags, phase, from, to, label });
+    drags: EditField = field,
+    gain = 1,
+  ) => levels.push({ line, field, drags, gain, phase, from, to, label });
   const secondsPerUnit = 1 / axis.unitsPerSecond;
 
   // Fill: flow at its target, the pressure builds to the step's exit. The flow falls at its
@@ -317,8 +336,16 @@ export function buildCurve(
   const pressureFrom = { x: pour.x0, y: p.pourPressure };
   const pressureTo = { x: pour.x1, y: p.pourPressure };
   pressure.push(pressureTo);
-  // The start flow is the value at the left edge, so that is where it is written.
-  level('flow', 'pourFlow', 'flow', pourFrom, pourTo, 'start');
+  // The start flow is the value at the left edge, so that is where it is written. In detail
+  // mode the end flow takes the right half; its line's end moves `shown` of the end flow's
+  // change, so the drag moves the end flow by the inverse and the end stays under the finger.
+  if (mode === 'detail') {
+    const middle = { x: (pourFrom.x + pourTo.x) / 2, y: (pourFrom.y + pourTo.y) / 2 };
+    level('flow', 'pourFlow', 'flow', pourFrom, middle, 'start');
+    level('flow', 'pourEndFlow', 'flow', middle, pourTo, 'end', 'pourEndFlow', 1 / shown);
+  } else {
+    level('flow', 'pourFlow', 'flow', pourFrom, pourTo, 'start');
+  }
   level('pressure', 'pourPressure', 'flow', pressureFrom, pressureTo);
   const pressureLimit: [Point, Point] | undefined =
     p.pourPressureLimit > 0 && p.pourPressureLimit !== p.pourPressure

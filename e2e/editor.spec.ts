@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mockGateway, type MockGateway } from './mock-gateway';
+import { selectPhase } from './touch';
 
 const errors: string[] = [];
 let gateway: MockGateway;
@@ -135,7 +136,7 @@ test('the layout stays inside the viewport and every column is wide enough for a
     }
   }
   // The longest panel, six values and the dose, fits without scrolling.
-  await page.getByTestId('phase-flow').click();
+  await selectPhase(page, 'flow');
   const panel = page.getByTestId('detail-panel');
   expect(await panel.evaluate((el) => el.scrollHeight <= el.clientHeight)).toBe(true);
 });
@@ -248,7 +249,7 @@ test('the pause is dragged in detail mode only', async ({ page }) => {
   await expect(page.getByTestId('popup')).toContainText('pause time');
   await page.mouse.up();
   expect(await number(page, 'value-pauseDuration')).toBeGreaterThan(15);
-  await expect(page.getByTestId('phase-secondFill')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('column-secondFill')).toHaveClass(/selected/);
 });
 
 test('simple mode: a weight chip on the graph opens and steps', async ({ page }) => {
@@ -261,7 +262,7 @@ test('simple mode: a weight chip on the graph opens and steps', async ({ page })
 
 test('detail mode: a chip changes the value and the curve', async ({ page }) => {
   await page.getByTestId('mode-detail').click();
-  await page.getByTestId('phase-pressurize').click();
+  await selectPhase(page, 'pressurize');
   await expect(page.getByTestId('column-pressurize')).toHaveClass(/selected/);
 
   const before = await pressurePoints(page);
@@ -276,7 +277,7 @@ test('detail mode: a chip changes the value and the curve', async ({ page }) => 
   // Tapping a column of the graph selects its phase.
   const flow = await column(page, 'flow');
   await page.mouse.click(flow.x + flow.width / 2, flow.y + flow.height - 10);
-  await expect(page.getByTestId('phase-flow')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('column-flow')).toHaveClass(/selected/);
   await expect(page.getByTestId('chip-stopWeight')).toBeVisible();
   await page.screenshot({ path: 'docs/product/detail.png' });
 });
@@ -289,11 +290,11 @@ test('detail mode lists the values of the review per phase, and the dose once', 
     infuse: ['pressure', 'time', 'move-on weight', 'temperature', 'flow limit'],
     secondFill: ['flow', 'move-on pressure', 'temperature', 'fill time', 'pause time', 'pause ends at flow under'],
     pressurize: ['target pressure', 'time', 'temperature'],
-    flow: ['start flow', 'flow gradient to', 'time', 'temperature', 'stop at weight', 'max. pressure'],
+    flow: ['start flow', 'end flow', 'time', 'temperature', 'stop at weight', 'max. pressure'],
   };
   const panel = page.getByTestId('detail-panel');
   for (const [phase, labels] of Object.entries(expected)) {
-    await page.getByTestId(`phase-${phase}`).click();
+    await selectPhase(page, phase);
     await expect(panel.locator('.label')).toHaveText([...labels, 'dose']);
   }
   await expect(page.getByTestId('chip-value-dose')).toHaveText('16 g');
@@ -312,7 +313,7 @@ test('detail mode: the flow the pause ends under is a value of the 2nd fill, and
   await expect(page.getByTestId('value-pauseExitFlow')).toHaveCount(0);
 
   await page.getByTestId('mode-detail').click();
-  await page.getByTestId('phase-secondFill').click();
+  await selectPhase(page, 'secondFill');
   const chip = page.getByTestId('chip-pauseExitFlow');
   await expect(page.getByTestId('chip-value-pauseExitFlow')).toHaveText('1 ml/s');
   const panel = page.getByTestId('detail-panel');
@@ -347,7 +348,7 @@ test('detail mode: the same lines are dragged as in simple mode', async ({ page 
   await page.mouse.up();
 
   // The drag selects the phase of its line, and the panel shows the new value.
-  await expect(page.getByTestId('phase-infuse')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('column-infuse')).toHaveClass(/selected/);
   const value = await number(page, 'chip-value-infusePressure');
   expect(value).toBeGreaterThan(3);
   await expect(page.getByTestId('value-infusePressure')).toHaveText(`${value} bar`);
@@ -365,9 +366,67 @@ test('detail mode: the same lines are dragged as in simple mode', async ({ page 
   expect(await number(page, 'value-infuseTime')).toBeLessThan(60);
 });
 
+// founder, 2026-10-16 (acceptance 23, first half): "end flow"; the last step's flow line is
+// split in detail mode, left half start flow, right half end flow; no buttons above the graph.
+test('detail mode: the left half of the last flow line drags the start flow, the right half the end flow', async ({
+  page,
+}) => {
+  await page.getByTestId('mode-detail').click();
+  // A tap on a step selects it: there are no phase buttons.
+  await expect(page.locator('[data-testid^="phase-"]')).toHaveCount(0);
+  await expect(page.getByRole('group', { name: 'phase' })).toHaveCount(0);
+  const header = (await page.locator('.editor header').boundingBox())!;
+  const graph = (await page.getByTestId('graph').boundingBox())!;
+  for (const button of await page.getByTestId('screen-editor').getByRole('button').all()) {
+    const box = await button.boundingBox();
+    if (!box || box.y < header.y + header.height) continue;
+    if (box.x >= graph.x + graph.width || box.x + box.width <= graph.x) continue;
+    expect(box.y + box.height).toBeGreaterThan(graph.y);
+  }
+
+  // light: start flow 3 ml/s, flow up, so the end flow follows at 6 ml/s.
+  await expect(page.getByTestId('value-pourFlow')).toHaveText('3 ml/s');
+  await expect(page.getByTestId('value-pourEndFlow')).toHaveText('6 ml/s');
+  const flowBefore = await flowPath(page);
+
+  await dragBy(page, await middleOf(page, 'pourEndFlow'), 0, 30);
+  await expect(page.getByTestId('popup')).toContainText('end flow');
+  await page.mouse.up();
+  await expect(page.getByTestId('column-flow')).toHaveClass(/selected/);
+  const end = await number(page, 'chip-value-pourEndFlow');
+  expect(end).toBeLessThan(6);
+  await expect(page.getByTestId('value-pourEndFlow')).toHaveText(`${end} ml/s`);
+  await expect(page.getByTestId('chip-value-pourFlow')).toHaveText('3 ml/s');
+  expect(await flowPath(page)).not.toBe(flowBefore);
+  // The end flow is the label's name everywhere.
+  await expect(page.getByTestId('detail-panel')).toContainText('end flow');
+  await expect(page.getByTestId('detail-panel')).not.toContainText('gradient');
+
+  await dragBy(page, await middleOf(page, 'pourFlow'), 0, -30);
+  await expect(page.getByTestId('popup')).toContainText('start flow');
+  await page.mouse.up();
+  expect(await number(page, 'chip-value-pourFlow')).toBeGreaterThan(3);
+  await expect(page.getByTestId('chip-value-pourEndFlow')).toHaveText(`${end} ml/s`);
+
+  // Both stay inside the maximum flow of the settings, 8 ml/s by default.
+  await dragBy(page, await middleOf(page, 'pourEndFlow'), 0, -600);
+  await expect(page.getByTestId('popup')).toContainText('8 ml/s');
+  await page.screenshot({ path: 'docs/product/detail-end-flow.png' });
+  await page.mouse.up();
+  await expect(page.getByTestId('chip-value-pourEndFlow')).toHaveText('8 ml/s');
+  await dragBy(page, await middleOf(page, 'pourEndFlow'), 0, 600);
+  await page.mouse.up();
+  await expect(page.getByTestId('chip-value-pourEndFlow')).toHaveText('0 ml/s');
+
+  // Simple mode keeps one line, the start flow's.
+  await page.getByTestId('mode-simple').click();
+  await expect(page.locator('line.level[data-field="pourEndFlow"]')).toHaveCount(0);
+  await expect(page.getByTestId('value-pourEndFlow')).toHaveCount(0);
+});
+
 test('detail mode: the number pad types a value and respects the range', async ({ page }) => {
   await page.getByTestId('mode-detail').click();
-  await page.getByTestId('phase-infuse').click();
+  await selectPhase(page, 'infuse');
   await expect(page.getByTestId('chip-value-infuseTime')).toHaveText('60 s');
   const before = (await column(page, 'infuse')).width;
 
@@ -418,7 +477,7 @@ test('temperatures: detail mode sets one phase, a drag in simple mode keeps the 
   page,
 }) => {
   await page.getByTestId('mode-detail').click();
-  await page.getByTestId('phase-infuse').click();
+  await selectPhase(page, 'infuse');
   await expect(page.getByTestId('chip-value-infuseTemperature')).toHaveText('95 °C');
   // While infuse follows the fill, its temperature is written once.
   await expect(page.getByTestId('value-infuseTemperature')).toHaveCount(0);
@@ -479,7 +538,7 @@ test('the temperature axis is 80 to 100 °C and widens for a temperature outside
 
   // A value typed in detail mode widens it the same way.
   await page.getByTestId('mode-detail').click();
-  await page.getByTestId('phase-fill').click();
+  await selectPhase(page, 'fill');
   await type(page, 'fillTemperature', '102');
   await page.getByTestId('numpad-confirm').click();
   await expect(page.getByTestId('chip-value-fillTemperature')).toHaveText('102 °C');
@@ -604,7 +663,7 @@ test('both toggles work', async ({ page }) => {
 // founder, 2026-10-15: the maximum flow is a setting, 8 ml/s by default.
 test('the flows of the editor follow the maximum flow of the settings', async ({ page }) => {
   await page.getByTestId('mode-detail').click();
-  await page.getByTestId('phase-flow').click();
+  await selectPhase(page, 'flow');
   await type(page, 'pourFlow', '15');
   await expect(page.getByTestId('numpad-range')).toHaveText('0.1 to 8 ml/s');
   await page.getByTestId('numpad-cancel').click();
@@ -616,7 +675,7 @@ test('the flows of the editor follow the maximum flow of the settings', async ({
   await page.reload();
   await expect(page.getByTestId('graph')).toBeVisible();
   await page.getByTestId('mode-detail').click();
-  await page.getByTestId('phase-flow').click();
+  await selectPhase(page, 'flow');
   await type(page, 'pourFlow', '11.5');
   await expect(page.getByTestId('numpad-range')).toHaveText('0.1 to 12 ml/s');
   await page.getByTestId('numpad-confirm').click();

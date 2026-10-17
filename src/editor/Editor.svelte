@@ -9,7 +9,6 @@
     resolveParams,
     serializeParams,
     type AFlowParams,
-    type NumberField,
   } from '../aflow';
   import type { ProfileRecord } from '../api';
   import { defaultProfile, sameProfile } from '../shell/profiles';
@@ -140,9 +139,6 @@
   // is and kept until it is edited: ±, the number pad and a drag bring it into the range.
   const limits = $derived(machineLimits(settings.maxFlow));
   const ranges = $derived(paramRanges(limits));
-  const phases = $derived(
-    (Object.keys(PHASE_LABEL) as PhaseId[]).filter((id) => id !== 'secondFill' || hasSecondFill(params)),
-  );
   const message = (cause: unknown) => (cause instanceof Error ? cause.message : String(cause));
 
   function open(key: string, values: AFlowParams) {
@@ -288,7 +284,7 @@
     if (selected === 'secondFill' && !hasSecondFill(params)) selected = 'infuse';
   }
 
-  function drag(field: NumberField, value: number) {
+  function drag(field: EditField, value: number) {
     touched = true;
     params = dragValue(params, field, value);
   }
@@ -365,20 +361,7 @@
     {#if notice}
       <p class="notice {notice.tone}" data-testid="editor-notice">{notice.text}</p>
     {/if}
-    {#if mode === 'detail'}
-      <div class="phases" role="group" aria-label="phase">
-        {#each phases as id (id)}
-          <button
-            class="seg"
-            aria-pressed={id === selected}
-            data-testid="phase-{id}"
-            onclick={() => (selected = id)}
-          >
-            {PHASE_LABEL[id]}
-          </button>
-        {/each}
-      </div>
-    {/if}
+    <!-- No phase buttons: in detail mode a tap on a step of the graph selects it (founder, 2026-10-16). -->
     <div class="plot">
       <Graph
         {params}
@@ -514,11 +497,6 @@
   }
 
   .group,
-  .phases {
-    display: flex;
-    gap: 0.4rem;
-  }
-
   header > .group:last-child {
     gap: 1rem;
   }
@@ -627,12 +605,6 @@
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
-  }
-
-  .phases .seg {
-    flex: 1;
-    min-width: 0;
-    padding: 0 0.4rem;
   }
 
   .plot {

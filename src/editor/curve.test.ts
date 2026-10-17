@@ -5,6 +5,7 @@ import {
   resolveParams,
   validateParams,
   type AFlowParams,
+  machineLimits,
 } from '../aflow';
 import {
   AXIS_SECONDS,
@@ -14,6 +15,7 @@ import {
   PAUSE_MIN_UNITS,
   TEMPERATURE_AXIS,
   buildCurve,
+  dragTarget,
   expectedSeconds,
   hitTest,
   temperatureAxis,
@@ -22,6 +24,7 @@ import {
   type PhaseId,
   type Projection,
 } from './curve';
+import { dragValue } from './edit';
 import { FIELD_LABEL, FIELD_STEP, PANEL_LABEL, PHASE_FIELDS, formatValue, snap, typedStep } from './fields';
 
 const byId = (id: string): AFlowParams => DEFAULT_PROFILES.find((p) => p.id === id)!.params;
@@ -614,5 +617,85 @@ describe('temperatureAxis', () => {
       const values = buildCurve(params).temperature.map((pt) => pt.y);
       expect(temperatureAxis(values)).toEqual(TEMPERATURE_AXIS);
     }
+  });
+});
+
+// founder, 2026-10-16: in detail mode the left half of the last step's flow line drags the
+// start flow, the right half the end flow; simple mode keeps one line for the start flow.
+describe('the split flow line of detail mode', () => {
+  const projection: Projection = {
+    x: (units) => units * 10,
+    y: (line, value) => (line === 'temperature' ? (105 - value) * 20 : 1000 - value * 20),
+  };
+  const pourLevels = (curve: ReturnType<typeof buildCurve>) =>
+    curve.levels.filter((l) => l.line === 'flow' && l.phase === 'flow');
+  /** What a finger on the pour flow line at a share of the column's width takes hold of. */
+  const at = (p: AFlowParams, share: number, mode: 'simple' | 'detail') => {
+    const curve = buildCurve(p, undefined, mode);
+    const pour = curve.phases.at(-1)!;
+    const [from, to] = [curve.flow.at(-1)!.at(-2)!, curve.flow.at(-1)!.at(-1)!];
+    const x = pour.x0 + (pour.x1 - pour.x0) * share;
+    const y = from.y + ((to.y - from.y) * (x - from.x)) / (to.x - from.x);
+    const hit = hitTest(curve, x * 10, 1000 - y * 20, projection, 10, 0);
+    return hit?.kind === 'level' ? hit.level : null;
+  };
+
+  it('is one start flow line in simple mode', () => {
+    expect(pourLevels(buildCurve(light)).map((l) => l.field)).toEqual(['pourFlow']);
+    expect(at(light, 0.25, 'simple')?.drags).toBe('pourFlow');
+    expect(at(light, 0.75, 'simple')?.drags).toBe('pourFlow');
+  });
+
+  it('drags the start flow on its left half and the end flow on its right half', () => {
+    for (const p of [light, dark, { ...light, pourEndFlow: 1 }]) {
+      expect(at(p, 0.1, 'detail')?.drags).toBe('pourFlow');
+      expect(at(p, 0.45, 'detail')?.drags).toBe('pourFlow');
+      expect(at(p, 0.55, 'detail')?.drags).toBe('pourEndFlow');
+      expect(at(p, 0.95, 'detail')?.drags).toBe('pourEndFlow');
+    }
+  });
+
+  it('draws the same line as simple mode, split in the middle, the end flow written at its end', () => {
+    const simple = buildCurve(light);
+    const detail = buildCurve(light, undefined, 'detail');
+    expect(detail.flow).toEqual(simple.flow);
+    const [start, end] = pourLevels(detail);
+    expect(start.to).toEqual(end.from);
+    expect(start.to.x).toBeCloseTo((start.from.x + end.to.x) / 2);
+    expect([start.label, end.label]).toEqual(['start', 'end']);
+    expect(FIELD_LABEL.pourEndFlow).toBe('end flow');
+    expect(PANEL_LABEL.pourEndFlow).toBe('end flow');
+  });
+
+  it('keeps the end of the line under the finger: the end flow moves by the line’s inverse share', () => {
+    // light's 60 s flow time is drawn for 30 s: the line's end moves half the end flow's change.
+    for (const p of [light, { ...light, pourTime: 30 }, { ...light, pourTime: 90, pourEndFlow: 1.5 }]) {
+      const curve = buildCurve(p, undefined, 'detail');
+      const end = pourLevels(curve)[1];
+      const start = resolveParams(p).pourEndFlow;
+      const value = snap('pourEndFlow', dragTarget(end, start, 0.6));
+      const moved = buildCurve(dragValue(p, 'pourEndFlow', value), undefined, 'detail');
+      expect(moved.flow.at(-1)!.at(-1)!.y).toBeCloseTo(curve.flow.at(-1)!.at(-1)!.y + 0.6, 1);
+      // The start flow does not move with it.
+      expect(moved.flow.at(-1)!.at(-2)!.y).toBe(p.pourFlow);
+    }
+    // The start flow follows the finger one to one.
+    expect(dragTarget(pourLevels(buildCurve(light, undefined, 'detail'))[0], 2, 0.5)).toBe(2.5);
+  });
+
+  it('keeps both drags inside their ranges and the maximum flow of the settings', () => {
+    const end = pourLevels(buildCurve(light, undefined, 'detail'))[1];
+    const limits = machineLimits(6);
+    expect(snap('pourEndFlow', dragTarget(end, 4, 10), limits)).toBe(6);
+    expect(snap('pourEndFlow', dragTarget(end, 4, -10), limits)).toBe(0);
+    expect(snap('pourFlow', dragTarget({ gain: 1 }, 2, 10), limits)).toBe(6);
+    expect(snap('pourFlow', dragTarget({ gain: 1 }, 2, -10), limits)).toBe(paramRanges(limits).pourFlow.min);
+  });
+
+  it('a drag of the end flow sets it and the toggle text to match; the start flow is left alone', () => {
+    const down = dragValue({ ...light, flowUp: true }, 'pourEndFlow', 1);
+    expect(down).toMatchObject({ pourEndFlow: 1, flowUp: false, pourFlow: light.pourFlow });
+    const up = dragValue({ ...light, flowUp: false }, 'pourEndFlow', 5);
+    expect(up).toMatchObject({ pourEndFlow: 5, flowUp: true });
   });
 });

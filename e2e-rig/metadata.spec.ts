@@ -5,6 +5,7 @@ import type { AFlowParams } from '../src/aflow/types';
 import { buildProfile } from '../src/editor/save';
 import { paramsMetadata, splitNotes, workflowProfile } from '../src/editor/storage';
 import light from '../src/aflow/defaults/default-light.json' with { type: 'json' };
+import { selectPhase } from '../e2e/touch';
 
 // M1 (docs/research.md section 18): a profile record's `metadata` on the rig, the way the
 // skin's A-Flow values are to travel in it (spec 3.6). It holds through GET, PUT, the lineage,
@@ -227,7 +228,7 @@ async function expectOnScreen(page: Page, name: string) {
   // The 2nd fill is off and kept its values: on, they show; off again, nothing changed.
   await expect(page.getByTestId('toggle-second-fill')).toHaveAttribute('aria-pressed', 'false');
   await page.getByTestId('toggle-second-fill').click();
-  await page.getByTestId('phase-secondFill').click();
+  await selectPhase(page, 'secondFill');
   await expect(page.getByTestId('chip-value-secondFillFlow')).toContainText('6.5');
   await expect(page.getByTestId('chip-value-secondFillTime')).toContainText('12');
   await page.getByTestId('toggle-second-fill').click();
@@ -243,11 +244,11 @@ test('the skin saves the A-Flow values in metadata, none in notes; they re-open 
   await page.getByTestId('mode-detail').click();
   // The 2nd fill on, values of its own, then off again.
   await page.getByTestId('toggle-second-fill').click();
-  await page.getByTestId('phase-secondFill').click();
+  await selectPhase(page, 'secondFill');
   await type(page, 'secondFillFlow', '6.5');
   await type(page, 'secondFillTime', '12');
   await page.getByTestId('toggle-second-fill').click();
-  await page.getByTestId('phase-pressurize').click();
+  await selectPhase(page, 'pressurize');
   await type(page, 'pourPressure', '8.3');
   await type(page, 'rampTime', '7');
   await type(page, 'dose', '18.5');

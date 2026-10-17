@@ -4,6 +4,7 @@ import type { AFlowParams } from '../src/aflow/types';
 import { buildProfile } from '../src/editor/save';
 import { paramsMetadata, splitNotes, workflowProfile } from '../src/editor/storage';
 import { mockGateway, type MockGateway } from './mock-gateway';
+import { selectPhase } from './touch';
 import light from '../src/aflow/defaults/default-light.json' with { type: 'json' };
 
 // The editor wired to the generator and the machine (D7), against a mocked gateway: it opens on
@@ -246,11 +247,11 @@ test('detail mode: typed values redraw the curve, are loaded by back, and are op
   await page.getByTestId('mode-detail').click();
   const before = await pressurePoints(page);
 
-  await page.getByTestId('phase-pressurize').click();
+  await selectPhase(page, 'pressurize');
   await type(page, 'pourPressure', '8.5');
   await expect(page.getByTestId('value-pourPressure')).toHaveText('8.5 bar');
   expect(await pressurePoints(page)).not.toBe(before);
-  await page.getByTestId('phase-infuse').click();
+  await selectPhase(page, 'infuse');
   await type(page, 'infuseTemperature', '91');
   await type(page, 'dose', '18.5');
 
@@ -278,7 +279,7 @@ test('save as stores a new named profile, loads it, and it re-opens with the sam
   await openEditor(page);
   await page.getByTestId('toggle-second-fill').click();
   await page.getByTestId('mode-detail').click();
-  await page.getByTestId('phase-infuse').click();
+  await selectPhase(page, 'infuse');
   await type(page, 'infuseTime', '25');
 
   await page.getByTestId('save-as').click();

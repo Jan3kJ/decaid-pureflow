@@ -16,3 +16,12 @@ export async function swipe(page: Page, from: { x: number; y: number }, to: { x:
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   await cdp.detach();
 }
+
+/**
+ * Detail mode: a tap on a step of the editor's graph selects it; there are no phase buttons
+ * (founder, 2026-10-16). It taps the step's name under the plot, away from every line.
+ */
+export async function selectPhase(page: Page, phase: string) {
+  const column = (await page.getByTestId(`column-${phase}`).boundingBox())!;
+  await page.mouse.click(column.x + column.width / 2, column.y + column.height - 10);
+}

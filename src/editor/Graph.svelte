@@ -10,6 +10,7 @@
     GRAPH_WIDTH,
     PHASE_LABEL,
     buildCurve,
+    dragTarget,
     hitTest,
     temperatureAxis,
     type EditField,
@@ -28,7 +29,7 @@
     mode: 'simple' | 'detail';
     selected: PhaseId;
     /** a line or a border was dragged to a new value */
-    ondrag: (field: NumberField, value: number) => void;
+    ondrag: (field: EditField, value: number) => void;
     /** a chip on the graph set one value */
     onedit: (field: EditField, value: number) => void;
     onselect: (phase: PhaseId) => void;
@@ -37,7 +38,7 @@
   let { params, limits = DEFAULT_MACHINE_LIMITS, mode, selected, ondrag, onedit, onselect }: Props = $props();
 
   const resolved = $derived(resolveParams(params));
-  const curve = $derived(buildCurve(params, limits));
+  const curve = $derived(buildCurve(params, limits, mode));
   /**
    * Pressure and flow share one scale: 1 bar is as high as 1 ml/s. It reaches the maxima, and
    * a saved flow above a lowered maximum flow, so that one is drawn where it is.
@@ -116,7 +117,7 @@
 
   interface Drag {
     /** the value the drag changes */
-    field: NumberField;
+    field: EditField;
     /** the value under the finger, which the pop-up shows */
     shown: EditField;
     /** a level line, or null for a border */
@@ -132,6 +133,8 @@
      * under a drag, and the value keeps following the finger at the same pace
      */
     valuePerPixel: number;
+    /** how far the value moves per unit the line under the finger moves (curve.ts, Level) */
+    gain: number;
     x: number;
     y: number;
   }
@@ -168,10 +171,12 @@
       pointer: event.pointerId,
       startX: x,
       startY: y,
-      startValue: params[field],
+      // The end flow may follow the toggle: its drag starts from the value the toggle gives.
+      startValue: resolved[field],
       secondsPerPixel:
         hit.kind === 'border' ? hit.border.secondsPerUnit / (box.plotW / GRAPH_WIDTH) : 0,
       valuePerPixel: hit.kind === 'level' ? valuePerPixel(hit.level.line) : 0,
+      gain: hit.kind === 'level' ? hit.level.gain : 1,
       x,
       y,
     };
@@ -183,7 +188,7 @@
     drag.x = x;
     drag.y = y;
     const value = drag.line
-      ? drag.startValue + (drag.startY - y) * drag.valuePerPixel
+      ? dragTarget(drag, drag.startValue, (drag.startY - y) * drag.valuePerPixel)
       : drag.startValue + (x - drag.startX) * drag.secondsPerPixel;
     const next = snap(drag.field, value, limits);
     if (next !== params[drag.field]) ondrag(drag.field, next);
@@ -325,10 +330,11 @@
         <text
           class="value {level.line}"
           class:start={level.label === 'start'}
+          class:end={level.label === 'end'}
           class:held={drag?.shown === level.field}
           data-testid="value-{level.field}"
-          x={level.label === 'start' ? x1 + 0.5 * rem : (x1 + x2) / 2}
-          y={level.label === 'start' ? y1 - 0.9 * rem : (y1 + y2) / 2 - 0.6 * rem}
+          x={level.label === 'start' ? x1 + 0.5 * rem : level.label === 'end' ? x2 - 0.5 * rem : (x1 + x2) / 2}
+          y={level.label === 'start' ? y1 - 0.9 * rem : level.label === 'end' ? y2 - 0.9 * rem : (y1 + y2) / 2 - 0.6 * rem}
         >
           {formatValue(level.field, resolved[level.field])}
         </text>
@@ -400,9 +406,12 @@
     text-anchor: middle;
   }
 
-  /* The start flow is the value at the left edge of its line. */
+  /* The start flow is the value at the left edge of its line, the end flow at the right. */
   .value.start {
     text-anchor: start;
+  }
+  .value.end {
+    text-anchor: end;
   }
 
   .phase {

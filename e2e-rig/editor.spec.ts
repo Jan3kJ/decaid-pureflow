@@ -4,6 +4,7 @@ import type { AFlowParams } from '../src/aflow/types';
 import { buildProfile } from '../src/editor/save';
 import { paramsMetadata, splitNotes, workflowProfile } from '../src/editor/storage';
 import light from '../src/aflow/defaults/default-light.json' with { type: 'json' };
+import { selectPhase } from '../e2e/touch';
 
 // Acceptance item 3 (spec section 5) against the rig: in simple and in detail mode, changing a
 // value redraws the curve, and the profile the gateway holds after the back arrow and after
@@ -200,12 +201,12 @@ test('detail mode: typed values are loaded; a saved profile re-opens with them a
   await openEditor(page);
   await page.getByTestId('mode-detail').click();
   const before = await pressurePoints(page);
-  await page.getByTestId('phase-pressurize').click();
+  await selectPhase(page, 'pressurize');
   await type(page, 'pourPressure', '8.5');
   await expect(page.getByTestId('value-pourPressure')).toHaveText('8.5 bar');
   expect(await pressurePoints(page)).not.toBe(before);
   await type(page, 'rampTime', '7');
-  await page.getByTestId('phase-infuse').click();
+  await selectPhase(page, 'infuse');
   await type(page, 'infuseTemperature', '91');
   await type(page, 'dose', '18.5');
   const wanted: AFlowParams = {
@@ -286,7 +287,7 @@ test('detail mode: typed values are loaded; a saved profile re-opens with them a
   expect(await expectWorkflow(about)).toEqual({ ...wanted, dose: 17, flowUp: false });
 
   // Back with a change in detail mode loads it, unsaved, under the profile's name.
-  await page.getByTestId('phase-pressurize').click();
+  await selectPhase(page, 'pressurize');
   await type(page, 'pourPressure', '8');
   await page.getByTestId('nav-home').click();
   expect(await expectLoaded(page, about)).toEqual({ ...wanted, dose: 17, flowUp: false, pourPressure: 8 });

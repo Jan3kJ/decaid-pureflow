@@ -39,7 +39,7 @@ fixed, so a profile that leaves these alone generates the steps it did before th
 | | `rampTime` | | Pressure Up: `seconds`. Under 1 s: the step Flow Start exists |
 | | `rampTemperature` (detail) | follows `pourTemperature` | Pressure Up: `temperature` |
 | Flow | `pourFlow` (start flow) | | Pressure Up: `exit` flow over it. Flow Start: `flow`, and `exit` flow over it - 0.1 |
-| | `pourEndFlow` (flow gradient, detail) | follows the toggle `flowUp` | Flow Extraction: `flow` |
+| | `pourEndFlow` (end flow, detail; the founder's "flow gradient") | follows the toggle `flowUp` | Flow Extraction: `flow` |
 | | `pourTime` (detail) | 60 s | Flow Extraction: `seconds` |
 | | `pourTemperature` | | `temperature` of Flow Start and Flow Extraction |
 | | `stopWeight` | | profile: `target_weight` |
