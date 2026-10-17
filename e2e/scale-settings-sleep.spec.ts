@@ -45,7 +45,7 @@ test('scale: there is no scale page and no menu entry; a tap on the weight tares
   await expect(page.getByTestId('screen-home')).toBeVisible();
   await expect(page.getByTestId('screen-scale')).toHaveCount(0);
   await page.getByTestId('menu').click();
-  await expect(page.getByRole('menuitem')).toHaveText(['Settings', 'Sleep']);
+  await expect(page.getByRole('menuitem')).toHaveText(['Settings', /^Steam off/, /^Machine off/]);
   await expect(page.getByTestId('open-scale')).toHaveCount(0);
   await page.getByTestId('menu-backdrop').click();
 
@@ -221,6 +221,7 @@ test('settings: the defaults, typed values and both switches survive a reload', 
         referenceMilk: 100,
         favourites: [25, 45, 30],
         adjustments: [-8, -4, 5],
+        heaterTemperature: 150,
       },
       hotWater: { ratios: [2, 2.5, 3] },
     },
@@ -294,7 +295,7 @@ test('sleep: the button sends the state sleeping, the skin goes dark, a touch an
 
   await page.getByTestId('menu').click();
 
-  await page.getByTestId('sleep').click();
+  await page.getByTestId('machine-off').click();
   await expect.poll(() => gateway.calls('PUT', '/api/v1/machine/state/sleeping').length).toBe(1);
   // The skin shows sleep when the machine says so, not when the button was tapped.
   await expect(page.getByTestId('asleep')).toBeVisible();
@@ -325,7 +326,7 @@ test('sleep: the brightness is left alone where the platform does not support it
   await page.getByTestId('asleep').tap();
   await expect(page.getByTestId('asleep')).toHaveCount(0);
   await page.getByTestId('menu').click();
-  await expect(page.getByTestId('sleep')).toBeEnabled();
+  await expect(page.getByTestId('machine-off')).toBeEnabled();
   await expect.poll(() => gateway.calls('GET', '/api/v1/display').length).toBe(2);
   expect(gateway.calls('PUT', '/api/v1/display/brightness')).toHaveLength(0);
   expect(errors).toEqual([]);
@@ -337,15 +338,15 @@ test('sleep is not offered while something runs or without a machine', async ({ 
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
   // The menu stays open while the machine changes: its sleep entry follows.
   await page.getByTestId('menu').click();
-  await expect(page.getByTestId('sleep')).toBeEnabled();
+  await expect(page.getByTestId('machine-off')).toBeEnabled();
   gateway.steamFor(3);
   await expect(page.getByTestId('status-title')).toHaveText('Steam');
-  await expect(page.getByTestId('sleep')).toBeDisabled();
+  await expect(page.getByTestId('machine-off')).toBeDisabled();
   gateway.state = 'idle';
-  await expect(page.getByTestId('sleep')).toBeEnabled();
+  await expect(page.getByTestId('machine-off')).toBeEnabled();
   gateway.machineConnected = false;
   await expect(page.getByTestId('status-title')).toHaveText('No machine connected', { timeout: 10_000 });
-  await expect(page.getByTestId('sleep')).toBeDisabled();
+  await expect(page.getByTestId('machine-off')).toBeDisabled();
   expect(errors).toEqual([]);
 });
 

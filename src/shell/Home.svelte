@@ -22,15 +22,37 @@
 
   /**
    * The menu of the top right corner (founder, 2026-10-13): what is rarely used. A list, so
-   * that an entry is one more line here.
+   * that an entry is one more line here. The steam switch and machine off are the shortcuts of
+   * spec 3.7; machine off is sleep, since Decaid cannot switch the DE1 off (research.md 22).
    */
-  const MENU: { id: string; label: string; disabled?: () => boolean; choose: () => void }[] = [
-    { id: 'open-settings', label: 'Settings', choose: () => skin.go('settings') },
-    { id: 'sleep', label: 'Sleep', disabled: () => !skin.canSleep, choose: () => void skin.sleep() },
+  interface Entry {
+    id: string;
+    label: () => string;
+    /** a second, smaller line: the state the entry is in, or what it really does */
+    detail?: () => string;
+    disabled?: () => boolean;
+    choose: () => void;
+  }
+  const MENU: Entry[] = [
+    { id: 'open-settings', label: () => 'Settings', choose: () => skin.go('settings') },
+    {
+      id: 'steam-heater',
+      label: () => (skin.steamHeater === 'off' ? 'Steam on' : 'Steam off'),
+      detail: () => (skin.steamHeater === null ? 'steam heater: not known' : `steam heater is ${skin.steamHeater}`),
+      disabled: () => skin.steamHeater === null,
+      choose: () => void skin.toggleSteamHeater(),
+    },
+    {
+      id: 'machine-off',
+      label: () => 'Machine off',
+      detail: () => 'sleeps: Decaid cannot switch the DE1 off',
+      disabled: () => !skin.canSleep,
+      choose: () => void skin.machineOff(),
+    },
   ];
   let menuOpen = $state(false);
 
-  function choose(entry: (typeof MENU)[number]) {
+  function choose(entry: Entry) {
     menuOpen = false;
     entry.choose();
   }
@@ -129,7 +151,10 @@
     {#each MENU as entry (entry.id)}
       <li>
         <button role="menuitem" data-testid={entry.id} disabled={entry.disabled?.()} onclick={() => choose(entry)}>
-          {entry.label}
+          <span class="label">{entry.label()}</span>
+          {#if entry.detail}
+            <small data-testid="{entry.id}-detail" class:off={entry.id === 'steam-heater' && skin.steamHeater === 'off'}>{entry.detail()}</small>
+          {/if}
         </button>
       </li>
     {/each}
@@ -333,5 +358,20 @@
 
   .menu button:disabled {
     color: var(--dim);
+  }
+
+  .menu .label {
+    display: block;
+  }
+
+  .menu small {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--dim);
+  }
+
+  /* the heater is off: said in the colour of temperature */
+  .menu small.off {
+    color: var(--temperature);
   }
 </style>

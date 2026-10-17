@@ -131,7 +131,7 @@ test('sleep: the button puts the machine into sleeping, a touch wakes it', async
 
     // Sleep is an entry of home's menu.
     await page.getByTestId('menu').click();
-    await page.getByTestId('sleep').click();
+    await page.getByTestId('machine-off').click();
     await expect.poll(machineState, { timeout: 15_000 }).toBe('sleeping');
     await expect(page.getByTestId('asleep')).toBeVisible({ timeout: 15_000 });
     await page.screenshot({ path: 'e2e-rig/.results/asleep-rig.png' });

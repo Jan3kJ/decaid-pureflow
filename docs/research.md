@@ -2534,3 +2534,61 @@ four more in `src/settings.test.ts`. `npm run e2e`: `e2e/hot-water.spec.ts`, fou
 split tab, the four values written, 1:2 of 40 g is 80 g and tare, the favourites from the
 settings and their backup); screenshots `docs/product/hot-water.png` and `home-tabs.png`.
 Rig: `e2e-rig/hot-water.spec.ts` (above); the full run: 22 passed, the steam control step too.
+
+## 22. Steam heater off and machine off on the rig (R4)
+
+Done on 2026-10-17 against Decaid v0.8.8 with device simulation (8.8; the gateway answered
+`GET /api/v1/machine/state` with 200 about a minute after the start); the rig served
+Streamline **0.2.14** (`GET /api/v1/webui/skins/default`, `reaMetadata.commitHash` `v0.2.14`).
+The probe is the rig's `log\r4-steam-power-probe.mjs`, its output `log\r4-steam-power-probe.txt`,
+the full rig run `log\r4-e2e-rig.txt`.
+
+### 22.1 The steam heater
+
+| Claim | Status |
+|---|---|
+| Decaid has no request of its own for the steam heater. `SteamSettings.targetTemperature` (`rest_v1.yml`): "Set to 0 to disable steam-heater preheating. Decaid writes 0 to the machine when steam is disabled and treats temperatures below the supported range as disabled. Supported enabled ranges are 135–160 °C for DE1 and 135–165 °C for Bengle." `duration` "does not control steam-heater preheating" | read |
+| Streamline 0.2.14 does the same: `setSteamHeaterEnabled` and `steamHeaterFor` in `src/modules/api.js` write `steamSettings.targetTemperature` 0, remember the temperature before in its KV key `streamline-app/last-steam-temp`, and write it back to switch on (it sends no temperature when it remembers none) | read (no code ported) |
+| `PUT /api/v1/workflow` with `{"steamSettings":{"targetTemperature":0}}`: 200; the workflow reads 0, duration and flow unchanged, and the machine's own settings (`/ws/v1/machine/shotSettings`) read `targetSteamTemp: 0` | seen running |
+| The same with 150: the workflow and the machine read 150 again | seen running |
+| With 100 (under the range): the workflow keeps 100, the machine reads 0 | seen running |
+| The snapshot's `steamTemperature` stays at about 150 °C on the simulated machine after the heater is off: the simulation does not cool. A real DE1's boiler cools | seen running; the real DE1 not seen |
+
+So the heater's state is the machine's `targetSteamTemp` (0 is off), and the workflow's
+`targetTemperature` while the machine's settings are not known (below 135 is off).
+
+### 22.2 Machine off
+
+| Claim | Status |
+|---|---|
+| `MachineState` (`rest_v1.yml`) has no off state; `PUT /api/v1/machine/state/{newState}` takes only its values. No other request of the REST or WebSocket API switches the machine off | read |
+| `PUT /api/v1/machine/state/off`, `.../shutdown`, `.../poweroff`: 500, `No enum value with that name` | seen running |
+| `PUT /api/v1/machine/state/sleeping`: 200, the state is `sleeping`; `.../idle` wakes it (as in 13) | seen running |
+
+So **machine off is sleep** through Decaid 0.8.8, and the menu says so.
+
+### 22.3 Built (R4)
+
+Home's menu (`src/shell/Home.svelte`) has three entries: **Settings**, the steam switch and
+**Machine off**. The steam switch reads 'Steam off' with the line 'steam heater is on', or
+'Steam on' with 'steam heater is off' (in red); it is disabled while neither the machine's
+settings nor the workflow is known (`heaterState` in `src/shell/steam-heater.ts`). Off writes
+0; on writes the temperature the heater had when it was switched off, kept in the setting
+`steam.heaterTemperature` (135-165, default 150; in the settings object and so in its KV
+backup, not shown on the settings page). As with the steam timer (16), Decaid passes a value
+on only when the workflow's changes, so when the machine's settings do not show the new value
+after 2 s they are written directly (`switchHeater`). **Machine off** replaces the menu's
+'Sleep' entry, which did the same: its line says 'sleeps: Decaid cannot switch the DE1 off';
+it is `Skin.machineOff`, which sends `sleeping`, and is disabled when sleep is
+(`canSleep`). The skin does not use Streamline's KV key for the temperature.
+
+Tests: Vitest `src/shell/steam-heater.test.ts` (10). `npm run e2e`:
+`e2e/menu-shortcuts.spec.ts`, five tests (off and on with the state shown, the remembered
+temperature after a reload and in the backup, the direct machine write, machine off as sleep,
+no machine); screenshot `docs/product/home-menu-steam-off.png`. Rig:
+`e2e-rig/menu-shortcuts.spec.ts` (steam off read back from the workflow and the machine, on
+again, machine off to `sleeping`, a touch wakes; it restores the temperature, the state, the
+brightness and the skin's KV backup). The full rig run: 24 passed, the steam control step of
+`e2e-rig/steam.spec.ts` too. The rig was left with 73 profiles, Streamline as the default skin,
+steam at 150 °C and the machine `idle`; Decaid was ended with `Stop-Process -Force`, port 8080
+was free.

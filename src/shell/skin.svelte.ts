@@ -30,6 +30,7 @@ import { canSleep, canStop, gatewayAfter, isAsleep, linkOf, stateLine, statusOf,
 import { followMachine, loadScreen, saveScreen, type Screen } from './nav';
 import { doseToSet } from './profiles';
 import { recordFrame, type Shot, type ShotSeries } from './shot';
+import { heaterState, isOnTemperature, switchHeater } from './steam-heater';
 import { recordWaterFrame, type WaterRun } from './water';
 import { writeHotWater, type HotWaterField } from '../hotwater/hot-water';
 import { applySteamTimer, timerMismatch } from '../steam/apply';
@@ -146,6 +147,8 @@ export class Skin {
   readonly steamAdjustment = $derived(
     this.steamAdjust === null ? null : (this.settings.steam.adjustments[this.steamAdjust] ?? null),
   );
+  /** the steam heater, on or off (spec 3.7, home's menu); null while neither the machine nor the workflow is known */
+  readonly steamHeater = $derived(heaterState(this.shotSettings, this.workflow));
   readonly steamMismatch = $derived(timerMismatch(this.steamAsked, this.shotSettings?.targetSteamDuration ?? null));
 
   private machine: SnapshotStream<MachineSnapshot> | undefined;
@@ -358,6 +361,32 @@ export class Skin {
   /** The state for sleep is `sleeping` (research.md, section 9). */
   sleep(): Promise<void> {
     return this.request('sleeping', 'The machine did not go to sleep');
+  }
+
+  /**
+   * The menu's 'machine off' (spec 3.7): Decaid has no request that switches the DE1 off, only
+   * `sleeping` (research.md 22), so it is sleep.
+   */
+  machineOff(): Promise<void> {
+    return this.sleep();
+  }
+
+  /**
+   * The menu's steam switch (spec 3.7): off writes 0 °C, after it remembered the temperature
+   * the heater had in the settings; on writes that temperature again.
+   */
+  async toggleSteamHeater(): Promise<void> {
+    this.notice = this.info = null;
+    const on = this.steamHeater === 'off';
+    const current = this.workflow?.steamSettings?.targetTemperature;
+    if (!on && isOnTemperature(current) && current !== this.settings.steam.heaterTemperature) {
+      this.setSettings({ steam: { ...this.settings.steam, heaterTemperature: current } });
+    }
+    try {
+      this.workflow = await switchHeater(this.client, on, this.settings.steam.heaterTemperature, () => this.shotSettings);
+    } catch (error) {
+      this.notice = `The steam heater was not switched ${on ? 'on' : 'off'}: ${error instanceof Error ? error.message : String(error)}`;
+    }
   }
 
   wake(): Promise<void> {

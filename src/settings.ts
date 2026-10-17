@@ -4,6 +4,7 @@
 // A copy in Decaid's KV store is its backup (settings-backup.ts, founder, 2026-10-14).
 import { DEFAULT_PROFILES } from './aflow/defaults';
 import { DOSE_MAX, MAX_FLOW_RANGE } from './aflow/validate';
+import { isOnTemperature } from './shell/steam-heater';
 
 export interface Settings {
   /** the editor offers the generated profile steps under the graph; its panel opens closed (founder, 2026-10-13) */
@@ -70,6 +71,11 @@ export interface SteamSettings {
    * calculated timer or to a favourite. The one list of numbers that may be negative.
    */
   adjustments: number[];
+  /**
+   * °C, what the menu's steam switch turns the steam heater on with again (spec 3.7): the
+   * workflow's temperature when it was switched off; 135-165, not on the settings page.
+   */
+  heaterTemperature: number;
 }
 
 /** The founder's values of 2026-10-12; the favourites are the sketch's. */
@@ -82,6 +88,7 @@ export const DEFAULT_STEAM_SETTINGS: SteamSettings = {
   referenceMilk: 180,
   favourites: [25, 50, 30],
   adjustments: [-8, -4, 5],
+  heaterTemperature: 150,
 };
 
 /** s, what an adjust button may add or take off */
@@ -157,7 +164,13 @@ export function readSettings(stored: unknown): Settings {
   const steam = (values.steam && typeof values.steam === 'object' ? values.steam : {}) as Record<string, unknown>;
   return {
     ...settings,
-    steam: { ...settings.steam, adjustments: readAdjustments(steam.adjustments) },
+    steam: {
+      ...settings.steam,
+      adjustments: readAdjustments(steam.adjustments),
+      heaterTemperature: isOnTemperature(steam.heaterTemperature)
+        ? steam.heaterTemperature
+        : DEFAULT_STEAM_SETTINGS.heaterTemperature,
+    },
     hotWater: { ratios: readRatios(settings.hotWater.ratios) },
     startProfiles: readStartProfiles(values.startProfiles),
   };

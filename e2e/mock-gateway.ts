@@ -281,10 +281,17 @@ export class MockGateway {
   /** Decaid's workflow write: the machine gets the steam timer only when the workflow's changes. */
   private putWorkflowSteam(patch: Json | undefined): void {
     const before = this.workflow.steamSettings.duration;
+    const temperatureBefore = this.workflow.steamSettings.targetTemperature;
     // What a patch leaves out keeps its value (research.md 8.3).
     this.workflow = { ...this.workflow, steamSettings: { ...this.workflow.steamSettings, ...patch } };
     const duration = this.workflow.steamSettings.duration;
     if (duration !== before) this.setMachineSteamTimer(duration);
+    // The steam heater: a changed temperature reaches the machine, below 135 °C as 0 (research.md 22).
+    const temperature = this.workflow.steamSettings.targetTemperature;
+    if (temperature !== temperatureBefore) {
+      this.shotSettings = { ...this.shotSettings, targetSteamTemp: temperature < 135 ? 0 : temperature };
+      for (const ws of this.settingsSockets) ws.send(JSON.stringify(this.shotSettings));
+    }
   }
 
   /** Streamline 0.2.13 on a frame with a steam time that is not the one it remembers. */

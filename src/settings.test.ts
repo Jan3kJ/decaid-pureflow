@@ -88,6 +88,7 @@ describe('settings', () => {
       referenceMilk: 180,
       favourites: [25, 50, 30],
       adjustments: [-8, -4, 5],
+      heaterTemperature: 150,
     });
   });
 
