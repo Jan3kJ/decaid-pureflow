@@ -277,6 +277,156 @@ From the founder's review of the built version 1.1 ([review-10-16-26.md](review-
 | Step editor, cards (low priority) | the arrow buttons go: a tap on the next card selects it, and the selected card always moves to the centre |
 | Step editor, SCRIPT (low priority) | as in Streamline: the steps' sentences are not edited as text; each value is a toggle (a chip that cycles) or opens a value picker (the number pad). This replaces the editable text of 3.6 and E4's parser |
 
+### 3.8 Founder's review of 2026-10-17
+
+From the founder's notes of 2026-10-17 ([review-10-17-26.md](review-10-17-26.md)), sent while
+version 1.1 with the review of 2026-10-16 was in use. The two screenshots the notes name did not
+arrive. Where a note leaves a choice open, the default below is built unless the founder says
+otherwise (section 8). Where a note changes something 3.1, 3.2 or 3.7 decided, it says so; those
+paragraphs and track R stay as built history.
+
+**Espresso graph: scale and the end (T1).** The shot graph's pressure and flow scale ends at
+10 bar and opens to 12 only when a drawn value (pressure, flow, weight flow or a target) goes
+over 10; the live graph draws only the shot itself, not the seconds after it, as the history's
+graph of the same shot does (founder, 2026-10-17). Today `ShotGraph.svelte` has a fixed
+`yMax = 12` with ticks at quarters (`mainTicks`); 10 needs ticks of its own (0, 2, 4, 6, 8, 10).
+The live series comes from `recordFrame` in `src/shell/shot.ts`, which adds every frame in state
+`espresso` "whatever its substate" until the state changes; the machine stays in `espresso` for
+a few seconds after the stop, and those frames are the tail. The history's `seriesOf`
+(`src/history/entries.ts`) draws Decaid's recorded measurements, which end earlier. The builder
+finds the substates of that tail on the rig (8.2's simulated substates; the real DE1's
+`pouringDone` / `ending` as the steam run's `steams` in `src/steam/run.ts` treats them) and ends
+the live shot at its first frame; the timer stops there too. **Time axis:** the running graph's
+axis starts at the shot's expected length instead of 30 s, so a 50 s shot is not rescaled at
+30, 40 and 50 s (`timeAxis` in `src/graph/axis.ts`, `minSeconds`). Default: the duration of the
+last shot with that profile's title in the history (the entries of `src/history/entries.ts`),
+else the profile's estimate (the A-Flow editor's drawn length, `buildCurve` in
+`src/editor/curve.ts`, for an A-Flow profile; the step editor's curve, `src/steps/curve.ts`,
+for others), else 30 s, rounded up to 10 s; it still grows in steps of 10 s past that (section 8).
+
+**Espresso shot: an overlay that stays (T2).** The shot's values and the stop button are an
+overlay over home, not a page of their own: it opens when a shot starts and stays after the shot
+until the user taps the screen or the next shot starts, so the screen does not jump back to home
+when the shot stops (founder, 2026-10-17). This changes 3.1's 'Espresso' row and D6's screen:
+today `followMachine` in `src/shell/nav.ts` opens the screen `espresso`
+(`src/shell/Espresso.svelte`) on entering espresso and returns to home on leaving it, and home
+then shows the 'last shot' graph. Default: the overlay holds the graph and the side panel of
+`Espresso.svelte` as it is now, over home's graph area, with home's state line still visible;
+after the shot the stop button gives way to the shot's summary, and a tap anywhere closes it to
+home with the shot as its 'last shot' (section 8). **Per-phase values:** the summary shows, as
+Streamline does, per phase the duration, weight, maximum pressure and flow (founder,
+2026-10-17). The screenshot of Streamline's table did not arrive. Default: one row per profile
+step that ran (the frames' `profileFrame` and the step's name, as the header's 'Step 9' does
+today), with its seconds, the weight gained in it, its maximum pressure and its mean flow, and a
+total row; Streamline's own computation is read in `decentespresso/streamline-js` before
+building (section 8).
+
+**Heating state (T3).** The state line says **Heating** while the machine heats, not Idle: on
+home until the group reaches the espresso target minus 3 °C, on the steam page until the steam
+heater reaches the steam target minus 3 °C (founder, 2026-10-17). Today `statusOf` in
+`src/shell/machine.ts` names the machine's own state (`STATE_LABEL`), and the DE1 reports `idle`
+while it heats, so the skin must derive it: on home `groupTemperature <
+targetGroupTemperature - 3` of the snapshot, on the steam page `steamTemperature` against the
+machine's `targetSteamTemp` (`/ws/v1/machine/shotSettings`, read already for the steam switch in
+`src/shell/steam-heater.ts`) minus 3. Only an `idle` machine is shown as heating; a steam
+heater that is off (`targetSteamTemp` 0) is not heating. `StateLine.svelte` gets which target to
+compare from its page. The tone is `busy`, not `ok`.
+
+**Home: tabs and font sizes (T3).** The history and steam (and hot water) tabs on the edges of
+home are thinner and their labels larger (founder, 2026-10-17); today they are `Home.svelte`'s
+edge tabs of about 5 % of the width with a small vertical label (screenshot
+home.png (screenshot in the team repository)). The font sizes are reviewed and aligned: the founder's example is
+home's state line (`StateLine.svelte`, 1.1rem) smaller than the profile picker's name beside it
+(`Home.svelte`, 1.3rem). The note's sentence breaks off at "labels like"; the default is one type
+scale in `src/app.css` (a few rem sizes as custom properties, for values, labels, titles and
+big numbers) used by home, steam, hot water and the overlay, with the state line and the
+profile's name the same size (section 8).
+
+**Profile picker: filter, preview, select (T4).** The picker gets a filter field: typing
+"light" leaves the profiles whose title contains it, without regard to case (founder,
+2026-10-17). A tap on a profile no longer loads it: it selects it and shows its description
+(the profile's `notes`, without the A-Flow line the skin writes there, `src/editor/storage.ts`)
+and a small preview chart of its targets, without labels, only to see the steps and their
+values; a **load** button loads the selected one (founder, 2026-10-17). This overrides the
+founder's 'a tap in the picker loads the profile at once' of 2026-10-13 (3.1 'Profiles', 8
+'Loading from the editor'). Today `Profiles.svelte` loads on the tap (`load`, after
+`skin.mayLoad()` for unsaved edits, which then moves to the load button) and its detail panel
+shows steps, stop weight and dose. The preview is the step editor's curve preview
+(`src/steps/curve.ts` drawn by `ShotGraph` with `preview`) for every profile, as small as the
+panel allows; the filter is typed with the tablet's own keyboard.
+
+**A-Flow defaults kept in the app (T5).** The five A-Flow 3.0 defaults are not stored as
+profiles in Decaid any more; they live in the skin (`DEFAULT_PROFILES`,
+`src/aflow/defaults/`) and are listed by the picker from there, so an update of the skin can
+change their values without overwriting a profile a user changed. A default is loaded as it is;
+edited, it is saved only with 'save as' under another name (founder, 2026-10-17). So the
+picker's offer 'A-Flow 3.0 defaults … not in Decaid yet' with its **add** button
+(`missingDefaults`, `saveDefaults` in `src/shell/profiles.ts`) goes. The name clash the founder
+saw is not one of names: Decaid's profile id is a hash of the steps and the stop weight
+(research.md 11.1), so posting `A-Flow / default-light` with the steps of the founder's
+`test-light` returns `test-light`'s record, and the picker selects it (`selectedId =
+added[0]?.id`); with the defaults out of Decaid it cannot happen. Today the editor already holds
+the defaults itself (its entries in `Editor.svelte`, `startChoices` in `src/editor/start.ts`)
+and `unsavedOnMachine` (`src/editor/unsaved.ts`) knows a default by its title, so loading a
+default is `loadProfile` with `defaultProfile(entry)` and no record. Default: the picker lists
+the five defaults first, marked 'default'; copies of them already stored in Decaid (titles
+`A-Flow / default-…`) are left in Decaid and not listed, since the app's default of that title
+is the one shown; Decaid's bundled de1app 'A-Flow / …' profiles are listed as before
+(section 8).
+
+**Swipe navigation (T6).** Home, steam and hot water are one row of pages, from left to right
+hot water, home, steam; a swipe left or right moves to the neighbour with an animated slide
+(founder, 2026-10-17). This extends 3.7's right-edge swipe to the steam page (R1,
+`src/history/swipe.ts`, on home only) to all three pages; the edge tabs stay. The left-edge
+swipe on home opens the shot history (3.1). Default: a swipe that starts in home's left fifth
+(`SWIPE_EDGE`) still opens the history; every other horizontal swipe on these three pages moves
+pages, so from home hot water is reached by a swipe that starts right of that fifth or by its
+tab (section 8). The slide follows the finger and finishes or springs back when it is let go;
+a swipe never starts on a drag of a control (the steam page's chips, the number pad). `go` in
+`src/shell/skin.svelte.ts` and `App.svelte` show one screen at a time today; the three pages
+are then one strip.
+
+**A-Flow editor: steps panel and save feedback (T7).** In the profile steps panel the last line
+'The shot stops at … g.' (`StepList.svelte`'s footer) goes; the stop weight is written in the
+exit column of the flow step, which saves a line (founder, 2026-10-17). 'save' on a default
+gives feedback instead of doing nothing: it shows a hint to use 'save as', since a default is
+saved under a new name. For other profiles 'saved … and loaded' stands next to the save buttons,
+not on a line of its own, or is a short pop-up (founder, 2026-10-17). Today 'save' is disabled
+for a default (`canSave` in `Editor.svelte`) and the result is `notice`, a paragraph under the
+graph (`editor-notice`). Default: 'save' stays tappable for a default and shows the hint for a
+few seconds beside the buttons; the save result is a short text beside the buttons that goes
+after 4 s; a failure stays until the next action. The step editor (`src/steps/`) keeps its own
+notices.
+
+**Shot history: faster (T8).** The history opens without the delay: the newest 20 shots are
+read and shown first, the older ones after them, and the shots are kept in memory instead of
+being read every time the overlay opens (founder, 2026-10-17). Today `History.svelte` calls
+`readShots` (`src/history/entries.ts`) on every mount, which pages through up to
+`HISTORY_SHOTS` (500) summaries before `groupShots` shows anything. Default: the shots are held
+by the skin (`src/shell/skin.svelte.ts`) for the session, read in the background once after the
+start; a shot that ends adds its record; an entry list built from the first 20 is replaced when
+the rest arrive, without moving the list under the finger.
+
+**Menu: clean (T9).** After the settings port, home's menu gets a shortcut to the maintenance
+page's clean (S2b, `Maintenance.svelte`, research.md 20.10), and that page shows the tank's water
+level, warns when it is under 350 ml, as a clean uses about 300 ml, and says to empty the drip
+tray before starting (founder, 2026-10-17). The tank's level is in mm (`WaterLevels`,
+`src/api/types.ts`); Streamline shows it in ml too (its `waterTankUnit`, research.md 20.3), so
+the builder takes Streamline's conversion from mm to ml. The warning does not block Start.
+
+**Menu: exit (T9).** Home's menu gets **Exit**, which leaves the Decaid app and sends the
+machine to sleep, or off if that is possible (founder, 2026-10-17). Off is not: Decaid 0.8.8 has
+no request that switches the DE1 off (research.md 22). Leaving the app is offered by the host,
+not the gateway: `window.decentApp.exitToDashboard()`, which S2a's settings page offers as 'Go
+to dashboard' where it exists (research.md 20.3, `SettingsPage.svelte`); it goes to Decaid's
+dashboard, it does not close Decaid. Default: **Exit** sends `sleeping` (`Skin.machineOff`) and
+then calls `exitToDashboard`; where the host does not offer it the entry is not shown, and
+**Machine off** stays as it is (section 8).
+
+**Flush duration: built.** The flush's flow and duration in Quick Adjustments (founder,
+2026-10-17) were built in S2a (`r16-settings-port-a`), recorded in 3.7's 'Settings' row; not
+planned again.
+
 ## 4. Technical approach
 
 ### 4.1 What a Decaid skin is
@@ -437,6 +587,46 @@ The founder's review of 2026-10-16 (3.7); items 17 to 23 and 26 are tests, 24 an
     and a tap on a number opens the picker; either changes the preview and, saved, the stored
     steps; there is no text field.
 
+The founder's review of 2026-10-17 (3.8); items 27 to 35 are tests, 36 and 37 the founder's:
+
+27. **Espresso graph (test).** A shot with pressure and flow under 10 has a scale to 10; a
+    value over 10 opens it to 12. The live series ends where the shot ends: the frames in
+    espresso after it add no points and do not move the timer, and the live graph equals the
+    history's graph of the same shot in length within one second. A running shot's time axis
+    starts at the last shot's duration with that profile, else the profile's estimate, else
+    30 s, and a shot shorter than it is not rescaled.
+28. **Shot overlay (test).** A shot opens the overlay over home with the stop button; when the
+    shot ends it stays, with the per-phase table (seconds, weight, maximum pressure, flow per
+    step and the total); a tap closes it to home, and a new shot replaces it.
+29. **Heating (test).** An `idle` machine with the group more than 3 °C under its target shows
+    'Heating' on home, and 'Idle' at 3 °C under it or closer; the steam page does the same with
+    the steam temperature and the steam target; with the steam heater off the steam page does
+    not say heating.
+30. **Profile picker (test).** Typing "light" leaves the profiles whose title holds "light", in
+    any case; a tap selects a profile and shows its description and preview and loads nothing;
+    **load** loads it, after the unsaved-edits question when there is one.
+31. **A-Flow defaults (test).** The picker lists the five defaults from the skin without any
+    `POST /api/v1/profiles`; there is no 'not in Decaid' offer; a default loads into the
+    workflow; edited, 'save' shows the hint and 'save as' stores it under the new name; a
+    stored profile with the steps of a default (the founder's `test-light`) is listed under its
+    own title only.
+32. **Swipe (test).** From home a swipe to the left opens steam and from steam back to home;
+    a swipe to the right from home (outside the history's edge) opens hot water; the left-edge
+    swipe on home still opens the history; a drag on a control moves no page.
+33. **Editor feedback and steps (test).** The steps panel has no 'shot stops at' line and the
+    flow step's exit holds the stop weight; 'save' on a default shows the 'save as' hint;
+    a save shows its result beside the buttons and the graph does not move.
+34. **History (test).** The overlay shows the newest 20 shots' entries before the older shots
+    are read; opened a second time it reads no shot list again; a new shot is in it.
+35. **Menu: clean and exit (test).** The menu's clean opens the maintenance page's clean with
+    the water level in ml, a warning under 350 ml and the drip tray hint; exit sends
+    `sleeping` and calls `window.decentApp.exitToDashboard` (a stub in the test), and is not
+    shown without it.
+36. **Fonts and tabs (founder).** Home's tabs are thinner with larger labels, and the sizes on
+    home, steam and hot water look aligned.
+37. **Hand-over (founder).** The 0.3.0 ZIP installs on the tablet; the checks of
+    [install.md](install.md) still open are asked again with the new ones.
+
 ## 6. Constraints
 - **Budget:** one Claude Pro plan. This product may use all of it up to 90% of the weekly
   limit; the team plans by capacity.
@@ -491,6 +681,16 @@ The weeks are a capacity guess on one Pro plan.
 | 3 (Oct 26-Nov 1) | E5 | review, low priority: step editor cards without arrows, the selected card centred | E2 |
 | 3 | E6 | review, low priority: SCRIPT as in Streamline, toggles and value pickers instead of text | E4 |
 | 2 | H1 | review: hand-over ZIP, install.md with the new checks and the open ones of 2026-10-16 | R1-R5, S2a-S2c, A2 |
+| 2 (Oct 19-25) | T1 | review 2026-10-17: espresso graph to 10 bar (12 above), no tail after the shot, time axis from the expected duration (3.8) | D6 |
+| 2 | T2 | review 2026-10-17: the shot as an overlay over home that stays after the shot, per-phase values (3.8) | T1 |
+| 2 | T3 | review 2026-10-17: heating state on home and steam, thinner tabs with larger labels, one type scale (3.8) | R2, R4 |
+| 2 | T4 | review 2026-10-17: profile picker filter, description and preview, a load button (3.8) | D6 |
+| 2 | T5 | review 2026-10-17: A-Flow defaults kept in the skin, no 'not in Decaid' offer (3.8) | T4 |
+| 2 | T6 | review 2026-10-17: swipe between hot water, home and steam with a slide (3.8) | R1, R5 |
+| 2 | T7 | review 2026-10-17: A-Flow editor steps panel without 'shot stops at', save feedback beside the buttons (3.8) | A2 |
+| 2 | T8 | review 2026-10-17: shot history, newest 20 first, shots kept in memory (3.8) | D8b |
+| 2 | T9 | review 2026-10-17: menu shortcuts clean (water level, drip tray) and exit (3.8) | S2b, R4 |
+| 2 | H2 | review 2026-10-17: hand-over ZIP 0.3.0, install.md with the new checks and the open ones | T1-T9 |
 
 ## 8. Open questions
 Answered by the first research task ([research.md](research.md)) and no longer open: Decaid
@@ -714,3 +914,28 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
   - Infuse width, built in A2 as planned: the estimated time is 4 s per gram plus 1 s (the
     founder's 1 g ≈ 5 s and 6 g ≈ 25 s), never longer than the phase's time. The infuse-to
     chip is dragged left and right, not up and down.
+- The review of 2026-10-17 (3.8), choices only the founder can make; the default is built
+  unless the founder says otherwise (founder):
+  - A-Flow defaults in the skin: the picker lists the five from the skin, first, marked
+    'default'; the 'not in Decaid' offer and its add button go; copies already stored in
+    Decaid under `A-Flow / default-…` stay in Decaid but are not listed (the skin's default of
+    that title is shown); Decaid's bundled de1app A-Flow profiles are listed as before. The
+    'light' / 'test-light' clash is Decaid's id being a hash of the steps (research.md 11.1),
+    and goes with the defaults out of Decaid. Should the stored copies be listed, or deleted?
+  - The shot overlay: it covers home's graph area with the live graph and the values, home's
+    state line stays visible; after the shot it stays with the per-phase table until a tap
+    anywhere or the next shot, and then home shows the shot as its 'last shot'.
+  - The per-phase values (the screenshot did not arrive): one row per profile step that ran,
+    with seconds, weight gained, maximum pressure and mean flow, and a total. Is it per step,
+    and which flow (mean, maximum, at the end)? Please send the screenshot again.
+  - The expected shot duration: the last shot with that profile, else the profile's estimate,
+    else 30 s, rounded up to 10 s.
+  - Exit: Decaid cannot switch the DE1 off (research.md 22) and a skin cannot close Decaid;
+    the host offers `window.decentApp.exitToDashboard()` (research.md 20.3), which goes to
+    Decaid's dashboard. **Exit** puts the machine to sleep and goes to the dashboard; without
+    the host's function it is not shown. Is the dashboard enough?
+  - Swipe and the history: a swipe that starts in home's left fifth still opens the history;
+    any other swipe moves between hot water, home and steam, so from home hot water needs a
+    swipe that starts right of that fifth, or its tab.
+  - Font sizes: the note breaks off at "labels like". One type scale, with the state line as
+    large as the profile's name. Which labels did the note mean?
