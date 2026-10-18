@@ -143,17 +143,22 @@ Editor behaviour:
 - Other profiles can be selected and loaded, but only A-Flow profiles are editable in v1.
 
 ### 3.3 Out of scope for v1
-- Import of de1app A-Flow `.tcl` profiles.
-- Editing non-A-Flow profiles: moved to version 1.1 (3.6).
-- Managing a bean and grinder catalogue (Decaid has APIs; candidates for v2). v1 only records
-  the bean and the grinder setting with a shot and restores them from history (3.5).
-- Hot water and flush / rinse: they stay in Decaid's default skin (candidates for v2). A view
-  of them while they run is in version 1.1 (3.6); hot water gets its own page in 3.7.
+Reviewed by the founder on 2026-10-18; items no longer out of scope say where they went.
+- Import of de1app A-Flow `.tcl` profiles. (Converting the old A-Flow profiles Decaid already
+  holds to 3.0 is planned: review 2026-10-18, item 6.)
+- Editing non-A-Flow profiles: built in version 1.1 (3.6, E2-E6).
+- Managing a bean and grinder catalogue: **planned** (founder, 2026-10-18; review 2026-10-18,
+  items 19 and 20). Decaid has `/api/v1/beans` and `/api/v1/grinders`, and Streamline uses them.
+  Until it is built, the skin records the bean and the grinder setting with a shot and restores
+  them from history (3.5).
+- Hot water and flush / rinse: built, a view in version 1.1 (3.6) and a hot water page (3.7).
 - Rating a shot (Decaid's 0-10 enjoyment scale).
 - Portrait layout and a light theme.
-- Plugins, sensors, camera.
+- Plugins, sensors, camera. Plugin settings are built (S2c, settings category 8) and so is the
+  sensor calibration (S2c); external sensors stay out. The tablet's camera is planned only for
+  the bean catalogue (review 2026-10-18, item 20).
 - The ghost curve of the profile's last shot in the editor: version 2 (founder, 2026-10-13).
-- iOS.
+- iOS stays out (founder, 2026-10-18).
 
 ### 3.4 Steam page
 From the founder's sketch and daily use of this feature in DSx2:
