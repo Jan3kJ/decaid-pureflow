@@ -45,6 +45,7 @@ test('a changed setting is backed up in the KV store and comes back after localS
     await expect(page.getByTestId('status-title')).toHaveText('Idle', { timeout: 15_000 });
     await page.getByTestId('menu').click();
     await page.getByTestId('open-settings').click();
+    await page.getByTestId('settings-category-skin').click();
     const legend = page.getByTestId('setting-show-graph-legend');
     await expect(legend).toHaveAttribute('aria-checked', 'true');
     await legend.click();
@@ -61,6 +62,7 @@ test('a changed setting is backed up in the KV store and comes back after localS
     // localStorage held the screen too: the skin starts on home
     await page.getByTestId('menu').click();
     await page.getByTestId('open-settings').click();
+    await page.getByTestId('settings-category-skin').click();
     await expect(page.getByTestId('setting-show-graph-legend')).toHaveAttribute('aria-checked', 'false');
     expect(await page.evaluate(() => JSON.parse(localStorage.getItem('decaid-skin.settings')!).showGraphLegend)).toBe(false);
   } finally {

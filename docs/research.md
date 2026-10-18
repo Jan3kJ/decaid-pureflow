@@ -2468,6 +2468,87 @@ effect; Streamline's settings page, opened afterwards, does not set them back un
    procedures.
 7. **Three tasks** (S2a, S2b, S2c) instead of one S2 (20.10).
 
+### 20.12 The flush: which values Decaid uses (S2a)
+
+The founder, 2026-10-17 (inbox 37): "flush: I noticed that in streamline settings I cannot set
+the flush duration. add that to the quick settings. I want to configure flow and time for
+flush." Checked on 2026-10-18 against Decaid 0.8.8 with device simulation; the rig served
+Streamline **0.2.14** (`GET /api/v1/webui/skins/default`: `0.2.14`, `commitHash` `v0.2.14`,
+installed 2026-10-16), so there was no newer release to diff against `3a4bd23`. The probe is
+the rig's `log\s2a-flush-probe.mjs`, its output `log\s2a-flush-probe.txt`.
+
+| Claim | Status |
+|---|---|
+| `updateWorkflowSettings` (`lib/src/controllers/de1_controller.dart`, tag `v0.8.8`) compares the workflow's old and new `rinseData`; when it changed it writes all three to the machine: `duration` → `setFlushTimeout`, `flow` → `setFlushFlow`, `targetTemperature` → `setFlushTemperature`. A direct `POST /api/v1/machine/settings` writes `flushTemp`, `flushFlow`, `flushTimeout` past the workflow | read |
+| `PUT /api/v1/workflow {"rinseData":{"targetTemperature":85,"duration":14,"flow":4}}` (200): the workflow reads it back, and the machine's `flushFlow` is 4 within 2.5 s; `flushTemp` (25) and `flushTimeout` (10) stay, as the simulated DE1 keeps neither (20.4) | seen running |
+| `POST /api/v1/machine/settings {"flushFlow":5,...}` (202): the machine has 5, the workflow's `rinseData.flow` stays 4; the next `rinseData` with flow 3 sets the machine to 3 | seen running |
+| Streamline's settings page writes the machine's `flushFlow` and `flushTemp`; its home page writes `rinseData.duration` alone (`updateFlushValue` in `src/modules/ui.js`, KV `last-flush-duration`); a changed `rinseData` therefore puts the machine's flow and temperature back to the workflow's | read |
+| A simulated flush has flow 0 and does not end by itself (19), so the flow and the time-out taking effect in a real flush | not seen: the founder's check on the real DE1 |
+
+So **the values that take effect are the workflow's `rinseData`**: Decaid passes them on with
+every change, and a direct machine write is overwritten by the next one. The page's flush has
+three fields, temperature, flow and duration, each one definition in `fields.ts` (`FLUSH`,
+source `workflow.rinseData`), written with the whole `rinseData` as Decaid's schema requires.
+The duration is also the one the home's ring counts (`waterDuration` in `src/shell/water.ts`).
+Ranges: Streamline's 5-95 °C and 1-8 ml/s (here in steps of 0.1, as `rinseData.flow` is a
+double), and 1-120 s for the duration, which Streamline does not limit.
+
+### 20.13 Built (S2a)
+
+The settings page is `src/settings-page/SettingsPage.svelte` (App's screen `settings`): a
+header with the version in the top right corner; on the left Streamline's categories with
+their numbers (1 Quick Adjustments, 3 Calibration, 4 Machine, 6 Skin, 9 Miscellaneous), the
+chosen one's subcategories under it, a tap on one scrolls to it; on the right the chosen
+category, all its subcategories one under the other, in a panel that scrolls vertically. The
+page opens on the category opened last (`decaid-skin.settings-location`, not a setting, not
+backed up), on Quick Adjustments without one. Screenshots: `docs/product/settings-quick-adjustments.png`,
+`settings-flush.png`, `settings-skin.png`.
+
+- `tree.ts`: the navigation (Streamline's ids, names and order); `fields.ts`: 37 fields of
+  20.3 (number, choice, switch, hh:mm time, read only), Fast Start; `gateway.ts`: `readAll`
+  (six requests when the page opens; the water level comes from the skin's stream),
+  `writeField` (one request with the key alone, then that source read again; the page shows
+  the read value), Streamline's KV keys moved when they exist, `applyFastStart`,
+  `resetMachine`; `FieldRow.svelte`: a row; `SkinCategory.svelte`: the old settings page in
+  five subcategories, Steam, Hot water, Profile (with the start row), Shot graph, Backup and
+  version, with every `data-testid` kept.
+- The client gained the machine settings and advanced settings (read and write), the reset,
+  the water level, the wake lock and `GET /api/v1/info`; `NumberPad.svelte` takes two places
+  for the 0.05 steps of the flow multipliers.
+- The hot water fields take the hot water page's ranges (`HOT_WATER_FIELDS`), so 0.1-10 ml/s
+  as R5 set, not Streamline's 8; the steam temperature is 135-165 °C or 0 (under 135 is
+  written as 0, the heater off); set to 0 here, the menu's steam on brings the temperature it
+  had back (`steam.heaterTemperature`).
+- Confirms before the voltage, the factory reset and the gateway mode; Fast Start writes at
+  once. A source that cannot be read (no machine) says so with 'Read again', its rows are
+  disabled; a failed write shows its message under the row and the read value stays.
+- A read-back right after a write was seen to hold the new value at once on the rig (13 to 90
+  ms, `log\s2a-readback-probe.txt`), so the page reads once and does not wait.
+- Choices of S2a: the flow multipliers' upper ends (Streamline has none): 5 for the weight flow
+  multiplier, 2 s for the volume and hot water ones. The night mode's times are typed as hhmm
+  on the number pad. 'Go to dashboard' shows only inside Decaid's window
+  (`window.decentApp.exitToDashboard`). The charging status shows only where Decaid reports one.
+
+Tests: Vitest `src/settings-page/fields.test.ts`, `gateway.test.ts` (a fake gateway as the
+rig answers), `tree.test.ts`: 56. `npm run e2e`: `e2e/settings-page.spec.ts`, seven tests
+(each category opens and fits 1280 x 800 without a horizontal scroll; typed values written
+with their key alone and the read value shown, the tank temperature the mock does not keep
+included; the flush; the confirms; the steam heater off; no machine and a failed write; the
+skin's settings in Skin, saved and backed up); the specs that opened the old page now open
+Skin first; the full run: 123 passed. Rig: `e2e-rig/settings-page.spec.ts` (acceptance 22):
+`weightFlowMultiplier`, `steamPurgeMode`, `heaterIdleTemp`, `stopHotWaterAtWeight`, the steam
+flow and the flush's duration and flow changed through the page and read back with the API
+(the machine's `flushFlow` follows), then restored, with everything recorded before and
+compared after. The full rig run: 25 passed (`log\s2a-e2e-rig.txt`). The rig was left as
+found: Decaid's, the machine's and the advanced settings equal to those recorded at the start
+(`log\s2a-before-*.json`), the workflow's steam (150 °C, 50 s), hot water and rinse values as
+before, 73 profiles and one shot, the skin's KV namespace empty, `streamline-app` holding only
+`favorite-profiles`, Streamline 0.2.14 the default skin; Decaid ended with `Stop-Process
+-Force`, port 8080 free.
+
+For the founder's check on the real DE1 (H1's install.md): the flush runs at the set flow and
+ends at the set duration.
+
 ## 21. Hot water page and stop at weight on the rig (R5)
 
 Done on 2026-10-17 against Decaid v0.8.8 with device simulation (8.8); the rig served

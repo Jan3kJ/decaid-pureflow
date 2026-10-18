@@ -18,7 +18,8 @@
   } from '../settings';
   import { PRODUCT_NAME, PRODUCT_VERSION } from '../product';
   import { backupTime } from '../settings-backup';
-  import type { Skin } from './skin.svelte';
+  import type { Skin } from '../shell/skin.svelte';
+  import { SETTINGS_TREE } from './tree';
 
   interface Props {
     skin: Skin;
@@ -26,7 +27,12 @@
 
   let { skin }: Props = $props();
 
-  // The few settings of the skin (spec 3.1); everything else stays in Decaid's own settings.
+  // The category Skin of the settings page (research.md 20.6): the skin's own settings, all in
+  // the one settings object (src/settings.ts) and so in its KV backup. Moved from the settings
+  // page of D8c with its test ids.
+  const SUB = Object.fromEntries(
+    SETTINGS_TREE.find((category) => category.id === 'skin')!.subcategories.map((sub) => [sub.id, sub]),
+  );
   type Switch = { key: 'firstStepWorkaround' | 'showProfileSteps' | 'showGraphLegend'; id: string; title: string; hint: string };
   const SWITCHES: Switch[] = [
     {
@@ -131,76 +137,72 @@
   }
 </script>
 
-<div class="settings">
-  <header>
-    <h1>Settings</h1>
-    <p>Kept on this tablet, with a backup in Decaid. Everything else is in Decaid's own settings.</p>
-    <!-- The skin's version, top right (founder, 2026-10-14); from the manifest, like the build. -->
-    <small class="version" data-testid="skin-version">{PRODUCT_NAME} {PRODUCT_VERSION}</small>
-  </header>
-
-  <section data-testid="settings-steam">
-    <h2>Steam</h2>
-    {#each STEAM_FIELDS as group (group.title)}
-      <div class="row">
-        <div class="about">
-          <strong>{group.title}</strong>
-          <small>{group.hint}</small>
-        </div>
-        <div class="values">
-          {#each group.fields as field (field.id)}
-            <button class="value" data-testid="setting-{field.id}" onclick={() => (typing = field)}>
-              <small>{field.label}</small>
-              <b>{shown(field)}<i>{field.unit}</i></b>
-            </button>
-          {/each}
-        </div>
-      </div>
-    {/each}
-  </section>
-
-  {#each [{ id: 'profile', title: 'Profile', switches: SWITCHES }, { id: 'graph', title: 'Shot graph', switches: GRAPH_SWITCHES }] as group (group.id)}
-    <section data-testid="settings-{group.id}">
-      {#if group.id === 'profile'}
-        <!-- founder, 2026-10-15: the editor's maximum flow and the dose of a shot that has none; on
-             the category's title line, so the page still fits the screen -->
-        <div class="titled">
-          <h2>{group.title}</h2>
-          <div class="values">
-            {#each PROFILE_FIELDS as field (field.id)}
-              <button class="value" data-testid="setting-{field.id}" onclick={() => (typingProfile = field)}>
-                <small>{field.label}</small>
-                <b>{shownProfile(field)}<i>{field.unit}</i></b>
-              </button>
-            {/each}
-          </div>
-        </div>
-      {:else}
-        <h2>{group.title}</h2>
-      {/if}
-      {#each group.switches as item (item.key)}
-        <button
-          class="row switch"
-          role="switch"
-          aria-checked={settings[item.key]}
-          data-testid="setting-{item.id}"
-          onclick={() => skin.setSettings({ [item.key]: !settings[item.key] })}
-        >
-          <span class="about">
-            <strong>{item.title}</strong>
-            <small>{item.hint}</small>
-          </span>
-          <span class="lever"><span></span></span>
-        </button>
-      {/each}
-    </section>
-  {/each}
-
-  <!-- Category Profile, in a block of its own: five slots do not fit beside Steam. -->
-  <section class="start" data-testid="settings-start">
+<section id="sub-skin-steam" data-testid="settings-steam">
+  <h2>{SUB['skin-steam'].name}</h2>
+  <p class="hint">{SUB['skin-steam'].hint}</p>
+  {#each STEAM_FIELDS as group (group.title)}
     <div class="row">
       <div class="about">
-        <h2>Profile: start row</h2>
+        <strong>{group.title}</strong>
+        <small>{group.hint}</small>
+      </div>
+      <div class="values">
+        {#each group.fields as field (field.id)}
+          <button class="value" data-testid="setting-{field.id}" onclick={() => (typing = field)}>
+            <small>{field.label}</small>
+            <b>{shown(field)}<i>{field.unit}</i></b>
+          </button>
+        {/each}
+      </div>
+    </div>
+  {/each}
+</section>
+
+<!-- The hot water page's ratio favourites (spec 3.7). -->
+<section id="sub-skin-hot-water" data-testid="settings-hot-water">
+  <h2>{SUB['skin-hot-water'].name}</h2>
+  <p class="hint">{SUB['skin-hot-water'].hint}</p>
+  <div class="row">
+    <div class="about">
+      <strong>ratios</strong>
+      <small>last shot × ratio is the stop at weight</small>
+    </div>
+    <div class="values">
+      {#each settings.hotWater.ratios as _, index (index)}
+        <button class="value" data-testid="setting-ratio-{index + 1}" onclick={() => (typingRatio = index)}>
+          <small>{index + 1}</small>
+          <b><i class="lead">1:</i>{shownRatio(index)}</b>
+        </button>
+      {/each}
+    </div>
+  </div>
+</section>
+
+<section id="sub-skin-profile" data-testid="settings-profile">
+  <h2>{SUB['skin-profile'].name}</h2>
+  <!-- founder, 2026-10-15: the editor's maximum flow and the dose of a shot that has none -->
+  <div class="row">
+    <div class="about">
+      <strong>editor and dose</strong>
+      <small>the highest flow the A-Flow editor offers; the dose of a shot that has none</small>
+    </div>
+    <div class="values">
+      {#each PROFILE_FIELDS as field (field.id)}
+        <button class="value" data-testid="setting-{field.id}" onclick={() => (typingProfile = field)}>
+          <small>{field.label}</small>
+          <b>{shownProfile(field)}<i>{field.unit}</i></b>
+        </button>
+      {/each}
+    </div>
+  </div>
+  {#each SWITCHES as item (item.key)}
+    {@render lever(item)}
+  {/each}
+
+  <div class="start" data-testid="settings-start">
+    <div class="row">
+      <div class="about">
+        <strong>start row</strong>
         <small>The editor's profiles to start from, up to five. A tap on a slot chooses its profile.</small>
       </div>
       {#if unread}
@@ -225,38 +227,55 @@
         </button>
       {/each}
     </div>
-  </section>
+  </div>
+</section>
 
-  <!-- Category Hot water (spec 3.7): the hot water page's ratio favourites, on the title line. -->
-  <section class="hot-water" data-testid="settings-hot-water">
-    <div class="titled">
-      <div class="about">
-        <h2>Hot water</h2>
-        <small>ratios: last shot × ratio is the stop at weight</small>
-      </div>
-      <div class="values">
-        {#each settings.hotWater.ratios as _, index (index)}
-          <button class="value" data-testid="setting-ratio-{index + 1}" onclick={() => (typingRatio = index)}>
-            <small>{index + 1}</small>
-            <b><i class="lead">1:</i>{shownRatio(index)}</b>
-          </button>
-        {/each}
-      </div>
-    </div>
-  </section>
+<section id="sub-skin-graph" data-testid="settings-graph">
+  <h2>{SUB['skin-graph'].name}</h2>
+  {#each GRAPH_SWITCHES as item (item.key)}
+    {@render lever(item)}
+  {/each}
+</section>
 
-  <div class="backup" data-testid="settings-backup">
+<!-- The backup in Decaid's KV store (founder, 2026-10-14), and the skin's name and version. -->
+<section id="sub-skin-backup" data-testid="settings-backup">
+  <h2>{SUB['skin-backup'].name}</h2>
+  <div class="row">
     <span class="about">
       <strong>Backup</strong>
       <small data-testid="backup-time">
         {skin.backupAt ? `in Decaid, ${backupTime(skin.backupAt)}` : 'none yet'}; every change is copied to Decaid
       </small>
+      {#if skin.backupError}<small class="warn" data-testid="backup-error">{skin.backupError}</small>{/if}
+      {#if restored}<small data-testid="backup-restored">{restored}</small>{/if}
     </span>
-    {#if skin.backupError}<small class="warn" data-testid="backup-error">{skin.backupError}</small>{/if}
-    {#if restored}<small data-testid="backup-restored">{restored}</small>{/if}
-    <button class="retry" data-testid="backup-restore" onclick={() => ((restored = null), (confirming = true))}>Restore from backup</button>
+    <button class="retry" data-testid="backup-restore" onclick={() => ((restored = null), (confirming = true))}
+      >Restore from backup</button
+    >
   </div>
-</div>
+  <div class="row">
+    <span class="about">
+      <strong>{PRODUCT_NAME}</strong>
+      <small>version {PRODUCT_VERSION}</small>
+    </span>
+  </div>
+</section>
+
+{#snippet lever(item: Switch)}
+  <button
+    class="row switch"
+    role="switch"
+    aria-checked={settings[item.key]}
+    data-testid="setting-{item.id}"
+    onclick={() => skin.setSettings({ [item.key]: !settings[item.key] })}
+  >
+    <span class="about">
+      <strong>{item.title}</strong>
+      <small>{item.hint}</small>
+    </span>
+    <span class="lever"><span></span></span>
+  </button>
+{/snippet}
 
 {#if confirming}
   <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
@@ -343,224 +362,24 @@
 {/if}
 
 <style>
-  .settings {
-    height: 100%;
-    box-sizing: border-box;
-    padding: 1rem 1.2rem;
-    display: grid;
-    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-    grid-template-rows: auto auto auto auto minmax(0, 1fr);
-    gap: 1rem 1.2rem;
-  }
-
-  /* Steam fills the left column; the switches' categories are stacked in the right one. */
-  section:first-of-type {
-    grid-row: 2 / 4;
-  }
-
-  .value .lead {
-    margin: 0 0.1em 0 0;
-  }
-
-  .titled {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-  }
-
-  /* The start row's slots run under both. */
-  .start {
-    grid-column: 1 / -1;
-  }
-
-  .start h2 {
-    margin: 0;
-  }
-
-  .start > .row {
-    border-top: 0;
-  }
-
-  .slots {
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 0.6rem;
-    padding-bottom: 0.4rem;
-  }
-
-  .value.slot {
-    width: auto;
-    min-width: 0;
-    padding: 0 0.6rem;
-  }
-
-  .slot b {
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-size: 1.25rem;
-  }
-
-  .slot.missing {
-    border-color: var(--temperature);
-  }
-
-  .warn {
-    color: var(--temperature);
-  }
-
-  /* The last line: Hot water's ratios on the left, the backup on the right (spec 3.7). */
-  .hot-water {
-    grid-column: 1;
-    padding-top: 0.2rem;
-    padding-bottom: 0.4rem;
-  }
-
-  .hot-water h2 {
-    margin: 0;
-  }
-
-  .hot-water .value {
-    min-height: 3.8rem;
-  }
-
-  .backup {
-    grid-column: 2;
-    align-self: start;
-    display: flex;
-    align-items: center;
-    gap: 1.2rem;
-    padding: 0 1.2rem;
-  }
-
-  .backup .about {
-    flex: 1;
-  }
-
-  .backup > small {
-    max-width: 40%;
-  }
-
-  .actions {
-    margin-top: 1rem;
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.6rem;
-  }
-
-  .retry.primary {
-    color: var(--bg);
-    background: var(--fg);
-    border-color: var(--fg);
-    font-weight: 600;
-  }
-
-  .none {
-    color: var(--dim);
-    font-style: italic;
-  }
-
-  .retry {
-    flex: none;
-    min-height: 3rem;
-    padding: 0 1rem;
-    background: var(--raised);
-    border: 1px solid var(--line);
-    border-radius: 0.9rem;
-  }
-
-  .backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 10;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgb(0 0 0 / 55%);
-  }
-
-  .dialog {
-    width: 28rem;
-    max-height: 80vh;
-    box-sizing: border-box;
-    padding: 0.4rem 1.2rem 1.2rem;
-    display: flex;
-    flex-direction: column;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 1.2rem;
-    box-shadow: 0 0.6rem 2.4rem rgb(0 0 0 / 70%);
-  }
-
-  ul {
-    min-height: 0;
-    margin: 0.6rem 0 0;
-    padding: 0;
-    list-style: none;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-  }
-
-  .choice {
-    width: 100%;
-    min-height: 3.4rem;
-    padding: 0 1rem;
-    text-align: left;
-    font-size: 1.1rem;
-    background: var(--raised);
-    border: 1px solid var(--line);
-    border-radius: 0.9rem;
-  }
-
-  .choice[aria-pressed='true'] {
-    background: var(--fg);
-    border-color: var(--fg);
-    color: var(--bg);
-    font-weight: 600;
-  }
-
-  header {
-    grid-column: 1 / -1;
-    display: flex;
-    align-items: baseline;
-    gap: 1.2rem;
-  }
-
-  .version {
-    margin-left: auto;
-    flex: none;
-    opacity: 0.7;
-  }
-
-  h1 {
-    margin: 0;
-    font-size: 2.2rem;
-    font-weight: 600;
-    line-height: 1.15;
-  }
-
-  p {
-    margin: 0;
-    color: var(--dim);
-  }
-
   section {
-    min-height: 0;
-    align-self: start;
-    padding: 0.4rem 1.2rem 0.6rem;
+    padding: 0.2rem 1.2rem 0.6rem;
     border: 1px solid var(--line);
     border-radius: 0.9rem;
     background: var(--panel);
+    scroll-margin-top: 0.6rem;
   }
 
   h2 {
-    margin: 0.6rem 0 0.2rem;
+    margin: 0.6rem 0 0.1rem;
     font-size: 1.4rem;
     font-weight: 600;
+  }
+
+  .hint {
+    margin: 0 0 0.2rem;
+    color: var(--dim);
+    font-size: 0.9rem;
   }
 
   .row {
@@ -570,10 +389,6 @@
     gap: 1rem;
     padding: 0.8rem 0;
     border-top: 1px solid var(--line);
-  }
-
-  h2 + .row {
-    border-top: 0;
   }
 
   .about {
@@ -592,6 +407,10 @@
   small {
     color: var(--dim);
     font-size: 0.85rem;
+  }
+
+  .warn {
+    color: var(--temperature);
   }
 
   .values {
@@ -626,6 +445,10 @@
     font-variant-numeric: tabular-nums;
   }
 
+  .value .lead {
+    margin: 0 0.1em 0 0;
+  }
+
   i {
     margin-left: 0.25em;
     font-style: normal;
@@ -634,18 +457,123 @@
     color: var(--dim);
   }
 
+  .slots {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.6rem;
+    padding-bottom: 0.4rem;
+  }
+
+  .value.slot {
+    width: auto;
+    min-width: 0;
+    padding: 0 0.6rem;
+  }
+
+  .slot b {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 1.25rem;
+  }
+
+  .slot.missing {
+    border-color: var(--temperature);
+  }
+
+  .none {
+    color: var(--dim);
+    font-style: italic;
+  }
+
+  .retry {
+    flex: none;
+    min-height: 3rem;
+    padding: 0 1rem;
+    background: var(--raised);
+    border: 1px solid var(--line);
+    border-radius: 0.9rem;
+  }
+
+  .retry.primary {
+    color: var(--bg);
+    background: var(--fg);
+    border-color: var(--fg);
+    font-weight: 600;
+  }
+
+  .actions {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+  }
+
+  .backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgb(0 0 0 / 55%);
+  }
+
+  .dialog {
+    width: 28rem;
+    max-height: 80vh;
+    box-sizing: border-box;
+    padding: 0.4rem 1.2rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 1.2rem;
+    box-shadow: 0 0.6rem 2.4rem rgb(0 0 0 / 70%);
+  }
+
+  .dialog p {
+    margin: 0;
+    color: var(--dim);
+  }
+
+  ul {
+    min-height: 0;
+    margin: 0.6rem 0 0;
+    padding: 0;
+    list-style: none;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .choice {
+    width: 100%;
+    min-height: 3.4rem;
+    padding: 0 1rem;
+    text-align: left;
+    font-size: 1.1rem;
+    background: var(--raised);
+    border: 1px solid var(--line);
+    border-radius: 0.9rem;
+  }
+
+  .choice[aria-pressed='true'] {
+    background: var(--fg);
+    border-color: var(--fg);
+    color: var(--bg);
+    font-weight: 600;
+  }
+
   .switch {
     width: 100%;
-    min-height: 5.8rem;
+    min-height: 5.2rem;
     background: none;
     border-width: 1px 0 0;
     border-style: solid;
     border-color: var(--line);
-  }
-
-  h2 + .switch,
-  .titled + .switch {
-    border-top-color: transparent;
   }
 
   .lever {

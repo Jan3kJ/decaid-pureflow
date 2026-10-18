@@ -8,7 +8,7 @@
   import Espresso from './shell/Espresso.svelte';
   import Home from './shell/Home.svelte';
   import Profiles from './shell/Profiles.svelte';
-  import Settings from './shell/Settings.svelte';
+  import SettingsPage from './settings-page/SettingsPage.svelte';
   import { Skin } from './shell/skin.svelte';
   import { backupTime } from './settings-backup';
   import Steam from './steam/Steam.svelte';
@@ -77,7 +77,7 @@
     {:else if skin.screen === 'hot-water'}
       <HotWater {skin} />
     {:else if skin.screen === 'settings'}
-      <Settings {skin} />
+      <SettingsPage {skin} />
     {/if}
   </div>
 

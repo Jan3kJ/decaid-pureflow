@@ -1,10 +1,14 @@
 // REST client for Decaid's gateway. Plain TypeScript, no UI: the base URL and fetch are
 // parameters, so it runs in the skin, in Node and in tests.
 import type {
+  AdvancedSettings,
+  DecaidInfo,
   DecaidSettings,
   DisplayState,
   ListProfilesQuery,
   ListShotsQuery,
+  MachineSettings,
+  MachineSettingsPatch,
   MachineSnapshot,
   PaginatedShots,
   Profile,
@@ -123,6 +127,34 @@ export class DecaidClient {
     await this.request('POST', '/api/v1/machine/shotSettings', settings);
   }
 
+  /** The machine's own settings: fan, USB, flush, tank, steam purge (research.md 20.3). */
+  getMachineSettings(): Promise<MachineSettings> {
+    return this.request('GET', '/api/v1/machine/settings');
+  }
+
+  /** Changes the given machine settings (202); a read afterwards says what the machine took. */
+  async updateMachineSettings(patch: MachineSettingsPatch): Promise<void> {
+    await this.request('POST', '/api/v1/machine/settings', patch);
+  }
+
+  getAdvancedSettings(): Promise<AdvancedSettings> {
+    return this.request('GET', '/api/v1/machine/settings/advanced');
+  }
+
+  async updateAdvancedSettings(patch: Partial<AdvancedSettings>): Promise<void> {
+    await this.request('POST', '/api/v1/machine/settings/advanced', patch);
+  }
+
+  /** The factory's fan, heater, refill kit, flow estimation and steam purge values; the workflow is not touched. */
+  async resetMachineSettings(): Promise<void> {
+    await this.request('DELETE', '/api/v1/machine/settings/reset');
+  }
+
+  /** mm, the water level of the refill warning; read on `/ws/v1/machine/waterLevels`. */
+  async setRefillLevel(refillLevel: number): Promise<void> {
+    await this.request('POST', '/api/v1/machine/waterLevels', { refillLevel });
+  }
+
   // --- workflow ---
 
   getWorkflow(): Promise<Workflow> {
@@ -215,7 +247,17 @@ export class DecaidClient {
     return this.request('PUT', '/api/v1/display/brightness', { brightness });
   }
 
+  /** Keeps the screen on (`wakeLockOverride`), or releases it. */
+  setWakeLock(on: boolean): Promise<DisplayState> {
+    return this.request(on ? 'POST' : 'DELETE', '/api/v1/display/wakelock');
+  }
+
   // --- settings ---
+
+  /** Decaid's version and build. */
+  getInfo(): Promise<DecaidInfo> {
+    return this.request('GET', '/api/v1/info');
+  }
 
   getSettings(): Promise<DecaidSettings> {
     return this.request('GET', '/api/v1/settings');

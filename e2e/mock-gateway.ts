@@ -170,6 +170,50 @@ export class MockGateway {
     targetShotVolume: 36,
     groupTemp: 94,
   };
+  /** `GET /api/v1/settings`: Decaid's own settings, as on the rig (research.md 20.4) */
+  decaidSettings: Json = {
+    gatewayMode: 'tracking',
+    webUiPath: '/web-ui/streamline.js',
+    logLevel: 'INFO',
+    weightFlowMultiplier: 1.0,
+    volumeFlowMultiplier: 0.3,
+    hotWaterFlowMultiplier: 0.3,
+    scalePowerMode: 'disconnect',
+    blockOnNoScale: false,
+    blockTareDuringShot: false,
+    stopHotWaterAtWeight: true,
+    automaticUpdateCheck: true,
+    chargingMode: 'disabled',
+    nightModeEnabled: false,
+    nightModeSleepTime: 1320,
+    nightModeMorningTime: 420,
+    lowBatteryBrightnessLimit: true,
+    keepAwake: true,
+    themeMode: 'system',
+  };
+  /** `GET /api/v1/machine/settings`, as on the rig */
+  machineSettings: Json = {
+    fan: 55,
+    usb: false,
+    flushTemp: 90,
+    flushTimeout: 10,
+    flushFlow: 6,
+    hotWaterFlow: 10,
+    steamFlow: 0.8,
+    tankTemp: 20,
+    steamPurgeMode: 0,
+  };
+  /** the machine settings the simulated DE1 accepts and does not keep (research.md 20.4) */
+  machineIgnores = new Set(['tankTemp']);
+  /** `GET /api/v1/machine/settings/advanced`, as on the rig */
+  advancedSettings: Json = {
+    heaterPh1Flow: 2.5,
+    heaterPh2Flow: 5,
+    heaterIdleTemp: 98,
+    heaterPh2Timeout: 5,
+    heaterVoltage: 120,
+    refillKitSetting: 2,
+  };
   /** `/ws/v1/machine/waterLevels`: the tank, in mm */
   water: Json = { currentLevel: 38, refillLevel: 5 };
   /** the KV store, as `namespace/key` */
@@ -464,6 +508,46 @@ export class MockGateway {
       this.display = { ...this.display, brightness: body.brightness, requestedBrightness: body.brightness };
       return json(this.display);
     }
+    if (path === '/api/v1/settings' && method === 'GET') return json(this.decaidSettings);
+    if (path === '/api/v1/settings' && method === 'POST') {
+      this.decaidSettings = { ...this.decaidSettings, ...body };
+      return json(null);
+    }
+    if (path === '/api/v1/info' && method === 'GET') {
+      return json({ version: '0.8.8', buildNumber: '2900', fullVersion: '0.8.8+2900', commitShort: 'aab5f938' });
+    }
+    if (path.startsWith('/api/v1/machine/settings') && !this.machineConnected) return noMachine();
+    if (path === '/api/v1/machine/settings' && method === 'GET') return json(this.machineSettings);
+    if (path === '/api/v1/machine/settings' && method === 'POST') {
+      const kept = Object.fromEntries(Object.entries(body).filter(([key]) => !this.machineIgnores.has(key)));
+      // The USB charger is written as 'enable' or 'disable' and read as a boolean; a boolean is ignored (research.md 20.4).
+      if ('usb' in kept) {
+        if (kept.usb === 'enable' || kept.usb === 'disable') kept.usb = kept.usb === 'enable';
+        else delete kept.usb;
+      }
+      this.machineSettings = { ...this.machineSettings, ...kept };
+      return json(null, 202);
+    }
+    if (path === '/api/v1/machine/settings/advanced' && method === 'GET') return json(this.advancedSettings);
+    if (path === '/api/v1/machine/settings/advanced' && method === 'POST') {
+      this.advancedSettings = { ...this.advancedSettings, ...body };
+      return json(null, 202);
+    }
+    if (path === '/api/v1/machine/settings/reset' && method === 'DELETE') {
+      this.machineSettings = { ...this.machineSettings, fan: 55, steamPurgeMode: 0 };
+      this.advancedSettings = { ...this.advancedSettings, heaterIdleTemp: 98, heaterPh1Flow: 2.5, heaterPh2Flow: 5, heaterPh2Timeout: 5, refillKitSetting: 2 };
+      return json(null, 202);
+    }
+    if (path === '/api/v1/machine/waterLevels' && method === 'POST') {
+      if (!this.machineConnected) return noMachine();
+      this.water = { ...this.water, refillLevel: body.refillLevel };
+      for (const ws of this.waterSockets) ws.send(JSON.stringify(this.water));
+      return json(null, 202);
+    }
+    if (path === '/api/v1/display/wakelock' && (method === 'POST' || method === 'DELETE')) {
+      this.display = { ...this.display, wakeLockOverride: method === 'POST' };
+      return json(this.display);
+    }
     if (path === '/api/v1/workflow' && method === 'GET') return json(this.workflow);
     if (path === '/api/v1/workflow' && method === 'PUT') {
       this.workflow = {
@@ -476,6 +560,11 @@ export class MockGateway {
         steamSettings: this.workflow.steamSettings,
       };
       this.putWorkflowSteam(body.steamSettings);
+      // Decaid writes a changed rinseData to the machine's flush settings (research.md 20.12).
+      if (body.rinseData) {
+        const { targetTemperature, duration, flow } = this.workflow.rinseData;
+        this.machineSettings = { ...this.machineSettings, flushTemp: targetTemperature, flushTimeout: duration, flushFlow: flow };
+      }
       // Each response describes the workflow resulting from that request (rest_v1.yml).
       const answer = { ...this.workflow, steamSettings: { ...this.workflow.steamSettings, ...body.steamSettings } };
       return json(answer);

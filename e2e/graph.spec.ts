@@ -193,6 +193,8 @@ test('the legend is under the graph by default, and the settings page switches i
   await page.getByTestId('menu').click();
 
   await page.getByTestId('open-settings').click();
+
+  await page.getByTestId('settings-category-skin').click();
   const lever = page.getByTestId('setting-show-graph-legend');
   await expect(lever).toHaveAttribute('aria-checked', 'true');
   await lever.click();
@@ -206,6 +208,7 @@ test('the legend is under the graph by default, and the settings page switches i
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
   await page.getByTestId('menu').click();
   await page.getByTestId('open-settings').click();
+  await page.getByTestId('settings-category-skin').click();
   await expect(page.getByTestId('setting-show-graph-legend')).toHaveAttribute('aria-checked', 'false');
   expect(errors).toEqual([]);
 });

@@ -20,9 +20,12 @@ test.beforeEach(({ page }) => {
 async function overflow(page: Page) {
   return page.evaluate(() => {
     const root = document.documentElement;
+    // In the settings page's panels, which scroll (research.md 20.7), only the width counts.
+    const scrolled = (element: Element) =>
+      !!element.parentElement?.closest('[data-testid="settings-content"], [aria-label="settings categories"]');
     const outside = [...document.querySelectorAll('button, section, header, aside')].filter((element) => {
       const rect = element.getBoundingClientRect();
-      return rect.width > 0 && (rect.left < 0 || rect.top < 0 || rect.right > innerWidth + 0.5 || rect.bottom > innerHeight + 0.5);
+      return rect.width > 0 && (rect.left < 0 || rect.right > innerWidth + 0.5 || (!scrolled(element) && (rect.top < 0 || rect.bottom > innerHeight + 0.5)));
     });
     return { scrolls: root.scrollWidth > innerWidth || root.scrollHeight > innerHeight, outside: outside.length };
   });
@@ -143,6 +146,7 @@ test('the favourites come from the settings; without a last shot or a scale noth
   await page.getByTestId('nav-home').click();
   await page.getByTestId('menu').click();
   await page.getByTestId('open-settings').click();
+  await page.getByTestId('settings-category-skin').click();
   await expect(page.getByTestId('settings-hot-water')).toBeVisible();
   await expect(page.getByTestId('setting-ratio-1')).toContainText('1:2');
   await type(page, 'setting-ratio-1', '1.5');

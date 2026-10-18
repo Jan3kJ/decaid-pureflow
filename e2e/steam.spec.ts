@@ -326,6 +326,7 @@ test('the adjust amounts come from the settings, and the settings page changes t
   await page.getByTestId('nav-home').click();
   await page.getByTestId('menu').click();
   await page.getByTestId('open-settings').click();
+  await page.getByTestId('settings-category-skin').click();
   await expect(page.getByTestId('setting-adjust-1')).toContainText('-3');
   await page.getByTestId('setting-adjust-1').click();
   await expect(page.getByTestId('numpad-range')).toHaveText('-60 to 60 s');

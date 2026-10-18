@@ -28,7 +28,7 @@ The skin's version, 0.1.1 (a beta), is set in two places that a test keeps equal
 
 ## Credits
 
-The step editor (`src/steps/`) is ported from
+The step editor (`src/steps/`) and the settings page (`src/settings-page/`) are ported from
 [Streamline.js](https://github.com/decentespresso/streamline-js) v0.2.14, "A browser-native
 skin for Decent Espresso machines", Copyright (C) 2025-2026 Decent Espresso, licensed under
 the GNU General Public License v3.0 or later; it is used here under GPL-3.0. Each ported file

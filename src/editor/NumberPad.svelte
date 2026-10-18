@@ -7,13 +7,15 @@
     max: number;
     /** false for a value in whole numbers: the decimal key is off */
     decimals: boolean;
+    /** the places after the point a decimal value takes; 1 unless a setting needs 2 (a flow multiplier of 0.05) */
+    places?: number;
     /** the value before typing, shown until the first key */
     current: string;
     onconfirm: (value: number) => void;
     oncancel: () => void;
   }
 
-  let { label, unit, min, max, decimals, current, onconfirm, oncancel }: Props = $props();
+  let { label, unit, min, max, decimals, places = 1, current, onconfirm, oncancel }: Props = $props();
 
   const MAX_LENGTH = 5;
   let typed = $state('');
@@ -30,8 +32,8 @@
       typed = typed === '' ? '0.' : typed + '.';
       return;
     }
-    // One decimal is the finest step of any value.
-    if (typed.includes('.') && typed.split('.')[1].length >= 1) return;
+    // One decimal is the finest step of a value, two of a few settings.
+    if (typed.includes('.') && typed.split('.')[1].length >= places) return;
     if (digits.length >= MAX_LENGTH) return;
     typed = digits === '0' ? typed.replace('0', k) : typed + k;
   }

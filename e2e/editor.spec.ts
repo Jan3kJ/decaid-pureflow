@@ -701,6 +701,7 @@ test('with the setting off, the profile steps button is not shown', async ({ pag
   await page.getByTestId('nav-home').click();
   await page.getByTestId('menu').click();
   await page.getByTestId('open-settings').click();
+  await page.getByTestId('settings-category-skin').click();
   await page.getByTestId('setting-show-profile-steps').click();
   await page.getByTestId('nav-home').click();
   await page.getByTestId('open-editor').click();
@@ -711,6 +712,7 @@ test('with the setting off, the profile steps button is not shown', async ({ pag
   await page.getByTestId('nav-home').click();
   await page.getByTestId('menu').click();
   await page.getByTestId('open-settings').click();
+  await page.getByTestId('settings-category-skin').click();
   await page.getByTestId('setting-show-profile-steps').click();
   await page.getByTestId('nav-home').click();
   await page.getByTestId('open-editor').click();

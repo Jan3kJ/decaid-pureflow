@@ -29,6 +29,7 @@ test.afterEach(() => {
 async function openSettings(page: Page) {
   await page.getByTestId('menu').click();
   await page.getByTestId('open-settings').click();
+  await page.getByTestId('settings-category-skin').click();
   await expect(page.getByTestId('screen-settings')).toBeVisible();
 }
 

@@ -20,9 +20,12 @@ test.beforeEach(({ page }) => {
 async function overflow(page: Page) {
   return page.evaluate(() => {
     const root = document.documentElement;
+    // In the settings page's panels, which scroll (research.md 20.7), only the width counts.
+    const scrolled = (element: Element) =>
+      !!element.parentElement?.closest('[data-testid="settings-content"], [aria-label="settings categories"]');
     const outside = [...document.querySelectorAll('button, section, header, h1')].filter((element) => {
       const rect = element.getBoundingClientRect();
-      return rect.width > 0 && (rect.left < 0 || rect.top < 0 || rect.right > innerWidth + 0.5 || rect.bottom > innerHeight + 0.5);
+      return rect.width > 0 && (rect.left < 0 || rect.right > innerWidth + 0.5 || (!scrolled(element) && (rect.top < 0 || rect.bottom > innerHeight + 0.5)));
     });
     return { scrolls: root.scrollWidth > innerWidth || root.scrollHeight > innerHeight, outside: outside.length };
   });
@@ -134,6 +137,7 @@ test('settings: the defaults, typed values and both switches survive a reload', 
   await page.goto('/');
   await page.getByTestId('menu').click();
   await page.getByTestId('open-settings').click();
+  await page.getByTestId('settings-category-skin').click();
 
   const values = (ids: string[]) => Promise.all(ids.map((id) => page.getByTestId(`setting-${id}`).locator('b').textContent()));
   const STEAM = [
@@ -156,13 +160,13 @@ test('settings: the defaults, typed values and both switches survive a reload', 
   const steps = page.getByTestId('setting-show-profile-steps');
   await expect(workaround).toHaveAttribute('aria-checked', 'false');
   await expect(steps).toHaveAttribute('aria-checked', 'true');
-  // Four categories and the start row of the category Profile, nothing else (Hot water: spec 3.7).
+  // The category Skin of the ported page (research.md 20.6): its five subcategories, nothing else.
   await expect(page.locator('[data-testid="screen-settings"] h2')).toHaveText([
     'Steam',
+    'Hot water',
     'Profile',
     'Shot graph',
-    'Profile: start row',
-    'Hot water',
+    'Backup and version',
   ]);
   await expect(page.getByTestId('settings-start').locator('b')).toHaveText(['floral', 'light', 'medium', 'dark', '46mm']);
   expect(await overflow(page)).toEqual({ scrolls: false, outside: 0 });
@@ -203,7 +207,8 @@ test('settings: the defaults, typed values and both switches survive a reload', 
       settings: JSON.parse(localStorage.getItem('decaid-skin.settings')!),
     })),
   ).toEqual({
-    keys: ['decaid-skin.screen', 'decaid-skin.settings'],
+    // The page's last category is not a setting (research.md 20.7).
+    keys: ['decaid-skin.screen', 'decaid-skin.settings', 'decaid-skin.settings-location'],
     session: 0,
     settings: {
       showProfileSteps: false,
@@ -253,6 +258,7 @@ test('settings: the defaults, typed values and both switches survive a reload', 
   await page.getByTestId('nav-home').click();
   await page.getByTestId('menu').click();
   await page.getByTestId('open-settings').click();
+  await page.getByTestId('settings-category-skin').click();
   await steps.click();
   await expect(steps).toHaveAttribute('aria-checked', 'true');
   await page.getByTestId('nav-home').click();
@@ -265,6 +271,7 @@ test('settings: the defaults, typed values and both switches survive a reload', 
   await page.getByTestId('nav-home').click();
   await page.getByTestId('menu').click();
   await page.getByTestId('open-settings').click();
+  await page.getByTestId('settings-category-skin').click();
   await expect(steps).toHaveAttribute('aria-checked', 'true');
   expect(errors).toEqual([]);
 });
@@ -278,6 +285,7 @@ test('settings: stored data that cannot be read gives the defaults, and the page
   await page.goto('/');
   await page.getByTestId('menu').click();
   await page.getByTestId('open-settings').click();
+  await page.getByTestId('settings-category-skin').click();
   await expect(page.getByTestId('setting-mug-small').locator('b')).toHaveText('150g');
   await type(page, 'setting-mug-large', '300');
   await page.reload();
@@ -362,6 +370,7 @@ test('a workflow without a dose takes the default dose; one with a dose keeps it
   gateway.workflow = { ...gateway.workflow, context: { targetYield: 36, targetDoseWeight: 20 } };
   await page.getByTestId('menu').click();
   await page.getByTestId('open-settings').click();
+  await page.getByTestId('settings-category-skin').click();
   await type(page, 'setting-default-dose', '16');
   await page.getByTestId('nav-home').click();
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
@@ -421,6 +430,7 @@ test('a stream the gateway closed with an error is tried again for 30 s, then sh
   // The action is on every screen.
   await page.getByTestId('menu').click();
   await page.getByTestId('open-settings').click();
+  await page.getByTestId('settings-category-skin').click();
   await expect(page.getByTestId('stream-failed')).toBeVisible();
   gateway.refuseStreams = false;
   await page.getByTestId('reconnect').click();

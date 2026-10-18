@@ -20,9 +20,12 @@ test.beforeEach(({ page }) => {
 async function expectInsideViewport(page: Page) {
   const overflow = await page.evaluate(() => {
     const root = document.documentElement;
+    // In the settings page's panels, which scroll (research.md 20.7), only the width counts.
+    const scrolled = (element: Element) =>
+      !!element.parentElement?.closest('[data-testid="settings-content"], [aria-label="settings categories"]');
     const outside = [...document.querySelectorAll('button, h1, section, aside, svg')].filter((element) => {
       const rect = element.getBoundingClientRect();
-      return rect.width > 0 && (rect.left < 0 || rect.top < 0 || rect.right > innerWidth + 0.5 || rect.bottom > innerHeight + 0.5);
+      return rect.width > 0 && (rect.left < 0 || rect.right > innerWidth + 0.5 || (!scrolled(element) && (rect.top < 0 || rect.bottom > innerHeight + 0.5)));
     });
     return {
       scrolls: root.scrollWidth > innerWidth || root.scrollHeight > innerHeight,

@@ -343,7 +343,7 @@ export interface PaginatedShots {
 
 // --- settings, skin server ---
 
-/** Decaid's own settings (`ReaSettings`); only the fields the skin reads are named. */
+/** Decaid's own settings (`ReaSettings`); the fields the skin reads or its settings page sets are named (research.md 20.3). */
 export interface DecaidSettings {
   gatewayMode?: 'disabled' | 'full' | 'tracking';
   blockOnNoScale?: boolean;
@@ -353,6 +353,66 @@ export interface DecaidSettings {
   keepAwake?: boolean;
   simulatedDevices?: Array<'machine' | 'scale' | 'sensor' | 'bengle'>;
   themeMode?: 'system' | 'light' | 'dark';
+  webUiPath?: string | null;
+  logLevel?: string;
+  weightFlowMultiplier?: number;
+  /** s */
+  volumeFlowMultiplier?: number;
+  /** s, the look-ahead of the stop at weight of hot water */
+  hotWaterFlowMultiplier?: number;
+  stopHotWaterAtWeight?: boolean;
+  automaticUpdateCheck?: boolean;
+  chargingMode?: 'disabled' | 'highAvailability' | 'balanced' | 'longevity';
+  nightModeEnabled?: boolean;
+  /** minutes since midnight */
+  nightModeSleepTime?: number;
+  nightModeMorningTime?: number;
+  lowBatteryBrightnessLimit?: boolean;
+  /** absent on the rig */
+  chargingState?: { batteryPercent?: number; isEmergency?: boolean; currentPhase?: string; usbChargerOn?: boolean } | null;
+  [key: string]: unknown;
+}
+
+/** `GET /api/v1/machine/settings` (`De1SettingsResponse`): the machine's own settings. */
+export interface MachineSettings {
+  /** read as a boolean, written as 'enable' or 'disable' (research.md 20.4) */
+  usb?: boolean;
+  /** °C */
+  fan?: number;
+  flushTemp?: number;
+  flushTimeout?: number;
+  flushFlow?: number;
+  hotWaterFlow?: number;
+  steamFlow?: number;
+  tankTemp?: number;
+  /** 0 normal, 1 two tap stop */
+  steamPurgeMode?: number;
+  [key: string]: unknown;
+}
+
+/** `POST /api/v1/machine/settings` (`De1SettingsRequest`): what a request may change. */
+export type MachineSettingsPatch = Omit<Partial<MachineSettings>, 'usb'> & { usb?: 'enable' | 'disable' };
+
+/** `GET`/`POST /api/v1/machine/settings/advanced` (`De1AdvancedSettingsRequest`). */
+export interface AdvancedSettings {
+  heaterPh1Flow?: number;
+  heaterPh2Flow?: number;
+  heaterIdleTemp?: number;
+  heaterPh2Timeout?: number;
+  /** 120 or 230; above 1000 a committed marker, read minus 1000 */
+  heaterVoltage?: number;
+  /** 2 auto, 1 force on, 0 force off */
+  refillKitSetting?: number;
+  [key: string]: unknown;
+}
+
+/** `GET /api/v1/info`: Decaid's build. */
+export interface DecaidInfo {
+  version?: string;
+  buildNumber?: string;
+  fullVersion?: string;
+  commitShort?: string;
+  buildTime?: string;
   [key: string]: unknown;
 }
 
