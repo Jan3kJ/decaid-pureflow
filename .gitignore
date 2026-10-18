@@ -1,0 +1,13 @@
+node_modules/
+dist/
+release/
+data/
+# stint: the runner's local files
+stint/logs/DayRun.log
+stint/logs/day-state-*.json
+stint/logs/tasks/
+stint/logs/blog-brief.md
+e2e/.results/
+test-results/
+playwright-report/
+e2e-rig/.results/
