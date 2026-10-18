@@ -1854,6 +1854,43 @@ card at the row's right end, the first at the left, a step moved right and twice
 open and centred); the acceptance-10 test waits for the centring before its screenshot
 (`docs/product/step-editor.png`). Rig: full `npm run e2e:rig` 31 of 31, Streamline 0.2.14.
 
+### 17.18 Built (E6)
+
+Built on 2026-10-18 (spec 3.7, SCRIPT; acceptance 26, second half). Streamline's SCRIPT view
+(`buildStepScript`, `renderScriptLine`, `createScriptChip`, `renderScriptTab` in
+`src/modules/profile_editor.js`, l. 2329-2806 at `3a4bd23`) is ported, and E4's typed text with
+its parser (17.8, 17.16: `src/steps/script.ts`, 24 tests) is removed. Files:
+`src/steps/sentences.ts` (+ `sentences.test.ts`, 10 tests) and `src/steps/ScriptTab.svelte`, both
+with the notice of 20.8; `StepEditor.svelte` lost the error state (nothing can fail to parse).
+
+**The sentences.** `stepSentences(profile, i)` gives a step's lines as words, chips and pills in
+Streamline's order and wording: "Start tracking water volume" on the step after
+`target_volume_count_start`; "Set|Increase|Decrease|Maintain [Coffee|Water] temperature to|at
+{93.0 °C}"; "[Flow quickly…] at a rate of {4.0 mL/s}" or "[Pressure …] to {9.0 bar}"; "Limit to
+{8.6 bar}"; "For a maximum of {36.0 g} or {2.0 sec} or {500.0 ml}"; "Move on if [Pressure is
+over] {4.0 bar}". A limit, a maximum or an exit that is off has no sentence, as in Streamline
+(the cards add one). Numbers print with one decimal, two where they have a second (0.75).
+
+**Chips and pills.** The sensor and pump chips are the cards' cycles (`cycleSensor`, `cyclePump`);
+the exit chip cycles the four exits without off (`cycleScriptExit`), as Streamline does, keeping
+the step's last value of a type. A pill opens `NumberPad` through the editor's `typing` state with
+`limitOf`'s range, the same pad and ranges as the cards; 0 on a limit or maximum removes the
+sentence. The preview beside it redraws on every change; save and save as store the edit.
+
+**On the rig.** Decaid stores a pressure step without its unused `flow` (and the other way round):
+a pump cycled from flow to pressure is read back without the old flow, which the editor keeps
+for switching back. Not a change the skin makes; the rig spec expects it.
+
+**Tests.** Vitest `sentences.test.ts`: the wording of Blooming Espresso's steps, a pressure step's
+units, the verb, number printing, every bundled step has a temperature and a pump sentence, each
+chip kind's cycle, the pills' values and ranges, 0 removing a sentence. Playwright
+`e2e/step-script.spec.ts` (2): no text field; the ramp's pump cycled to pressure quickly and the
+exit cycled round move the preview; step 5's flow typed 3.0 on the pad moves it; 'save' posts
+exactly those steps, the cards show them; the sensor cycles and a limit typed 0 leaves its
+sentence. Screenshot `docs/product/step-script.png`. Rig `e2e-rig/step-editor.spec.ts`, third
+test: the same edits on Blooming Espresso, 'save as', the steps read back, purged. Full
+`npm run e2e:rig` 31 of 31 with Streamline 0.2.14 served (log `..\decaid-rig\log\e6-e2e-rig.txt`).
+
 ## 18. Profile metadata on the rig (M1)
 
 **Verdict: metadata holds.**

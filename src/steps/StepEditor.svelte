@@ -10,8 +10,8 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   // on the workflow's profile, as the A-Flow editor does. One card per step; 'save' and 'save
   // as' store through the skin's one writer and load what they stored; leaving loads a changed
   // profile. Above the cards, the curve preview draws the profile's targets and follows every
-  // edit (E3); the SETTINGS tab edits the profile's own values; the SCRIPT tab edits the steps
-  // as text, and while its text does not parse nothing is saved and leaving is refused (E4).
+  // edit (E3); the SETTINGS tab edits the profile's own values; the SCRIPT tab shows the steps
+  // as Streamline's sentences, whose words cycle and whose numbers open the number pad (E6).
   import { onMount, tick } from 'svelte';
   import type { Profile, ProfileRecord } from '../api';
   import NameDialog from '../editor/NameDialog.svelte';
@@ -70,8 +70,6 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   let notice: { tone: 'info' | 'warn'; text: string } | null = $state(null);
   let row: HTMLDivElement | undefined = $state();
   let tab: 'cards' | 'settings' | 'script' = $state('cards');
-  /** the SCRIPT tab's errors: its text does not parse, so nothing is saved */
-  let scriptErrors: string[] = $state.raw([]);
 
   const taken = $derived(records.map((entry) => entry.profile.title));
   /** 'save' may rename the profile, but not to the title of another visible one. */
@@ -81,8 +79,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     return `Another profile is called “${profile.title}”: choose another title, or use save as.`;
   });
   const dirty = $derived(profileChanged(profile, origin));
-  const broken = $derived(scriptErrors.length > 0);
-  const canSave = $derived(canSaveOver(record) && dirty && profile.steps.length > 0 && !titleProblem && !broken);
+  const canSave = $derived(canSaveOver(record) && dirty && profile.steps.length > 0 && !titleProblem);
   const message = (cause: unknown) => (cause instanceof Error ? cause.message : String(cause));
 
   /** What a record's id is made of: the steps and the target weight. */
@@ -129,10 +126,6 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
    */
   async function leave(): Promise<boolean> {
     if (busy) return false;
-    if (broken) {
-      notice = { tone: 'warn', text: 'The script has errors: nothing is saved or loaded. Correct it, or open cards to keep the steps that last parsed.' };
-      return false;
-    }
     if (!profileChanged(profile, openedWith) || (refused && !profileChanged(profile, refused))) return true;
     busy = true;
     notice = null;
@@ -221,10 +214,8 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     profile = next;
   }
 
-  /** Leaving SCRIPT drops a text that does not parse: the other tabs show the steps that last parsed. */
   function open(next: typeof tab) {
     tab = next;
-    scriptErrors = [];
     openIndex = Math.min(openIndex, Math.max(0, profile.steps.length - 1));
   }
 
@@ -270,7 +261,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     <span class="count" data-testid="step-count">{profile.steps.length} {profile.steps.length === 1 ? 'step' : 'steps'}</span>
     <div class="group" role="group" aria-label="profile actions">
       <button class="seg action" data-testid="save" disabled={busy || !canSave} onclick={save}>save</button>
-      <button class="seg action" data-testid="save-as" disabled={busy || broken || profile.steps.length === 0} onclick={() => (naming = true)}>
+      <button class="seg action" data-testid="save-as" disabled={busy || profile.steps.length === 0} onclick={() => (naming = true)}>
         save as
       </button>
     </div>
@@ -283,7 +274,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   {#if tab === 'settings'}
     <ProfileSettings {profile} {titleProblem} disabled={busy} onedit={edit} />
   {:else if tab === 'script'}
-    <ScriptTab {profile} errors={scriptErrors} disabled={busy} onedit={edit} onerrors={(errors) => (scriptErrors = errors)} />
+    <ScriptTab {profile} disabled={busy} onedit={edit} ontype={(index, value) => (typing = { index, value })} />
   {:else}
   <!-- The curve preview: the targets of the steps, redrawn with every edit. -->
   <StepPreview {profile} />

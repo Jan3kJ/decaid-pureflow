@@ -1,7 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import type { Profile } from '../src/api';
-import { insertStepAfter, moveStep, removeStepAt, setValue, stepValue } from '../src/steps/model';
-import { parseScript, writeScript } from '../src/steps/script';
+import { cyclePump, insertStepAfter, moveStep, removeStepAt, setValue, stepValue } from '../src/steps/model';
 
 // Acceptance item 10 (spec 3.6, research.md 17.11) against the rig: a profile that is not
 // A-Flow opens in the step editor; a value changed with ± and with the pad, a step added, one
@@ -242,17 +241,11 @@ test('the profile settings are saved with the steps and read back', async ({ pag
   );
 });
 
-// Acceptance item 13 (research.md 17.11 E4) against the rig: every profile Decaid lists comes
-// back from its SCRIPT text unchanged (read-only); a value changed in the SCRIPT tab moves the
-// preview, a broken text turns saving off, and 'save as' from the tab stores the edited steps.
-test('the SCRIPT tab: every listed profile round-trips, and an edit in the text is stored', async ({ page }) => {
-  const records = await api('GET', '/api/v1/profiles');
-  for (const record of records) {
-    const result = parseScript(writeScript(record.profile), record.profile);
-    expect(result.ok, record.profile.title).toBe(true);
-    if (result.ok) expect(result.profile, record.profile.title).toEqual(record.profile);
-  }
-  const source = records.find((record: any) => record.profile.title === SOURCE);
+// Acceptance item 26, second half (spec 3.7, research.md 17.18) against the rig: in SCRIPT a tap
+// on a state word cycles it and a tap on a number opens the pad; both move the preview, and
+// 'save as' from the tab stores exactly those steps, which are read back; all made is purged.
+test('the SCRIPT tab: a cycled word and a typed number are stored', async ({ page }) => {
+  const source = (await api('GET', '/api/v1/profiles')).find((record: any) => record.profile.title === SOURCE);
   expect(source, `the rig bundles “${SOURCE}”`).toBeTruthy();
   await api('PUT', '/api/v1/workflow', { profile: source.profile });
 
@@ -260,24 +253,22 @@ test('the SCRIPT tab: every listed profile round-trips, and an edit in the text 
   await page.goto('/');
   await expect(page.getByTestId('step-cards')).toBeVisible();
   await page.getByTestId('tab-script').click();
-  const text = page.getByTestId('script-text');
-  const script = writeScript(source.profile);
-  await expect(text).toHaveValue(script);
+  await expect(page.getByTestId('step-script').locator('textarea, input')).toHaveCount(0);
   const flow = () => page.getByTestId('step-preview').getByTestId('shot-target-flow').getAttribute('d');
   const before = await flow();
 
-  // Step 5, "flat flow", from 2.2 to 3.0 ml/s.
-  const line = '- Flow quickly at a rate of 2.2 mL/s\n- Limit to 8.6 bar';
-  expect(script).toContain(line);
-  const edited = script.replace(line, line.replace('2.2', '3.0'));
-  await text.fill(edited.replace('Limit to 8.6 bar', 'Limit to 13 bar'));
-  await expect(page.getByTestId('script-error')).toHaveText(['line 22: a pressure limit is 0 to 12 bar']);
-  await expect(page.getByTestId('save-as')).toBeDisabled();
-  await text.fill(edited);
-  await expect(page.getByTestId('script-errors')).toHaveCount(0);
+  // Step 4, "ramp": the pump cycled to pressure quickly; step 5, "flat flow": the flow typed from 2.2 to 3.0 ml/s.
+  await page.getByTestId('script-chip-3-pump').click();
+  await expect(page.getByTestId('script-chip-3-pump')).toHaveText('Pressure quickly');
   await expect.poll(flow).not.toBe(before);
+  const cycled = await flow();
+  await page.getByTestId('script-value-4-target').click();
+  for (const key of ['3', 'dot', '0']) await page.getByTestId(`numpad-key-${key}`).click();
+  await page.getByTestId('numpad-confirm').click();
+  await expect(page.getByTestId('script-value-4-target')).toHaveText('3.0 mL/s');
+  await expect.poll(flow).not.toBe(cycled);
 
-  const title = `E4 rig ${Date.now().toString(36)}`;
+  const title = `E6 rig ${Date.now().toString(36)}`;
   await page.getByTestId('save-as').click();
   await page.getByTestId('save-name').fill(title);
   await page.getByTestId('save-confirm').click();
@@ -285,7 +276,11 @@ test('the SCRIPT tab: every listed profile round-trips, and an edit in the text 
   const copies = (await api('GET', '/api/v1/profiles')).filter((record: any) => record.profile.title === title);
   expect(copies).toHaveLength(1);
   expect(copies[0].parentId).toBe(source.id);
-  const expected = setValue(structuredClone(source.profile), 4, 'target', 3);
+  const expected = setValue(cyclePump(structuredClone(source.profile), 3), 4, 'target', 3);
+  expect(expected.steps[3].pump).toBe('pressure');
+  // The skin sends the ramp's old flow along (the cards keep it to switch back to); Decaid
+  // stores a pressure step without the unused pump's value.
+  delete expected.steps[3].flow;
   const read = await api('GET', `/api/v1/profiles/${encodeURIComponent(copies[0].id)}`);
   expect(canonical(read.profile.steps)).toEqual(canonical(expected.steps));
   expect(read.profile.target_volume_count_start).toBe(source.profile.target_volume_count_start);
