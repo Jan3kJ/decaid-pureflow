@@ -14,7 +14,7 @@ function setup() {
   const bundledRecord = gateway.make(blooming, { id: 'profile:blooming', isDefault: true, metadata: null });
   const mine = gateway.make({ ...blooming, title: 'My blooming', steps: blooming.steps.slice(0, 5) }, {
     id: 'profile:mine',
-    metadata: { source: 'decaid-skin', note: 'kept' },
+    metadata: { source: 'pureflow', note: 'kept' },
   });
   gateway.records.push(bundledRecord, mine);
   return { gateway, bundledRecord, mine };
@@ -30,9 +30,9 @@ function edit(profile: Profile): Profile {
 
 describe('stepMetadata', () => {
   it("is the parent's, marked as the skin's, without A-Flow keys", () => {
-    expect(stepMetadata(null)).toEqual({ source: 'decaid-skin' });
+    expect(stepMetadata(null)).toEqual({ source: 'pureflow' });
     expect(stepMetadata({ source: 'other', aflow: '3.0', aflowValues: {}, beans: 'x' })).toEqual({
-      source: 'decaid-skin',
+      source: 'pureflow',
       beans: 'x',
     });
   });
@@ -46,7 +46,7 @@ describe('saveStepEdit', () => {
     expect(gateway.sent()).toEqual(['POST /api/v1/profiles', 'PUT /api/v1/profiles/profile:mine/visibility']);
     const post = gateway.calls[0].body;
     expect(post.parentId).toBe('profile:mine');
-    expect(post.metadata).toEqual({ source: 'decaid-skin', note: 'kept' });
+    expect(post.metadata).toEqual({ source: 'pureflow', note: 'kept' });
     expect(post.profile).toEqual(edited);
     expect(record.profile.steps).toEqual(edited.steps);
     expect(record.parentId).toBe('profile:mine');
@@ -113,7 +113,7 @@ describe('saveStepAs', () => {
     expect(gateway.calls[0].body).toEqual({
       profile: { ...edited, title: 'Blooming, mine' },
       parentId: 'profile:blooming',
-      metadata: { source: 'decaid-skin' },
+      metadata: { source: 'pureflow' },
     });
     expect(record.profile.title).toBe('Blooming, mine');
     expect(bundledRecord.visibility).toBe('visible');

@@ -13,7 +13,7 @@ Needs Node.js 22 or newer. The stack is TypeScript, Vite, Svelte and Vitest.
 | Install | `npm install` | the packages in `node_modules/` |
 | Test | `npm test` | runs the Vitest tests once |
 | Build | `npm run build` | the static skin in `dist/`, with `index.html` and `manifest.json` at its root |
-| Zip | `npm run zip` | builds, then writes `release/decaid-skin-<version>.zip` with `index.html` at the ZIP's root |
+| Zip | `npm run zip` | builds, then writes `release/pureflow-<version>.zip` with `index.html` at the ZIP's root |
 
 `npm run dev` starts the Vite dev server on port 24800, and `npm run check` type-checks the
 TypeScript and Svelte sources.
@@ -24,7 +24,7 @@ result of the last full run is in [docs/acceptance.md](docs/acceptance.md), and 
 installed in Decaid in [docs/install.md](docs/install.md).
 
 The skin's version, 0.2.0 (a beta), is set in two places that a test keeps equal:
-`package.json` and `public/manifest.json`. The ZIP is `release/decaid-skin-0.2.0.zip`.
+`package.json` and `public/manifest.json`. The ZIP is `release/pureflow-0.2.0.zip`.
 
 ## Credits
 

@@ -229,7 +229,7 @@ export const TREE_FIELDS: Field[] = SETTINGS_TREE.flatMap((category) =>
 export const DEFAULT_CATEGORY = SETTINGS_TREE[0].id;
 
 /** Where the page opens: the category opened last (Streamline's `streamline.settings.location`). Not a setting, not backed up. */
-export const LOCATION_KEY = 'decaid-skin.settings-location';
+export const LOCATION_KEY = 'pureflow.settings-location';
 
 export function loadLocation(store: Pick<Storage, 'getItem'> = localStorage): string {
   try {

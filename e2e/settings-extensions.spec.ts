@@ -223,7 +223,7 @@ test('a failed firmware stream says why', async ({ page }) => {
 });
 
 test('a sensor is corrected from a capture and a measured value after a confirm, and restored', async ({ page }) => {
-  await page.addInitScript(() => localStorage.removeItem('decaid-skin.sensor-calibration-previous'));
+  await page.addInitScript(() => localStorage.removeItem('pureflow.sensor-calibration-previous'));
   await openCategory(page, 'calibration');
   await page.getByTestId('settings-sub-sensors').click();
   await expect(page.getByTestId('sensor-stored-temperature')).toHaveText('+0.00 °C');

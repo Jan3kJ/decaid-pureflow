@@ -109,7 +109,7 @@ describe('saveEdit', () => {
     const gateway = fakeGateway();
     const v1 = gateway.make(
       generateProfile(edited, { ...about, notes: `${serializeParams(edited)}\nfor the morning` }),
-      { metadata: { source: 'decaid-skin', aflow: '3.0' } },
+      { metadata: { source: 'pureflow', aflow: '3.0' } },
     );
     gateway.records.push(v1);
     // It opens with its values, read from the notes.

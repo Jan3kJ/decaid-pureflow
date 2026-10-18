@@ -104,7 +104,7 @@ describe('saveDefaults', () => {
     ]);
     expect(calls[0].body).toEqual({
       profile: defaultProfile(DEFAULT_PROFILES[0]),
-      metadata: { source: 'decaid-skin', ...paramsMetadata(DEFAULT_PROFILES[0].params) },
+      metadata: { source: 'pureflow', ...paramsMetadata(DEFAULT_PROFILES[0].params) },
     });
     expect((calls[0].body as { profile: Profile }).profile.notes).toBe('');
     expect(saved.map((item) => item.profile.title)).toEqual(['A-Flow / default-floral', 'A-Flow / default-light']);
@@ -113,7 +113,7 @@ describe('saveDefaults', () => {
 
 describe('sortProfiles', () => {
   it('puts the skin’s A-Flow 3.0 profiles first in their order, then other A-Flow, then the rest', () => {
-    const ours = { metadata: { source: 'decaid-skin', aflow: '3.0' } };
+    const ours = { metadata: { source: 'pureflow', aflow: '3.0' } };
     const list = [
       record(other),
       record({ ...other, title: 'A-Flow / default-like-dflow' }),
@@ -123,6 +123,9 @@ describe('sortProfiles', () => {
     ];
     expect(isAFlow3(list[2])).toBe(true);
     expect(isAFlow3(list[1])).toBe(false);
+    // the skin's former name (founder, 2026-10-18)
+    expect(isAFlow3(record(other, { metadata: { source: 'decaid-skin', aflow: '3.0' } }))).toBe(true);
+    expect(isAFlow3(record(other, { metadata: { source: 'other', aflow: '3.0' } }))).toBe(false);
     expect(sortProfiles(list).map((item) => item.profile.title)).toEqual([
       'A-Flow / default-floral',
       'A-Flow / default-dark',
@@ -151,10 +154,10 @@ describe('loadProfile', () => {
   it('loads a record with the values in its metadata, one of version 1 with them in its notes, and a shot copy', async () => {
     const params = DEFAULT_PROFILES[1].params;
     const { client: api, calls } = client(() => ({}));
-    await loadRecord(api, record(light, { metadata: { source: 'decaid-skin', ...paramsMetadata(params) } }));
+    await loadRecord(api, record(light, { metadata: { source: 'pureflow', ...paramsMetadata(params) } }));
     const v1 = { ...light, notes: `${serializeParams(params)}
 mine` };
-    await loadRecord(api, record(v1, { metadata: { source: 'decaid-skin', aflow: '3.0' } }));
+    await loadRecord(api, record(v1, { metadata: { source: 'pureflow', aflow: '3.0' } }));
     await loadProfile(api, (calls[0].body as { profile: Profile }).profile);
     expect(calls.map((call) => call.body)).toEqual([
       { profile: workflowProfile(light, params), context: { targetYield: 48, targetDoseWeight: 16 } },

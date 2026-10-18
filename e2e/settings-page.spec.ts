@@ -109,7 +109,7 @@ test("each category opens in Streamline's order and the page fits 1280 x 800 wit
   // The place is kept over a reload: the last category, not a setting.
   await page.reload();
   await expect(page.getByTestId('settings-content')).toHaveAttribute('data-category', 'skin');
-  expect(await page.evaluate(() => localStorage.getItem('decaid-skin.settings-location'))).toBe('skin');
+  expect(await page.evaluate(() => localStorage.getItem('pureflow.settings-location'))).toBe('skin');
 });
 
 test('a typed number is written with its key alone, and the page shows what the next read returns', async ({ page }) => {
@@ -270,9 +270,9 @@ test("the skin's own settings are in Skin, saved and backed up as before", async
   await page.getByTestId('settings-sub-skin-steam').click();
   await type(page, 'setting-mug-small', '160');
   await expect(page.getByTestId('setting-mug-small').locator('b')).toHaveText('160g');
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('decaid-skin.settings')!).steam.mugSmall)).toBe(160);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('pureflow.settings')!).steam.mugSmall)).toBe(160);
   await expect
-    .poll(() => (gateway.store['decaid-skin/settings-backup'] as any)?.settings?.steam?.mugSmall, { timeout: 10_000 })
+    .poll(() => (gateway.store['pureflow/settings-backup'] as any)?.settings?.steam?.mugSmall, { timeout: 10_000 })
     .toBe(160);
   // Nothing of Decaid's was written for it.
   expect(gateway.requests.filter((request) => request.method !== 'GET' && !request.path.startsWith('/api/v1/store'))).toEqual([]);

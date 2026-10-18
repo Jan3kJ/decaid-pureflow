@@ -16,7 +16,7 @@ test.beforeEach(async ({ page }) => {
   gateway = (await mockGateway(page)).withDefaults('light');
   // The skin opens on the editor the first time; a reload opens the screen it was on.
   await page.addInitScript(() => {
-    if (!localStorage.getItem('decaid-skin.screen')) localStorage.setItem('decaid-skin.screen', 'editor');
+    if (!localStorage.getItem('pureflow.screen')) localStorage.setItem('pureflow.screen', 'editor');
   });
 });
 
@@ -93,9 +93,9 @@ test('a chosen profile that no longer exists is left out of the row and shown as
   page,
 }) => {
   await page.addInitScript(() => {
-    if (!localStorage.getItem('decaid-skin.settings')) {
+    if (!localStorage.getItem('pureflow.settings')) {
       localStorage.setItem(
-        'decaid-skin.settings',
+        'pureflow.settings',
         JSON.stringify({ startProfiles: ['A-Flow / gone', 'A-Flow / default-dark', null, null, null] }),
       );
     }

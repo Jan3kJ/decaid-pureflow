@@ -77,7 +77,7 @@ async function type(page: Page, field: string, keys: string) {
 /** The editor on default-light: it opens on the workflow's profile, so that is put there first. */
 async function openEditor(page: Page) {
   await api('PUT', '/api/v1/workflow', { profile: workflowProfile(buildProfile(light, LIGHT, false), light) });
-  await page.addInitScript(() => localStorage.setItem('decaid-skin.screen', 'editor'));
+  await page.addInitScript(() => localStorage.setItem('pureflow.screen', 'editor'));
   await page.goto('/');
   await expect(page.getByTestId('graph')).toBeVisible();
   await expect(page.getByTestId('nav-status')).toBeVisible();
@@ -223,7 +223,7 @@ test('detail mode: typed values are loaded; a saved profile re-opens with them a
   const saved = (await api('GET', '/api/v1/profiles')).find((record: any) => record.profile.title === about.title);
   expect(profilesBefore).not.toContain(saved.id);
   expect(saved.parentId).toBeNull();
-  expect(saved.metadata).toEqual({ source: 'decaid-skin', ...paramsMetadata(wanted) });
+  expect(saved.metadata).toEqual({ source: 'pureflow', ...paramsMetadata(wanted) });
   expect(recordParams(saved)).toEqual(wanted);
   const expected = buildProfile(wanted, about, false);
   expect(held(saved.profile, expected)).toEqual(canonical(expected));

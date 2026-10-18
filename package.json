@@ -1,5 +1,5 @@
 {
-  "name": "decaid-skin",
+  "name": "decaid-pureflow",
   "version": "0.2.0",
   "description": "A minimal landscape, dark skin for the DE1: espresso with a live graph, an editor for A-Flow 3.0 profiles, a steam timer set from the milk's weight, and a shot history.",
   "private": true,
@@ -8,7 +8,7 @@
   "author": "Janek",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Jan3kJ/decaid-skin.git"
+    "url": "git+https://github.com/Jan3kJ/decaid-pureflow.git"
   },
   "scripts": {
     "dev": "vite",

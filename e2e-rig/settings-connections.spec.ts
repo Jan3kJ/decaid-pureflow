@@ -9,7 +9,7 @@ import { expect, test, type Page } from '@playwright/test';
 // gateway: e2e/settings-connections.spec.ts.
 
 const GATEWAY = 'http://localhost:8080';
-const BACKUP = '/api/v1/store/decaid-skin/settings-backup';
+const BACKUP = '/api/v1/store/pureflow/settings-backup';
 
 async function api(method: string, path: string, body?: unknown): Promise<any> {
   const response = await fetch(GATEWAY + path, {

@@ -15,7 +15,7 @@ test.beforeEach(async ({ page }) => {
   // The five defaults are in Decaid; the tests start from default-light, the loaded one. The
   // first default, floral, has the 2nd fill on.
   gateway = (await mockGateway(page)).withDefaults('light');
-  await page.addInitScript(() => localStorage.setItem('decaid-skin.screen', 'editor'));
+  await page.addInitScript(() => localStorage.setItem('pureflow.screen', 'editor'));
   await page.goto('/');
   await expect(page.getByTestId('graph')).toBeVisible();
   await expect(page.getByTestId('editor-profile')).toHaveText('light');
@@ -694,7 +694,7 @@ test('the profile steps are closed whenever the editor opens, and the panel is n
   await expect(page.getByTestId('toggle-steps')).toHaveAttribute('aria-pressed', 'false');
   await expect(page.getByTestId('steps')).toHaveCount(0);
   // The button is not the setting: it stays on.
-  expect(await page.evaluate(() => localStorage.getItem('decaid-skin.settings'))).toBeNull();
+  expect(await page.evaluate(() => localStorage.getItem('pureflow.settings'))).toBeNull();
 });
 
 test('with the setting off, the profile steps button is not shown', async ({ page }) => {
@@ -755,8 +755,8 @@ test('the flows of the editor follow the maximum flow of the settings', async ({
   await page.getByTestId('numpad-cancel').click();
 
   await page.evaluate(() => {
-    const settings = JSON.parse(localStorage.getItem('decaid-skin.settings') ?? '{}');
-    localStorage.setItem('decaid-skin.settings', JSON.stringify({ ...settings, maxFlow: 12 }));
+    const settings = JSON.parse(localStorage.getItem('pureflow.settings') ?? '{}');
+    localStorage.setItem('pureflow.settings', JSON.stringify({ ...settings, maxFlow: 12 }));
   });
   await page.reload();
   await expect(page.getByTestId('graph')).toBeVisible();

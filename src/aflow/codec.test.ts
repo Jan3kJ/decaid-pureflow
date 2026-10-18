@@ -140,7 +140,7 @@ describe('encodeParams and decodeParams (the record metadata)', () => {
   });
 
   it('reads a metadata object with other keys beside aflow and params', () => {
-    const metadata = { source: 'decaid-skin', ...encodeParams(medium), other: [1, 'x'] };
+    const metadata = { source: 'pureflow', ...encodeParams(medium), other: [1, 'x'] };
     expect(decodeParams(metadata)).toEqual({ ok: true, params: medium });
   });
 
@@ -149,7 +149,7 @@ describe('encodeParams and decodeParams (the record metadata)', () => {
     expect(decodeParams(undefined).ok).toBe(false);
     expect(decodeParams([]).ok).toBe(false);
     expect(decodeParams('{"aflow":"3.0"}').ok).toBe(false);
-    expect(decodeParams({ source: 'decaid-skin', aflow: '3.0' })).toEqual({ ok: false, error: 'no params' });
+    expect(decodeParams({ source: 'pureflow', aflow: '3.0' })).toEqual({ ok: false, error: 'no params' });
     expect(decodeParams({ source: 'bundled', filename: 'a.json' }).ok).toBe(false);
   });
 });

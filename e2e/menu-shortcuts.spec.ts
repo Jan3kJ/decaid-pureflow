@@ -66,10 +66,10 @@ test('steam on brings back the temperature the heater had, and it is in the sett
   await openMenu(page);
   await page.getByTestId('steam-heater').click();
   await expect.poll(() => gateway.shotSettings.targetSteamTemp).toBe(0);
-  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('decaid-skin.settings') ?? '{}'));
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('pureflow.settings') ?? '{}'));
   expect(stored.steam.heaterTemperature).toBe(158);
   await expect
-    .poll(() => (gateway.store['decaid-skin/settings-backup'] as any)?.settings?.steam?.heaterTemperature, { timeout: 10_000 })
+    .poll(() => (gateway.store['pureflow/settings-backup'] as any)?.settings?.steam?.heaterTemperature, { timeout: 10_000 })
     .toBe(158);
 
   // After a reload the remembered temperature is still the one switched on with.

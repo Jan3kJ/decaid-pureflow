@@ -377,7 +377,7 @@ export class MockGateway {
   withDefaults(loaded?: string): this {
     for (const entry of DEFAULT_PROFILES) {
       this.profiles.push(
-        record(`profile:${entry.id}`, defaultProfile(entry), { source: 'decaid-skin', ...paramsMetadata(entry.params) }),
+        record(`profile:${entry.id}`, defaultProfile(entry), { source: 'pureflow', ...paramsMetadata(entry.params) }),
       );
     }
     const entry = DEFAULT_PROFILES.find((candidate) => candidate.id === `default-${loaded}`);

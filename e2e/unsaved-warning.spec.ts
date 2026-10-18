@@ -26,7 +26,7 @@ const dialog = (page: Page) => page.getByTestId('unsaved-dialog');
 /** The editor on 'light', one value changed, left by the profile's name: the picker, with the change on the machine. */
 async function leaveWithChange(page: Page): Promise<MockGateway> {
   const gateway = (await mockGateway(page)).withDefaults('light');
-  await page.addInitScript(() => localStorage.setItem('decaid-skin.screen', 'editor'));
+  await page.addInitScript(() => localStorage.setItem('pureflow.screen', 'editor'));
   await page.goto('/');
   await expect(page.getByTestId('editor-profile')).toHaveText('light');
   await page.getByTestId('toggle-flow').click();
@@ -97,7 +97,7 @@ test('Save as… opens the editor\'s save as on the values on the machine', asyn
 
 test('without unsaved edits a tap loads at once', async ({ page }) => {
   const gateway = (await mockGateway(page)).withDefaults('light');
-  await page.addInitScript(() => localStorage.setItem('decaid-skin.screen', 'profiles'));
+  await page.addInitScript(() => localStorage.setItem('pureflow.screen', 'profiles'));
   await page.goto('/');
   await pickFloral(page);
 
@@ -119,7 +119,7 @@ async function withUnsaved(page: Page, screen: string): Promise<MockGateway> {
     workflowProfile(defaultProfile(DEFAULT_PROFILES[0]), DEFAULT_PROFILES[0].params),
     null,
   );
-  await page.addInitScript((value) => localStorage.setItem('decaid-skin.screen', value), screen);
+  await page.addInitScript((value) => localStorage.setItem('pureflow.screen', value), screen);
   await page.goto('/');
   return gateway;
 }

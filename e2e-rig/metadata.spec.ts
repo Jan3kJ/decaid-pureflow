@@ -32,7 +32,7 @@ const PARAMS = {
   flowUp: false,
 };
 const METADATA = {
-  source: 'decaid-skin',
+  source: 'pureflow',
   aflow: '3.0',
   params: PARAMS,
   detail: true,
@@ -73,7 +73,7 @@ const BASE_TEMPERATURE = 80 + (Date.now() % 1000) / 100;
 
 /** A profile with steps no other record has: the id is a hash of the steps (research.md 11.1). */
 function testProfile(shift = 0) {
-  const profile = buildProfile(light, { title: 'M1 metadata check', author: 'decaid-skin rig' }, false);
+  const profile = buildProfile(light, { title: 'M1 metadata check', author: 'pureflow rig' }, false);
   const temperature = BASE_TEMPERATURE + shift;
   return { ...profile, steps: profile.steps.map((step) => ({ ...step, temperature })) };
 }
@@ -133,7 +133,7 @@ test('metadata holds through GET, PUT and the lineage', async () => {
   expect((await call('GET', record(created.id))).status).toBe(404);
 
   // Supplied metadata replaces the stored one; it is not merged.
-  const partial = { source: 'decaid-skin', aflow: '3.0', params: { dose: 20 } };
+  const partial = { source: 'pureflow', aflow: '3.0', params: { dose: 20 } };
   expect((await api('PUT', record(moved.id), { metadata: partial })).metadata).toEqual(partial);
   expect((await api('PUT', record(moved.id), { metadata: METADATA })).metadata).toEqual(METADATA);
 
@@ -211,7 +211,7 @@ async function type(page: Page, field: string, keys: string) {
 
 /** The skin on its editor, which opens on the workflow's profile. */
 async function openEditor(page: Page) {
-  await page.addInitScript(() => localStorage.setItem('decaid-skin.screen', 'editor'));
+  await page.addInitScript(() => localStorage.setItem('pureflow.screen', 'editor'));
   await page.goto('/');
   await expect(page.getByTestId('graph')).toBeVisible();
   await expect(page.getByTestId('nav-status')).toBeVisible();
@@ -272,7 +272,7 @@ test('the skin saves the A-Flow values in metadata, none in notes; they re-open 
   // The record: the values in its metadata, its notes empty.
   const saved = (await api('GET', '/api/v1/profiles')).find((stored: any) => stored.profile.title === title);
   expect(profilesBefore).not.toContain(saved.id);
-  expect(saved.metadata).toEqual({ source: 'decaid-skin', ...paramsMetadata(wanted) });
+  expect(saved.metadata).toEqual({ source: 'pureflow', ...paramsMetadata(wanted) });
   expect(saved.profile.notes ?? '').toBe('');
   // The workflow's copy carries them in its notes: the workflow has no metadata.
   expect(splitNotes((await api('GET', '/api/v1/workflow')).profile.notes).params).toEqual(wanted);
@@ -311,7 +311,7 @@ test('a profile with the A-Flow values in its notes opens right and is moved on 
   const params: AFlowParams = { ...light, pourPressure: 8.2, rampTime: 6, dose: 17 };
   // As version 1 of the skin stored it: the values in the notes, here beside a text of the user.
   const profile = { ...buildProfile(params, { title, author: 'Janek' }, false), notes: `${serializeParams(params)}\nrig note` };
-  const v1 = await api('POST', '/api/v1/profiles', { profile, metadata: { source: 'decaid-skin', aflow: '3.0' } });
+  const v1 = await api('POST', '/api/v1/profiles', { profile, metadata: { source: 'pureflow', aflow: '3.0' } });
   expect(profilesBefore).not.toContain(v1.id);
   // Loaded as another skin loads it: the record's profile as it is.
   await api('PUT', '/api/v1/workflow', { profile: v1.profile, context: { targetYield: params.stopWeight } });
@@ -329,7 +329,7 @@ test('a profile with the A-Flow values in its notes opens right and is moved on 
   await expect(page.getByTestId('editor-notice')).toHaveText(`Saved “${name}” and loaded.`);
   const moved = await api('GET', record(v1.id));
   expect(moved.profile.notes).toBe('rig note');
-  expect(moved.metadata).toEqual({ source: 'decaid-skin', aflow: '3.0', ...paramsMetadata({ ...params, dose: 19 }) });
+  expect(moved.metadata).toEqual({ source: 'pureflow', aflow: '3.0', ...paramsMetadata({ ...params, dose: 19 }) });
   expect(moved.visibility).toBe('visible');
 
   // Re-opened after a reload, from the picker: the values as saved.

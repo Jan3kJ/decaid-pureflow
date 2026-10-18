@@ -1,4 +1,4 @@
-# decaid-skin: product spec
+# pureflow: product spec
 
 Status: draft 2026-10-11
 
@@ -51,7 +51,7 @@ version 2.
 | Scale | connect state, tare (a 400 `block_tare_during_shot` is a notice, not an error). The page is removed in 3.7 (founder, 2026-10-16) |
 | Profiles | list, select, load to the machine (`PUT /api/v1/workflow`) (founder, 2026-10-13) |
 | Shot history | **an overlay, not a page:** a tab on the left edge of the screen (or a swipe from left to right) opens it; it closes when an item is selected or on a tap outside it. It holds **a list of previous shots; tapping one loads its profile, beans and grinder setting and shows its graph**: see 3.5 |
-| Settings | a settings page with categories. **Steam** is one (3.4), and **Profile** holds the first-step workaround (3.2) and the editor's row of profiles to start from, up to five (founder, 2026-10-13); the others hold the few settings the founder needs. Everything else stays in Decaid's own settings. The settings stay in the tablet's localStorage; every change is backed up to Decaid's KV store (`decaid-skin/settings-backup`, with its time and the skin's version), a start without settings takes them from the backup and says so, and the page shows the backup's time with 'Restore from backup' (founder, 2026-10-14). The page names the skin's version, from its manifest, small in its top right corner (founder, 2026-10-14) |
+| Settings | a settings page with categories. **Steam** is one (3.4), and **Profile** holds the first-step workaround (3.2) and the editor's row of profiles to start from, up to five (founder, 2026-10-13); the others hold the few settings the founder needs. Everything else stays in Decaid's own settings. The settings stay in the tablet's localStorage; every change is backed up to Decaid's KV store (`pureflow/settings-backup`, with its time and the skin's version), a start without settings takes them from the backup and says so, and the page shows the backup's time with 'Restore from backup' (founder, 2026-10-14). The page names the skin's version, from its manifest, small in its top right corner (founder, 2026-10-14) |
 | Sleep / wake | sleep button, wake on touch; brightness only where `platformSupported.brightness` |
 
 ### 3.2 The A-Flow profile editor (A-Flow 3.0)
@@ -236,8 +236,10 @@ backoff (1, 2, 4, 8, 16 s, the last one shortened to end at 30 s, `REFUSED_RETRY
 closed the connection' with **reconnect**, which starts another 30 s.
 
 Built in M2 (2026-10-16), where 3.6 leaves the detail open: a stored record's `metadata` is
-`{ source: 'decaid-skin', aflow: '3.0', params }`, `params` the 26 values as the codec writes
+`{ source: 'pureflow', aflow: '3.0', params }`, `params` the 26 values as the codec writes
 them (the 2nd fill's too while it is off), and its `notes` hold only what a user wrote there.
+A record stored before the rename has `source: 'decaid-skin'`, the skin's former name, and
+still counts as the skin's own (founder, 2026-10-18; `SKIN_SOURCES` in `src/shell/profiles.ts`).
 Reading takes `metadata` first, then a line of the `notes` that is the codec's string, and the
 steps must still be the generator's for the values. A profile of version 1 is moved on its next
 save: the values go to `metadata`, the other lines of its `notes` stay. Decaid's workflow holds
@@ -500,7 +502,7 @@ Windows, Linux and macOS. What differs per platform is **Decaid itself**:
   2026-10-13), fix rounds 0.1.x, 0.1.1 on 2026-10-15; a hand-over raises the minor version
   (founder, 2026-10-16), so the hand-over of version 1.1 and the review of 2026-10-16 is
   0.2.0 (H1, 2026-10-18): `npm run zip` writes
-  `release/decaid-skin-0.2.0.zip`; the steps and the
+  `release/pureflow-<version>.zip`; the steps and the
   founder's checks are in
   [install.md](install.md), the result of the automated items in
   [acceptance.md](acceptance.md).
@@ -779,8 +781,15 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
 - Where Decaid keeps its database (`streamline_bridge.sqlite`) on Android was not seen; the
   app's private folder is likely, out of reach of a file manager. The founder's view is the
   API in a browser on the tablet or `GET /api/v1/data/export`. (owner)
-- What are the skin and the repository called? `decaid-skin` is provisional; decided before
-  the first public release. (owner)
+- What are the skin and the repository called? The skin is `pureflow` (a minimal design
+  and A-Flow, the A for adaptive), its manifest id and name `pureflow`; the repository is
+  `decaid-pureflow` (the pattern `decaid-<name>`), `github.com/Jan3kJ/decaid-pureflow`
+  (founder, 2026-10-18). Until then both were `decaid-skin`. The new id makes Decaid treat it
+  as a new skin, so the old one is deleted by hand once ([install.md](install.md)). A start
+  moves the settings kept under the former name: the localStorage keys `decaid-skin.*` to
+  `pureflow.*` (`src/former-keys.ts`), and without a backup in the namespace `pureflow` the
+  one in `decaid-skin` is read and copied (`src/settings-backup.ts`); profiles stored with
+  `source: 'decaid-skin'` count as the skin's own. (decided)
 - Steam test (acceptance 4), as built in D8a; the founder agreed to it on 2026-10-13
   (request 168). `npm run e2e` runs the steam page against a mocked gateway: Playwright
   answers `/ws/v1/scale/snapshot` with fake weight frames for a small, a medium and a large
@@ -856,11 +865,12 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
   - The switch on the settings page is the one place to set 'profile steps'; the editor's
     button only opens and closes the panel, which is not stored (founder, 2026-10-13).
     (answered)
-  - Settings stay in `localStorage` (`decaid-skin.settings`) (founder, 2026-10-14), backed
-    up to the KV store (`decaid-skin/settings-backup`, `src/settings-backup.ts`): every save
+  - Settings stay in `localStorage` (`pureflow.settings`) (founder, 2026-10-14), backed
+    up to the KV store (`pureflow/settings-backup`, `src/settings-backup.ts`): every save
     writes it 1.5 s after the last change, a start without settings takes it back. The
-    screen the skin opens with is not a setting, has its own key (`decaid-skin.screen`) and
-    is not backed up. (answered)
+    screen the skin opens with is not a setting, has its own key (`pureflow.screen`) and
+    is not backed up. The keys of the former name are moved at the start (the naming
+    question above). (answered)
   - While the machine sleeps the skin is a dark screen, 'Asleep, touch to wake', over every
     page, whoever put the machine to sleep; a touch asks for `idle`. Where
     `platformSupported.brightness` is true the brightness goes to 5 (`SLEEP_BRIGHTNESS` in

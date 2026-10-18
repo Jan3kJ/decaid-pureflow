@@ -43,7 +43,7 @@ async function type(page: Page, testid: string, value: string) {
 test('scale: there is no scale page and no menu entry; a tap on the weight tares (item 21)', async ({ page }) => {
   const gateway = await mockGateway(page);
   // A skin that showed the scale page before opens home.
-  await page.addInitScript(() => localStorage.setItem('decaid-skin.screen', 'scale'));
+  await page.addInitScript(() => localStorage.setItem('pureflow.screen', 'scale'));
   await page.goto('/');
   await expect(page.getByTestId('screen-home')).toBeVisible();
   await expect(page.getByTestId('screen-scale')).toHaveCount(0);
@@ -204,11 +204,11 @@ test('settings: the defaults, typed values and both switches survive a reload', 
     await page.evaluate(() => ({
       keys: Object.keys(localStorage).sort(),
       session: sessionStorage.length,
-      settings: JSON.parse(localStorage.getItem('decaid-skin.settings')!),
+      settings: JSON.parse(localStorage.getItem('pureflow.settings')!),
     })),
   ).toEqual({
     // The page's last category is not a setting (research.md 20.7).
-    keys: ['decaid-skin.screen', 'decaid-skin.settings', 'decaid-skin.settings-location'],
+    keys: ['pureflow.screen', 'pureflow.settings', 'pureflow.settings-location'],
     session: 0,
     settings: {
       showProfileSteps: false,
@@ -279,7 +279,7 @@ test('settings: the defaults, typed values and both switches survive a reload', 
 test('settings: stored data that cannot be read gives the defaults, and the page still saves', async ({ page }) => {
   await mockGateway(page);
   await page.addInitScript(() => {
-    if (!sessionStorage.getItem('seeded')) localStorage.setItem('decaid-skin.settings', '{"steam":{"mugSmall":"heavy"');
+    if (!sessionStorage.getItem('seeded')) localStorage.setItem('pureflow.settings', '{"steam":{"mugSmall":"heavy"');
     sessionStorage.setItem('seeded', '1');
   });
   await page.goto('/');

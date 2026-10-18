@@ -49,22 +49,22 @@ describe('readParams', () => {
   });
 
   it('reads the metadata first, then the notes', () => {
-    const metadata = { source: 'decaid-skin', ...paramsMetadata(edited) };
+    const metadata = { source: 'pureflow', ...paramsMetadata(edited) };
     expect(readParams(storedOf(edited), metadata)).toEqual(edited);
     expect(readRecord({ profile: storedOf(edited), metadata })).toEqual(edited);
     // Notes of version 1, beside the metadata a record of version 1 has.
-    expect(readParams(profileOf(edited), { source: 'decaid-skin', aflow: '3.0' })).toEqual(edited);
+    expect(readParams(profileOf(edited), { source: 'pureflow', aflow: '3.0' })).toEqual(edited);
     expect(readParams(profileOf(edited), null)).toEqual(edited);
     // Both: the metadata wins.
     const dose = { ...edited, dose: 19 };
     expect(readParams(profileOf(edited), paramsMetadata(dose))).toEqual(dose);
     // Neither.
-    expect(readParams(storedOf(edited), { source: 'decaid-skin', aflow: '3.0' })).toBeNull();
+    expect(readParams(storedOf(edited), { source: 'pureflow', aflow: '3.0' })).toBeNull();
     expect(readParams(storedOf(edited))).toBeNull();
   });
 
   it("keeps the 2nd fill's values while it is off, through JSON as the gateway answers", () => {
-    const metadata = JSON.parse(JSON.stringify({ source: 'decaid-skin', ...paramsMetadata(off) }));
+    const metadata = JSON.parse(JSON.stringify({ source: 'pureflow', ...paramsMetadata(off) }));
     expect(readParams(storedOf(off), metadata)).toEqual(off);
   });
 
@@ -153,19 +153,19 @@ describe('writeParams', () => {
     const gateway = fakeGateway();
     const old = gateway.make(
       { ...profileOf(edited), notes: `${serializeParams(edited)}\nmine` },
-      { metadata: { source: 'decaid-skin', aflow: '3.0' } },
+      { metadata: { source: 'pureflow', aflow: '3.0' } },
     );
     gateway.records.push(old);
     // Only the dose differs: the steps and the target weight, and so the id, are the same.
     const params = { ...edited, dose: 18.5 };
 
     const record = await writeParams(gateway.client, { ...storedOf(params), notes: old.profile.notes }, params, {
-      metadata: { source: 'decaid-skin' },
+      metadata: { source: 'pureflow' },
     });
 
     expect(gateway.sent()).toEqual(['POST /api/v1/profiles', `PUT /api/v1/profiles/${old.id}`]);
     expect(gateway.calls[1].body.profile.notes).toBe('mine');
-    expect(gateway.calls[1].body.metadata).toEqual({ source: 'decaid-skin', ...paramsMetadata(params) });
+    expect(gateway.calls[1].body.metadata).toEqual({ source: 'pureflow', ...paramsMetadata(params) });
     expect(record.id).toBe(old.id);
     expect(readRecord(record)).toEqual(params);
     expect(gateway.records).toHaveLength(1);

@@ -8,7 +8,7 @@ import { expect, test, type Page } from '@playwright/test';
 // them. Without a gateway: e2e/settings-page.spec.ts.
 
 const GATEWAY = 'http://localhost:8080';
-const BACKUP = '/api/v1/store/decaid-skin/settings-backup';
+const BACKUP = '/api/v1/store/pureflow/settings-backup';
 /** Streamline's keys the page moves with its values, where Streamline has them */
 const STREAMLINE_KEYS = ['last-steam-flow', 'last-flush-duration'];
 

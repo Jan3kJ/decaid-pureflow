@@ -15,7 +15,7 @@ export const SCREENS = [
 
 export type Screen = (typeof SCREENS)[number];
 
-export const SCREEN_KEY = 'decaid-skin.screen';
+export const SCREEN_KEY = 'pureflow.screen';
 
 type Store = Pick<Storage, 'getItem' | 'setItem'>;
 

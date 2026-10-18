@@ -270,11 +270,11 @@ describe('profiles', () => {
 
   it('sends the parent id and the metadata with a saved profile', async () => {
     const { client, calls } = clientWith({ status: 201, body: {} });
-    await client.saveProfile(PROFILE, { parentId: 'profile:0', metadata: { source: 'decaid-skin' } });
+    await client.saveProfile(PROFILE, { parentId: 'profile:0', metadata: { source: 'pureflow' } });
     expect(calls[0].body).toEqual({
       profile: PROFILE,
       parentId: 'profile:0',
-      metadata: { source: 'decaid-skin' },
+      metadata: { source: 'pureflow' },
     });
   });
 
@@ -402,16 +402,16 @@ describe('display', () => {
 });
 
 describe('KV store', () => {
-  it('lists the keys of the namespace decaid-skin', async () => {
+  it('lists the keys of the namespace pureflow', async () => {
     const { client, calls } = clientWith({ body: ['settings'] });
     expect(await client.kvKeys()).toEqual(['settings']);
-    expect(calls[0]).toMatchObject({ method: 'GET', url: 'http://localhost:8080/api/v1/store/decaid-skin' });
+    expect(calls[0]).toMatchObject({ method: 'GET', url: 'http://localhost:8080/api/v1/store/pureflow' });
   });
 
   it('writes a value with POST; the 204 has no body', async () => {
     const { client, calls } = clientWith({ status: 204 });
     await expect(client.kvSet('steam', { mugs: [200, 300, 400] })).resolves.toBeUndefined();
-    expect(calls[0]).toMatchObject({ method: 'POST', url: 'http://localhost:8080/api/v1/store/decaid-skin/steam' });
+    expect(calls[0]).toMatchObject({ method: 'POST', url: 'http://localhost:8080/api/v1/store/pureflow/steam' });
     expect(calls[0].body).toEqual({ mugs: [200, 300, 400] });
   });
 
@@ -437,7 +437,7 @@ describe('KV store', () => {
     const { client, calls } = clientWith({ body: { deleted: true } }, { status: 404, body: 'Not found' });
     await client.kvDelete('steam');
     await expect(client.kvDelete('steam')).resolves.toBeUndefined();
-    expect(calls[0]).toMatchObject({ method: 'DELETE', url: 'http://localhost:8080/api/v1/store/decaid-skin/steam' });
+    expect(calls[0]).toMatchObject({ method: 'DELETE', url: 'http://localhost:8080/api/v1/store/pureflow/steam' });
   });
 });
 

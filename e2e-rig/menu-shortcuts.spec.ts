@@ -8,7 +8,7 @@ import { expect, test } from '@playwright/test';
 // mocked gateway: e2e/menu-shortcuts.spec.ts.
 
 const GATEWAY = 'http://localhost:8080';
-const BACKUP = '/api/v1/store/decaid-skin/settings-backup';
+const BACKUP = '/api/v1/store/pureflow/settings-backup';
 
 async function api(method: string, path: string, body?: unknown): Promise<any> {
   const response = await fetch(GATEWAY + path, {

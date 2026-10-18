@@ -283,7 +283,7 @@ test('a shot started at the machine: the espresso screen opens by itself with a 
 
 test('the espresso screen opens when the skin loads in the middle of a shot', async ({ page }) => {
   const gateway = await mockGateway(page);
-  await page.addInitScript(() => localStorage.setItem('decaid-skin.screen', 'editor'));
+  await page.addInitScript(() => localStorage.setItem('pureflow.screen', 'editor'));
   await page.goto('/');
   await expect(page.getByTestId('screen-editor')).toBeVisible();
 
@@ -319,7 +319,7 @@ test('the picker lists the profiles of the gateway, offers the A-Flow 3.0 defaul
     'A-Flow / default-46mm',
   ]);
   // The values go into the metadata, none into the notes (spec 3.6).
-  expect(posts[0].body.metadata).toEqual({ source: 'decaid-skin', ...paramsMetadata(DEFAULT_PROFILES[0].params) });
+  expect(posts[0].body.metadata).toEqual({ source: 'pureflow', ...paramsMetadata(DEFAULT_PROFILES[0].params) });
   expect(posts[0].body.profile.notes).toBe('');
   await expect(items).toHaveCount(10);
   await expect(items.first()).toContainText('A-Flow / default-floral');
@@ -371,7 +371,7 @@ test('every screen is one tap from home and back, and the screen survives a relo
   await page.getByTestId('open-editor').click();
   await expect(page.getByTestId('graph')).toBeVisible();
   // localStorage, not sessionStorage: the WebView unloads in the background (spec 4.1).
-  expect(await page.evaluate(() => [localStorage.getItem('decaid-skin.screen'), sessionStorage.length])).toEqual([
+  expect(await page.evaluate(() => [localStorage.getItem('pureflow.screen'), sessionStorage.length])).toEqual([
     'editor',
     0,
   ]);

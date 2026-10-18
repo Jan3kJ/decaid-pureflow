@@ -6,7 +6,7 @@ import { GATEWAY, mockGateway, type MockGateway } from './mock-gateway';
 // after a short pause, a start without settings takes it back, and the settings page restores
 // it on request. The same against the running gateway: e2e-rig/settings-backup.spec.ts.
 
-const KEY = 'decaid-skin/settings-backup';
+const KEY = 'pureflow/settings-backup';
 /** the skin's version, which the backup names */
 const VERSION: string = JSON.parse(readFileSync('public/manifest.json', 'utf8')).version;
 const errors: string[] = [];
@@ -61,7 +61,7 @@ test('a change is backed up; a start without settings takes them back and says s
   await expect(workaround(page)).toHaveAttribute('aria-checked', 'true');
   await page.getByTestId('settings-restored-ok').click();
   await expect(page.getByTestId('settings-restored')).toHaveCount(0);
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('decaid-skin.settings')!).firstStepWorkaround)).toBe(true);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('pureflow.settings')!).firstStepWorkaround)).toBe(true);
 
   // Said once: the next start has settings of its own.
   await page.reload();
@@ -111,7 +111,7 @@ test('a failed write is shown on the settings page and the setting is saved all 
   await workaround(page).click();
   await expect(page.getByTestId('backup-error')).toContainText('The backup in Decaid was not written');
   await expect(page.getByTestId('backup-error')).toHaveCount(1);
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('decaid-skin.settings')!).firstStepWorkaround)).toBe(true);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('pureflow.settings')!).firstStepWorkaround)).toBe(true);
   expect(backup()).toBeUndefined();
 
   // The next write that works clears it.

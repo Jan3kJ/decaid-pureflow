@@ -11,7 +11,7 @@ import { expect, test, type Page } from '@playwright/test';
 const GATEWAY = 'http://localhost:8080';
 const PROFILE = 'Rao Allongé';
 const SHOT_GRAMS = 40;
-const BACKUP = '/api/v1/store/decaid-skin/settings-backup';
+const BACKUP = '/api/v1/store/pureflow/settings-backup';
 
 async function api(method: string, path: string, body?: unknown): Promise<any> {
   const response = await fetch(GATEWAY + path, {

@@ -111,7 +111,7 @@ export const DEFAULT_SETTINGS: Settings = {
   hotWater: DEFAULT_HOT_WATER_SETTINGS,
 };
 
-export const SETTINGS_KEY = 'decaid-skin.settings';
+export const SETTINGS_KEY = 'pureflow.settings';
 
 type Store = Pick<Storage, 'getItem' | 'setItem'>;
 

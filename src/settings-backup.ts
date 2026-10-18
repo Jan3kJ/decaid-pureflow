@@ -3,9 +3,10 @@
 // port or a cleared app (research.md 9.1 and 9.2). One key in the skin's own namespace; every
 // save writes it after a short pause, and a start without settings reads it back. No UI: the
 // gateway and the clock are parameters.
+import { FORMER_NAME } from './former-name';
 import { readSettings, type Settings } from './settings';
 
-/** The key in the skin's namespace (`decaid-skin`, the client's default): `decaid-skin/settings-backup`. */
+/** The key in the skin's namespace (`pureflow`, the client's default): `pureflow/settings-backup`. */
 export const BACKUP_KEY = 'settings-backup';
 
 /** How long the settings must stay unchanged before the backup is written, in ms. */
@@ -116,8 +117,17 @@ export class SettingsBackup {
     }
   }
 
-  /** The stored backup; null when there is none or it is not one. Throws when the gateway does not answer. */
+  /**
+   * The stored backup; null when there is none or it is not one. Throws when the gateway does
+   * not answer. Without one, the backup kept under the skin's former name is read and copied
+   * to the new namespace as it is; a failed copy is tried again at the next start.
+   */
   async read(): Promise<ReadBackup | null> {
-    return readBackup(await this.gateway.kvGet(BACKUP_KEY));
+    const value = await this.gateway.kvGet(BACKUP_KEY);
+    if (value !== null) return readBackup(value);
+    const former = await this.gateway.kvGet(BACKUP_KEY, FORMER_NAME);
+    const backup = readBackup(former);
+    if (backup) await this.gateway.kvSet(BACKUP_KEY, former).catch(() => undefined);
+    return backup;
   }
 }

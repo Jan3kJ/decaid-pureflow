@@ -44,7 +44,7 @@ import type {
 export const DEFAULT_BASE_URL = 'http://localhost:8080';
 
 /** The KV namespace of the skin: its manifest id. */
-export const DEFAULT_KV_NAMESPACE = 'decaid-skin';
+export const DEFAULT_KV_NAMESPACE = 'pureflow';
 
 export const BLOCK_TARE_DURING_SHOT = 'block_tare_during_shot';
 

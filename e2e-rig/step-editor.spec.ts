@@ -94,7 +94,7 @@ test('a bundled profile opens in the step editor; its edited copy is stored with
   expect(source.isDefault).toBe(true);
   await api('PUT', '/api/v1/workflow', { profile: source.profile });
 
-  await page.addInitScript(() => localStorage.setItem('decaid-skin.screen', 'editor'));
+  await page.addInitScript(() => localStorage.setItem('pureflow.screen', 'editor'));
   await page.goto('/');
   await expect(page.getByTestId('step-cards')).toBeVisible();
   await expect(page.getByTestId('graph')).toHaveCount(0);
@@ -150,7 +150,7 @@ test('a bundled profile opens in the step editor; its edited copy is stored with
   expect(canonical(saved.profile.steps)).toEqual(canonical(expected.steps));
   expect(saved.profile.target_volume_count_start).toBe(expected.target_volume_count_start);
   // The parent's metadata (a bundled profile's `filename`), marked as the skin's.
-  expect(saved.metadata).toEqual({ ...source.metadata, source: 'decaid-skin' });
+  expect(saved.metadata).toEqual({ ...source.metadata, source: 'pureflow' });
   // Decaid's lineage holds both versions: the copy hidden, the edit visible.
   const lineage = await api('GET', `/api/v1/profiles/${encodeURIComponent(saved.id)}/lineage`);
   const versions = Object.fromEntries(lineage.map((record: any) => [record.id, record.visibility]));
@@ -174,7 +174,7 @@ test('the profile settings are saved with the steps and read back', async ({ pag
   expect(source, `the rig bundles “${SOURCE}”`).toBeTruthy();
   await api('PUT', '/api/v1/workflow', { profile: source.profile });
 
-  await page.addInitScript(() => localStorage.setItem('decaid-skin.screen', 'editor'));
+  await page.addInitScript(() => localStorage.setItem('pureflow.screen', 'editor'));
   await page.goto('/');
   await expect(page.getByTestId('step-cards')).toBeVisible();
   const preview = page.getByTestId('step-preview');
@@ -249,7 +249,7 @@ test('the SCRIPT tab: a cycled word and a typed number are stored', async ({ pag
   expect(source, `the rig bundles “${SOURCE}”`).toBeTruthy();
   await api('PUT', '/api/v1/workflow', { profile: source.profile });
 
-  await page.addInitScript(() => localStorage.setItem('decaid-skin.screen', 'editor'));
+  await page.addInitScript(() => localStorage.setItem('pureflow.screen', 'editor'));
   await page.goto('/');
   await expect(page.getByTestId('step-cards')).toBeVisible();
   await page.getByTestId('tab-script').click();

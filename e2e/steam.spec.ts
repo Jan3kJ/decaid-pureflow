@@ -189,7 +189,7 @@ test('the steam settings come from the settings store and survive a reload', asy
   await page.goto('/');
   await page.evaluate(() => {
     localStorage.setItem(
-      'decaid-skin.settings',
+      'pureflow.settings',
       JSON.stringify({ steam: { mugSmall: 100, referenceSeconds: 30, referenceMilk: 100, favourites: [10, 20, 40] } }),
     );
   });
@@ -313,7 +313,7 @@ test('the adjust amounts come from the settings, and the settings page changes t
   const gateway = await mockGateway(page);
   await page.goto('/');
   await page.evaluate(() => {
-    localStorage.setItem('decaid-skin.settings', JSON.stringify({ steam: { adjustments: [-3, 2, 10] } }));
+    localStorage.setItem('pureflow.settings', JSON.stringify({ steam: { adjustments: [-3, 2, 10] } }));
   });
   await page.reload();
   await page.getByTestId('open-steam').click();

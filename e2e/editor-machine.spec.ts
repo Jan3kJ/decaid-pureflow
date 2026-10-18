@@ -43,14 +43,14 @@ async function withMorning(page: Page, v1 = false): Promise<MockGateway> {
     isDefault: false,
     createdAt: '2026-10-13T04:00:00Z',
     updatedAt: '2026-10-13T04:00:00Z',
-    metadata: v1 ? { source: 'decaid-skin', aflow: '3.0' } : { source: 'decaid-skin', ...paramsMetadata(morning) },
+    metadata: v1 ? { source: 'pureflow', aflow: '3.0' } : { source: 'pureflow', ...paramsMetadata(morning) },
   });
   gateway.workflow.profile = workflowProfile(profile, morning);
   return gateway;
 }
 
 async function openEditor(page: Page) {
-  await page.addInitScript(() => localStorage.setItem('decaid-skin.screen', 'editor'));
+  await page.addInitScript(() => localStorage.setItem('pureflow.screen', 'editor'));
   await page.goto('/');
   await expect(page.getByTestId('graph')).toBeVisible();
 }
@@ -83,7 +83,7 @@ function loadedProfile(gateway: MockGateway, title: string, author: string, work
 
 test('a profile that is not A-Flow 3.0 opens in the step editor (spec 3.6)', async ({ page }) => {
   const gateway = await mockGateway(page);
-  await page.addInitScript(() => localStorage.setItem('decaid-skin.screen', 'editor'));
+  await page.addInitScript(() => localStorage.setItem('pureflow.screen', 'editor'));
   await page.goto('/');
 
   // The mock's workflow holds the plugin's default as Decaid bundles it: A-Flow by name only.
@@ -119,7 +119,7 @@ test('the editor opens on the current A-Flow 3.0 profile and saves an edit with 
   const posts = gateway.calls('POST', '/api/v1/profiles');
   expect(posts).toHaveLength(1);
   expect(posts[0].body.parentId).toBe('profile:morning');
-  expect(posts[0].body.metadata).toEqual({ source: 'decaid-skin', ...paramsMetadata({ ...morning, flowUp: false }) });
+  expect(posts[0].body.metadata).toEqual({ source: 'pureflow', ...paramsMetadata({ ...morning, flowUp: false }) });
   expect(posts[0].body.profile).toEqual(buildProfile({ ...morning, flowUp: false }, MORNING, false));
   expect(posts[0].body.profile.notes).toBe('');
   expect(gateway.calls('PUT', /\/profiles\/profile%3Amorning\/visibility$/).map((call) => call.body)).toEqual([
@@ -155,7 +155,7 @@ test('an edit of the dose alone changes the metadata of the same record', async 
   const puts = gateway.calls('PUT', /\/profiles\/profile%3Amorning$/);
   expect(puts).toHaveLength(1);
   expect(puts[0].body.profile).toEqual(buildProfile({ ...morning, dose: 18 }, MORNING, false));
-  expect(puts[0].body.metadata).toEqual({ source: 'decaid-skin', ...paramsMetadata({ ...morning, dose: 18 }) });
+  expect(puts[0].body.metadata).toEqual({ source: 'pureflow', ...paramsMetadata({ ...morning, dose: 18 }) });
   expect(gateway.calls('PUT', /\/visibility$/)).toHaveLength(0);
   await expect(page.getByTestId('chip-value-dose')).toHaveText('18 g');
   expect(gateway.profiles.filter((record) => record.profile.title === MORNING.title)).toHaveLength(1);
@@ -182,7 +182,7 @@ test('a profile with the values in its notes opens right and is moved on its nex
   const puts = gateway.calls('PUT', /\/profiles\/profile%3Amorning$/);
   expect(puts).toHaveLength(1);
   expect(puts[0].body.profile.notes).toBe('for the morning');
-  expect(puts[0].body.metadata).toEqual({ source: 'decaid-skin', ...paramsMetadata({ ...morning, dose: 18 }) });
+  expect(puts[0].body.metadata).toEqual({ source: 'pureflow', ...paramsMetadata({ ...morning, dose: 18 }) });
   const stored = gateway.profiles.find((record) => record.id === 'profile:morning')!;
   expect(stored.profile.notes).toBe('for the morning');
 
@@ -292,7 +292,7 @@ test('save as stores a new named profile, loads it, and it re-opens with the sam
   expect(posts).toHaveLength(1);
   expect(posts[0].body).toEqual({
     profile: buildProfile(wanted, { title: 'A-Flow / morning light', author: 'Janek' }, false),
-    metadata: { source: 'decaid-skin', ...paramsMetadata(wanted) },
+    metadata: { source: 'pureflow', ...paramsMetadata(wanted) },
   });
   await expect(pressed(page)).toHaveText('morning light');
   await expect(page.getByTestId('save')).toBeDisabled();
@@ -336,7 +336,7 @@ test('the first-step workaround is off by default and adds the Pre Fill step whe
 }) => {
   const gateway = (await mockGateway(page)).withDefaults('medium');
   await page.addInitScript(() =>
-    localStorage.setItem('decaid-skin.settings', JSON.stringify({ firstStepWorkaround: true })),
+    localStorage.setItem('pureflow.settings', JSON.stringify({ firstStepWorkaround: true })),
   );
   await openEditor(page);
   await page.getByTestId('toggle-steps').click();

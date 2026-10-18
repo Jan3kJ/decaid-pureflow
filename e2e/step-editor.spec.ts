@@ -144,7 +144,7 @@ test('a profile that is not A-Flow 3.0 opens in the step editor; edits saved giv
   const posts = gateway.calls('POST', '/api/v1/profiles');
   expect(posts).toHaveLength(1);
   expect(posts[0].body.parentId).toBe('profile:mine');
-  expect(posts[0].body.metadata).toEqual({ source: 'decaid-skin' });
+  expect(posts[0].body.metadata).toEqual({ source: 'pureflow' });
   expect(posts[0].body.profile).toEqual(expected);
   const stored = gateway.profiles.find((record) => record.parentId === 'profile:mine')!;
   expect(stored.profile.steps).toEqual(expected.steps);

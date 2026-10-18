@@ -164,7 +164,7 @@ test('the favourites come from the settings; without a last shot or a scale noth
   await expect(page.getByTestId('hot-water-tare')).toBeDisabled();
   // The ratios are a part of the settings object, so the KV backup carries them.
   await expect
-    .poll(() => (gateway.store['decaid-skin/settings-backup'] as any)?.settings?.hotWater?.ratios ?? null)
+    .poll(() => (gateway.store['pureflow/settings-backup'] as any)?.settings?.hotWater?.ratios ?? null)
     .toEqual([1.5, 2.5, 3]);
   expect(errors).toEqual([]);
 });

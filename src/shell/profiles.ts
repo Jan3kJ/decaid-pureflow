@@ -9,9 +9,13 @@ import {
 } from '../aflow';
 import type { DecaidClient, Profile, ProfileRecord, Workflow, WorkflowContextPatch } from '../api';
 import { paramsMetadata, readParams, sameSteps, workflowProfile } from '../editor/storage';
+import { FORMER_NAME } from '../former-name';
 
-/** `metadata.source` of a profile this skin stored. */
-export const SKIN_SOURCE = 'decaid-skin';
+/** `metadata.source` of a profile this skin stores. */
+export const SKIN_SOURCE = 'pureflow';
+
+/** `metadata.source` of the profiles this skin stored: the profiles of its former name count as its own (founder, 2026-10-18). */
+export const SKIN_SOURCES: readonly string[] = [SKIN_SOURCE, FORMER_NAME];
 
 /** A default as the v2 profile the generator writes for it; its parameters go into the metadata (`saveDefaults`). */
 export function defaultProfile(entry: DefaultProfile): Profile {
@@ -49,7 +53,7 @@ export async function saveDefaults(
 
 /** Whether this skin stored the profile as A-Flow 3.0. */
 export function isAFlow3(record: ProfileRecord): boolean {
-  return record.metadata?.source === SKIN_SOURCE && record.metadata?.aflow === AFLOW_VERSION;
+  return SKIN_SOURCES.includes(record.metadata?.source as string) && record.metadata?.aflow === AFLOW_VERSION;
 }
 
 /** The list as the picker shows it: the skin's A-Flow 3.0 profiles, then the other A-Flow ones, then the rest by title. */

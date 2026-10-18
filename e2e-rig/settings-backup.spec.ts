@@ -10,7 +10,7 @@ import { expect, test } from '@playwright/test';
 /** the skin's version, which the backup names */
 const VERSION: string = JSON.parse(readFileSync('public/manifest.json', 'utf8')).version;
 const GATEWAY = 'http://localhost:8080';
-const BACKUP = '/api/v1/store/decaid-skin/settings-backup';
+const BACKUP = '/api/v1/store/pureflow/settings-backup';
 
 async function api(method: string, path: string, body?: unknown): Promise<any> {
   const response = await fetch(GATEWAY + path, {
@@ -64,7 +64,7 @@ test('a changed setting is backed up in the KV store and comes back after localS
     await page.getByTestId('open-settings').click();
     await page.getByTestId('settings-category-skin').click();
     await expect(page.getByTestId('setting-show-graph-legend')).toHaveAttribute('aria-checked', 'false');
-    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('decaid-skin.settings')!).showGraphLegend)).toBe(false);
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('pureflow.settings')!).showGraphLegend)).toBe(false);
   } finally {
     if (before === null || before === undefined) await api('DELETE', BACKUP);
     else await api('POST', BACKUP, before);

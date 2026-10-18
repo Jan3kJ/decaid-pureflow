@@ -4,8 +4,8 @@ import pkg from '../package.json';
 import { PRODUCT_NAME } from './product';
 
 describe('manifest.json', () => {
-  it('has the id decaid-skin, one safe path component', () => {
-    expect(manifest.id).toBe('decaid-skin');
+  it('has the id pureflow (decided 2026-10-18), one safe path component', () => {
+    expect(manifest.id).toBe('pureflow');
     expect(manifest.id).toMatch(/^[A-Za-z0-9][A-Za-z0-9._-]*$/);
   });
 

@@ -110,7 +110,7 @@ export function readingText(sensor: Sensor, value: number | null): string {
  * Only this page's writes are known to it (Streamline keeps it in its IndexedDB); here it is in
  * `localStorage`, not a setting and not backed up, as the page's location.
  */
-export const PREVIOUS_KEY = 'decaid-skin.sensor-calibration-previous';
+export const PREVIOUS_KEY = 'pureflow.sensor-calibration-previous';
 
 export function loadPrevious(store: Pick<Storage, 'getItem'> = localStorage): Partial<Record<SensorTarget, number>> {
   try {
