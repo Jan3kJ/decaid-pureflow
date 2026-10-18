@@ -66,15 +66,19 @@ test("each category opens in Streamline's order and the page fits 1280 x 800 wit
     '4. Machine',
     '5. Maintenance',
     '6. Skin',
+    '8. Extensions',
     '9. Miscellaneous',
+    '10. Updates',
   ]);
   const sections: Record<string, string[]> = {
     quickadjustments: ['flowmultiplier', 'steam', 'hotwater', 'watertank', 'flush', 'machineadvancedsettings'],
     bluetooth: ['ble_machine', 'ble_scale'],
-    calibration: ['defaultloadsettings', 'refillkit', 'voltage', 'fan'],
+    calibration: ['defaultloadsettings', 'refillkit', 'voltage', 'fan', 'sensors'],
     machine: ['usbchargermode', 'machineinfo'],
     maintenance: ['machinecleaning', 'machinedescaling', 'transportmode'],
-    miscellaneous: ['reasettings', 'brightness', 'wakelock'],
+    extensions: ['extention2'],
+    miscellaneous: ['reasettings', 'brightness', 'wakelock', 'presence'],
+    updates: ['firmwareupdate', 'appupdate'],
   };
   await expect(shown(page, 'weight-flow-multiplier')).toHaveText('1.0');
   expect(await fitsWidth(page)).toEqual({ scrollsX: false, scrollsY: false, wide: 0 });

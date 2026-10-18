@@ -485,3 +485,74 @@ describe('errors', () => {
     expect((error as Error).message).toContain('fetch failed');
   });
 });
+
+describe('plugins, presence, calibration, firmware (S2c)', () => {
+  it('sends each request to its path, with the body Decaid takes', async () => {
+    const { client, calls } = clientWith();
+    await client.listPlugins();
+    await client.getPluginSettings('time-to-ready.reaplugin');
+    await client.updatePluginSettings('time-to-ready.reaplugin', { Stabilisation: null });
+    await client.setPluginEnabled('dye2.reaplugin', false);
+    await client.setPluginEnabled('dye2.reaplugin', true);
+    await client.checkPluginUpdates();
+    await client.approvePluginUpdate('dye2.reaplugin');
+    await client.getPresenceSettings();
+    await client.updatePresenceSettings({ sleepTimeoutMinutes: 31 });
+    await client.createWakeSchedule({ time: '06:00', daysOfWeek: [1], enabled: true, keepAwakeFor: null });
+    await client.updateWakeSchedule('a b', { enabled: false });
+    await client.deleteWakeSchedule('a b');
+    await client.getSensorCalibration('pressure');
+    await client.correctSensorCalibration('flow', 2, 2.2);
+    await client.getFirmwareCatalog();
+    await client.cancelFirmware();
+    await client.getAppUpdate();
+    expect(calls.map((call) => `${call.method} ${call.url.replace(DEFAULT_BASE_URL, '')}`)).toEqual([
+      'GET /api/v1/plugins',
+      'GET /api/v1/plugins/time-to-ready.reaplugin/settings',
+      'POST /api/v1/plugins/time-to-ready.reaplugin/settings',
+      'POST /api/v1/plugins/dye2.reaplugin/disable',
+      'POST /api/v1/plugins/dye2.reaplugin/enable',
+      'POST /api/v1/plugins/update',
+      'POST /api/v1/plugins/dye2.reaplugin/update/approve',
+      'GET /api/v1/presence/settings',
+      'POST /api/v1/presence/settings',
+      'POST /api/v1/presence/schedules',
+      'PUT /api/v1/presence/schedules/a%20b',
+      'DELETE /api/v1/presence/schedules/a%20b',
+      'GET /api/v1/machine/calibration/pressure',
+      'PUT /api/v1/machine/calibration/flow',
+      'GET /api/v1/machine/firmware',
+      'DELETE /api/v1/machine/firmware',
+      'GET /api/v1/update',
+    ]);
+    expect(calls[2].body).toEqual({ Stabilisation: null });
+    expect(calls[13].body).toEqual({ de1ReportedValue: 2, measuredValue: 2.2 });
+  });
+
+  it('a plugin without stored settings gives {}', async () => {
+    const { client } = clientWith({ body: null });
+    expect(await client.getPluginSettings('settings.reaplugin')).toEqual({});
+  });
+
+  it("applies a bundled firmware and follows its NDJSON stream to 'done'", async () => {
+    const lines = ['{"status":"erasing","progress":0.0}', '{"status":"uploading","progress":0.5}', '{"status":"done","progress":1.0}'];
+    const { client, calls } = clientWith({ body: lines.join('\n') + '\n' });
+    const seen: string[] = [];
+    await client.applyFirmware('de1-1358', (event) => seen.push(`${event.status} ${event.progress}`));
+    expect(seen).toEqual(['erasing 0', 'uploading 0.5', 'done 1']);
+    expect([calls[0].method, calls[0].url.replace(DEFAULT_BASE_URL, ''), calls[0].body]).toEqual([
+      'POST',
+      '/api/v1/machine/firmware/apply',
+      { artifactId: 'de1-1358' },
+    ]);
+  });
+
+  it("fails on the stream's error line, on a stream without 'done', and on a refused apply", async () => {
+    const error = clientWith({ body: '{"status":"erasing","progress":0}\n{"status":"error","progress":-1,"error":"crc mismatch"}' });
+    await expect(error.client.applyFirmware('de1-1358', () => {})).rejects.toThrow(/crc mismatch/);
+    const cut = clientWith({ body: '{"status":"uploading","progress":0.4}\n' });
+    await expect(cut.client.applyFirmware('de1-1358', () => {})).rejects.toThrow(/before the update was confirmed/);
+    const busy = clientWith({ status: 409, body: { error: 'in progress' } });
+    await expect(busy.client.applyFirmware('de1-1358', () => {})).rejects.toBeInstanceOf(DecaidApiError);
+  });
+});

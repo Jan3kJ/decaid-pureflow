@@ -15,7 +15,8 @@ import { STEAM_ON_MAX, STEAM_ON_MIN } from '../shell/steam-heater';
  * Where a setting lives. `decaid`: `/api/v1/settings`; `machine`: `/api/v1/machine/settings`;
  * `advanced`: `/api/v1/machine/settings/advanced`; `workflow.*`: a group of the workflow;
  * `waterLevels`: written with `POST /api/v1/machine/waterLevels`, read on its stream;
- * `display`: `/api/v1/display`; `info`: `/api/v1/info`, read only.
+ * `display`: `/api/v1/display`; `info`: `/api/v1/info`, read only; `presence`:
+ * `/api/v1/presence/settings`.
  */
 export type Source =
   | 'decaid'
@@ -26,7 +27,8 @@ export type Source =
   | 'workflow.rinseData'
   | 'waterLevels'
   | 'display'
-  | 'info';
+  | 'info'
+  | 'presence';
 
 interface Common {
   /** the name in the tests: `setting-<id>` */
@@ -512,6 +514,30 @@ export const BRIGHTNESS: Field[] = [
     unit: '',
     min: 0,
     max: 100,
+    step: 1,
+    places: 0,
+  }),
+];
+
+/** Presence Detection (S2c); its wake schedules are `Presence.svelte`. */
+export const PRESENCE: Field[] = [
+  {
+    kind: 'switch',
+    id: 'presence-enabled',
+    label: 'presence detection',
+    hint: 'Track use of the machine and the tablet to put the machine to sleep automatically.',
+    source: 'presence',
+    key: 'userPresenceEnabled',
+  },
+  number({
+    id: 'sleep-timeout',
+    label: 'sleep after',
+    hint: 'Minutes without use before the machine goes to sleep.',
+    source: 'presence',
+    key: 'sleepTimeoutMinutes',
+    unit: 'min',
+    min: 1,
+    max: 120,
     step: 1,
     places: 0,
   }),

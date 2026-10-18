@@ -2,11 +2,15 @@
 // parameters, so it runs in the skin, in Node and in tests.
 import type {
   AdvancedSettings,
+  AppUpdateState,
   DecaidInfo,
   DeviceConnectResult,
   DeviceInfo,
   DecaidSettings,
   DisplayState,
+  FirmwareCatalog,
+  FirmwareOperation,
+  FirmwareProgress,
   ListProfilesQuery,
   ListShotsQuery,
   MachineInfo,
@@ -14,15 +18,22 @@ import type {
   MachineSettingsPatch,
   MachineSnapshot,
   PaginatedShots,
+  PluginManifest,
+  PluginSettings,
+  PresenceSettings,
   Profile,
   ProfileRecord,
   RequestedMachineState,
   ProfileUpdate,
   ProfileVisibility,
   SaveProfileOptions,
+  SensorCalibration,
+  SensorTarget,
   ShotRecord,
   ShotRecordSummary,
   ShotSettings,
+  WakeSchedule,
+  WakeScheduleInput,
   WebUiServerStatus,
   WifiEndpoints,
   Workflow,
@@ -162,6 +173,77 @@ export class DecaidClient {
   /** mm, the water level of the refill warning; read on `/ws/v1/machine/waterLevels`. */
   async setRefillLevel(refillLevel: number): Promise<void> {
     await this.request('POST', '/api/v1/machine/waterLevels', { refillLevel });
+  }
+
+  /**
+   * One sensor's calibration: for flow and pressure the stored ratio, for temperature the
+   * offset, both in `measuredValue`. Answers 500 or 504 without a machine.
+   */
+  getSensorCalibration(target: SensorTarget): Promise<SensorCalibration> {
+    return this.request('GET', `/api/v1/machine/calibration/${segment(target)}`);
+  }
+
+  /**
+   * A correction, not a value: the machine multiplies its flow or pressure ratio by
+   * `measured / reported` and adds `measured - reported` to the temperature offset. 202 once the
+   * machine acknowledged it.
+   */
+  async correctSensorCalibration(target: SensorTarget, de1ReportedValue: number, measuredValue: number): Promise<void> {
+    await this.request('PUT', `/api/v1/machine/calibration/${segment(target)}`, { de1ReportedValue, measuredValue });
+  }
+
+  /** The bundled firmware, what applies to the connected machine, and an update running. No machine needed. */
+  getFirmwareCatalog(): Promise<FirmwareCatalog> {
+    return this.request('GET', '/api/v1/machine/firmware');
+  }
+
+  /**
+   * Flashes a bundled firmware build. The answer is an NDJSON stream (`erasing`, `uploading`,
+   * then `done` or `error`), each line given to `onProgress`; resolves with `done` only, and a
+   * stream that ends without it throws.
+   */
+  async applyFirmware(artifactId: string, onProgress: (progress: FirmwareProgress) => void): Promise<void> {
+    const path = '/api/v1/machine/firmware/apply';
+    let response: Response;
+    try {
+      response = await this.fetchFn(this.baseUrl + path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ artifactId }),
+      });
+    } catch (cause) {
+      throw new DecaidNetworkError('POST', path, cause);
+    }
+    if (!response.ok) throw new DecaidApiError('POST', path, response.status, parse(await response.text()));
+    let last: FirmwareProgress | null = null;
+    const take = (line: string) => {
+      if (!line.trim()) return;
+      last = JSON.parse(line) as FirmwareProgress;
+      onProgress(last);
+    };
+    const reader = response.body?.getReader();
+    if (reader) {
+      const decoder = new TextDecoder();
+      let rest = '';
+      for (;;) {
+        const { value, done } = await reader.read();
+        rest += done ? decoder.decode() : decoder.decode(value, { stream: true });
+        const lines = rest.split('\n');
+        rest = lines.pop() ?? '';
+        lines.forEach(take);
+        if (done) break;
+      }
+      take(rest);
+    } else (await response.text()).split('\n').forEach(take);
+    const end = last as FirmwareProgress | null;
+    if (end?.status === 'error') throw new Error(`The firmware update failed: ${end.error ?? 'no reason given'}`);
+    if (end?.status !== 'done') throw new Error('The firmware stream ended before the update was confirmed');
+  }
+
+  /** Cancels a firmware update; safe with none running. */
+  async cancelFirmware(): Promise<FirmwareOperation | undefined> {
+    const answer = await this.request<{ operation?: { state?: FirmwareOperation } } | undefined>('DELETE', '/api/v1/machine/firmware');
+    return answer?.operation?.state;
   }
 
   // --- workflow ---
@@ -317,6 +399,68 @@ export class DecaidClient {
   /** Changes the given settings; the others keep their values. */
   async updateSettings(patch: Partial<DecaidSettings>): Promise<void> {
     await this.request('POST', '/api/v1/settings', patch);
+  }
+
+  /** Decaid's own update: the phase and the version offered. Reads only; it starts no check. */
+  getAppUpdate(): Promise<AppUpdateState> {
+    return this.request('GET', '/api/v1/update');
+  }
+
+  // --- presence ---
+
+  /** Presence, the sleep after so many minutes, and the wake schedules. */
+  getPresenceSettings(): Promise<PresenceSettings> {
+    return this.request('GET', '/api/v1/presence/settings');
+  }
+
+  /** Changes the given presence settings; the others keep their values. */
+  async updatePresenceSettings(patch: Pick<PresenceSettings, 'userPresenceEnabled' | 'sleepTimeoutMinutes'>): Promise<void> {
+    await this.request('POST', '/api/v1/presence/settings', patch);
+  }
+
+  createWakeSchedule(schedule: WakeScheduleInput): Promise<WakeSchedule> {
+    return this.request('POST', '/api/v1/presence/schedules', schedule);
+  }
+
+  /** Changes the given fields of a schedule. */
+  async updateWakeSchedule(id: string, patch: Partial<WakeScheduleInput>): Promise<void> {
+    await this.request('PUT', `/api/v1/presence/schedules/${segment(id)}`, patch);
+  }
+
+  async deleteWakeSchedule(id: string): Promise<void> {
+    await this.request('DELETE', `/api/v1/presence/schedules/${segment(id)}`);
+  }
+
+  // --- plugins ---
+
+  /** Every installed plugin: its manifest (with the settings' schema), loaded, its source and a held update. */
+  listPlugins(): Promise<PluginManifest[]> {
+    return this.request('GET', '/api/v1/plugins');
+  }
+
+  /** The stored values; a secure one is `{ isSet }`, never the value. */
+  async getPluginSettings(id: string): Promise<PluginSettings> {
+    return (await this.request<PluginSettings | undefined>('GET', `/api/v1/plugins/${segment(id)}/settings`)) ?? {};
+  }
+
+  /** Changes the given values (`null` clears one); the answer is the stored values, secure ones redacted. */
+  async updatePluginSettings(id: string, patch: PluginSettings): Promise<PluginSettings> {
+    return (await this.request<PluginSettings | undefined>('POST', `/api/v1/plugins/${segment(id)}/settings`, patch)) ?? {};
+  }
+
+  /** Enables and loads a plugin, or disables and unloads it. */
+  async setPluginEnabled(id: string, enabled: boolean): Promise<void> {
+    await this.request('POST', `/api/v1/plugins/${segment(id)}/${enabled ? 'enable' : 'disable'}`);
+  }
+
+  /** Checks every plugin from GitHub for an update; one that asks for more permissions is held back. */
+  async checkPluginUpdates(): Promise<void> {
+    await this.request('POST', '/api/v1/plugins/update');
+  }
+
+  /** Installs the held update of a plugin, with the permissions it adds. */
+  async approvePluginUpdate(id: string): Promise<void> {
+    await this.request('POST', `/api/v1/plugins/${segment(id)}/update/approve`);
   }
 
   // --- KV store ---

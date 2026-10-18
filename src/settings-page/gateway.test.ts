@@ -29,6 +29,7 @@ function fakeGateway() {
       rinseData: { targetTemperature: 90, duration: 10, flow: 6 },
     } as Record<string, any>,
     display: { brightness: 100, requestedBrightness: 100, wakeLockOverride: false } as Record<string, any>,
+    presence: { userPresenceEnabled: true, sleepTimeoutMinutes: 30, schedules: [] } as Record<string, any>,
     kv: {} as Record<string, unknown>,
   };
   /** a path that answers 500 */
@@ -89,6 +90,13 @@ function fakeGateway() {
         return json({ version: '0.8.8', buildNumber: '2900' });
       case 'POST /api/v1/machine/waterLevels':
         return json(undefined, 202);
+      case 'GET /api/v1/presence/settings':
+        return json(state.presence);
+      case 'POST /api/v1/presence/settings':
+        // Decaid holds the timeout in 0..240 (rest_v1.yml).
+        Object.assign(state.presence, body);
+        state.presence.sleepTimeoutMinutes = Math.min(240, state.presence.sleepTimeoutMinutes);
+        return json(state.presence);
     }
     return json({ error: 'no such path' }, 404);
   }
@@ -116,10 +124,12 @@ describe('readAll', () => {
       'GET /api/v1/info',
       'GET /api/v1/machine/settings',
       'GET /api/v1/machine/settings/advanced',
+      'GET /api/v1/presence/settings',
       'GET /api/v1/settings',
       'GET /api/v1/workflow',
     ]);
     expect(rawValue(values, field('heater-idle-temperature'))).toBe(98);
+    expect(rawValue(values, field('sleep-timeout'))).toBe(30);
     expect(rawValue(values, field('flush-duration'))).toBe(10);
   });
 
@@ -142,6 +152,8 @@ describe('writeField', () => {
     ['steam-flow', 1.2, 'PUT', '/api/v1/workflow', { steamSettings: { flow: 1.2 } }],
     ['brightness', 60, 'PUT', '/api/v1/display/brightness', { brightness: 60 }],
     ['water-alert', 10, 'POST', '/api/v1/machine/waterLevels', { refillLevel: 10 }],
+    ['sleep-timeout', 31, 'POST', '/api/v1/presence/settings', { sleepTimeoutMinutes: 31 }],
+    ['presence-enabled', false, 'POST', '/api/v1/presence/settings', { userPresenceEnabled: false }],
   ])('%s: one request with that key alone', async (id, value, method, path, body) => {
     const gateway = await opened();
     await writeField(gateway.client, gateway.values, field(id), value);

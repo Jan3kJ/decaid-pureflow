@@ -3,6 +3,7 @@ import { HOT_WATER_FIELDS } from '../hotwater/hot-water';
 import {
   FAST_START,
   FLUSH,
+  PRESENCE,
   SCALE,
   STEAM_TEMPERATURE,
   USB,
@@ -42,6 +43,7 @@ describe('the fields of the settings page (research.md 20.3)', () => {
     ['heater-test-timeout', 'advanced', 'heaterPh2Timeout', 0, 60, 1],
     ['fan-threshold', 'machine', 'fan', 0, 50, 1],
     ['brightness', 'display', 'requestedBrightness', 0, 100, 1],
+    ['sleep-timeout', 'presence', 'sleepTimeoutMinutes', 1, 120, 1],
   ];
 
   it.each(EXPECTED)('%s: %s %s, %d to %d in steps of %d', (id, source, key, min, max, step) => {
@@ -82,6 +84,13 @@ describe('the fields of the settings page (research.md 20.3)', () => {
       const field = numberField(`hot-water-${page.id}`);
       expect([field.key, field.min, field.max, field.unit]).toEqual([page.key, page.min, page.max, page.unit]);
     }
+  });
+
+  it('presence is a switch and the sleep timeout a number of /api/v1/presence/settings (S2c)', () => {
+    expect(PRESENCE.map((field) => [field.kind, field.source, field.key])).toEqual([
+      ['switch', 'presence', 'userPresenceEnabled'],
+      ['number', 'presence', 'sleepTimeoutMinutes'],
+    ]);
   });
 
   it("the scale's settings are Decaid's scalePowerMode and blockOnNoScale (S2b)", () => {

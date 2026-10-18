@@ -16,8 +16,12 @@
   import Confirm from './Confirm.svelte';
   import Devices from './Devices.svelte';
   import FieldRow from './FieldRow.svelte';
+  import Firmware from './Firmware.svelte';
   import MachineInfo from './MachineInfo.svelte';
   import Maintenance from './Maintenance.svelte';
+  import Plugins from './Plugins.svelte';
+  import Presence from './Presence.svelte';
+  import SensorCalibration from './SensorCalibration.svelte';
   import SkinCategory from './SkinCategory.svelte';
   import { PREFERRED_DEVICES, STEAM_TEMPERATURE, type Field } from './fields';
   import {
@@ -26,6 +30,7 @@
     partOf,
     rawValue,
     readAll,
+    readPart,
     resetMachine,
     sourceObject,
     writeField,
@@ -69,6 +74,16 @@
   }
 
   onMount(readValues);
+
+  /** One source read again, after a change that is not a field's (a wake schedule). */
+  async function readAgain(part: Part) {
+    try {
+      read = { ...read, [part]: await readPart(skin.client, part) };
+      delete readErrors[part];
+    } catch (cause) {
+      readErrors[part] = cause instanceof Error ? cause.message : String(cause);
+    }
+  }
 
   const isRead = (field: Field) => {
     const part = partOf(field.source);
@@ -209,6 +224,14 @@
                 <Maintenance {skin} procedure={view.procedure} titled={false} />
               {:else if view?.kind === 'machine-info' || view?.kind === 'charging'}
                 <MachineInfo {skin} part={view.kind} decaid={read.decaid} />
+              {:else if view?.kind === 'plugins'}
+                <Plugins {skin} />
+              {:else if view?.kind === 'presence'}
+                <Presence {skin} schedules={read.presence ? (read.presence.schedules ?? []) : null} onchanged={() => readAgain('presence')} />
+              {:else if view?.kind === 'firmware' || view?.kind === 'app-update'}
+                <Firmware {skin} part={view.kind === 'firmware' ? 'firmware' : 'app'} />
+              {:else if view?.kind === 'sensors'}
+                <SensorCalibration {skin} />
               {/if}
             {/snippet}
             {#each unreadOf(sub) as error (error)}

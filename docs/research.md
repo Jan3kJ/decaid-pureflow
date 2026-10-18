@@ -2601,6 +2601,78 @@ values equal to those recorded at the start (`log\s2b-before-*.json`, `s2b-after
 profiles, one shot, the skin's KV empty, Streamline the default skin. Screenshots:
 `docs/product/settings-connections.png`, `settings-maintenance.png`.
 
+### 20.15 Built (S2c)
+
+Built on 2026-10-18 against Decaid 0.8.8 with device simulation; the rig served Streamline
+**0.2.14** (`GET /api/v1/webui/skins/default`), so there was no newer release to diff against
+`3a4bd23`. With S2a and S2b this completes S2: categories 1 to 6, 8, 9 and 10 of Streamline,
+without what 20.11 leaves out.
+
+- **Sensor Calibration** (category 3, `SensorCalibration.svelte`, `sensor-calibration.ts`, from
+  `sensor-cal.js`): per sensor the stored correction (`GET /api/v1/machine/calibration/{target}`,
+  `measuredValue`: a ratio for flow and pressure, an offset for temperature), the one before
+  this page's last write, and the live reading of the sensor itself (`groupTemperature`,
+  `pressure`, `flow`; not the frame's target). Capture takes the mean of the last 5 s, the
+  measured value is typed on the number pad, the outcome is shown, and Apply writes the
+  correction (`PUT`, a correction, not a value) after a confirm and reads it back; an idle
+  capture (0), a measured 0 and a ratio outside 0.75-1.33 are refused. Restore lands on the
+  previous value exactly. The previous value is in `localStorage`
+  (`decaid-skin.sensor-calibration-previous`, not a setting, not backed up), where Streamline
+  keeps it in its IndexedDB. Not written on the rig: the simulation reports pressure 9.0 and
+  temperature 93.0 as its stored values, which no real calibration has.
+- **Extensions > Plugins** (category 8, `Plugins.svelte`, `plugins.ts`, from `plugin-view.js`
+  and the plugin controls of `settings.js`): one card per plugin of `GET /api/v1/plugins`, by
+  name, with its version, a state as Streamline words it (only "Checked, no update held back"
+  where Streamline says "Up to date", since a held update is only one that asks for more
+  permissions), Enabled (`POST .../enable` / `disable`, the list read again), Approve for a held
+  update after a confirm that names the added permissions, 'Check for plugin updates'
+  (`POST /api/v1/plugins/update`), and one control per manifest setting: a switch, a number on
+  the pad (finite, not negative), a text field (trimmed), chips for an enum, and for a secure
+  one a password field that is never filled: it shows 'Saved' or 'Not set' from `{ isSet }`, a
+  typed value is written as typed and the field emptied. A value not stored shows the
+  manifest's default, marked 'default'. Every write is the one key, then the settings are read
+  again. Visualizer and Shot Uploader are their plugin cards, not subcategories of their own,
+  and Streamline's own Visualizer server form is not ported.
+- **Presence Detection** (category 9): presence and the sleep timeout are fields of the source
+  `presence` (`/api/v1/presence/settings`, read with the page; 1-120 min as Streamline, Decaid
+  takes 0-240); the wake schedules are `Presence.svelte` (`presence.ts`): each as one line, a
+  switch, Edit, Delete after a confirm; Add and Edit share a form (time typed as hhmm, days as
+  chips, none for every day, keep awake 0-720 min, 0 wakes only). Streamline cannot edit a
+  schedule's time; this page can (`PUT .../schedules/{id}` with the whole schedule,
+  `keepAwakeFor: null` clearing one, seen on the rig: `log\s2c-schedule-probe.txt`).
+- **Updates** (category 10, `Firmware.svelte`, `firmware.ts`, from `firmware-progress.js` and
+  `renderFirmwareUpdateSettings`): the machine and its build, the status from
+  `updateAvailable` (null is 'Could not check', never 'Up to date'; a machine newer than every
+  bundled build is 'Newer'), every bundled build with its eligibility and release notes, and
+  Install of the recommended build behind a confirm that says it takes 50 minutes: `POST
+  /api/v1/machine/firmware/apply`, its NDJSON progress (`DecaidClient.applyFirmware`, done only
+  with `done`), Cancel (`DELETE /api/v1/machine/firmware`). No file upload (20.11). A second
+  subcategory **Decaid** shows Decaid's own update from `GET /api/v1/update` (version, phase,
+  the release page as text); Streamline asks GitHub's API for the latest release, which this
+  skin does not (spec 6).
+- On the rig: `GET /api/v1/machine/firmware` lists builds 1352 and 1358, both applicable to the
+  simulated DE1Pro at 1337, 1358 recommended, so Install is offered; it was opened and
+  cancelled, nothing applied. dye2 0.1.4 has an update held back (0.2.0); it was not approved.
+
+Tests: Vitest `plugins.test.ts` (each control type, label and default, a secure value never
+shown, what each type writes, the states), `sensor-calibration.test.ts`, `firmware.test.ts`,
+`presence.test.ts`, the client's new requests and its NDJSON stream; `npm test` 739 passed.
+`npm run e2e`: `e2e/settings-extensions.spec.ts`, 8 tests (a plugin setting of each type
+written alone and read back; a secure value written and never shown; disable, enable and an
+approved update; the sleep timeout and a schedule added, edited, switched and deleted; the
+firmware's status and its confirm, a failed stream; a sensor corrected and restored, an idle
+capture refused; no machine); the full run 142 passed. Rig: `e2e-rig/settings-extensions.spec.ts`,
+three tests: time-to-ready's `Stabilisation` set to 7 through the page, read back and restored
+(the first restore held this time; the test reads back and writes once more if not); the sleep
+timeout 30 → 31 and back; a schedule created and deleted through the page; the firmware catalog
+shown and Install cancelled. Full rig run 31 of 31 (`log\s2c-e2e-rig.txt`). Decaid's, the
+machine's and the advanced settings, the workflow's steam, hot water and rinse values,
+presence, every plugin's version, loaded state and settings equal to those recorded at the
+start (`log\s2c-before-state.json`, `s2c-after-state.json`), 73 profiles, one shot, the skin's
+KV empty, `streamline-app` holding only `favorite-profiles`, Streamline the default skin, steam
+150 °C; Decaid ended with `Stop-Process -Force`, port 8080 free. Screenshots:
+`docs/product/settings-plugins.png`, `settings-presence.png`.
+
 ## 21. Hot water page and stop at weight on the rig (R5)
 
 Done on 2026-10-17 against Decaid v0.8.8 with device simulation (8.8); the rig served

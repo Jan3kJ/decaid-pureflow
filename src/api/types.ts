@@ -503,3 +503,130 @@ export interface WebUiServerStatus {
   port?: number | null;
   ip?: string | null;
 }
+
+// --- plugins, presence, calibration, firmware, Decaid's update (research.md 20.3, S2c) ---
+
+/** `PluginSettingSchema`: one setting a plugin's manifest declares. */
+export interface PluginSettingSchema {
+  type: 'string' | 'number' | 'boolean' | 'enum';
+  label?: string;
+  description?: string;
+  default?: unknown;
+  /** held in the platform's credential store; read back only as `{ isSet }` */
+  secure?: boolean;
+  /** the values of an `enum` */
+  values?: string[];
+  /** managed by the plugin's own screen (Streamline shows it nowhere) */
+  hidden?: boolean;
+}
+
+/** `PluginManifest` with its load state, as `GET /api/v1/plugins` lists it. */
+export interface PluginManifest {
+  id: string;
+  name?: string;
+  author?: string;
+  description?: string;
+  version?: string;
+  permissions?: string[];
+  settings?: Record<string, PluginSettingSchema>;
+  loaded?: boolean;
+  autoLoad?: boolean;
+  /** where the installed copy came from; null for a bundled one */
+  source?: {
+    kind?: 'github_release' | 'github_branch' | 'local_zip' | 'local_folder';
+    repo?: string | null;
+    lastChecked?: string | null;
+    lastError?: string | null;
+  } | null;
+  /** an update held back because it asks for more permissions */
+  pendingUpdate?: { version?: string; addedPermissions?: string[]; detectedAt?: string } | null;
+  [key: string]: unknown;
+}
+
+/** A secure setting's value as the gateway reports it: never the value itself. */
+export interface SecureState {
+  isSet: boolean;
+}
+
+/** `PluginSettings`: the stored values; a key without a stored value is absent. A `null` in a write clears it. */
+export type PluginSettings = Record<string, unknown>;
+
+/** `WakeSchedule`. */
+export interface WakeSchedule {
+  id: string;
+  /** "HH:MM", 24 hours */
+  time: string;
+  /** 1 Monday to 7 Sunday; empty for every day */
+  daysOfWeek: number[];
+  enabled: boolean;
+  /** minutes awake after it fires, 1-720; null or absent: only wake */
+  keepAwakeFor?: number | null;
+}
+
+export type WakeScheduleInput = Omit<WakeSchedule, 'id'>;
+
+/** `GET /api/v1/presence/settings`. */
+export interface PresenceSettings {
+  userPresenceEnabled?: boolean;
+  /** minutes without use before the machine sleeps; 0 turns it off */
+  sleepTimeoutMinutes?: number;
+  schedules?: WakeSchedule[];
+  keepAwakeUntil?: string | null;
+  [key: string]: unknown;
+}
+
+export type SensorTarget = 'flow' | 'pressure' | 'temperature';
+
+/** `De1SensorCalibration`: for flow and pressure the stored ratio is `measuredValue`; for temperature the offset. */
+export interface SensorCalibration {
+  target: SensorTarget;
+  source: 'current' | 'factory';
+  de1ReportedValue: number;
+  measuredValue: number;
+}
+
+/** `FirmwareCatalogEntry`. */
+export interface FirmwareArtifact {
+  id: string;
+  source?: string;
+  supportedModels?: string[];
+  build?: number;
+  versionLabel?: string;
+  channel?: string;
+  releaseNotes?: string;
+  eligibility?: { status?: 'applicable' | 'notApplicable' | 'unknown'; reasons?: string[] };
+}
+
+/** `FirmwareOperationState`. */
+export type FirmwareOperation = 'idle' | 'erasing' | 'uploading' | 'verifying' | 'cancelling';
+
+/** `GET /api/v1/machine/firmware`: the bundled firmware and what applies to the machine. */
+export interface FirmwareCatalog {
+  artifacts?: FirmwareArtifact[];
+  machine?: { model?: string; build?: number | null } | null;
+  recommendedArtifactId?: string | null;
+  /** null: not known (no machine, an unknown build) */
+  updateAvailable?: boolean | null;
+  operation?: { state?: FirmwareOperation };
+}
+
+/** One line of the firmware's NDJSON progress stream. */
+export interface FirmwareProgress {
+  status: 'erasing' | 'uploading' | 'done' | 'error';
+  /** 0..1; -1 with an error */
+  progress: number;
+  error?: string;
+}
+
+/** `AppUpdateState`: Decaid's own update. */
+export interface AppUpdateState {
+  phase: 'idle' | 'checking' | 'available' | 'downloading' | 'installing' | 'error';
+  currentVersion: string;
+  latestVersion?: string | null;
+  releaseNotes?: string | null;
+  releaseUrl: string;
+  /** only on Android with an update */
+  installable: boolean;
+  progress?: number | null;
+  error?: string | null;
+}

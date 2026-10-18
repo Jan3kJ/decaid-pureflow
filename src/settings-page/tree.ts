@@ -6,7 +6,7 @@
 //
 // The settings page's navigation (research.md 20.3, 20.7): Streamline's categories in its order
 // and with its numbers, each subcategory with what renders it. What the port leaves out is
-// absent; S2c adds Extensions, Updates, presence and sensor calibration (20.10).
+// absent.
 import {
   BRIGHTNESS,
   DECAID_SETTINGS,
@@ -15,6 +15,7 @@ import {
   FLUSH,
   HOT_WATER,
   MACHINE_ADVANCED,
+  PRESENCE,
   REFILL_KIT,
   SCALE,
   STEAM,
@@ -34,15 +35,22 @@ export type Action = 'fast-start' | 'reset' | 'dashboard';
 export type SkinPart = 'steam' | 'hot-water' | 'profile' | 'graph' | 'backup';
 
 /**
- * A part of a subcategory that is not a list of fields (S2b): the device lists
- * (`Devices.svelte`), a maintenance procedure (`Maintenance.svelte`), the machine's information
- * and the charging status (`MachineInfo.svelte`). Drawn above the subcategory's fields.
+ * A part of a subcategory that is not a list of fields: the device lists (`Devices.svelte`), a
+ * maintenance procedure (`Maintenance.svelte`), the machine's information and the charging
+ * status (`MachineInfo.svelte`) (S2b); the plugin cards (`Plugins.svelte`), the wake schedules
+ * (`Presence.svelte`), the firmware and Decaid's update (`Firmware.svelte`), the sensors'
+ * calibration (`SensorCalibration.svelte`) (S2c). Drawn above the subcategory's fields.
  */
 export type View =
   | { kind: 'devices'; devices: DeviceKind }
   | { kind: 'maintenance'; procedure: ProcedureId }
   | { kind: 'machine-info' }
-  | { kind: 'charging' };
+  | { kind: 'charging' }
+  | { kind: 'plugins' }
+  | { kind: 'presence' }
+  | { kind: 'firmware' }
+  | { kind: 'app-update' }
+  | { kind: 'sensors' };
 
 export type Content =
   | { kind: 'fields'; fields: Field[]; actions?: Action[]; view?: View; below?: boolean }
@@ -124,6 +132,12 @@ export const SETTINGS_TREE: Category[] = [
       { id: 'refillkit', name: 'Refill Kit', content: fields(REFILL_KIT) },
       { id: 'voltage', name: 'Voltage', content: fields(VOLTAGE) },
       { id: 'fan', name: 'Fan', content: fields(FAN) },
+      {
+        id: 'sensors',
+        name: 'Sensor Calibration',
+        hint: "Corrections of the machine's temperature, pressure and flow sensors against your own instrument.",
+        content: view({ kind: 'sensors' }),
+      },
     ],
   },
   {
@@ -168,6 +182,19 @@ export const SETTINGS_TREE: Category[] = [
     ],
   },
   {
+    id: 'extensions',
+    number: 8,
+    name: 'Extensions',
+    subcategories: [
+      {
+        id: 'extention2',
+        name: 'Plugins',
+        hint: "Decaid's plugins, Visualizer and Shot Uploader among them, with the settings each declares.",
+        content: view({ kind: 'plugins' }),
+      },
+    ],
+  },
+  {
     id: 'miscellaneous',
     number: 9,
     name: 'Miscellaneous',
@@ -175,6 +202,21 @@ export const SETTINGS_TREE: Category[] = [
       { id: 'reasettings', name: 'Decaid Settings', content: fields(DECAID_SETTINGS, ['dashboard']) },
       { id: 'brightness', name: 'Brightness', content: fields(BRIGHTNESS) },
       { id: 'wakelock', name: 'Wake Lock', content: fields(WAKE_LOCK) },
+      {
+        id: 'presence',
+        name: 'Presence Detection',
+        hint: 'Sleep and wake the machine by use and by schedule.',
+        content: view({ kind: 'presence' }, PRESENCE, true),
+      },
+    ],
+  },
+  {
+    id: 'updates',
+    number: 10,
+    name: 'Updates',
+    subcategories: [
+      { id: 'firmwareupdate', name: 'Firmware Update', content: view({ kind: 'firmware' }) },
+      { id: 'appupdate', name: 'Decaid', hint: "Decaid's own update, as Decaid reports it.", content: view({ kind: 'app-update' }) },
     ],
   },
 ];

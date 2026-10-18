@@ -15,6 +15,7 @@ import type {
   DecaidSettings,
   DisplayState,
   MachineSettings,
+  PresenceSettings,
   WaterLevels,
   Workflow,
 } from '../api';
@@ -22,8 +23,8 @@ import { STREAMLINE_NAMESPACE } from '../steam/apply';
 import { FAST_START, type Field, type Source } from './fields';
 
 /** What the page reads: one request each. */
-export type Part = 'decaid' | 'machine' | 'advanced' | 'workflow' | 'display' | 'info';
-export const PARTS: Part[] = ['decaid', 'machine', 'advanced', 'workflow', 'display', 'info'];
+export type Part = 'decaid' | 'machine' | 'advanced' | 'workflow' | 'display' | 'info' | 'presence';
+export const PARTS: Part[] = ['decaid', 'machine', 'advanced', 'workflow', 'display', 'info', 'presence'];
 
 export interface Values {
   decaid: DecaidSettings | null;
@@ -32,6 +33,8 @@ export interface Values {
   workflow: Workflow | null;
   display: DisplayState | null;
   info: DecaidInfo | null;
+  /** presence and its wake schedules (S2c) */
+  presence: PresenceSettings | null;
   /** the latest frame of `/ws/v1/machine/waterLevels`, from the skin's stream */
   waterLevels: WaterLevels | null;
 }
@@ -43,6 +46,7 @@ export const NO_VALUES: Values = {
   workflow: null,
   display: null,
   info: null,
+  presence: null,
   waterLevels: null,
 };
 
@@ -62,6 +66,8 @@ export type SettingsGateway = Pick<
   | 'setBrightness'
   | 'setWakeLock'
   | 'getInfo'
+  | 'getPresenceSettings'
+  | 'updatePresenceSettings'
   | 'kvGet'
   | 'kvSet'
 >;
@@ -100,6 +106,8 @@ export function readPart(gateway: SettingsGateway, part: Part): Promise<unknown>
       return gateway.getDisplay();
     case 'info':
       return gateway.getInfo();
+    case 'presence':
+      return gateway.getPresenceSettings();
   }
 }
 
@@ -188,6 +196,8 @@ async function send(gateway: SettingsGateway, values: Values, field: Field, valu
       if (field.key === 'wakeLockOverride') await gateway.setWakeLock(value === true);
       else await gateway.setBrightness(value as number);
       return;
+    case 'presence':
+      return gateway.updatePresenceSettings(patch);
     case 'info':
       throw new WriteError(`${field.label} is read only`);
   }

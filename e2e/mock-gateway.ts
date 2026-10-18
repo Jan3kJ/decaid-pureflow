@@ -234,6 +234,76 @@ export class MockGateway {
   machineInfo: Json = { version: '1337', model: 'DE1Pro', serialNumber: 'mock-de1', GHC: false, extra: { refillKit: true, voltage: 120 } };
   /** the KV store, as `namespace/key` */
   store: Record<string, unknown> = {};
+  /** `GET /api/v1/plugins`: three of the rig's plugins, as Decaid 0.8.8 lists them, and one with an enum */
+  plugins: Json[] = [
+    {
+      id: 'visualizer.reaplugin',
+      name: 'Visualizer',
+      version: '1.5.10',
+      description: 'Uploads shots to visualizer.coffee',
+      loaded: true,
+      autoLoad: true,
+      source: null,
+      pendingUpdate: null,
+      settings: {
+        Username: { type: 'string', label: 'User name' },
+        Password: { type: 'string', secure: true, label: 'Password' },
+        AutoUpload: { type: 'boolean', label: 'Upload shots automatically', default: true },
+        LengthThreshold: { type: 'number', label: 'Minimum shot length', description: 'Seconds', default: 5 },
+      },
+    },
+    {
+      id: 'time-to-ready.reaplugin',
+      name: 'Time to Ready',
+      version: '1.0.4',
+      loaded: true,
+      autoLoad: true,
+      source: null,
+      pendingUpdate: null,
+      settings: { Stabilisation: { type: 'number', description: 'Seconds the group needs to settle' } },
+    },
+    {
+      id: 'dye2.reaplugin',
+      name: 'DYE2',
+      version: '0.1.4',
+      loaded: true,
+      autoLoad: true,
+      source: { kind: 'github_release', repo: 'decentespresso/dye2', lastChecked: '2026-10-18T06:00:00Z', lastError: null },
+      pendingUpdate: { version: '0.2.0', addedPermissions: ['network.tcp'], detectedAt: '2026-10-18T06:00:00Z' },
+      settings: { Theme: { type: 'enum', values: ['light', 'dark'], default: 'dark' } },
+    },
+  ];
+  /** the plugins' stored values, by id; a secure one is kept as typed and answered as `{ isSet }` */
+  pluginSettings: Record<string, Json> = { 'visualizer.reaplugin': { Username: 'janek' } };
+  /** `GET /api/v1/presence/settings`, as on the rig */
+  presence: Json = { userPresenceEnabled: true, sleepTimeoutMinutes: 30, keepAwakeUntil: null, schedules: [] };
+  private scheduleCount = 0;
+  /** `GET /api/v1/machine/calibration/{target}`: the stored value of each sensor */
+  calibration: Json = { flow: 1.0, pressure: 1.0, temperature: 0.0 };
+  /** `GET /api/v1/machine/firmware`, as on the rig (2026-10-18) */
+  firmware: Json = {
+    artifacts: [
+      { id: 'de1-1352', source: 'bundled', build: 1352, versionLabel: '1352', channel: 'stable', releaseNotes: 'Fixed an edge case where profile upload would clear NoAC lights.', eligibility: { status: 'applicable', reasons: [] } },
+      { id: 'de1-1358', source: 'bundled', build: 1358, versionLabel: '1358', channel: 'stable', releaseNotes: 'Cold maintenance forwards requests through preheat.', eligibility: { status: 'applicable', reasons: [] } },
+    ],
+    machine: { model: 'DE1Pro', build: 1337 },
+    recommendedArtifactId: 'de1-1358',
+    updateAvailable: true,
+    operation: { state: 'idle' },
+  };
+  /** the NDJSON lines `POST /api/v1/machine/firmware/apply` answers */
+  firmwareStream = ['{"status":"erasing","progress":0.0}', '{"status":"uploading","progress":0.5}', '{"status":"done","progress":1.0}'];
+  /** `GET /api/v1/update`, as on the rig */
+  appUpdate: Json = {
+    phase: 'idle',
+    currentVersion: '0.8.8',
+    latestVersion: null,
+    releaseNotes: null,
+    releaseUrl: 'https://github.com/decentespresso/decaid/releases',
+    installable: false,
+    progress: null,
+    error: null,
+  };
   /**
    * A Streamline page is open somewhere: it writes the steam time it remembers back over
    * every other one the machine shows, as its version 0.2.13 does.
@@ -596,6 +666,82 @@ export class MockGateway {
       return json({ endpoints: this.wifi });
     }
     if (path === '/api/v1/machine/info' && method === 'GET') return this.machineConnected ? json(this.machineInfo) : noMachine();
+    if (path === '/api/v1/plugins' && method === 'GET') return json(this.plugins);
+    if (path === '/api/v1/plugins/update' && method === 'POST') return json({ message: 'checked' });
+    const [, pluginId, pluginAction] = /^\/api\/v1\/plugins\/([^/]+)\/(settings|enable|disable|update\/approve)$/.exec(path) ?? [];
+    const plugin = this.plugins.find((entry) => entry.id === pluginId);
+    if (pluginId && !plugin) return json({ error: 'Plugin not found' }, 404);
+    if (plugin && pluginAction === 'settings') {
+      const stored = (this.pluginSettings[plugin.id] ??= {});
+      if (method === 'POST') {
+        // A null clears a value; the others are kept (rest_v1.yml).
+        for (const [key, value] of Object.entries(body)) {
+          if (value === null) delete stored[key];
+          else stored[key] = value;
+        }
+      }
+      const redacted = Object.fromEntries(
+        Object.entries(plugin.settings ?? {})
+          .filter(([key, schema]: [string, any]) => schema.secure || key in stored)
+          .map(([key, schema]: [string, any]) => [key, schema.secure ? { isSet: key in stored } : stored[key]]),
+      );
+      return json(redacted);
+    }
+    if (plugin && (pluginAction === 'enable' || pluginAction === 'disable') && method === 'POST') {
+      plugin.loaded = pluginAction === 'enable';
+      return json({ message: `${pluginAction}d`, id: plugin.id });
+    }
+    if (plugin && pluginAction === 'update/approve' && method === 'POST') {
+      plugin.version = plugin.pendingUpdate?.version ?? plugin.version;
+      plugin.pendingUpdate = null;
+      return json({ message: 'updated', id: plugin.id, version: plugin.version, loaded: plugin.loaded });
+    }
+    if (path === '/api/v1/presence/settings' && method === 'GET') return json(this.presence);
+    if (path === '/api/v1/presence/settings' && method === 'POST') {
+      const { userPresenceEnabled, sleepTimeoutMinutes } = body;
+      if (userPresenceEnabled !== undefined) this.presence.userPresenceEnabled = userPresenceEnabled;
+      if (sleepTimeoutMinutes !== undefined) this.presence.sleepTimeoutMinutes = Math.max(0, Math.min(240, sleepTimeoutMinutes));
+      return json({ userPresenceEnabled: this.presence.userPresenceEnabled, sleepTimeoutMinutes: this.presence.sleepTimeoutMinutes });
+    }
+    // As the rig answers (log\s2c-schedule-probe.txt): a null keepAwakeFor is left out.
+    const scheduleOf = (entry: Json) => Object.fromEntries(Object.entries(entry).filter(([, value]) => value !== null && value !== undefined));
+    if (path === '/api/v1/presence/schedules' && method === 'POST') {
+      const created = scheduleOf({ id: `schedule-${++this.scheduleCount}`, daysOfWeek: [], enabled: true, ...body });
+      this.presence.schedules = [...this.presence.schedules, created];
+      return json(created, 201);
+    }
+    const [, scheduleId] = /^\/api\/v1\/presence\/schedules\/([^/]+)$/.exec(path) ?? [];
+    if (scheduleId) {
+      const existing = this.presence.schedules.find((entry: Json) => entry.id === scheduleId);
+      if (!existing) return json({ error: 'Schedule not found' }, 404);
+      if (method === 'PUT') {
+        const changed = scheduleOf({ ...existing, ...body });
+        this.presence.schedules = this.presence.schedules.map((entry: Json) => (entry.id === scheduleId ? changed : entry));
+        return json(changed);
+      }
+      if (method === 'DELETE') {
+        this.presence.schedules = this.presence.schedules.filter((entry: Json) => entry.id !== scheduleId);
+        return json({ deleted: scheduleId });
+      }
+    }
+    const [, target] = /^\/api\/v1\/machine\/calibration\/(flow|pressure|temperature)$/.exec(path) ?? [];
+    if (target) {
+      if (!this.machineConnected) return noMachine();
+      const ratio = target !== 'temperature';
+      if (method === 'PUT') {
+        // A correction: a ratio multiplies, the temperature's offset adds (rest_v1.yml).
+        const { de1ReportedValue: reported, measuredValue: measured } = body;
+        this.calibration[target] = ratio ? this.calibration[target] * (measured / reported) : this.calibration[target] + (measured - reported);
+        return json(null, 202);
+      }
+      return json({ target, source: 'current', de1ReportedValue: ratio ? 1.0 : 0.0, measuredValue: this.calibration[target] });
+    }
+    if (path === '/api/v1/machine/firmware' && method === 'GET') return json(this.firmware);
+    if (path === '/api/v1/machine/firmware' && method === 'DELETE') return json({ operation: { state: 'idle' } }, 202);
+    if (path === '/api/v1/machine/firmware/apply' && method === 'POST') {
+      return route.fulfill({ status: 200, headers: CORS, contentType: 'application/x-ndjson', body: this.firmwareStream.join('\n') + '\n' });
+    }
+    if (path === '/api/v1/update' && method === 'GET') return json(this.appUpdate);
     if (path.startsWith('/api/v1/machine/settings') && !this.machineConnected) return noMachine();
     if (path === '/api/v1/machine/settings' && method === 'GET') return json(this.machineSettings);
     if (path === '/api/v1/machine/settings' && method === 'POST') {
