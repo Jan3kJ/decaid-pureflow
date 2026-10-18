@@ -156,7 +156,8 @@ Reviewed by the founder on 2026-10-18; items no longer out of scope say where th
 - Portrait layout and a light theme.
 - Plugins, sensors, camera. Plugin settings are built (S2c, settings category 8) and so is the
   sensor calibration (S2c); external sensors stay out. The tablet's camera is planned only for
-  the bean catalogue (review 2026-10-18, item 20).
+  the bean catalogue, low priority: a photo of the bag, read with Tesseract.js to pre-fill the
+  typed name and roaster (review 2026-10-18, item 20).
 - The ghost curve of the profile's last shot in the editor: version 2 (founder, 2026-10-13).
 - iOS stays out (founder, 2026-10-18).
 
