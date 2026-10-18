@@ -7,8 +7,8 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
 -->
 <script lang="ts">
   // One step of the profile. Closed, its values in lines and a tap opens it; open, every value
-  // with ± and the number pad, the chips that cycle, its name, the arrows that move it, and the
-  // buttons that delete it and add a step after it. What a tap changes is the editor's.
+  // with ± and the number pad, the chips that cycle, its name, and in its footer the buttons that
+  // delete it, move it left or right and add a step after it. What a tap changes is the editor's.
   import type { ProfileStep } from '../api';
   import ValueChip from '../editor/ValueChip.svelte';
   import CycleChip from './CycleChip.svelte';
@@ -58,12 +58,6 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
         {disabled}
         onchange={(e) => onname(e.currentTarget.value)}
       />
-      <button class="icon" aria-label="move step {index + 1} left" data-testid="step-move-left-{index}" disabled={disabled || index === 0} onclick={() => onmove(-1)}>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
-      </button>
-      <button class="icon" aria-label="move step {index + 1} right" data-testid="step-move-right-{index}" disabled={disabled || index === count - 1} onclick={() => onmove(1)}>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
-      </button>
     </header>
 
     <div class="rows">
@@ -101,7 +95,11 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
 
     <footer>
       <button class="act delete" data-testid="step-delete-{index}" disabled={disabled || count === 1} onclick={ondelete}>delete step</button>
-      <button class="act" data-testid="step-insert-{index}" {disabled} onclick={oninsert}>+ step after</button>
+      <span class="moves">
+        <button class="act" data-testid="step-move-left-{index}" disabled={disabled || index === 0} onclick={() => onmove(-1)}>move left</button>
+        <button class="act" data-testid="step-move-right-{index}" disabled={disabled || index === count - 1} onclick={() => onmove(1)}>move right</button>
+        <button class="act" data-testid="step-insert-{index}" {disabled} onclick={oninsert}>+ step after</button>
+      </span>
     </footer>
   </article>
 {:else}
@@ -124,7 +122,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     flex: none;
     box-sizing: border-box;
     max-height: 100%;
-    scroll-snap-align: start;
+    scroll-snap-align: center;
     font: inherit;
     color: var(--fg);
     background: var(--panel);
@@ -265,7 +263,6 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     gap: 0.6rem;
   }
 
-  button.icon,
   .act {
     min-height: 3rem;
     font: inherit;
@@ -277,24 +274,13 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     user-select: none;
   }
 
-  button.icon {
-    width: 3.5rem;
-    display: grid;
-    place-items: center;
-  }
-
-  button.icon svg {
-    width: 1.6rem;
-    height: 1.6rem;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2.6;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
-
   .act {
     padding: 0 1.2rem;
+  }
+
+  .moves {
+    display: flex;
+    gap: 0.6rem;
   }
 
   .act.delete {

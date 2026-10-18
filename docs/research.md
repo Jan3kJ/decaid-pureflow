@@ -1826,6 +1826,34 @@ the tab: `GET` reads exactly that change back, the workflow holds it; all made i
 `npm run e2e:rig`: 19 passed, 1 failed, the known steam control step (18.4); log
 `..\decaid-rig\log\e4-e2e-rig.txt`.
 
+### 17.17 Built (E5)
+
+Built on 2026-10-18 (spec 3.7, the step cards; acceptance 26, first half). The founder's review
+of 2026-10-16 says the arrow buttons go and the selected card always moves to the centre. The
+arrows were the two chevrons in the open card's header that moved the step (Streamline has them
+there too, 17.2); they are gone, and the header is the step's number and name. Moving a step is
+kept in the simplest place: two text buttons, **move left** and **move right**, in the open
+card's footer between **delete step** and **+ step after**; they keep the test ids
+`step-move-left-n` and `step-move-right-n`, so `e2e-rig/step-editor.spec.ts` is unchanged.
+Drag to reorder was not built: it would fight the row's sideways swipe.
+
+**Centring.** `centredScroll` (`src/steps/centre.ts`) gives the row's scroll position that puts
+the open card's centre on the row's centre, held between 0 and what the row can scroll. At
+1280 x 800 a profile of six steps is 1872 px of cards in a row of 1248 px, so the first card
+stays at the left end (its centre 256 px left of the row's) and the last at the right end; the
+middle ones centre exactly. `StepEditor.svelte` centres in an effect on the open card's index,
+the number of steps and the row: `scrollTo` with `behavior: 'smooth'`, or at once when the row
+is new (the cards tab opened again). The cards snap to their centre (`scroll-snap-align:
+center`, was `start`), so a swipe of the row ends on a centred card too, and a centring scroll
+is not pulled back to a card's start. The previous `scrollIntoView({ inline: 'nearest' })`
+after a move or an insert went.
+
+**Tests.** Vitest: `src/steps/centre.test.ts` (4). `e2e/step-editor.spec.ts`: a new test (no
+button and no icon in the card's header, a tap on cards 3 and 4 centres them to 1 px, the last
+card at the row's right end, the first at the left, a step moved right and twice left stays
+open and centred); the acceptance-10 test waits for the centring before its screenshot
+(`docs/product/step-editor.png`). Rig: full `npm run e2e:rig` 31 of 31, Streamline 0.2.14.
+
 ## 18. Profile metadata on the rig (M1)
 
 **Verdict: metadata holds.**

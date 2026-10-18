@@ -43,6 +43,39 @@ async function withMine(page: Page): Promise<MockGateway> {
 
 const card = (page: Page, index: number) => page.getByTestId(`step-card-${index}`);
 
+/**
+ * Where the open card sits in the row: its centre's distance from the row's centre, and how far
+ * the row is scrolled and can scroll, in CSS pixels.
+ */
+function placement(page: Page) {
+  return page.getByTestId('step-cards').evaluate((row) => {
+    const card = row.querySelector('[data-open="true"]')!.getBoundingClientRect();
+    const box = row.getBoundingClientRect();
+    return {
+      offCentre: Math.round(card.left + card.width / 2 - (box.left + box.width / 2)),
+      scroll: Math.round(row.scrollLeft),
+      most: row.scrollWidth - row.clientWidth,
+    };
+  });
+}
+
+/**
+ * The open card is as near the row's centre as the row can scroll once the scroll has run:
+ * 'centre' on it exactly, 'start' and 'end' with the row at that end.
+ */
+async function centred(page: Page, where: 'centre' | 'start' | 'end' | 'near' = 'centre') {
+  await expect
+    .poll(async () => {
+      const { offCentre, scroll, most } = await placement(page);
+      const nearest = Math.min(most, Math.max(0, scroll + offCentre));
+      if (Math.abs(scroll - nearest) > 1) return false;
+      if (where === 'start') return scroll === 0;
+      if (where === 'end') return Math.abs(scroll - most) <= 1;
+      return where === 'near' || Math.abs(offCentre) <= 1;
+    })
+    .toBe(true);
+}
+
 async function type(page: Page, testid: string, keys: string) {
   await page.getByTestId(`chip-edit-${testid}`).click();
   for (const key of keys) await page.getByTestId(`numpad-key-${key === '.' ? 'dot' : key}`).click();
@@ -80,6 +113,7 @@ async function editOnScreen(page: Page): Promise<Profile> {
   expected = moveStep(expected, 3, 2);
   await expect(card(page, 2)).toHaveAttribute('data-open', 'true');
   await expect(page.getByTestId('step-name-2')).toHaveValue('ramp');
+  await centred(page);
   return expected;
 }
 
@@ -126,6 +160,48 @@ test('a profile that is not A-Flow 3.0 opens in the step editor; edits saved giv
   await page.getByTestId('nav-home').click();
   await expect(page.getByTestId('screen-home')).toBeVisible();
   expect(gateway.calls('PUT', '/api/v1/workflow')).toHaveLength(1);
+  expect(errors).toEqual([]);
+});
+
+test('cards have no arrow buttons: a tap selects a card and centres it, the first and last as near as they go; moving still works', async ({
+  page,
+}) => {
+  await withMine(page);
+  await page.goto('/');
+  await page.getByTestId('open-editor').click();
+  await expect(card(page, 0)).toHaveAttribute('data-open', 'true');
+  // No arrows in the card: its header is the number and the name; moving is in the footer, as text.
+  await expect(card(page, 0).locator('header button')).toHaveCount(0);
+  await expect(card(page, 0).locator('svg')).toHaveCount(0);
+  await expect(card(page, 0).locator('footer').getByTestId('step-move-right-0')).toHaveText('move right');
+  await expect(page.getByTestId('step-move-left-0')).toBeDisabled();
+  await centred(page, 'start');
+
+  // A tap on a closed card selects it and centres it.
+  await card(page, 2).click();
+  await expect(card(page, 2)).toHaveAttribute('data-open', 'true');
+  await expect(card(page, 0)).toHaveAttribute('data-open', 'false');
+  await centred(page);
+  await card(page, 3).click();
+  await centred(page);
+  // The last card goes as far as the row scrolls, then the first back to the start.
+  await card(page, 5).click();
+  await expect(page.getByTestId('step-move-right-5')).toBeDisabled();
+  await centred(page, 'end');
+  await card(page, 0).click();
+  await centred(page, 'start');
+
+  // Moving: the moved step stays selected and centred in its new place.
+  await card(page, 3).click();
+  await expect(page.getByTestId('step-name-3')).toHaveValue('ramp');
+  await page.getByTestId('step-move-right-3').click();
+  await expect(card(page, 4)).toHaveAttribute('data-open', 'true');
+  await expect(page.getByTestId('step-name-4')).toHaveValue('ramp');
+  await centred(page, 'near');
+  await page.getByTestId('step-move-left-4').click();
+  await page.getByTestId('step-move-left-3').click();
+  await expect(page.getByTestId('step-name-2')).toHaveValue('ramp');
+  await centred(page);
   expect(errors).toEqual([]);
 });
 

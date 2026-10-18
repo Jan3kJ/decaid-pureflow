@@ -36,6 +36,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     type StepValue,
   } from './model';
   import { canSaveOver, loadStepsOnLeave, profileChanged, saveStepAs, saveStepEdit } from './save';
+  import { centredScroll } from './centre';
   import ProfileSettings from './ProfileSettings.svelte';
   import ScriptTab from './ScriptTab.svelte';
   import StepCard from './StepCard.svelte';
@@ -195,11 +196,26 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
       await adopt(stored, `Saved as “${title}”`);
     });
 
-  /** The open card comes into view after it moved or was added. */
-  async function reveal() {
+  /** the row the open card was last centred in: a new one (the cards tab opened) is placed at once */
+  let centredIn: HTMLDivElement | undefined;
+  const stepCount = $derived(profile.steps.length);
+
+  /** The open card moves to the centre of the row, the first and last as near as the row allows. */
+  async function centre() {
     await tick();
-    row?.querySelector('[data-open="true"]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    const card = row?.querySelector<HTMLElement>('[data-open="true"]');
+    if (!row || !card) return;
+    const left = card.getBoundingClientRect().left - row.getBoundingClientRect().left + row.scrollLeft;
+    const smooth = centredIn === row;
+    centredIn = row;
+    row.scrollTo({ left: centredScroll(left, card.offsetWidth, row.clientWidth, row.scrollWidth), behavior: smooth ? 'smooth' : 'instant' });
   }
+
+  // Whenever another card opens (a tap, a step added, moved or deleted): a short animated scroll.
+  $effect(() => {
+    void [openIndex, stepCount, row];
+    void centre();
+  });
 
   function edit(next: Profile) {
     profile = next;
@@ -215,13 +231,11 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   function move(index: number, direction: 1 | -1) {
     edit(moveStep(profile, index, index + direction));
     openIndex = index + direction;
-    void reveal();
   }
 
   function insert(index: number) {
     edit(insertStepAfter(profile, index));
     openIndex = index + 1;
-    void reveal();
   }
 
   function remove(index: number) {
@@ -456,7 +470,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     color: var(--warn);
   }
 
-  /* A row of cards that scrolls sideways, one open at a time, as high as the open card. */
+  /* A row of cards that scrolls sideways, one open at a time and centred, as high as the open card. */
   .cards {
     flex: 0 1 auto;
     min-height: 0;
