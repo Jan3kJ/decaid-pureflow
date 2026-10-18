@@ -491,8 +491,10 @@ Windows, Linux and macOS. What differs per platform is **Decaid itself**:
   founder has Damian's approval to use that code.
 - **Version 1:** a local ZIP with `index.html` at its root, which the founder installs on the
   tablet. No GitHub release. Built in D9, numbered 0.1.0 since 2026-10-14 (beta; founder,
-  2026-10-13), fix rounds 0.1.x; now 0.1.1 (2026-10-15): `npm run zip` writes
-  `release/decaid-skin-0.1.1.zip`; the steps and the
+  2026-10-13), fix rounds 0.1.x, 0.1.1 on 2026-10-15; a hand-over raises the minor version
+  (founder, 2026-10-16), so the hand-over of version 1.1 and the review of 2026-10-16 is
+  0.2.0 (H1, 2026-10-18): `npm run zip` writes
+  `release/decaid-skin-0.2.0.zip`; the steps and the
   founder's checks are in
   [install.md](install.md), the result of the automated items in
   [acceptance.md](acceptance.md).
@@ -760,9 +762,10 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
   Settings); whether the skin's port is the same there and stays over a restart, which the
   settings in `localStorage` depend on. The founder's checks are in
   [install.md](install.md). (owner)
-- The version is `0.1.1`, a beta (founder, 2026-10-13; 0.1.x for fix rounds); it is in
+- The version is `0.2.0`, a beta (founder, 2026-10-13; 0.1.x for fix rounds); it is in
   `package.json` and `public/manifest.json`. Versions are semantic (founder, 2026-10-16): a
-  hand-over raises the minor version, so H1 builds `0.2.0`; a major version (such as the
+  hand-over raises the minor version, so H1 built `0.2.0` (2026-10-18) and H2 builds
+  `0.3.0`; a major version (such as the
   reverted 1.1.0, commit `ad378f9`) only after asking the founder. (answered)
 - Other profiles (founder's question of 2026-10-14, [answers-2026-10-14.md](answers-2026-10-14.md)):
   answered by version 1.1: they open in the skin's own step editor, ported from Streamline
