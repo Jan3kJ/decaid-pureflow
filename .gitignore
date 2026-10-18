@@ -1,6 +1,7 @@
 node_modules/
 dist/
 release/
+data/
 # stint: the runner's local files
 stint/logs/DayRun.log
 stint/logs/day-state-*.json
