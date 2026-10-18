@@ -1920,7 +1920,8 @@ So the write-back of section 16 no longer happens with 0.2.14. The control step 
 `e2e-rig/steam.spec.ts` now checks the adoption (KV key 26, workflow and machine 26) instead of
 the write-back. The skin's own steps are unchanged and still needed for a tablet on 0.2.13:
 the skin changes Streamline's key before it writes the workflow, so either version agrees.
-Full rig run: 21 passed (`log1-e2e-rig.txt`). The rig was left as found: 73 profiles, the
+Full rig run: 21 passed (`log
+1-e2e-rig.txt`). The rig was left as found: 73 profiles, the
 skin's KV namespace empty, `last-steam-duration` absent, steam settings as before (50 s),
 Streamline the default skin.
 
@@ -2548,6 +2549,57 @@ before, 73 profiles and one shot, the skin's KV namespace empty, `streamline-app
 
 For the founder's check on the real DE1 (H1's install.md): the flush runs at the set flow and
 ends at the set duration.
+
+### 20.14 Built (S2b)
+
+Built on 2026-10-18 against Decaid 0.8.8 with device simulation; the rig served Streamline
+**0.2.14** (`GET /api/v1/webui/skins/default`, `commitHash` `v0.2.14`), so there was no newer
+release to diff against `3a4bd23`.
+
+- **Connections** (category 2, `Devices.svelte`, `devices.ts`): one list each for machines and
+  scales, from `/ws/v1/devices` (the whole list at connect and at every change; the skin's new
+  `devicesStream`). Order: connected, then connecting or disconnecting, then present, then
+  remembered and absent (`available: false`); Decaid's order within each. A row has the
+  preferred switch (`preferredMachineId` / `preferredScaleId`, written and read back as every
+  field), its state and Streamline's actions: Disconnect, Connect, or for an absent one
+  Reconnect (a scan) and Forget behind a confirm. Commands are REST requests, not the
+  channel's commands: `GET /api/v1/devices/scan?connect=true&quick=true` (Streamline's Search
+  with Decaid's default `connect`), `PUT .../connect`, `.../disconnect`, `.../forget` with the
+  id in the body. Under the scale list: scale power mode, scale required, Wi-Fi scales by
+  address (`GET`/`POST`/`DELETE /api/v1/devices/wifi`), shown inline rather than in
+  Streamline's dialog.
+- **Machine Information** (category 4, `MachineInfo.svelte`): `GET /api/v1/machine/info`
+  (model, firmware, serial with Copy, group head controller, every `extra` entry); the USB
+  page's charging status moved from a field to this component, shown only where Decaid
+  reports one.
+- **Maintenance** (category 5, `Maintenance.svelte`, `maintenance.ts`, from Streamline's
+  `maintenance.js` and `maintenance-progress.js`): clean, descale, transport mode; Start asks
+  first, Cancel (`PUT .../state/idle`) while it runs; the steps from the machine's substate,
+  a start timeout of 20 s, "lost contact" without frames, a procedure already running joined.
+  Out of water Start says so and asks nothing; a sleeping machine is woken first. The descale
+  switches the steam heater off (the menu's switch, now `Skin.setSteamHeater`), waits for the
+  boiler to be at 60 °C or under (20 min at most) and switches it on again when the cycle ends,
+  is cancelled or the page is left. The component takes only the skin and the procedure
+  (`titled` adds its own title), so T9's menu shortcut can open the clean on its own.
+- **On the rig** (`log\s2b-clean-probe.mjs`, `.txt`): `PUT /api/v1/machine/state/cleaning`
+  answered 200, the simulated DE1 was in `cleaning` (substate `idle`) 0.5 s later and stayed
+  there; `PUT .../idle` brought it back. So the simulation shows the first step only. A real DE1
+  nearby (`DE1`, a Bluetooth MAC) was listed as discovered beside `MockDe1`; the rig tests
+  search, connect, disconnect and forget nothing.
+
+Tests: Vitest `devices.test.ts` (each list's devices, order, labels, actions, the connect's
+answers), `maintenance.test.ts` (steps, done, timeout, stale, joined, the boiler's
+temperature), the tree, the scale fields, the client's new requests. `npm run e2e`:
+`e2e/settings-connections.spec.ts`, 11 tests with fake `/ws/v1/devices` frames (lists, Search,
+Connect and a time-out, preferred, Forget, power mode and scale required, Wi-Fi, the clean's
+confirm and Cancel, a clean joined, out of water, machine information). Rig:
+`e2e-rig/settings-connections.spec.ts`, three tests: `MockDe1` and `MockScale` connected,
+`scalePowerMode` and `blockOnNoScale` changed through the page, read back and restored; a clean
+started and cancelled with the state read back; the machine's information. Full rig run 28 of
+28 (`log\s2b-e2e-rig.txt`); Decaid's settings and the workflow's steam, hot water and rinse
+values equal to those recorded at the start (`log\s2b-before-*.json`, `s2b-after-*.json`), 73
+profiles, one shot, the skin's KV empty, Streamline the default skin. Screenshots:
+`docs/product/settings-connections.png`, `settings-maintenance.png`.
 
 ## 21. Hot water page and stop at weight on the rig (R5)
 

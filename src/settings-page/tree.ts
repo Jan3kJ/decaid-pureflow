@@ -6,7 +6,7 @@
 //
 // The settings page's navigation (research.md 20.3, 20.7): Streamline's categories in its order
 // and with its numbers, each subcategory with what renders it. What the port leaves out is
-// absent; S2b and S2c add Connections, Maintenance, Extensions, Updates and the rest (20.10).
+// absent; S2c adds Extensions, Updates, presence and sensor calibration (20.10).
 import {
   BRIGHTNESS,
   DECAID_SETTINGS,
@@ -16,6 +16,7 @@ import {
   HOT_WATER,
   MACHINE_ADVANCED,
   REFILL_KIT,
+  SCALE,
   STEAM,
   USB,
   VOLTAGE,
@@ -23,6 +24,8 @@ import {
   WATER_TANK,
   type Field,
 } from './fields';
+import type { DeviceKind } from './devices';
+import type { ProcedureId } from './maintenance';
 
 /** A button of a subcategory that is not a setting. */
 export type Action = 'fast-start' | 'reset' | 'dashboard';
@@ -30,7 +33,20 @@ export type Action = 'fast-start' | 'reset' | 'dashboard';
 /** The skin's own settings (20.6), drawn by `SkinCategory.svelte`. */
 export type SkinPart = 'steam' | 'hot-water' | 'profile' | 'graph' | 'backup';
 
-export type Content = { kind: 'fields'; fields: Field[]; actions?: Action[] } | { kind: 'skin'; part: SkinPart };
+/**
+ * A part of a subcategory that is not a list of fields (S2b): the device lists
+ * (`Devices.svelte`), a maintenance procedure (`Maintenance.svelte`), the machine's information
+ * and the charging status (`MachineInfo.svelte`). Drawn above the subcategory's fields.
+ */
+export type View =
+  | { kind: 'devices'; devices: DeviceKind }
+  | { kind: 'maintenance'; procedure: ProcedureId }
+  | { kind: 'machine-info' }
+  | { kind: 'charging' };
+
+export type Content =
+  | { kind: 'fields'; fields: Field[]; actions?: Action[]; view?: View; below?: boolean }
+  | { kind: 'skin'; part: SkinPart };
 
 export interface Subcategory {
   id: string;
@@ -49,6 +65,7 @@ export interface Category {
 }
 
 const fields = (list: Field[], actions?: Action[]): Content => ({ kind: 'fields', fields: list, actions });
+const view = (shown: View, list: Field[] = [], below = false): Content => ({ kind: 'fields', fields: list, view: shown, below });
 
 export const SETTINGS_TREE: Category[] = [
   {
@@ -80,6 +97,20 @@ export const SETTINGS_TREE: Category[] = [
     ],
   },
   {
+    id: 'bluetooth',
+    number: 2,
+    name: 'Connections',
+    subcategories: [
+      {
+        id: 'ble_machine',
+        name: '1. Machine',
+        hint: 'Decaid connects the preferred machine by itself when it finds it.',
+        content: view({ kind: 'devices', devices: 'machine' }),
+      },
+      { id: 'ble_scale', name: '2. Scale', content: view({ kind: 'devices', devices: 'scale' }, SCALE) },
+    ],
+  },
+  {
     id: 'calibration',
     number: 3,
     name: 'Calibration',
@@ -99,7 +130,20 @@ export const SETTINGS_TREE: Category[] = [
     id: 'machine',
     number: 4,
     name: 'Machine',
-    subcategories: [{ id: 'usbchargermode', name: 'USB', content: fields(USB) }],
+    subcategories: [
+      { id: 'usbchargermode', name: 'USB', content: view({ kind: 'charging' }, USB, true) },
+      { id: 'machineinfo', name: 'Machine Information', content: view({ kind: 'machine-info' }) },
+    ],
+  },
+  {
+    id: 'maintenance',
+    number: 5,
+    name: 'Maintenance',
+    subcategories: [
+      { id: 'machinecleaning', name: 'Clean', content: view({ kind: 'maintenance', procedure: 'clean' }) },
+      { id: 'machinedescaling', name: 'Machine Descaling', content: view({ kind: 'maintenance', procedure: 'descale' }) },
+      { id: 'transportmode', name: 'Transport Mode', content: view({ kind: 'maintenance', procedure: 'transport' }) },
+    ],
   },
   {
     id: 'skin',

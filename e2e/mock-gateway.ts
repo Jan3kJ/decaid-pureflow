@@ -180,6 +180,8 @@ export class MockGateway {
     hotWaterFlowMultiplier: 0.3,
     scalePowerMode: 'disconnect',
     blockOnNoScale: false,
+    preferredMachineId: 'MockDe1',
+    preferredScaleId: 'MockScale',
     blockTareDuringShot: false,
     stopHotWaterAtWeight: true,
     automaticUpdateCheck: true,
@@ -216,6 +218,20 @@ export class MockGateway {
   };
   /** `/ws/v1/machine/waterLevels`: the tank, in mm */
   water: Json = { currentLevel: 38, refillLevel: 5 };
+  /** `/ws/v1/devices` and `GET /api/v1/devices`: the devices Decaid knows, as on the rig (2026-10-18) */
+  devices: Json[] = [
+    { name: 'Mock Scale', id: 'MockScale', state: 'connected', type: 'scale', available: true, connectionRole: 'primary' },
+    { name: 'MockDe1', id: 'MockDe1', state: 'connected', type: 'machine', available: true },
+  ];
+  scanning = false;
+  /** what the next scan finds */
+  scanFinds: Json[] = [];
+  /** device ids whose connect times out */
+  connectTimesOut = new Set<string>();
+  /** `GET /api/v1/devices/wifi` */
+  wifi: string[] = [];
+  /** `GET /api/v1/machine/info`, as on the rig */
+  machineInfo: Json = { version: '1337', model: 'DE1Pro', serialNumber: 'mock-de1', GHC: false, extra: { refillKit: true, voltage: 120 } };
   /** the KV store, as `namespace/key` */
   store: Record<string, unknown> = {};
   /**
@@ -234,6 +250,7 @@ export class MockGateway {
   private readonly scaleSockets = new Set<WebSocketRoute>();
   private readonly settingsSockets = new Set<WebSocketRoute>();
   private readonly waterSockets = new Set<WebSocketRoute>();
+  private readonly deviceSockets = new Set<WebSocketRoute>();
   /**
    * The machine's substate, where a test sets one: a real DE1 stays in state steam after the
    * steam, in `pouringDone`, `puffing` or `pausedSteam` (spec 3.7). Else the rig's.
@@ -261,6 +278,10 @@ export class MockGateway {
     });
     await page.routeWebSocket(/:8080\/ws\/v1\/machine\/waterLevels/, (ws) => {
       if (this.open(ws, this.waterSockets)) ws.send(JSON.stringify(this.water));
+    });
+    await page.routeWebSocket(/:8080\/ws\/v1\/devices/, (ws) => {
+      // The whole list when the socket opens, then at every change.
+      if (this.open(ws, this.deviceSockets)) ws.send(JSON.stringify(this.devicesFrame()));
     });
     await page.routeWebSocket(/:8080\/ws\/v1\/scale\/snapshot/, (ws) => {
       // The first frame is a status frame without a weight.
@@ -343,6 +364,21 @@ export class MockGateway {
     const remembered = this.store['streamline-app/last-steam-duration'];
     if (!this.streamlineOpen || typeof remembered !== 'number') return;
     if (remembered !== this.shotSettings.targetSteamDuration) this.putWorkflowSteam({ duration: remembered });
+  }
+
+  /** A frame of `/ws/v1/devices`. */
+  devicesFrame(): Json {
+    return { timestamp: new Date().toISOString(), devices: this.devices, scanning: this.scanning, connectionStatus: { phase: 'ready', error: null } };
+  }
+
+  /** Another client or the device itself changed the list: the frame goes out. */
+  sendDevices(): void {
+    for (const ws of this.deviceSockets) ws.send(JSON.stringify(this.devicesFrame()));
+  }
+
+  private setDevice(id: string, change: Json): void {
+    this.devices = this.devices.map((entry) => (entry.id === id ? { ...entry, ...change } : entry));
+    this.sendDevices();
   }
 
   /** The tank's level changes, in mm. */
@@ -490,8 +526,10 @@ export class MockGateway {
       if (!this.machineConnected) return noMachine();
       // The state itself changes when the test replays the shot or lets it end; only sleep
       // and the wake from it are the mock's own.
-      const asked = path.split('/').pop();
-      if (asked === 'sleeping' || this.state === 'sleeping') this.state = asked!;
+      const asked = path.split('/').pop()!;
+      // The maintenance states are entered and left at once, as the simulated DE1 does (research.md 20.14).
+      const own = ['sleeping', 'cleaning', 'descaling', 'airPurge'];
+      if (own.includes(asked) || own.includes(this.state)) this.state = asked;
       return json(null);
     }
     if (method === 'PUT' && path === '/api/v1/scale/tare') {
@@ -516,6 +554,48 @@ export class MockGateway {
     if (path === '/api/v1/info' && method === 'GET') {
       return json({ version: '0.8.8', buildNumber: '2900', fullVersion: '0.8.8+2900', commitShort: 'aab5f938' });
     }
+    if (path === '/api/v1/devices' && method === 'GET') return json(this.devices);
+    if (path === '/api/v1/devices/scan' && method === 'GET') {
+      // The scan runs on: its start and its end are frames of the stream.
+      this.scanning = true;
+      this.sendDevices();
+      setTimeout(() => {
+        const known = new Set(this.devices.map((entry) => entry.id));
+        this.devices = [...this.devices, ...this.scanFinds.filter((entry) => !known.has(entry.id))];
+        this.scanning = false;
+        this.sendDevices();
+      }, 300);
+      return json(url.searchParams.get('quick') === 'true' ? [] : this.devices);
+    }
+    if (path === '/api/v1/devices/connect' && method === 'PUT') {
+      const found = this.devices.find((entry) => entry.id === body?.deviceId);
+      if (!found) return json({ error: 'Device not found' }, 404);
+      const result = (outcome: string, state: string) => ({ deviceId: found.id, operation: 'connect', outcome, state, connectionError: null });
+      this.setDevice(found.id, { state: 'connecting' });
+      if (this.connectTimesOut.has(found.id)) {
+        this.setDevice(found.id, { state: 'disconnected' });
+        return json({ ...result('timedOut', 'disconnected'), error: 'connect timed out' }, 504);
+      }
+      this.setDevice(found.id, { state: 'connected', available: true });
+      return json(result('connected', 'connected'));
+    }
+    if (path === '/api/v1/devices/disconnect' && method === 'PUT') {
+      if (!this.devices.some((entry) => entry.id === body?.deviceId)) return json({ error: 'Device not found' }, 404);
+      this.setDevice(body.deviceId, { state: 'disconnected' });
+      return json(null);
+    }
+    if (path === '/api/v1/devices/forget' && method === 'PUT') {
+      // An absent device leaves the list; a present one stays, no longer remembered.
+      this.devices = this.devices.filter((entry) => entry.id !== body?.deviceId || entry.available !== false);
+      this.sendDevices();
+      return json(null);
+    }
+    if (path === '/api/v1/devices/wifi') {
+      if (method === 'POST' && !this.wifi.includes(body.host)) this.wifi = [...this.wifi, body.host];
+      if (method === 'DELETE') this.wifi = this.wifi.filter((host) => host !== body.host);
+      return json({ endpoints: this.wifi });
+    }
+    if (path === '/api/v1/machine/info' && method === 'GET') return this.machineConnected ? json(this.machineInfo) : noMachine();
     if (path.startsWith('/api/v1/machine/settings') && !this.machineConnected) return noMachine();
     if (path === '/api/v1/machine/settings' && method === 'GET') return json(this.machineSettings);
     if (path === '/api/v1/machine/settings' && method === 'POST') {

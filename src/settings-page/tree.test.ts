@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULT_CATEGORY, LOCATION_KEY, SETTINGS_TREE, loadLocation, saveLocation } from './tree';
 
 describe('the settings tree (research.md 20.3, 20.10 S2a)', () => {
-  it("has Streamline's categories of S2a in its order and with its numbers", () => {
+  it("has Streamline's categories of S2a and S2b in its order and with its numbers", () => {
     expect(SETTINGS_TREE.map((category) => `${category.number}. ${category.name}`)).toEqual([
       '1. Quick Adjustments',
+      '2. Connections',
       '3. Calibration',
       '4. Machine',
+      '5. Maintenance',
       '6. Skin',
       '9. Miscellaneous',
     ]);
@@ -23,12 +25,14 @@ describe('the settings tree (research.md 20.3, 20.10 S2a)', () => {
       'Machine Advanced Settings',
     ]);
     expect(names('calibration')).toEqual(['Default load settings', 'Refill Kit', 'Voltage', 'Fan']);
-    expect(names('machine')).toEqual(['USB']);
+    expect(names('bluetooth')).toEqual(['1. Machine', '2. Scale']);
+    expect(names('machine')).toEqual(['USB', 'Machine Information']);
+    expect(names('maintenance')).toEqual(['Clean', 'Machine Descaling', 'Transport Mode']);
     expect(names('skin')).toEqual(['Steam', 'Hot water', 'Profile', 'Shot graph', 'Backup and version']);
     expect(names('miscellaneous')).toEqual(['Decaid Settings', 'Brightness', 'Wake Lock']);
   });
 
-  it('leaves out what the port leaves out, and what S2b and S2c bring', () => {
+  it('leaves out what the port leaves out, and what S2c brings', () => {
     const all = SETTINGS_TREE.flatMap((category) => [category.name, ...category.subcategories.map((sub) => sub.name)]);
     for (const absent of [
       // Streamline's own, Bengle only, the skin switch, the manual (research.md 20.11)
@@ -45,10 +49,7 @@ describe('the settings tree (research.md 20.3, 20.10 S2a)', () => {
       'User Manual',
       // shown once, in Quick Adjustments
       'Calibration Steam',
-      // S2b and S2c
-      'Connections',
-      'Maintenance',
-      'Machine Information',
+      // S2c
       'Sensor Calibration',
       'Extensions',
       'Presence Detection',
@@ -57,6 +58,21 @@ describe('the settings tree (research.md 20.3, 20.10 S2a)', () => {
       expect(all).not.toContain(absent);
     }
     expect(SETTINGS_TREE.find((category) => category.id === 'calibration')!.subcategories.map((sub) => sub.id)).not.toContain('steam');
+  });
+
+  it('draws the device lists, the procedures and the machine information with their views (S2b)', () => {
+    const views = SETTINGS_TREE.flatMap((category) =>
+      category.subcategories.map((sub) => [sub.id, sub.content.kind === 'fields' ? (sub.content.view ?? null) : null]),
+    ).filter(([, view]) => view !== null);
+    expect(Object.fromEntries(views)).toEqual({
+      ble_machine: { kind: 'devices', devices: 'machine' },
+      ble_scale: { kind: 'devices', devices: 'scale' },
+      usbchargermode: { kind: 'charging' },
+      machineinfo: { kind: 'machine-info' },
+      machinecleaning: { kind: 'maintenance', procedure: 'clean' },
+      machinedescaling: { kind: 'maintenance', procedure: 'descale' },
+      transportmode: { kind: 'maintenance', procedure: 'transport' },
+    });
   });
 
   it('keeps the category opened last, and opens on the first without one', () => {

@@ -13,9 +13,13 @@
   import { onMount } from 'svelte';
   import { PRODUCT_NAME, PRODUCT_VERSION } from '../product';
   import type { Skin } from '../shell/skin.svelte';
+  import Confirm from './Confirm.svelte';
+  import Devices from './Devices.svelte';
   import FieldRow from './FieldRow.svelte';
+  import MachineInfo from './MachineInfo.svelte';
+  import Maintenance from './Maintenance.svelte';
   import SkinCategory from './SkinCategory.svelte';
-  import { STEAM_TEMPERATURE, type Field } from './fields';
+  import { PREFERRED_DEVICES, STEAM_TEMPERATURE, type Field } from './fields';
   import {
     NO_VALUES,
     applyFastStart,
@@ -106,6 +110,12 @@
     }
   }
 
+  /** A device list's preferred switch: one write, read back, as every field; a failure goes to the list. */
+  async function prefer(key: string, id: string | null) {
+    const field = PREFERRED_DEVICES.find((entry) => entry.key === key)!;
+    read = await writeField(skin.client, values, field, id);
+  }
+
   const ACTIONS: Record<Action, { label: string; hint: string; confirm?: string }> = {
     'fast-start': {
       label: 'Fast Start Defaults',
@@ -186,12 +196,28 @@
           <h2>{sub.name}</h2>
           {#if sub.hint}<p class="hint">{sub.hint}</p>{/if}
           {#if sub.content.kind === 'fields'}
+            {@const view = sub.content.view}
+            {#snippet shown()}
+              {#if view?.kind === 'devices'}
+                <Devices
+                  {skin}
+                  kind={view.devices}
+                  preferred={read.decaid ? (read.decaid[view.devices === 'machine' ? 'preferredMachineId' : 'preferredScaleId'] ?? null) : undefined}
+                  onpreferred={prefer}
+                />
+              {:else if view?.kind === 'maintenance'}
+                <Maintenance {skin} procedure={view.procedure} titled={false} />
+              {:else if view?.kind === 'machine-info' || view?.kind === 'charging'}
+                <MachineInfo {skin} part={view.kind} decaid={read.decaid} />
+              {/if}
+            {/snippet}
             {#each unreadOf(sub) as error (error)}
               <p class="warn" data-testid="settings-unread">
                 Not read: {error}
                 <button class="action" onclick={readValues} disabled={reading}>Read again</button>
               </p>
             {/each}
+            {#if !sub.content.below}{@render shown()}{/if}
             {#each sub.content.fields as field (field.id)}
               <FieldRow
                 {field}
@@ -203,6 +229,7 @@
                 onwrite={(value) => write(field, value)}
               />
             {/each}
+            {#if sub.content.below}{@render shown()}{/if}
             {#each (sub.content.actions ?? []).filter(offered) as action (action)}
               <div class="row">
                 <div class="about">
@@ -223,17 +250,7 @@
 </div>
 
 {#if confirming}
-  <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-  <div class="backdrop" onclick={(e) => e.target === e.currentTarget && (confirming = null)}>
-    <div class="dialog" role="dialog" aria-modal="true" aria-label={confirming.title} data-testid="settings-confirm">
-      <h2>{confirming.title}</h2>
-      <p>{confirming.text}</p>
-      <div class="actions">
-        <button class="action" data-testid="settings-confirm-cancel" onclick={() => (confirming = null)}>Cancel</button>
-        <button class="action primary" data-testid="settings-confirm-ok" onclick={confirming.run}>Set</button>
-      </div>
-    </div>
-  </div>
+  <Confirm title={confirming.title} text={confirming.text} onok={confirming.run} oncancel={() => (confirming = null)} />
 {/if}
 
 <style>
@@ -391,46 +408,7 @@
     border-radius: 0.9rem;
   }
 
-  .action.primary {
-    color: var(--bg);
-    background: var(--fg);
-    border-color: var(--fg);
-    font-weight: 600;
-  }
-
   .action:disabled {
     opacity: 0.5;
-  }
-
-  .backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 10;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgb(0 0 0 / 55%);
-  }
-
-  .dialog {
-    width: 30rem;
-    box-sizing: border-box;
-    padding: 0.4rem 1.2rem 1.2rem;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 1.2rem;
-    box-shadow: 0 0.6rem 2.4rem rgb(0 0 0 / 70%);
-  }
-
-  .dialog p {
-    margin: 0;
-    color: var(--dim);
-  }
-
-  .actions {
-    margin-top: 1rem;
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.6rem;
   }
 </style>

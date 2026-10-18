@@ -377,15 +377,24 @@ export class Skin {
    */
   async toggleSteamHeater(): Promise<void> {
     this.notice = this.info = null;
-    const on = this.steamHeater === 'off';
+    await this.setSteamHeater(this.steamHeater === 'off');
+  }
+
+  /**
+   * The steam heater on or off, as the menu's switch does; the descale switches it off for the
+   * cycle (research.md 20.3). False when it was not switched: the notice says why.
+   */
+  async setSteamHeater(on: boolean): Promise<boolean> {
     const current = this.workflow?.steamSettings?.targetTemperature;
     if (!on && isOnTemperature(current) && current !== this.settings.steam.heaterTemperature) {
       this.setSettings({ steam: { ...this.settings.steam, heaterTemperature: current } });
     }
     try {
       this.workflow = await switchHeater(this.client, on, this.settings.steam.heaterTemperature, () => this.shotSettings);
+      return true;
     } catch (error) {
       this.notice = `The steam heater was not switched ${on ? 'on' : 'off'}: ${error instanceof Error ? error.message : String(error)}`;
+      return false;
     }
   }
 

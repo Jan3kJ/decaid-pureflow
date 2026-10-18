@@ -3,10 +3,13 @@
 import type {
   AdvancedSettings,
   DecaidInfo,
+  DeviceConnectResult,
+  DeviceInfo,
   DecaidSettings,
   DisplayState,
   ListProfilesQuery,
   ListShotsQuery,
+  MachineInfo,
   MachineSettings,
   MachineSettingsPatch,
   MachineSnapshot,
@@ -21,6 +24,7 @@ import type {
   ShotRecordSummary,
   ShotSettings,
   WebUiServerStatus,
+  WifiEndpoints,
   Workflow,
   WorkflowPatch,
 } from './types';
@@ -111,6 +115,11 @@ export class DecaidClient {
   /** Asks for a state change. The snapshot stream shows when the machine has followed. */
   async requestMachineState(state: RequestedMachineState): Promise<void> {
     await this.request('PUT', `/api/v1/machine/state/${segment(state)}`);
+  }
+
+  /** The connected machine's model, firmware and serial number; answers an error without one. */
+  getMachineInfo(): Promise<MachineInfo> {
+    return this.request('GET', '/api/v1/machine/info');
   }
 
   /** Loads a profile to the machine without changing the rest of the workflow. */
@@ -227,6 +236,48 @@ export class DecaidClient {
   /** The latest shot, without measurements. */
   getLatestShot(): Promise<ShotRecordSummary> {
     return this.request('GET', '/api/v1/shots/latest');
+  }
+
+  // --- devices ---
+
+  /** The machines, scales and sensors Decaid knows, with their states; `/ws/v1/devices` streams the same. */
+  listDevices(): Promise<DeviceInfo[]> {
+    return this.request('GET', '/api/v1/devices');
+  }
+
+  /**
+   * A scan. With `connect` (Decaid's default) the missing machine and scale are connected
+   * without replacing connected ones; with `quick` the answer comes at once and the scan goes on.
+   */
+  scanDevices(options: { connect?: boolean; quick?: boolean } = {}): Promise<DeviceInfo[]> {
+    return this.request('GET', `/api/v1/devices/scan${queryString(options)}`);
+  }
+
+  /** The id goes in the body: a MAC has colons, a serial port slashes. */
+  connectDevice(deviceId: string): Promise<DeviceConnectResult> {
+    return this.request('PUT', '/api/v1/devices/connect', { deviceId });
+  }
+
+  async disconnectDevice(deviceId: string): Promise<void> {
+    await this.request('PUT', '/api/v1/devices/disconnect', { deviceId });
+  }
+
+  /** Removes a device from Decaid's remembered devices; one that is present stays listed. */
+  async forgetDevice(deviceId: string): Promise<void> {
+    await this.request('PUT', '/api/v1/devices/forget', { deviceId });
+  }
+
+  /** The Wi-Fi scales added by host; the ones Decaid finds by itself are in the device list only. */
+  async listWifiScales(): Promise<string[]> {
+    return (await this.request<WifiEndpoints>('GET', '/api/v1/devices/wifi')).endpoints ?? [];
+  }
+
+  async addWifiScale(host: string): Promise<string[]> {
+    return (await this.request<WifiEndpoints>('POST', '/api/v1/devices/wifi', { host })).endpoints ?? [];
+  }
+
+  async removeWifiScale(host: string): Promise<string[]> {
+    return (await this.request<WifiEndpoints>('DELETE', '/api/v1/devices/wifi', { host })).endpoints ?? [];
   }
 
   // --- scale ---

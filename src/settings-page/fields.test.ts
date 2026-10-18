@@ -3,6 +3,7 @@ import { HOT_WATER_FIELDS } from '../hotwater/hot-water';
 import {
   FAST_START,
   FLUSH,
+  SCALE,
   STEAM_TEMPERATURE,
   USB,
   clock,
@@ -62,6 +63,7 @@ describe('the fields of the settings page (research.md 20.3)', () => {
     expect(options('gateway-mode')).toEqual(['disabled', 'tracking', 'full']);
     expect(options('charging-mode')).toEqual(['disabled', 'highAvailability', 'balanced', 'longevity']);
     expect(options('log-level')).toHaveLength(10);
+    expect(options('scale-power-mode')).toEqual(['disabled', 'displayOff', 'disconnect']);
   });
 
   it('asks before the voltage and the gateway mode, and before nothing else (research.md 20.9)', () => {
@@ -80,6 +82,13 @@ describe('the fields of the settings page (research.md 20.3)', () => {
       const field = numberField(`hot-water-${page.id}`);
       expect([field.key, field.min, field.max, field.unit]).toEqual([page.key, page.min, page.max, page.unit]);
     }
+  });
+
+  it("the scale's settings are Decaid's scalePowerMode and blockOnNoScale (S2b)", () => {
+    expect(SCALE.map((field) => [field.kind, field.source, field.key])).toEqual([
+      ['choice', 'decaid', 'scalePowerMode'],
+      ['switch', 'decaid', 'blockOnNoScale'],
+    ]);
   });
 
   it("writes the USB charger as 'enable' / 'disable' (research.md 20.4)", () => {

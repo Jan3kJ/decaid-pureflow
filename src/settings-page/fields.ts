@@ -420,18 +420,39 @@ export const USB: Field[] = [
     source: 'decaid',
     key: 'lowBatteryBrightnessLimit',
   },
+];
+
+// --- 2. Connections ---
+
+/** The scale's settings under its device list (Streamline's 'Scale' page). */
+export const SCALE: Field[] = [
   {
-    kind: 'info',
-    id: 'charging-state',
-    label: 'charging status',
+    kind: 'choice',
+    id: 'scale-power-mode',
+    label: 'scale power mode',
+    hint: 'What the scale does while the machine sleeps.',
     source: 'decaid',
-    key: 'chargingState',
-    format: (raw) => {
-      if (!raw || typeof raw !== 'object') return null;
-      const state = raw as { batteryPercent?: number; currentPhase?: string; usbChargerOn?: boolean };
-      return `battery ${state.batteryPercent ?? '--'}%, ${state.currentPhase ?? '--'}, USB ${state.usbChargerOn ? 'on' : 'off'}`;
-    },
+    key: 'scalePowerMode',
+    options: [
+      { value: 'disabled', label: 'Nothing' },
+      { value: 'displayOff', label: 'Display off' },
+      { value: 'disconnect', label: 'Disconnect' },
+    ],
   },
+  {
+    kind: 'switch',
+    id: 'block-on-no-scale',
+    label: 'scale required',
+    hint: 'A shot does not start while no scale is connected.',
+    source: 'decaid',
+    key: 'blockOnNoScale',
+  },
+];
+
+/** The device Decaid connects by itself when it finds it; written by the device lists' switches (`Devices.svelte`). */
+export const PREFERRED_DEVICES: InfoField[] = [
+  { kind: 'info', id: 'preferred-machine', label: 'preferred machine', source: 'decaid', key: 'preferredMachineId' },
+  { kind: 'info', id: 'preferred-scale', label: 'preferred scale', source: 'decaid', key: 'preferredScaleId' },
 ];
 
 // --- 9. Miscellaneous ---

@@ -53,8 +53,11 @@ export interface WaterLevels {
   refillLevel: number;
 }
 
-/** The states version 1 of the skin asks for (spec 3.1). Sleep is `sleeping`. */
-export type RequestedMachineState = 'idle' | 'espresso' | 'steam' | 'sleeping';
+/**
+ * The states the skin asks for (spec 3.1). Sleep is `sleeping`; the settings page's maintenance
+ * asks for `cleaning`, `descaling` and `airPurge` (research.md 20.3).
+ */
+export type RequestedMachineState = 'idle' | 'espresso' | 'steam' | 'sleeping' | 'cleaning' | 'descaling' | 'airPurge';
 
 /**
  * A frame of `/ws/v1/machine/snapshot` and the answer of `GET /api/v1/machine/state`.
@@ -79,6 +82,63 @@ export interface MachineSnapshot {
   /** 0-based index of the profile step that runs */
   profileFrame: number;
   steamTemperature: number;
+}
+
+/** `GET /api/v1/machine/info`: the connected machine. */
+export interface MachineInfo {
+  /** the firmware version */
+  version?: string;
+  model?: string;
+  serialNumber?: string;
+  /** the group head controller is present and active */
+  GHC?: boolean;
+  /** read from the machine once at connect: `refillKit`, `voltage` and what a firmware adds */
+  extra?: Record<string, unknown> | null;
+  [key: string]: unknown;
+}
+
+// --- devices ---
+
+export type DeviceState = 'discovered' | 'connecting' | 'connected' | 'disconnecting' | 'disconnected';
+export type DeviceType = 'machine' | 'scale' | 'sensor' | 'grinder';
+
+/** A device of `GET /api/v1/devices` and of `/ws/v1/devices` (`DeviceInfo`, `DeviceInventory`). */
+export interface DeviceInfo {
+  name: string;
+  /** a BLE MAC, a UUID, a serial port's path or a Wi-Fi host */
+  id: string;
+  state: DeviceState;
+  type: DeviceType;
+  /** false: a remembered device that is not present, reported as `disconnected`; absent in older builds */
+  available?: boolean;
+  connectionRole?: 'primary' | 'auxiliary';
+}
+
+/** A frame of `/ws/v1/devices`: the whole device list, at connect and at every change. */
+export interface DevicesState {
+  timestamp: string;
+  devices: DeviceInfo[];
+  /** a scan runs */
+  scanning: boolean;
+  connectionStatus?: {
+    phase?: 'idle' | 'scanning' | 'connectingMachine' | 'connectingScale' | 'ready';
+    error?: { kind: string; message: string; suggestion?: string | null } | null;
+    [key: string]: unknown;
+  };
+}
+
+/** The answer of `PUT /api/v1/devices/connect`. */
+export interface DeviceConnectResult {
+  deviceId: string;
+  outcome: 'connected' | 'alreadyConnected' | 'conflict' | 'failed' | 'timedOut';
+  state: DeviceState;
+  connectionError?: { kind: string; message: string } | null;
+  error?: string | null;
+}
+
+/** `GET`, `POST` and `DELETE /api/v1/devices/wifi`: the Wi-Fi scales added by hand. */
+export interface WifiEndpoints {
+  endpoints: string[];
 }
 
 // --- scale ---
@@ -368,6 +428,11 @@ export interface DecaidSettings {
   nightModeSleepTime?: number;
   nightModeMorningTime?: number;
   lowBatteryBrightnessLimit?: boolean;
+  /** the device id Decaid connects by itself when it finds it; null for none */
+  preferredMachineId?: string | null;
+  preferredScaleId?: string | null;
+  /** what the scale does while the machine sleeps */
+  scalePowerMode?: 'disabled' | 'displayOff' | 'disconnect';
   /** absent on the rig */
   chargingState?: { batteryPercent?: number; isEmergency?: boolean; currentPhase?: string; usbChargerOn?: boolean } | null;
   [key: string]: unknown;

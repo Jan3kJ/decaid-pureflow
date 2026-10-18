@@ -106,7 +106,71 @@ describe('base URL', () => {
   });
 });
 
+describe('devices (research.md 20.3)', () => {
+  // As the rig answered (Decaid 0.8.8 with simulated devices, 2026-10-18).
+  const DEVICES = [
+    { name: 'Mock Scale', id: 'MockScale', state: 'connected', type: 'scale', available: true, connectionRole: 'primary' },
+    { name: 'MockDe1', id: 'MockDe1', state: 'connected', type: 'machine', available: true },
+  ];
+
+  it('lists the devices', async () => {
+    const { client, calls } = clientWith({ body: DEVICES });
+    expect(await client.listDevices()).toEqual(DEVICES);
+    expect(calls[0]).toMatchObject({ method: 'GET', url: 'http://localhost:8080/api/v1/devices' });
+  });
+
+  it('scans with its options as the query', async () => {
+    const { client, calls } = clientWith({ body: [] }, { body: DEVICES });
+    await client.scanDevices({ connect: true, quick: true });
+    await client.scanDevices();
+    expect(calls.map((call) => call.url)).toEqual([
+      'http://localhost:8080/api/v1/devices/scan?connect=true&quick=true',
+      'http://localhost:8080/api/v1/devices/scan',
+    ]);
+  });
+
+  it('connects, disconnects and forgets with the id in the body: a MAC has colons, a serial port slashes', async () => {
+    const result = { deviceId: 'AA:BB', operation: 'connect', outcome: 'connected', state: 'connected', connectionError: null };
+    const { client, calls } = clientWith({ body: result });
+    expect(await client.connectDevice('AA:BB')).toEqual(result);
+    await client.disconnectDevice('/dev/ttyUSB0');
+    await client.forgetDevice('AA:BB');
+    expect(calls.map((call) => [call.method, call.url.replace(DEFAULT_BASE_URL, ''), call.body])).toEqual([
+      ['PUT', '/api/v1/devices/connect', { deviceId: 'AA:BB' }],
+      ['PUT', '/api/v1/devices/disconnect', { deviceId: '/dev/ttyUSB0' }],
+      ['PUT', '/api/v1/devices/forget', { deviceId: 'AA:BB' }],
+    ]);
+  });
+
+  it('a connect that fails answers with its result in the error', async () => {
+    const result = { deviceId: 'x', operation: 'connect', outcome: 'timedOut', state: 'disconnected', connectionError: null };
+    const { client } = clientWith({ status: 504, body: result });
+    const error = await client.connectDevice('x').catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(DecaidApiError);
+    expect((error as DecaidApiError).body).toEqual(result);
+  });
+
+  it('lists, adds and removes the Wi-Fi scales added by host', async () => {
+    const { client, calls } = clientWith({ body: { endpoints: [] } }, { body: { endpoints: ['hds.local'] } }, { body: { endpoints: [] } });
+    expect(await client.listWifiScales()).toEqual([]);
+    expect(await client.addWifiScale('hds.local')).toEqual(['hds.local']);
+    expect(await client.removeWifiScale('hds.local')).toEqual([]);
+    expect(calls.map((call) => [call.method, call.url.replace(DEFAULT_BASE_URL, ''), call.body])).toEqual([
+      ['GET', '/api/v1/devices/wifi', undefined],
+      ['POST', '/api/v1/devices/wifi', { host: 'hds.local' }],
+      ['DELETE', '/api/v1/devices/wifi', { host: 'hds.local' }],
+    ]);
+  });
+});
+
 describe('machine', () => {
+  it("reads the machine's information", async () => {
+    const info = { version: '1337', model: 'DE1Pro', serialNumber: 'mock-de1', GHC: false, extra: {} };
+    const { client, calls } = clientWith({ body: info });
+    expect(await client.getMachineInfo()).toEqual(info);
+    expect(calls[0]).toMatchObject({ method: 'GET', url: 'http://localhost:8080/api/v1/machine/info' });
+  });
+
   it('reads the machine state', async () => {
     const { client, calls } = clientWith({ body: SNAPSHOT });
     const snapshot = await client.getMachineState();
@@ -115,7 +179,7 @@ describe('machine', () => {
     expect(calls[0]).toMatchObject({ method: 'GET', body: undefined });
   });
 
-  it.each(['idle', 'espresso', 'steam', 'sleeping'] as const)('requests the state %s', async (state) => {
+  it.each(['idle', 'espresso', 'steam', 'sleeping', 'cleaning', 'descaling', 'airPurge'] as const)('requests the state %s', async (state) => {
     const { client, calls } = clientWith();
     await expect(client.requestMachineState(state)).resolves.toBeUndefined();
     expect(calls[0].method).toBe('PUT');

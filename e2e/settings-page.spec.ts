@@ -61,15 +61,19 @@ test("each category opens in Streamline's order and the page fits 1280 x 800 wit
   await expect(page.getByTestId('settings-content')).toHaveAttribute('data-category', 'quickadjustments');
   await expect(page.locator('.tree .category')).toHaveText([
     '1. Quick Adjustments',
+    '2. Connections',
     '3. Calibration',
     '4. Machine',
+    '5. Maintenance',
     '6. Skin',
     '9. Miscellaneous',
   ]);
   const sections: Record<string, string[]> = {
     quickadjustments: ['flowmultiplier', 'steam', 'hotwater', 'watertank', 'flush', 'machineadvancedsettings'],
+    bluetooth: ['ble_machine', 'ble_scale'],
     calibration: ['defaultloadsettings', 'refillkit', 'voltage', 'fan'],
-    machine: ['usbchargermode'],
+    machine: ['usbchargermode', 'machineinfo'],
+    maintenance: ['machinecleaning', 'machinedescaling', 'transportmode'],
     miscellaneous: ['reasettings', 'brightness', 'wakelock'],
   };
   await expect(shown(page, 'weight-flow-multiplier')).toHaveText('1.0');
