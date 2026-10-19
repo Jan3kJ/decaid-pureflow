@@ -584,7 +584,10 @@ settings' notes, the picker's filter, the settings page's fields) applies as a `
 is 0 again when the field loses the focus or the keyboard closes. `interactive-widget=resizes-visual`
 is added to the viewport meta for hosts that honour it. A Playwright test plays
 the keyboard by shrinking the page's height with a field focused; the tablet is the founder's
-check.
+check. Built (U1): one rule in `app.css` moves the marked element (`[data-lifted]`), so every
+text field is covered without a change in its component; an element taller than the space above
+the keyboard (the profile's notes fill their column) is also held to that space while it is
+lifted.
 
 **Hot water page: rows with sliders (item 11; U3).** The four squares of the hot water page,
 one per value, become one row per value, with a slider under it to change the value (founder,

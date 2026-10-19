@@ -407,7 +407,7 @@ test('a swipe from the right edge to the left opens the steam page, and no other
   expect(errors).toEqual([]);
 });
 
-test("the steam page's tare button tares the scale, and does nothing without one", async ({ page }) => {
+test("the steam page's tare button tares the scale, and without one looks for it (spec 3.9)", async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
   await page.getByTestId('open-steam').click();
@@ -418,7 +418,9 @@ test("the steam page's tare button tares the scale, and does nothing without one
   expect(gateway.calls('PUT', '/api/v1/scale/tare')).toHaveLength(1);
 
   gateway.connectScale(false);
-  await expect(page.getByTestId('steam-tare')).toBeDisabled();
+  await expect(page.getByTestId('steam-weight')).toHaveText('–');
+  await page.getByTestId('steam-tare').click();
+  await expect.poll(() => gateway.calls('GET', '/api/v1/devices/scan').length).toBe(1);
   expect(gateway.calls('PUT', '/api/v1/scale/tare')).toHaveLength(1);
   expect(errors).toEqual([]);
 });

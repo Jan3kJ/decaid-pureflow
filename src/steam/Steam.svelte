@@ -82,11 +82,10 @@
         <dt>scale</dt>
         <dd>
           <span data-testid="steam-weight">{skin.weight === null ? '–' : `${skin.weight.toFixed(1)} g`}</span>
-          <!-- The one tare of the skin (Skin.tare, spec 3.7); without a scale there is nothing to tare. -->
+          <!-- The one tare of the skin (Skin.tare, spec 3.7); without a scale it looks for the scale (spec 3.9). -->
           <button
             class="tare"
             data-testid="steam-tare"
-            disabled={skin.scaleLink !== 'connected'}
             onclick={() => skin.tare()}>tare</button
           >
         </dd>
@@ -301,10 +300,6 @@
     padding: 0 1rem;
     font-size: 1rem;
     font-weight: 600;
-  }
-
-  .tare:disabled {
-    color: var(--dim);
   }
 
   .size {

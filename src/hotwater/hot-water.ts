@@ -21,22 +21,32 @@ export interface HotWaterField {
 }
 
 /**
- * Streamline's ranges (src/settings/settings.js, v0.2.14), with the flow up to 10 ml/s: the
- * rig's workflow has 10, and the founder's newer machine drives more than 8 (spec 3.6).
+ * Streamline's ranges (src/settings/settings.js, v0.2.14), with the flow up to 8 ml/s, the DE1's
+ * maximum (spec 3.9, item 16). The hot water page and the settings page both read them.
  */
 export const HOT_WATER_FIELDS: HotWaterField[] = [
   { id: 'temperature', label: 'temperature', key: 'targetTemperature', unit: '°C', min: 50, max: 95, decimals: false },
-  { id: 'flow', label: 'flow', key: 'flow', unit: 'ml/s', min: 0.1, max: 10, decimals: true },
+  { id: 'flow', label: 'flow', key: 'flow', unit: 'ml/s', min: 0.1, max: 8, decimals: true },
   { id: 'time', label: 'time', key: 'duration', unit: 's', min: 5, max: 120, decimals: false },
   { id: 'weight', label: 'stop at weight', key: 'volume', unit: 'g', min: 10, max: 500, decimals: false },
 ];
 
 export const WEIGHT_FIELD = HOT_WATER_FIELDS.find((field) => field.key === 'volume')!;
+export const FLOW_FIELD = HOT_WATER_FIELDS.find((field) => field.key === 'flow')!;
 
 /** A value held inside its field's range and step. */
 export function heldValue(field: HotWaterField, value: number): number {
   const stepped = field.decimals ? Math.round(value * 10) / 10 : Math.round(value);
   return Math.min(field.max, Math.max(field.min, stepped));
+}
+
+/**
+ * `hotWaterData` as it is written: a flow above the DE1's 8 ml/s, stored by another app or by
+ * an older pureflow (the rig's workflow has 10), is held to 8 by the next change of any value
+ * (spec 3.9). It is shown as it is until then; the other values are sent as they are.
+ */
+export function heldHotWater<T extends Partial<HotWaterData>>(data: T): T {
+  return typeof data.flow === 'number' && data.flow > FLOW_FIELD.max ? { ...data, flow: FLOW_FIELD.max } : data;
 }
 
 /** g, the stop at weight for a shot of this weight and a ratio: 40 g and 1:2 give 80 g. */
@@ -65,7 +75,8 @@ export async function lastShotGrams(client: Pick<DecaidClient, 'listShots'>): Pr
 
 /**
  * Writes one value to the workflow's `hotWaterData` with `PUT /api/v1/workflow`, held inside
- * its range. Decaid's schema requires all four fields, so the others are sent as they are.
+ * its range. Decaid's schema requires all four fields, so the others are sent as they are, but
+for a flow above 8 ml/s (`heldHotWater`).
  * Returns the workflow Decaid answers with.
  */
 export function writeHotWater(
@@ -74,5 +85,5 @@ export function writeHotWater(
   field: HotWaterField,
   value: number,
 ): Promise<Workflow> {
-  return client.updateWorkflow({ hotWaterData: { ...current, [field.key]: heldValue(field, value) } });
+  return client.updateWorkflow({ hotWaterData: heldHotWater({ ...current, [field.key]: heldValue(field, value) }) });
 }

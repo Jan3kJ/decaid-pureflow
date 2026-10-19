@@ -81,14 +81,14 @@ test('the state line warns in place of the weight when the scale is not connecte
   await expect(page.getByTestId('state-scale')).toHaveText('0.0 g');
 
   gateway.connectScale(false);
-  await expect(page.getByTestId('state-scale')).toHaveText('⚠ not connected');
+  await expect(page.getByTestId('state-scale')).toHaveText(/^⚠ (looking for it|not connected, tap to retry)$/);
   gateway.connectScale(true);
   gateway.putOnScale(12.3);
   await expect(page.getByTestId('state-scale')).toHaveText('12.3 g');
   expect(errors).toEqual([]);
 });
 
-test('the menu opens with settings, steam off and machine off, and closes on a choice and on a tap outside', async ({ page }) => {
+test('the menu opens with settings, steam off and machine sleep, and closes on a choice and on a tap outside', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
@@ -96,7 +96,7 @@ test('the menu opens with settings, steam off and machine off, and closes on a c
 
   // A tap outside closes it and does nothing else.
   await openMenu(page);
-  await expect(page.getByRole('menuitem')).toHaveText(['Settings', /^Steam off/, /^Machine off/]);
+  await expect(page.getByRole('menuitem')).toHaveText(['Settings', /^Steam off/, /^Machine sleep/]);
   await expectInsideViewport(page);
   await page.screenshot({ path: 'docs/product/home-menu.png' });
   await page.mouse.click(400, 500);
@@ -112,7 +112,7 @@ test('the menu opens with settings, steam off and machine off, and closes on a c
   }
 
   await openMenu(page);
-  await page.getByTestId('machine-off').click();
+  await page.getByTestId('machine-sleep').click();
   await expect(page.getByTestId('menu-list')).toHaveCount(0);
   await expect.poll(() => gateway.calls('PUT', '/api/v1/machine/state/sleeping').length).toBe(1);
   expect(errors).toEqual([]);

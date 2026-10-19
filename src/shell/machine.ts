@@ -155,7 +155,8 @@ export interface StateValue {
 /**
  * The state line of home and the steam page: the machine's values only from a fresh frame
  * (principle 3), the tank's level only from its stream, the weight only from a connected scale.
- * A value that was not read is '–'.
+ * A value that was not read is '–'. Without a scale the warning says whether the skin is looking
+ * for it (`scaleLooking`, spec 3.9) or that a tap looks again.
  */
 export function stateLine(
   link: Link,
@@ -163,6 +164,7 @@ export function stateLine(
   water: WaterLevels | null,
   scaleLink: ScaleLink,
   weight: number | null,
+  scaleLooking = false,
 ): StateValue[] {
   const machine = link === 'machine' ? snapshot : null;
   const tank = link === 'machine' ? water : null;
@@ -178,6 +180,6 @@ export function stateLine(
     },
     scaleLink === 'connected'
       ? { key: 'scale', label: 'scale', value: weight === null ? '–' : `${weight.toFixed(1)} g`, warn: false }
-      : { key: 'scale', label: 'scale', value: 'not connected', warn: true },
+      : { key: 'scale', label: 'scale', value: scaleLooking ? 'looking for it' : 'not connected, tap to retry', warn: true },
   ];
 }

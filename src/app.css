@@ -17,15 +17,28 @@
      (HSL 200° 72% 78% against 211° 100% 65%, a CIELAB distance of 40), so no curve's colour. */
   --accent: #9fd4f0;
   font-family: system-ui, sans-serif;
-  /* 16 px on the 1280 x 800 design target; every size is in rem and follows the viewport. */
-  font-size: min(2vh, 1.25vw);
+  /*
+   * 16 px on the 1280 x 800 design target; every size is in rem and follows the viewport, as
+   * src/viewport.ts stores it: not shrunk by the keyboard (spec 3.9).
+   */
+  font-size: min(calc(var(--app-h, 100vh) * 0.02), calc(var(--app-w, 100vw) * 0.0125));
 }
 
 html,
-body,
-#app {
+body {
   height: 100%;
   margin: 0;
+}
+
+/* The keyboard covers the app's lower part; it does not shrink it. */
+#app {
+  height: var(--app-h, 100%);
+}
+
+/* The field being typed in with its dialog or label, above the keyboard (src/viewport.ts). */
+[data-lifted] {
+  max-height: var(--keyboard-space, none);
+  translate: 0 calc(-1 * var(--keyboard-lift, 0px));
 }
 
 body {
@@ -35,8 +48,7 @@ body {
   overscroll-behavior: none;
 }
 
-@media (orientation: portrait) {
-  :root {
-    font-size: min(2vw, 1.25vh);
-  }
+/* Portrait by the stored size (src/viewport.ts), not by a viewport the keyboard shrank. */
+:root[data-portrait] {
+  font-size: min(calc(var(--app-w) * 0.02), calc(var(--app-h) * 0.0125));
 }

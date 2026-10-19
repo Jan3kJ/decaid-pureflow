@@ -323,12 +323,11 @@
   }
 
   /* v1 is landscape only: a tablet held upright still gets the landscape layout. */
-  @media (orientation: portrait) {
-    main {
-      width: 100vh;
-      height: 100vw;
-      transform: rotate(90deg) translateY(-100%);
-      transform-origin: top left;
-    }
+  /* Portrait by the size src/viewport.ts stores, so the keyboard does not turn the app. */
+  :global(:root[data-portrait]) main {
+    width: var(--app-h);
+    height: var(--app-w);
+    transform: rotate(90deg) translateY(-100%);
+    transform-origin: top left;
   }
 </style>

@@ -90,11 +90,10 @@
     <div class="scale">
       <small>scale</small>
       <span data-testid="hot-water-scale">{skin.weight === null ? '–' : `${skin.weight.toFixed(1)} g`}</span>
-      <!-- The one tare of the skin (Skin.tare, spec 3.7); without a scale there is nothing to tare. -->
+      <!-- The one tare of the skin (Skin.tare, spec 3.7); without a scale it looks for the scale (spec 3.9). -->
       <button
         class="tare"
         data-testid="hot-water-tare"
-        disabled={skin.scaleLink !== 'connected'}
         onclick={() => skin.tare()}>tare</button
       >
     </div>

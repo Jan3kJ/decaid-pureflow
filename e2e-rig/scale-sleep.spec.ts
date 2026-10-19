@@ -5,7 +5,8 @@ import { expect, test } from '@playwright/test';
 // blockTareDuringShot on, a tare during a simulated shot shows the notice; the sleep button
 // puts the machine into `sleeping` and a touch wakes it. The tests delete the shot they
 // create and put the setting and the screen's brightness back. That settings survive a reload
-// needs no gateway: e2e/scale-settings-sleep.spec.ts.
+// needs no gateway: e2e/scale-settings-sleep.spec.ts. The simulated scale, disconnected, is
+// connected again by the skin's scan (spec 3.9, acceptance 40) and is left connected.
 
 const GATEWAY = 'http://localhost:8080';
 
@@ -114,6 +115,58 @@ test('scale: with blockTareDuringShot on, a tare during a simulated shot shows t
   await expect.poll(machineState, { timeout: 30_000 }).toBe('idle');
 });
 
+const scaleState = async (): Promise<string | undefined> =>
+  (await api('GET', '/api/v1/devices')).find((device: { id: string }) => device.id === 'MockScale')?.state;
+
+/**
+ * Disconnects the simulated scale until it stays away for 30 s without a skin: for a while
+ * after a wake Decaid takes a preferred scale back by itself (spec 3.9; seen on the rig after
+ * the sleep test, 2026-10-19), and then the skin's scan would prove nothing. Otherwise Decaid
+ * does not connect it again (seen for 60 s). This test runs before the file's sleep test.
+ */
+async function dropScale(page: import('@playwright/test').Page): Promise<void> {
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    if ((await scaleState()) === 'connected') await api('PUT', '/api/v1/devices/disconnect', { deviceId: 'MockScale' });
+    await page.waitForTimeout(30_000);
+    if ((await scaleState()) !== 'connected') return;
+  }
+  throw new Error('Decaid connects the simulated scale again by itself');
+}
+
+test('scale: the simulated scale, missing at the start or dropped, is connected again by the skin without a touch (spec 3.9, acceptance 40)', async ({ page }) => {
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  test.setTimeout(400_000);
+  // Only a scan connects it, and a scan takes about 15 s with Bluetooth searched too.
+  expect(await scaleState(), 'the rig starts with its simulated scale connected').toBe('connected');
+  const scans: string[] = [];
+  page.on('request', (request) => request.url().includes('/api/v1/devices/scan') && scans.push(request.url()));
+
+  try {
+    // Missing at the start, with the preferred scale set: one round after the first status frame.
+    await dropScale(page);
+    await page.goto('/');
+    await expect(page.getByTestId('status-title')).toHaveText('Idle', { timeout: 30_000 });
+    await expect.poll(scaleState, { timeout: 60_000, intervals: [1_000] }).toBe('connected');
+    await expect(page.getByTestId('state-scale')).toHaveText(/ g$/, { timeout: 15_000 });
+    expect(scans.length).toBeGreaterThanOrEqual(1);
+    expect(scans[0]).toMatch(/\/api\/v1\/devices\/scan\?connect=true&quick=true$/);
+
+    // A drop while the skin runs.
+    const before = scans.length;
+    await api('PUT', '/api/v1/devices/disconnect', { deviceId: 'MockScale' });
+    await expect(page.getByTestId('state-scale')).toHaveText('⚠ looking for it', { timeout: 10_000 });
+    await expect.poll(scaleState, { timeout: 60_000, intervals: [1_000] }).toBe('connected');
+    await expect(page.getByTestId('state-scale')).toHaveText(/ g$/, { timeout: 15_000 });
+    expect(scans.length).toBeGreaterThan(before);
+    await page.screenshot({ path: 'e2e-rig/.results/scale-reconnected-rig.png' });
+  } finally {
+    if ((await scaleState().catch(() => undefined)) !== 'connected') {
+      await api('GET', '/api/v1/devices/scan?connect=true').catch(() => undefined);
+    }
+  }
+  expect(await scaleState()).toBe('connected');
+});
+
 test('sleep: the button puts the machine into sleeping, a touch wakes it', async ({ page }) => {
   test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
 
@@ -131,7 +184,7 @@ test('sleep: the button puts the machine into sleeping, a touch wakes it', async
 
     // Sleep is an entry of home's menu.
     await page.getByTestId('menu').click();
-    await page.getByTestId('machine-off').click();
+    await page.getByTestId('machine-sleep').click();
     await expect.poll(machineState, { timeout: 15_000 }).toBe('sleeping');
     await expect(page.getByTestId('asleep')).toBeVisible({ timeout: 15_000 });
     await page.screenshot({ path: 'e2e-rig/.results/asleep-rig.png' });

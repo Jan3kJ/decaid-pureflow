@@ -43,15 +43,19 @@ describe('tare', () => {
     expect(skin.info).toBeNull();
   });
 
-  it('does nothing without a connected scale', async () => {
+  it('without a connected scale tares nothing and scans for the scale at once (spec 3.9)', async () => {
+    vi.useFakeTimers();
     for (const link of ['disconnected', 'unknown'] as const) {
+      calls = [];
       const skin = new Skin(GATEWAY);
       skin.scaleLink = link;
-      skin.notice = 'earlier';
       await skin.tare();
-      expect(skin.notice).toBe('earlier');
+      await vi.waitFor(() => expect(calls).toHaveLength(1));
+      expect(calls).toEqual([{ method: 'GET', url: `${GATEWAY}/api/v1/devices/scan?connect=true&quick=true` }]);
+      expect(skin.scaleLooking).toBe(true);
     }
-    expect(calls).toEqual([]);
+    vi.clearAllTimers();
+    vi.useRealTimers();
   });
 
   it('a tare Decaid blocks during a shot is a notice, not an error', async () => {

@@ -195,6 +195,15 @@ describe('writeField', () => {
     expect(gateway.state.machine).toMatchObject({ flushFlow: 4.5, flushTimeout: 14 });
   });
 
+  it("holds the stored hot water flow of 10 to the DE1's 8 ml/s when another hot water value changes (spec 3.9)", async () => {
+    const gateway = await opened();
+    await writeField(gateway.client, gateway.values, field('hot-water-time'), 40);
+    const workflow = gateway.writes().filter((write) => write.path === '/api/v1/workflow');
+    expect(workflow.map((write) => write.body)).toEqual([
+      { hotWaterData: { targetTemperature: 75, duration: 40, volume: 50, flow: 8 } },
+    ]);
+  });
+
   it('turns the wake lock on with POST and off with DELETE', async () => {
     const gateway = await opened();
     const on = await writeField(gateway.client, gateway.values, field('wake-lock'), true);

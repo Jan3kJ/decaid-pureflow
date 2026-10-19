@@ -23,10 +23,16 @@
           <small>{item.label}</small>
           <b data-testid="state-scale">{item.value}</b>
         </button>
+      {:else if item.key === 'scale'}
+        <!-- Without a scale the warning is a button: a tap looks for the scale again (spec 3.9). -->
+        <button class="value scale warn" data-testid="scale-retry" aria-label="look for the scale" onclick={() => skin.findScale()}>
+          <small>{item.label}</small>
+          <b data-testid="state-scale">⚠ {item.value}</b>
+        </button>
       {:else}
         <span class="value {item.key}" class:warn={item.warn}>
           <small>{item.label}</small>
-          <b data-testid="state-{item.key}">{item.warn && item.key === 'scale' ? `⚠ ${item.value}` : item.value}</b>
+          <b data-testid="state-{item.key}">{item.value}</b>
         </span>
       {/if}
     {/each}

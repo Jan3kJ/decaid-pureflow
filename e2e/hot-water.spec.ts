@@ -88,7 +88,7 @@ test('temperature, flow, time and stop at weight are written to hotWaterData (it
   await expect(page.getByTestId('hot-water-weight')).toContainText('50g');
 
   await type(page, 'hot-water-temperature', '85');
-  expect(lastWrite(gateway)).toEqual({ targetTemperature: 85, duration: 30, volume: 50, flow: 10 });
+  expect(lastWrite(gateway)).toEqual({ targetTemperature: 85, duration: 30, volume: 50, flow: 8 });
   await type(page, 'hot-water-flow', '6.5');
   await type(page, 'hot-water-time', '45');
   await type(page, 'hot-water-weight', '120');
@@ -116,7 +116,7 @@ test('a ratio favourite with a last shot of 40 g sets 80 g for 1:2; the tare but
   await expect(ratios).toHaveText(['1:2 80 g', '1:2.5 100 g', '1:3 120 g']);
 
   await ratios.nth(0).click();
-  expect(lastWrite(gateway)).toEqual({ targetTemperature: 75, duration: 30, volume: 80, flow: 10 });
+  expect(lastWrite(gateway)).toEqual({ targetTemperature: 75, duration: 30, volume: 80, flow: 8 });
   await expect(page.getByTestId('hot-water-weight')).toContainText('80g');
   await expect(ratios.nth(0)).toHaveClass(/on/);
   await ratios.nth(1).click();
@@ -160,8 +160,12 @@ test('the favourites come from the settings; without a last shot or a scale noth
   await expect(page.getByTestId('hot-water-ratio')).toHaveText(['1:1.5 60 g', '1:2.5 100 g', '1:3 120 g']);
   await page.getByTestId('hot-water-ratio').first().click();
   expect(lastWrite(gateway)?.volume).toBe(60);
-  // Without a scale there is nothing to tare.
-  await expect(page.getByTestId('hot-water-tare')).toBeDisabled();
+  // Without a scale a tap tares nothing and looks for the scale (spec 3.9).
+  const tares = gateway.calls('PUT', '/api/v1/scale/tare').length;
+  const scans = gateway.calls('GET', '/api/v1/devices/scan').length;
+  await page.getByTestId('hot-water-tare').click();
+  await expect.poll(() => gateway.calls('GET', '/api/v1/devices/scan').length).toBe(scans + 1);
+  expect(gateway.calls('PUT', '/api/v1/scale/tare')).toHaveLength(tares);
   // The ratios are a part of the settings object, so the KV backup carries them.
   await expect
     .poll(() => (gateway.store['pureflow/settings-backup'] as any)?.settings?.hotWater?.ratios ?? null)

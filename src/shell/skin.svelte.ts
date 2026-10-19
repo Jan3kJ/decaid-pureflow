@@ -2,6 +2,7 @@
 // One object, made once by App.svelte; the screens read it and call its actions.
 import {
   DecaidClient,
+  devicesStream,
   isScaleSnapshot,
   isScaleStatus,
   isTareBlocked,
@@ -9,6 +10,7 @@ import {
   machineSnapshotStream,
   machineWaterLevelsStream,
   scaleSnapshotStream,
+  type DevicesState,
   type MachineSnapshot,
   type MachineState,
   type RequestedMachineState,
@@ -32,6 +34,7 @@ import { doseToSet } from './profiles';
 import { recordFrame, type Shot, type ShotSeries } from './shot';
 import { heaterState, isOnTemperature, switchHeater } from './steam-heater';
 import { recordWaterFrame, type WaterRun } from './water';
+import { ScaleRetry } from './scale-retry';
 import { writeHotWater, type HotWaterField } from '../hotwater/hot-water';
 import { applySteamTimer, timerMismatch } from '../steam/apply';
 import { recordSteamFrame, type SteamRun } from '../steam/run';
@@ -82,6 +85,8 @@ export class Skin {
   water: WaterLevels | null = $state.raw(null);
   /** what the scale stream said about the scale */
   scaleLink: ScaleLink = $state('unknown');
+  /** a round of scans for the scale runs (spec 3.9, `ScaleRetry`) */
+  scaleLooking = $state(false);
   /** the skin's settings; changed with `setSettings` only, so they are stored */
   settings: Settings = $state.raw(loadSettings());
   /** the time of the last backup of the settings in Decaid's KV store, ISO 8601; null while none is known */
@@ -127,7 +132,9 @@ export class Skin {
   readonly canSleep = $derived(canSleep(this.link, this.snapshot));
   readonly asleep = $derived(isAsleep(this.link, this.snapshot));
   /** the values of the state line, on home and on the steam page */
-  readonly stateValues = $derived(stateLine(this.link, this.snapshot, this.water, this.scaleLink, this.weight));
+  readonly stateValues = $derived(
+    stateLine(this.link, this.snapshot, this.water, this.scaleLink, this.weight, this.scaleLooking),
+  );
   /**
    * A stream stopped in the state `failed`: the gateway sent an error frame and closed the
    * socket, and did so again while the stream tried for 30 s (founder, 2026-10-15). It does
@@ -155,6 +162,12 @@ export class Skin {
   private machineSettings: SnapshotStream<ShotSettings> | undefined;
   private waterLevels: SnapshotStream<WaterLevels> | undefined;
   private scale: SnapshotStream<ScaleFrame> | undefined;
+  /** `/ws/v1/devices`, read only for whether Decaid scans: no round scans while it does */
+  private devices: SnapshotStream<DevicesState> | undefined;
+  private decaidScanning = false;
+  /** ms, when the machine last left `sleeping` */
+  private wokeAt: number | null = null;
+  private readonly scaleRetry: ScaleRetry;
   private clock: ReturnType<typeof setInterval> | undefined;
   private machineState: MachineState | undefined;
   /** the skin lowered the screen's brightness for a sleeping machine */
@@ -171,6 +184,23 @@ export class Skin {
     this.baseUrl = baseUrl;
     this.client = new DecaidClient({ baseUrl });
     this.backup = new SettingsBackup(this.client, PRODUCT_VERSION, (written) => this.onBackupWritten(written));
+    this.scaleRetry = new ScaleRetry({
+      scaleConnected: () => this.scaleLink === 'connected',
+      machineAsleep: () => this.machineState === 'sleeping',
+      wokeAt: () => this.wokeAt,
+      decaidScanning: () => this.decaidScanning,
+      preferredScale: async () => {
+        try {
+          return (await this.client.getSettings()).preferredScaleId ?? null;
+        } catch {
+          return null;
+        }
+      },
+      scan: async () => {
+        await this.client.scanDevices({ connect: true, quick: true });
+      },
+      onLooking: (looking) => (this.scaleLooking = looking),
+    });
   }
 
   /** Opens the streams. Returns what closes them again. */
@@ -223,6 +253,7 @@ export class Skin {
       },
       // The first frame is a status frame without a weight; a weight only comes from a scale.
       onFrame: (frame) => {
+        const before = this.scaleLink;
         if (isScaleSnapshot(frame)) {
           this.weight = frame.weight;
           this.weightFlow = typeof frame.weightFlow === 'number' ? frame.weightFlow : null;
@@ -231,8 +262,18 @@ export class Skin {
           this.scaleLink = frame.status === 'connected' ? 'connected' : 'disconnected';
           if (this.scaleLink === 'disconnected') this.weight = null;
         }
+        // A drop, or no scale in the stream's first frame: a round looks for it (spec 3.9).
+        if (this.scaleLink === 'connected') this.scaleRetry.stop();
+        else if (before !== 'disconnected' && !this.scaleRetry.looking) this.scaleRetry.start(false);
       },
       onError: (frame) => this.onStreamError(frame),
+    }).connect();
+    this.devices = devicesStream({
+      baseUrl: this.baseUrl,
+      onState: (state) => {
+        if (state !== 'open') this.decaidScanning = false;
+      },
+      onFrame: (frame) => (this.decaidScanning = frame.scanning === true),
     }).connect();
     this.clock = setInterval(() => (this.now = Date.now()), CLOCK_MS);
     return () => {
@@ -240,6 +281,8 @@ export class Skin {
       this.machineSettings?.close();
       this.waterLevels?.close();
       this.scale?.close();
+      this.devices?.close();
+      this.scaleRetry.stop();
       clearInterval(this.clock);
     };
   }
@@ -249,6 +292,7 @@ export class Skin {
     this.snapshot = frame;
     const state = frame.state.state;
     const next = followMachine(this.screen, this.machineState, state);
+    if (this.machineState === 'sleeping' && state !== 'sleeping') this.wokeAt = Date.now();
     this.machineState = state;
     this.shot = recordFrame(this.shot, frame, this.weight, this.weightFlow);
     if (this.shot && !this.shot.ended) this.recalled = null;
@@ -271,6 +315,7 @@ export class Skin {
     this.machineSettings?.connect();
     this.waterLevels?.connect();
     this.scale?.connect();
+    this.devices?.connect();
   }
 
   /**
@@ -364,14 +409,6 @@ export class Skin {
   }
 
   /**
-   * The menu's 'machine off' (spec 3.7): Decaid has no request that switches the DE1 off, only
-   * `sleeping` (research.md 22), so it is sleep.
-   */
-  machineOff(): Promise<void> {
-    return this.sleep();
-  }
-
-  /**
    * The menu's steam switch (spec 3.7): off writes 0 °C, after it remembered the temperature
    * the heater had in the settings; on writes that temperature again.
    */
@@ -404,12 +441,16 @@ export class Skin {
 
   /**
    * Tares the scale: a tap on the weight in the state line, and the tare buttons of the steam
-   * and hot water pages (spec 3.7). Without a connected scale it does nothing. Decaid refuses
+   * and hot water pages (spec 3.7). Without a connected scale it tares nothing and looks for the
+   * scale at once (`findScale`, spec 3.9). Decaid refuses
    * it during a shot when its setting `blockTareDuringShot` is on: that is what the user asked
    * Decaid for, so it is a notice and not an error.
    */
   async tare(): Promise<void> {
-    if (this.scaleLink !== 'connected') return;
+    if (this.scaleLink !== 'connected') {
+      this.findScale();
+      return;
+    }
     this.notice = this.info = null;
     try {
       await this.client.tareScale();
@@ -417,6 +458,12 @@ export class Skin {
       if (isTareBlocked(error)) this.info = 'No tare while a shot runs: Decaid blocks it (its setting "block tare during shot").';
       else this.notice = `The scale was not tared: ${error instanceof Error ? error.message : String(error)}`;
     }
+  }
+
+  /** A tap on the scale's warning or on a tare button without a scale: a round by hand, scanning at once. */
+  findScale(): void {
+    this.notice = this.info = null;
+    this.scaleRetry.start(true);
   }
 
   /**

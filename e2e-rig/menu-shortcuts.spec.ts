@@ -2,8 +2,8 @@ import { expect, test } from '@playwright/test';
 
 // Acceptance item 18 (spec 3.7, R4) against the rig: the home menu's steam off writes the
 // workflow's steam temperature 0 and the machine's own settings read back a heater that is off;
-// steam on brings the temperature back; machine off is sleep, since Decaid 0.8.8 has no state
-// that switches the DE1 off (research.md 22), and a touch wakes it. The test leaves the steam
+// steam on brings the temperature back; machine sleep (spec 3.9 item 1) is sleep, since Decaid
+// 0.8.8 has no state that switches the DE1 off (research.md 22), and a touch wakes it. The test leaves the steam
 // temperature, the machine's state and the skin's KV backup as it found them. The same with a
 // mocked gateway: e2e/menu-shortcuts.spec.ts.
 
@@ -51,7 +51,7 @@ test.beforeAll(async () => {
   }
 });
 
-test('home menu: steam off and on again, read back from the machine; machine off is sleep (item 18)', async ({ page }) => {
+test('home menu: steam off and on again, read back from the machine; machine sleep is sleep (item 18, 38)', async ({ page }) => {
   test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
 
   const temperatureBefore = await workflowSteam();
@@ -80,8 +80,11 @@ test('home menu: steam off and on again, read back from the machine; machine off
     await page.getByTestId('menu').click();
     await expect(page.getByTestId('steam-heater-detail')).toHaveText('steam heater is on');
 
-    await expect(page.getByTestId('machine-off-detail')).toHaveText('sleeps: Decaid cannot switch the DE1 off');
-    await page.getByTestId('machine-off').click();
+    await expect(page.getByTestId('machine-sleep')).toContainText('Machine sleep');
+    await expect(page.getByTestId('machine-sleep-detail')).toHaveText(
+      'only the machine sleeps, not the app: Decaid cannot switch the DE1 off',
+    );
+    await page.getByTestId('machine-sleep').click();
     await expect.poll(machineState, { timeout: 15_000 }).toBe('sleeping');
     await expect(page.getByTestId('asleep')).toBeVisible({ timeout: 15_000 });
     await page.touchscreen.tap(1200, 760);

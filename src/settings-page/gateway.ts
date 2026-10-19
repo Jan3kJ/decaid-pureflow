@@ -19,6 +19,7 @@ import type {
   WaterLevels,
   Workflow,
 } from '../api';
+import { heldHotWater } from '../hotwater/hot-water';
 import { STREAMLINE_NAMESPACE } from '../steam/apply';
 import { FAST_START, type Field, type Source } from './fields';
 
@@ -187,7 +188,9 @@ async function send(gateway: SettingsGateway, values: Values, field: Field, valu
       const current = sourceObject(values, field.source);
       if (!current) throw new WriteError(`${field.label}: the workflow is not read yet`);
       const group = field.source === 'workflow.hotWaterData' ? 'hotWaterData' : 'rinseData';
-      await gateway.updateWorkflow({ [group]: { ...current, ...patch } });
+      // A hot water flow above the DE1's 8 ml/s is held to 8 with any change (spec 3.9).
+      const data = group === 'hotWaterData' ? heldHotWater({ ...current, ...patch }) : { ...current, ...patch };
+      await gateway.updateWorkflow({ [group]: data });
       return;
     }
     case 'waterLevels':

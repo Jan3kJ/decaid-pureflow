@@ -226,6 +226,8 @@ export class MockGateway {
   scanning = false;
   /** what the next scan finds */
   scanFinds: Json[] = [];
+  /** a scan connects the scale again, as Decaid's scan connects a missing preferred scale (spec 3.9) */
+  scanConnectsScale = false;
   /** device ids whose connect times out */
   connectTimesOut = new Set<string>();
   /** `GET /api/v1/devices/wifi` */
@@ -634,6 +636,7 @@ export class MockGateway {
         this.devices = [...this.devices, ...this.scanFinds.filter((entry) => !known.has(entry.id))];
         this.scanning = false;
         this.sendDevices();
+        if (this.scanConnectsScale && !this.scaleConnected) this.connectScale(true);
       }, 300);
       return json(url.searchParams.get('quick') === 'true' ? [] : this.devices);
     }

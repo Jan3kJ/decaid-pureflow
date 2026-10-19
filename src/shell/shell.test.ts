@@ -217,8 +217,9 @@ describe('stateLine', () => {
   });
 
   it('warns in place of the weight when the scale is not connected', () => {
-    expect(text(stateLine('machine', frame('idle'), water, 'disconnected', null)).at(-1)).toBe('scale not connected!');
-    expect(text(stateLine('machine', frame('idle'), water, 'unknown', null)).at(-1)).toBe('scale not connected!');
+    expect(text(stateLine('machine', frame('idle'), water, 'disconnected', null)).at(-1)).toBe('scale not connected, tap to retry!');
+    expect(text(stateLine('machine', frame('idle'), water, 'unknown', null)).at(-1)).toBe('scale not connected, tap to retry!');
+    expect(text(stateLine('machine', frame('idle'), water, 'disconnected', null, true)).at(-1)).toBe('scale looking for it!');
   });
 
   it('warns when the tank is under its refill level', () => {

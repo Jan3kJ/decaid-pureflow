@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { mockGateway } from './mock-gateway';
 
 // Acceptance item 18 (spec 3.7, R4) against a mocked gateway: the home menu's steam switch
-// writes the workflow's steam temperature (0 is off) and shows the heater's state; machine off
+// writes the workflow's steam temperature (0 is off) and shows the heater's state; machine sleep
 // is sleep, as Decaid cannot switch the DE1 off (research.md 22). The same against the
 // running gateway: e2e-rig/menu-shortcuts.spec.ts.
 
@@ -95,14 +95,17 @@ test('steam on reaches the machine when the workflow already holds the temperatu
   expect(errors).toEqual([]);
 });
 
-test('machine off is labelled as sleep and sends the state sleeping (item 18)', async ({ page }) => {
+test('machine sleep: the entry says only the machine sleeps and sends the state sleeping (spec 3.9 item 1)', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
   await openMenu(page);
-  await expect(page.getByTestId('machine-off')).toContainText('Machine off');
-  await expect(page.getByTestId('machine-off-detail')).toHaveText('sleeps: Decaid cannot switch the DE1 off');
-  await page.getByTestId('machine-off').click();
+  await expect(page.getByTestId('machine-sleep')).toContainText('Machine sleep');
+  await expect(page.getByTestId('machine-sleep-detail')).toHaveText(
+    'only the machine sleeps, not the app: Decaid cannot switch the DE1 off',
+  );
+  await expect(page.getByRole('menuitem').filter({ hasText: /Machine off|Exit/ })).toHaveCount(0);
+  await page.getByTestId('machine-sleep').click();
   await expect.poll(() => gateway.calls('PUT', /^\/api\/v1\/machine\/state\//).map((call) => call.path)).toEqual([
     '/api/v1/machine/state/sleeping',
   ]);
@@ -110,13 +113,13 @@ test('machine off is labelled as sleep and sends the state sleeping (item 18)', 
   expect(errors).toEqual([]);
 });
 
-test('without a machine the steam switch is offered from the workflow, machine off is not', async ({ page }) => {
+test('without a machine the steam switch is offered from the workflow, machine sleep is not', async ({ page }) => {
   const gateway = await mockGateway(page);
   gateway.machineConnected = false;
   await page.goto('/');
   await expect(page.getByTestId('status-title')).toHaveText('No machine connected', { timeout: 10_000 });
   await openMenu(page);
-  await expect(page.getByTestId('machine-off')).toBeDisabled();
+  await expect(page.getByTestId('machine-sleep')).toBeDisabled();
   await expect(page.getByTestId('steam-heater-detail')).toHaveText('steam heater is on');
   expect(errors).toEqual([]);
 });

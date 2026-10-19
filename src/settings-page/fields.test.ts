@@ -30,7 +30,7 @@ describe('the fields of the settings page (research.md 20.3)', () => {
     ['hot-water-temperature', 'workflow.hotWaterData', 'targetTemperature', 50, 95, 1],
     ['hot-water-weight', 'workflow.hotWaterData', 'volume', 10, 500, 1],
     ['hot-water-time', 'workflow.hotWaterData', 'duration', 5, 120, 1],
-    ['hot-water-flow', 'workflow.hotWaterData', 'flow', 0.1, 10, 0.1],
+    ['hot-water-flow', 'workflow.hotWaterData', 'flow', 0.1, 8, 0.1],
     ['hot-water-flow-multiplier', 'decaid', 'hotWaterFlowMultiplier', 0, 2, 0.05],
     ['tank-temperature', 'machine', 'tankTemp', 10, 40, 1],
     ['water-alert', 'waterLevels', 'refillLevel', 0, 30, 5],

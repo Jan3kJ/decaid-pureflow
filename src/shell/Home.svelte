@@ -22,8 +22,9 @@
 
   /**
    * The menu of the top right corner (founder, 2026-10-13): what is rarely used. A list, so
-   * that an entry is one more line here. The steam switch and machine off are the shortcuts of
-   * spec 3.7; machine off is sleep, since Decaid cannot switch the DE1 off (research.md 22).
+   * that an entry is one more line here. The steam switch and machine sleep are the shortcuts of
+   * spec 3.7; machine sleep sends only the machine to sleep, since Decaid cannot switch the DE1
+   * off (research.md 22, spec 3.9 item 1).
    */
   interface Entry {
     id: string;
@@ -43,11 +44,11 @@
       choose: () => void skin.toggleSteamHeater(),
     },
     {
-      id: 'machine-off',
-      label: () => 'Machine off',
-      detail: () => 'sleeps: Decaid cannot switch the DE1 off',
+      id: 'machine-sleep',
+      label: () => 'Machine sleep',
+      detail: () => 'only the machine sleeps, not the app: Decaid cannot switch the DE1 off',
       disabled: () => !skin.canSleep,
-      choose: () => void skin.machineOff(),
+      choose: () => void skin.sleep(),
     },
   ];
   let menuOpen = $state(false);
