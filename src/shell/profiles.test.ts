@@ -8,12 +8,13 @@ import {
   doseToSet,
   filterProfiles,
   isAFlow3,
+  isDefaultTitle,
+  loadEntry,
   loadProfile,
   loadRecord,
-  missingDefaults,
+  pickerEntries,
   profileDescription,
   sameProfile,
-  saveDefaults,
   sortProfiles,
 } from './profiles';
 
@@ -71,50 +72,64 @@ describe('sameProfile', () => {
   });
 });
 
-describe('missingDefaults', () => {
-  it('offers all five, in the order of the founder, to a gateway that has none', () => {
-    expect(missingDefaults([record(other)]).map((entry) => entry.id)).toEqual([
-      'default-floral',
-      'default-light',
-      'default-medium',
-      'default-dark',
-      'default-46mm',
+describe('pickerEntries', () => {
+  const titles = (records: ProfileRecord[]) => pickerEntries(records).map((entry) => entry.profile.title);
+  const fiveDefaults = [
+    'A-Flow / default-floral',
+    'A-Flow / default-light',
+    'A-Flow / default-medium',
+    'A-Flow / default-dark',
+    'A-Flow / default-46mm',
+  ];
+
+  it('lists the five defaults of the skin first, in the order of the founder, to a gateway that has none', () => {
+    const entries = pickerEntries([record(other)]);
+    expect(entries.map((entry) => entry.profile.title)).toEqual([...fiveDefaults, 'Best practice']);
+    expect(entries.map((entry) => entry.isDefault)).toEqual([true, true, true, true, true, false]);
+    expect(entries.map((entry) => entry.id)).toEqual([...DEFAULT_PROFILES.map((entry) => entry.id), 'profile:Best practice']);
+    // As the generator writes them, with their values where a record keeps them.
+    expect(entries[1].profile).toEqual(light);
+    expect(entries[1].metadata).toEqual(paramsMetadata(DEFAULT_PROFILES[1].params));
+    expect(titles([])).toEqual(fiveDefaults);
+  });
+
+  it('hides the copies stored in Decaid under a default’s title, whatever their steps', () => {
+    const ours = { metadata: { source: 'pureflow', ...paramsMetadata(DEFAULT_PROFILES[1].params) } };
+    const stored = [
+      record(fromGateway(light), { id: 'profile:copy', ...ours }),
+      record(defaultProfile(DEFAULT_PROFILES[0]), { id: 'profile:old', metadata: { source: 'decaid-skin', aflow: '3.0' } }),
+      // the plugin's default as Decaid bundles it under a 3.0 title, other steps
+      record({ ...light, steps: light.steps.slice(1) }, { id: 'profile:bundled' }),
+    ];
+    const entries = pickerEntries([...stored, record(other)]);
+    expect(entries.map((entry) => entry.profile.title)).toEqual([...fiveDefaults, 'Best practice']);
+    expect(entries.map((entry) => entry.id)).not.toContain('profile:copy');
+    expect(entries.map((entry) => entry.id)).not.toContain('profile:bundled');
+    expect(isDefaultTitle('A-Flow / default-light')).toBe(true);
+    expect(isDefaultTitle('A-Flow / default-very-dark')).toBe(false);
+  });
+
+  it('keeps Decaid’s other bundled A-Flow profiles and a profile with a default’s steps under its own title', () => {
+    const list = [
+      record(other),
+      record({ ...other, title: 'A-Flow / default-very-dark' }),
+      record({ ...other, title: 'A-Flow / default-like-dflow' }),
+      // the founder's test-light: the steps of a default under another title (spec 3.8)
+      record({ ...light, title: 'A-Flow / test-light' }, { metadata: { source: 'pureflow', aflow: '3.0' } }),
+    ];
+    expect(titles(list)).toEqual([
+      ...fiveDefaults,
+      'A-Flow / test-light',
+      'A-Flow / default-like-dflow',
+      'A-Flow / default-very-dark',
+      'Best practice',
     ]);
-  });
-
-  it('does not take the plugin default that Decaid bundles under the same title for a 3.0 one', () => {
-    const bundled = record({ ...light, steps: [...light.steps, light.steps[0]] });
-    expect(missingDefaults([bundled])).toHaveLength(5);
-  });
-
-  it('leaves out what the gateway has', () => {
-    const has = [record(fromGateway(light)), record(fromGateway(defaultProfile(DEFAULT_PROFILES[4])))];
-    expect(missingDefaults(has).map((entry) => entry.id)).toEqual(['default-floral', 'default-medium', 'default-dark']);
-    expect(missingDefaults(DEFAULT_PROFILES.map((entry) => record(defaultProfile(entry))))).toEqual([]);
-  });
-});
-
-describe('saveDefaults', () => {
-  it('posts each profile to /api/v1/profiles, marked as the skin’s A-Flow 3.0', async () => {
-    const { client: api, calls } = client((_method, _path, body) =>
-      record((body as { profile: Profile }).profile),
-    );
-    const saved = await saveDefaults(api, DEFAULT_PROFILES.slice(0, 2));
-    expect(calls.map((call) => `${call.method} ${call.path}`)).toEqual([
-      'POST /api/v1/profiles',
-      'POST /api/v1/profiles',
-    ]);
-    expect(calls[0].body).toEqual({
-      profile: defaultProfile(DEFAULT_PROFILES[0]),
-      metadata: { source: 'pureflow', ...paramsMetadata(DEFAULT_PROFILES[0].params) },
-    });
-    expect((calls[0].body as { profile: Profile }).profile.notes).toBe('');
-    expect(saved.map((item) => item.profile.title)).toEqual(['A-Flow / default-floral', 'A-Flow / default-light']);
+    expect(pickerEntries(list).filter((entry) => entry.profile.title === 'A-Flow / default-light')).toHaveLength(1);
   });
 });
 
 describe('sortProfiles', () => {
-  it('puts the skin’s A-Flow 3.0 profiles first in their order, then other A-Flow, then the rest', () => {
+  it('puts the skin’s A-Flow 3.0 profiles first, then other A-Flow, then the rest, each by title', () => {
     const ours = { metadata: { source: 'pureflow', aflow: '3.0' } };
     const list = [
       record(other),
@@ -129,8 +144,8 @@ describe('sortProfiles', () => {
     expect(isAFlow3(record(other, { metadata: { source: 'decaid-skin', aflow: '3.0' } }))).toBe(true);
     expect(isAFlow3(record(other, { metadata: { source: 'other', aflow: '3.0' } }))).toBe(false);
     expect(sortProfiles(list).map((item) => item.profile.title)).toEqual([
-      'A-Flow / default-floral',
       'A-Flow / default-dark',
+      'A-Flow / default-floral',
       'A-Flow / default-like-dflow',
       'Adaptive',
       'Best practice',
@@ -167,6 +182,21 @@ mine` };
 mine` }, context: { targetYield: 48, targetDoseWeight: 16 } },
       { profile: workflowProfile(light, params), context: { targetYield: 48, targetDoseWeight: 16 } },
     ]);
+  });
+
+  it('loads a default as the skin holds it, without a record and without a POST', async () => {
+    const { client: api, calls } = client(() => ({}));
+    const [floral] = pickerEntries([]);
+    await loadEntry(api, floral);
+    const stored = record(fromGateway(light), { metadata: { source: 'pureflow', ...paramsMetadata(DEFAULT_PROFILES[1].params) } });
+    await loadEntry(api, pickerEntries([record({ ...light, title: 'mine' }), stored]).at(-1)!);
+    expect(calls.map((call) => `${call.method} ${call.path}`)).toEqual(['PUT /api/v1/workflow', 'PUT /api/v1/workflow']);
+    const params = DEFAULT_PROFILES[0].params;
+    expect(calls[0].body).toEqual({
+      profile: workflowProfile(defaultProfile(DEFAULT_PROFILES[0]), params),
+      context: { targetYield: params.stopWeight, targetDoseWeight: params.dose },
+    });
+    expect((calls[1].body as { profile: Profile }).profile.title).toBe('mine');
   });
 
   it('leaves the dose alone for a profile that brings none, and the yield for one without a stop weight', async () => {

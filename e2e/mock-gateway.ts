@@ -161,7 +161,7 @@ export function profile(title: string, targetWeight: number, steps = 1): Json {
   };
 }
 
-function record(id: string, body: Json, metadata: Json | null): Json {
+export function record(id: string, body: Json, metadata: Json | null): Json {
   return {
     id,
     profile: body,

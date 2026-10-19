@@ -2,7 +2,8 @@ import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { DEFAULT_PROFILES } from '../src/aflow';
 import { paramsMetadata, workflowProfile } from '../src/editor/storage';
-import { WATER_FRAMES, mockGateway } from './mock-gateway';
+import { defaultProfile } from '../src/shell/profiles';
+import { WATER_FRAMES, mockGateway, record } from './mock-gateway';
 
 // The shell against a mocked gateway: home, the profile picker and a replayed shot (D6).
 
@@ -298,64 +299,87 @@ test('the shot overlay opens on home when the skin loads in the middle of a shot
   expect(errors).toEqual([]);
 });
 
-test('the picker lists the profiles of the gateway, offers the A-Flow 3.0 defaults and loads one', async ({ page }) => {
+test('the picker lists the A-Flow 3.0 defaults of the skin first, offers no add and loads one without storing it', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
   await page.getByTestId('open-profiles').click();
   await expect(page.getByTestId('screen-profiles')).toBeVisible();
 
+  // The skin's five defaults first, marked; the copies under their titles that Decaid stores
+  // (here the plugin's light and medium as Decaid bundles them) are not listed (spec 3.8, T5).
   const items = page.getByTestId('profile-item');
-  await expect(items).toHaveCount(5);
-  // A-Flow first, the rest by title; the loaded one is marked and selected.
-  await expect(items.first()).toContainText('A-Flow / default-light');
-  await expect(items.nth(1)).toContainText('loaded');
-  await expect(items.nth(1)).toHaveAttribute('aria-pressed', 'true');
-  await expect(items.last()).toContainText('D-Flow / default');
-
-  await expect(page.getByTestId('offer-defaults')).toContainText('floral, light, medium, dark, 46mm');
-  await page.getByTestId('add-defaults').click();
-  await expect(page.getByTestId('offer-defaults')).toHaveCount(0);
-  const posts = gateway.calls('POST', '/api/v1/profiles');
-  expect(posts.map((post) => post.body.profile.title)).toEqual([
+  await expect(items.locator('.title')).toHaveText([
     'A-Flow / default-floral',
     'A-Flow / default-light',
     'A-Flow / default-medium',
     'A-Flow / default-dark',
     'A-Flow / default-46mm',
+    'Adaptive v2',
+    'Best practice',
+    'D-Flow / default',
   ]);
-  // The values go into the metadata, none into the notes (spec 3.6).
-  expect(posts[0].body.metadata).toEqual({ source: 'pureflow', ...paramsMetadata(DEFAULT_PROFILES[0].params) });
-  expect(posts[0].body.profile.notes).toBe('');
-  await expect(items).toHaveCount(10);
-  await expect(items.first()).toContainText('A-Flow / default-floral');
-  await expect(items.first()).toContainText('A-Flow 3.0');
+  await expect(page.getByTestId('default-tag')).toHaveCount(5);
+  await expect(items.first()).toHaveAttribute('data-default', 'true');
+  await expect(items.last()).toHaveAttribute('data-default', 'false');
+  // No 'not in Decaid' offer: the defaults are not stored in Decaid.
+  await expect(page.getByText('not in Decaid')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /^add/ })).toHaveCount(0);
 
   await expectInsideViewport(page);
   // A tap selects, 'load' loads (founder, 2026-10-17).
   await items.filter({ hasText: 'A-Flow / default-dark' }).click();
+  await expect(page.getByTestId('profile-detail')).toContainText('A-Flow / default-dark');
+  await expect(page.getByTestId('profile-detail')).toContainText('16 g');
+  await expect(page.getByTestId('profile-preview')).toBeVisible();
+  expect(gateway.calls('PUT', '/api/v1/workflow')).toHaveLength(0);
   await page.getByTestId('load-profile').click();
-  // Loading is one PUT of the workflow: the profile, its stop weight and its dose.
+  // Loading is one PUT of the workflow: the default as the skin holds it, its stop weight and
+  // its dose; nothing is stored.
   await expect(page.getByTestId('screen-home')).toBeVisible();
   const puts = gateway.calls('PUT', '/api/v1/workflow');
   expect(puts).toHaveLength(1);
   // The workflow's copy carries the values in its notes: the workflow has no metadata.
-  expect(puts[0].body.profile).toEqual(workflowProfile(posts[3].body.profile, DEFAULT_PROFILES[3].params));
+  expect(puts[0].body.profile).toEqual(workflowProfile(defaultProfile(DEFAULT_PROFILES[3]), DEFAULT_PROFILES[3].params));
   expect(puts[0].body.context).toEqual({ targetYield: 36, targetDoseWeight: 16 });
+  expect(gateway.calls('POST', '/api/v1/profiles')).toHaveLength(0);
   expect(gateway.calls('POST', '/api/v1/machine/profile')).toHaveLength(0);
   await expect(page.getByTestId('profile-name')).toHaveText('A-Flow / default-dark');
   // Dose and stop weight are not on home: the gateway's workflow holds them.
   expect(gateway.workflow.context).toMatchObject({ targetYield: 36, targetDoseWeight: 16 });
 
-  // The gateway has the defaults now: no offer the next time.
+  // The next time the loaded default is marked and selected, with its stop weight and its dose.
   await page.getByTestId('open-profiles').click();
-  await expect(items).toHaveCount(10);
-  await expect(page.getByTestId('offer-defaults')).toHaveCount(0);
+  await expect(items).toHaveCount(8);
   const dark = items.filter({ hasText: 'loaded' });
+  await expect(dark).toHaveCount(1);
   await expect(dark).toContainText('A-Flow / default-dark');
-  // The loaded one is selected, with its stop weight and its dose.
   await expect(dark).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByTestId('profile-detail')).toContainText('36 g');
   await expect(page.getByTestId('profile-detail')).toContainText('16 g');
+  expect(gateway.calls('POST', '/api/v1/profiles')).toHaveLength(0);
+  expect(errors).toEqual([]);
+});
+
+test('the picker lists a stored profile with a default’s steps under its own title only', async ({ page }) => {
+  const gateway = (await mockGateway(page)).withDefaults();
+  // The founder's test-light: the steps of the light default under another title (spec 3.8).
+  const light = DEFAULT_PROFILES[1];
+  gateway.profiles.push(
+    record('profile:test-light', { ...defaultProfile(light), title: 'A-Flow / test-light' }, {
+      source: 'pureflow',
+      ...paramsMetadata(light.params),
+    }),
+  );
+  await page.goto('/');
+  await page.getByTestId('open-profiles').click();
+  const items = page.getByTestId('profile-item');
+  await expect(items.filter({ hasText: 'A-Flow / test-light' })).toHaveCount(1);
+  // The copies of the defaults that withDefaults stores are not listed: each title once.
+  for (const entry of DEFAULT_PROFILES) {
+    await expect(items.filter({ hasText: entry.title })).toHaveCount(1);
+    await expect(items.filter({ hasText: entry.title })).toHaveAttribute('data-default', 'true');
+  }
+  await expect(items.filter({ hasText: 'A-Flow / test-light' })).toHaveAttribute('data-default', 'false');
   expect(errors).toEqual([]);
 });
 
@@ -365,19 +389,20 @@ test('the picker filters by title, a tap selects and shows the description and p
   await page.goto('/');
   await page.getByTestId('open-profiles').click();
   const items = page.getByTestId('profile-item');
-  await expect(items).toHaveCount(10);
+  await expect(items).toHaveCount(8);
 
   // The filter: a part of the title, in any case (founder, 2026-10-17).
   const filter = page.getByTestId('profile-filter');
+  // The skin's default only: the copy withDefaults stored and the plugin's bundled one are not listed.
   await filter.fill('LIGHT');
-  await expect(items.locator('.title')).toHaveText(['A-Flow / default-light', 'A-Flow / default-light']);
+  await expect(items.locator('.title')).toHaveText(['A-Flow / default-light']);
   await filter.fill('ive v');
   await expect(items.locator('.title')).toHaveText(['Adaptive v2']);
   await filter.fill('turbo');
   await expect(items).toHaveCount(0);
   await expect(page.getByTestId('profiles-empty')).toContainText('turbo');
   await filter.fill('');
-  await expect(items).toHaveCount(10);
+  await expect(items).toHaveCount(8);
 
   // A tap selects: the description and the preview show, and nothing is loaded.
   const detail = page.getByTestId('profile-detail');
@@ -418,7 +443,7 @@ test('the picker filters by title, a tap selects and shows the description and p
   // The picker opens again with the whole list, the loaded one selected.
   await page.getByTestId('open-profiles').click();
   await expect(filter).toHaveValue('');
-  await expect(items).toHaveCount(10);
+  await expect(items).toHaveCount(8);
   await expect(items.filter({ hasText: 'loaded' })).toHaveAttribute('aria-pressed', 'true');
   expect(errors).toEqual([]);
 });

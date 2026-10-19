@@ -1,12 +1,6 @@
-// The profile picker's logic: the gateway's list, the A-Flow 3.0 defaults it may still lack,
-// and the one call that loads a profile.
-import {
-  AFLOW_VERSION,
-  DEFAULT_AUTHOR,
-  DEFAULT_PROFILES,
-  generateProfile,
-  type DefaultProfile,
-} from '../aflow';
+// The profile picker's logic: the gateway's list with the A-Flow 3.0 defaults the skin keeps
+// itself, and the one call that loads a profile.
+import { AFLOW_VERSION, DEFAULT_AUTHOR, DEFAULT_PROFILES, generateProfile, type DefaultProfile } from '../aflow';
 import type { DecaidClient, Profile, ProfileRecord, Workflow, WorkflowContextPatch } from '../api';
 import { notesText, paramsMetadata, readParams, sameSteps, workflowProfile } from '../editor/storage';
 import { FORMER_NAME } from '../former-name';
@@ -17,7 +11,7 @@ export const SKIN_SOURCE = 'pureflow';
 /** `metadata.source` of the profiles this skin stored: the profiles of its former name count as its own (founder, 2026-10-18). */
 export const SKIN_SOURCES: readonly string[] = [SKIN_SOURCE, FORMER_NAME];
 
-/** A default as the v2 profile the generator writes for it; its parameters go into the metadata (`saveDefaults`). */
+/** A default as the v2 profile the generator writes for it; its parameters go with it as metadata (`pickerEntries`). */
 export function defaultProfile(entry: DefaultProfile): Profile {
   return generateProfile(entry.params, { title: entry.title, author: DEFAULT_AUTHOR }) as Profile;
 }
@@ -27,53 +21,63 @@ export function sameProfile(a: Profile, b: Profile): boolean {
   return a.title === b.title && sameSteps(a.steps, b.steps);
 }
 
-/** The A-Flow 3.0 defaults the gateway does not have yet, in their order. */
-export function missingDefaults(records: readonly ProfileRecord[]): DefaultProfile[] {
-  return DEFAULT_PROFILES.filter((entry) => {
-    const profile = defaultProfile(entry);
-    return !records.some((record) => sameProfile(record.profile, profile));
-  });
+/**
+ * A line of the picker: one of the skin's defaults or a profile Decaid stores. A default has no
+ * record; its parameters stand in `metadata` as a record's would, so it loads and shows its dose
+ * as a stored A-Flow 3.0 profile does.
+ */
+export interface PickerEntry {
+  /** the default's id (`default-light`) or the record's */
+  id: string;
+  profile: Profile;
+  metadata: Record<string, unknown> | null;
+  /** one of the skin's defaults (spec 3.8, T5) */
+  isDefault: boolean;
 }
 
-/** Stores the given defaults with `POST /api/v1/profiles` and returns their records. */
-export async function saveDefaults(
-  client: DecaidClient,
-  entries: readonly DefaultProfile[],
-): Promise<ProfileRecord[]> {
-  const records: ProfileRecord[] = [];
-  for (const entry of entries) {
-    records.push(
-      await client.saveProfile(defaultProfile(entry), {
-        metadata: { source: SKIN_SOURCE, ...paramsMetadata(entry.params) },
-      }),
-    );
-  }
-  return records;
+/** The title of one of the skin's defaults. */
+export function isDefaultTitle(title: string): boolean {
+  return DEFAULT_PROFILES.some((entry) => entry.title === title);
+}
+
+/**
+ * The picker's list (spec 3.8, T5): the skin's five defaults first, in their order, then the
+ * stored profiles as `sortProfiles` orders them. The defaults live in the skin, not in Decaid:
+ * a stored profile under a default's title (a copy the picker's former 'add' stored, or the
+ * plugin's default Decaid bundles under three of the titles) stays in Decaid and is not listed,
+ * since the skin's default of that title stands for it. A stored profile with a default's steps
+ * under another title is listed under its own title.
+ */
+export function pickerEntries(records: readonly ProfileRecord[]): PickerEntry[] {
+  const defaults = DEFAULT_PROFILES.map((entry) => ({
+    id: entry.id,
+    profile: defaultProfile(entry),
+    metadata: paramsMetadata(entry.params),
+    isDefault: true,
+  }));
+  const stored = sortProfiles(records.filter((record) => !isDefaultTitle(record.profile.title))).map((record) => ({
+    id: record.id,
+    profile: record.profile,
+    metadata: record.metadata ?? null,
+    isDefault: false,
+  }));
+  return [...defaults, ...stored];
 }
 
 /** Whether this skin stored the profile as A-Flow 3.0. */
-export function isAFlow3(record: ProfileRecord): boolean {
+export function isAFlow3(record: Pick<ProfileRecord, 'metadata'>): boolean {
   return SKIN_SOURCES.includes(record.metadata?.source as string) && record.metadata?.aflow === AFLOW_VERSION;
 }
 
-/** The list as the picker shows it: the skin's A-Flow 3.0 profiles, then the other A-Flow ones, then the rest by title. */
+/** The stored profiles as the picker lists them after the defaults: the skin's A-Flow 3.0 profiles, then the other A-Flow ones, then the rest, each by title. */
 export function sortProfiles(records: readonly ProfileRecord[]): ProfileRecord[] {
   const rank = (record: ProfileRecord) =>
     isAFlow3(record) ? 0 : record.profile.title.startsWith('A-Flow') ? 1 : 2;
-  const order = (record: ProfileRecord) => {
-    const index = DEFAULT_PROFILES.findIndex((entry) => entry.title === record.profile.title);
-    return index < 0 ? DEFAULT_PROFILES.length : index;
-  };
-  return [...records].sort(
-    (a, b) =>
-      rank(a) - rank(b) ||
-      (rank(a) === 0 ? order(a) - order(b) : 0) ||
-      a.profile.title.localeCompare(b.profile.title),
-  );
+  return [...records].sort((a, b) => rank(a) - rank(b) || a.profile.title.localeCompare(b.profile.title));
 }
 
 /** The profiles whose title holds the filter, in any case (founder, 2026-10-17); an empty filter keeps them all. */
-export function filterProfiles(records: readonly ProfileRecord[], filter: string): ProfileRecord[] {
+export function filterProfiles<T extends { profile: Pick<Profile, 'title'> }>(records: readonly T[], filter: string): T[] {
   const needle = filter.trim().toLocaleLowerCase();
   return records.filter((record) => record.profile.title.toLocaleLowerCase().includes(needle));
 }
@@ -126,6 +130,14 @@ export function loadProfile(
   const params = readParams(profile, metadata);
   if (params) context.targetDoseWeight = params.dose;
   return client.updateWorkflow({ profile: params ? workflowProfile(profile, params) : profile, context });
+}
+
+/**
+ * Loads a picker entry (`loadProfile`): a stored profile with its metadata, a default as the
+ * generator writes it, with no record (spec 3.8, T5).
+ */
+export function loadEntry(client: DecaidClient, entry: PickerEntry): Promise<Workflow> {
+  return loadProfile(client, entry.profile, {}, entry.metadata);
 }
 
 /** Loads a stored profile (`loadProfile`), its parameters read from its metadata. */

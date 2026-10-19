@@ -6,12 +6,11 @@
     doseOf,
     filterProfiles,
     isAFlow3,
-    loadRecord,
-    missingDefaults,
+    loadEntry,
+    pickerEntries,
     profileDescription,
     sameProfile,
-    saveDefaults,
-    sortProfiles,
+    type PickerEntry,
   } from './profiles';
   import type { Skin } from './skin.svelte';
 
@@ -21,6 +20,7 @@
 
   let { skin }: Props = $props();
 
+  /** the gateway's list; until it is read, and when it cannot be, the defaults are listed alone */
   let records: ProfileRecord[] | null = $state.raw(null);
   let selectedId: string | null = $state(null);
   let busy = $state(false);
@@ -28,20 +28,20 @@
   /** The filter is not kept: the picker opens with the whole list. */
   let filter = $state('');
 
-  const sorted = $derived(sortProfiles(records ?? []));
-  const shown = $derived(filterProfiles(sorted, filter));
-  const missing = $derived(records ? missingDefaults(records) : []);
+  // The skin's defaults first, marked; stored copies under their titles are not listed (spec 3.8, T5).
+  const entries = $derived(pickerEntries(records ?? []));
+  const shown = $derived(filterProfiles(entries, filter));
   // A selected profile the filter hides is not shown, nor loaded; it is again once the filter lets it through.
-  const selected = $derived(shown.find((record) => record.id === selectedId) ?? null);
+  const selected = $derived(shown.find((entry) => entry.id === selectedId) ?? null);
   const current = $derived(skin.workflow?.profile);
-  const isLoaded = (record: ProfileRecord) => !!current && sameProfile(record.profile, current);
+  const isLoaded = (entry: PickerEntry) => !!current && sameProfile(entry.profile, current);
   const message = (cause: unknown) => (cause instanceof Error ? cause.message : String(cause));
 
   async function read() {
     error = null;
     try {
       records = await skin.client.listProfiles();
-      selectedId ??= sortProfiles(records).find(isLoaded)?.id ?? null;
+      selectedId ??= pickerEntries(records).find(isLoaded)?.id ?? null;
     } catch (cause) {
       error = `The profiles could not be read: ${message(cause)}`;
     }
@@ -59,25 +59,19 @@
     }
   }
 
-  const addDefaults = () =>
-    act('The defaults could not be saved', async () => {
-      const added = await saveDefaults(skin.client, missing);
-      await read();
-      selectedId = added[0]?.id ?? selectedId;
-    });
-
   /**
    * A tap selects a profile and shows it; 'load' loads it (founder, 2026-10-17, overriding the
    * tap that loaded of 2026-10-13) and goes back: to the editor when it opened the picker,
-   * which opens the profile in its editor (spec 3.6), to home otherwise.
+   * which opens the profile in its editor (spec 3.6), to home otherwise. A default loads as
+   * the skin holds it, without a record (spec 3.8, T5).
    */
-  const load = (record: ProfileRecord) =>
+  const load = (entry: PickerEntry) =>
     act('The profile could not be loaded', async () => {
       // Unsaved edits on the machine are asked about first (founder, 2026-10-14).
       const answer = await skin.mayLoad();
       if (answer === 'save-as') skin.openSaveAs();
       if (answer !== 'load') return;
-      skin.workflow = await loadRecord(skin.client, record);
+      skin.workflow = await loadEntry(skin.client, entry);
       skin.go(skin.pickerReturn === 'editor' ? 'editor' : 'home');
     });
 
@@ -86,17 +80,6 @@
 
 <div class="profiles">
   <section class="list">
-    {#if missing.length > 0}
-      <div class="offer" data-testid="offer-defaults">
-        <span>
-          <strong>A-Flow 3.0 defaults</strong>
-          {missing.map((entry) => entry.id.replace('default-', '')).join(', ')}: not in Decaid yet
-        </span>
-        <button data-testid="add-defaults" disabled={busy} onclick={addDefaults}>
-          add {missing.length}
-        </button>
-      </div>
-    {/if}
     {#if error}
       <div class="offer error" data-testid="profiles-error">
         <span>{error}</span>
@@ -114,30 +97,26 @@
       bind:value={filter}
     />
     <ul data-testid="profile-list">
-      {#each shown as record (record.id)}
+      {#each shown as entry (entry.id)}
         <li>
           <button
             class="item"
-            aria-pressed={record.id === selectedId}
+            aria-pressed={entry.id === selectedId}
             data-testid="profile-item"
-            data-id={record.id}
+            data-id={entry.id}
+            data-default={entry.isDefault}
             disabled={busy}
-            onclick={() => (selectedId = record.id)}
+            onclick={() => (selectedId = entry.id)}
           >
-            <span class="title">{record.profile.title}</span>
-            {#if isLoaded(record)}<span class="tag loaded">loaded</span>{/if}
-            {#if isAFlow3(record)}<span class="tag">A-Flow 3.0</span>{/if}
+            <span class="title">{entry.profile.title}</span>
+            {#if isLoaded(entry)}<span class="tag loaded">loaded</span>{/if}
+            {#if entry.isDefault}<span class="tag" data-testid="default-tag">A-Flow 3.0 default</span>
+            {:else if isAFlow3(entry)}<span class="tag">A-Flow 3.0</span>{/if}
           </button>
         </li>
       {:else}
         <li class="empty" data-testid="profiles-empty">
-          {records
-            ? records.length > 0
-              ? `No profile name holds “${filter.trim()}”.`
-              : 'Decaid has no profiles.'
-            : error
-              ? ''
-              : 'Reading the profiles …'}
+          {`No profile name holds “${filter.trim()}”.`}
         </li>
       {/each}
     </ul>
@@ -219,12 +198,6 @@
     border-radius: 0.9rem;
     background: var(--raised);
     color: var(--dim);
-  }
-
-  .offer strong {
-    display: block;
-    color: var(--fg);
-    font-weight: 600;
   }
 
   .offer.error span {

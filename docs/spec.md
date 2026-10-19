@@ -408,7 +408,11 @@ default is `loadProfile` with `defaultProfile(entry)` and no record. Default: th
 the five defaults first, marked 'default'; copies of them already stored in Decaid (titles
 `A-Flow / default-…`) are left in Decaid and not listed, since the app's default of that title
 is the one shown; Decaid's bundled de1app 'A-Flow / …' profiles are listed as before
-(section 8).
+(section 8). *Built (T5, research.md 25):* `pickerEntries` lists the five first with the tag
+'A-Flow 3.0 default' and hides every stored profile under a default's title, which includes
+Decaid's bundled plugin `A-Flow / default-light`, `-medium` and `-dark` (as 3.9 counts them as
+the default); the other bundled A-Flow profiles are listed. A default loads with `loadEntry`,
+its parameters going with it in the workflow's notes; nothing is posted.
 
 **Swipe navigation (T6).** Home, steam and hot water are one row of pages, from left to right
 hot water, home, steam; a swipe left or right moves to the neighbour with an animated slide
@@ -1335,7 +1339,8 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
     Decaid under `A-Flow / default-…` stay in Decaid but are not listed (the skin's default of
     that title is shown); Decaid's bundled de1app A-Flow profiles are listed as before. The
     'light' / 'test-light' clash is Decaid's id being a hash of the steps (research.md 11.1),
-    and goes with the defaults out of Decaid. Should the stored copies be listed, or deleted?
+    and goes with the defaults out of Decaid. Built in T5 (research.md 25): the stored copies
+    are not listed and not deleted.
   - The shot overlay: it covers home's graph area with the live graph and the values, home's
     state line stays visible; after the shot it stays with the per-phase table until a tap
     anywhere or the next shot, and then home shows the shot as its 'last shot'. Built in T2

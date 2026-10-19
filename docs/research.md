@@ -3020,3 +3020,59 @@ they look at home's last shot. Screenshots `docs/product/shot-overlay-during.png
 overlay's table after the simulated A-Flow / default-medium shot to 42 g (live: preinfusion
 64 s, total 102 s, 139 ml) and finds the same in `phaseTable` of Decaid's record of the shot
 (64 s, 102 s, 139 ml; extraction 38 s, 40.2 g, pressure 3.0→7.8→6.3).
+
+## 25. The A-Flow defaults kept in the skin, on the rig (T5)
+
+Spec 3.8 'A-Flow defaults kept in the app'. Rig: Decaid 0.8.8 with device simulation, serving
+Streamline 0.2.14 (`GET /api/v1/webui/skins/default`, 2026-10-19), 73 profiles, one shot.
+
+### 25.1 What the workflow holds after a default is loaded without a record
+
+`e2e-rig/aflow-defaults.spec.ts` loads `A-Flow / default-light` from the picker; nothing is
+posted to `/api/v1/profiles` and the list of profile ids is the same before and after.
+`GET /api/v1/workflow` then holds (seen running):
+
+- the same workflow (`id` unchanged, `name` "Workflow"), with the keys `id`, `name`,
+  `description`, `profile`, `context`, `steamSettings`, `hotWaterData`, `rinseData`: no
+  profile id, no record, no `metadata`, as for any loaded profile (research.md 9.3, 11);
+- `profile`: the generator's v2 profile (`version`, `title`, `notes`, `author`,
+  `beverage_type`, `steps`, `target_volume`, `target_weight`, `target_volume_count_start`,
+  `tank_temperature`), 4 steps, `target_weight` 48, and the parameters as the codec's JSON in
+  `notes` (`{"aflow":"3.0","params":{...}}`, `workflowProfile`), so the editor and the
+  unsaved-edits warning read it from Decaid alone;
+- `context`: `targetYield` 48 and `targetDoseWeight` 16 from the default, the rest
+  (`grinderSetting`, `extras`) as it was.
+
+### 25.2 A shot with a default records the profile
+
+`e2e-rig/shot.spec.ts` now loads `A-Flow / default-medium` the same way (the skin's default,
+no record; before T5 it posted the defaults first) and pulls the simulated shot to 42 g. The
+shot record's `workflow.profile` has the title, the steps and the notes (with the parameters)
+of the workflow's copy, and `workflow.context.targetYield` 42 (seen running). So the history
+names and restores a default's shot without the default being stored in Decaid.
+
+### 25.3 Built (T5)
+
+- `pickerEntries` (`src/shell/profiles.ts`) builds the picker's list: the five
+  `DEFAULT_PROFILES` first, in their order, as `PickerEntry`s with `isDefault` and their
+  parameters as `metadata` (`paramsMetadata`), then the stored profiles as `sortProfiles`
+  orders them (the skin's A-Flow 3.0, other A-Flow, the rest, each by title). A stored profile
+  whose title is a default's (`isDefaultTitle`) is not listed: the copies the former **add**
+  stored and Decaid's bundled plugin `A-Flow / default-light`, `-medium` and `-dark`. They
+  stay in Decaid. `default-very-dark`, `default-like-dflow` and the other bundled profiles are
+  listed as before; a stored profile with a default's steps under another title (the founder's
+  `test-light`) is listed under its own title.
+- `loadEntry` loads an entry with `loadProfile(client, entry.profile, {}, entry.metadata)`: for
+  a default that is `defaultProfile(entry)` with its parameters, no record.
+- `Profiles.svelte` lists the defaults while the gateway's list is read (and when it cannot
+  be), marks them with the tag 'A-Flow 3.0 default' (`default-tag`, `data-default` on
+  `profile-item`). `missingDefaults`, `saveDefaults` and the offer (`offer-defaults`,
+  `add-defaults`) are gone.
+
+Tests: Vitest `src/shell/profiles.test.ts` (`pickerEntries`: defaults first, stored copies
+hidden whatever their steps, bundled A-Flow profiles and `test-light` kept; `loadEntry`).
+`npm run e2e`: `e2e/shell.spec.ts` (the list, no add offer, selecting and loading a default:
+one `PUT /api/v1/workflow`, no `POST /api/v1/profiles`; `test-light` under its own title).
+Rig (2026-10-19, log `..\decaid-rig\log\t5-rig-suite.txt`): full `npm run e2e:rig` 34 of
+34 passed; afterwards 73 profiles, one shot, the KV namespaces `pureflow` and `decaid-skin`
+empty, steam 150 °C, Streamline the default skin.
