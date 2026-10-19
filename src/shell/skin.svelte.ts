@@ -1,5 +1,6 @@
 // The skin's live state: the two snapshot streams, the workflow, the settings and the screen.
 // One object, made once by App.svelte; the screens read it and call its actions.
+import { untrack } from 'svelte';
 import {
   DecaidClient,
   devicesStream,
@@ -31,7 +32,8 @@ import { gatewayBaseUrl } from './gateway';
 import { canSleep, canStop, gatewayAfter, isAsleep, linkOf, stateLine, statusOf, type Gateway, type ScaleLink } from './machine';
 import { followMachine, loadScreen, saveScreen, type Screen } from './nav';
 import { doseToSet } from './profiles';
-import { recordFrame, type Shot, type ShotSeries } from './shot';
+import { expectedShotSeconds, lastShotSeconds } from './expected';
+import { recordFrame, shotSeconds, type Shot, type ShotSeries } from './shot';
 import { heaterState, isOnTemperature, switchHeater } from './steam-heater';
 import { recordWaterFrame, type WaterRun } from './water';
 import { ScaleRetry } from './scale-retry';
@@ -68,6 +70,8 @@ export class Skin {
   shotSettings: ShotSettings | null = $state.raw(null);
   /** the running shot, or the finished one until it is dismissed */
   shot: Shot | null = $state.raw(null);
+  /** s, the length of the last shot with a profile title, null when it has none; see `expectedSeconds` */
+  private lastShot: { title: string; seconds: number | null } | null = $state.raw(null);
   /** the shot history's overlay is open (spec 3.1); only home shows it */
   historyOpen = $state(false);
   /** the history entry that was restored, until it is dismissed or a shot starts */
@@ -125,6 +129,16 @@ export class Skin {
   private steamAsked: number | null = $state(null);
   private machineStream: StreamState = $state('idle');
   private scaleStream: StreamState = $state('idle');
+
+  /**
+   * s, where the running shot graph's time axis starts (spec 3.8): the last shot with the
+   * workflow's profile title, else the profile's estimate, else 30 s, rounded up to 10 s.
+   */
+  readonly expectedSeconds = $derived.by(() => {
+    const profile = this.workflow?.profile;
+    const last = this.lastShot && this.lastShot.title === profile?.title ? this.lastShot.seconds : null;
+    return expectedShotSeconds(profile, last);
+  });
 
   readonly link = $derived(linkOf(this.gateway, this.openedAt, this.lastFrameAt, this.now));
   readonly status = $derived.by(() => statusOf(this.link, this.snapshot, this.baseUrl));
@@ -276,7 +290,15 @@ export class Skin {
       onFrame: (frame) => (this.decaidScanning = frame.scanning === true),
     }).connect();
     this.clock = setInterval(() => (this.now = Date.now()), CLOCK_MS);
+    // The last shot with the profile is read whenever another profile is loaded.
+    const stopEffects = $effect.root(() => {
+      $effect(() => {
+        const title = this.workflow?.profile?.title;
+        if (title) void untrack(() => this.readLastShot(title));
+      });
+    });
     return () => {
+      stopEffects();
       this.machine?.close();
       this.machineSettings?.close();
       this.waterLevels?.close();
@@ -294,14 +316,32 @@ export class Skin {
     const next = followMachine(this.screen, this.machineState, state);
     if (this.machineState === 'sleeping' && state !== 'sleeping') this.wokeAt = Date.now();
     this.machineState = state;
+    const running = this.shot !== null && !this.shot.ended;
     this.shot = recordFrame(this.shot, frame, this.weight, this.weightFlow);
     if (this.shot && !this.shot.ended) this.recalled = null;
+    // A shot that ends is the last one with its profile: the next one's axis starts at its length.
+    const title = this.workflow?.profile?.title;
+    if (running && this.shot?.ended && title && shotSeconds(this.shot) > 0) {
+      this.lastShot = { title, seconds: shotSeconds(this.shot) };
+    }
     const steaming = this.steam !== null && !this.steam.ended;
     this.steam = recordSteamFrame(this.steam, frame);
     if (steaming && this.steam?.ended) this.steamAdjust = null;
     this.waterRun = recordWaterFrame(this.waterRun, frame);
     if (next !== this.screen) this.go(next);
     void this.dim(state === 'sleeping');
+  }
+
+  /** Reads the length of the last shot with this title from the history; a failure leaves the estimate. */
+  private async readLastShot(title: string): Promise<void> {
+    if (this.lastShot?.title === title) return;
+    try {
+      const seconds = await lastShotSeconds(this.client, title);
+      // A shot that ended meanwhile is newer than the record read.
+      if (this.workflow?.profile?.title === title && this.lastShot?.title !== title) this.lastShot = { title, seconds };
+    } catch {
+      // The axis starts at the profile's estimate instead.
+    }
   }
 
   private onStreamError(frame: StreamErrorFrame): void {

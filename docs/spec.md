@@ -316,6 +316,11 @@ last shot with that profile's title in the history (the entries of `src/history/
 else the profile's estimate (the A-Flow editor's drawn length, `buildCurve` in
 `src/editor/curve.ts`, for an A-Flow profile; the step editor's curve, `src/steps/curve.ts`,
 for others), else 30 s, rounded up to 10 s; it still grows in steps of 10 s past that (section 8).
+*Built (T1, research.md 23):* the simulated machine has no tail (it goes from `pouring` to
+idle); the live shot ends at the first frame in `pouringDone` or out of espresso (`shotOver`,
+`src/shell/shot.ts`), and the history's graph is cut there too. Over 10 the scale has ticks
+every 2 up to 12. An A-Flow profile's estimate is its phases before the pour as the editor
+expects them plus the 30 s of pour the editor draws (`drawnShotSeconds`).
 
 **Espresso shot: an overlay that stays (T2).** The shot's values and the stop button are an
 overlay over home, not a page of their own: it opens when a shot starts and stays after the shot
@@ -1325,7 +1330,7 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
     screenshot resent on 2026-10-18: per phase (preinfusion, extraction, total) with start and
     end values, as Streamline shows them (3.9).
   - The expected shot duration: the last shot with that profile, else the profile's estimate,
-    else 30 s, rounded up to 10 s.
+    else 30 s, rounded up to 10 s. Built in T1 (research.md 23).
   - Exit: Decaid cannot switch the DE1 off (research.md 22) and a skin cannot close Decaid;
     the host offers `window.decentApp.exitToDashboard()` (research.md 20.3), which goes to
     Decaid's dashboard. **Exit** puts the machine to sleep and goes to the dashboard; without

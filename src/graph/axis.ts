@@ -20,6 +20,47 @@ export function timeAxis(last: number, fit: boolean, minSeconds = 30): TimeAxis 
   return { seconds, ticks };
 }
 
+/** The scale of pressure, flow and weight flow: its top and where a number stands. */
+export interface MainScale {
+  max: number;
+  ticks: number[];
+}
+
+/** bar and ml/s: a shot's scale ends here unless a value goes over it (founder, 2026-10-17) */
+export const SHOT_SCALE = 10;
+/** bar and ml/s: the scale of a shot with a value over SHOT_SCALE; higher values are held at it */
+export const SHOT_SCALE_OPEN = 12;
+
+/**
+ * The shot graph's scale of pressure, flow and weight flow (spec 3.8): 0 to 10 with a number
+ * every 2, opened to 12 only when a drawn value (measured or target; null is a gap) goes over
+ * 10. The live graph and the history's draw with it.
+ */
+export function shotScale(values: readonly (readonly (number | null)[] | undefined)[]): MainScale {
+  const over = values.some((series) => (series ?? []).some((value) => value !== null && value > SHOT_SCALE));
+  const max = over ? SHOT_SCALE_OPEN : SHOT_SCALE;
+  const ticks: number[] = [];
+  for (let tick = 0; tick <= max; tick += 2) ticks.push(tick);
+  return { max, ticks };
+}
+
+/** A fixed scale (steam, the step editor's preview): a number at every quarter. */
+export function fixedScale(max: number): MainScale {
+  return { max, ticks: [0, 1, 2, 3, 4].map((tick) => (tick * max) / 4) };
+}
+
+/** s, the running axis of a shot when nothing at all is known of its length */
+export const DEFAULT_SHOT_SECONDS = 30;
+
+/**
+ * Where a running shot's time axis starts (spec 3.8): the expected length in s, rounded up to
+ * ten seconds; DEFAULT_SHOT_SECONDS without one. `timeAxis` grows it in steps of ten past that.
+ */
+export function startSeconds(expected: number | null | undefined): number {
+  const seconds = typeof expected === 'number' && Number.isFinite(expected) && expected > 0 ? expected : DEFAULT_SHOT_SECONDS;
+  return Math.ceil(seconds / 10 - 1e-9) * 10;
+}
+
 /** °C, the ends of the temperature band */
 export interface TemperatureBand {
   min: number;

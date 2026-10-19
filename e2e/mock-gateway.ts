@@ -36,15 +36,87 @@ export const WATER_FRAMES = RECORDING.slice(
 /** s, the heating at the start of the recording: espresso frames in which no water moves */
 export const HEATING_SECONDS = 4.5;
 
-/** The recorded shot as a shot record's measurements: one per espresso frame, with the scale's latest weight. */
-export const MEASUREMENTS: Json[] = [];
-{
+/** Recorded events as a shot record's measurements: one per espresso frame, with the scale's latest weight. */
+export function measurementsFrom(events: readonly RecordedEvent[]): Json[] {
+  const measurements: Json[] = [];
   let scale: Json | null = null;
-  for (const event of RECORDING) {
+  for (const event of events) {
     if (event.scale && 'weight' in event.scale) scale = event.scale;
-    if (isEspresso(event)) MEASUREMENTS.push({ machine: event.machine, scale, volume: null });
+    if (isEspresso(event)) measurements.push({ machine: event.machine, scale, volume: null });
   }
+  return measurements;
 }
+
+/** The recorded shot as a shot record's measurements. */
+export const MEASUREMENTS: Json[] = measurementsFrom(RECORDING);
+/** How a replay changes the recorded shot. */
+export interface ReplayOptions {
+  /** s of the real DE1's tail after the stop: espresso frames in `pouringDone` (spec 3.8) */
+  tail?: number;
+  /** pressure and its target times this factor: 1.15 takes the recording's 10 bar to 11.5 */
+  pressure?: number;
+}
+
+const stamp = (at: number) => new Date(at).toISOString().replace('Z', '000');
+
+/**
+ * The recorded shot, changed: with `tail`, after its last espresso frame the machine stays in
+ * espresso for `tail` s at 10 frames a second, in `pouringDone`, its pressure falling to
+ * 0.5 bar and its flow rising to a target of 4 ml/s, as in the founder's screenshot of
+ * 2026-10-17 (docs/product/review-10-17-espresso-tail.png). The frames after it follow later.
+ */
+export function shotEvents(options: ReplayOptions = {}): RecordedEvent[] {
+  const factor = options.pressure ?? 1;
+  let events = SHOT_EVENTS.map((event) =>
+    event.machine && factor !== 1
+      ? {
+          ...event,
+          machine: {
+            ...event.machine,
+            pressure: event.machine.pressure * factor,
+            targetPressure: event.machine.targetPressure * factor,
+          },
+        }
+      : event,
+  );
+  const tail = options.tail ?? 0;
+  if (tail > 0) {
+    const lastIndex = events.findLastIndex(isEspresso);
+    const last = events[lastIndex];
+    const lastAt = Date.parse(`${last.machine!.timestamp.slice(0, 23)}Z`);
+    const frames: RecordedEvent[] = [];
+    for (let i = 1; i <= tail * 10; i += 1) {
+      const share = Math.min(1, i / 15);
+      frames.push({
+        at: last.at + i * 100,
+        machine: {
+          ...last.machine,
+          timestamp: stamp(lastAt + i * 100),
+          state: { state: 'espresso', substate: 'pouringDone' },
+          pressure: last.machine!.pressure * (1 - share) + 0.5 * share,
+          flow: last.machine!.flow * (1 - share) + 4 * share,
+          targetFlow: 4,
+          targetPressure: 0,
+        },
+      });
+    }
+    const shift = tail * 1000;
+    const after = events.slice(lastIndex + 1).map((event) => ({
+      ...event,
+      at: event.at + shift,
+      machine: event.machine && { ...event.machine, timestamp: stamp(Date.parse(`${event.machine.timestamp.slice(0, 23)}Z`) + shift) },
+    }));
+    events = [...events.slice(0, lastIndex + 1), ...frames, ...after];
+  }
+  return events;
+}
+
+/** The share of `shotEvents(options)` up to and with its last espresso frame: a replay to it ends in the shot or its tail. */
+export function espressoShare(options: ReplayOptions = {}): number {
+  const events = shotEvents(options);
+  return (events.findLastIndex(isEspresso) + 1) / events.length;
+}
+
 /** The measurements of a shorter shot: the recorded one, ended `seconds` after its first espresso frame. */
 export function measurementsOf(seconds: number): Json[] {
   const start = Date.parse(MEASUREMENTS[0].machine.timestamp);
@@ -118,7 +190,7 @@ export interface MockOptions {
 
 export class MockGateway {
   /** every REST call the page made, in order */
-  readonly requests: { method: string; path: string; body: any }[] = [];
+  readonly requests: { method: string; path: string; body: any; query: string }[] = [];
   machineConnected: boolean;
   /** the machine's state outside a replay */
   state = 'idle';
@@ -387,6 +459,14 @@ export class MockGateway {
     return this;
   }
 
+  /**
+   * The history's reads of the shot list: not the skin's look-up of the last shot with the
+   * loaded profile (`profileTitle`, spec 3.8), which reads its record too.
+   */
+  historyListCalls() {
+    return this.calls('GET', '/api/v1/shots').filter((request) => !request.query.includes('profileTitle'));
+  }
+
   /** The calls of one kind, as `METHOD path`. */
   calls(method: string, path: string | RegExp) {
     return this.requests.filter(
@@ -534,11 +614,13 @@ export class MockGateway {
 
   /**
    * Sends a part of the recorded shot, as fast as the page takes it: the skin reads the time
-   * from the frames, not from its clock. `from` and `to` are shares of the shot, 0 to 1.
+   * from the frames, not from its clock. `from` and `to` are shares of the shot, 0 to 1, of
+   * the recording or, with `options`, of the shot changed by them (`shotEvents`).
    */
-  async replay(page: Page, from = 0, to = 1): Promise<void> {
+  async replay(page: Page, from = 0, to = 1, options: ReplayOptions = {}): Promise<void> {
     this.replaying = true;
-    const events = SHOT_EVENTS.slice(Math.round(from * SHOT_EVENTS.length), Math.round(to * SHOT_EVENTS.length));
+    const all = shotEvents(options);
+    const events = all.slice(Math.round(from * all.length), Math.round(to * all.length));
     for (const [i, event] of events.entries()) {
       if (event.machine) this.sendMachine(event.machine);
       if (event.scale && 'weight' in event.scale) {
@@ -585,7 +667,7 @@ export class MockGateway {
     const path = url.pathname;
     if (method === 'OPTIONS') return route.fulfill({ status: 204, headers: CORS });
     const body = request.postData() ? JSON.parse(request.postData()!) : undefined;
-    this.requests.push({ method, path, body });
+    this.requests.push({ method, path, body, query: url.search });
 
     const json = (value: unknown, status = 200) =>
       route.fulfill({ status, headers: CORS, contentType: 'application/json', body: JSON.stringify(value) });
@@ -818,8 +900,11 @@ export class MockGateway {
     if (path === '/api/v1/shots' && method === 'GET') {
       const limit = Number(url.searchParams.get('limit') ?? 20);
       const offset = Number(url.searchParams.get('offset') ?? 0);
-      const newestFirst = [...this.shots].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
-      return json({ items: newestFirst.slice(offset, offset + limit), total: this.shots.length, limit, offset });
+      // `profileTitle` matches the whole title, as on the rig (research.md 23).
+      const title = url.searchParams.get('profileTitle');
+      const matching = this.shots.filter((shot) => title === null || shot.workflow?.profile?.title === title);
+      const newestFirst = matching.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+      return json({ items: newestFirst.slice(offset, offset + limit), total: matching.length, limit, offset });
     }
     if (path.startsWith('/api/v1/shots/') && method === 'GET') {
       const shot = this.shots.find((candidate) => candidate.id === decodeURIComponent(path.split('/').pop()!));

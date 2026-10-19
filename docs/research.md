@@ -2862,3 +2862,71 @@ brightness and the skin's KV backup). The full rig run: 24 passed, the steam con
 `e2e-rig/steam.spec.ts` too. The rig was left with 73 profiles, Streamline as the default skin,
 steam at 150 °C and the machine `idle`; Decaid was ended with `Stop-Process -Force`, port 8080
 was free.
+
+## 23. The end of a shot on the rig (T1)
+
+Spec 3.8 'Espresso graph: scale and the end'. Run on 2026-10-19 against Decaid 0.8.8 with
+device simulation, Streamline 0.2.14 served as the default skin, with
+`scripts/rig-shot-end-probe.mjs` (log `..\decaid-rig\log\t1-shot-end-probe.txt`):
+A-Flow / default-medium, target 36 g, every machine frame logged with its substate.
+
+### 23.1 What the simulated machine sends after the pour: nothing in espresso
+
+```
+30.00 06:52:09.109533 espresso/pouring/frame8   p=6.48 f=2.34 w=33.57
+30.11 06:52:09.209927 espresso/pouring/frame8   p=6.47 f=2.34 w=34.03   shotState 'stopping' (decision)
+30.20 06:52:09.309102 idle/idle/frame0          p=0.00 f=0.00 w=34.03
+30.70 06:52:09.809889 idle/idle/frame0          p=0.00 f=0.00 w=34.31
+...                                                                      shotState 'finished' at 34.2 s
+```
+
+- The espresso substates, in order of first appearance: `preparingForShot`, `preinfusion`,
+  `pouring` (and `preparingForShot` again between two steps, 8.2). After the stop at the
+  target weight the next frame is `idle/idle`: **the simulated machine has no tail**. The
+  live graph's tail (the founder's screenshot `docs/product/review-10-17-espresso-tail.png`,
+  pressure down at about 54 s and the flow rising to a 4 ml/s target for 5 s) comes from the
+  real DE1.
+- Decaid's record of the shot (278 measurements) ends at `06:52:09.109533`, the frame before
+  the `stopping` decision on `/ws/v1/machine/shotState`; the live series has that one frame
+  more (0.1 s).
+- `MachineSubstate` in the release's `rest_v1.yml` has no `ending`: the DE1 firmware's Ending
+  substate is Decaid's `pouringDone`, the substate a real DE1 sends in state espresso after the
+  stop (and in steam after the steam, 16 and `src/steam/run.ts`).
+- `GET /api/v1/shots?profileTitle=…` matches the whole title, case-sensitively: `A-Flow /
+  default-medium` finds the rig's shot, `default-med` and `a-flow / default-medium` find none.
+
+### 23.2 Built (T1)
+
+- **The end:** `shotOver` in `src/shell/shot.ts`: another state, or state espresso with
+  substate `pouringDone` (or `ending`, should a gateway use the firmware's name). `recordFrame`
+  ends the live shot at that frame without a point, so the graph and the timer stop there;
+  the espresso frames after it until the machine leaves espresso are ignored (`Shot.left`),
+  and the next espresso is a new shot. `seriesOf` (`src/history/entries.ts`) cuts a record at
+  the same frame, so a record with a tail draws as the live graph does.
+- **The scale:** `shotScale` in `src/graph/axis.ts`: 0 to 10 with ticks 0, 2, 4, 6, 8, 10, and
+  0 to 12 (ticks every 2) when a drawn value (pressure, flow, weight flow, or a target of a
+  drawn curve) is over 10; higher values are held at 12. `ShotGraph.svelte` uses it unless a
+  page passes a fixed `yMax` (steam 4, the step preview), so the live graph, home's last shot
+  and the history draw with the same rule. The SVG carries `data-scale`.
+- **The time axis:** `Skin.expectedSeconds` (`src/shell/skin.svelte.ts`), from
+  `expectedShotSeconds` in `src/shell/expected.ts`: the newest shot with the workflow's profile
+  title (`GET /api/v1/shots?profileTitle=…&limit=1`, then its measurements, measured by
+  `seriesOf`; read again when another profile is loaded, and set from the live shot when one
+  ends), else the profile's estimate, else 30 s, rounded up to 10 s by `startSeconds`
+  (`src/graph/axis.ts`); `timeAxis` grows it in steps of 10 s past that. The estimate is
+  `drawnShotSeconds` (`src/editor/curve.ts`) for an A-Flow 3.0 profile: the expected seconds
+  of the phases before the pour plus the 30 s of pour the editor draws; for any other profile
+  the step editor's curve length (`stepCurve`, a step without time counted 10 s).
+
+Tests: Vitest `src/shell/shot.test.ts` (the tail cut), `src/history/entries.test.ts` (the
+record's cut), `src/graph/axis.test.ts` (`shotScale`, `startSeconds`),
+`src/shell/expected.test.ts` (estimate, last shot). `npm run e2e`: `e2e/shot-graph.spec.ts`
+(a shot at or under 10 bar, one over it with the recording's pressure times 1.15, a 5 s
+`pouringDone` tail added to the recording, the time axis from the last shot and from the
+profile's estimate); the mock gateway's replay takes `tail` and `pressure`
+(`shotEvents`), and its shot list filters by `profileTitle`. Screenshots
+`docs/product/espresso-during.png` and `docs/product/espresso-after.png` (the shot ended,
+5 s into the tail: the graph stands at 27.4 s while the values show the tail's 0.5 bar and
+4 ml/s). Rig: `e2e-rig/shot-end.spec.ts`: running axis 30 s from the rig's earlier shot of the
+profile, scale 10, the live graph 27.4 s and 275 points against the record's 27.30 s and 274
+measurements from the water.

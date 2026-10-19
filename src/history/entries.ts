@@ -10,7 +10,7 @@ import type {
   WorkflowContextPatch,
 } from '../api';
 import { loadProfile } from '../shell/profiles';
-import { TARE_SETTLE_S, emptySeries, frameTime, pushPoint, waterMoves, type ShotSeries } from '../shell/shot';
+import { TARE_SETTLE_S, emptySeries, frameTime, pushPoint, shotOver, waterMoves, type ShotSeries } from '../shell/shot';
 
 /** A bean as the workflow holds it: two display strings and, from Decaid's catalogue, a batch id. */
 export interface Bean {
@@ -129,13 +129,18 @@ export function beanAndGrinder(shot: ShotRecordSummary): WorkflowContextPatch {
  * measurement from the first one in which water moved. A measurement's `machine` is a
  * snapshot frame with its substate, so the heating before the water is cut as in the live
  * shot (`waterMoves`). A record in which no measurement says that water moved is shown whole.
+ * It ends where the live shot ends (`shotOver`, spec 3.8): Decaid's record of the simulated
+ * shot already stops before that (research.md 23), and the cut keeps a record with a tail
+ * equal to the live graph.
  */
 export function seriesOf(record: Pick<ShotRecord, 'measurements'>): ShotSeries {
   const series = emptySeries();
   const all = record.measurements;
   if (all.length === 0) return series;
   const first = all.findIndex(({ machine }) => waterMoves(machine));
-  const shown = first < 0 ? all : all.slice(first);
+  const from = first < 0 ? all : all.slice(first);
+  const over = from.findIndex(({ machine }, i) => i > 0 && shotOver(machine));
+  const shown = over < 0 ? from : from.slice(0, over);
   const entered = frameTime(all[0].machine.timestamp);
   const start = frameTime(shown[0].machine.timestamp);
   for (const { machine, scale } of shown) {

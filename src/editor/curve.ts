@@ -198,6 +198,17 @@ export function expectedSeconds(p: AFlowParams): {
 }
 
 /**
+ * s, how long a shot of these parameters is expected to take, as the editor draws it: the
+ * expected seconds of every phase before the pour, and the pour as far as its flow line is
+ * drawn (POUR_SHOWN_SECONDS). The running shot graph's time axis starts there when the profile
+ * has no shot yet (spec 3.8).
+ */
+export function drawnShotSeconds(p: AFlowParams): number {
+  const seconds = expectedSeconds(p);
+  return seconds.fill + seconds.infuse + seconds.secondFill + seconds.pause + seconds.pressurize + POUR_SHOWN_SECONDS;
+}
+
+/**
  * The widths of the columns: every phase as wide as its expected seconds on one linear scale,
  * the flow phase with the rest of AXIS_SECONDS, and none under its minimum width. A phase
  * that is off has no width.

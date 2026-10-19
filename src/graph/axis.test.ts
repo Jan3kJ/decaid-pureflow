@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { inBand, temperatureBand, timeAxis } from './axis';
+import { fixedScale, inBand, shotScale, startSeconds, temperatureBand, timeAxis } from './axis';
 
 describe('timeAxis', () => {
   it('ends at the last sample of a stored shot, short or long', () => {
@@ -25,6 +25,46 @@ describe('timeAxis', () => {
 
   it('has the running axis for a shot without a sample', () => {
     expect(timeAxis(0, true)).toEqual({ seconds: 30, ticks: [0, 10, 20, 30] });
+  });
+});
+
+describe('shotScale', () => {
+  it('ends at 10 with a number every 2 while every value stays at or under 10', () => {
+    expect(shotScale([[0, 9.4, 10], [8, 2.2], [null, 4.1], [9, null]])).toEqual({ max: 10, ticks: [0, 2, 4, 6, 8, 10] });
+    expect(shotScale([])).toEqual({ max: 10, ticks: [0, 2, 4, 6, 8, 10] });
+    expect(shotScale([undefined, []]).max).toBe(10);
+  });
+
+  it('opens to 12 when one drawn value goes over 10: measured, weight flow or target', () => {
+    const open = { max: 12, ticks: [0, 2, 4, 6, 8, 10, 12] };
+    expect(shotScale([[9, 10.4], [2]])).toEqual(open);
+    expect(shotScale([[9], [2], [null, 11]])).toEqual(open);
+    expect(shotScale([[9], [2], undefined, [null, 10.5]])).toEqual(open);
+    // A value over 12 is held at the top: the scale stays 12.
+    expect(shotScale([[14]]).max).toBe(12);
+  });
+
+  it('has a number at every quarter of a fixed scale', () => {
+    expect(fixedScale(4)).toEqual({ max: 4, ticks: [0, 1, 2, 3, 4] });
+  });
+});
+
+describe('startSeconds', () => {
+  it('rounds the expected length up to ten seconds', () => {
+    expect(startSeconds(27.7)).toBe(30);
+    expect(startSeconds(50)).toBe(50);
+    expect(startSeconds(50.2)).toBe(60);
+    expect(startSeconds(4)).toBe(10);
+  });
+
+  it('is 30 s without an expected length', () => {
+    for (const none of [null, undefined, 0, -3, Number.NaN]) expect(startSeconds(none)).toBe(30);
+  });
+
+  it('is where a running axis starts, and a shorter shot does not rescale it', () => {
+    const start = startSeconds(54.3);
+    for (const last of [0, 10, 30, 52, 60]) expect(timeAxis(last, false, start).seconds).toBe(60);
+    expect(timeAxis(61, false, start).seconds).toBe(70);
   });
 });
 

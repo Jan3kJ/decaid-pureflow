@@ -34,8 +34,13 @@ export interface Shot {
   /** ms, the timestamp of the first frame in which water moved; null while the machine still heats */
   startedAt: number | null;
   series: ShotSeries;
-  /** the machine has left espresso: the graph is finished */
+  /** the shot is over (`shotOver`): the graph is finished and the timer stands */
   ended: boolean;
+  /**
+   * the machine has left espresso since; until then the espresso frames after the shot (its
+   * tail) are not a new shot. Missing counts as true.
+   */
+  left?: boolean;
 }
 
 /**
@@ -52,6 +57,24 @@ export const TARE_SETTLE_S = 1;
  * `pouringDone`, one a newer Decaid adds) counts as water moving.
  */
 const WAITING: readonly string[] = ['idle', 'preparingForShot'];
+
+/**
+ * The substates of state espresso after the shot (spec 3.8): the real DE1 stays in espresso
+ * for seconds after the stop, in `pouringDone` (`MachineSubstate` in rest_v1.yml; the
+ * firmware's own name for it is Ending), and pumps towards other targets meanwhile: the tail
+ * of the founder's screenshot of 2026-10-17. 'ending' is there for a gateway that uses the
+ * firmware's name. The simulated machine goes from `pouring` to idle at once and sends none
+ * of them (research.md 23). The steam run treats its own end so (`steams` in steam/run.ts).
+ */
+const SHOT_DONE: readonly string[] = ['pouringDone', 'ending'];
+
+/**
+ * The shot is over in this frame: another state, or one of the substates after the shot.
+ * Where the live graph and the timer end, and where the history's graph ends (`seriesOf`).
+ */
+export function shotOver(frame: Pick<MachineSnapshot, 'state'>): boolean {
+  return frame.state.state !== 'espresso' || SHOT_DONE.includes(frame.state.substate);
+}
 
 /** Water moves in this frame: where the graph and the shot timer start. */
 export function waterMoves(frame: Pick<MachineSnapshot, 'state'>): boolean {
@@ -101,12 +124,15 @@ export function pushPoint(
 
 /**
  * The shot after one machine frame. A frame in state espresso starts a shot (and replaces a
- * finished one) or adds a point; the first frame of another state ends it. The graph and the
- * timer start with the first frame in which water moves (`waterMoves`): the frames of the
- * heating before it give no points. After that every espresso frame is a point, whatever its
- * substate (the simulated machine goes back to `preparingForShot` between two steps,
- * research.md 8.2). `weight` is the scale's latest weight, null without a scale, and
- * `weightFlow` its latest weight flow in g/s. Nothing is changed in place.
+ * finished one) or adds a point; the first frame in which the shot is over (`shotOver`: another
+ * state, or `pouringDone` after the stop) ends it and adds no point, so the graph and the timer
+ * stop there (spec 3.8). Espresso frames after that, until the machine leaves espresso, are the
+ * shot's tail and change nothing. The graph and the timer start with the first frame in which
+ * water moves (`waterMoves`): the frames of the heating before it give no points. After that
+ * every espresso frame is a point until the end, whatever its substate (the simulated machine
+ * goes back to `preparingForShot` between two steps, research.md 8.2). `weight` is the scale's
+ * latest weight, null without a scale, and `weightFlow` its latest weight flow in g/s. Nothing
+ * is changed in place.
  */
 export function recordFrame(
   shot: Shot | null,
@@ -115,7 +141,11 @@ export function recordFrame(
   weightFlow: number | null = null,
 ): Shot | null {
   if (frame.state.state !== 'espresso') {
-    return shot && !shot.ended ? { ...shot, ended: true } : shot;
+    return shot && !(shot.ended && shot.left !== false) ? { ...shot, ended: true, left: true } : shot;
+  }
+  if (shot?.ended && shot.left === false) return shot;
+  if (shotOver(frame)) {
+    return shot && !shot.ended ? { ...shot, ended: true, left: false } : shot;
   }
   const at = frameTime(frame.timestamp);
   const running: Shot =

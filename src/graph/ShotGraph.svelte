@@ -6,7 +6,7 @@
   // The profile's targets are thin dashed lines in the colour and on the scale of their
   // quantity. Every scale names its unit in its colour. As the step editor's preview (`preview`)
   // it draws a profile's targets alone, as solid lines, with its steps' borders.
-  import { inBand, temperatureBand, timeAxis, type TemperatureBand } from './axis';
+  import { fixedScale, inBand, shotScale, temperatureBand, timeAxis, type TemperatureBand } from './axis';
 
   interface Props {
     /** s, one entry per sample; every other array is as long */
@@ -29,7 +29,10 @@
     fit?: boolean;
     /** a running graph's time axis is at least this long, and grows in steps of ten seconds */
     minSeconds?: number;
-    /** the top of the scale of pressure and flow; steam stays far under a shot's 12 */
+    /**
+     * a fixed top of the scale of pressure and flow (steam's 4, the preview's); without it the
+     * shot's scale, 10 or 12 by the values (`shotScale`)
+     */
     yMax?: number;
     /** °C, a temperature band that does not follow the values (the steam page's 140 to 170) */
     temperatureScale?: TemperatureBand;
@@ -55,7 +58,7 @@
     targetTemperature,
     fit = false,
     minSeconds = 30,
-    yMax = 12,
+    yMax,
     temperatureScale,
     legend = false,
     label = 'shot graph',
@@ -67,8 +70,21 @@
   /**
    * Pressure, flow and weight flow share one scale, as in the editor: 1 bar is as high as
    * 1 ml/s and 1 g/s. A shot's weight flow stays under about 5 g/s, under the flow it follows.
+   * Only what is drawn counts: the weight flow only with a scale, the targets only with their curve.
    */
-  const mainTicks = $derived([0, 1, 2, 3, 4].map((tick) => (tick * yMax) / 4));
+  const scale = $derived(
+    yMax !== undefined
+      ? fixedScale(yMax)
+      : shotScale([
+          pressure,
+          flow,
+          weightFlow,
+          pressure ? targetPressure : undefined,
+          flow ? targetFlow : undefined,
+        ]),
+  );
+  const top = $derived(scale.max);
+  const mainTicks = $derived(scale.ticks);
 
   let width = $state(0);
   let height = $state(0);
@@ -111,7 +127,7 @@
   });
 
   const x = (time: number) => box.left + (time / seconds) * (box.right - box.left);
-  const yMain = (value: number) => box.bottom - (Math.min(Math.max(value, 0), yMax) / yMax) * box.mainH;
+  const yMain = (value: number) => box.bottom - (Math.min(Math.max(value, 0), top) / top) * box.mainH;
   const yTemperature = (value: number) =>
     box.tempBottom -
     ((inBand(value, temperatureRange) - temperatureRange.min) / (temperatureRange.max - temperatureRange.min)) * box.tempH;
@@ -142,6 +158,7 @@
       data-testid="shot-graph"
       data-points={t.length}
       data-seconds={seconds}
+      data-scale={top}
     >
       {#each mainTicks as tick (tick)}
         <line class="grid" x1={box.left} x2={box.right} y1={yMain(tick)} y2={yMain(tick)} />

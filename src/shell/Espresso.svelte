@@ -32,6 +32,7 @@
     <ShotGraph
       {...series}
       fit={skin.shot?.ended ?? false}
+      minSeconds={skin.expectedSeconds}
       legend={skin.settings.showGraphLegend}
       label="live shot"
     />

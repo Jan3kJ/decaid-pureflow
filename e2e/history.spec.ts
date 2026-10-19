@@ -65,8 +65,9 @@ test('the tab opens the overlay: one entry per profile and bean, newest first, w
   await expect(entries.nth(2).getByTestId('entry-when')).toContainText('2 shots');
   await expect(entries.nth(2)).toHaveAttribute('data-shot', 'shot-2');
 
-  // The list is read without measurements; nothing is written by opening it.
-  expect(gateway.calls('GET', '/api/v1/shots')).toHaveLength(1);
+  // The list is read without measurements; nothing is written by opening it. (The workflow's
+  // profile has no shot, so the look-up of its last shot, spec 3.8, reads no record.)
+  expect(gateway.historyListCalls()).toHaveLength(1);
   expect(gateway.calls('GET', /^\/api\/v1\/shots\/./)).toHaveLength(0);
   expect(written(gateway)).toEqual([]);
   expect(errors).toEqual([]);
@@ -166,7 +167,11 @@ test('tapping an entry closes the overlay, restores profile, bean and grinder se
   await expect(page.getByTestId('recalled-profile')).toHaveText('A-Flow / default-light');
   await expect(page.getByTestId('recalled-bean')).toHaveText('Square Mile · Red Brick');
   await expect(page.getByTestId('recalled-grinder')).toHaveText('grinder 4.8');
-  expect(gateway.calls('GET', /^\/api\/v1\/shots\/./).map((call) => call.path)).toEqual(['/api/v1/shots/shot-2']);
+  // The entry's latest shot is read for its graph; the restored profile's newest shot (shot-3,
+  // another bean) may be read for the next shot's time axis (spec 3.8), nothing else.
+  const read = gateway.calls('GET', /^\/api\/v1\/shots\/./).map((call) => call.path);
+  expect(read).toContain('/api/v1/shots/shot-2');
+  expect(read.filter((path) => path !== '/api/v1/shots/shot-2' && path !== '/api/v1/shots/shot-3')).toEqual([]);
   // One point per measurement from the first one in which water moves.
   expect(await points(page)).toBe(WATER_FRAMES);
   const graph = page.getByTestId('history-graph');
@@ -263,7 +268,7 @@ test('the history is on home only: the editor has no tab, and its drags never op
   await page.waitForTimeout(200);
   await expect(page.getByTestId('history')).toHaveCount(0);
   await expect(page.getByTestId('screen-editor')).toBeVisible();
-  expect(gateway.calls('GET', '/api/v1/shots')).toHaveLength(0);
+  expect(gateway.historyListCalls()).toHaveLength(0);
   expect(errors).toEqual([]);
 });
 

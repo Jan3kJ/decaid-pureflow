@@ -3,7 +3,7 @@ import { isScaleSnapshot, type MachineSnapshot, type MachineState, type ScaleFra
 // A simulated shot recorded on the rig (Decaid 0.8.8, A-Flow / default-medium, target 36 g),
 // with 34.1 g left on the scale when it started.
 import recording from '../../e2e/fixtures/shot.json';
-import { TARE_SETTLE_S, recordFrame, shotSeconds, shotWeight, waterMoves, type Shot } from './shot';
+import { TARE_SETTLE_S, recordFrame, shotOver, shotSeconds, shotWeight, waterMoves, type Shot } from './shot';
 
 function frame(
   state: MachineState,
@@ -103,6 +103,44 @@ describe('recordFrame', () => {
     expect(recordFrame(ended, frame('idle', '13.000'), 6)).toBe(ended);
   });
 
+  it('ends the shot at its first frame after the pour: the tail in espresso adds nothing and the timer stands', () => {
+    // A real DE1 after the stop (spec 3.8, the founder's screenshot of 2026-10-17): still in
+    // espresso, substate pouringDone, the pressure falls and the pump drives the flow to 4 ml/s.
+    let shot = recordFrame(null, frame('espresso', '10.000'), 0);
+    shot = recordFrame(shot, frame('espresso', '40.000'), 36);
+    const ended = recordFrame(shot, frame('espresso', '40.100', { pressure: 0.6, flow: 3 }, 'pouringDone'), 36.1)!;
+    expect(ended.ended).toBe(true);
+    expect(ended.series).toEqual(shot!.series);
+    expect(shotSeconds(ended)).toBe(30);
+    let tail = ended;
+    for (let s = 41; s <= 45; s += 1) {
+      tail = recordFrame(tail, frame('espresso', `${s}.000`, { pressure: 0.5, flow: 4, targetFlow: 4 }, 'pouringDone'), 36.5)!;
+      // Neither a point nor a new shot, also when a frame of the tail says pouring again.
+      tail = recordFrame(tail, frame('espresso', `${s}.500`, { flow: 4 }, 'pouring'), 36.5)!;
+    }
+    expect(tail).toBe(ended);
+    expect(shotSeconds(tail)).toBe(30);
+    // Leaving espresso changes nothing on the graph; the next espresso is a new shot.
+    const idle = recordFrame(tail, frame('idle', '46.000'), 36.5)!;
+    expect(idle.series).toEqual(shot!.series);
+    expect(idle.ended).toBe(true);
+    const next = recordFrame(idle, frame('espresso', '50.000', { pressure: 4 }), 0)!;
+    expect(next.ended).toBe(false);
+    expect(next.series.pressure).toEqual([4]);
+  });
+
+  it('knows the frames in which the shot is over', () => {
+    expect(shotOver(frame('espresso', '1.000', {}, 'pouring'))).toBe(false);
+    expect(shotOver(frame('espresso', '1.000', {}, 'preparingForShot'))).toBe(false);
+    expect(shotOver(frame('espresso', '1.000', {}, 'pouringDone'))).toBe(true);
+    expect(shotOver(frame('espresso', '1.000', {}, 'ending'))).toBe(true);
+    expect(shotOver(frame('idle', '1.000', {}, 'idle'))).toBe(true);
+  });
+
+  it('starts no shot in the tail of one it never saw', () => {
+    expect(recordFrame(null, frame('espresso', '1.000', {}, 'pouringDone'), 0)).toBeNull();
+  });
+
   it('replaces a finished shot when the next one starts', () => {
     let shot = recordFrame(null, frame('espresso', '10.000'), 0);
     shot = recordFrame(shot, frame('idle', '11.000'), 0);
@@ -142,13 +180,14 @@ describe('recordFrame', () => {
     expect(shot!.series.weight).toEqual([0, 1.5, 12]);
   });
 
-  it('keeps every frame once water has moved, also one that says preparingForShot again', () => {
+  it('keeps every frame once water has moved, also one that says preparingForShot again, until the pour is done', () => {
     let shot = heated();
     shot = recordFrame(shot, frame('espresso', '16.000', {}, 'preinfusion'), 0);
     shot = recordFrame(shot, frame('espresso', '17.000', {}, 'preparingForShot'), 0);
     shot = recordFrame(shot, frame('espresso', '18.000', {}, 'pouring'), 0);
     shot = recordFrame(shot, frame('espresso', '19.000', {}, 'pouringDone'), 0);
-    expect(shot!.series.t).toEqual([0, 1, 2, 3]);
+    expect(shot!.series.t).toEqual([0, 1, 2]);
+    expect(shot!.ended).toBe(true);
   });
 
   it('ends a shot that never moved water with an empty graph', () => {

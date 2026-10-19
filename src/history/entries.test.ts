@@ -315,6 +315,21 @@ describe('seriesOf', () => {
     expect(series.targetTemperature).toEqual([93, 93, 93]);
   });
 
+  it('ends where the live shot ends: a tail after the pour is cut', () => {
+    const done = { state: { state: 'espresso' as const, substate: 'pouringDone' } };
+    const series = seriesOf({
+      measurements: [
+        measurement(0, 0),
+        measurement(1, 0.5),
+        measurement(30, 36),
+        measurement(30.1, 36.1, { pressure: 0.6, flow: 3, ...done }),
+        measurement(33, 36.5, { pressure: 0.5, flow: 4, targetFlow: 4, ...done }),
+      ],
+    });
+    expect(series.t).toEqual([0, 1, 30]);
+    expect(series.targetFlow).toEqual([null, null, null]);
+  });
+
   it('shows a record whole when no measurement says that water moved', () => {
     const waiting = { state: { state: 'espresso' as const, substate: 'preparingForShot' } };
     const series = seriesOf({ measurements: [measurement(0, 0, waiting), measurement(3, 1, waiting)] });
