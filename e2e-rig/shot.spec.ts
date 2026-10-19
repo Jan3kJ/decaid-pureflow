@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { IDLE } from './idle';
 import { phaseTable, recordSamples } from '../src/shell/phases';
 
 // Acceptance item 2 (spec section 5) against the rig: the skin loads, shows the machine
@@ -59,7 +60,7 @@ test('a simulated shot: the state, an A-Flow profile, a live graph, the stop at 
   try {
     // The skin loads and shows the state the machine sent.
     await page.goto('/');
-    await expect(page.getByTestId('status-title')).toHaveText('Idle', { timeout: 15_000 });
+    await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 15_000 });
     await expect(page.getByTestId('status')).toHaveAttribute('data-link', 'machine');
     await expect(page.getByTestId('profile-name')).toHaveText(workflowBefore.profile.title);
     // The state line: every value read from the gateway's streams, the tank from its own.
@@ -106,7 +107,7 @@ test('a simulated shot: the state, an A-Flow profile, a live graph, the stop at 
     // It ends by itself at the target weight; the overlay stays with the per-phase table
     // (spec 3.8), and a tap closes it to home, which keeps the finished graph.
     await expect(page.getByTestId('shot-phases')).toBeVisible({ timeout: 180_000 });
-    await expect(page.getByTestId('status-title')).toHaveText('Idle', { timeout: 15_000 });
+    await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 15_000 });
     await expect(page.getByTestId('shot-phases').locator('tbody th')).toHaveText(['Preinfusion', 'Extraction', 'Total']);
     const live = {
       preinfusion: Number(await page.getByTestId('phase-preinfusion-seconds').textContent()),

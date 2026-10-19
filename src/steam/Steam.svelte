@@ -35,7 +35,7 @@
 <div class="steam">
   <header>
     <strong>Steam</strong>
-    <StateLine {skin} />
+    <StateLine {skin} heat="steam" />
     {#if skin.steam}
       <span class="run" data-testid="steam-state">
         {steaming ? 'steaming' : 'last steam'}
@@ -170,7 +170,7 @@
   }
 
   header > strong {
-    font-size: 1.4rem;
+    font-size: var(--text-title);
     font-weight: 600;
   }
 
@@ -180,7 +180,7 @@
 
   .run {
     color: var(--dim);
-    font-size: 1.1rem;
+    font-size: var(--text-body);
     white-space: nowrap;
   }
 
@@ -224,13 +224,13 @@
 
   .adjust .chip {
     min-height: 3.4rem;
-    font-size: 1.15rem;
+    font-size: var(--text-value);
   }
 
   .chip {
     flex: 1;
     min-height: 4rem;
-    font-size: 1.3rem;
+    font-size: var(--text-value);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
   }
@@ -243,7 +243,7 @@
   small,
   dt {
     color: var(--dim);
-    font-size: 0.85rem;
+    font-size: var(--text-label);
   }
 
   i {
@@ -261,7 +261,7 @@
   }
 
   .big b {
-    font-size: 3.6rem;
+    font-size: var(--text-big);
     font-weight: 600;
     line-height: 1.1;
     font-variant-numeric: tabular-nums;
@@ -282,7 +282,7 @@
 
   dd {
     margin: 0;
-    font-size: 1.6rem;
+    font-size: var(--text-title);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
   }
@@ -298,7 +298,7 @@
     align-self: center;
     min-height: 2.6rem;
     padding: 0 1rem;
-    font-size: 1rem;
+    font-size: var(--text-body);
     font-weight: 600;
   }
 
@@ -315,7 +315,7 @@
 
   .set {
     min-height: 4.5rem;
-    font-size: 1.4rem;
+    font-size: var(--text-value);
     font-weight: 600;
     display: flex;
     align-items: center;
@@ -337,7 +337,7 @@
   .notice {
     margin: 0;
     color: var(--warn);
-    font-size: 0.95rem;
+    font-size: var(--text-label);
   }
 
   .info {
@@ -347,7 +347,7 @@
   .stop {
     margin-top: auto;
     min-height: 6rem;
-    font-size: 2rem;
+    font-size: var(--text-large);
     font-weight: 600;
     color: var(--bg);
     background: var(--temperature);

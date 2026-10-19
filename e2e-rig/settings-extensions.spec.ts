@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { IDLE } from './idle';
 
 // Plugins, presence and firmware against the rig (research.md 20.10 S2c): a plugin setting
 // changed through the page, read back from the gateway and restored (read back, and written a
@@ -36,7 +37,7 @@ test.beforeAll(async () => {
 
 async function openCategory(page: Page, id: string) {
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle', { timeout: 15_000 });
+  await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 15_000 });
   await page.getByTestId('menu').click();
   await page.getByTestId('open-settings').click();
   await page.getByTestId(`settings-category-${id}`).click();

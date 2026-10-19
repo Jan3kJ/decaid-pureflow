@@ -151,7 +151,7 @@
   }
 
   header > strong {
-    font-size: 1.4rem;
+    font-size: var(--text-title);
     font-weight: 600;
   }
 
@@ -191,11 +191,11 @@
   }
 
   .value small {
-    font-size: 1.1rem;
+    font-size: var(--text-body);
   }
 
   .value b {
-    font-size: 4.2rem;
+    font-size: var(--text-big);
     font-weight: 600;
     line-height: 1.1;
     font-variant-numeric: tabular-nums;
@@ -232,7 +232,7 @@
 
   small {
     color: var(--dim);
-    font-size: 0.85rem;
+    font-size: var(--text-label);
   }
 
   .shot,
@@ -245,7 +245,7 @@
 
   .shot b,
   .scale span {
-    font-size: 1.6rem;
+    font-size: var(--text-title);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     color: var(--weight);
@@ -268,7 +268,7 @@
     align-items: center;
     justify-content: center;
     gap: 0.1rem;
-    font-size: 1.3rem;
+    font-size: var(--text-value);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
   }
@@ -291,20 +291,20 @@
     align-self: center;
     min-height: 2.6rem;
     padding: 0 1rem;
-    font-size: 1rem;
+    font-size: var(--text-body);
     font-weight: 600;
   }
 
   .hint {
     margin: 0;
     color: var(--dim);
-    font-size: 0.9rem;
+    font-size: var(--text-label);
   }
 
   .notice {
     margin: 0;
     color: var(--warn);
-    font-size: 0.95rem;
+    font-size: var(--text-label);
   }
 
   .info {
@@ -314,7 +314,7 @@
   .stop {
     margin-top: auto;
     min-height: 6rem;
-    font-size: 2rem;
+    font-size: var(--text-large);
     font-weight: 600;
     color: var(--bg);
     background: var(--temperature);

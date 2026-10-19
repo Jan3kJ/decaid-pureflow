@@ -16,6 +16,22 @@
   /* The way back to home, light blue (founder, 2026-10-14): lighter and paler than --flow
      (HSL 200° 72% 78% against 211° 100% 65%, a CIELAB distance of 40), so no curve's colour. */
   --accent: #9fd4f0;
+  /*
+   * One type scale for home, steam, hot water and the shot (spec 3.8): a label is smaller than
+   * its value (founder, 2026-10-18), the state line's values are the profile name's size.
+   */
+  /* a value's label, a hint, a notice */
+  --text-label: 0.85rem;
+  /* running text, a small button */
+  --text-body: 1.1rem;
+  /* a value, the machine's state, the profile's name, a chip */
+  --text-value: 1.3rem;
+  /* a page's title, a value of a panel */
+  --text-title: 1.6rem;
+  /* a stop button, a number of the running ring */
+  --text-large: 2.2rem;
+  /* the big number of a page: a time, a temperature */
+  --text-big: 3.6rem;
   font-family: system-ui, sans-serif;
   /*
    * 16 px on the 1280 x 800 design target; every size is in rem and follows the viewport, as

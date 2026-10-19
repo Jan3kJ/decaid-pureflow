@@ -1,6 +1,6 @@
 // What the skin says about the gateway and the machine, from what the snapshot stream
 // delivered. Nothing here is assumed: without a fresh frame there is no machine state.
-import type { MachineSnapshot, MachineState, StreamState, WaterLevels } from '../api';
+import type { MachineSnapshot, MachineState, ShotSettings, StreamState, WaterLevels } from '../api';
 
 /**
  * Whether the gateway answers: not known until the stream opened or failed once. `refused`:
@@ -116,6 +116,36 @@ export function statusOf(link: Link, snapshot: MachineSnapshot | null, gatewayUr
     detail: `group ${snapshot.groupTemperature.toFixed(1)} °C, set to ${snapshot.targetGroupTemperature.toFixed(0)} °C`,
     tone: WARN.includes(state) ? 'warn' : RUNNING.includes(state) ? 'busy' : state === 'idle' ? 'ok' : 'off',
   };
+}
+
+/** °C under its target from which a heater counts as heated (founder, 2026-10-17) */
+export const HEATED_MARGIN = 3;
+
+/** The heater a page's state line waits for: home the group's, the steam page the steam heater's. */
+export type HeatTarget = 'group' | 'steam';
+
+/**
+ * The DE1 says `idle` while it heats, so the skin derives it (spec 3.8): an idle machine whose
+ * heater is more than `HEATED_MARGIN` under its target. The steam target is the machine's own
+ * (`targetSteamTemp` of its settings); a heater that is off (0) or not known is not heating.
+ */
+export function isHeating(snapshot: MachineSnapshot | null, target: HeatTarget, settings: ShotSettings | null): boolean {
+  if (!snapshot || snapshot.state.state !== 'idle') return false;
+  if (target === 'group') return snapshot.groupTemperature < snapshot.targetGroupTemperature - HEATED_MARGIN;
+  const steamTarget = settings?.targetSteamTemp ?? 0;
+  return steamTarget > 0 && snapshot.steamTemperature < steamTarget - HEATED_MARGIN;
+}
+
+/** The status of a page whose state line waits for `target`: 'Heating' in place of 'Idle'. */
+export function heatingStatus(
+  status: Status,
+  link: Link,
+  snapshot: MachineSnapshot | null,
+  target: HeatTarget,
+  settings: ShotSettings | null,
+): Status {
+  if (link !== 'machine' || !isHeating(snapshot, target, settings)) return status;
+  return { ...status, title: 'Heating', tone: 'busy' };
 }
 
 /**

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { IDLE } from './idle';
 
 // Acceptance item 5 (spec section 5) against the rig: simulated shots with another profile
 // or another bean give one entry each, a changed grinder setting does not; tapping an entry
@@ -101,7 +102,7 @@ test('the history: shots with another profile or bean are entries, a tap restore
       context: { coffeeName: 'D8b Other', coffeeRoaster: null, grinderSetting: '1' },
     });
     await page.goto('/');
-    await expect(page.getByTestId('status-title')).toHaveText('Idle', { timeout: 15_000 });
+    await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 15_000 });
     await expect(page.getByTestId('profile-name')).toHaveText(workflowBefore.profile.title);
 
     // The tab opens the overlay. The rig's older shots have their own entries.

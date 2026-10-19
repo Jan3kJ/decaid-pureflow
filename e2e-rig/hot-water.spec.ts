@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { IDLE } from './idle';
 
 // The hot water page against the rig (R5, spec 3.7, acceptance item 20). A short simulated
 // shot is pulled and its recorded yield set to 40 g, so the newest shot weighs 40 g; the split
@@ -77,7 +78,7 @@ test('the hot water page writes hotWaterData, 1:2 of a 40 g shot is 80 g, Decaid
 
     // The split tab's hot water part opens the page.
     await page.goto('/');
-    await expect(page.getByTestId('status-title')).toHaveText('Idle', { timeout: 30_000 });
+    await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 30_000 });
     await page.getByTestId('open-hot-water').click();
     await expect(page.getByTestId('screen-hot-water')).toBeVisible();
     await expect(page.getByTestId('hot-water-last-shot')).toHaveText('40.0 g');

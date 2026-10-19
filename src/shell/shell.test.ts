@@ -1,7 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import type { MachineSnapshot, MachineState } from '../api';
+import type { MachineSnapshot, MachineState, ShotSettings } from '../api';
 import { gatewayBaseUrl } from './gateway';
-import { FRAME_STALE_MS, canSleep, canStop, gatewayAfter, isAsleep, linkOf, stateLabel, stateLine, statusOf } from './machine';
+import {
+  FRAME_STALE_MS,
+  canSleep,
+  canStop,
+  gatewayAfter,
+  heatingStatus,
+  isAsleep,
+  isHeating,
+  linkOf,
+  stateLabel,
+  stateLine,
+  statusOf,
+} from './machine';
 import { SCREEN_KEY, followMachine, loadScreen, saveScreen, shotOverlay } from './nav';
 
 function frame(state: MachineState, over: Partial<MachineSnapshot> = {}): MachineSnapshot {
@@ -163,6 +175,63 @@ describe('the link to the machine', () => {
   it('does not count a frame from before a reconnect', () => {
     expect(linkOf('connected', 5000, 1200, 5100)).toBe('connecting');
     expect(linkOf('connected', 5000, 1200, 5001 + FRAME_STALE_MS)).toBe('no-machine');
+  });
+});
+
+describe('heating (spec 3.8)', () => {
+  const url = 'http://localhost:8080';
+  const settings = (targetSteamTemp: number): ShotSettings => ({
+    steamSetting: 0,
+    targetSteamTemp,
+    targetSteamDuration: 50,
+    targetHotWaterTemp: 75,
+    targetHotWaterVolume: 50,
+    targetHotWaterDuration: 30,
+    targetShotVolume: 36,
+    groupTemp: 93,
+  });
+
+  it('on home: heating until the group is 3 °C under its target', () => {
+    expect(isHeating(frame('idle', { groupTemperature: 89.9 }), 'group', null)).toBe(true);
+    expect(isHeating(frame('idle', { groupTemperature: 90 }), 'group', null)).toBe(false);
+    expect(isHeating(frame('idle', { groupTemperature: 92.6 }), 'group', null)).toBe(false);
+  });
+
+  it('on the steam page: heating until the steam heater is 3 °C under the steam target of the machine', () => {
+    expect(isHeating(frame('idle', { steamTemperature: 146.9 }), 'steam', settings(150))).toBe(true);
+    expect(isHeating(frame('idle', { steamTemperature: 147 }), 'steam', settings(150))).toBe(false);
+    // the group's temperature does not count on the steam page, nor the steam's on home
+    expect(isHeating(frame('idle', { groupTemperature: 60, steamTemperature: 150 }), 'steam', settings(150))).toBe(false);
+    expect(isHeating(frame('idle', { groupTemperature: 93, steamTemperature: 60 }), 'group', settings(150))).toBe(false);
+  });
+
+  it('a steam heater that is off or not known is not heating', () => {
+    expect(isHeating(frame('idle', { steamTemperature: 40 }), 'steam', settings(0))).toBe(false);
+    expect(isHeating(frame('idle', { steamTemperature: 40 }), 'steam', null)).toBe(false);
+  });
+
+  it('only an idle machine is shown as heating', () => {
+    expect(isHeating(frame('espresso', { groupTemperature: 80 }), 'group', null)).toBe(false);
+    expect(isHeating(frame('sleeping', { groupTemperature: 30 }), 'group', null)).toBe(false);
+    expect(isHeating(frame('steam', { steamTemperature: 120 }), 'steam', settings(150))).toBe(false);
+    expect(isHeating(null, 'group', null)).toBe(false);
+  });
+
+  it('says Heating with the tone busy in place of Idle', () => {
+    const cold = frame('idle', { groupTemperature: 70 });
+    expect(heatingStatus(statusOf('machine', cold, url), 'machine', cold, 'group', null)).toMatchObject({
+      title: 'Heating',
+      tone: 'busy',
+    });
+    const warm = frame('idle', { groupTemperature: 92 });
+    expect(heatingStatus(statusOf('machine', warm, url), 'machine', warm, 'group', null)).toMatchObject({
+      title: 'Idle',
+      tone: 'ok',
+    });
+    // without a fresh frame the link's status stands
+    expect(heatingStatus(statusOf('no-machine', cold, url), 'no-machine', cold, 'group', null).title).toBe(
+      'No machine connected',
+    );
   });
 });
 

@@ -194,6 +194,9 @@ export class MockGateway {
   machineConnected: boolean;
   /** the machine's state outside a replay */
   state = 'idle';
+  /** °C of the frames outside a replay: a warm machine, as the rig's (target 93 °C, steam 150 °C) */
+  groupTemperature = 92.6;
+  steamTemperature = 148;
   /** Decaid's setting blockTareDuringShot is on and a shot runs: a tare answers 400 */
   tareBlocked = false;
   /** true: a stream is answered with an error frame and closed (research.md 9.4) */
@@ -533,6 +536,19 @@ export class MockGateway {
     this.sendDevices();
   }
 
+  /** The heaters are at these °C: the next frame says so. */
+  heatTo(temperatures: { group?: number; steam?: number }): void {
+    this.groupTemperature = temperatures.group ?? this.groupTemperature;
+    this.steamTemperature = temperatures.steam ?? this.steamTemperature;
+    if (this.machineConnected) this.sendMachine(this.frame());
+  }
+
+  /** The machine's own steam target changes (0: the heater is off), as another client may set it. */
+  setMachineSteamTarget(temperature: number): void {
+    this.shotSettings = { ...this.shotSettings, targetSteamTemp: temperature };
+    for (const ws of this.settingsSockets) ws.send(JSON.stringify(this.shotSettings));
+  }
+
   /** The tank's level changes, in mm. */
   setWater(currentLevel: number): void {
     this.water = { ...this.water, currentLevel };
@@ -604,11 +620,11 @@ export class MockGateway {
       targetFlow: 0,
       targetPressure: 0,
       mixTemperature: 91.4,
-      groupTemperature: 92.6,
+      groupTemperature: this.groupTemperature,
       targetMixTemperature: 93,
       targetGroupTemperature: 93,
       profileFrame: 0,
-      steamTemperature: this.state === 'steam' ? 143 : 148,
+      steamTemperature: this.state === 'steam' ? 143 : this.steamTemperature,
     };
   }
 

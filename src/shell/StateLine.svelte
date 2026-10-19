@@ -1,20 +1,25 @@
 <script lang="ts">
+  import type { HeatTarget } from './machine';
   import type { Skin } from './skin.svelte';
 
   interface Props {
     skin: Skin;
+    /** the heater this page waits for: an idle machine under its target says 'Heating' (spec 3.8) */
+    heat?: HeatTarget;
   }
 
-  let { skin }: Props = $props();
+  let { skin, heat }: Props = $props();
+
+  const status = $derived(skin.statusFor(heat ?? null));
 
   // With a machine the line is its values; without one, what the skin knows about the link.
   const machine = $derived(skin.link === 'machine' && skin.snapshot !== null);
 </script>
 
 <!-- The machine's state in one line, on home and on the steam page (founder, 2026-10-13). -->
-<section class="state {skin.status.tone}" data-testid="status" data-link={skin.link}>
+<section class="state {status.tone}" data-testid="status" data-link={skin.link}>
   <span class="dot"></span>
-  <strong data-testid="status-title">{skin.status.title}</strong>
+  <strong data-testid="status-title">{status.title}</strong>
   {#if machine}
     {#each skin.stateValues as item (item.key)}
       {#if item.key === 'scale' && skin.scaleLink === 'connected'}
@@ -37,7 +42,7 @@
       {/if}
     {/each}
   {:else}
-    <span class="detail" data-testid="status-detail">{skin.status.detail}</span>
+    <span class="detail" data-testid="status-detail">{status.detail}</span>
   {/if}
 </section>
 
@@ -47,7 +52,7 @@
     display: flex;
     align-items: baseline;
     gap: 1.1rem;
-    font-size: 1.1rem;
+    font-size: var(--text-value);
     white-space: nowrap;
     /* Clipped sideways only: the weight's tap target reaches above and below the line. */
     overflow-x: clip;
@@ -83,7 +88,7 @@
   small {
     margin-right: 0.35rem;
     color: var(--dim);
-    font-size: 0.85rem;
+    font-size: var(--text-label);
   }
 
   b {
@@ -116,11 +121,16 @@
     color: var(--warn);
   }
 
+  /* The scale's warning is a hint, not a value: at a label's size it fits beside the profile. */
+  .scale.warn b {
+    font-size: var(--text-label);
+  }
+
   .detail {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     color: var(--dim);
-    font-size: 0.95rem;
+    font-size: var(--text-body);
   }
 </style>

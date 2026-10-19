@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { IDLE } from './idle';
 
 // The ported settings page against the rig (acceptance 22, research.md 20.10 S2a): Decaid's
 // settings changed through the page are read back from the running gateway, and the flush's
@@ -81,7 +82,7 @@ test('settings changed through the page are read back from the gateway, and rest
 
   try {
     await page.goto('/');
-    await expect(page.getByTestId('status-title')).toHaveText('Idle', { timeout: 15_000 });
+    await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 15_000 });
     await page.getByTestId('menu').click();
     await page.getByTestId('open-settings').click();
     await page.getByTestId('settings-category-quickadjustments').click();

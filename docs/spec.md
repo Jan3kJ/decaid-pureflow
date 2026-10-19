@@ -355,6 +355,11 @@ machine's `targetSteamTemp` (`/ws/v1/machine/shotSettings`, read already for the
 `src/shell/steam-heater.ts`) minus 3. Only an `idle` machine is shown as heating; a steam
 heater that is off (`targetSteamTemp` 0) is not heating. `StateLine.svelte` gets which target to
 compare from its page. The tone is `busy`, not `ok`.
+*Built (T3):* `isHeating` and `heatingStatus` in `src/shell/machine.ts` (`HEATED_MARGIN` 3 °C,
+heating while strictly more than 3 °C under the target); `Skin.statusFor` gives a page its
+status, `StateLine` takes `heat` ('group' on home, 'steam' on the steam page), and the steam
+page's dot on the left edge follows it. A steam target that is not known yet counts as off. The
+hot water page keeps the machine's own state: the founder named home and steam only.
 
 **Home: tabs and font sizes (T3).** The history and steam (and hot water) tabs on the edges of
 home are thinner and their labels larger (founder, 2026-10-17); today they are `Home.svelte`'s
@@ -369,6 +374,14 @@ like steam, group in the status row may be smaller as of today. Means not everyt
 same font size.' So the type scale keeps a smaller size for labels: in the state line the labels
 ('group', 'steam', 'tank', 'scale') stay smaller than their values, and the state and the values
 are the profile name's size.
+*Built (T3):* the scale is six custom properties in `src/app.css`: `--text-label` 0.85rem
+(a value's label, hints, notices), `--text-body` 1.1rem, `--text-value` 1.3rem (values, the
+state, the profile's name, chips, the edge tabs' labels), `--text-title` 1.6rem, `--text-large`
+2.2rem (stop buttons, the ring's numbers) and `--text-big` 3.6rem (a page's big number; hot
+water's values were 4.2rem). The scale's warning 'not connected, tap to retry' is a hint at the
+label's size, so that the state line still fits beside the profile at 1280 × 800. Home's edge
+tabs are 3.5rem wide (56 CSS pixels, a finger's target; 4rem before) with labels at 1.3rem
+(0.9rem before); the left edge of the other pages keeps 4rem for the way back.
 
 **Profile picker: filter, preview, select (T4).** The picker gets a filter field: typing
 "light" leaves the profiles whose title contains it, without regard to case (founder,

@@ -22,6 +22,8 @@
   // the right edge opens the steam page, as the steam tab does (spec 3.7). Not over the shot's
   // overlay: after the shot a touch there closes it (spec 3.8).
   const home = $derived(skin.screen === 'home');
+  // The steam page's dot says what its state line says: heating against the steam target (spec 3.8).
+  const navStatus = $derived(skin.statusFor(skin.screen === 'steam' ? 'steam' : null));
   let swipe: (Point & { id: number; edge: Edge }) | null = null;
 
   function onpointerdown(event: PointerEvent) {
@@ -54,7 +56,7 @@
       <button class="back" data-testid="nav-home" aria-label="back to home" onclick={() => skin.leave('home')}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4l-8 8 8 8" /></svg>
       </button>
-      <span class="dot {skin.status.tone}" title={skin.status.title} data-testid="nav-status"></span>
+      <span class="dot {navStatus.tone}" title={navStatus.title} data-testid="nav-status"></span>
     {/if}
   </nav>
 
@@ -141,8 +143,10 @@
     grid-template-columns: 4rem minmax(0, 1fr);
   }
 
+  /* Home's edge tabs are thinner than the way back, their labels larger (founder, 2026-10-17):
+     56 CSS pixels, still a finger's target. */
   main.home {
-    grid-template-columns: 4rem minmax(0, 1fr) 4rem;
+    grid-template-columns: 3.5rem minmax(0, 1fr) 3.5rem;
   }
 
   /* A finger that moves sideways on home is a swipe of the history or the steam page, not the browser's pan. */
@@ -198,9 +202,9 @@
   /* The tabs of the history and of steam run down the edges. */
   nav .tab {
     flex: 1;
-    font-size: 0.9rem;
+    font-size: var(--text-value);
     color: var(--dim);
-    letter-spacing: 0.08em;
+    letter-spacing: 0.06em;
   }
 
   nav .tab span {

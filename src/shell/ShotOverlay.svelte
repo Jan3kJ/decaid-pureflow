@@ -145,7 +145,7 @@
   }
 
   header strong {
-    font-size: 1.3rem;
+    font-size: var(--text-value);
     font-weight: 600;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -154,7 +154,7 @@
 
   header span {
     color: var(--dim);
-    font-size: 1.1rem;
+    font-size: var(--text-body);
     white-space: nowrap;
   }
 
@@ -169,7 +169,7 @@
   table {
     grid-area: table;
     border-collapse: collapse;
-    font-size: 1.2rem;
+    font-size: var(--text-value);
     font-variant-numeric: tabular-nums;
     border: 1px solid var(--line);
     border-radius: 0.9rem;
@@ -186,7 +186,7 @@
   thead th {
     padding-top: 0.5rem;
     color: var(--dim);
-    font-size: 0.9rem;
+    font-size: var(--text-label);
     font-weight: 400;
   }
 
@@ -229,7 +229,7 @@
   small,
   dt {
     color: var(--dim);
-    font-size: 0.85rem;
+    font-size: var(--text-label);
   }
 
   i {
@@ -246,7 +246,7 @@
   }
 
   .big b {
-    font-size: 3.6rem;
+    font-size: var(--text-big);
     font-weight: 600;
     line-height: 1.1;
     font-variant-numeric: tabular-nums;
@@ -271,7 +271,7 @@
 
   dd {
     margin: 0;
-    font-size: 1.6rem;
+    font-size: var(--text-title);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
   }
@@ -293,14 +293,14 @@
   .notice {
     margin: 0;
     color: var(--warn);
-    font-size: 0.95rem;
+    font-size: var(--text-label);
   }
 
   .close {
     margin: auto 0 0;
     padding: 1rem;
     color: var(--dim);
-    font-size: 1.1rem;
+    font-size: var(--text-body);
     text-align: center;
     border: 1px dashed var(--line);
     border-radius: 0.9rem;
@@ -310,7 +310,7 @@
     margin-top: auto;
     min-height: 7rem;
     font: inherit;
-    font-size: 2.2rem;
+    font-size: var(--text-large);
     font-weight: 600;
     color: var(--bg);
     background: var(--temperature);

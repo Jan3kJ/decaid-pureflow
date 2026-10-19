@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
+import { IDLE } from './idle';
 
 // The backup of the settings in Decaid's KV store (founder, 2026-10-14) against the rig: a
 // changed setting can be read back from the running gateway's KV store, and a start without
@@ -42,7 +43,7 @@ test('a changed setting is backed up in the KV store and comes back after localS
   try {
     await api('DELETE', BACKUP);
     await page.goto('/');
-    await expect(page.getByTestId('status-title')).toHaveText('Idle', { timeout: 15_000 });
+    await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 15_000 });
     await page.getByTestId('menu').click();
     await page.getByTestId('open-settings').click();
     await page.getByTestId('settings-category-skin').click();

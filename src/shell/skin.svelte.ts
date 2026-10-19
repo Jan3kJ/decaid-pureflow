@@ -29,7 +29,20 @@ import { PRODUCT_VERSION } from '../product';
 import { hasSettings, loadSettings, saveSettings, type Settings } from '../settings';
 import { SettingsBackup, atStart, type ReadBackup, type Written } from '../settings-backup';
 import { gatewayBaseUrl } from './gateway';
-import { canSleep, canStop, gatewayAfter, isAsleep, linkOf, stateLine, statusOf, type Gateway, type ScaleLink } from './machine';
+import {
+  canSleep,
+  canStop,
+  gatewayAfter,
+  heatingStatus,
+  isAsleep,
+  linkOf,
+  stateLine,
+  statusOf,
+  type Gateway,
+  type HeatTarget,
+  type ScaleLink,
+  type Status,
+} from './machine';
 import { followMachine, loadScreen, saveScreen, shotOverlay, type Screen } from './nav';
 import { doseToSet } from './profiles';
 import { expectedShotSeconds, lastShotSeconds } from './expected';
@@ -147,6 +160,10 @@ export class Skin {
 
   readonly link = $derived(linkOf(this.gateway, this.openedAt, this.lastFrameAt, this.now));
   readonly status = $derived.by(() => statusOf(this.link, this.snapshot, this.baseUrl));
+  /** The status of a page that waits for a heater (spec 3.8): home the group, steam the steam heater. */
+  statusFor(target: HeatTarget | null): Status {
+    return target ? heatingStatus(this.status, this.link, this.snapshot, target, this.shotSettings) : this.status;
+  }
   readonly canStop = $derived(canStop(this.link, this.snapshot));
   readonly canSleep = $derived(canSleep(this.link, this.snapshot));
   readonly asleep = $derived(isAsleep(this.link, this.snapshot));

@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { IDLE } from './idle';
 
 // Acceptance item 18 (spec 3.7, R4) against the rig: the home menu's steam off writes the
 // workflow's steam temperature 0 and the machine's own settings read back a heater that is off;
@@ -62,7 +63,7 @@ test('home menu: steam off and on again, read back from the machine; machine sle
 
   try {
     await page.goto('/');
-    await expect(page.getByTestId('status-title')).toHaveText('Idle', { timeout: 30_000 });
+    await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 30_000 });
 
     await page.getByTestId('menu').click();
     await expect(page.getByTestId('steam-heater-detail')).toHaveText('steam heater is on', { timeout: 15_000 });

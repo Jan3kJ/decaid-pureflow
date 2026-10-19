@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { IDLE } from './idle';
 
 // Connections, Maintenance and Machine Information against the rig (research.md 20.10 S2b):
 // the device lists show the simulated MockDe1 and MockScale connected; the scale's power mode
@@ -35,7 +36,7 @@ test.beforeAll(async () => {
 
 async function openCategory(page: Page, id: string) {
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle', { timeout: 15_000 });
+  await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 15_000 });
   await page.getByTestId('menu').click();
   await page.getByTestId('open-settings').click();
   await page.getByTestId(`settings-category-${id}`).click();

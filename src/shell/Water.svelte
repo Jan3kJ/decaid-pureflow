@@ -101,18 +101,18 @@
   }
 
   .kind {
-    font-size: 1.6rem;
+    font-size: var(--text-title);
   }
 
   .time {
-    font-size: 3.4rem;
+    font-size: var(--text-big);
     font-weight: 600;
   }
 
   .values {
     display: flex;
     gap: 1.6rem;
-    font-size: 1.9rem;
+    font-size: var(--text-large);
   }
 
   .flow {
@@ -128,7 +128,7 @@
   }
 
   .stop strong {
-    font-size: 2.8rem;
+    font-size: var(--text-large);
     font-weight: 600;
     color: var(--temperature);
   }

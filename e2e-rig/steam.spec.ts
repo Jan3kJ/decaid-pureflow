@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { IDLE } from './idle';
 
 // The steam page against the rig (D8a): the duration the skin writes can be read back from
 // the running gateway, and steam starts and is stopped by the skin's stop button. Only the
@@ -105,7 +106,7 @@ test('steam: the written timer is read back from the workflow and from the machi
     expect(await machineTimer()).toBe(STREAMLINE_SECONDS);
 
     await page.goto('/');
-    await expect(page.getByTestId('status-title')).toHaveText('Idle', { timeout: 15_000 });
+    await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 15_000 });
     await page.getByTestId('open-steam').click();
     await expect(page.getByTestId('steam-timer')).toHaveText(`${STREAMLINE_SECONDS}s`);
 
@@ -242,7 +243,7 @@ test("steam: the page's tare button tares the simulated scale (item 17)", async 
     if (response.url() === `${GATEWAY}/api/v1/scale/tare`) tares.push(response.status());
   });
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle', { timeout: 15_000 });
+  await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 15_000 });
   await page.getByTestId('open-steam').click();
   // The simulated scale, its own frames: connected, with a weight.
   await expect(page.getByTestId('steam-tare')).toBeEnabled({ timeout: 30_000 });

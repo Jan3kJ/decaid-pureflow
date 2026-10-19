@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { IDLE } from './idle';
 
 // The water view against the rig (V1 and R3, acceptance items 9 and 19): no picture, the
 // countdown ring, and the values inside the stop button. The test asks the simulated machine
@@ -50,7 +51,7 @@ test('hot water and flush started at the machine show the ring and the values in
   };
   try {
     await page.goto('/');
-    await expect(page.getByTestId('status-title')).toHaveText('Idle', { timeout: 30_000 });
+    await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 30_000 });
 
     // Hot water: it pours, the button shows the mock scale's weight, and it ends by itself.
     await api('PUT', '/api/v1/machine/state/hotWater');

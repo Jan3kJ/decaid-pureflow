@@ -62,7 +62,7 @@
 
 <div class="home">
   <header>
-    <StateLine {skin} />
+    <StateLine {skin} heat="group" />
 
     <div class="profile">
       <button class="name" data-testid="open-profiles" aria-label="choose a profile" onclick={() => skin.go('profiles')}>
@@ -222,7 +222,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: 1.1rem;
+    font-size: var(--text-value);
     font-weight: 600;
   }
 
@@ -254,7 +254,7 @@
     min-width: 7rem;
     min-height: 3.2rem;
     padding: 0 1rem;
-    font-size: 1rem;
+    font-size: var(--text-body);
   }
 
   .last {
@@ -276,7 +276,7 @@
   .last header strong {
     margin-left: 0.8rem;
     color: var(--fg);
-    font-size: 1.3rem;
+    font-size: var(--text-value);
     font-variant-numeric: tabular-nums;
   }
 
@@ -292,7 +292,7 @@
   }
 
   .last header .recalled strong {
-    font-size: 1.1rem;
+    font-size: var(--text-body);
   }
 
   .plot {
@@ -306,7 +306,7 @@
   .notice {
     margin: 0;
     color: var(--warn);
-    font-size: 0.95rem;
+    font-size: var(--text-label);
   }
 
   .info {
@@ -316,7 +316,7 @@
   .stop {
     flex: none;
     min-height: 5rem;
-    font-size: 2rem;
+    font-size: var(--text-large);
     font-weight: 600;
     color: var(--bg);
     background: var(--temperature);
@@ -335,8 +335,8 @@
   .menu {
     position: fixed;
     top: 4.6rem;
-    /* under the menu button: the steam tab's 4rem and home's padding */
-    right: 5.2rem;
+    /* under the menu button: the steam tab's 3.5rem and home's padding */
+    right: 4.7rem;
     z-index: 11;
     min-width: 14rem;
     margin: 0;
@@ -356,7 +356,7 @@
     min-height: 3.8rem;
     padding: 0 1.2rem;
     text-align: left;
-    font-size: 1.2rem;
+    font-size: var(--text-value);
     border: 0;
     background: none;
   }
@@ -371,7 +371,7 @@
 
   .menu small {
     display: block;
-    font-size: 0.85rem;
+    font-size: var(--text-label);
     color: var(--dim);
   }
 
