@@ -1,6 +1,7 @@
 // Snapshot frames in, the series of a shot graph out: plain arrays, one value per machine
 // frame. Pure: no clock, no network. Time comes from the frames' own timestamps.
 import type { MachineSnapshot } from '../api';
+import { phaseSample, type PhaseSample } from './phases';
 
 /** What the graph draws. Every array is as long as `t`. */
 export interface ShotSeries {
@@ -34,6 +35,14 @@ export interface Shot {
   /** ms, the timestamp of the first frame in which water moved; null while the machine still heats */
   startedAt: number | null;
   series: ShotSeries;
+  /** the frames the per-phase table counts (`phaseTable` in phases.ts), with the scale's raw weight */
+  samples: PhaseSample[];
+  /**
+   * g, the weight in the cup after the shot: the highest weight the scale showed since the
+   * shot ended (`settleWeight`), so the drops after the stop count and taking the cup away
+   * does not. Null while the shot runs.
+   */
+  finalWeight: number | null;
   /** the shot is over (`shotOver`): the graph is finished and the timer stands */
   ended: boolean;
   /**
@@ -149,8 +158,11 @@ export function recordFrame(
   }
   const at = frameTime(frame.timestamp);
   const running: Shot =
-    shot && !shot.ended ? shot : { enteredAt: at, startedAt: null, series: emptySeries(), ended: false };
+    shot && !shot.ended
+      ? shot
+      : { enteredAt: at, startedAt: null, series: emptySeries(), samples: [], finalWeight: null, ended: false };
   if (running.startedAt === null && !waterMoves(frame)) return running;
+  const sample = phaseSample(frame, weight);
   const startedAt = running.startedAt ?? at;
   const s = running.series;
   // A clock that steps back must not draw a line to the left.
@@ -168,7 +180,19 @@ export function recordFrame(
   };
   const settled = (at - running.enteredAt) / 1000 >= TARE_SETTLE_S;
   pushPoint(series, t, frame, settled ? weight : null, weightFlow);
-  return { ...running, startedAt, series };
+  return { ...running, startedAt, series, samples: sample ? [...running.samples, sample] : running.samples };
+}
+
+/**
+ * The shot after a scale weight: a finished shot keeps the highest weight since it ended as
+ * the weight in the cup. Streamline follows the scale after the shot (`setFinalWeight` in its
+ * shotData.js); the highest weight keeps the drops after the stop but not a cup taken away
+ * while the summary is still open (spec 3.8, T2). Nothing is changed in place.
+ */
+export function settleWeight(shot: Shot | null, weight: number | null): Shot | null {
+  if (!shot?.ended || weight === null) return shot;
+  const held = shot.finalWeight ?? shotWeight(shot) ?? weight;
+  return weight > held || shot.finalWeight === null ? { ...shot, finalWeight: Math.max(held, weight) } : shot;
 }
 
 /** The shot timer: seconds from the first frame in which water moved to the latest frame. */

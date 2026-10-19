@@ -47,7 +47,7 @@ test('a shot that stays at or under 10 bar has a scale to 10, live and afterward
   expect(await attribute(page.getByTestId('empty-graph'), 'data-scale')).toBe(10);
 
   await gateway.replay(page, 0, 0.7);
-  await expect(page.getByTestId('screen-espresso')).toBeVisible();
+  await expect(page.getByTestId('shot-overlay')).toBeVisible();
   await expect.poll(() => attribute(page, 'data-points')).toBeGreaterThan(100);
   expect(await attribute(page, 'data-scale')).toBe(10);
   expect(await ticks(page)).toEqual([0, 2, 4, 6, 8, 10]);
@@ -55,6 +55,7 @@ test('a shot that stays at or under 10 bar has a scale to 10, live and afterward
   await page.screenshot({ path: 'docs/product/espresso-during.png' });
 
   await gateway.replay(page, 0.7, 1);
+  await page.getByTestId('shot-close').click();
   await expect(page.getByTestId('screen-home')).toBeVisible();
   const last = page.getByTestId('last-shot');
   expect(await attribute(last, 'data-scale')).toBe(10);
@@ -67,7 +68,7 @@ test('a shot that goes over 10 bar opens the scale to 12 when it does', async ({
   await home(page);
   // The recording's 10 bar times 1.15: 11.5 bar, from 63 % of the shot on.
   await gateway.replay(page, 0, 0.5, { pressure: 1.15 });
-  await expect(page.getByTestId('screen-espresso')).toBeVisible();
+  await expect(page.getByTestId('shot-overlay')).toBeVisible();
   await expect.poll(() => attribute(page, 'data-points')).toBeGreaterThan(50);
   expect(await attribute(page, 'data-scale')).toBe(10);
 
@@ -76,6 +77,7 @@ test('a shot that goes over 10 bar opens the scale to 12 when it does', async ({
   expect(await ticks(page)).toEqual([0, 2, 4, 6, 8, 10, 12]);
 
   await gateway.replay(page, 0.8, 1, { pressure: 1.15 });
+  await page.getByTestId('shot-close').click();
   await expect(page.getByTestId('screen-home')).toBeVisible();
   expect(await attribute(page.getByTestId('last-shot'), 'data-scale')).toBe(12);
   expect(errors).toEqual([]);
@@ -90,14 +92,14 @@ test('the live shot ends at the pour: the tail adds no points, the timer stands,
 
   // The shot up to its last frame of the pour.
   await gateway.replay(page, 0, espressoShare(), tail);
-  await expect(page.getByTestId('screen-espresso')).toBeVisible();
+  await expect(page.getByTestId('shot-overlay')).toBeVisible();
   await expect.poll(() => timer(page)).toBeGreaterThan(25);
   const points = await attribute(page, 'data-points');
   const seconds = await timer(page);
 
   // 5 s of the real DE1's tail: still espresso, but nothing moves on screen.
   await gateway.replay(page, espressoShare(), espressoShare(tail), tail);
-  await expect(page.getByTestId('screen-espresso')).toBeVisible();
+  await expect(page.getByTestId('shot-overlay')).toBeVisible();
   await page.waitForTimeout(700);
   expect(await attribute(page, 'data-points')).toBe(points);
   expect(await timer(page)).toBe(seconds);
@@ -107,6 +109,7 @@ test('the live shot ends at the pour: the tail adds no points, the timer stands,
 
   // The machine leaves espresso: home's last shot is the same graph.
   await gateway.replay(page, espressoShare(tail), 1, tail);
+  await page.getByTestId('shot-close').click();
   await expect(page.getByTestId('screen-home')).toBeVisible();
   const last = page.getByTestId('last-shot');
   expect(await attribute(last, 'data-points')).toBe(points);
@@ -145,7 +148,7 @@ test("the running time axis starts at the last shot's length with the profile an
     [0.8, espressoShare()],
   ]) {
     await gateway.replay(page, from, to);
-    await expect(page.getByTestId('screen-espresso')).toBeVisible();
+    await expect(page.getByTestId('shot-overlay')).toBeVisible();
     expect(await attribute(page, 'data-seconds')).toBe(60);
   }
   await gateway.replay(page, espressoShare(), 1);
@@ -153,7 +156,7 @@ test("the running time axis starts at the last shot's length with the profile an
 
   // That shot (27 s) is now the last one with the profile: the next starts at 30 s.
   await gateway.replay(page, 0, 0.3);
-  await expect(page.getByTestId('screen-espresso')).toBeVisible();
+  await expect(page.getByTestId('shot-overlay')).toBeVisible();
   expect(await attribute(page, 'data-seconds')).toBe(30);
   expect(errors).toEqual([]);
 });
@@ -163,7 +166,7 @@ test("without a shot of the profile the axis starts at the profile's estimate", 
   await home(page);
   // The mock's profile: 9 pressure steps of 11 to 19 s, 135 s in the step editor's curve.
   await gateway.replay(page, 0, 0.3);
-  await expect(page.getByTestId('screen-espresso')).toBeVisible();
+  await expect(page.getByTestId('shot-overlay')).toBeVisible();
   expect(await attribute(page, 'data-seconds')).toBe(140);
   expect(errors).toEqual([]);
 });

@@ -98,10 +98,9 @@ test('scale: the status frame alone makes the weight a tare button, before any w
 test('scale: a tare Decaid blocks during a shot is a notice, another failure is an error', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
-  // A shot runs; the user leaves the espresso screen for home.
+  // A shot runs; home's state line with the scale stays visible above its overlay (spec 3.8).
   await gateway.replay(page, 0, 0.4);
-  await expect(page.getByTestId('screen-espresso')).toBeVisible();
-  await page.getByTestId('nav-home').click();
+  await expect(page.getByTestId('shot-overlay')).toBeVisible();
 
   gateway.tareBlocked = true;
   await page.getByTestId('tare').click();

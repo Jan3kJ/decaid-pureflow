@@ -2,6 +2,7 @@
   import ShotGraph from '../graph/ShotGraph.svelte';
   import { beanLabel } from '../history/entries';
   import { emptySeries, shotSeconds, shotWeight } from './shot';
+  import ShotOverlay from './ShotOverlay.svelte';
   import type { Skin } from './skin.svelte';
   import StateLine from './StateLine.svelte';
   import Water from './Water.svelte';
@@ -83,6 +84,9 @@
 
   {#if water}
     <Water {skin} run={water} />
+  {:else if skin.shotOpen}
+    <!-- The shot lies over the graph area, under the state line, until it is closed (spec 3.8). -->
+    <ShotOverlay {skin} />
   {:else}
     <section class="last">
       {#if recalled}
@@ -134,13 +138,13 @@
     </section>
   {/if}
 
-  {#if skin.notice}
+  {#if skin.notice && !(skin.shotOpen && !water)}
     <p class="notice" data-testid="notice">{skin.notice}</p>
   {:else if skin.info}
     <p class="notice info" data-testid="tare-notice">{skin.info}</p>
   {/if}
   <!-- Nothing is started here: the DE1 is started at the machine. What runs can be stopped. -->
-  {#if skin.canStop && !water}
+  {#if skin.canStop && !water && !skin.shotOpen}
     <button class="stop" data-testid="stop" onclick={() => skin.stop()}>stop</button>
   {/if}
 </div>

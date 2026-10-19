@@ -34,13 +34,15 @@ test('a live shot starts its graph and timer when water moves, not while the mac
 
   // Only the heating: espresso, and nothing drawn yet.
   await gateway.replay(page, 0, HEATING_SHARE);
-  await expect(page.getByTestId('screen-espresso')).toBeVisible();
+  await expect(page.getByTestId('shot-overlay')).toBeVisible();
   await expect(page.getByTestId('espresso-step')).toHaveText('heating');
   await expect(page.getByTestId('shot-graph')).toHaveAttribute('data-points', '0');
   await expect(page.getByTestId('shot-timer')).toHaveText('0.0s');
 
   // The water: the graph starts at 0 s with the first frame of preinfusion.
   await gateway.replay(page, HEATING_SHARE, 1);
+  // The overlay stays after the shot; a tap closes it to home's last shot (spec 3.8).
+  await page.getByTestId('shot-close').click();
   await expect(page.getByTestId('screen-home')).toBeVisible();
   const last = page.getByTestId('last-shot');
   expect(await points(last)).toBeGreaterThanOrEqual(WATER_FRAMES);
@@ -58,6 +60,7 @@ test('the targets are dashed lines with their quantity, every scale has its unit
   const gateway = await mockGateway(page);
   await home(page);
   await gateway.replay(page, 0, 1);
+  await page.getByTestId('shot-close').click();
   await expect(page.getByTestId('screen-home')).toBeVisible();
   const graph = page.getByTestId('last-shot');
 
@@ -187,6 +190,7 @@ test('the legend is under the graph by default, and the settings page switches i
   expect(shown.y).toBeGreaterThanOrEqual(plot.y + plot.height - 1);
   expect(shown.x).toBeLessThan(plot.x + plot.width / 4);
   await gateway.replay(page, 0.5, 1);
+  await page.getByTestId('shot-close').click();
   await expect(page.getByTestId('screen-home')).toBeVisible();
   await expect(page.getByTestId('last-shot').getByTestId('shot-legend')).toBeVisible();
 

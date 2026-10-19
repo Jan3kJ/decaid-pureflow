@@ -30,10 +30,10 @@ import { hasSettings, loadSettings, saveSettings, type Settings } from '../setti
 import { SettingsBackup, atStart, type ReadBackup, type Written } from '../settings-backup';
 import { gatewayBaseUrl } from './gateway';
 import { canSleep, canStop, gatewayAfter, isAsleep, linkOf, stateLine, statusOf, type Gateway, type ScaleLink } from './machine';
-import { followMachine, loadScreen, saveScreen, type Screen } from './nav';
+import { followMachine, loadScreen, saveScreen, shotOverlay, type Screen } from './nav';
 import { doseToSet } from './profiles';
 import { expectedShotSeconds, lastShotSeconds } from './expected';
-import { recordFrame, shotSeconds, type Shot, type ShotSeries } from './shot';
+import { recordFrame, settleWeight, shotSeconds, type Shot, type ShotSeries } from './shot';
 import { heaterState, isOnTemperature, switchHeater } from './steam-heater';
 import { recordWaterFrame, type WaterRun } from './water';
 import { ScaleRetry } from './scale-retry';
@@ -70,6 +70,11 @@ export class Skin {
   shotSettings: ShotSettings | null = $state.raw(null);
   /** the running shot, or the finished one until it is dismissed */
   shot: Shot | null = $state.raw(null);
+  /**
+   * The shot's overlay on home is open (spec 3.8): from the start of a shot until a tap after
+   * it (`closeShot`); the next shot opens it again (`shotOverlay` in nav.ts).
+   */
+  shotOpen = $state(false);
   /** s, the length of the last shot with a profile title, null when it has none; see `expectedSeconds` */
   private lastShot: { title: string; seconds: number | null } | null = $state.raw(null);
   /** the shot history's overlay is open (spec 3.1); only home shows it */
@@ -271,6 +276,7 @@ export class Skin {
         if (isScaleSnapshot(frame)) {
           this.weight = frame.weight;
           this.weightFlow = typeof frame.weightFlow === 'number' ? frame.weightFlow : null;
+          this.shot = settleWeight(this.shot, frame.weight);
           this.scaleLink = 'connected';
         } else if (isScaleStatus(frame)) {
           this.scaleLink = frame.status === 'connected' ? 'connected' : 'disconnected';
@@ -314,6 +320,9 @@ export class Skin {
     this.snapshot = frame;
     const state = frame.state.state;
     const next = followMachine(this.screen, this.machineState, state);
+    const open = shotOverlay(this.shotOpen, this.machineState, state);
+    if (open && !this.shotOpen) this.historyOpen = false;
+    this.shotOpen = open;
     if (this.machineState === 'sleeping' && state !== 'sleeping') this.wokeAt = Date.now();
     this.machineState = state;
     const running = this.shot !== null && !this.shot.ended;
@@ -563,6 +572,12 @@ export class Skin {
     } else {
       this.backupError = `The backup in Decaid was not written: ${written.error}`;
     }
+  }
+
+  /** A tap anywhere after the shot closes its overlay; home then shows it as the last shot. */
+  closeShot(): void {
+    if (this.shot && !this.shot.ended) return;
+    this.shotOpen = false;
   }
 
   dismissShot(): void {

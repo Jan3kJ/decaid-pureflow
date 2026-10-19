@@ -225,17 +225,18 @@ test('home says when no machine is connected, and shows the machine when it come
   expect(errors).toEqual([]);
 });
 
-test('a shot started at the machine: the espresso screen opens by itself with a live graph, and home keeps the finished graph', async ({
+test('a shot started at the machine: the shot overlay opens by itself with a live graph, stays, and home keeps the finished graph', async ({
   page,
 }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
 
-  // The shot is started at the machine: the screen opens when a frame says espresso.
+  // The shot is started at the machine: the overlay opens on home when a frame says espresso.
   await expect(page.getByTestId('screen-home')).toBeVisible();
   await gateway.replay(page, 0, 0.3);
-  await expect(page.getByTestId('screen-espresso')).toBeVisible();
+  await expect(page.getByTestId('shot-overlay')).toBeVisible();
+  await expect(page.getByTestId('screen-home')).toBeVisible();
   const early = await points(page);
   expect(early).toBeGreaterThan(20);
 
@@ -260,8 +261,11 @@ test('a shot started at the machine: the espresso screen opens by itself with a 
   expect(gateway.calls('PUT', '/api/v1/scale/tare')).toHaveLength(0);
 
   await gateway.replay(page, 0.7, 1);
-  await expect(page.getByTestId('screen-home')).toBeVisible();
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  // The overlay stays after the shot (spec 3.8); a tap closes it to home's last shot.
+  await expect(page.getByTestId('shot-phases')).toBeVisible();
+  await page.getByTestId('shot-close').click();
+  await expect(page.getByTestId('shot-overlay')).toHaveCount(0);
   await expect(page.getByTestId('last-shot')).toBeVisible();
   // Every espresso frame from the first one with water is a point; the mock repeated its latest
   // frame while the test looked.
@@ -281,14 +285,15 @@ test('a shot started at the machine: the espresso screen opens by itself with a 
   expect(errors).toEqual([]);
 });
 
-test('the espresso screen opens when the skin loads in the middle of a shot', async ({ page }) => {
+test('the shot overlay opens on home when the skin loads in the middle of a shot', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.addInitScript(() => localStorage.setItem('pureflow.screen', 'editor'));
   await page.goto('/');
   await expect(page.getByTestId('screen-editor')).toBeVisible();
 
   await gateway.replay(page, 0.4, 0.6);
-  await expect(page.getByTestId('screen-espresso')).toBeVisible();
+  await expect(page.getByTestId('screen-home')).toBeVisible();
+  await expect(page.getByTestId('shot-overlay')).toBeVisible();
   await expect(page.getByTestId('stop')).toBeEnabled();
   expect(errors).toEqual([]);
 });

@@ -86,10 +86,9 @@ test('scale: with blockTareDuringShot on, a tare during a simulated shot shows t
     await expect(page.getByTestId('status-title')).toHaveText('Idle', { timeout: 15_000 });
 
     // The shot of whatever profile the workflow holds, started through the gateway as at the
-    // machine; the espresso screen opens by itself.
+    // machine; the shot's overlay opens on home by itself, under the state line (spec 3.8).
     await api('PUT', '/api/v1/machine/state/espresso');
-    await expect(page.getByTestId('screen-espresso')).toBeVisible({ timeout: 15_000 });
-    await page.getByTestId('nav-home').click();
+    await expect(page.getByTestId('shot-overlay')).toBeVisible({ timeout: 15_000 });
     expect(await machineState()).toBe('espresso');
 
     const answer = page.waitForResponse((response) => response.url().endsWith('/api/v1/scale/tare'));

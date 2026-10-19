@@ -5,7 +5,6 @@
   import History from './history/History.svelte';
   import HotWater from './hotwater/HotWater.svelte';
   import { isOpeningSwipe, startsAtEdge, type Edge, type Point } from './history/swipe';
-  import Espresso from './shell/Espresso.svelte';
   import Home from './shell/Home.svelte';
   import Profiles from './shell/Profiles.svelte';
   import SettingsPage from './settings-page/SettingsPage.svelte';
@@ -20,14 +19,15 @@
 
   // The shot history opens by its tab or by a swipe from the left edge, on home only: the
   // editor's drags and every other screen never see the gesture (spec 3.1). Its mirror from
-  // the right edge opens the steam page, as the steam tab does (spec 3.7).
+  // the right edge opens the steam page, as the steam tab does (spec 3.7). Not over the shot's
+  // overlay: after the shot a touch there closes it (spec 3.8).
   const home = $derived(skin.screen === 'home');
   let swipe: (Point & { id: number; edge: Edge }) | null = null;
 
   function onpointerdown(event: PointerEvent) {
     const start = { x: event.clientX, y: event.clientY };
     const edge = (['left', 'right'] as const).find((side) => startsAtEdge(start, innerWidth, side));
-    swipe = home && !skin.historyOpen && edge ? { ...start, id: event.pointerId, edge } : null;
+    swipe = home && !skin.historyOpen && !skin.shotOpen && edge ? { ...start, id: event.pointerId, edge } : null;
   }
 
   function onpointermove(event: PointerEvent) {
@@ -61,8 +61,6 @@
   <div class="screen" data-testid="screen-{skin.screen}">
     {#if skin.screen === 'home'}
       <Home {skin} />
-    {:else if skin.screen === 'espresso'}
-      <Espresso {skin} />
     {:else if skin.screen === 'profiles'}
       <Profiles {skin} />
     {:else if skin.screen === 'editor'}

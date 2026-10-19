@@ -2930,3 +2930,93 @@ profile's estimate); the mock gateway's replay takes `tail` and `pressure`
 4 ml/s). Rig: `e2e-rig/shot-end.spec.ts`: running axis 30 s from the rig's earlier shot of the
 profile, scale 10, the live graph 27.4 s and 275 points against the record's 27.30 s and 274
 measurements from the water.
+
+## 24. Streamline's per-phase shot table, and the shot overlay (T2)
+
+Spec 3.8 'Espresso shot: an overlay that stays', with 3.9's answer from the founder's screenshot
+review-10-17-streamline-phase-values.png (screenshot in the team repository).
+Read on 2026-10-19 in the clone `../streamline-js` at `3a4bd23` (v0.2.14), the version the
+rig serves as its default skin (`GET /api/v1/webui/skins`: `streamline.js 0.2.14`).
+
+### 24.1 Where Streamline computes the table
+
+Not in `shotSummary.js`, which 3.9 names: that file writes a Markdown summary per profile
+*frame* (`profileFrame`) for sharing, with peak values and `actual(target)` pairs; it is not the
+table of the screenshot. The table is `src/modules/shotData.js` (cells `shot-data-pi-*`,
+`shot-data-ex-*`, `shot-data-total-*` in `index.html`), fed from `app.js`:
+
+- **Which frames.** Only machine frames in substate `preinfusion` or `pouring`
+  (`espressoStates`); `preparingForShot` (before the shot and, on the simulated machine,
+  between steps) and `pouringDone` after it are left out. Live (`updateShotData`) each frame
+  carries the scale's latest weight; a record (`renderPastShot`) the measurement's
+  `scale.weight`. The table is cleared when a new shot's first preinfusion or pouring frame
+  arrives (`clearShotData`, `app.js` 1001).
+- **Where preinfusion ends.** At the sample before the first sample in `pouring`
+  (`preinfusionEndIndex`); a first sample already in `pouring` does not count, the next one
+  does. Without a `pouring` sample the whole shot is preinfusion and the extraction row stays
+  empty. So the split is the machine's own substate, not the profile's steps.
+- **Seconds.** Preinfusion: last preinfusion sample − first sample; extraction: last sample −
+  first extraction sample; total: last − first; each rounded to whole seconds.
+- **Weight.** Preinfusion: the weight at its last sample. Total: `finalWeight`, which follows
+  the scale on every scale frame even after the shot (drip-down, `setFinalWeight`), and for a
+  record Decaid's `annotations.actualYield`, else the record's last scale weight; without it
+  the last sample's. Extraction: total − preinfusion, so the two add up.
+- **Volume.** The flow summed over the samples: each sample adds the previous sample's flow
+  times the time since it (ml); extraction is total − preinfusion.
+- **Temperature.** `groupTemperature` (as the chart), written lowest → highest
+  (`formatRange`, 0 decimals), one value when both round alike.
+- **Flow and pressure.** start → peak → end (`formatStartPeakEnd`, 1 decimal); the peak only
+  when it is neither the start nor the end; one value when start and end are equal. The
+  founder's 3.3→9.5→8.3 is that.
+
+### 24.2 Ported, and checked against Streamline itself
+
+`src/shell/phases.ts` is a port of that computation (GPL notice as 20.8): `phaseSample` (a
+frame, or null when not counted), `recordSamples` (a shot record, with `actualYield`),
+`phaseTable` (the cells as Streamline writes them). Streamline's own `renderPastShot` was run
+under Node with a stub `document` on two inputs, and its cells are the tests' expected values:
+
+| input | Preinfusion | Extraction | Total |
+|---|---|---|---|
+| the rig's shot record `ee7495ea…` (2026-10-11, fixture `src/shell/fixtures/rig-shot.json`) | 4 s, 0.0 g, 34 ml, 78→89, 7.4→8.0, 0.7→3.1 | 23 s, 34.3 g, 40 ml, 89→93, 8.0→2.3, 3.2→10.0→6.5 | 27 s, 34.3 g, 74 ml |
+| the e2e recording `e2e/fixtures/shot.json` as frames | 4 s, 0.0 g, 34 ml, 78→89, 7.4→8.0, 0.7→3.1 | 23 s, 33.8 g, 40 ml, 89→93, 8.0→2.3, 3.3→10.0→6.6 | 27 s, 33.8 g, 74 ml |
+
+The skin differs in two small things. A missing weight is '–', where Streamline writes '0.0'
+without a unit. The weight in the cup after the shot (`settleWeight` in `src/shell/shot.ts`) is
+the highest scale weight since the shot ended, not the latest one: the drops after the stop
+count, a cup taken away while the summary is open does not (Streamline's total falls to 0 g
+then).
+
+### 24.3 Built (T2)
+
+- **The overlay.** The screen `espresso` is gone (`SCREENS`, `src/shell/nav.ts`); a stored
+  'espresso' opens home. `followMachine` opens home when the machine enters espresso (also at a
+  load in the middle of a shot) and leaves the screen alone when it leaves espresso;
+  `shotOverlay` opens `Skin.shotOpen` on entering espresso and keeps it open otherwise.
+  `Skin.closeShot` closes it once the shot is over (`Shot.ended`); while it runs it stays.
+  Opening it closes the history overlay.
+- **Where.** `src/shell/ShotOverlay.svelte` (the former `Espresso.svelte`) takes home's graph
+  area under home's header, so the state line, the profile and the menu stay visible; home's
+  own stop button and notice are not shown under it. A running hot water or flush still shows
+  home's water ring with its stop in its place (the overlay comes back after it).
+- **After the shot.** The header says 'shot finished', the big weight is the weight in the
+  cup, the stop button gives way to 'tap anywhere to close', and the per-phase table
+  (`shot-phases`, rows `phase-preinfusion`, `phase-extraction`, `phase-total`, cells
+  `phase-<row>-<column>`) stands under the graph. A transparent button over the whole app
+  (`shot-close`, under the stream banner and the sleep screen) takes the tap and does nothing
+  else; home then shows the shot as its 'last shot'. The left- and right-edge swipes are off
+  while the overlay is open.
+
+Tests: Vitest `src/shell/phases.test.ts` (the formats; the rig record and the e2e recording
+against Streamline's cells; the split, no scale), `src/shell/overlay.test.ts` (`Skin` fed the
+recording: opens from another screen, stays while running and after the shot, closes on the
+tap, the next shot replaces it), `src/shell/shell.test.ts` (`followMachine`, `shotOverlay`).
+`npm run e2e`: `e2e/shot-overlay.spec.ts` (the overlay under the state line, the table's cells,
+a tap on the menu's place closes it and opens no menu, the next shot replaces it open or
+closed, a shot from the steam page opens home); the espresso specs close the overlay before
+they look at home's last shot. Screenshots `docs/product/shot-overlay-during.png`,
+`docs/product/shot-overlay-after.png`. Rig (2026-10-19, log
+`..\decaid-rig\log\t2-rig-suite.txt`, 33 of 33 passed): `e2e-rig/shot.spec.ts` reads the
+overlay's table after the simulated A-Flow / default-medium shot to 42 g (live: preinfusion
+64 s, total 102 s, 139 ml) and finds the same in `phaseTable` of Decaid's record of the shot
+(64 s, 102 s, 139 ml; extraction 38 s, 40.2 g, pressure 3.0→7.8→6.3).

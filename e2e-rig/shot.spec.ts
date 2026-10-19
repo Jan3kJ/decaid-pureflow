@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { phaseTable, recordSamples } from '../src/shell/phases';
 
 // Acceptance item 2 (spec section 5) against the rig: the skin loads, shows the machine
 // state, loads an A-Flow profile, runs a simulated shot with a live graph and stops at the
@@ -89,10 +90,10 @@ test('a simulated shot: the state, an A-Flow profile, a live graph, the stop at 
     expect(workflow.context.targetDoseWeight).toBe(16);
 
     // The shot: started at the machine, here through the gateway as the removed start button
-    // did; the espresso screen opens by itself and the graph grows while it runs.
+    // did; the shot's overlay opens on home by itself and the graph grows while it runs.
     await expect(page.getByRole('button', { name: /start/ })).toHaveCount(0);
     await api('PUT', '/api/v1/machine/state/espresso');
-    await expect(page.getByTestId('screen-espresso')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId('shot-overlay')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId('espresso-profile')).toHaveText(PROFILE);
     await expect.poll(() => points(page), { timeout: 15_000 }).toBeGreaterThan(20);
     const early = await points(page);
@@ -103,9 +104,19 @@ test('a simulated shot: the state, an A-Flow profile, a live graph, the stop at 
     }
     await page.screenshot({ path: 'e2e-rig/.results/espresso-rig.png' });
 
-    // It ends by itself at the target weight; home keeps the finished graph.
-    await expect(page.getByTestId('screen-home')).toBeVisible({ timeout: 180_000 });
-    await expect(page.getByTestId('status-title')).toHaveText('Idle');
+    // It ends by itself at the target weight; the overlay stays with the per-phase table
+    // (spec 3.8), and a tap closes it to home, which keeps the finished graph.
+    await expect(page.getByTestId('shot-phases')).toBeVisible({ timeout: 180_000 });
+    await expect(page.getByTestId('status-title')).toHaveText('Idle', { timeout: 15_000 });
+    await expect(page.getByTestId('shot-phases').locator('tbody th')).toHaveText(['Preinfusion', 'Extraction', 'Total']);
+    const live = {
+      preinfusion: Number(await page.getByTestId('phase-preinfusion-seconds').textContent()),
+      total: Number(await page.getByTestId('phase-total-seconds').textContent()),
+      volume: Number(await page.getByTestId('phase-total-volume').textContent()),
+    };
+    await page.screenshot({ path: 'e2e-rig/.results/shot-overlay-rig.png' });
+    await page.getByTestId('shot-close').click();
+    await expect(page.getByTestId('shot-overlay')).toHaveCount(0);
     await expect(page.getByTestId('last-shot')).toBeVisible();
     const grams = parseFloat((await page.getByTestId('last-shot-weight').textContent())!);
     expect(grams).toBeGreaterThan(TARGET - UNDER);
@@ -129,6 +140,15 @@ test('a simulated shot: the state, an A-Flow profile, a live graph, the stop at 
       )
       .toBe(false);
     expect(shot.stopReason).toBe('targetWeight');
+
+    // The overlay's table, from the live frames, is the table of Decaid's record of the shot.
+    const record = await api('GET', `/api/v1/shots/${encodeURIComponent(shot.id)}`);
+    const { samples, finalWeight } = recordSamples(record);
+    const table = phaseTable(samples, finalWeight)!;
+    console.log(`rig shot: live table ${JSON.stringify(live)}, record's ${JSON.stringify(table)}`);
+    expect(Math.abs(live.preinfusion - Number(table.preinfusion.seconds))).toBeLessThanOrEqual(1);
+    expect(Math.abs(live.total - Number(table.total.seconds))).toBeLessThanOrEqual(1);
+    expect(Math.abs(live.volume - Number(table.total.volume))).toBeLessThanOrEqual(3);
     expect(shot.workflow.profile.title).toBe(PROFILE);
     expect(shot.workflow.context.targetYield).toBe(TARGET);
 

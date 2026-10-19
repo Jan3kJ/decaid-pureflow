@@ -239,9 +239,10 @@ test('a shot that starts closes the overlay, and its graph takes the place of th
   await expect(page.getByTestId('history')).toBeVisible();
 
   await gateway.replay(page, 0, 0.3);
-  await expect(page.getByTestId('screen-espresso')).toBeVisible();
+  await expect(page.getByTestId('shot-overlay')).toBeVisible();
   await expect(page.getByTestId('history')).toHaveCount(0);
   await gateway.replay(page, 0.3, 1);
+  await page.getByTestId('shot-close').click();
   await expect(page.getByTestId('screen-home')).toBeVisible();
   await expect(page.getByTestId('history')).toHaveCount(0);
   await expect(page.getByTestId('last-shot')).toBeVisible();

@@ -333,12 +333,17 @@ then shows the 'last shot' graph. Default: the overlay holds the graph and the s
 after the shot the stop button gives way to the shot's summary, and a tap anywhere closes it to
 home with the shot as its 'last shot' (section 8). **Per-phase values:** the summary shows, as
 Streamline does, per phase the duration, weight, maximum pressure and flow (founder,
-2026-10-17). The screenshot of Streamline's table did not arrive. Default: one row per profile
-step that ran (the frames' `profileFrame` and the step's name, as the header's 'Step 9' does
-today), with its seconds, the weight gained in it, its maximum pressure and its mean flow, and a
-total row; Streamline's own computation is read in `decentespresso/streamline-js` before
-building (section 8). *Overridden by 3.9:* the resent screenshot shows Streamline's table per
-phase (preinfusion, extraction, total) with start and end values, which T2 builds.
+2026-10-17). As Streamline's table of the founder's screenshot (3.9): rows Preinfusion,
+Extraction and Total; columns seconds, grams, ml, °C (lowest → highest), ml/s and bar (start →
+peak → end), computed as Streamline's `shotData.js` does: only frames in `preinfusion` or
+`pouring`, the preinfusion ending with the frame before the first in `pouring`, the volume summed
+from the flow, the extraction's weight the total minus the preinfusion's (research.md 24).
+*Built (T2, research.md 24):* the screen `espresso` is gone; `ShotOverlay.svelte` takes home's
+graph area under its header while `Skin.shotOpen`, which opens on entering espresso and is
+closed by a tap anywhere once the shot is over. After the shot the stop button gives way to
+'tap anywhere to close' and the table stands under the graph. The weight in the cup is the
+highest scale weight since the shot ended (Streamline takes the latest), so a cup taken away
+does not empty the total. A running hot water or flush keeps its ring in home's graph area.
 
 **Heating state (T3).** The state line says **Heating** while the machine heats, not Idle: on
 home until the group reaches the espresso target minus 3 °C, on the steam page until the steam
@@ -1324,11 +1329,11 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
     and goes with the defaults out of Decaid. Should the stored copies be listed, or deleted?
   - The shot overlay: it covers home's graph area with the live graph and the values, home's
     state line stays visible; after the shot it stays with the per-phase table until a tap
-    anywhere or the next shot, and then home shows the shot as its 'last shot'.
-  - The per-phase values (the screenshot did not arrive): one row per profile step that ran,
-    with seconds, weight gained, maximum pressure and mean flow, and a total. Answered by the
-    screenshot resent on 2026-10-18: per phase (preinfusion, extraction, total) with start and
-    end values, as Streamline shows them (3.9).
+    anywhere or the next shot, and then home shows the shot as its 'last shot'. Built in T2
+    (research.md 24).
+  - The per-phase values: per phase (preinfusion, extraction, total) with start and end
+    values, as Streamline shows them (the screenshot resent on 2026-10-18, 3.9), computed as
+    its `shotData.js` does (research.md 24). Built in T2.
   - The expected shot duration: the last shot with that profile, else the profile's estimate,
     else 30 s, rounded up to 10 s. Built in T1 (research.md 23).
   - Exit: Decaid cannot switch the DE1 off (research.md 22) and a skin cannot close Decaid;

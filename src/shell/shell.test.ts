@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { MachineSnapshot, MachineState } from '../api';
 import { gatewayBaseUrl } from './gateway';
 import { FRAME_STALE_MS, canSleep, canStop, gatewayAfter, isAsleep, linkOf, stateLabel, stateLine, statusOf } from './machine';
-import { SCREEN_KEY, followMachine, loadScreen, saveScreen } from './nav';
+import { SCREEN_KEY, followMachine, loadScreen, saveScreen, shotOverlay } from './nav';
 
 function frame(state: MachineState, over: Partial<MachineSnapshot> = {}): MachineSnapshot {
   return {
@@ -61,7 +61,7 @@ describe('the screen', () => {
     expect(loadScreen(memoryStore({ [SCREEN_KEY]: 'scale' }))).toBe('home');
   });
 
-  it('never restores the espresso screen: it follows the machine', () => {
+  it('opens home for the espresso screen a skin before 0.3 stored: the shot is an overlay now', () => {
     expect(loadScreen(memoryStore({ [SCREEN_KEY]: 'espresso' }))).toBe('home');
   });
 
@@ -87,28 +87,45 @@ describe('the screen', () => {
 });
 
 describe('followMachine', () => {
-  it('opens the espresso screen when the machine enters espresso, from any screen', () => {
-    expect(followMachine('home', 'idle', 'espresso')).toBe('espresso');
-    expect(followMachine('editor', 'idle', 'espresso')).toBe('espresso');
+  it('opens home, where the shot overlay lies, when the machine enters espresso, from any screen', () => {
+    expect(followMachine('home', 'idle', 'espresso')).toBe('home');
+    expect(followMachine('editor', 'idle', 'espresso')).toBe('home');
+    expect(followMachine('steam', 'idle', 'espresso')).toBe('home');
   });
 
   it('opens it when the skin loads in the middle of a shot', () => {
-    expect(followMachine('home', undefined, 'espresso')).toBe('espresso');
+    expect(followMachine('profiles', undefined, 'espresso')).toBe('home');
   });
 
-  it('returns to home when the machine leaves espresso', () => {
-    expect(followMachine('espresso', 'espresso', 'idle')).toBe('home');
-  });
-
-  it('leaves a screen the user went to during the shot', () => {
+  it('leaves the screen alone when the machine leaves espresso, and during the shot', () => {
+    expect(followMachine('home', 'espresso', 'idle')).toBe('home');
     expect(followMachine('profiles', 'espresso', 'idle')).toBe('profiles');
-    expect(followMachine('home', 'espresso', 'espresso')).toBe('home');
+    expect(followMachine('steam', 'espresso', 'espresso')).toBe('steam');
   });
 
   it('does nothing on other changes of state', () => {
     expect(followMachine('editor', 'idle', 'steam')).toBe('editor');
     expect(followMachine('home', 'sleeping', 'idle')).toBe('home');
-    expect(followMachine('espresso', undefined, 'idle')).toBe('espresso');
+  });
+});
+
+describe('shotOverlay', () => {
+  it('opens when the machine enters espresso, also in the middle of a shot at load', () => {
+    expect(shotOverlay(false, 'idle', 'espresso')).toBe(true);
+    expect(shotOverlay(false, undefined, 'espresso')).toBe(true);
+  });
+
+  it('stays open after the shot: leaving espresso does not close it', () => {
+    expect(shotOverlay(true, 'espresso', 'idle')).toBe(true);
+    expect(shotOverlay(true, 'idle', 'idle')).toBe(true);
+    expect(shotOverlay(true, 'idle', 'sleeping')).toBe(true);
+  });
+
+  it('stays closed once closed, until the next shot', () => {
+    expect(shotOverlay(false, 'espresso', 'espresso')).toBe(false);
+    expect(shotOverlay(false, 'espresso', 'idle')).toBe(false);
+    expect(shotOverlay(false, 'idle', 'steam')).toBe(false);
+    expect(shotOverlay(false, 'steam', 'espresso')).toBe(true);
   });
 });
 

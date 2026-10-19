@@ -56,7 +56,7 @@ test('a simulated shot: the live graph ends with the shot, as long as its record
     if (previous) await page.waitForResponse((response) => response.url().includes(`/api/v1/shots/${previous.id}`), { timeout: 15_000 }).catch(() => undefined);
 
     await api('PUT', '/api/v1/machine/state/espresso');
-    await expect(page.getByTestId('screen-espresso')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId('shot-overlay')).toBeVisible({ timeout: 15_000 });
     const graph = page.getByTestId('shot-graph');
     await expect.poll(async () => Number(await graph.getAttribute('data-points')), { timeout: 20_000 }).toBeGreaterThan(30);
     const running = Number(await graph.getAttribute('data-seconds'));
@@ -66,7 +66,9 @@ test('a simulated shot: the live graph ends with the shot, as long as its record
     expect(await graph.getAttribute('data-scale')).toBe('10');
     await page.screenshot({ path: 'e2e-rig/.results/espresso-shot-end-rig.png' });
 
-    await expect(page.getByTestId('screen-home')).toBeVisible({ timeout: 180_000 });
+    // The overlay stays after the shot (spec 3.8); a tap closes it to home's last shot.
+    await page.getByTestId('shot-close').click({ timeout: 180_000 });
+    await expect(page.getByTestId('screen-home')).toBeVisible();
     const last = page.getByTestId('last-shot');
     const seconds = parseFloat((await page.getByTestId('last-shot-time').textContent())!);
     const points = Number(await last.getByTestId('shot-graph').getAttribute('data-points'));
