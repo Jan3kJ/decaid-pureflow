@@ -40,6 +40,7 @@
     type Stored,
   } from './save';
   import { startRow } from './start';
+  import { DEFAULT_SAVE_HINT, noticeLasts, type Notice } from './status';
   import StepList from './StepList.svelte';
   import { readParams, readRecord } from './storage';
   import ValueChip from './ValueChip.svelte';
@@ -80,7 +81,8 @@
   let selected: PhaseId = $state('fill');
   let naming = $state(false);
   let busy = $state(false);
-  let notice: { tone: 'info' | 'warn'; text: string } | null = $state(null);
+  /** the status line under the start row: a result goes after 4 s, a failure stays (spec 3.8, 3.9) */
+  let notice: Notice | null = $state(null);
   /** the value the number pad is open for */
   let typing: EditField | null = $state(null);
   /** the profile steps are shown; closed whenever the editor opens (founder, 2026-10-13) */
@@ -125,8 +127,11 @@
   const row = $derived(startRow(settings.startProfiles, entries));
   const origin = $derived(entries.find((entry) => entry.key === originKey) ?? entries[0]);
   const dirty = $derived(serializeParams(params) !== serializeParams(origin.params));
-  /** 'save' writes a new version of a saved profile; a default is saved under a new name. */
-  const canSave = $derived(!!origin.record && !origin.isDefault && dirty);
+  /**
+   * 'save' writes a new version of a saved profile; a default is saved under a new name, so
+   * there 'save' only says so (founder, 2026-10-17).
+   */
+  const canSave = $derived(origin.isDefault || (!!origin.record && dirty));
   const taken = $derived([
     ...entries.map((entry) => entry.name),
     ...records
@@ -225,6 +230,17 @@
     open(key, entries.find((entry) => entry.key === key)!.params);
   }
 
+  // Each notice is timed from when it is shown; the next action replaces it.
+  $effect(() => {
+    const shown = notice;
+    const lasts = shown && noticeLasts(shown);
+    if (!lasts) return;
+    const timer = setTimeout(() => {
+      if (notice === shown) notice = null;
+    }, lasts);
+    return () => clearTimeout(timer);
+  });
+
   onMount(() => {
     void init();
     skin.leaving = leave;
@@ -268,8 +284,12 @@
       await adopt(stored, `Saved as “${name}”`);
     });
 
-  const save = () =>
-    act('The profile was not saved', async () => {
+  const save = () => {
+    if (origin.isDefault) {
+      notice = { tone: 'info', text: DEFAULT_SAVE_HINT };
+      return;
+    }
+    return act('The profile was not saved', async () => {
       const name = origin.name;
       const parent = origin.record!;
       const stored = await storeAndLoad(skin.client, () =>
@@ -277,6 +297,7 @@
       );
       await adopt(stored, `Saved “${name}”`);
     });
+  };
 
   function edit(field: EditField, value: number) {
     touched = true;
@@ -357,10 +378,15 @@
     </div>
   </header>
 
-  <section class="stage">
+  <!-- One line under the start row for what a save or a load answered; it keeps its height
+       while it is empty, so the graph does not move (founder, 2026-10-18). -->
+  <div class="status" role="status" data-testid="editor-status">
     {#if notice}
-      <p class="notice {notice.tone}" data-testid="editor-notice">{notice.text}</p>
+      <p class="notice {notice.tone}" data-testid="editor-notice" title={notice.text}>{notice.text}</p>
     {/if}
+  </div>
+
+  <section class="stage">
     <!-- No phase buttons: in detail mode a tap on a step of the graph selects it (founder, 2026-10-16). -->
     <div class="plot">
       <Graph
@@ -478,15 +504,15 @@
     padding: 0.7rem 1rem;
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr) auto auto;
-    grid-template-areas: 'header' 'stage' 'footer' 'steps';
+    grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+    grid-template-areas: 'header' 'status' 'stage' 'footer' 'steps';
     gap: 0.6rem 1rem;
   }
 
   /* The panel runs down to the bottom edge: a phase has up to six values and the dose. */
   .editor.detail {
     grid-template-columns: minmax(0, 1fr) 19rem;
-    grid-template-areas: 'header header' 'stage panel' 'footer panel' 'steps panel';
+    grid-template-areas: 'header header' 'status panel' 'stage panel' 'footer panel' 'steps panel';
   }
 
   header {
@@ -585,13 +611,21 @@
   }
 
   /* One line: what the editor is on, and what a save or a load answered. */
+  .status {
+    grid-area: status;
+    height: 1.5rem;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+  }
+
   .notice {
     margin: 0;
-    padding: 0.5rem 0.9rem;
-    border: 1px solid var(--line);
-    border-radius: 0.9rem;
-    background: var(--raised);
-    color: var(--dim);
+    padding: 0 0.3rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--fg);
     font-size: 0.95rem;
   }
 

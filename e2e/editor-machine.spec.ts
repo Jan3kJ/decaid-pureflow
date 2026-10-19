@@ -269,8 +269,8 @@ test('detail mode: typed values redraw the curve, are loaded by back, and are op
   await expect(page.getByTestId('editor-notice')).toHaveCount(0);
   await page.getByTestId('mode-detail').click();
   await expect(page.getByTestId('chip-value-dose')).toHaveText('18.5 g');
-  // A default is saved under a new name, not over itself.
-  await expect(page.getByTestId('save')).toBeDisabled();
+  // A default is saved under a new name, not over itself: 'save' only says so (T7).
+  await expect(page.getByTestId('save')).toBeEnabled();
   expect(errors).toEqual([]);
 });
 

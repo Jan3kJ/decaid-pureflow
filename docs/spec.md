@@ -450,7 +450,13 @@ graph (`editor-notice`). Default: 'save' stays tappable for a default and shows 
 few seconds beside the buttons; the save result is a short text beside the buttons that goes
 after 4 s; a failure stays until the next action. The step editor (`src/steps/`) keeps its own
 notices. *Overridden by 3.9 (item 8):* the save result and the hint stand in one status line
-under the row of default profiles, not beside the buttons; the timing stays.
+under the row of default profiles, not beside the buttons; the timing stays. Built (T7,
+2026-10-19): the last step of the steps panel, the flow step that runs until the end, reads
+'stops at … g' in its exit column; 'save' on a default writes 'A default is not changed: use
+‘save as’ to save it under a new name.' for 4 s and stores nothing; the status line is one line
+of 1.5 rem under the header (`editor-status`, `src/editor/status.ts` for its timing), empty when
+there is nothing to say, so the graph keeps its place; it holds every notice of the A-Flow
+editor, also leaving's failed load and 'Decaid did not answer', which stay as failures do.
 
 **Shot history: faster (T8).** The history opens without the delay: the newest 20 shots are
 read and shown first, the older ones after them, and the shots are kept in memory instead of
