@@ -25,7 +25,7 @@ test.afterEach(() => {
   expect(errors).toEqual([]);
 });
 
-/** The editor's shortcut: the picker, a tap on an A-Flow 3.0 default, and back in the editor on it. */
+/** The editor's shortcut: the picker, a tap on an A-Flow 3.0 default, load, and back in the editor on it. */
 async function pick(page: Page, id: string) {
   await page.getByTestId('editor-profile').click();
   await expect(page.getByTestId('screen-profiles')).toBeVisible();
@@ -34,6 +34,7 @@ async function pick(page: Page, id: string) {
     .filter({ hasText: `A-Flow / default-${id}` })
     .filter({ hasText: 'A-Flow 3.0' })
     .click();
+  await page.getByTestId('load-profile').click();
   await expect(page.getByTestId('screen-editor')).toBeVisible();
   await expect(page.getByTestId('editor-profile')).toHaveText(id);
 }
@@ -108,7 +109,7 @@ test('loads in simple mode with no console errors; its name leads to the picker,
   await page.getByTestId('nav-home').click();
   await page.getByTestId('open-editor').click();
   await pick(page, 'floral');
-  // The tap loaded it, once.
+  // Load loaded it, once.
   expect(gateway.calls('PUT', '/api/v1/workflow')).toHaveLength(1);
   await expect(page.getByTestId('value-pauseDuration')).toHaveText('pause 15 s');
   await page.screenshot({ path: 'docs/product/simple.png' });
@@ -667,6 +668,7 @@ test('save as stores the profile under its name, loads it, and the picker has it
   await page.getByTestId('editor-profile').click();
   await expect(page.getByTestId('profile-item').filter({ hasText: 'not this one' })).toHaveCount(0);
   await page.getByTestId('profile-item').filter({ hasText: 'A-Flow / morning light' }).click();
+  await page.getByTestId('load-profile').click();
   await expect(page.getByTestId('editor-profile')).toHaveText('morning light');
   await expect(page.getByTestId('toggle-flow')).toHaveText(/flow down/);
 });

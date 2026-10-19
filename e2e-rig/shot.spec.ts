@@ -77,8 +77,9 @@ test('a simulated shot: the state, an A-Flow profile, a live graph, the stop at 
       await expect(page.getByTestId('offer-defaults')).toHaveCount(0);
     }
     // Decaid bundles the plugin's default under the same title: the 3.0 one carries the tag.
-    // A tap loads it (founder, 2026-10-13).
+    // A tap selects it, 'load' loads it (founder, 2026-10-17).
     await page.getByTestId('profile-item').filter({ hasText: PROFILE }).filter({ hasText: 'A-Flow 3.0' }).click();
+    await page.getByTestId('load-profile').click();
 
     await expect(page.getByTestId('screen-home')).toBeVisible();
     await expect(page.getByTestId('profile-name')).toHaveText(PROFILE);

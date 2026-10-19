@@ -249,6 +249,7 @@ test('detail mode: typed values are loaded; a saved profile re-opens with them a
   await pressed(page).click();
   await expect(page.getByTestId('screen-profiles')).toBeVisible();
   await page.getByTestId('profile-item').filter({ hasText: about.title }).click();
+  await page.getByTestId('load-profile').click();
   await expect(page.getByTestId('screen-editor')).toBeVisible();
   await expect(pressed(page)).toHaveText(name);
   await expect(page.getByTestId('value-pourPressure')).toHaveText('8.5 bar');
@@ -305,6 +306,7 @@ test('unsaved edits on the machine: the picker asks before it loads (founder, 20
   const other = page.getByTestId('profile-item').filter({ hasText: 'Best practice' }).first();
   const title = (await other.locator('.title').textContent())!;
   await other.click();
+  await page.getByTestId('load-profile').click();
   await expect(dialog).toContainText('light has unsaved changes on the machine');
   await page.getByTestId('unsaved-cancel').click();
   await expect(dialog).toHaveCount(0);
@@ -312,6 +314,7 @@ test('unsaved edits on the machine: the picker asks before it loads (founder, 20
   expect(await expectWorkflow(LIGHT)).toEqual({ ...light, flowUp: false });
 
   await other.click();
+  await page.getByTestId('load-profile').click();
   await page.getByTestId('unsaved-discard').click();
   // Not A-Flow 3.0: the picker opened from the editor comes back to the step editor on it (spec 3.6).
   await expect(page.getByTestId('step-cards')).toBeVisible();

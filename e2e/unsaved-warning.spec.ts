@@ -36,10 +36,13 @@ async function leaveWithChange(page: Page): Promise<MockGateway> {
   return gateway;
 }
 
-const pickFloral = (page: Page) =>
-  page.getByTestId('profile-item').filter({ hasText: 'A-Flow / default-floral' }).click();
+/** A tap selects the profile, 'load' loads it (founder, 2026-10-17). */
+async function pickFloral(page: Page) {
+  await page.getByTestId('profile-item').filter({ hasText: 'A-Flow / default-floral' }).click();
+  await page.getByTestId('load-profile').click();
+}
 
-test('a tap in the picker asks first; Cancel loads nothing', async ({ page }) => {
+test('load in the picker asks first; Cancel loads nothing', async ({ page }) => {
   const gateway = await leaveWithChange(page);
   await pickFloral(page);
 
@@ -60,7 +63,7 @@ test('a tap in the picker asks first; Cancel loads nothing', async ({ page }) =>
   expect(errors).toEqual([]);
 });
 
-test('Discard and load loads the profile tapped', async ({ page }) => {
+test('Discard and load loads the profile selected', async ({ page }) => {
   const gateway = await leaveWithChange(page);
   await pickFloral(page);
   await page.getByTestId('unsaved-discard').click();
@@ -95,7 +98,7 @@ test('Save as… opens the editor\'s save as on the values on the machine', asyn
   expect(errors).toEqual([]);
 });
 
-test('without unsaved edits a tap loads at once', async ({ page }) => {
+test('without unsaved edits load loads at once', async ({ page }) => {
   const gateway = (await mockGateway(page)).withDefaults('light');
   await page.addInitScript(() => localStorage.setItem('pureflow.screen', 'profiles'));
   await page.goto('/');

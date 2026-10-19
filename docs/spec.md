@@ -381,7 +381,15 @@ founder's 'a tap in the picker loads the profile at once' of 2026-10-13 (3.1 'Pr
 `skin.mayLoad()` for unsaved edits, which then moves to the load button) and its detail panel
 shows steps, stop weight and dose. The preview is the step editor's curve preview
 (`src/steps/curve.ts` drawn by `ShotGraph` with `preview`) for every profile, as small as the
-panel allows; the filter is typed with the tablet's own keyboard.
+panel allows; the filter is typed with the tablet's own keyboard. Built (`r17-profile-picker`):
+the filter (`filterProfiles` in `src/shell/profiles.ts`, spaces around it ignored) sits over
+the list and is not kept: the picker opens with the whole list, the loaded profile selected.
+A selected profile the filter hides leaves the panel and cannot be loaded until it shows
+again. The panel shows title, author, steps, stop weight and dose as before, then the
+preview (`StepPreview` with `bare`: `ShotGraph` without ticks, units and times, steps'
+borders kept), then the description (`profileDescription`: `notesText`, trimmed; nothing
+when empty), then **load** at the bottom (`data-testid="load-profile"`), which asks
+`skin.mayLoad()` first.
 
 **A-Flow defaults kept in the app (T5).** The five A-Flow 3.0 defaults are not stored as
 profiles in Decaid any more; they live in the skin (`DEFAULT_PROFILES`,
@@ -1222,7 +1230,7 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
   started from, and loads nothing when nothing changed. Such unsaved edits are on the machine
   but not stored as a profile: the editor opens on them again while they are the workflow's
   profile, and they are gone once another profile is loaded. Before the skin loads another
-  profile while they are on the machine (a tap in the picker, a restore from the history,
+  profile while they are on the machine ('load' in the picker, a restore from the history,
   another profile of the editor's start row), it asks (founder, 2026-10-14): a dark dialog
   names the profile, 'has unsaved changes on the machine', with 'Save as…' (the editor's save
   as on those values), 'Discard and load' and 'Cancel'; nothing is loaded before the answer.
@@ -1234,8 +1242,9 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
   about: the edits are then lost without a word. A failed load is shown and the
   editor stays open; 'back' a second time with the same values leaves without loading them.
   The editor is not asked when the machine itself opens the espresso screen or the page is
-  reloaded: those leave without loading. A tap in the picker loads the profile at once; the
-  picker's 'load' button is gone. (owner)
+  reloaded: those leave without loading. A tap in the picker selects a profile and its
+  **load** button loads it (founder, 2026-10-17, spec 3.8, overriding 'a tap loads at once'
+  of 2026-10-13). (owner)
 - The setting "first-step workaround" is `firstStepWorkaround` in `src/settings.ts`, off by
   default, and acts where the editor generates a profile (save, save as, leaving with changes).
   Profiles stored before it was switched on, and the defaults the picker adds, do not get

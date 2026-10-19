@@ -331,9 +331,9 @@ test('the picker lists the profiles of the gateway, offers the A-Flow 3.0 defaul
   await expect(items.first()).toContainText('A-Flow 3.0');
 
   await expectInsideViewport(page);
-  // No 'load' button: a tap on a profile loads it (founder, 2026-10-13).
-  await expect(page.getByTestId('load-profile')).toHaveCount(0);
+  // A tap selects, 'load' loads (founder, 2026-10-17).
   await items.filter({ hasText: 'A-Flow / default-dark' }).click();
+  await page.getByTestId('load-profile').click();
   // Loading is one PUT of the workflow: the profile, its stop weight and its dose.
   await expect(page.getByTestId('screen-home')).toBeVisible();
   const puts = gateway.calls('PUT', '/api/v1/workflow');
@@ -356,6 +356,70 @@ test('the picker lists the profiles of the gateway, offers the A-Flow 3.0 defaul
   await expect(dark).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByTestId('profile-detail')).toContainText('36 g');
   await expect(page.getByTestId('profile-detail')).toContainText('16 g');
+  expect(errors).toEqual([]);
+});
+
+test('the picker filters by title, a tap selects and shows the description and preview, load loads', async ({ page }) => {
+  const gateway = await mockGateway(page);
+  gateway.withDefaults();
+  await page.goto('/');
+  await page.getByTestId('open-profiles').click();
+  const items = page.getByTestId('profile-item');
+  await expect(items).toHaveCount(10);
+
+  // The filter: a part of the title, in any case (founder, 2026-10-17).
+  const filter = page.getByTestId('profile-filter');
+  await filter.fill('LIGHT');
+  await expect(items.locator('.title')).toHaveText(['A-Flow / default-light', 'A-Flow / default-light']);
+  await filter.fill('ive v');
+  await expect(items.locator('.title')).toHaveText(['Adaptive v2']);
+  await filter.fill('turbo');
+  await expect(items).toHaveCount(0);
+  await expect(page.getByTestId('profiles-empty')).toContainText('turbo');
+  await filter.fill('');
+  await expect(items).toHaveCount(10);
+
+  // A tap selects: the description and the preview show, and nothing is loaded.
+  const detail = page.getByTestId('profile-detail');
+  await items.filter({ hasText: 'Adaptive v2' }).click();
+  await expect(items.filter({ hasText: 'Adaptive v2' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('screen-profiles')).toBeVisible();
+  await expect(detail.locator('h1')).toHaveText('Adaptive v2');
+  await expect(page.getByTestId('profile-description')).toHaveText('Adaptive v2: a profile of the mocked gateway');
+  // The step editor's curve preview: five steps, without labels.
+  const preview = page.getByTestId('profile-preview');
+  await expect(preview.getByTestId('shot-graph')).toBeVisible();
+  await expect(preview.getByTestId('shot-border')).toHaveCount(4);
+  await expect(preview.getByTestId('shot-target-pressure')).toHaveCount(1);
+  await expect(preview.locator('text')).toHaveCount(0);
+  await expect(preview.getByTestId('preview-untimed')).toHaveCount(0);
+
+  // An A-Flow default: no line of its values in the description, the same preview of its targets.
+  await items.filter({ hasText: 'A-Flow / default-medium' }).filter({ hasText: 'A-Flow 3.0' }).click();
+  await expect(detail.locator('h1')).toHaveText('A-Flow / default-medium');
+  await expect(detail).not.toContainText('aflow');
+  await expect(preview.getByTestId('shot-graph')).toBeVisible();
+  await expect(detail).toContainText('16 g');
+  await page.screenshot({ path: 'docs/product/profile-picker.png' });
+  await expectInsideViewport(page);
+  expect(gateway.calls('PUT', '/api/v1/workflow')).toHaveLength(0);
+
+  // A selected profile the filter hides is neither shown nor loadable until it shows again.
+  await filter.fill('best');
+  await expect(page.getByTestId('load-profile')).toHaveCount(0);
+  await items.filter({ hasText: 'Best practice' }).click();
+  await page.getByTestId('load-profile').click();
+  await expect(page.getByTestId('screen-home')).toBeVisible();
+  const puts = gateway.calls('PUT', '/api/v1/workflow');
+  expect(puts).toHaveLength(1);
+  expect(puts[0].body.profile.title).toBe('Best practice');
+  await expect(page.getByTestId('profile-name')).toHaveText('Best practice');
+
+  // The picker opens again with the whole list, the loaded one selected.
+  await page.getByTestId('open-profiles').click();
+  await expect(filter).toHaveValue('');
+  await expect(items).toHaveCount(10);
+  await expect(items.filter({ hasText: 'loaded' })).toHaveAttribute('aria-pressed', 'true');
   expect(errors).toEqual([]);
 });
 

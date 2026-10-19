@@ -300,6 +300,7 @@ test('the skin saves the A-Flow values in metadata, none in notes; they re-open 
   await pressed(page).click();
   await expect(page.getByTestId('screen-profiles')).toBeVisible();
   await page.getByTestId('profile-item').filter({ hasText: title }).click();
+  await page.getByTestId('load-profile').click();
   await expect(page.getByTestId('screen-editor')).toBeVisible();
   await expectOnScreen(page, name);
   expect(splitNotes((await api('GET', '/api/v1/workflow')).profile.notes).params).toEqual(wanted);
@@ -337,6 +338,7 @@ test('a profile with the A-Flow values in its notes opens right and is moved on 
   await expect(page.getByTestId('graph')).toBeVisible();
   await pressed(page).click();
   await page.getByTestId('profile-item').filter({ hasText: title }).click();
+  await page.getByTestId('load-profile').click();
   await expect(page.getByTestId('screen-editor')).toBeVisible();
   await expect(pressed(page)).toHaveText(name);
   await expect(page.getByTestId('value-pourPressure')).toHaveText('8.2 bar');

@@ -8,7 +8,7 @@ import {
   type DefaultProfile,
 } from '../aflow';
 import type { DecaidClient, Profile, ProfileRecord, Workflow, WorkflowContextPatch } from '../api';
-import { paramsMetadata, readParams, sameSteps, workflowProfile } from '../editor/storage';
+import { notesText, paramsMetadata, readParams, sameSteps, workflowProfile } from '../editor/storage';
 import { FORMER_NAME } from '../former-name';
 
 /** `metadata.source` of a profile this skin stores. */
@@ -70,6 +70,17 @@ export function sortProfiles(records: readonly ProfileRecord[]): ProfileRecord[]
       (rank(a) === 0 ? order(a) - order(b) : 0) ||
       a.profile.title.localeCompare(b.profile.title),
   );
+}
+
+/** The profiles whose title holds the filter, in any case (founder, 2026-10-17); an empty filter keeps them all. */
+export function filterProfiles(records: readonly ProfileRecord[], filter: string): ProfileRecord[] {
+  const needle = filter.trim().toLocaleLowerCase();
+  return records.filter((record) => record.profile.title.toLocaleLowerCase().includes(needle));
+}
+
+/** What the picker shows of a profile: its notes without the A-Flow line the skin writes there; '' for none. */
+export function profileDescription(profile: Pick<Profile, 'notes'>): string {
+  return notesText(profile.notes).trim();
 }
 
 /** The dose a profile brings, in g: an A-Flow 3.0 profile has one in its parameters. */

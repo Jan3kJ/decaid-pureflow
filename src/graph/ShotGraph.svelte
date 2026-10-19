@@ -45,6 +45,8 @@
     borders?: number[];
     /** s, stretches drawn shaded: steps whose drawn length is not their own */
     shaded?: { start: number; end: number }[];
+    /** no ticks, units or times: the picker's small preview of a profile (spec 3.8) */
+    bare?: boolean;
   }
 
   let {
@@ -65,6 +67,7 @@
     preview = false,
     borders = [],
     shaded = [],
+    bare = false,
   }: Props = $props();
 
   /**
@@ -116,10 +119,10 @@
   // The plot in pixels: a band for the temperature on top, a gap, and the main band. Over
   // each band is a line for its units.
   const box = $derived.by(() => {
-    const left = 2.8 * rem;
-    const right = Math.max(left + 1, width - 1.2 * rem);
-    const top = 1.5 * rem;
-    const bottom = Math.max(top + 3, height - 2 * rem);
+    const left = bare ? 0.4 * rem : 2.8 * rem;
+    const right = Math.max(left + 1, width - (bare ? 0.4 : 1.2) * rem);
+    const top = bare ? 0.4 * rem : 1.5 * rem;
+    const bottom = Math.max(top + 3, height - (bare ? 0.4 : 2) * rem);
     const gap = temperature ? 1.5 * rem : 0;
     const tempH = temperature ? Math.max(1, Math.min(bottom - top - gap, Math.max((bottom - top) * 0.18, 2.6 * rem))) : 0;
     const mainTop = top + tempH + gap;
@@ -162,26 +165,28 @@
     >
       {#each mainTicks as tick (tick)}
         <line class="grid" x1={box.left} x2={box.right} y1={yMain(tick)} y2={yMain(tick)} />
-        <text class="tick" x={box.left - 0.5 * rem} y={yMain(tick) + 0.3 * rem}>{tick}</text>
+        {#if !bare}<text class="tick" x={box.left - 0.5 * rem} y={yMain(tick) + 0.3 * rem}>{tick}</text>{/if}
       {/each}
-      <text class="unit" data-testid="shot-unit-main" x={box.left} y={box.mainTop - 0.5 * rem}>
-        {#if pressure}<tspan class="pressure">bar</tspan>{/if}
-        {#if flow}<tspan class="flow" dx={pressure ? 0.3 * rem : 0}>ml/s</tspan>{/if}
-        {#if hasWeightFlow}
-          <tspan dx={0.3 * rem}>·</tspan>
-          <tspan class="weight" data-testid="shot-unit-weight-flow" dx={0.3 * rem}>g/s</tspan>
-        {/if}
-      </text>
-      {#if temperature}
-        {#each [temperatureRange.min, temperatureRange.max] as tick (tick)}
-          <line class="grid" x1={box.left} x2={box.right} y1={yTemperature(tick)} y2={yTemperature(tick)} />
-          <text class="tick temperature" data-testid="shot-tick-temperature" x={box.left - 0.5 * rem} y={yTemperature(tick) + 0.3 * rem}>{tick}</text>
-        {/each}
-        <text class="unit temperature" data-testid="shot-unit-temperature" x={box.left} y={box.top - 0.5 * rem}>°C</text>
+      {#if !bare}
+        <text class="unit" data-testid="shot-unit-main" x={box.left} y={box.mainTop - 0.5 * rem}>
+          {#if pressure}<tspan class="pressure">bar</tspan>{/if}
+          {#if flow}<tspan class="flow" dx={pressure ? 0.3 * rem : 0}>ml/s</tspan>{/if}
+          {#if hasWeightFlow}
+            <tspan dx={0.3 * rem}>·</tspan>
+            <tspan class="weight" data-testid="shot-unit-weight-flow" dx={0.3 * rem}>g/s</tspan>
+          {/if}
+        </text>
+        {#if temperature}
+          {#each [temperatureRange.min, temperatureRange.max] as tick (tick)}
+            <line class="grid" x1={box.left} x2={box.right} y1={yTemperature(tick)} y2={yTemperature(tick)} />
+            <text class="tick temperature" data-testid="shot-tick-temperature" x={box.left - 0.5 * rem} y={yTemperature(tick) + 0.3 * rem}>{tick}</text>
+          {/each}
+          <text class="unit temperature" data-testid="shot-unit-temperature" x={box.left} y={box.top - 0.5 * rem}>°C</text>
       {/if}
       {#each axis.ticks as tick (tick)}
         <text class="time" x={x(tick)} y={box.bottom + 1.4 * rem}>{tick}{tick === 0 ? ' s' : ''}</text>
       {/each}
+      {/if}
 
       {#each shaded as span, i (i)}
         <rect

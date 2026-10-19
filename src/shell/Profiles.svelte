@@ -1,12 +1,14 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { ProfileRecord } from '../api';
-  import { notesText } from '../editor/storage';
+  import StepPreview from '../steps/StepPreview.svelte';
   import {
     doseOf,
+    filterProfiles,
     isAFlow3,
     loadRecord,
     missingDefaults,
+    profileDescription,
     sameProfile,
     saveDefaults,
     sortProfiles,
@@ -23,10 +25,14 @@
   let selectedId: string | null = $state(null);
   let busy = $state(false);
   let error: string | null = $state(null);
+  /** The filter is not kept: the picker opens with the whole list. */
+  let filter = $state('');
 
   const sorted = $derived(sortProfiles(records ?? []));
+  const shown = $derived(filterProfiles(sorted, filter));
   const missing = $derived(records ? missingDefaults(records) : []);
-  const selected = $derived(sorted.find((record) => record.id === selectedId) ?? null);
+  // A selected profile the filter hides is not shown, nor loaded; it is again once the filter lets it through.
+  const selected = $derived(shown.find((record) => record.id === selectedId) ?? null);
   const current = $derived(skin.workflow?.profile);
   const isLoaded = (record: ProfileRecord) => !!current && sameProfile(record.profile, current);
   const message = (cause: unknown) => (cause instanceof Error ? cause.message : String(cause));
@@ -61,9 +67,9 @@
     });
 
   /**
-   * A tap loads the profile, as in other skins (founder, 2026-10-13), and goes back: to the
-   * editor when it opened the picker, which opens the profile in its editor (spec 3.6), to
-   * home otherwise.
+   * A tap selects a profile and shows it; 'load' loads it (founder, 2026-10-17, overriding the
+   * tap that loaded of 2026-10-13) and goes back: to the editor when it opened the picker,
+   * which opens the profile in its editor (spec 3.6), to home otherwise.
    */
   const load = (record: ProfileRecord) =>
     act('The profile could not be loaded', async () => {
@@ -71,7 +77,6 @@
       const answer = await skin.mayLoad();
       if (answer === 'save-as') skin.openSaveAs();
       if (answer !== 'load') return;
-      selectedId = record.id;
       skin.workflow = await loadRecord(skin.client, record);
       skin.go(skin.pickerReturn === 'editor' ? 'editor' : 'home');
     });
@@ -98,8 +103,18 @@
         <button data-testid="profiles-retry" onclick={read}>try again</button>
       </div>
     {/if}
+    <input
+      class="filter"
+      type="search"
+      placeholder="filter by name"
+      aria-label="filter by name"
+      autocomplete="off"
+      spellcheck="false"
+      data-testid="profile-filter"
+      bind:value={filter}
+    />
     <ul data-testid="profile-list">
-      {#each sorted as record (record.id)}
+      {#each shown as record (record.id)}
         <li>
           <button
             class="item"
@@ -107,7 +122,7 @@
             data-testid="profile-item"
             data-id={record.id}
             disabled={busy}
-            onclick={() => load(record)}
+            onclick={() => (selectedId = record.id)}
           >
             <span class="title">{record.profile.title}</span>
             {#if isLoaded(record)}<span class="tag loaded">loaded</span>{/if}
@@ -115,7 +130,15 @@
           </button>
         </li>
       {:else}
-        <li class="empty">{records ? 'Decaid has no profiles.' : error ? '' : 'Reading the profiles …'}</li>
+        <li class="empty" data-testid="profiles-empty">
+          {records
+            ? records.length > 0
+              ? `No profile name holds “${filter.trim()}”.`
+              : 'Decaid has no profiles.'
+            : error
+              ? ''
+              : 'Reading the profiles …'}
+        </li>
       {/each}
     </ul>
   </section>
@@ -124,6 +147,7 @@
     {#if selected}
       {@const profile = selected.profile}
       {@const dose = doseOf(profile, selected.metadata)}
+      {@const description = profileDescription(profile)}
       <h1>{profile.title}</h1>
       {#if profile.author}<p class="author">by {profile.author}</p>{/if}
       <dl>
@@ -140,15 +164,20 @@
           <dd>{dose === undefined ? '–' : `${dose} g`}</dd>
         </div>
       </dl>
-      {#if dose !== undefined}
-        <p class="notes">A-Flow 3.0: once it is loaded, the editor opens on it.</p>
-      {/if}
+      <!-- The targets of its steps, without labels: only to see the steps and their values (founder, 2026-10-17). -->
+      <div class="preview" data-testid="profile-preview">
+        <StepPreview {profile} bare />
+      </div>
       <!-- Notes of version 1 hold the A-Flow parameters (editor/storage.ts): only the text shows. -->
-      {#if notesText(profile.notes)}
-        <p class="notes">{notesText(profile.notes)}</p>
+      {#if description}
+        <p class="notes" data-testid="profile-description">{description}</p>
       {/if}
+      {#if dose !== undefined}
+        <p class="aflow">A-Flow 3.0: once it is loaded, the editor opens on it.</p>
+      {/if}
+      <button class="load" data-testid="load-profile" disabled={busy} onclick={() => load(selected)}>load</button>
     {:else}
-      <p class="hint">Tap a profile to load it.</p>
+      <p class="hint">Tap a profile to see it; load sends it to the machine.</p>
     {/if}
   </aside>
 </div>
@@ -212,6 +241,24 @@
     border-color: var(--fg);
     color: var(--bg);
     font-weight: 600;
+  }
+
+  .filter {
+    flex: none;
+    min-height: 3rem;
+    padding: 0 1rem;
+    font: inherit;
+    font-size: 1.1rem;
+    color: var(--fg);
+    background: var(--raised);
+    border: 1px solid var(--line);
+    border-radius: 0.9rem;
+    box-sizing: border-box;
+    width: 100%;
+  }
+
+  .filter::placeholder {
+    color: var(--dim);
   }
 
   ul {
@@ -323,12 +370,39 @@
     font-variant-numeric: tabular-nums;
   }
 
+  /* The preview takes what the panel leaves; the description below it scrolls when long. */
+  .preview {
+    flex: 1 1 0;
+    min-height: 6rem;
+    display: flex;
+  }
+
   .notes {
-    flex: 1;
+    flex: 0 1 auto;
+    max-height: 30%;
     min-height: 0;
-    overflow: hidden;
+    overflow-y: auto;
     color: var(--dim);
     font-size: 0.95rem;
     white-space: pre-line;
+  }
+
+  .aflow {
+    color: var(--dim);
+    font-size: 0.9rem;
+  }
+
+  .load {
+    flex: none;
+    min-height: 3.4rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+    background: var(--fg);
+    border-color: var(--fg);
+    color: var(--bg);
+  }
+
+  .load:disabled {
+    opacity: 0.5;
   }
 </style>

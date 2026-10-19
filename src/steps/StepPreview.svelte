@@ -15,9 +15,11 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
 
   interface Props {
     profile: Profile;
+    /** the picker's small preview: no labels and no note on untimed steps (spec 3.8) */
+    bare?: boolean;
   }
 
-  let { profile }: Props = $props();
+  let { profile, bare = false }: Props = $props();
 
   const curve = $derived(stepCurve(profile));
   /** Pressure and flow share one scale, as on every graph of the skin; it reaches a target above 12. */
@@ -26,7 +28,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   );
 </script>
 
-<div class="preview" data-testid="step-preview" data-seconds={curve.seconds}>
+<div class="preview" class:bare data-testid="step-preview" data-seconds={curve.seconds}>
   <ShotGraph
     t={curve.t}
     pressure={[]}
@@ -40,9 +42,10 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     yMax={previewMax}
     fit
     preview
+    {bare}
     label="curve preview"
   />
-  {#if curve.steps.some((span) => span.untimed)}
+  {#if !bare && curve.steps.some((span) => span.untimed)}
     <p class="untimed" data-testid="preview-untimed">shaded: a step without a time, drawn 10 s long</p>
   {/if}
 </div>
@@ -57,6 +60,10 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     border: 1px solid var(--line);
     border-radius: 1rem;
     overflow: hidden;
+  }
+
+  .preview.bare {
+    min-height: 0;
   }
 
   .untimed {

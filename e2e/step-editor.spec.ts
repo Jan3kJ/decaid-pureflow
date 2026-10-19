@@ -213,6 +213,7 @@ test('an A-Flow 3.0 profile opens in the A-Flow editor, also from the picker of 
 
   await page.getByTestId('editor-profile').click();
   await page.getByTestId('profile-item').filter({ hasText: 'A-Flow / default-dark' }).filter({ hasText: 'A-Flow 3.0' }).click();
+  await page.getByTestId('load-profile').click();
   await expect(page.getByTestId('screen-editor')).toBeVisible();
   await expect(page.getByTestId('graph')).toBeVisible();
   await expect(page.getByTestId('step-cards')).toHaveCount(0);
@@ -221,6 +222,7 @@ test('an A-Flow 3.0 profile opens in the A-Flow editor, also from the picker of 
   // And back to a profile of steps: the step editor again.
   await page.getByTestId('editor-profile').click();
   await page.getByTestId('profile-item').filter({ hasText: 'D-Flow / default' }).click();
+  await page.getByTestId('load-profile').click();
   await expect(page.getByTestId('step-cards')).toBeVisible();
   await expect(page.getByTestId('editor-profile')).toHaveText('D-Flow / default');
   expect(gateway.calls('PUT', '/api/v1/workflow')).toHaveLength(2);
@@ -245,6 +247,7 @@ test('leaving loads the changed steps; the warning comes before another load, an
   // Another load: asked first; cancel loads nothing.
   await page.getByTestId('open-profiles').click();
   await page.getByTestId('profile-item').filter({ hasText: 'Best practice' }).click();
+  await page.getByTestId('load-profile').click();
   await expect(page.getByTestId('unsaved-dialog')).toBeVisible();
   await expect(page.getByTestId('unsaved-name')).toHaveText('My blooming');
   await page.getByTestId('unsaved-cancel').click();
@@ -252,6 +255,7 @@ test('leaving loads the changed steps; the warning comes before another load, an
 
   // 'Save as…' opens the step editor on the machine's steps and asks for a name.
   await page.getByTestId('profile-item').filter({ hasText: 'Best practice' }).click();
+  await page.getByTestId('load-profile').click();
   await page.getByTestId('unsaved-save-as').click();
   await expect(page.getByTestId('step-cards')).toBeVisible();
   await expect(page.getByTestId('save-dialog')).toBeVisible();

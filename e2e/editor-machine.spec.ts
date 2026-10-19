@@ -396,6 +396,7 @@ test('the name in the top bar opens the picker: changes are loaded first, a choi
   // An A-Flow 3.0 profile: the unsaved changes are asked about first (founder, 2026-10-14),
   // then it is loaded, and the editor is on it.
   await page.getByTestId('profile-item').filter({ hasText: 'A-Flow / default-dark' }).filter({ hasText: 'A-Flow 3.0' }).click();
+  await page.getByTestId('load-profile').click();
   await page.getByTestId('unsaved-discard').click();
   await expect(page.getByTestId('screen-editor')).toBeVisible();
   await expect(pressed(page)).toHaveText('dark');
@@ -407,6 +408,7 @@ test('the name in the top bar opens the picker: changes are loaded first, a choi
   // A profile that is not A-Flow 3.0: loaded, and the picker comes back to the step editor on it.
   await pressed(page).click();
   await page.getByTestId('profile-item').filter({ hasText: 'Best practice' }).click();
+  await page.getByTestId('load-profile').click();
   await expect(page.getByTestId('screen-editor')).toBeVisible();
   await expect(page.getByTestId('step-cards')).toBeVisible();
   await expect(pressed(page)).toHaveText('Best practice');

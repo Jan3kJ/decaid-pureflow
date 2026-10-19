@@ -6,10 +6,12 @@ import {
   defaultProfile,
   doseOf,
   doseToSet,
+  filterProfiles,
   isAFlow3,
   loadProfile,
   loadRecord,
   missingDefaults,
+  profileDescription,
   sameProfile,
   saveDefaults,
   sortProfiles,
@@ -198,5 +200,46 @@ describe('doseToSet', () => {
   it('keeps the dose a profile or the user set', () => {
     expect(doseToSet({ context: { targetDoseWeight: 16 } }, 18)).toBeNull();
     expect(doseToSet({ context: { targetDoseWeight: 20.5, targetYield: 40 } }, 18)).toBeNull();
+  });
+});
+
+describe('filterProfiles', () => {
+  const records = [light, other, { ...other, title: 'Light roast' }, { ...other, title: 'Dark' }].map((profile) =>
+    record(profile),
+  );
+  const titles = (filter: string) => filterProfiles(records, filter).map((entry) => entry.profile.title);
+
+  it('keeps the titles that hold the filter, in any case', () => {
+    expect(titles('light')).toEqual(['A-Flow / default-light', 'Light roast']);
+    expect(titles('LIGHT')).toEqual(['A-Flow / default-light', 'Light roast']);
+    expect(titles('ht ro')).toEqual(['Light roast']);
+  });
+
+  it('keeps all for an empty filter or spaces, and none for a title nobody has', () => {
+    expect(titles('')).toHaveLength(4);
+    expect(titles('  ')).toHaveLength(4);
+    expect(titles('turbo')).toEqual([]);
+  });
+
+  it('looks at the title only', () => {
+    expect(titles('Decent')).toEqual([]);
+  });
+});
+
+describe('profileDescription', () => {
+  it('is the notes without the A-Flow line the skin writes', () => {
+    const params = DEFAULT_PROFILES[1].params;
+    expect(profileDescription({ notes: `${serializeParams(params)}\nBright and sweet.` })).toBe('Bright and sweet.');
+    expect(profileDescription(workflowProfile({ notes: 'Bright and sweet.' }, params))).toBe('Bright and sweet.');
+  });
+
+  it('is empty when nothing but the A-Flow line is left, or there are no notes', () => {
+    expect(profileDescription({ notes: serializeParams(DEFAULT_PROFILES[1].params) })).toBe('');
+    expect(profileDescription({ notes: undefined })).toBe('');
+    expect(profileDescription({ notes: '  ' })).toBe('');
+  });
+
+  it('keeps notes of other skins as they are', () => {
+    expect(profileDescription({ notes: 'Turbo shot.\nGrind fine.' })).toBe('Turbo shot.\nGrind fine.');
   });
 });
