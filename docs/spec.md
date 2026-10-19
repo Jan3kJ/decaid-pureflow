@@ -293,6 +293,11 @@ arrive. Where a note leaves a choice open, the default below is built unless the
 otherwise (section 8). Where a note changes something 3.1, 3.2 or 3.7 decided, it says so; those
 paragraphs and track R stay as built history.
 
+The founder answered the questions on 2026-10-18: the font sizes as
+recorded under T3 below, and 'rest of the question, agree to your proposal': every other default
+of this section stands, except where 3.9 overrides it (T2's per-phase values, T7's save feedback,
+T9's exit).
+
 **Espresso graph: scale and the end (T1).** The shot graph's pressure and flow scale ends at
 10 bar and opens to 12 only when a drawn value (pressure, flow, weight flow or a target) goes
 over 10; the live graph draws only the shot itself, not the seconds after it, as the history's
@@ -327,7 +332,8 @@ Streamline does, per phase the duration, weight, maximum pressure and flow (foun
 step that ran (the frames' `profileFrame` and the step's name, as the header's 'Step 9' does
 today), with its seconds, the weight gained in it, its maximum pressure and its mean flow, and a
 total row; Streamline's own computation is read in `decentespresso/streamline-js` before
-building (section 8).
+building (section 8). *Overridden by 3.9:* the resent screenshot shows Streamline's table per
+phase (preinfusion, extraction, total) with start and end values, which T2 builds.
 
 **Heating state (T3).** The state line says **Heating** while the machine heats, not Idle: on
 home until the group reaches the espresso target minus 3 °C, on the steam page until the steam
@@ -348,7 +354,11 @@ home's state line (`StateLine.svelte`, 1.1rem) smaller than the profile picker's
 (`Home.svelte`, 1.3rem). The note's sentence breaks off at "labels like"; the default is one type
 scale in `src/app.css` (a few rem sizes as custom properties, for values, labels, titles and
 big numbers) used by home, steam, hot water and the overlay, with the state line and the
-profile's name the same size (section 8).
+profile's name the same size (section 8). *Answered (founder, 2026-10-18, message 41):* 'labels
+like steam, group in the status row may be smaller as of today. Means not everything gets the
+same font size.' So the type scale keeps a smaller size for labels: in the state line the labels
+('group', 'steam', 'tank', 'scale') stay smaller than their values, and the state and the values
+are the profile name's size.
 
 **Profile picker: filter, preview, select (T4).** The picker gets a filter field: typing
 "light" leaves the profiles whose title contains it, without regard to case (founder,
@@ -404,7 +414,8 @@ for a default (`canSave` in `Editor.svelte`) and the result is `notice`, a parag
 graph (`editor-notice`). Default: 'save' stays tappable for a default and shows the hint for a
 few seconds beside the buttons; the save result is a short text beside the buttons that goes
 after 4 s; a failure stays until the next action. The step editor (`src/steps/`) keeps its own
-notices.
+notices. *Overridden by 3.9 (item 8):* the save result and the hint stand in one status line
+under the row of default profiles, not beside the buttons; the timing stays.
 
 **Shot history: faster (T8).** The history opens without the delay: the newest 20 shots are
 read and shown first, the older ones after them, and the shots are kept in memory instead of
@@ -429,11 +440,291 @@ not the gateway: `window.decentApp.exitToDashboard()`, which S2a's settings page
 to dashboard' where it exists (research.md 20.3, `SettingsPage.svelte`); it goes to Decaid's
 dashboard, it does not close Decaid. Default: **Exit** sends `sleeping` (`Skin.machineOff`) and
 then calls `exitToDashboard`; where the host does not offer it the entry is not shown, and
-**Machine off** stays as it is (section 8).
+**Machine off** stays as it is (section 8). *Overridden by 3.9 (items 1 and 2):* there is no
+**Exit**; T9 builds the clean shortcut only, **Machine off** becomes **Machine sleep** (U1), and
+a second entry, **Machine and app sleep** (U4), takes Exit's place.
 
 **Flush duration: built.** The flush's flow and duration in Quick Adjustments (founder,
 2026-10-17) were built in S2a (`r16-settings-port-a`), recorded in 3.7's 'Settings' row; not
 planned again.
+
+### 3.9 Founder's review of 2026-10-18
+
+From the founder's review of hand-over 0.2.0 ([review-10-18-26.md](review-10-18-26.md)), 20
+items, checked by the founder; the item numbers are the review's. Where an item leaves a choice
+open, the default below is built unless the founder says otherwise (section 8). Where an item
+changes something 3.7 or 3.8 decided, it says so and wins; those paragraphs stay as history.
+The bugs (items 1, 3, 10, 16) are built first, together (U1).
+
+**Menu: machine sleep (item 1, bug; U1).** The menu's **Machine off** is renamed **Machine
+sleep**, and its line says that Decaid cannot switch the DE1 off and that the button sends only
+the machine to sleep, not the app (founder, 2026-10-18). Today it is R4's entry in
+`src/shell/Home.svelte`, 'Machine off' with the line 'sleeps: Decaid cannot switch the DE1
+off', calling `Skin.machineOff` (`sleeping`, research.md 22.3); only the words change, and the
+method may be renamed with them. This overrides 3.7's label 'machine off'.
+
+**Menu: machine and app sleep (item 2; U4).** A second entry sends both the machine and the app
+to sleep (founder, 2026-10-18). This replaces 3.8's **Exit** (T9): Decaid cannot be closed by a
+skin nor switch the DE1 off, and 'the app sleeps' is what the founder asks for in its place, so
+3.9 wins and T9 builds the clean shortcut only. What the skin has (research.md 13, 20.3): the
+machine's `sleeping`, its own sleep screen (`.asleep` in `App.svelte`, brightness
+`SLEEP_BRIGHTNESS` 5 where `platformSupported.brightness`), and Decaid's wake lock
+(`POST`/`DELETE /api/v1/display/wakelock`, `wakeLockOverride`, Decaid's `keepAwake`), which keeps
+the tablet's screen on. Default: **Machine and app sleep** sends `sleeping`, sets the brightness
+to 0 instead of 5 and lets the tablet's screen go off by Android's own timeout, releasing
+Decaid's wake lock for the sleep and putting it back as it was at the wake; a touch wakes both,
+as the sleep screen does today. The builder checks on the rig what `GET /api/v1/display` reports
+before and after, and whether Decaid takes the wake lock back by itself while the machine sleeps;
+if the wake lock cannot be released, the entry only dims to 0 and its line says so.
+`exitToDashboard` is not used (section 8).
+
+**Scale: reconnect (item 3, bug; U1).** The scale is connected again when its connection is
+lost, and when it was not there at the app's start: the skin retries with a time-out, and tries
+again when the user taps the 'not connected' warning or a tare button on any page (founder,
+2026-10-18). F1's 30 s retry (`REFUSED_RETRY_MS` in `src/api/stream.ts`) is about the gateway's
+stream, not the scale's Bluetooth link, so it does not cover this. Today `Skin`
+(`src/shell/skin.svelte.ts`) only listens: the scale stream's status frames set `scaleLink` to
+`connected` or `disconnected`, nothing asks Decaid to find the scale again, the warning in
+`StateLine.svelte` is plain text, and `Skin.tare` does nothing without a scale. Decaid connects
+a scale with a scan: `scanDevices({ connect: true, quick: true })` in `src/api/client.ts`
+(`GET /api/v1/devices/scan`, which connects a missing machine and scale without replacing
+connected ones). Streamline's retry is the model (`scaleAutoRetryDecision`,
+`attemptScaleAutoRetry`, `onScaleDisconnect` in `src/modules/app.js` at `3a4bd23`): after a drop
+it scans every 5 s, at most 3 times, and not while the machine sleeps, nor within 4 s after a
+wake (Decaid reacquires a preferred scale itself then, and a second scan fails it), nor while
+Decaid already scans, nor with the scale power mode `disconnect`; it retries only when a scale is
+known (`preferredScaleId`). Default: the skin does the same, and also once after the start when
+the first status frame says no scale is connected; while a round runs the warning reads 'looking
+for the scale', after its last try 'scale not connected, tap to retry'. A tap on the warning, or
+on the tare button of the steam or hot water page, starts a new round, with no known scale too;
+such a tap tares nothing.
+
+**A-Flow profiles open in the A-Flow 3.0 editor (items 4 and 5; U2).** Every A-Flow profile
+opens in the skin's A-Flow 3.0 editor, never in the step editor, and it is converted to 3.0 when
+it is saved (founder, 2026-10-18). This overrides E2's routing (3.6, research.md 17.5), where
+Decaid's bundled de1app 'A-Flow / …' profiles and the user's own old A-Flow profiles open in the
+step editor because `readParams` (`src/editor/storage.ts`) finds no 3.0 values; `editorFor` in
+`src/editor/route.ts` decides it in one place. What is new is a reader of the plugin's steps: the
+de1app plugin writes an A-Flow profile as named steps (Pre Fill, Filling, Infuse, 2nd Fill,
+Pause, Ramp Up, Pouring start, Pouring, and Ramp down; research.md 6, `code.tcl`), and the
+generator (`src/aflow/generator.ts`, with the plugin's output in `src/aflow/plugin-expected.ts`)
+writes the same steps, so the reader is its inverse: from the steps it takes the fill flow and
+temperature, the infuse pressure, time and move-on weight, the 2nd fill and its pause, the ramp's
+pressure and time, the pour flow and pressure, flow up or down, and the stop weight. A profile is
+A-Flow by its steps (the plugin's step names in its order, with the values the generator would
+write for them), not by its title, as 17.5 keeps it. What 3.0 has not got is dropped: ramp down
+(3.2) and the Pre Fill step (the setting `firstStepWorkaround` decides it on save); the editor
+then says once, in its status line (item 8), what was dropped. The opened profile is the
+editor's start: 'save' stores it through the editor's save path as a 3.0 profile (the values in
+`metadata`, M2) with the old record as its parent and hidden, as any save does; 'save as' under a
+new name. A converted profile whose title is one of the skin's defaults (Decaid's bundled
+`A-Flow / default-light`, `-medium`, `-dark`) counts as that default: T5 lists the skin's default
+under that title, and it is saved only with 'save as' (3.8). A profile the reader cannot read
+(steps changed in another app) still opens in the step editor, as an A-Flow 3.0 profile with
+changed steps does today. Default (section 8): ramp down is dropped without asking.
+
+**Import of old A-Flow profiles (item 6; U7).** The skin's settings category
+(`src/settings-page/SkinCategory.svelte`) gets a button that converts all old A-Flow profiles to
+3.0 at once (founder, 2026-10-18). It uses U2's reader and save: each visible profile that is
+A-Flow by its steps and has no 3.0 values is stored as 3.0, with the old one as its parent and
+hidden. The button asks first and names how many it found, then reports how many were converted
+and which could not be read. Default (section 8): Decaid's bundled de1app A-Flow profiles
+(`A-Flow / default-…`, `default-very-dark` and `default-like-dflow` among them) are skipped, as
+the skin's own defaults stand for them (T5), and so is every profile that already has 3.0
+values.
+
+**Step editor: 0 s steps not drawn (item 7; U6).** For profiles that are not A-Flow, a step of
+0 s is not drawn in the curve; it stays in the cards and in SCRIPT, where it can be seen and
+changed (founder, 2026-10-18). Today `buildCurve` in `src/steps/curve.ts` draws a step without a
+time `UNTIMED_STEP_SECONDS` (10 s) long and shaded, Streamline's rule (3.6, E3). The machine
+passes a 0 s step at once (that is how the de1app A-Flow editor switches a step off, 3.6's
+fallback), so the 10 s rule goes: a 0 s step has no width and no shading. The builder checks on
+the rig that the simulation passes a 0 s step at once. The same curve is T4's preview in the
+picker and T1's estimate of a step profile's length; both follow.
+
+**A-Flow editor: status line and spacing (items 8 and 9; U5).** The status line ('saved as …',
+'loaded', a failure) moves to the row below the default profiles, and the profile buttons get
+more space between them (founder, 2026-10-18). Today `Editor.svelte`'s header holds the
+profile's name, the start row (`.group.start`, `data-testid="start-row"`), save, save as and the
+mode switch, and `notice` is a paragraph at the top of `.stage` (`editor-notice`), so it pushes
+the graph down. This overrides T7's 'beside the buttons' (3.8); 3.9 wins: every notice of the
+A-Flow editor (the save result, T7's hint to use 'save as' on a default, U2's note of what was
+dropped) is one line under the start row, its height kept while it is empty, so nothing moves;
+T7's timing stands (a result goes after 4 s, a failure stays until the next action). Default:
+the gaps between the start row's buttons and between the header's groups are about twice
+today's (`gap` of `.group`), within the 1280 px width.
+
+**Text fields and the keyboard (item 10, bug; U1).** Tapping a text field ('save as', the
+description in the profile's settings, T4's filter, the settings page's text fields) must not
+shrink the app: the keyboard lies over the app, and the field being edited and what belongs to it
+(its dialog, its label, its buttons) stay visible above the keyboard (founder, 2026-10-18). It
+cannot be seen in the Windows rig. **The likely cause:** Decaid's Android activity has
+`android:windowSoftInputMode="adjustResize"` (`android/app/src/main/AndroidManifest.xml` at
+`v0.8.8`) and shows the skin in a Flutter `flutter_inappwebview` view (`pubspec.yaml`), which
+Flutter shrinks to the space above the keyboard. So the WebView's viewport loses the keyboard's
+height, and the skin sizes everything by the viewport's height: `src/app.css` sets the root
+`font-size: min(2vh, 1.25vw)`, every size is in rem, and `html`, `body` and `#app` are
+`height: 100%`. With a keyboard of about half the screen, `2vh` halves, every rem halves, and the
+whole app is drawn small in the upper half: what the founder saw. The viewport meta
+(`index.html`: `width=device-width, initial-scale=1.0`) has no `interactive-widget`, but that
+key cannot help alone: it tells the browser how to resize its viewport, and in Decaid the host
+resizes the view itself. **The fix:** the skin keeps its size from the full viewport. A small
+module (`src/viewport.ts`, started in `main.ts`) writes the viewport's width and height in px to
+two custom properties on `:root` at the start and on every resize that is not the keyboard: a
+change of the width (rotation, another window), or a height that grows; a height that shrinks
+while a text field has the focus is the keyboard and is not taken. `app.css` then sizes from them
+(the root font size the smaller of 2 % of the stored height and 1.25 % of the stored width,
+`#app` the stored height), so the app keeps its size and the keyboard covers its lower part; the portrait
+rule of `app.css` and `App.svelte` follows the stored size too. Then the field is lifted: the
+keyboard's top is the viewport's height after the resize (`window.innerHeight`, or
+`visualViewport.height` + `offsetTop` where the host does not resize); when the focused field's
+dialog (or, for a field in a page, the field with its label) reaches under it, the module sets a
+third property, the distance to lift, which the dialog (`NameDialog.svelte`, the profile
+settings' notes, the picker's filter, the settings page's fields) applies as a `translateY`; it
+is 0 again when the field loses the focus or the keyboard closes. `interactive-widget=resizes-visual`
+is added to the viewport meta for hosts that honour it. A Playwright test plays
+the keyboard by shrinking the page's height with a field focused; the tablet is the founder's
+check.
+
+**Hot water page: rows with sliders (item 11; U3).** The four squares of the hot water page,
+one per value, become one row per value, with a slider under it to change the value (founder,
+2026-10-18; values, not volumes). Today `HotWater.svelte` draws `HOT_WATER_FIELDS`
+(`src/hotwater/hot-water.ts`) as a 2 × 2 grid of large tiles, a tap opening the number pad
+(screenshot hot-water.png (screenshot in the team repository)); R5 built it (3.7). Default: a row is the
+label and the value with its unit; the slider has the field's range and step (temperature, time
+and weight whole, flow 0.1), moves the shown value while it is dragged and writes once when it
+is let go, through the same `writeHotWater`; a tap on the value still opens the number pad. A
+drag on a slider moves no page (T6's rule for controls). The right column (last shot, ratios,
+scale, tare, hint) stays.
+
+**Steam and hot water: no state dot (item 12; U3).** The green circle in the bottom-left corner
+of the steam and hot water pages goes (founder, 2026-10-18). It is the machine's state: the
+`.dot` with `skin.status.tone` under the back arrow in `App.svelte`'s left `nav`
+(`data-testid="nav-status"`), shown on every page but home (screenshots
+steam.png (screenshot in the team repository), hot-water.png (screenshot in the team repository)). Default: it goes from
+every page; the state line of home, steam and hot water and the sleep screen show the state.
+
+**Hot water page: the ring while it pours (item 13; U3).** While hot water pours, the hot water
+page shows a circle like the flush's (founder, 2026-10-18). The flush's circle is R3's ring on
+home (`src/shell/Water.svelte`, `ringOf` and `waterValues` in `src/shell/water.ts`), with stop
+and the values inside; home shows it while hot water or flush runs, and the hot water page has
+only a plain stop button. Default: while hot water runs, the hot water page shows
+`Water.svelte`'s ring, at item 14's size, in place of its value rows, and the rows come back when
+it ends; home is unchanged.
+
+**Flush ring a little smaller (item 14; U3).** The flush circle looks good; its diameter is a
+little smaller (founder, 2026-10-18). Today `.ring` in `Water.svelte` is `height: 100%` of
+home's panel. Default: 85 % of it, centred, with the stop button and its values scaled with it.
+
+**Hot water flow up to 8 ml/s (item 16, bug; U1).** The hot water flow goes up to 8 ml/s, the
+DE1's maximum, on the hot water page and on the settings page (today 10); the Bengle's higher
+maximum (about 12 ml/s) is not needed, the founder has a DE1 (founder, 2026-10-18). Both pages
+take the range from one entry: the flow of `HOT_WATER_FIELDS` (`max: 10`,
+`src/hotwater/hot-water.ts`), which the settings page's `hotWater('flow', …)`
+(`src/settings-page/fields.ts`) reads; its comment ('the founder's newer machine drives more
+than 8') is wrong and goes. A flow above 8 already in the workflow (the rig's is 10) is shown as
+it is and held to 8 by the next change, as F1 does for a profile's flow. The settings page's
+other flows up to 10 (`heaterPh1Flow`, `heaterPh2Flow`, the heater's warm-up and test flows) are
+not hot water and stay.
+
+**Steam page: heater off (item 18; U3).** When the steam heater is off, the steam page shows a
+message saying so and a button that switches it on; both are hidden while it is on (founder,
+2026-10-18). The heater's state is `heaterState` in `src/shell/steam-heater.ts` (the machine's
+`targetSteamTemp`, 0 is off; the workflow's temperature while the machine's settings are not
+known), and switching on is `Skin.setSteamHeater(true)`, which the menu's 'Steam on' uses (R4)
+and which writes `steam.heaterTemperature` (150 °C by default). Default: the message ('The steam
+heater is off') and **Steam on** sit at the top of the right column of `src/steam/Steam.svelte`,
+in the place of the favourites, which come back when the heater is on.
+
+**SCRIPT offers off (item 17; U6).** In the step editor's SCRIPT, the exit and both limits (the
+limit and the maximum) can be set to off, as on the cards (founder, 2026-10-18). The founder
+asked whether Streamline leaves it out on purpose. **It does, on purpose**, read in
+`decentespresso/streamline-js` at `3a4bd23` (v0.2.14), `src/modules/profile_editor.js`:
+`buildStepScript` (l. 2347) leaves out a limit, maximum or exit that is off ("an unset field is
+left out rather than shown muted: this half is prose, and 'Limit to 0.0 bar' … asserts something
+the step does not do. Nothing becomes unreachable — CARDS keeps a permanent row for each of
+them, which is where one gets added"), and the exit chip in `renderScriptLine` (l. 2593) drops
+off from its cycle ("Off is deliberately dropped from the cycle here. This line only exists while
+the step HAS an exit, so landing on Off would delete the very control being tapped, halfway
+through its own cycle — CARDS keeps a permanent Move-on-if row, and that is where an exit gets
+switched off"); a limit or maximum typed as 0 removes its sentence. So it is a choice of wording
+and of a vanishing control, not a mistake, and E6 ported it (`stepSentences` and `SCRIPT_EXITS`
+in `src/steps/sentences.ts`, research.md 17.18). The founder wants the option in SCRIPT, so the
+skin departs from Streamline here and avoids the vanishing chip. Default: each step in SCRIPT
+always has its limit, maximum and exit lines; one that is off is muted ('No limit', 'No maximum',
+'Move on: off') with a chip that switches it on. The exit chip cycles the four exits and **off**;
+at off the line stays, muted, without its value pill, and the next tap brings the first exit back
+with its remembered value. A limit and each amount of the maximum typed 0 on the number pad is
+off and stays as a muted line or pill; switched on, a limit takes its remembered value or the
+range's default, as the card does. Streamline's ISC notice stays on the file.
+
+**The screenshots of 2026-10-17 (T1, T2).** The screenshots of messages 38 and 39 were resent as
+files (review-10-17-espresso-tail.png (screenshot in the team repository),
+review-10-17-streamline-phase-values.png (screenshot in the team repository)).
+The first is T1's tail as 3.8 describes it (A-Flow / floral2: the pressure drops at about 54 s,
+then the flow rises to the 4 ml/s target), so T1 stands. The second answers T2's per-phase
+question and overrides 3.8's default of one row per step with mean values: Streamline's table has
+one row per **phase**, Preinfusion, Extraction ('Extraktion') and Total, with the columns
+duration (s), weight (g), volume (ml), temperature (°C), flow (ml/s) and pressure (bar), the last
+three as start → end and the pressure also with its peak (3.3 → 9.5 → 8.3). T2 builds that; the
+split into phases and the values are taken from Streamline (`shotSummary.js` in
+`decentespresso/streamline-js`, read before building), and acceptance 51 replaces item 28's
+per-step table.
+
+**Beans and grinders (item 19; U8, U9, U10).** A bean and grinder catalogue: list, add, edit and
+archive beans and grinders, pick them for the next shot, and filter the history by them, on
+Decaid's `/api/v1/beans` and `/api/v1/grinders` (founder, 2026-10-18; spec 3.3 as the founder
+reviewed it, commits 032e579 and 4f4ef9d). Typing a bean's name and roaster by hand is what
+matters first (item 20). Streamline uses the same paths, so it is a port in two parts, as the
+settings were (S1, S2): **U8** reads Streamline's bean and grinder pages and writes the port plan
+into research.md (files, data model, requests, which Svelte component each part becomes, what is
+left out, how it meets the history's entries of 3.5); **U9** builds the catalogue and the pick
+for the next shot; **U10** joins it to the history. Where to start reading, in
+`decentespresso/streamline-js` at `3a4bd23`: the requests in `src/modules/api.js` (beans and
+grinders, about l. 2350-2440, with `includeArchived`), `bean-selection.js`,
+`bean-selection-modal.js`, `dye-selection.js`, `dye-context.js` and `dyeStrip.js` (its 'describe
+your espresso' strip), and where `history.js` and `profile_selector.js` use them. Today the skin
+keeps the bean and the grinder setting only in the workflow's `context` (`coffeeName`,
+`coffeeRoaster`, `grinderSetting`; research.md 14): the history restores them (3.5, `entryKey` in
+`src/history/entries.ts`, a bean is its name and roaster) and nothing lets the user type or pick
+them. Picking a bean writes its fields (and its batch id, research.md 4) into the workflow's
+`context`, so the next shot carries it; the history keeps one entry per profile and bean (3.5),
+and its filter shows the entries of one bean or one grinder. The plan says where the catalogue
+opens (home's menu and the bean's name on home or in the history are candidates) and checks every
+request on the rig.
+
+**Bean from a photo (item 20, low priority; U13, after 19).** A bean can be added from a photo
+of its bag taken with the tablet's camera; reading the name and the roaster from it is nice to
+have (founder, 2026-10-18). **Step 1 is a check on the real tablet that only the founder can
+make:** does Decaid's WebView let a skin use the camera, through `<input type="file"
+accept="image/*" capture="environment">` or `getUserMedia`? Decaid's `flutter_inappwebview`
+needs the app's camera permission and a file chooser for the first and a permission request
+handler for the second; the Windows simulation shows neither. The check is a small test page in
+the hand-over (H3) that the founder opens on the tablet. If the camera works, the photo is
+stored with the bean, and step 2 reads the name and the roaster from it with Tesseract.js
+(founder's choice, 2026-10-18: free, open source, no key, runs on the tablet), whose language
+data is bundled in the ZIP and never fetched at run time; its result only pre-fills U9's typed
+fields, which the user corrects. If the camera is blocked, the item stops after step 1 and says
+so. U13 waits on the founder's check (`conditional_on`) and on U9.
+
+**Settings: the rest of Streamline (item 15, low priority; U11, U12).** The settings page gets
+Streamline's skin switch, and then the rest: display options, the Bengle pages, the manual,
+feedback, and the firmware upload from a file; planned, after everything else (founder,
+2026-10-18). S1 left these out (research.md 20.3, 20.6): category 6's Active Skin (`GET
+/api/v1/webui/skins`, `PUT /api/v1/webui/skins/default`, `POST …/update`), 9's Display Size,
+Temperature unit and Screen Saver (Streamline's `localStorage`; here they would be the skin's
+settings), the Bengle-only pages (the rig's DE1 answers 404), 11's User Manual (Streamline's
+Quick Start Guide text) and Send Feedback (`POST /api/v1/feedback`), and 10's firmware upload
+(`POST /api/v1/machine/firmware` with a file, NDJSON progress). **U11** builds the skin switch
+(the installed skins; switching after a confirm, since it leaves this skin) and the display
+options that apply to this skin; **U12** the Bengle pages (shown only on a Bengle), the manual,
+feedback and the firmware upload behind S2c's confirm. Feedback goes to Decent through Decaid,
+an outside service that spec 6 asks the founder to approve; item 15 asks for it, and the default
+takes that as the approval (section 8). Talk to Decent (a Decent account) is not asked for and
+stays out.
+
+**No change:** 'Steam on' falling back to 150 °C is fine, because it returns to the previously
+set values (founder, 2026-10-18).
 
 ## 4. Technical approach
 
@@ -637,6 +928,71 @@ The founder's review of 2026-10-17 (3.8); items 27 to 35 are tests, 36 and 37 th
 37. **Hand-over (founder).** The 0.3.0 ZIP installs on the tablet; the checks of
     [install.md](install.md) still open are asked again with the new ones.
 
+The founder's review of 2026-10-18 (3.9); items marked (test) are tests, (founder) the founder's.
+Where an item here and one of 27-37 disagree, the item here wins (3.9 overrides 3.8):
+
+38. **Machine sleep (test).** The menu's entry reads 'Machine sleep' with the line that Decaid
+    cannot switch the DE1 off and that only the machine sleeps; it sends `sleeping`. The menu
+    has no 'Machine off' and no 'Exit' (this replaces item 35's exit).
+39. **Machine and app sleep (test).** The second entry sends `sleeping`, sets the brightness to 0
+    where `platformSupported.brightness`, releases Decaid's wake lock, and after a touch the
+    machine is `idle` and the wake lock and brightness are as before.
+40. **Scale reconnect (test).** A scale that drops, or is missing at the start while a preferred
+    scale is set, is scanned for (`GET /api/v1/devices/scan`) every 5 s, at most 3 times, not
+    while the machine sleeps; the warning then offers a retry, and a tap on it or on the steam or
+    hot water page's tare button starts a new round. On the rig the simulated scale,
+    disconnected, is connected again without a touch.
+41. **Keyboard (test).** With a text field focused and the page's height shrunk to that of a
+    keyboard (1280 × 450 from 1280 × 800), the root font size and the app's height are
+    unchanged, and the field's dialog (save as, the profile's notes, the picker's filter) lies
+    entirely above the new height; with the focus gone it is back in its place.
+42. **Keyboard on the tablet (founder).** Tapping 'save as', the profile's description and the
+    picker's filter opens the keyboard over the app; the app keeps its size and the field with
+    its dialog is readable above the keyboard.
+43. **A-Flow profiles (test).** Decaid's bundled `A-Flow / default-medium` and an old de1app
+    A-Flow profile open in the A-Flow 3.0 editor with the values the plugin wrote (the reader
+    gives back the generator's input for every regression fixture); ramp down is dropped and the
+    status line says so; 'save' stores the profile with its 3.0 values in `metadata`, the old
+    one its parent and hidden; a profile with changed steps still opens in the step editor.
+44. **A-Flow import (test).** The settings button, after its question, converts every old A-Flow
+    profile of the user's to 3.0 and reports the count; Decaid's bundled A-Flow profiles and 3.0
+    profiles are not touched; a second run converts nothing.
+45. **0 s steps (test).** In the step editor's curve a 0 s step has no width and no shading, the
+    other steps are as before; the cards and SCRIPT still show it and its values can be
+    changed.
+46. **A-Flow editor status and spacing (test).** 'save', 'save as', a failed save and a load
+    show their text in the line under the start row; the graph does not move when it appears or
+    goes; the start row's buttons stand further apart than in 0.2.0.
+47. **Hot water page (test).** The page has one row per value with a slider; a slider let go
+    writes the value to `hotWaterData` once; a tap on the value opens the number pad; the flow
+    goes up to 8 ml/s on this page and on the settings page; while hot water runs the page shows
+    the ring with stop and its values; a drag on a slider moves no page.
+48. **Steam heater off (test).** With `targetSteamTemp` 0 the steam page shows the message and
+    'Steam on', which switches the heater on with the remembered temperature; with the heater on
+    neither is shown.
+49. **No state dot, smaller ring (test).** No page shows the state dot under the back arrow;
+    home's water ring is 85 % of its panel's height.
+50. **SCRIPT off (test).** In SCRIPT a step's exit cycles the four exits and off, and stays a
+    line at off; a limit and a maximum's amount typed 0 are off and stay muted; each can be
+    switched on again; saved, the stored steps have `exit: null`, no limiter and 0 amounts.
+51. **Per-phase values (test).** After a shot the overlay's table has the rows Preinfusion,
+    Extraction and Total with duration, weight, volume, temperature, flow and pressure, the last
+    three as start → end and the pressure with its peak, computed as Streamline does (this
+    replaces item 28's per-step table).
+52. **Beans and grinders (test).** Beans and grinders can be listed, added (name and roaster
+    typed), edited and archived through `/api/v1/beans` and `/api/v1/grinders`; a picked bean
+    and grinder setting are in the workflow's `context` and in the next shot's record; the
+    history filtered by a bean shows only its entries.
+53. **Settings, the rest (test).** The skin switch lists the installed skins and switches after
+    a confirm; the display options apply; the Bengle pages are not shown on a DE1; the manual
+    opens; feedback is sent with `POST /api/v1/feedback`; a firmware file uploads behind a
+    confirm with its progress (the mocked gateway).
+54. **Camera (founder).** The hand-over's camera test page, opened on the tablet, says whether
+    the skin can take a photo; if it can, a bean added from a photo of its bag has the photo and
+    pre-filled name and roaster that can be corrected.
+55. **Hand-over (founder).** The 0.4.0 ZIP installs on the tablet; the checks of
+    [install.md](install.md) still open are asked again with the new ones.
+
 ## 6. Constraints
 - **Budget:** one Claude Pro plan. This product may use all of it up to 90% of the weekly
   limit; the team plans by capacity.
@@ -697,10 +1053,24 @@ The weeks are a capacity guess on one Pro plan.
 | 2 | T4 | review 2026-10-17: profile picker filter, description and preview, a load button (3.8) | D6 |
 | 2 | T5 | review 2026-10-17: A-Flow defaults kept in the skin, no 'not in Decaid' offer (3.8) | T4 |
 | 2 | T6 | review 2026-10-17: swipe between hot water, home and steam with a slide (3.8) | R1, R5 |
-| 2 | T7 | review 2026-10-17: A-Flow editor steps panel without 'shot stops at', save feedback beside the buttons (3.8) | A2 |
+| 2 | T7 | review 2026-10-17: A-Flow editor steps panel without 'shot stops at', save feedback in the status line under the start row (3.8, as 3.9 item 8 changes it) | A2 |
 | 2 | T8 | review 2026-10-17: shot history, newest 20 first, shots kept in memory (3.8) | D8b |
-| 2 | T9 | review 2026-10-17: menu shortcuts clean (water level, drip tray) and exit (3.8) | S2b, R4 |
+| 2 | T9 | review 2026-10-17: menu shortcut clean (water level, drip tray); no exit, replaced by 3.9 items 1 and 2 (U1, U4) (3.8, 3.9) | S2b, R4 |
 | 2 | H2 | review 2026-10-17: hand-over ZIP 0.3.0, install.md with the new checks and the open ones | T1-T9 |
+| 2 (Oct 19-25) | U1 | review 2026-10-18: the bugs: machine sleep label, scale reconnect, the keyboard over the app, hot water flow to 8 ml/s (3.9 items 1, 3, 10, 16) | R4 |
+| 2 | U2 | review 2026-10-18: every A-Flow profile opens in the A-Flow 3.0 editor, read from the plugin's steps, converted on save (3.9 items 4, 5) | T5 |
+| 2 | U3 | review 2026-10-18: hot water rows with sliders and the ring while it pours, no state dot, smaller flush ring, steam heater off message (3.9 items 11-14, 18) | U1, T6 |
+| 2 | U4 | review 2026-10-18: menu entry machine and app sleep, in place of T9's exit (3.9 item 2) | U1, T9 |
+| 2 | U5 | review 2026-10-18: A-Flow editor status line under the start row, more space between the profile buttons (3.9 items 8, 9) | T7 |
+| 2 | U6 | review 2026-10-18: step editor: 0 s steps not drawn, SCRIPT offers off for exit, limit and maximum (3.9 items 7, 17) | E6 |
+| 2 | U7 | review 2026-10-18: settings button importing all old A-Flow profiles to 3.0 (3.9 item 6) | U2, S2a |
+| 3 (Oct 26-Nov 1) | U8 | review 2026-10-18: read Streamline's bean and grinder pages, write the port plan into research.md (3.9 item 19) | D8b |
+| 3 | U9 | review 2026-10-18: bean and grinder catalogue (list, add, edit, archive) and the pick for the next shot (3.9 item 19) | U8 |
+| 3 | U10 | review 2026-10-18: the history filtered by bean and grinder, its entries with the catalogue's beans (3.9 item 19) | U9, T8 |
+| 3 | U11 | review 2026-10-18, low priority: settings: Streamline's skin switch and display options (3.9 item 15) | U2-U7, U10 |
+| 3 | U12 | review 2026-10-18, low priority: settings: Bengle pages, manual, feedback, firmware upload from a file (3.9 item 15) | U11 |
+| 3 | H3 | review 2026-10-18: hand-over ZIP 0.4.0, install.md with the new checks, the open ones and the camera test page | U1-U12, H2 |
+| 3 | U13 | review 2026-10-18, low priority: a bean from a photo of its bag, Tesseract.js pre-fills name and roaster; only if the founder's camera check passes (3.9 item 20) | U9, founder |
 
 ## 8. Open questions
 Answered by the first research task ([research.md](research.md)) and no longer open: Decaid
@@ -773,7 +1143,7 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
 - The version is `0.2.0`, a beta (founder, 2026-10-13; 0.1.x for fix rounds); it is in
   `package.json` and `public/manifest.json`. Versions are semantic (founder, 2026-10-16): a
   hand-over raises the minor version, so H1 built `0.2.0` (2026-10-18) and H2 builds
-  `0.3.0`; a major version (such as the
+  `0.3.0`, and H3 (the review of 2026-10-18) `0.4.0`; a major version (such as the
   reverted 1.1.0, commit `ad378f9`) only after asking the founder. (answered)
 - Other profiles (founder's question of 2026-10-14, [answers-2026-10-14.md](answers-2026-10-14.md)):
   answered by version 1.1: they open in the skin's own step editor, ported from Streamline
@@ -933,8 +1303,11 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
   - Infuse width, built in A2 as planned: the estimated time is 4 s per gram plus 1 s (the
     founder's 1 g ≈ 5 s and 6 g ≈ 25 s), never longer than the phase's time. The infuse-to
     chip is dragged left and right, not up and down.
-- The review of 2026-10-17 (3.8), choices only the founder can make; the default is built
-  unless the founder says otherwise (founder):
+- The review of 2026-10-17 (3.8), choices only the founder could make. Answered on
+  2026-10-18 (message 41): the font sizes as below, and 'rest of the question, agree to your
+  proposal', so every default stands as written, except where 3.9 overrides it: the per-phase
+  values (the resent screenshot), the save feedback (3.9 item 8) and the exit (3.9 items 1 and
+  2). (answered)
   - A-Flow defaults in the skin: the picker lists the five from the skin, first, marked
     'default'; the 'not in Decaid' offer and its add button go; copies already stored in
     Decaid under `A-Flow / default-…` stay in Decaid but are not listed (the skin's default of
@@ -945,16 +1318,49 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
     state line stays visible; after the shot it stays with the per-phase table until a tap
     anywhere or the next shot, and then home shows the shot as its 'last shot'.
   - The per-phase values (the screenshot did not arrive): one row per profile step that ran,
-    with seconds, weight gained, maximum pressure and mean flow, and a total. Is it per step,
-    and which flow (mean, maximum, at the end)? Please send the screenshot again.
+    with seconds, weight gained, maximum pressure and mean flow, and a total. Answered by the
+    screenshot resent on 2026-10-18: per phase (preinfusion, extraction, total) with start and
+    end values, as Streamline shows them (3.9).
   - The expected shot duration: the last shot with that profile, else the profile's estimate,
     else 30 s, rounded up to 10 s.
   - Exit: Decaid cannot switch the DE1 off (research.md 22) and a skin cannot close Decaid;
     the host offers `window.decentApp.exitToDashboard()` (research.md 20.3), which goes to
     Decaid's dashboard. **Exit** puts the machine to sleep and goes to the dashboard; without
-    the host's function it is not shown. Is the dashboard enough?
+    the host's function it is not shown. Agreed, then replaced by the review of 2026-10-18:
+    no Exit; 'Machine sleep' and 'Machine and app sleep' (3.9 items 1, 2).
   - Swipe and the history: a swipe that starts in home's left fifth still opens the history;
     any other swipe moves between hot water, home and steam, so from home hot water needs a
     swipe that starts right of that fifth, or its tab.
   - Font sizes: the note breaks off at "labels like". One type scale, with the state line as
-    large as the profile's name. Which labels did the note mean?
+    large as the profile's name. Answered (founder, 2026-10-18): labels such as 'steam' and
+    'group' in the state line may be smaller than their values; not everything gets the same
+    size (3.8, T3).
+- The tablet's Streamline version (question 8 of the hand-over 0.2.0, request 189): the
+  founder has 0.2.14 (2026-10-18, message 41: 'I do have that version'). What depended on it:
+  Streamline 0.2.13 wrote the steam time it remembers back over every other one while a page of
+  it was open (research.md 16), the one cause of the founder's 25 s that ran 30 s on 2026-10-13
+  the rig reproduces; 0.2.14 takes an outside value over instead (`decideResync`'s adopt,
+  research.md 18, seen on the rig in R1). So on the tablet the write-back cannot recur, the
+  skin's change of Streamline's key (`src/steam/apply.ts`) stays only for a tablet on 0.2.13
+  and is harmless on 0.2.14, and research.md 20.9's warning that Streamline may put machine
+  values back is weaker. The founder's steam check (timing 25 s on the real DE1, above) is
+  still open; no question is left. (answered)
+- The review of 2026-10-18 (3.9), choices only the founder can make; the default is built
+  unless the founder says otherwise (founder):
+  - Machine and app sleep (item 2): the machine sleeps, the skin's sleep screen goes to
+    brightness 0, and Decaid's wake lock is released so that Android switches the screen off by
+    its own timeout; a touch wakes both and puts the wake lock back. It replaces T9's Exit to
+    Decaid's dashboard, which is not built. Is that what 'the app sleeps' means?
+  - Old A-Flow profiles (items 4-6): converting drops ramp down, which 3.0 removed, without
+    asking; the old version stays in Decaid's lineage, hidden. The import button skips Decaid's
+    bundled de1app A-Flow profiles, since the skin's defaults stand for them.
+  - Feedback (item 15): Send Feedback goes to Decent through Decaid (`POST /api/v1/feedback`),
+    an outside service spec 6 asks the founder to approve; item 15 is taken as that approval.
+  - The camera (item 20): only the founder can check it, with the hand-over's test page on the
+    tablet; until then U13 is not started.
+- The review of 2026-10-18 (3.9), choices the team will make unless the founder says otherwise
+  (owner): the scale retry as Streamline's (every 5 s, three times, not while the machine
+  sleeps); the hot water sliders write when let go, the value still opens the number pad; the
+  state dot goes from every page; the flush ring is 85 % of its panel; the steam page's heater
+  message stands in the place of the favourites; SCRIPT keeps a muted line for an exit, limit
+  or maximum that is off.
