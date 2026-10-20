@@ -2,8 +2,10 @@
 // One object, made once by App.svelte; the screens read it and call its actions. It hands the
 // work to its parts: the streams (streams.svelte.ts), the settings and their backup
 // (settings-store.svelte.ts), steam (steam-control.svelte.ts), the history and its restore
-// (recall.svelte.ts), the warning before a load (load-warning.svelte.ts) and the screen's
-// brightness and wake lock in sleep (dimmer.ts).
+// (recall.svelte.ts), the warning before a load (load-warning.svelte.ts), the screen's
+// brightness and wake lock in sleep (dimmer.ts) and the bean and grinder catalogue
+// (src/beans/catalogue.svelte.ts).
+import { Catalogue } from '../beans/catalogue.svelte';
 import { DecaidClient, isTareBlocked, type MachineSnapshot, type RequestedMachineState, type Workflow } from '../api';
 import type { HistoryEntry } from '../history/entries';
 import { ShotCache } from '../history/shots.svelte';
@@ -29,6 +31,8 @@ export class Skin {
   readonly client: DecaidClient;
   /** the shots read from Decaid for the session: the history, the restore and the expected length (spec 3.8) */
   readonly shots: ShotCache;
+  /** Decaid's beans and grinders, and the pick for the next shot (spec 3.9 item 19) */
+  readonly catalogue: Catalogue;
 
   screen: Screen = $state(loadScreen());
   workflow: Workflow | null = $state.raw(null);
@@ -77,6 +81,7 @@ export class Skin {
     this.baseUrl = baseUrl;
     this.client = new DecaidClient({ baseUrl });
     this.shots = new ShotCache(this.client);
+    this.catalogue = new Catalogue(this);
     this.store = new SettingsStore(this.client);
     this.steamer = new SteamControl(this);
     this.recall = new Recall(this);

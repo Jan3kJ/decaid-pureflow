@@ -4,7 +4,7 @@
 // an overlay on home's graph (spec 3.8, `ShotOverlay.svelte`).
 import type { MachineState } from '../api';
 
-export const SCREENS = ['home', 'profiles', 'editor', 'steam', 'hot-water', 'settings'] as const;
+export const SCREENS = ['home', 'profiles', 'editor', 'steam', 'hot-water', 'settings', 'beans'] as const;
 
 export type Screen = (typeof SCREENS)[number];
 

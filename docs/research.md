@@ -3550,3 +3550,16 @@ skin's own settings page, not as DYE2's grid of cards.
    per-profile memory of the setting is not ported (3.5: it belongs to the entry).
 7. **The history's filter works on the held shots** and matches by batch or by name and
    roaster; a catalogue bean is one entry across renames and bags (29.6).
+
+### 29.12 Seen on the rig while building U9 (2026-10-20)
+
+Decaid 0.8.8 with Streamline 0.2.17 as its default skin; the probe's output is the rig's
+`log\u9-probe.txt`, the state before the tests `log\u9-before.txt`.
+
+| Claim | Status |
+|---|---|
+| `POST /beans/{id}/batches` takes a date alone (`"2026-10-01"`) and stores `2026-10-01T00:00:00.000`; an empty body makes a batch without a roast date | seen running |
+| `GET /beans/{id}/batches` lists the newest roast date first; the skin orders by `createdAt` itself | seen running |
+| `PUT /beans/{id}` and `/grinders/{id}` change only the fields they carry, and `{"archived": true}` takes the item out of the list without `includeArchived` | seen running |
+| **`DELETE /beans/{id}` of a bean that has batches answers 500** (`SqliteException(787) … FOREIGN KEY constraint failed`), against `rest_v1.yml`'s "with all its batches"; deleting the batches first (`DELETE /bean-batches/{id}`, 200), then the bean, works. The skin deletes nothing; the rig test cleans up in that order | seen running |
+| A shot pulled after the pick holds `beanBatchId`, `coffeeName`, `coffeeRoaster`, `grinderId`, `grinderModel` and `grinderSetting` as picked, and `GET /shots?beanId=` and `?grinderId=` find exactly that shot (`e2e-rig/beans.spec.ts`; 29.10 risk 3 settled) | seen running |

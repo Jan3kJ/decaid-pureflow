@@ -568,3 +568,52 @@ describe('plugins, presence, calibration, firmware (S2c)', () => {
     await expect(busy.client.applyFirmware('de1-1358', () => {})).rejects.toBeInstanceOf(DecaidApiError);
   });
 });
+
+describe('beans and grinders (U9)', () => {
+  it('sends each request to its path, archived ones only when asked for', async () => {
+    const { client, calls } = clientWith();
+    await client.listBeans();
+    await client.listBeans(true);
+    await client.createBean({ roaster: 'Rig', name: 'Red Brick' });
+    await client.updateBean('b 1', { notes: null, archived: true });
+    await client.listBatches('b 1');
+    await client.listBatches('b 1', true);
+    await client.listAllBatches(true);
+    await client.createBatch('b 1', { roastDate: '2026-10-01' });
+    await client.createBatch('b 1');
+    await client.updateBatch('batch-1', { archived: true });
+    await client.listGrinders();
+    await client.listGrinders(true);
+    await client.createGrinder({ model: 'Niche Zero' });
+    await client.updateGrinder('g/1', { settingSmallStep: 0.5 });
+    expect(calls.map((call) => `${call.method} ${call.url.replace(DEFAULT_BASE_URL, '')}`)).toEqual([
+      'GET /api/v1/beans',
+      'GET /api/v1/beans?includeArchived=true',
+      'POST /api/v1/beans',
+      'PUT /api/v1/beans/b%201',
+      'GET /api/v1/beans/b%201/batches',
+      'GET /api/v1/beans/b%201/batches?includeArchived=true',
+      'GET /api/v1/bean-batches?includeArchived=true',
+      'POST /api/v1/beans/b%201/batches',
+      'POST /api/v1/beans/b%201/batches',
+      'PUT /api/v1/bean-batches/batch-1',
+      'GET /api/v1/grinders',
+      'GET /api/v1/grinders?includeArchived=true',
+      'POST /api/v1/grinders',
+      'PUT /api/v1/grinders/g%2F1',
+    ]);
+    expect(calls[2].body).toEqual({ roaster: 'Rig', name: 'Red Brick' });
+    expect(calls[3].body).toEqual({ notes: null, archived: true });
+    expect(calls[7].body).toEqual({ roastDate: '2026-10-01' });
+    expect(calls[8].body).toEqual({});
+    expect(calls[12].body).toEqual({ model: 'Niche Zero' });
+    expect(calls[13].body).toEqual({ settingSmallStep: 0.5 });
+  });
+
+  it("gives Decaid's answer, and its error for an unknown bean", async () => {
+    const bean = { id: 'b1', roaster: 'Rig', name: 'Red Brick', decaf: false, archived: false, createdAt: 'x', updatedAt: 'x' };
+    const { client } = clientWith({ status: 201, body: bean }, { status: 404, body: { error: 'Bean not found' } });
+    expect(await client.createBean({ roaster: 'Rig', name: 'Red Brick' })).toEqual(bean);
+    await expect(client.updateBean('nope', { name: 'x' })).rejects.toThrow('PUT /api/v1/beans/nope: 404 Bean not found');
+  });
+});

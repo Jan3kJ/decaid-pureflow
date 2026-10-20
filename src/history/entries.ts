@@ -1,7 +1,7 @@
 // The shot history's logic (spec 3.5): the gateway's shot records in, the entries of the
 // overlay out, and what one entry writes back to the workflow. Pure, except `restoreEntry`;
 // the shots themselves are held by `ShotCache` (shots.svelte.ts).
-import type { DecaidClient, Profile, ShotRecord, ShotRecordSummary, Workflow, WorkflowContextPatch } from '../api';
+import type { DecaidClient, Profile, ShotRecord, ShotRecordSummary, Workflow, WorkflowContext, WorkflowContextPatch } from '../api';
 import { loadProfile } from '../shell/profiles';
 import { TARE_SETTLE_S, emptySeries, frameTime, pushPoint, shotOver, waterMoves, type ShotSeries } from '../shell/shot';
 
@@ -32,7 +32,11 @@ const text = (value: string | null | undefined): string | null => value?.trim() 
 
 /** The bean of a shot, null when the workflow named none. */
 export function beanOf(shot: ShotRecordSummary): Bean | null {
-  const context = shot.workflow?.context;
+  return contextBean(shot.workflow?.context);
+}
+
+/** The bean a workflow's context names, null for none: the shot's, or the one for the next shot. */
+export function contextBean(context: WorkflowContext | null | undefined): Bean | null {
   const bean = {
     name: text(context?.coffeeName),
     roaster: text(context?.coffeeRoaster),

@@ -90,7 +90,7 @@ test('the state line warns in place of the weight when the scale is not connecte
   expect(errors).toEqual([]);
 });
 
-test('the menu opens with settings, clean, steam off and machine sleep, and closes on a choice and on a tap outside', async ({
+test('the menu opens with settings, beans and grinders, clean, steam off and machine sleep, and closes on a choice and on a tap outside', async ({
   page,
 }) => {
   const gateway = await mockGateway(page);
@@ -102,6 +102,7 @@ test('the menu opens with settings, clean, steam off and machine sleep, and clos
   await openMenu(page);
   await expect(page.getByRole('menuitem')).toHaveText([
     'Settings',
+    /^Beans and grinders/,
     /^Clean/,
     /^Steam off/,
     /^Machine sleep/,

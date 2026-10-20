@@ -4,7 +4,10 @@ import { readFileSync } from 'node:fs';
 import type { Page, Route, WebSocketRoute } from '@playwright/test';
 import { DEFAULT_PROFILES } from '../src/aflow';
 import type {
+  BeanBatch,
+  CatalogueBean,
   DeviceInfo,
+  Grinder,
   DisplayState,
   HotWaterData,
   MachineSnapshot,
@@ -248,6 +251,12 @@ export class MockGateway {
   refuseStreams = false;
   /** sockets refused with an error frame, every stream counted */
   refused = 0;
+  /** Decaid's bean and grinder catalogue, archived ones too (research.md 29.3) */
+  beans: CatalogueBean[] = [];
+  batches: BeanBatch[] = [];
+  grinders: Grinder[] = [];
+  /** the catalogue's writes so far, for ids and times that differ and grow */
+  private catalogueWrites = 0;
   /** `GET /api/v1/display` */
   display: DisplayState = {
     wakeLockEnabled: true,
@@ -1064,7 +1073,85 @@ export class MockGateway {
       }
       return json(stored);
     }
+    const catalogue = this.answerCatalogue(method, path, url, body);
+    if (catalogue) return json(catalogue.value, catalogue.status);
     return json({ error: `the mock has no ${method} ${path}` }, 404);
+  }
+
+  /**
+   * The bean and grinder catalogue as Decaid answers it: 201 with the object for a POST, a PUT
+   * keeps the fields it omits, the lists leave archived ones out unless `includeArchived=true`,
+   * and an unknown id is 404 (research.md 29.4).
+   */
+  private answerCatalogue(method: string, path: string, url: URL, body: RequestBody): { value: unknown; status: number } | null {
+    const all = url.searchParams.get('includeArchived') === 'true';
+    const listed = <T extends { archived: boolean }>(items: T[]) => ({
+      value: items.filter((item) => all || !item.archived),
+      status: 200,
+    });
+    const stamp = () => {
+      this.catalogueWrites += 1;
+      const at = new Date(Date.UTC(2026, 9, 20, 10, 0, this.catalogueWrites)).toISOString().replace('Z', '');
+      return { id: `mock-${this.catalogueWrites}`, at };
+    };
+    const created = <T>(item: T) => ({ value: item, status: 201 });
+    const changed = <T extends { updatedAt: string }>(items: T[], id: string, missing: string) => {
+      const index = items.findIndex((item) => (item as unknown as { id: string }).id === id);
+      if (index < 0) return { value: { error: missing }, status: 404 };
+      items[index] = { ...items[index], ...body, updatedAt: stamp().at };
+      return { value: items[index], status: 200 };
+    };
+    const segments = path.split('/').slice(3).map(decodeURIComponent);
+    const [kind, id, sub] = segments;
+    if (kind === 'beans' && !id) {
+      if (method === 'GET') return listed(this.beans);
+      if (method === 'POST') {
+        const { id: newId, at } = stamp();
+        const bean = { decaf: false, archived: false, ...body, id: newId, createdAt: at, updatedAt: at } as unknown as CatalogueBean;
+        this.beans.push(bean);
+        return created(bean);
+      }
+    }
+    if (kind === 'beans' && id && sub === 'batches') {
+      if (method === 'GET') return listed(this.batches.filter((batch) => batch.beanId === id));
+      if (method === 'POST') {
+        const { id: newId, at } = stamp();
+        const roastDate = typeof body.roastDate === 'string' ? `${body.roastDate.slice(0, 10)}T00:00:00.000` : undefined;
+        const batch = {
+          frozen: false,
+          archived: false,
+          ...body,
+          roastDate,
+          beanId: id,
+          id: newId,
+          createdAt: at,
+          updatedAt: at,
+        } as BeanBatch;
+        this.batches.push(batch);
+        return created(batch);
+      }
+    }
+    if (kind === 'beans' && id && !sub && method === 'PUT') return changed(this.beans, id, 'Bean not found');
+    if (kind === 'bean-batches' && !id && method === 'GET') return listed(this.batches);
+    if (kind === 'bean-batches' && id && method === 'PUT') return changed(this.batches, id, 'Batch not found');
+    if (kind === 'grinders' && !id) {
+      if (method === 'GET') return listed(this.grinders);
+      if (method === 'POST') {
+        const { id: newId, at } = stamp();
+        const grinder = {
+          archived: false,
+          settingType: 'numeric',
+          ...body,
+          id: newId,
+          createdAt: at,
+          updatedAt: at,
+        } as unknown as Grinder;
+        this.grinders.push(grinder);
+        return created(grinder);
+      }
+    }
+    if (kind === 'grinders' && id && method === 'PUT') return changed(this.grinders, id, 'Grinder not found');
+    return null;
   }
 }
 

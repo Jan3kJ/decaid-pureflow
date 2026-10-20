@@ -630,3 +630,70 @@ export interface AppUpdateState {
   progress?: number | null;
   error?: string | null;
 }
+
+// --- beans and grinders (research.md 29.3) ---
+
+/** A coffee, an origin or a blend, in Decaid's catalogue. Fields the skin does not show are kept as Decaid holds them. */
+export interface CatalogueBean {
+  id: string;
+  roaster: string;
+  name: string;
+  decaf: boolean;
+  archived: boolean;
+  notes?: string | null;
+  species?: string | null;
+  decafProcess?: string | null;
+  country?: string | null;
+  region?: string | null;
+  producer?: string | null;
+  variety?: string[] | null;
+  altitude?: number[] | null;
+  processing?: string | null;
+  extras?: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** One bag of a bean: what a shot's `beanBatchId` names. */
+export interface BeanBatch {
+  id: string;
+  beanId: string;
+  /** local date and time, no zone: `2026-10-01T00:00:00.000`; a date alone is taken too */
+  roastDate?: string | null;
+  frozen: boolean;
+  archived: boolean;
+  notes?: string | null;
+  extras?: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Grinder {
+  id: string;
+  model: string;
+  archived: boolean;
+  /** `numeric`: a number with steps; `preset`: the named positions of `settingValues` */
+  settingType: 'numeric' | 'preset';
+  settingValues?: string[] | null;
+  settingSmallStep?: number | null;
+  settingBigStep?: number | null;
+  burrs?: string | null;
+  burrSize?: number | null;
+  burrType?: string | null;
+  notes?: string | null;
+  extras?: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+type Written = 'id' | 'createdAt' | 'updatedAt';
+
+/** `POST /api/v1/beans`: roaster and name are required. */
+export type BeanInput = Pick<CatalogueBean, 'roaster' | 'name'> & Partial<Omit<CatalogueBean, Written | 'roaster' | 'name'>>;
+/** `PUT /api/v1/beans/{id}`: omitted fields keep their values, `null` clears one. */
+export type BeanPatch = Partial<Omit<CatalogueBean, Written>>;
+export type BatchInput = Partial<Omit<BeanBatch, Written | 'beanId'>>;
+export type BatchPatch = BatchInput;
+/** `POST /api/v1/grinders`: the model is required. */
+export type GrinderInput = Pick<Grinder, 'model'> & Partial<Omit<Grinder, Written | 'model'>>;
+export type GrinderPatch = Partial<Omit<Grinder, Written>>;

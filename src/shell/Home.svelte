@@ -1,6 +1,7 @@
 <script lang="ts">
+  import Pick from '../beans/Pick.svelte';
   import ShotGraph from '../graph/ShotGraph.svelte';
-  import { beanLabel } from '../history/entries';
+  import { beanLabel, contextBean } from '../history/entries';
   import { saveLocation } from '../settings-page/tree';
   import { emptySeries, shotSeconds, shotWeight } from './shot';
   import ShotOverlay from './ShotOverlay.svelte';
@@ -22,13 +23,17 @@
   const recalled = $derived(skin.recalled);
   // Hot water or flush runs: home shows it in place of the graph, with stop in its ring (spec 3.6).
   const water = $derived(shownRun(skin.waterRun, skin.canStop));
+  // The bean and grinder setting for the next shot, as the workflow holds them; a tap picks others (spec 3.9 item 19).
+  const nextBean = $derived(beanLabel(contextBean(skin.workflow?.context)));
+  const nextSetting = $derived(skin.workflow?.context?.grinderSetting?.trim() || null);
+  let picking = $state(false);
 
   /**
    * The menu of the top right corner (founder, 2026-10-13): what is rarely used. A list, so
    * that an entry is one more line here. The steam switch and machine sleep are the shortcuts of
    * spec 3.7; machine sleep sends only the machine to sleep, since Decaid cannot switch the DE1
    * off (research.md 22, spec 3.9 item 1); machine and app sleep also lets the tablet's screen
-   * go off (spec 3.9 item 2). Clean opens the settings page on Maintenance, whose
+   * go off (spec 3.9 item 2). Beans and grinders opens the catalogue (spec 3.9 item 19). Clean opens the settings page on Maintenance, whose
    * first procedure is the clean (spec 3.8 'Menu: clean').
    */
   interface Entry {
@@ -41,6 +46,12 @@
   }
   const MENU: Entry[] = [
     { id: 'open-settings', label: () => 'Settings', choose: () => skin.go('settings') },
+    {
+      id: 'open-beans',
+      label: () => 'Beans and grinders',
+      detail: () => 'add, edit and archive them; the pick for the next shot is on home',
+      choose: () => skin.go('beans'),
+    },
     {
       id: 'open-clean',
       label: () => 'Clean',
@@ -94,6 +105,11 @@
         </svg>
       </button>
     </div>
+
+    <button class="pick" data-testid="open-pick" aria-label="bean and grinder for the next shot" onclick={() => (picking = true)}>
+      <span data-testid="next-bean">{nextBean}</span>
+      {#if nextSetting}<small data-testid="next-setting">{nextSetting}</small>{/if}
+    </button>
 
     <button class="icon" data-testid="menu" aria-label="menu" aria-expanded={menuOpen} onclick={() => (menuOpen = !menuOpen)}>
       <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -159,6 +175,10 @@
   {/if}
 </div>
 
+{#if picking}
+  <Pick {skin} onclose={() => (picking = false)} />
+{/if}
+
 {#if menuOpen}
   <!-- A tap outside the menu closes it and does nothing else. -->
   <button class="backdrop" data-no-swipe data-testid="menu-backdrop" aria-label="close the menu" onclick={() => (menuOpen = false)}
@@ -221,6 +241,33 @@
   .profile button {
     border: 0;
     background: none;
+  }
+
+  /* The bean and the grinder setting for the next shot: shortened, so the header stays one row. */
+  .pick {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 16rem;
+    min-height: 3.5rem;
+    padding: 0 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: var(--text-body);
+  }
+
+  .pick span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .pick small {
+    flex: none;
+    color: var(--dim);
+    font-size: var(--text-body);
+    font-variant-numeric: tabular-nums;
   }
 
   .name {

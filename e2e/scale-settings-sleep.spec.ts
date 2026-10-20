@@ -53,6 +53,7 @@ test('scale: there is no scale page and no menu entry; a tap on the weight tares
   await page.getByTestId('menu').click();
   await expect(page.getByRole('menuitem')).toHaveText([
     'Settings',
+    /^Beans and grinders/,
     /^Clean/,
     /^Steam off/,
     /^Machine sleep/,

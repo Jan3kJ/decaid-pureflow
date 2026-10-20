@@ -3,6 +3,12 @@
 import type {
   AdvancedSettings,
   AppUpdateState,
+  BatchInput,
+  BatchPatch,
+  BeanBatch,
+  BeanInput,
+  BeanPatch,
+  CatalogueBean,
   DecaidInfo,
   DeviceConnectResult,
   DeviceInfo,
@@ -11,6 +17,9 @@ import type {
   FirmwareCatalog,
   FirmwareOperation,
   FirmwareProgress,
+  Grinder,
+  GrinderInput,
+  GrinderPatch,
   ListProfilesQuery,
   ListShotsQuery,
   MachineInfo,
@@ -319,6 +328,56 @@ export class DecaidClient {
   /** The latest shot, without measurements. */
   getLatestShot(): Promise<ShotRecordSummary> {
     return this.request('GET', '/api/v1/shots/latest');
+  }
+
+  // --- beans and grinders (research.md 29.3) ---
+
+  /** Archived beans only with `includeArchived`. */
+  listBeans(includeArchived = false): Promise<CatalogueBean[]> {
+    return this.request('GET', `/api/v1/beans${queryString({ includeArchived: includeArchived || undefined })}`);
+  }
+
+  createBean(bean: BeanInput): Promise<CatalogueBean> {
+    return this.request('POST', '/api/v1/beans', bean);
+  }
+
+  /** Changes the fields the patch holds; the others keep their values. `archived` archives or restores. */
+  updateBean(id: string, patch: BeanPatch): Promise<CatalogueBean> {
+    return this.request('PUT', `/api/v1/beans/${segment(id)}`, patch);
+  }
+
+  /** The batches of one bean; an unknown bean has none (200 `[]`). */
+  listBatches(beanId: string, includeArchived = false): Promise<BeanBatch[]> {
+    return this.request(
+      'GET',
+      `/api/v1/beans/${segment(beanId)}/batches${queryString({ includeArchived: includeArchived || undefined })}`,
+    );
+  }
+
+  /** The batches of every bean, in one request. */
+  listAllBatches(includeArchived = false): Promise<BeanBatch[]> {
+    return this.request('GET', `/api/v1/bean-batches${queryString({ includeArchived: includeArchived || undefined })}`);
+  }
+
+  createBatch(beanId: string, batch: BatchInput = {}): Promise<BeanBatch> {
+    return this.request('POST', `/api/v1/beans/${segment(beanId)}/batches`, batch);
+  }
+
+  updateBatch(id: string, patch: BatchPatch): Promise<BeanBatch> {
+    return this.request('PUT', `/api/v1/bean-batches/${segment(id)}`, patch);
+  }
+
+  /** Archived grinders only with `includeArchived`. */
+  listGrinders(includeArchived = false): Promise<Grinder[]> {
+    return this.request('GET', `/api/v1/grinders${queryString({ includeArchived: includeArchived || undefined })}`);
+  }
+
+  createGrinder(grinder: GrinderInput): Promise<Grinder> {
+    return this.request('POST', '/api/v1/grinders', grinder);
+  }
+
+  updateGrinder(id: string, patch: GrinderPatch): Promise<Grinder> {
+    return this.request('PUT', `/api/v1/grinders/${segment(id)}`, patch);
   }
 
   // --- devices ---

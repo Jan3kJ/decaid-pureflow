@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import Beans from './beans/Beans.svelte';
   import Editor from './editor/Editor.svelte';
   import { editorFor } from './editor/route';
   import History from './history/History.svelte';
@@ -140,6 +141,8 @@
       <HotWater {skin} />
     {:else if screen === 'settings'}
       <SettingsPage {skin} />
+    {:else if screen === 'beans'}
+      <Beans {skin} />
     {/if}
   </div>
 

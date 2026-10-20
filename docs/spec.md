@@ -147,10 +147,10 @@ Reviewed by the founder on 2026-10-18; items no longer out of scope say where th
 - Import of de1app A-Flow `.tcl` profiles. (Converting the old A-Flow profiles Decaid already
   holds to 3.0 is planned: review 2026-10-18, item 6.)
 - Editing non-A-Flow profiles: built in version 1.1 (3.6, E2-E6).
-- Managing a bean and grinder catalogue: **planned** (founder, 2026-10-18; review 2026-10-18,
-  items 19 and 20). Decaid has `/api/v1/beans` and `/api/v1/grinders`, and Streamline uses them.
-  Until it is built, the skin records the bean and the grinder setting with a shot and restores
-  them from history (3.5).
+- Managing a bean and grinder catalogue: **built** (founder, 2026-10-18; review 2026-10-18,
+  items 19 and 20; U9, 3.9): list, add, edit, archive and the pick for the next shot, on Decaid's
+  `/api/v1/beans` and `/api/v1/grinders`. The history's filter by bean and grinder is U10; a
+  bean from a photo is U13.
 - Hot water and flush / rinse: built, a view in version 1.1 (3.6) and a hot water page (3.7).
 - Rating a shot (Decaid's 0-10 enjoyment scale).
 - Portrait layout and a light theme.
@@ -837,6 +837,17 @@ them. Picking a bean writes its fields (and its batch id, research.md 4) into th
 and its filter shows the entries of one bean or one grinder. The plan says where the catalogue
 opens (home's menu and the bean's name on home or in the history are candidates) and checks every
 request on the rig.
+
+Built in U9 (research.md 29.6, 29.12): a screen **Beans and grinders** from home's menu, laid out
+as the settings page (the kinds, the list with search and 'show archived', the form); a bean's
+form has name and roaster (required), the current bag's roast date and notes, every new bean gets
+a bag, **New bag** archives the current one and starts the next; a grinder's form has model
+(required), burrs, the setting as numbers with a step (default 1) or as named positions, and
+notes; archive asks first, restore does not; nothing is deleted. Home's header has a chip after
+the profile with the bean ('no bean') and the grinder setting; it opens the pick (beans that are
+not archived, grinders, the setting with − and + by the grinder's step or on the number pad),
+whose 'Use for the next shot' writes the six context fields in one `PUT /api/v1/workflow`; the
+pick stays until it is changed.
 
 **Bean from a photo (item 20, low priority; U13, after 19).** A bean can be added from a photo
 of its bag taken with the tablet's camera; reading the name and the roaster from it is nice to
