@@ -100,7 +100,13 @@ test('the menu opens with settings, clean, steam off and machine sleep, and clos
 
   // A tap outside closes it and does nothing else.
   await openMenu(page);
-  await expect(page.getByRole('menuitem')).toHaveText(['Settings', /^Clean/, /^Steam off/, /^Machine sleep/]);
+  await expect(page.getByRole('menuitem')).toHaveText([
+    'Settings',
+    /^Clean/,
+    /^Steam off/,
+    /^Machine sleep/,
+    /^Machine and app sleep/,
+  ]);
   await expectInsideViewport(page);
   await page.screenshot({ path: 'docs/product/home-menu.png' });
   await page.mouse.click(400, 500);

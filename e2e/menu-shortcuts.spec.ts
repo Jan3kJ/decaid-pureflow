@@ -5,7 +5,8 @@ import { mockGateway } from './mock-gateway';
 
 // Acceptance item 18 (spec 3.7, R4) against a mocked gateway: the home menu's steam switch
 // writes the workflow's steam temperature (0 is off) and shows the heater's state; machine sleep
-// is sleep, as Decaid cannot switch the DE1 off (research.md 22). The same against the
+// is sleep, as Decaid cannot switch the DE1 off (research.md 22); machine and app sleep also
+// releases Decaid's wake lock and dims the screen to 0 until the wake (spec 3.9 item 2). The same against the
 // running gateway: e2e-rig/menu-shortcuts.spec.ts.
 
 const errors: string[] = [];
@@ -119,6 +120,67 @@ test('machine sleep: the entry says only the machine sleeps and sends the state 
   expect(errors).toEqual([]);
 });
 
+test('machine and app sleep: sleeping, the wake lock released and the screen at 0; a touch puts both back (spec 3.9 item 2)', async ({
+  page,
+}) => {
+  const gateway = await mockGateway(page);
+  gateway.display = { ...gateway.display, wakeLockOverride: true };
+  await page.goto('/');
+  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await openMenu(page);
+  await expect(page.getByTestId('app-sleep')).toContainText('Machine and app sleep');
+  await expect(page.getByTestId('app-sleep-detail')).toHaveText(
+    "the screen goes dark and then off by the tablet's own timeout; a touch wakes both",
+  );
+  const start = gateway.requests.length;
+  /** what the sleep and the wake asked of Decaid, in order */
+  const asked = () =>
+    gateway.requests
+      .slice(start)
+      .filter((call) => /^\/api\/v1\/(machine\/state\/|display\/|settings$)/.test(call.path) && call.method !== 'GET')
+      .map((call) => `${call.method} ${call.path}${call.body === undefined ? '' : ` ${JSON.stringify(call.body)}`}`);
+
+  await page.getByTestId('app-sleep').click();
+  await expect(page.getByTestId('asleep')).toBeVisible();
+  await expect
+    .poll(asked)
+    .toEqual([
+      'PUT /api/v1/machine/state/sleeping',
+      'DELETE /api/v1/display/wakelock',
+      'POST /api/v1/settings {"keepAwake":false}',
+      'PUT /api/v1/display/brightness {"brightness":0}',
+    ]);
+  expect(gateway.display.wakeLockOverride).toBe(false);
+  expect(gateway.decaidSettings.keepAwake).toBe(false);
+
+  await page.touchscreen.tap(1200, 760);
+  await expect(page.getByTestId('asleep')).toHaveCount(0);
+  await expect
+    .poll(asked)
+    .toEqual([
+      'PUT /api/v1/machine/state/sleeping',
+      'DELETE /api/v1/display/wakelock',
+      'POST /api/v1/settings {"keepAwake":false}',
+      'PUT /api/v1/display/brightness {"brightness":0}',
+      'PUT /api/v1/machine/state/idle',
+      'POST /api/v1/settings {"keepAwake":true}',
+      'POST /api/v1/display/wakelock',
+      'PUT /api/v1/display/brightness {"brightness":100}',
+    ]);
+  expect(gateway.display.wakeLockOverride).toBe(true);
+  expect(gateway.decaidSettings.keepAwake).toBe(true);
+  expect(gateway.display.requestedBrightness).toBe(100);
+
+  // The next machine sleep is the machine's alone: dimmed, the wake lock left as it is.
+  await openMenu(page);
+  await page.getByTestId('machine-sleep').click();
+  await expect(page.getByTestId('asleep')).toBeVisible();
+  await expect
+    .poll(() => asked().slice(8))
+    .toEqual(['PUT /api/v1/machine/state/sleeping', 'PUT /api/v1/display/brightness {"brightness":5}']);
+  expect(errors).toEqual([]);
+});
+
 test('without a machine the steam switch is offered from the workflow, machine sleep is not', async ({ page }) => {
   const gateway = await mockGateway(page);
   gateway.machineConnected = false;
@@ -126,6 +188,7 @@ test('without a machine the steam switch is offered from the workflow, machine s
   await expect(page.getByTestId('status-title')).toHaveText('No machine connected', { timeout: 10_000 });
   await openMenu(page);
   await expect(page.getByTestId('machine-sleep')).toBeDisabled();
+  await expect(page.getByTestId('app-sleep')).toBeDisabled();
   await expect(page.getByTestId('steam-heater-detail')).toHaveText('steam heater is on');
   expect(errors).toEqual([]);
 });

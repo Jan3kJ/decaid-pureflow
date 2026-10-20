@@ -3,7 +3,7 @@
 // work to its parts: the streams (streams.svelte.ts), the settings and their backup
 // (settings-store.svelte.ts), steam (steam-control.svelte.ts), the history and its restore
 // (recall.svelte.ts), the warning before a load (load-warning.svelte.ts) and the screen's
-// brightness in sleep (dimmer.ts).
+// brightness and wake lock in sleep (dimmer.ts).
 import { DecaidClient, isTareBlocked, type MachineSnapshot, type RequestedMachineState, type Workflow } from '../api';
 import type { HistoryEntry } from '../history/entries';
 import { ShotCache } from '../history/shots.svelte';
@@ -305,6 +305,16 @@ export class Skin {
   /** The state for sleep is `sleeping` (research.md, section 9). */
   sleep(): Promise<void> {
     return this.request('sleeping', 'The machine did not go to sleep');
+  }
+
+  /**
+   * The menu's 'Machine and app sleep' (spec 3.9 item 2): the machine sleeps, and the screen
+   * goes to 0 with Decaid's wake lock released, until the wake (`Dimmer`).
+   */
+  async sleepApp(): Promise<void> {
+    this.dimmer.sleepApp();
+    await this.sleep();
+    if (this.notice) this.dimmer.cancelApp();
   }
 
   /** The menu's steam switch (spec 3.7); see `SteamControl.toggleHeater`. */

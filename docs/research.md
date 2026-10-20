@@ -982,6 +982,25 @@ shot as before), `blockTareDuringShot` is `false` again, the brightness is back 
 the machine is `idle`. Decaid was ended with `Stop-Process -Force`; port 8080 was free
 afterwards.
 
+### 13.1 The wake lock in sleep (U4, 2026-10-20)
+
+Checked against Decaid 0.8.8 with the simulated DE1, Streamline 0.2.17 served, for the menu's
+'Machine and app sleep' (spec 3.9 item 2); the probe's output is in the rig's
+`log\u4-app-sleep-probe.txt`.
+
+| Claim | Status |
+|---|---|
+| Decaid holds the wake lock (`wakeLockEnabled`) while the machine is awake, whatever `keepAwake` and the override say | seen running |
+| While the machine sleeps it holds it only for its setting `keepAwake` (`POST /api/v1/settings`, on by default on the rig) or the override (`POST`/`DELETE /api/v1/display/wakelock`): with both off `wakeLockEnabled` is `false` while asleep and stays so (seen for 15 s); `DELETE /api/v1/display/wakelock` alone releases nothing while `keepAwake` is on | seen running |
+| At a wake (`PUT /api/v1/machine/state/idle`) Decaid takes the lock back by itself, and sets the brightness from 0 back to 100 | seen running |
+| `PUT /api/v1/display/brightness` with 0 answers 200, and `GET /api/v1/display` reports `brightness` and `requestedBrightness` 0 | seen running |
+| **Streamline 0.2.17's page switches the override on** (`wakeLockOverride` false → true while `e2e-rig/steam.spec.ts` had it open) and leaves it so; that spec now puts it back | seen running |
+
+So the skin releases the lock for the app's sleep by switching `keepAwake` and the override
+off, where they are on, and puts them back at the wake (`src/shell/dimmer.ts`). Whether the
+tablet's screen then goes off by Android's timeout, and whether the touch that switches it on
+again also reaches the skin, can only be seen on the tablet.
+
 ## 14. Shot history overlay (D8b)
 
 Done on 2026-10-13, against Decaid v0.8.8 started as in 8.8 step 2 (the gateway answered

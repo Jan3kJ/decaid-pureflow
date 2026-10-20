@@ -545,7 +545,15 @@ Decaid's wake lock for the sleep and putting it back as it was at the wake; a to
 as the sleep screen does today. The builder checks on the rig what `GET /api/v1/display` reports
 before and after, and whether Decaid takes the wake lock back by itself while the machine sleeps;
 if the wake lock cannot be released, the entry only dims to 0 and its line says so.
-`exitToDashboard` is not used (section 8).
+`exitToDashboard` is not used (section 8). *Built (U4):* the entry is under **Machine sleep**,
+offered when that one is, with the line 'the screen goes dark and then off by the tablet's own
+timeout; a touch wakes both'. It sends `sleeping`; when the machine sleeps, `Dimmer`
+(`src/shell/dimmer.ts`, the one sleep path) switches off what keeps Decaid's wake lock in sleep,
+the override and the setting `keepAwake` where they are on (Decaid holds the lock while the
+machine is awake anyway, research.md 13.1), and sets the brightness to 0
+(`APP_SLEEP_BRIGHTNESS`); at the wake it switches them on again and the brightness goes to 100,
+as after a machine sleep. What is to be put back is kept in `localStorage`
+(`pureflow.app-sleep`, not a setting), so a reload while asleep puts it back at the next wake.
 
 **Scale: reconnect (item 3, bug; U1).** The scale is connected again when its connection is
 lost, and when it was not there at the app's start: the skin retries with a time-out, and tries
@@ -1487,7 +1495,9 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
   - Machine and app sleep (item 2): the machine sleeps, the skin's sleep screen goes to
     brightness 0, and Decaid's wake lock is released so that Android switches the screen off by
     its own timeout; a touch wakes both and puts the wake lock back. It replaces T9's Exit to
-    Decaid's dashboard, which is not built. Is that what 'the app sleeps' means?
+    Decaid's dashboard, which is not built. Built in U4: the lock is released by switching
+    Decaid's `keepAwake` off for the sleep (research.md 13.1). Is that what 'the app sleeps'
+    means, and does the tablet's screen go off and wake with one touch?
   - Old A-Flow profiles (items 4-6): converting drops ramp down, which 3.0 removed, without
     asking; the old version stays in Decaid's lineage, hidden. The import button skips Decaid's
     bundled de1app A-Flow profiles, since the skin's defaults stand for them.

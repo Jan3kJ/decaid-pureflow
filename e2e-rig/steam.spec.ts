@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import type { MachineSnapshot, WebUiServerStatus, ShotSettings } from '../src/api';
+import type { DisplayState, MachineSnapshot, WebUiServerStatus, ShotSettings } from '../src/api';
 import type { RigWorkflow } from './gateway';
 import { IDLE } from './idle';
 
@@ -81,6 +81,8 @@ test('steam: the written timer is read back from the workflow and from the machi
   const steamsBefore = await steamIds();
   const rememberedBefore = await api('GET', REMEMBERED);
   const storeBefore: string[] = await api('GET', STREAMLINE_STORE);
+  // Streamline 0.2.17's page switches Decaid's wake lock override on (research.md 13).
+  const wakeLockBefore = (await api<DisplayState>('GET', '/api/v1/display')).wakeLockOverride === true;
   const sent: string[] = [];
   page.on('request', (request) => {
     if (request.url().startsWith(GATEWAY) && request.method() !== 'GET' && request.method() !== 'OPTIONS') {
@@ -229,6 +231,9 @@ test('steam: the written timer is read back from the workflow and from the machi
       if (!storeBefore.includes(key)) await api('DELETE', `${STREAMLINE_STORE}/${encodeURIComponent(key)}`);
     }
     await api('PUT', '/api/v1/workflow', { steamSettings: before });
+    if ((await api<DisplayState>('GET', '/api/v1/display')).wakeLockOverride !== wakeLockBefore) {
+      await api(wakeLockBefore ? 'POST' : 'DELETE', '/api/v1/display/wakelock');
+    }
   }
 
   expect(await steamIds()).toEqual(steamsBefore);
@@ -236,6 +241,7 @@ test('steam: the written timer is read back from the workflow and from the machi
   expect(await machineTimer()).toBe(before.duration);
   expect(await api('GET', REMEMBERED)).toBe(rememberedBefore);
   expect(await api('GET', STREAMLINE_STORE)).toEqual(storeBefore);
+  expect((await api<DisplayState>('GET', '/api/v1/display')).wakeLockOverride === true).toBe(wakeLockBefore);
 });
 
 test("steam: the page's tare button tares the simulated scale (item 17)", async ({ page }) => {

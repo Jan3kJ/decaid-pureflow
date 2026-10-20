@@ -27,7 +27,8 @@
    * The menu of the top right corner (founder, 2026-10-13): what is rarely used. A list, so
    * that an entry is one more line here. The steam switch and machine sleep are the shortcuts of
    * spec 3.7; machine sleep sends only the machine to sleep, since Decaid cannot switch the DE1
-   * off (research.md 22, spec 3.9 item 1). Clean opens the settings page on Maintenance, whose
+   * off (research.md 22, spec 3.9 item 1); machine and app sleep also lets the tablet's screen
+   * go off (spec 3.9 item 2). Clean opens the settings page on Maintenance, whose
    * first procedure is the clean (spec 3.8 'Menu: clean').
    */
   interface Entry {
@@ -62,6 +63,13 @@
       detail: () => 'only the machine sleeps, not the app: Decaid cannot switch the DE1 off',
       disabled: () => !skin.canSleep,
       choose: () => void skin.sleep(),
+    },
+    {
+      id: 'app-sleep',
+      label: () => 'Machine and app sleep',
+      detail: () => "the screen goes dark and then off by the tablet's own timeout; a touch wakes both",
+      disabled: () => !skin.canSleep,
+      choose: () => void skin.sleepApp(),
     },
   ];
   let menuOpen = $state(false);
