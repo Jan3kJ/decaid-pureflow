@@ -1,0 +1,891 @@
+[
+  {
+    "version": "2",
+    "title": "A-Flow / default-dark",
+    "notes": "A-Flow: an alternative profile for D-Flow",
+    "author": "Janek",
+    "beverage_type": "espresso",
+    "steps": [
+      {
+        "name": "Pre Fill",
+        "pump": "flow",
+        "transition": "fast",
+        "exit": null,
+        "volume": 100,
+        "seconds": 1,
+        "weight": 0,
+        "temperature": 93,
+        "sensor": "coffee",
+        "flow": 8,
+        "limiter": {
+          "value": 8,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "Fill",
+        "pump": "flow",
+        "transition": "fast",
+        "exit": {
+          "type": "pressure",
+          "condition": "over",
+          "value": 3
+        },
+        "volume": 100,
+        "seconds": 15,
+        "weight": 0,
+        "temperature": 93,
+        "sensor": "coffee",
+        "flow": 8,
+        "limiter": {
+          "value": 8,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "Infuse",
+        "pump": "pressure",
+        "transition": "fast",
+        "exit": null,
+        "volume": 100,
+        "seconds": 10,
+        "weight": 2,
+        "temperature": 93,
+        "sensor": "coffee",
+        "pressure": 3,
+        "limiter": {
+          "value": 1,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "2nd Fill",
+        "pump": "flow",
+        "transition": "fast",
+        "exit": {
+          "type": "pressure",
+          "condition": "over",
+          "value": 2.5
+        },
+        "volume": 100,
+        "seconds": 0,
+        "weight": 0,
+        "temperature": 95,
+        "sensor": "coffee",
+        "flow": 8,
+        "limiter": {
+          "value": 3,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "Pause",
+        "pump": "pressure",
+        "transition": "fast",
+        "exit": {
+          "type": "flow",
+          "condition": "under",
+          "value": 1
+        },
+        "volume": 100,
+        "seconds": 15,
+        "weight": 0,
+        "temperature": 95,
+        "sensor": "coffee",
+        "pressure": 1,
+        "limiter": {
+          "value": 1,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "Pressure Up",
+        "pump": "pressure",
+        "transition": "smooth",
+        "exit": {
+          "type": "flow",
+          "condition": "over",
+          "value": 2
+        },
+        "volume": 100,
+        "seconds": 5,
+        "weight": 0,
+        "temperature": 88,
+        "sensor": "coffee",
+        "pressure": 9,
+        "limiter": {
+          "value": 0,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "Pressure Decline",
+        "pump": "pressure",
+        "transition": "smooth",
+        "exit": {
+          "type": "flow",
+          "condition": "under",
+          "value": 2.1
+        },
+        "volume": 100,
+        "seconds": 0,
+        "weight": 0,
+        "temperature": 88,
+        "sensor": "coffee",
+        "pressure": 1,
+        "limiter": {
+          "value": 0,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "Flow Start",
+        "pump": "flow",
+        "transition": "fast",
+        "exit": null,
+        "volume": 100,
+        "seconds": 0,
+        "weight": 0,
+        "temperature": 88,
+        "sensor": "coffee",
+        "flow": 2,
+        "limiter": {
+          "value": 0,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "Flow Extraction",
+        "pump": "flow",
+        "transition": "smooth",
+        "exit": null,
+        "volume": 100,
+        "seconds": 60,
+        "weight": 0,
+        "temperature": 88,
+        "sensor": "coffee",
+        "flow": 0,
+        "limiter": {
+          "value": 9,
+          "range": 0.6
+        }
+      }
+    ],
+    "target_volume": 100,
+    "target_weight": 36,
+    "target_volume_count_start": 2,
+    "tank_temperature": 0
+  },
+  {
+    "version": "2",
+    "title": "A-Flow / default-light",
+    "notes": "A-Flow: an alternative profile for D-Flow",
+    "author": "Janek",
+    "beverage_type": "espresso",
+    "steps": [
+      {
+        "name": "Pre Fill",
+        "pump": "flow",
+        "transition": "fast",
+        "exit": null,
+        "volume": 100,
+        "seconds": 1,
+        "weight": 0,
+        "temperature": 95,
+        "sensor": "coffee",
+        "flow": 8,
+        "limiter": {
+          "value": 8,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "Fill",
+        "pump": "flow",
+        "transition": "fast",
+        "exit": {
+          "type": "pressure",
+          "condition": "over",
+          "value": 3
+        },
+        "volume": 100,
+        "seconds": 15,
+        "weight": 0,
+        "temperature": 95,
+        "sensor": "coffee",
+        "flow": 8,
+        "limiter": {
+          "value": 8,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "Infuse",
+        "pump": "pressure",
+        "transition": "fast",
+        "exit": null,
+        "volume": 100,
+        "seconds": 60,
+        "weight": 6,
+        "temperature": 95,
+        "sensor": "coffee",
+        "pressure": 3,
+        "limiter": {
+          "value": 1,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "2nd Fill",
+        "pump": "flow",
+        "transition": "fast",
+        "exit": {
+          "type": "pressure",
+          "condition": "over",
+          "value": 2.5
+        },
+        "volume": 100,
+        "seconds": 0,
+        "weight": 0,
+        "temperature": 95,
+        "sensor": "coffee",
+        "flow": 8,
+        "limiter": {
+          "value": 3,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "Pause",
+        "pump": "pressure",
+        "transition": "fast",
+        "exit": {
+          "type": "flow",
+          "condition": "under",
+          "value": 1
+        },
+        "volume": 100,
+        "seconds": 15,
+        "weight": 0,
+        "temperature": 95,
+        "sensor": "coffee",
+        "pressure": 1,
+        "limiter": {
+          "value": 1,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "Pressure Up",
+        "pump": "pressure",
+        "transition": "smooth",
+        "exit": {
+          "type": "flow",
+          "condition": "over",
+          "value": 3
+        },
+        "volume": 100,
+        "seconds": 10,
+        "weight": 0,
+        "temperature": 95,
+        "sensor": "coffee",
+        "pressure": 9.5,
+        "limiter": {
+          "value": 0,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "Pressure Decline",
+        "pump": "pressure",
+        "transition": "smooth",
+        "exit": {
+          "type": "flow",
+          "condition": "under",
+          "value": 3.1
+        },
+        "volume": 100,
+        "seconds": 0,
+        "weight": 0,
+        "temperature": 95,
+        "sensor": "coffee",
+        "pressure": 1,
+        "limiter": {
+          "value": 0,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "Flow Start",
+        "pump": "flow",
+        "transition": "fast",
+        "exit": null,
+        "volume": 100,
+        "seconds": 0,
+        "weight": 0,
+        "temperature": 95,
+        "sensor": "coffee",
+        "flow": 3,
+        "limiter": {
+          "value": 0,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "Flow Extraction",
+        "pump": "flow",
+        "transition": "smooth",
+        "exit": null,
+        "volume": 100,
+        "seconds": 60,
+        "weight": 0,
+        "temperature": 95,
+        "sensor": "coffee",
+        "flow": 6,
+        "limiter": {
+          "value": 9.5,
+          "range": 0.6
+        }
+      }
+    ],
+    "target_volume": 100,
+    "target_weight": 48,
+    "target_volume_count_start": 2,
+    "tank_temperature": 0
+  },
+  {
+    "version": "2",
+    "title": "A-Flow / default-like-dflow",
+    "notes": "A-Flow: an alternative profile for D-Flow",
+    "author": "Janek",
+    "beverage_type": "espresso",
+    "steps": [
+      {
+        "name": "Pre Fill",
+        "pump": "flow",
+        "transition": "fast",
+        "exit": null,
+        "volume": 100,
+        "seconds": 1,
+        "weight": 0,
+        "temperature": 93,
+        "sensor": "coffee",
+        "flow": 8,
+        "limiter": {
+          "value": 8,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "Fill",
+        "pump": "flow",
+        "transition": "fast",
+        "exit": {
+          "type": "pressure",
+          "condition": "over",
+          "value": 3
+        },
+        "volume": 100,
+        "seconds": 15,
+        "weight": 0,
+        "temperature": 93,
+        "sensor": "coffee",
+        "flow": 8,
+        "limiter": {
+          "value": 8,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "Infuse",
+        "pump": "pressure",
+        "transition": "fast",
+        "exit": null,
+        "volume": 100,
+        "seconds": 60,
+        "weight": 4,
+        "temperature": 93,
+        "sensor": "coffee",
+        "pressure": 3,
+        "limiter": {
+          "value": 1,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "2nd Fill",
+        "pump": "flow",
+        "transition": "fast",
+        "exit": {
+          "type": "pressure",
+          "condition": "over",
+          "value": 2.5
+        },
+        "volume": 100,
+        "seconds": 0,
+        "weight": 0,
+        "temperature": 95,
+        "sensor": "coffee",
+        "flow": 8,
+        "limiter": {
+          "value": 3,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "Pause",
+        "pump": "pressure",
+        "transition": "fast",
+        "exit": {
+          "type": "flow",
+          "condition": "under",
+          "value": 1
+        },
+        "volume": 100,
+        "seconds": 15,
+        "weight": 0,
+        "temperature": 95,
+        "sensor": "coffee",
+        "pressure": 1,
+        "limiter": {
+          "value": 1,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "Pressure Up",
+        "pump": "pressure",
+        "transition": "smooth",
+        "exit": {
+          "type": "flow",
+          "condition": "over",
+          "value": 2
+        },
+        "volume": 100,
+        "seconds": 0,
+        "weight": 0,
+        "temperature": 93,
+        "sensor": "coffee",
+        "pressure": 10,
+        "limiter": {
+          "value": 0,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "Pressure Decline",
+        "pump": "pressure",
+        "transition": "smooth",
+        "exit": {
+          "type": "flow",
+          "condition": "under",
+          "value": 2.1
+        },
+        "volume": 100,
+        "seconds": 0,
+        "weight": 0,
+        "temperature": 93,
+        "sensor": "coffee",
+        "pressure": 1,
+        "limiter": {
+          "value": 0,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "Flow Start",
+        "pump": "flow",
+        "transition": "fast",
+        "exit": {
+          "type": "flow",
+          "condition": "over",
+          "value": 1.9
+        },
+        "volume": 100,
+        "seconds": 10,
+        "weight": 0,
+        "temperature": 93,
+        "sensor": "coffee",
+        "flow": 2,
+        "limiter": {
+          "value": 0,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "Flow Extraction",
+        "pump": "flow",
+        "transition": "smooth",
+        "exit": null,
+        "volume": 100,
+        "seconds": 60,
+        "weight": 0,
+        "temperature": 93,
+        "sensor": "coffee",
+        "flow": 4,
+        "limiter": {
+          "value": 10,
+          "range": 0.6
+        }
+      }
+    ],
+    "target_volume": 100,
+    "target_weight": 36,
+    "target_volume_count_start": 2,
+    "tank_temperature": 0
+  },
+  {
+    "version": "2",
+    "title": "A-Flow / default-medium",
+    "notes": "A-Flow: an alternative profile for D-Flow",
+    "author": "Janek",
+    "beverage_type": "espresso",
+    "steps": [
+      {
+        "name": "Pre Fill",
+        "pump": "flow",
+        "transition": "fast",
+        "exit": null,
+        "volume": 100,
+        "seconds": 1,
+        "weight": 0,
+        "temperature": 93,
+        "sensor": "coffee",
+        "flow": 8,
+        "limiter": {
+          "value": 8,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "Fill",
+        "pump": "flow",
+        "transition": "fast",
+        "exit": {
+          "type": "pressure",
+          "condition": "over",
+          "value": 3
+        },
+        "volume": 100,
+        "seconds": 15,
+        "weight": 0,
+        "temperature": 93,
+        "sensor": "coffee",
+        "flow": 8,
+        "limiter": {
+          "value": 8,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "Infuse",
+        "pump": "pressure",
+        "transition": "fast",
+        "exit": null,
+        "volume": 100,
+        "seconds": 60,
+        "weight": 3.6,
+        "temperature": 93,
+        "sensor": "coffee",
+        "pressure": 3,
+        "limiter": {
+          "value": 1,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "2nd Fill",
+        "pump": "flow",
+        "transition": "fast",
+        "exit": {
+          "type": "pressure",
+          "condition": "over",
+          "value": 2.5
+        },
+        "volume": 100,
+        "seconds": 0,
+        "weight": 0,
+        "temperature": 95,
+        "sensor": "coffee",
+        "flow": 8,
+        "limiter": {
+          "value": 3,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "Pause",
+        "pump": "pressure",
+        "transition": "fast",
+        "exit": {
+          "type": "flow",
+          "condition": "under",
+          "value": 1
+        },
+        "volume": 100,
+        "seconds": 15,
+        "weight": 0,
+        "temperature": 95,
+        "sensor": "coffee",
+        "pressure": 1,
+        "limiter": {
+          "value": 1,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "Pressure Up",
+        "pump": "pressure",
+        "transition": "smooth",
+        "exit": {
+          "type": "flow",
+          "condition": "over",
+          "value": 2
+        },
+        "volume": 100,
+        "seconds": 10,
+        "weight": 0,
+        "temperature": 93,
+        "sensor": "coffee",
+        "pressure": 10,
+        "limiter": {
+          "value": 0,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "Pressure Decline",
+        "pump": "pressure",
+        "transition": "smooth",
+        "exit": {
+          "type": "flow",
+          "condition": "under",
+          "value": 2.1
+        },
+        "volume": 100,
+        "seconds": 0,
+        "weight": 0,
+        "temperature": 93,
+        "sensor": "coffee",
+        "pressure": 1,
+        "limiter": {
+          "value": 0,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "Flow Start",
+        "pump": "flow",
+        "transition": "fast",
+        "exit": null,
+        "volume": 100,
+        "seconds": 0,
+        "weight": 0,
+        "temperature": 93,
+        "sensor": "coffee",
+        "flow": 2,
+        "limiter": {
+          "value": 0,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "Flow Extraction",
+        "pump": "flow",
+        "transition": "smooth",
+        "exit": null,
+        "volume": 100,
+        "seconds": 60,
+        "weight": 0,
+        "temperature": 93,
+        "sensor": "coffee",
+        "flow": 4,
+        "limiter": {
+          "value": 10,
+          "range": 0.6
+        }
+      }
+    ],
+    "target_volume": 100,
+    "target_weight": 42,
+    "target_volume_count_start": 2,
+    "tank_temperature": 0
+  },
+  {
+    "version": "2",
+    "title": "A-Flow / default-very-dark",
+    "notes": "A-Flow: an alternative profile for D-Flow",
+    "author": "Janek",
+    "beverage_type": "espresso",
+    "steps": [
+      {
+        "name": "Pre Fill",
+        "pump": "flow",
+        "transition": "fast",
+        "exit": null,
+        "volume": 100,
+        "seconds": 1,
+        "weight": 0,
+        "temperature": 93,
+        "sensor": "coffee",
+        "flow": 8,
+        "limiter": {
+          "value": 8,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "Fill",
+        "pump": "flow",
+        "transition": "fast",
+        "exit": {
+          "type": "pressure",
+          "condition": "over",
+          "value": 3
+        },
+        "volume": 100,
+        "seconds": 15,
+        "weight": 0,
+        "temperature": 93,
+        "sensor": "coffee",
+        "flow": 8,
+        "limiter": {
+          "value": 8,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "Infuse",
+        "pump": "pressure",
+        "transition": "fast",
+        "exit": null,
+        "volume": 100,
+        "seconds": 6,
+        "weight": 2,
+        "temperature": 93,
+        "sensor": "coffee",
+        "pressure": 3,
+        "limiter": {
+          "value": 1,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "2nd Fill",
+        "pump": "flow",
+        "transition": "fast",
+        "exit": {
+          "type": "pressure",
+          "condition": "over",
+          "value": 2.5
+        },
+        "volume": 100,
+        "seconds": 0,
+        "weight": 0,
+        "temperature": 95,
+        "sensor": "coffee",
+        "flow": 8,
+        "limiter": {
+          "value": 3,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "Pause",
+        "pump": "pressure",
+        "transition": "fast",
+        "exit": {
+          "type": "flow",
+          "condition": "under",
+          "value": 1
+        },
+        "volume": 100,
+        "seconds": 15,
+        "weight": 0,
+        "temperature": 95,
+        "sensor": "coffee",
+        "pressure": 1,
+        "limiter": {
+          "value": 1,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "Pressure Up",
+        "pump": "pressure",
+        "transition": "smooth",
+        "exit": {
+          "type": "flow",
+          "condition": "over",
+          "value": 3.6
+        },
+        "volume": 100,
+        "seconds": 3,
+        "weight": 0,
+        "temperature": 88,
+        "sensor": "coffee",
+        "pressure": 10,
+        "limiter": {
+          "value": 0,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "Pressure Decline",
+        "pump": "pressure",
+        "transition": "smooth",
+        "exit": {
+          "type": "flow",
+          "condition": "under",
+          "value": 1.9
+        },
+        "volume": 100,
+        "seconds": 3,
+        "weight": 0,
+        "temperature": 88,
+        "sensor": "coffee",
+        "pressure": 1,
+        "limiter": {
+          "value": 0,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "Flow Start",
+        "pump": "flow",
+        "transition": "fast",
+        "exit": null,
+        "volume": 100,
+        "seconds": 0,
+        "weight": 0,
+        "temperature": 88,
+        "sensor": "coffee",
+        "flow": 1.8,
+        "limiter": {
+          "value": 0,
+          "range": 0.6
+        }
+      },
+      {
+        "name": "Flow Extraction",
+        "pump": "flow",
+        "transition": "smooth",
+        "exit": null,
+        "volume": 100,
+        "seconds": 60,
+        "weight": 0,
+        "temperature": 88,
+        "sensor": "coffee",
+        "flow": 3.6,
+        "limiter": {
+          "value": 10,
+          "range": 0.6
+        }
+      }
+    ],
+    "target_volume": 100,
+    "target_weight": 32,
+    "target_volume_count_start": 2,
+    "tank_temperature": 0
+  }
+]

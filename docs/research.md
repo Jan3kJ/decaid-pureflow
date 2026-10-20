@@ -3140,3 +3140,63 @@ entry on top, read with offset 0 only. Full `npm run e2e:rig` 35 of 35 passed (l
 `decaid-skin` empty, steam 150 °C, the workflow and the settings equal to
 `t8-workflow-before.json` and `t8-settings-before.json`, Streamline the default skin. Decaid
 was ended with `Stop-Process -Force`; port 8080 was free afterwards.
+
+## 27. The A-Flow plugin's steps by version, read back (U2, 2026-10-20)
+
+Read in `Jan3kJ/A_Flow` on GitHub (the commit list, `plugin.tcl` before 2025-11 and `code.tcl`
+after, and `profiles/` at each version), and on the rig.
+
+| Plugin | Commit | Steps the plugin writes (`update_A-Flow`) |
+|---|---|---|
+| before 1.0 (2024-01 to 2024-12) | `d9bf9b72` … `988083ec` | D-Flow's three steps under the D-Flow plugin: not A-Flow |
+| 1.0 to 1.3 | `6997cc70` (1.0), `5cbdbd59` (1.2) | Fill, Infuse, Pressure Up, Pressure Decline, Flow Start, Flow Extraction |
+| 1.4 on | `9749e20a`, `841f8094` (1.4), `e1a4d871` (newest) | Pre Fill, Fill, Infuse, 2nd Fill, Pause, Pressure Up, Pressure Decline, Flow Start, Flow Extraction |
+
+- The plugin always writes every step and switches one off with 0 s. Its own reader (`prep`)
+  takes the pour flow from Flow Start's flow, the ramp time as Pressure Up + Pressure Decline
+  seconds, flow up when Flow Extraction's flow is over the pour flow, ramp down when Pressure
+  Decline lasts, and the 2nd fill when Pause lasts. It sets 2nd Fill and Pause to 15 s or 0 s
+  together. With ramp down on, Pressure Up gets `round(T/2)` s and moves on at 2 × pour flow,
+  Pressure Decline the rest of T and moves on under pour flow + 0.1.
+- 1.4 converts a six-step profile when it is next written: it adds Pre Fill (8 ml/s, 1 s), and
+  2nd Fill (flow 1.5 ml/s at `841f8094`, 8 ml/s from `8fb4fbc1`) and Pause, both 0 s.
+- In 1.0 to 1.3 the infuse temperature is the fill's and the ramp's the pour's; 1.4 also gives
+  2nd Fill and Pause the pour temperature when on. 3.0 can hold each.
+- The names spec 3.9 lists (Filling, Ramp Up, Pouring start, Pouring, Ramp down) are the
+  plugin's array names (`filling`, `ramp_up`, …); the steps carry the names above in every
+  version.
+- On the rig (Decaid 0.8.8): 73 profiles, five of them A-Flow, all of 1.4 (nine steps):
+  `A-Flow / default-light`, `-medium`, `-dark`, `-like-dflow`, `-very-dark` (very-dark with
+  ramp down, like-dflow with ramp 0 s and Flow Start on). They equal the plugin's newest files,
+  converted to the API's form, except the Pause, 15 s in Decaid and 0 s in the files
+  (a-flow-3.0.md, 3). No profile of 1.0 to 1.3 is on the rig; the fixture
+  `src/aflow/fixtures/plugin-1.2.json` is the plugin's 1.2 files put into the form Decaid gives
+  the 1.4 ones (checked: that conversion of the newest files equals the rig's copies but for
+  the Pause). `src/aflow/fixtures/rig-plugin-1.4.json` is the rig's five as
+  `GET /api/v1/profiles` returned them.
+
+### 27.1 Built (U2)
+
+`readSteps` in `src/aflow/reader.ts`, the generator's inverse: the steps must be A-Flow's names
+in their order (Fill, Infuse, Pressure Up and Flow Extraction present, the others optional), the
+values are read as `prep` reads them, held to 3.0's ranges, and the generator's steps for the
+read values must equal the profile's after the drops (Pre Fill, ramp down merged into the ramp
+up, a Pause without its 2nd Fill in the plugin's form, an infuse volume other than 100 ml);
+otherwise it says which step differs. A value equal to what it follows reads as null, so the
+defaults read back exactly. `openParams` (`src/editor/storage.ts`) is what the A-Flow editor
+and `editorFor` open; `stepEditorReason` is the step editor's line.
+
+Tests: Vitest `src/aflow/reader.test.ts` (both fixture files, the regression fixtures giving
+back the generator's input, the round trip over every default and its toggles and 400 sets of
+values across the ranges, what cannot be read), `src/editor/storage.test.ts`,
+`route.test.ts`, `status.test.ts`. `npm run e2e`: `e2e/aflow-open.spec.ts` (an old profile with
+ramp down opens, says so and is saved as 3.0 with its parent hidden; leaving it unedited loads
+nothing; Decaid's default-medium opens as the skin's medium; changed steps open in the step
+editor with the reason). Rig: `e2e-rig/aflow-open.spec.ts` loads Decaid's
+`A-Flow / default-very-dark` from the picker and opens it in the A-Flow editor (ramp 6 s, the
+status line names ramp down) without saving.
+Full `npm run e2e:rig` 37 of 37 passed (log `u2-rig-suite.txt`); afterwards 73 profiles (none
+hidden), one shot, the KV namespaces `pureflow` and `decaid-skin` empty, steam 150 °C, the
+workflow on `A-Flow / default-medium` as before, Streamline the default skin. The rig now serves
+Streamline 0.2.17 (0.2.14 on 2026-10-19). Decaid was ended with `Stop-Process -Force`; port 8080
+was free afterwards.

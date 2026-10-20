@@ -17,7 +17,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   import NameDialog from '../editor/NameDialog.svelte';
   import NumberPad from '../editor/NumberPad.svelte';
   import { storeAndLoad, type Stored } from '../editor/save';
-  import { sameSteps } from '../editor/storage';
+  import { sameSteps, stepEditorReason } from '../editor/storage';
   import type { Skin } from '../shell/skin.svelte';
   import {
     VALUE_LABEL,
@@ -106,6 +106,9 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     if (!loaded) return;
     openedWith = loaded;
     show(loaded, null);
+    // An A-Flow profile the A-Flow editor cannot open says why (spec 3.9, U2).
+    const reason = stepEditorReason(loaded);
+    if (reason) notice = { tone: 'info', text: reason };
     try {
       records = await skin.client.listProfiles();
     } catch (cause) {

@@ -1,15 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_PROFILES, generateProfile, serializeParams, type AFlowParams } from '../aflow';
+import rig14 from '../aflow/fixtures/rig-plugin-1.4.json' with { type: 'json' };
 import type { Profile } from '../api';
 import { fakeGateway } from './gateway.fake';
 import {
   StepsTakenError,
   notesText,
+  openParams,
+  openRecord,
   paramsMetadata,
   readParams,
   readRecord,
   sameSteps,
   splitNotes,
+  stepEditorReason,
   workflowNotes,
   writeParams,
 } from './storage';
@@ -226,5 +230,46 @@ describe('writeParams', () => {
     // A bundled default with the same steps and title: its content cannot be changed.
     gateway.records.push(gateway.make({ ...profileOf(edited), notes: 'bundled' }, { isDefault: true }));
     await expect(writeParams(gateway.client, profileOf(edited), edited)).rejects.toThrow('Cannot modify default profile content');
+  });
+});
+
+describe('openParams: what the A-Flow editor opens (spec 3.9, U2)', () => {
+  const medium = rig14.find((profile) => profile.title === 'A-Flow / default-medium') as Profile;
+  const veryDark = rig14.find((profile) => profile.title === 'A-Flow / default-very-dark') as Profile;
+
+  it('an A-Flow 3.0 profile with its values: those values, nothing dropped', () => {
+    const profile = generateProfile(edited, { title: 'A-Flow / mine' });
+    expect(openParams(profile, paramsMetadata(edited))).toEqual({ params: edited, dropped: null });
+    expect(openRecord({ profile, metadata: paramsMetadata(edited) })).toEqual({ params: edited, dropped: null });
+  });
+
+  it('an older A-Flow profile: the values its steps hold, and what was dropped', () => {
+    expect(openParams(medium)).toEqual({ params: DEFAULT_PROFILES[2].params, dropped: ['preFill', 'pause'] });
+    expect(openParams(veryDark)?.dropped).toEqual(['preFill', 'rampDown', 'pause']);
+  });
+
+  it('3.0 values whose steps were changed elsewhere are not read from the steps', () => {
+    const profile = generateProfile(edited, { title: 'A-Flow / mine' });
+    const changed = { ...profile, steps: profile.steps.map((step, i) => (i === 0 ? { ...step, temperature: 80 } : step)) };
+    expect(openParams(changed, paramsMetadata(edited))).toBeNull();
+    // Without the values the same steps are A-Flow by themselves.
+    expect(openParams(changed)?.params.fillTemperature).toBe(80);
+  });
+
+  it('stepEditorReason: why an A-Flow profile opens in the step editor; nothing for others', () => {
+    const changed = {
+      ...medium,
+      steps: medium.steps.map((step) => (step.name === 'Fill' ? { ...step, limiter: { value: 7, range: 0.6 } } : step)),
+    };
+    expect(stepEditorReason(changed)).toBe(
+      'These A-Flow steps cannot be read as A-Flow 3.0 (“Fill” is not what A-Flow writes for its values), so they open in the step editor.',
+    );
+    const workflow = generateProfile(edited, { title: 'A-Flow / mine', notes: serializeParams(edited) });
+    const edited3 = { ...workflow, steps: workflow.steps.map((step, i) => (i === 0 ? { ...step, temperature: 80 } : step)) };
+    expect(stepEditorReason(edited3)).toBe(
+      'The steps of this A-Flow 3.0 profile were changed elsewhere, so it opens in the step editor.',
+    );
+    expect(stepEditorReason(medium)).toBeNull();
+    expect(stepEditorReason({ ...medium, steps: medium.steps.slice(2, 4) })).toBeNull();
   });
 });

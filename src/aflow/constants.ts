@@ -4,7 +4,11 @@
 // 2026-10-12), which agree with Decaid 0.8.8's `assets/defaultProfiles/A-Flow____default-*.json`
 // in all of these. docs/a-flow-3.0.md lists them with their source.
 
-/** Step names, as the plugin and Decaid's shipped profiles write them. */
+/**
+ * Step names, as the plugin and Decaid's shipped profiles write them, in their order. The
+ * generator writes every one but `rampDown`, the plugin's ramp down, which 3.0 removed; the
+ * reader (reader.ts) reads it.
+ */
 export const STEP_NAME = {
   preFill: 'Pre Fill',
   fill: 'Fill',
@@ -12,6 +16,7 @@ export const STEP_NAME = {
   secondFill: '2nd Fill',
   pause: 'Pause',
   rampUp: 'Pressure Up',
+  rampDown: 'Pressure Decline',
   pouringStart: 'Flow Start',
   pouring: 'Flow Extraction',
 } as const;
@@ -45,6 +50,8 @@ export const FILL_EXIT_PRESSURE_OVER = 3;
 export const INFUSE_FLOW_LIMIT = 1;
 
 // 2nd Fill: flow, fast
+/** ml/s; default of `secondFillFlow` */
+export const SECOND_FILL_FLOW = 8;
 /** s; default of `secondFillTime` */
 export const SECOND_FILL_SECONDS = 15;
 /** bar */
@@ -80,6 +87,8 @@ export const FLOW_UP_FACTOR = 2;
 export const FLOW_DOWN_TARGET = 0;
 
 // Profile
+/** g; default of `dose`, which a profile's steps do not hold */
+export const DOSE = 16;
 export const PROFILE_VERSION = '2';
 export const BEVERAGE_TYPE = 'espresso';
 export const TANK_TEMPERATURE = 0;

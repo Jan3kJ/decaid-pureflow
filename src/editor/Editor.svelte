@@ -21,9 +21,9 @@
   import NumberPad from './NumberPad.svelte';
   import { TITLE_PREFIX, changed, loadOnLeave, nameOf, saveAs, saveEdit, storeAndLoad, titleOf, type Stored } from './save';
   import { startRow } from './start';
-  import { DEFAULT_SAVE_HINT, noticeLasts, type Notice } from './status';
+  import { DEFAULT_SAVE_HINT, convertedNotice, noticeLasts, type Notice } from './status';
   import StepList from './StepList.svelte';
-  import { readParams, readRecord } from './storage';
+  import { openParams, openRecord, readRecord } from './storage';
   import ValueChip from './ValueChip.svelte';
   import { errorMessage } from '../error-message';
 
@@ -33,7 +33,7 @@
 
   let { skin }: Props = $props();
 
-  /** A profile the editor can open: a default, a saved A-Flow 3.0 profile, or the loaded one. */
+  /** A profile the editor can open: a default, a saved A-Flow profile, or the loaded one. */
   interface Entry {
     key: string;
     name: string;
@@ -43,14 +43,16 @@
     /** the gateway's record of it, where it has one */
     record: ProfileRecord | null;
     isDefault: boolean;
+    /** read from an older A-Flow profile's steps: 'save' stores it as 3.0 without an edit too */
+    converted: boolean;
   }
 
   /** the key of the loaded profile when the gateway has no record under its title */
   const LOADED = 'loaded';
 
   let records: ProfileRecord[] = $state.raw([]);
-  /** the workflow's profile, when it is an A-Flow 3.0 profile */
-  let loaded: { title: string; author: string; params: AFlowParams } | null = $state.raw(null);
+  /** the workflow's profile, when the editor can open it */
+  let loaded: { title: string; author: string; params: AFlowParams; converted: boolean } | null = $state.raw(null);
   let originKey = $state(DEFAULT_PROFILES[0].id);
   let params: AFlowParams = $state({ ...DEFAULT_PROFILES[0].params });
   /** the values on the machine as far as the editor knows: leaving loads what differs from them */
@@ -83,20 +85,23 @@
         params: entry.params,
         record: records.find((record) => sameProfile(record.profile, profile)) ?? null,
         isDefault: true,
+        converted: false,
       };
     });
     const saved: Entry[] = [];
     for (const record of records) {
-      const read = readRecord(record);
+      // A profile under a default's title counts as that default (spec 3.8 T5, 3.9 U2).
+      const read = openRecord(record);
       if (!read || defaults.some((entry) => entry.title === record.profile.title)) continue;
       saved.push({
         key: record.id,
         name: nameOf(record.profile.title),
         title: record.profile.title,
         author: record.profile.author ?? '',
-        params: read,
+        params: read.params,
         record,
         isDefault: false,
+        converted: read.dropped !== null,
       });
     }
     const all = [...defaults, ...saved];
@@ -113,7 +118,7 @@
    * 'save' writes a new version of a saved profile; a default is saved under a new name, so
    * there 'save' only says so (founder, 2026-10-17).
    */
-  const canSave = $derived(origin.isDefault || (!!origin.record && dirty));
+  const canSave = $derived(origin.isDefault || (!!origin.record && (dirty || origin.converted)));
   const taken = $derived([
     ...entries.map((entry) => entry.name),
     ...records
@@ -134,8 +139,9 @@
   }
 
   /**
-   * Opens the editor on the current profile, the workflow's, when it is an A-Flow 3.0 profile
-   * (spec 3.2); without one it stays on a default.
+   * Opens the editor on the current profile, the workflow's, when it is an A-Flow profile
+   * (spec 3.2, 3.9); without one it stays on a default. An older A-Flow profile, read from its
+   * steps, says so and what was dropped.
    */
   async function init() {
     // The warning before a load asked for 'save as' on the machine's values (founder, 2026-10-14).
@@ -154,13 +160,14 @@
     const profile = skin.workflow?.profile;
     if (!profile) return;
     // Any other profile opens in the step editor (App.svelte, route.ts).
-    const read = readParams(profile);
+    const read = openParams(profile);
     if (!read || touched) return;
     // The record under its title is what 'save' continues; values that were loaded without
     // being saved are open again as they were.
-    loaded = { title: profile.title, author: profile.author ?? '', params: read };
-    open(entries.find((entry) => entry.title === profile.title)?.key ?? LOADED, read);
-    openedWith = read;
+    loaded = { title: profile.title, author: profile.author ?? '', params: read.params, converted: read.dropped !== null };
+    open(entries.find((entry) => entry.title === profile.title)?.key ?? LOADED, read.params);
+    openedWith = read.params;
+    if (read.dropped) notice = convertedNotice(read.dropped, settings.firstStepWorkaround);
     if (saveAsNext) naming = true;
   }
 

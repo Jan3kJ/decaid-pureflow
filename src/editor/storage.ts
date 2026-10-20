@@ -10,10 +10,12 @@ import {
   encodeParams,
   generateSteps,
   parseParams,
+  readSteps,
   serializeParams,
   validateParams,
   WIDEST_MACHINE_LIMITS,
   type AFlowParams,
+  type Dropped,
 } from '../aflow';
 import type { DecaidClient, Profile, ProfileRecord, SaveProfileOptions } from '../api';
 
@@ -86,8 +88,7 @@ export function readParams(
   profile: Pick<Profile, 'notes' | 'steps' | 'target_weight'>,
   metadata?: Record<string, unknown> | null,
 ): AFlowParams | null {
-  const stored = decodeParams(metadata);
-  const params = stored.ok ? stored.params : splitNotes(profile.notes).params;
+  const params = storedParams(profile, metadata);
   if (!params) return null;
   // Within the widest maximum flow, not the setting's: lowering it hides no profile.
   if (validateParams(params, WIDEST_MACHINE_LIMITS).length > 0) return null;
@@ -99,6 +100,50 @@ export function readParams(
 /** The A-Flow 3.0 parameters of a stored profile (`readParams` with its metadata). */
 export function readRecord(record: Pick<ProfileRecord, 'profile' | 'metadata'>): AFlowParams | null {
   return readParams(record.profile, record.metadata);
+}
+
+/** The parameters a profile holds in its metadata or its notes, whether its steps fit them or not. */
+function storedParams(profile: Pick<Profile, 'notes'>, metadata?: Record<string, unknown> | null): AFlowParams | null {
+  const stored = decodeParams(metadata);
+  return stored.ok ? stored.params : splitNotes(profile.notes).params;
+}
+
+/** A profile the A-Flow editor opens (spec 3.9, U2). */
+export interface Opened {
+  params: AFlowParams;
+  /** read from the steps of an older A-Flow profile, with what that dropped; null for an A-Flow 3.0 profile */
+  dropped: Dropped[] | null;
+}
+
+/**
+ * What the A-Flow editor opens a profile with, or null when it opens in the step editor: an
+ * A-Flow 3.0 profile's parameters (`readParams`), else those an older A-Flow profile's steps
+ * hold (`readSteps`). A profile with 3.0 parameters whose steps were changed elsewhere is not
+ * read from its steps: it opens in the step editor.
+ */
+export function openParams(
+  profile: Pick<Profile, 'notes' | 'steps' | 'target_weight'>,
+  metadata?: Record<string, unknown> | null,
+): Opened | null {
+  const params = readParams(profile, metadata);
+  if (params) return { params, dropped: null };
+  if (storedParams(profile, metadata)) return null;
+  const read = readSteps(profile);
+  return read.ok ? { params: read.params, dropped: read.dropped } : null;
+}
+
+/** `openParams` of a stored profile, with its metadata. */
+export function openRecord(record: Pick<ProfileRecord, 'profile' | 'metadata'>): Opened | null {
+  return openParams(record.profile, record.metadata);
+}
+
+/** Why an A-Flow profile opens in the step editor, for its status line; null for any other profile. */
+export function stepEditorReason(profile: Pick<Profile, 'notes' | 'steps' | 'target_weight'>): string | null {
+  if (openParams(profile)) return null;
+  if (storedParams(profile)) return 'The steps of this A-Flow 3.0 profile were changed elsewhere, so it opens in the step editor.';
+  const read = readSteps(profile);
+  if (read.ok || !read.aflow) return null;
+  return `These A-Flow steps cannot be read as A-Flow 3.0 (${read.reason}), so they open in the step editor.`;
 }
 
 /** Decaid holds these steps already, as a visible profile with another title. */

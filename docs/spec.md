@@ -590,7 +590,21 @@ new name. A converted profile whose title is one of the skin's defaults (Decaid'
 `A-Flow / default-light`, `-medium`, `-dark`) counts as that default: T5 lists the skin's default
 under that title, and it is saved only with 'save as' (3.8). A profile the reader cannot read
 (steps changed in another app) still opens in the step editor, as an A-Flow 3.0 profile with
-changed steps does today. Default (section 8): ramp down is dropped without asking.
+changed steps does today. Default (section 8): ramp down is dropped without asking. Built
+(U2): the reader is `readSteps` in `src/aflow/reader.ts`; `openParams` in
+`src/editor/storage.ts` gives the editor and `editorFor` a 3.0 profile's values, else those of
+the steps. The plugin wrote two forms (research.md 27): six steps up to 1.3 (Fill, Infuse,
+Pressure Up, Pressure Decline, Flow Start, Flow Extraction) and nine from 1.4 (Pre Fill, 2nd
+Fill and Pause added); the names 3.9 lists (Filling, Ramp Up, …) are the plugin's internal
+ones, its profiles carry these. The generator's own steps read too, so generating and reading
+gives the values back. In the plugin's steps the 2nd fill is on when 2nd Fill and Pause both
+last; Decaid's copies keep a 15 s Pause with a 0 s 2nd Fill, and that Pause is dropped and
+named too, as is an infuse volume other than 100 ml (3.0 has none). A profile's steps hold no
+dose: it opens with 3.2's 16 g. The status line names the drops and stays until the next
+action (a failure's timing); with nothing dropped it only says that 'save' stores it as 3.0,
+for 4 s. 'save' is offered for an opened old profile without an edit. A profile with 3.0
+values whose steps were changed is not read from its steps; it and any A-Flow profile whose
+steps cannot be read open in the step editor with a line in its status line that says why.
 
 **Import of old A-Flow profiles (item 6; U7).** The skin's settings category
 (`src/settings-page/SkinCategory.svelte`) gets a button that converts all old A-Flow profiles to

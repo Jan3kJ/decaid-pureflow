@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_PROFILES, generateProfile } from '../aflow';
-import { NOTICE_MS, exitText, noticeLasts } from './status';
+import { NOTICE_MS, convertedNotice, exitText, noticeLasts } from './status';
 
 describe("the A-Flow editor's status line", () => {
   it('lets a result go after 4 s and keeps a failure', () => {
@@ -27,5 +27,26 @@ describe('the exit column of the profile steps', () => {
     const infuse = steps.findIndex((step) => step.name === 'Infuse');
     expect(column[infuse]).toMatch(/^weight [\d.]+ g$/);
     expect(exitText({ ...steps[fill], exit: undefined, weight: 0 }, null)).toBe('-');
+  });
+});
+
+describe('the line an older A-Flow profile opens with', () => {
+  it('names what was dropped and stays; Pre Fill only while the workaround is off', () => {
+    expect(convertedNotice(['preFill', 'rampDown'], false)).toEqual({
+      tone: 'warn',
+      text: 'An older A-Flow profile, read without Pre Fill and ramp down, which 3.0 has not got; ‘save’ stores it as A-Flow 3.0.',
+    });
+    expect(convertedNotice(['preFill', 'rampDown', 'pause'], true).text).toContain(
+      'without ramp down and the Pause without a 2nd fill,',
+    );
+    expect(convertedNotice(['preFill', 'pause', 'infuseVolume'], false).text).toContain(
+      'Pre Fill, the Pause without a 2nd fill and the infuse volume',
+    );
+    expect(noticeLasts(convertedNotice(['rampDown'], false))).toBeNull();
+  });
+
+  it('with nothing dropped, only that save converts it, for 4 s', () => {
+    expect(convertedNotice([], false)).toEqual({ tone: 'info', text: 'An older A-Flow profile: ‘save’ stores it as A-Flow 3.0.' });
+    expect(convertedNotice(['preFill'], true).tone).toBe('info');
   });
 });
