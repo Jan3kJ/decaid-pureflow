@@ -3238,3 +3238,315 @@ the workflow's temperature, with the machine's settings written directly if they
 **Steam on** and reads 150 back from the workflow and the machine. Full `npm run e2e:rig`: 39 of
 39 passed; afterwards 73 profiles, one shot, both KV namespaces empty, steam 150 °C, Streamline
 the default skin. Decaid was ended with `Stop-Process -Force`; port 8080 was free.
+
+## 29. Bean and grinder catalogue port plan (U8, 2026-10-20)
+
+Written on 2026-10-20 for the milestones U9 and U10 (spec 3.9 'Beans and grinders', item 19;
+acceptance 52). No product code was written. "Read" means read in the source; "seen" means
+answered by the rig. The rig was only read: every request below that writes is read in
+`rest_v1.yml` and is for U9's rig test to see. Every choice made here is the simplest one that
+meets 3.9 and acceptance 52; those the founder has not seen are collected in 29.11.
+
+### 29.1 What was read
+
+- **The rig serves Streamline 0.2.17**, not 0.2.14: Decaid updated it by itself on 2026-10-20
+  at 11:01 (`web-ui/.rea_metadata.json`: `github_release:allofmeng/streamline_project@v0.2.17`;
+  `GET /api/v1/webui/skins/default` says `0.2.17`). The clone of E1, `../streamline-js`,
+  was fetched and read at tag **`v0.2.17`** (`ec1fe2e`). From 0.2.14 to 0.2.17 the bean files
+  changed little (`bean-selection-modal.js` 3 lines, `dye-context.js` 28) and the grinder got a
+  runtime part (`grinder-runtime.js`, `grinder-sync.js`, Settings > Connections > Grinder: the
+  device, not the catalogue; 20.1 saw it coming).
+- **Streamline's bean and grinder code:** `src/modules/api.js` (l. 2360-2520 at 0.2.17: shots
+  with filters, beans, batches, grinders), `bean-selection.js` (17 lines),
+  `bean-selection-modal.js` (82), `dye-context.js` (62), `dye-selection.js` (230), `dyeStrip.js`
+  (the context clean-up, l. 1130-1250), and where `history.js`, `profileManager.js`,
+  `profile_selector.js`, `ui.js` and `app.js` touch the context's grinder setting.
+- **DYE2**, the plugin that has the catalogue pages (29.2): `decentespresso/dye2`, cloned to
+  `../dye2` as a reference only, read at **`v0.1.4`** (`637dd09`), the version installed on
+  the rig (`plugins/dye2.reaplugin/.rea_source.json`; 0.1.21 waits there as `pendingUpdate`
+  with the new permissions `events.shots` and `events.workflow`), and compared with `v0.1.21`:
+  `src/api/client.ts`, `src/pages/bean-picker.ts`, `add-bean.ts`, `roasters.ts`, `grinders.ts`,
+  `grinder-picker.ts`, `dashboard.ts` (its bean card and 'same beans'), `edit-shot.ts`.
+- **Decaid's API:** the rig's `assets/api/rest_v1.yml` (paths `/api/v1/beans`, `/beans/{id}`,
+  `/beans/{beanId}/batches`, `/bean-batches`, `/bean-batches/{id}`, `/grinders`,
+  `/grinders/{id}`, `/shots`; schemas `Bean`, `BeanBatch`, `Grinder`, `WorkflowContext`,
+  `WorkflowContextPatch`) and the rig's answers (29.4).
+- **This skin:** `src/history/{entries.ts,shots.svelte.ts,shot-list.ts,History.svelte}`,
+  `src/shell/{Home.svelte,nav.ts,profiles.ts,recall.svelte.ts}`, `src/api/{client.ts,types.ts}`,
+  `src/settings-page/*`, `src/editor/{NameDialog.svelte,NumberPad.svelte}`, and sections 4, 14
+  and 26 above.
+
+### 29.2 Streamline has no catalogue pages: DYE2 has them
+
+Spec 3.9 calls them Streamline's bean and grinder pages. Read, they are not Streamline's.
+**Streamline 0.2.17 has one dialog that picks a bean, and nothing that adds, edits or archives
+one**: its `createBean`, `updateBean`, `deleteBean`, `createBeanBatch`, `updateBeanBatch`,
+`createGrinder`, `updateGrinder`, `deleteGrinder` and `getGrinders` in `api.js` have no caller
+(`grep` over `src/`). Adding and editing beans and grinders is the DYE2 plugin's ("Bean,
+grinder, and equipment management for Decent Espresso", its manifest), and Streamline sends the
+user there: the DYE button of its header (`dyeStrip.js`, off by default behind
+`streamline.dye2Enabled`) navigates the page to `/api/v1/plugins/dye2.reaplugin/dashboard`, a
+plugin page on another origin, and back with `?dyeReturn=1`. So the port takes the requests and
+the data from Streamline and Decaid, the behaviour of the pages from DYE2, and the code of
+neither page (29.9).
+
+What each part shows and does:
+
+| Where | What it shows | What it does | Requests |
+|---|---|---|---|
+| Streamline, history's long press, **'Select coffee batch for next shot'** (`bean-selection-modal.js`) | a `<dialog>`: a `<select>` of the beans that are not archived ('name · roaster · species'), then one of that bean's batches ('name · roast level · roast date'), **Cancel** and **Use for next shot** | writes `beanBatchId`, `coffeeName`, `coffeeRoaster` and the flag `extras.streamlineBean: true` into the workflow's context; after the next shot Streamline's clean-up clears the three again (`skinBeanClearContext`): **its pick is for one shot** | `GET /beans?includeArchived=false`, `GET /beans/{id}/batches?includeArchived=false`, `PUT /workflow` |
+| Streamline, home's **Grind** value with − and + | `context.grinderSetting` | the step is the connected grinder's (0.2.17), else Streamline's own; the value is remembered per profile in Streamline's storage (`profileManager.js`, `lastGrinderSetting`) and written with every profile load | `PUT /workflow` |
+| Streamline, after each shot and at its start (`clearDyeWorkflowContext`) | — | while DYE2 is on and loaded, clears the bean and grinder fields DYE2 set (scoped by DYE2's marker `extras.dye` from DYE2 0.1.20 on); `grinderId` and `grinderModel` survive from Streamline 0.2.15 on | `GET /workflow`, `PUT /workflow` |
+| DYE2 **dashboard** | a bean card ('Roaster • Name', or '— Select Beans') and 'Grinder Model • Setting'; the last shots with **All shots / Same beans** | a tap on the bean card opens the bean picker; 'Same beans' keeps the shots whose `coffeeName` equals the shown one's (on the page, not a request) | `GET /workflow`, `GET /shots` |
+| DYE2 **Select Beans** (`bean-picker`) | a search field and sort buttons (recent, oldest, A-Z, Z-A; 'most used' and 'least used' fall back to A-Z) on the left, a grid of cards in three columns: 'ADD NEW BEANS +', then one card per bean (name, harvest, country, processing, variety; the roaster; the newest batch's roast date with its days off roast); 0.1.21 adds a pencil on each card and 'IMPORT FROM BEANCONQUEROR' | a tap selects; **CONFIRM** writes `coffeeName`, `coffeeRoaster` and the newest batch's `beanBatchId` (the batches are read one bean at a time) and goes back; a bean without a roaster goes to **Select Roaster** first | `GET /beans` (with `?archived=true` for archived ones, a parameter Decaid does not have, 29.4), `GET /beans/{id}/batches` per bean, `PUT /workflow` |
+| DYE2 **Add New Beans** (`add-bean`) | Beans (a text field with the known names as suggestions), Roaster (the known roasters), Roast Date (a date picker), Bean Notes; 0.1.21 adds processing, country, decaf and its process, roast level, weight and weight remaining, and the same page as **Edit Beans** with `?id=` | name and roaster are required (a red border); **CONFIRM** creates the bean, then a batch only if a roast date was given | `POST /beans`, `POST /beans/{id}/batches`; 0.1.21 also `PUT /beans/{id}`, `PUT /bean-batches/{id}` |
+| DYE2 **Select Roaster** (`roasters`) | the roasters of all beans as cards | the roaster chosen is written with the bean's name | `GET /beans`, `PUT /workflow` |
+| DYE2 **Grinders** | the same rail and grid: 'ADD NEW GRINDER +', one card per grinder (model; burrs · type · size; setting type · notes) | a tap opens a form: Model (required), Burrs, Burr Type, Burr Size (mm), Setting Type (numeric or preset), Small and Big Step or the preset values, RPM Small and Big Step, Notes; 0.1.21 adds **DELETE** | `GET /grinders`, `POST /grinders`, `PUT /grinders/{id}`; 0.1.21 `DELETE /grinders/{id}` |
+| DYE2 **Select Grinder** (`grinder-picker`) | the grinders as cards, a form to add one | writes `grinderId` and `grinderModel` | `GET /grinders`, `POST /grinders`, `PUT /workflow` |
+
+**Archiving is in neither.** Decaid has it (`archived` in `PUT /beans/{id}`,
+`/bean-batches/{id}` and `/grinders/{id}`, and `includeArchived` on the lists); DYE2 only
+writes it in its Beanconqueror import (0.1.21), and Streamline only hides archived beans and
+batches (`selectableBeans`, `selectableBatches`). Nor does either filter the history by a
+grinder: Streamline's history has no filter, DYE2's 'Same beans' compares names on the page.
+
+### 29.3 The data model: bean, batch, grinder, and what a shot holds of them
+
+Decaid (`rest_v1.yml`) keeps three kinds, each with `id` (UUID), `createdAt`, `updatedAt`,
+`archived` and a free `extras`:
+
+- **Bean** (an origin or blend): `roaster` and `name` required; `species`, `decaf` (default
+  false), `decafProcess`, `country`, `region`, `producer`, `variety` (strings), `altitude`
+  ([min, max] m), `processing`, `notes`.
+- **BeanBatch** (one bag of a bean): `beanId` required; `roastDate`, `roastLevel`,
+  `harvestDate`, `qualityScore`, `price`, `currency`, `weight` and `weightRemaining` (g; the
+  POST sets the remaining to the weight), `buyDate`, `openDate`, `bestBeforeDate`,
+  `freezeDate`, `unfreezeDate`, `frozen`, `notes`. Nothing in Decaid lowers `weightRemaining`
+  after a shot (read: no request or event names it).
+- **Grinder**: `model` required; `burrs`, `burrSize` (mm), `burrType`, `notes`, `settingType`
+  (`numeric`, the default, or `preset`), `settingValues` (the preset's positions),
+  `settingSmallStep`, `settingBigStep`, `rpmSmallStep`, `rpmBigStep`.
+
+Writes: `POST` creates (201 with the object); **`PUT` changes only the fields it carries**
+("Omitted fields preserve their current values, explicit `null` clears nullable fields"), so a
+skin that edits name, roaster and notes leaves DYE2's other fields as they are; `DELETE` removes
+for good, a bean with all its batches. The lists leave archived ones out unless
+`includeArchived=true`.
+
+**A shot refers to them only through the workflow's `context`**, copied into the record at the
+shot (14): `beanBatchId` (a batch, not a bean) with `coffeeName` and `coffeeRoaster` as display
+strings, and `grinderId` with `grinderModel` and `grinderSetting` (a string). There is no
+`beanId` in the context. `GET /shots` filters by `beanBatchId`, by **`beanId`** ("every batch
+currently associated with the bean, including archived batches, so bean renames do not break
+batch-backed shot history"), `grinderId`, `grinderModel`, `coffeeName`, `coffeeRoaster`,
+`profileTitle` and a free `search`. So a shot is tied to its bean only if the pick wrote a
+batch id: a bean without a batch can be named in a shot, but not found again by its id.
+
+### 29.4 On the rig (read only)
+
+The probe is a list of `GET`s; its output is the rig's `log\u8-beans-probe.txt`. Nothing was
+written.
+
+| Claim | Status |
+|---|---|
+| `GET /beans`, `/beans?includeArchived=true`, `/bean-batches?includeArchived=true`, `/grinders`, `/grinders?includeArchived=true`: 200, `[]` each, with an `ETag`: **the rig's catalogue is empty**, although DYE2 0.1.4 is installed and loaded | seen running |
+| `GET /beans/{unknown}`: 404 `{"error":"Bean not found"}`; the same for `/grinders/{unknown}` ('Grinder not found') and `/bean-batches/{unknown}` ('Batch not found'); `GET /beans/{unknown}/batches`: 200 `[]`, not 404 | seen running |
+| `GET /shots?beanId=x`, `?grinderId=x`, `?coffeeName=x`, `?search=x`: 200 `{"items":[],"total":0,...}`; the parameters are taken | seen running; that they match a real bean is for U9's test |
+| The rig's one shot (`ee7495ea`, 2026-10-11) has `coffeeName: "Rig Bean A"`, `coffeeRoaster: "Rig"`, `grinderModel: "Rig Grinder"`, `grinderSetting: "5.2"` and no ids: the strings of D8b's probe, from no catalogue | seen running |
+| The workflow's context now: `targetDoseWeight` 16, `targetYield` 42, `grinderSetting` "5.2", `extras` with DYE2's four null keys (`basketId`, `basketName`, `rpm`, `note`); no bean | seen running |
+| `GET /grinder/info`: 503 `{"error":"No grinder connected"}`; `/devices` lists only `MockScale` and `MockDe1` | seen running |
+| DYE2 asks for archived ones with `?archived=true` (`client.ts`, 0.1.4 and 0.1.21); Decaid's parameter is `includeArchived`, so DYE2 never lists them. With an empty catalogue the rig cannot show the difference | read |
+
+To be seen by U9's rig test, since the rig was not to be written now: a bean, a batch and a
+grinder created, read, changed and archived; an archived one absent from the list and present
+with `includeArchived`; a picked bean and grinder in the next shot's record; `GET /shots?beanId=`
+and `?grinderId=` finding that shot. Everything is deleted afterwards (29.8).
+
+### 29.5 What the skin has today
+
+- **The context's six fields** are typed in `WorkflowContext` (`src/api/types.ts`); the client
+  has `getWorkflow`, `updateWorkflow` and `listShots` with every filter of 29.3
+  (`ListShotsQuery` already has `beanId`, `grinderId`, `search`). It has **no bean, batch or
+  grinder request.**
+- **The history** (`src/history/entries.ts`, spec 3.5) groups the held shots (`ShotCache`, the
+  newest 500, T8) into one entry per profile title and bean; `entryKey`'s bean is roaster and
+  name, the batch id only for a bean without both; an entry shows 'Roaster · Name', 'no bean'
+  or 'bean from Decaid'; a tap restores profile, bean and grinder fields with one
+  `PUT /workflow` (`beanAndGrinder`, `null` for what the shot lacked).
+- **Nothing lets the user type or pick a bean or a grinder setting**, and nothing shows the
+  current bean outside a restored entry (home's 'last shot with …'). `loadProfile` sends only
+  the keys it is given, so loading a profile from the picker keeps the current bean.
+- **For the forms:** `NameDialog.svelte` (a text field on the tablet's own keyboard, checked
+  names, Escape and a tap outside cancel), `NumberPad.svelte` (numbers), the settings page's
+  `Confirm.svelte` and its two-column layout (list left, the chosen one right;
+  `SettingsPage.svelte`), and `errorMessage` for a failed request.
+
+### 29.6 The plan: one 'Beans' screen, a pick on home, the history's filter
+
+**Where it opens.** The catalogue is a seventh screen, `beans` (`SCREENS` in
+`src/shell/nav.ts`), opened by a new entry **Beans and grinders** in home's menu: one tap from
+home and back, as every screen. The **pick for the next shot** is a chip in home's header after
+the profile name, showing the current bean as the history labels it ('Roaster · Name', or 'no
+bean') and the grinder setting; a tap opens the pick as a dialog over home. Both places were
+candidates in 3.9; the menu is for what is rarely done (adding a bag), the chip for what is
+done before a shot. The header must stay on one row at 1280 x 800 (spec 3.9 item 9); if the
+chip does not fit there, it goes under the profile name.
+
+**The screen** (U9), laid out as the settings page: on the left **Beans** and **Grinders**, in
+the middle the list of the chosen kind, newest first, with a search field and **show
+archived**; on the right the chosen one's form, or **add a bean** / **add a grinder**.
+- A bean's form: **name** and **roaster** (required, as Decaid and DYE2 require them; the
+  roaster field suggests the roasters already in the catalogue), **roast date** and **notes**.
+  The roast date is the bean's current batch's. Saving a new bean is `POST /beans`, then
+  `POST /beans/{id}/batches` always (with the roast date, or empty), so that every bean of the
+  skin has a batch and its shots can be found by `beanId` (29.3). Saving an edit is
+  `PUT /beans/{id}` with the fields that changed, and `PUT /bean-batches/{id}` for the roast
+  date. **New bag** archives the current batch and creates the next one (a new roast date of
+  the same bean, which is what Decaid's batches are).
+- A grinder's form: **model** (required), **burrs**, **setting type** (numbers or named
+  positions), the **small step** (the pick's − and + use it; default 1) or the **positions**,
+  **notes**. `POST /grinders`, `PUT /grinders/{id}`.
+- **Archive** on both forms (`PUT … {"archived": true}`), behind `Confirm` ('Archive Red Brick?
+  It is no longer offered for the next shot; its shots stay in the history'), and **restore**
+  on an archived one. No delete: Decaid's delete takes a bean's batches with it, its shots then
+  name a batch that no longer exists, and archiving is what 3.9 asks for.
+- Fields that DYE2 or another skin wrote and the skin does not show are kept, since `PUT` sends
+  only what changed.
+
+**The pick** (U9): a dialog with the beans that are not archived (with search when there are
+more than fit; the current one marked), the grinders that are not archived, and the **grinder
+setting** with − and + by the grinder's small step and its value on the number pad (or its
+named positions). **Use for the next shot** sends one `PUT /api/v1/workflow` with
+`coffeeName`, `coffeeRoaster`, `beanBatchId` (the bean's current batch: the newest that is not
+archived), `grinderId`, `grinderModel` and `grinderSetting`; **no bean** sends `null` for the
+three bean fields. **The pick stays for every next shot until it is changed**, unlike
+Streamline's one-shot pick: the founder pulls the same beans many times, and 3.5's entries are
+built for that. With one grinder in the catalogue it is chosen by itself (the founder has one
+grinder). The chip reads the workflow the skin already holds (Decaid pushes its changes), so a
+pick made in DYE2 or Streamline shows too.
+
+**The history** (U10):
+- **Its filter:** above the list, **all**, a **bean** and a **grinder** choice (the
+  catalogue's, archived ones included, since their shots are in the history). The shots are
+  filtered first, then grouped (`groupShots` as it is): a bean matches a shot whose
+  `beanBatchId` is one of the bean's batches (`GET /bean-batches?includeArchived=true`, one
+  request for all), or, for a shot from before the catalogue or from a skin that wrote no
+  batch, whose name and roaster equal the bean's; a grinder matches by `grinderId`, or by
+  `grinderModel` for a shot without one. This runs on the held 500 shots, not as
+  `GET /shots?beanId=`: the overlay already holds them (T8), the answer needs no request, and
+  the name match finds shots the server's filter cannot. The choice lasts for the session.
+- **The entries with the catalogue's beans:** a shot whose `beanBatchId` is in the catalogue is
+  labelled with the bean's current roaster and name (a renamed bean shows its new name), and
+  `entryKey` takes the bean's id for it, so the shots of one bean stay one entry across a
+  rename and across bags. A shot without a known batch keeps 3.5's rule (name and roaster).
+  This changes the answered rule in spec 8 'Shot history' for catalogue beans only.
+- **A tap on an entry's bean** sets the filter to that bean. Restoring an entry stays as it is;
+  its `beanAndGrinder` already carries `beanBatchId` and `grinderId`.
+
+### 29.7 Files: what is reused, what is new
+
+| File | U | What |
+|---|---|---|
+| `src/api/types.ts` | U9 | `Bean`, `BeanBatch`, `Grinder` and their create and update bodies, from `rest_v1.yml` (29.3) |
+| `src/api/client.ts` | U9 | `listBeans(includeArchived)`, `createBean`, `updateBean`, `listBatches(beanId, includeArchived)`, `listAllBatches(includeArchived)`, `createBatch`, `updateBatch`, `listGrinders(includeArchived)`, `createGrinder`, `updateGrinder`; no delete (the rig test deletes with `fetch`) |
+| `src/beans/catalogue.ts` (new) | U9 | pure: a bean's current batch, the pick's context patch (`null`s for 'no bean'), what changed in a form (the `PUT` body), the roasters for the suggestions, sort and search; `selectableBeans` and `currentBeanContext` ported from Streamline's `bean-selection.js` with its notice (29.9) |
+| `src/beans/catalogue.svelte.ts` (new) | U9 | the catalogue as the screens read it: read on opening, written and read back, the last error; one more part of `Skin`, as Q2 split it |
+| `src/beans/Beans.svelte` (new) | U9 | the screen: kinds, list, form (29.6) |
+| `src/beans/BeanForm.svelte`, `GrinderForm.svelte` (new) | U9 | the two forms; a `TextField` for name, roaster, model, burrs and notes, as `NameDialog`'s field; the date as `<input type="date">` (Android's own picker in the WebView) |
+| `src/beans/Pick.svelte` (new) | U9 | the pick for the next shot, the grinder setting on `NumberPad` |
+| `src/shell/Home.svelte` | U9 | the chip in the header, the menu entry |
+| `src/shell/nav.ts`, `src/App.svelte` | U9 | the screen `beans` |
+| `src/settings-page/Confirm.svelte` | U9 | reused as it is, for archive |
+| `src/history/entries.ts` | U10 | `entryKey` and `beanLabel` with the catalogue (29.6); `matchesBean`, `matchesGrinder` |
+| `src/history/History.svelte` | U10 | the filter row; the tap on a bean |
+| `e2e/mock-gateway.ts` | U9, U10 | the three kinds in memory, answering as Decaid does (201, `PUT` keeps omitted fields, `includeArchived`) |
+
+The settings page's `FieldRow` and `fields.ts` are not reused for the forms: those rows are
+tied to gateway settings with ranges (`Field`), and a bean's fields are text. What is shared is
+the layout, `Confirm`, `NumberPad` and the error line.
+
+### 29.8 The milestones and their tests
+
+**U9: the catalogue and the pick** (about 2.0M tokens; E2, a ported screen of several files,
+took 2.54M; this one is new code on parts the skin has). Tests:
+- Vitest: `catalogue.test.ts` (the current batch is the newest not archived; the pick's patch,
+  'no bean' as three `null`s; an edit's body holds only what changed; a new bean is two
+  requests, bean then batch; search and sort; the grinder setting's − and + by the step and
+  through named positions); the client's new requests against a fake `fetch` (paths,
+  `includeArchived`, bodies).
+- Playwright, mocked gateway, `e2e/beans.spec.ts`: the menu opens the screen; a bean is added
+  with name and roaster typed, edited, archived (the confirm first), absent from the list and
+  back with 'show archived', restored; the same for a grinder; the chip opens the pick, and a
+  bean, a grinder and a setting go out in one `PUT /workflow` and show on the chip; 'no bean'
+  clears; the header stays one row at 1280 x 800; the screen has no horizontal scroll.
+- Rig, `e2e-rig/beans.spec.ts` (acceptance 52, first half): through the screen, add a bean and
+  a grinder named with the test's own prefix (`pureflow-rig-…`), edit and archive them, read
+  each step back with the client; pick them, run one simulated shot (as `shot.spec.ts`) and read
+  its record: `beanBatchId`, `coffeeName`, `coffeeRoaster`, `grinderId`, `grinderModel`,
+  `grinderSetting` as picked; `GET /shots?beanId=` and `?grinderId=` find it. Then delete the
+  shot, the bean (with its batches) and the grinder, put the six context fields back as
+  recorded before, and check: the catalogue empty again, one shot, 73 profiles.
+
+**U10: the history filtered by bean and grinder** (about 1.3M tokens). Tests:
+- Vitest: `entries.test.ts` extended (a catalogue bean is one entry across a rename and two
+  batches; its label is the current name; a shot without a batch keeps 3.5's key; the filters
+  by batch, by name and roaster, by grinder id and by model; filtered, then grouped).
+- Playwright, mocked gateway, `e2e/history.spec.ts` extended: two beans, shots of each and one
+  without; the filter by one bean shows only its entries, by the grinder only its; a tap on an
+  entry's bean filters by it; 'all' brings every entry back; the existing tests pass.
+- Rig, `e2e-rig/history.spec.ts` extended (acceptance 52's last sentence): two beans of the
+  test's own, a simulated shot with each, the overlay filtered by one shows one entry; shots,
+  beans and context cleaned up as in U9.
+
+U9 and U10 stay two tasks: U10 needs U9's requests, types and catalogue, and each is
+committable on its own (U9 without U10 is the catalogue and a pick that the history already
+restores). U10 is the smaller one.
+
+### 29.9 Licence
+
+**Streamline** is GPL-3.0-or-later (20.8). The one piece of its code the skin takes is
+`bean-selection.js`'s two filters and `currentBeanContext` (in `src/beans/catalogue.ts`), with
+20.8's notice naming v0.2.17 and `src/modules/bean-selection.js`. The requests are Decaid's
+API, not Streamline's code.
+
+**DYE2 has no licence** (no `LICENSE` at `v0.1.4`, `v0.1.21` or its head `be4768d`, and its
+`package.json` names none), so all rights are its authors': **no code, wording or style of DYE2
+is copied.** The plan takes from it only what using it shows (which fields a bean form has,
+that a picked bean writes three context fields), and the skin's screen is laid out as the
+skin's own settings page, not as DYE2's grid of cards.
+
+### 29.10 Risks
+
+1. **Another writer of the context.** Streamline, when it is the skin, clears after each shot
+   the bean that DYE2 set (DYE2 on and loaded) and the one its own picker flagged; the skin
+   flags nothing, so Streamline leaves the skin's pick alone unless DYE2 is on in Streamline.
+   DYE2 0.1.21, once approved, holds `events.workflow` and may write the context itself. The
+   chip reads the workflow, so it shows what is really there; U9 tests the pick against a
+   context holding DYE2's `extras` keys, as the rig's does.
+2. **The catalogue lives in Decaid, not in the skin:** beans added in DYE2 show in the skin and
+   the other way round. A bean DYE2 added without a batch has none to pick; the pick then sends
+   no `beanBatchId` (name and roaster only) and does not create a batch by itself.
+3. **`GET /shots?beanId=` and the shot's ids were not seen** with a real bean (29.4); U9's rig
+   test is the first to. If a record lacked the ids, U10 would still filter by name and
+   roaster.
+4. **The keyboard:** typing is the tablet's soft keyboard over the form. The editor's 'save as'
+   already uses it (`NameDialog`); the form keeps its fields in the upper half so the keyboard
+   does not cover the one being typed.
+5. **Bean from a photo (U13)** adds a photo to the bean later; Decaid's `extras` can hold a
+   reference, so nothing in U9's model has to change for it.
+
+### 29.11 Choices the founder has not seen
+
+1. **The pages are DYE2's, not Streamline's** (29.2): the skin builds its own screen on
+   Decaid's requests, and nothing of DYE2's code or look is taken (29.9).
+2. **Where it opens:** a 'Beans and grinders' screen from home's menu, and the pick from a chip
+   in home's header with the current bean and grinder setting (29.6).
+3. **The pick stays** for every next shot until it is changed; Streamline's is for one shot.
+4. **The bean form has name, roaster, roast date and notes;** the other fields of Decaid's bean
+   and batch (origin, process, variety, weights, prices, dates) are left out, and kept when
+   DYE2 wrote them. Every new bean gets a batch; **new bag** starts the next one.
+5. **Archive, no delete,** for beans and grinders.
+6. **The grinder setting is set in the pick** with − and + by the grinder's step; Streamline's
+   per-profile memory of the setting is not ported (3.5: it belongs to the entry).
+7. **The history's filter works on the held shots** and matches by batch or by name and
+   roaster; a catalogue bean is one entry across renames and bags (29.6).
