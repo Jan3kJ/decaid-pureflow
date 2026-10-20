@@ -468,12 +468,18 @@
     grid-area: header;
     display: flex;
     justify-content: space-between;
-    gap: 1rem;
+    gap: 2rem;
   }
 
-  .group,
+  /* The header is one row at 1280 px: the name, the start row, save and save as, the mode. */
+  .group {
+    flex: none;
+    display: flex;
+    gap: 0.75rem;
+  }
+
   header > .group:last-child {
-    gap: 1rem;
+    gap: 2rem;
   }
 
   /* The profile's name, and the way to the picker. */

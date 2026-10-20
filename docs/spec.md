@@ -636,6 +636,15 @@ dropped) is one line under the start row, its height kept while it is empty, so 
 T7's timing stands (a result goes after 4 s, a failure stays until the next action). Default:
 the gaps between the start row's buttons and between the header's groups are about twice
 today's (`gap` of `.group`), within the 1280 px width.
+Built (U5, 2026-10-20): every notice of the A-Flow editor (the hint, 'saved …', 'saved as …',
+a failed save or load, 'Decaid did not answer', U2's line of what was dropped) is the one
+`notice` shown in `editor-status`; the line of a profile whose steps cannot be read stands in
+the step editor's own status line, as U2 says. The `gap` of `.group` had no effect, as the
+groups were not flex boxes: the start row's buttons stood a space apart and save / save as and
+simple / detail wrapped onto two lines. Now `.group` is a flex row with 0.75 rem between its
+buttons and the header's groups stand 2 rem apart (`Editor.svelte`), so the header is one row
+of 3 rem at 1280 x 800 and the graph gains the second row's height
+(`docs/product/editor-status.png`).
 
 **Text fields and the keyboard (item 10, bug; U1).** Tapping a text field ('save as', the
 description in the profile's settings, T4's filter, the settings page's text fields) must not
