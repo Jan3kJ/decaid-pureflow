@@ -1,0 +1,17 @@
+# Generated, vendored or recorded files; Prettier formats the code only.
+node_modules/
+release/
+dist/
+data/
+docs/product/
+test-results/
+playwright-report/
+e2e/.results/
+e2e-rig/.results/
+stint/
+.claude/worktrees/
+package-lock.json
+# Recorded test data (captured shots, bundled profiles), kept as captured.
+**/fixtures/*.json
+# Prose: the spec and the reviews are not reflowed.
+*.md
