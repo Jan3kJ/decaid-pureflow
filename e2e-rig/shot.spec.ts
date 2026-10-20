@@ -30,8 +30,7 @@ async function api(method: string, path: string, body?: unknown): Promise<any> {
 
 const shotIds = async (): Promise<string[]> =>
   (await api('GET', '/api/v1/shots?limit=100')).items.map((shot: { id: string }) => shot.id);
-const profileIds = async (): Promise<string[]> =>
-  (await api('GET', '/api/v1/profiles')).map((record: { id: string }) => record.id);
+const profileIds = async (): Promise<string[]> => (await api('GET', '/api/v1/profiles')).map((record: { id: string }) => record.id);
 const points = async (page: Page) => Number(await page.getByTestId('shot-graph').getAttribute('data-points'));
 
 let gatewayUp = false;
@@ -157,8 +156,9 @@ test('a simulated shot: the state, an A-Flow profile, a live graph, the stop at 
 
     // Its measurements carry the substate and the targets, so a shot from the history is cut
     // at the water and drawn with its targets as the live one (src/history/entries.ts).
-    const measurements: { machine: { state: { substate: string }; targetFlow: number; targetPressure: number } }[] =
-      (await api('GET', `/api/v1/shots/${encodeURIComponent(shot.id)}`)).measurements;
+    const measurements: { machine: { state: { substate: string }; targetFlow: number; targetPressure: number } }[] = (
+      await api('GET', `/api/v1/shots/${encodeURIComponent(shot.id)}`)
+    ).measurements;
     const substates = [...new Set(measurements.map((measurement) => measurement.machine.state.substate))];
     console.log(`rig shot: ${measurements.length} measurements, substates in order of first appearance: ${substates.join(', ')}`);
     expect(substates).toContain('pouring');

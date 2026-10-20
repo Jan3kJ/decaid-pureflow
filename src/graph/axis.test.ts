@@ -30,7 +30,14 @@ describe('timeAxis', () => {
 
 describe('shotScale', () => {
   it('ends at 10 with a number every 2 while every value stays at or under 10', () => {
-    expect(shotScale([[0, 9.4, 10], [8, 2.2], [null, 4.1], [9, null]])).toEqual({ max: 10, ticks: [0, 2, 4, 6, 8, 10] });
+    expect(
+      shotScale([
+        [0, 9.4, 10],
+        [8, 2.2],
+        [null, 4.1],
+        [9, null],
+      ]),
+    ).toEqual({ max: 10, ticks: [0, 2, 4, 6, 8, 10] });
     expect(shotScale([])).toEqual({ max: 10, ticks: [0, 2, 4, 6, 8, 10] });
     expect(shotScale([undefined, []]).max).toBe(10);
   });

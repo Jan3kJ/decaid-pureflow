@@ -87,7 +87,12 @@ export function stepSentences(profile: Profile, index: number): Sentence[] {
   sentences.push({
     kind: 'pump',
     parts: [
-      { kind: 'chip', chip: 'pump', text: pumpLabel({ pump, transition: step.transition === 'smooth' ? 'smooth' : 'fast' }), tone: pump },
+      {
+        kind: 'chip',
+        chip: 'pump',
+        text: pumpLabel({ pump, transition: step.transition === 'smooth' ? 'smooth' : 'fast' }),
+        tone: pump,
+      },
       text(pressure ? 'to' : 'at a rate of'),
       pill(step, 'target', UNIT[pump], pump),
     ],
@@ -113,7 +118,12 @@ export function stepSentences(profile: Profile, index: number): Sentence[] {
       kind: 'exit',
       parts: [
         text('Move on if'),
-        { kind: 'chip', chip: 'exit', text: `${exit.type === 'flow' ? 'Flow' : 'Pressure'} ${exit.condition === 'under' ? 'is under' : 'is over'}`, tone: exit.type },
+        {
+          kind: 'chip',
+          chip: 'exit',
+          text: `${exit.type === 'flow' ? 'Flow' : 'Pressure'} ${exit.condition === 'under' ? 'is under' : 'is over'}`,
+          tone: exit.type,
+        },
         pill(step, 'exit', UNIT[exit.type], exit.type),
       ],
     });

@@ -244,9 +244,7 @@ export type StreamFactoryOptions<Frame> = Omit<SnapshotStreamOptions<Frame>, 'ur
 };
 
 /** `/ws/v1/machine/snapshot`: about 10 frames per second in a shot, 2 while idle. */
-export function machineSnapshotStream(
-  options: StreamFactoryOptions<MachineSnapshot> = {},
-): SnapshotStream<MachineSnapshot> {
+export function machineSnapshotStream(options: StreamFactoryOptions<MachineSnapshot> = {}): SnapshotStream<MachineSnapshot> {
   return create(MACHINE_SNAPSHOT_PATH, options);
 }
 
@@ -262,16 +260,12 @@ export function scaleSnapshotStream(options: StreamFactoryOptions<ScaleFrame> = 
  * `/ws/v1/machine/shotSettings`: the settings the machine holds, one frame when the socket
  * opens and one after every change, whoever made it.
  */
-export function machineShotSettingsStream(
-  options: StreamFactoryOptions<ShotSettings> = {},
-): SnapshotStream<ShotSettings> {
+export function machineShotSettingsStream(options: StreamFactoryOptions<ShotSettings> = {}): SnapshotStream<ShotSettings> {
   return create(MACHINE_SHOT_SETTINGS_PATH, options);
 }
 
 /** `/ws/v1/machine/waterLevels`: the tank's water level, sent as it changes. */
-export function machineWaterLevelsStream(
-  options: StreamFactoryOptions<WaterLevels> = {},
-): SnapshotStream<WaterLevels> {
+export function machineWaterLevelsStream(options: StreamFactoryOptions<WaterLevels> = {}): SnapshotStream<WaterLevels> {
   return create(MACHINE_WATER_LEVELS_PATH, options);
 }
 

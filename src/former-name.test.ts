@@ -27,7 +27,11 @@ describe('the keys of the former name in localStorage', () => {
   it('move to the new keys and are removed', () => {
     const store = memoryStore({ 'decaid-skin.settings': '{"maxFlow":6}', 'decaid-skin.screen': 'editor', other: 'kept' });
     moveFormerKeys(store);
-    expect(Object.fromEntries(store.items)).toEqual({ 'pureflow.settings': '{"maxFlow":6}', 'pureflow.screen': 'editor', other: 'kept' });
+    expect(Object.fromEntries(store.items)).toEqual({
+      'pureflow.settings': '{"maxFlow":6}',
+      'pureflow.screen': 'editor',
+      other: 'kept',
+    });
   });
 
   it('do not replace a value under the new key', () => {
@@ -40,7 +44,13 @@ describe('the keys of the former name in localStorage', () => {
     const store = memoryStore({ 'pureflow.screen': 'home' });
     moveFormerKeys(store);
     expect(Object.fromEntries(store.items)).toEqual({ 'pureflow.screen': 'home' });
-    const broken = { getItem: () => { throw new Error('denied'); }, setItem() {}, removeItem() {} };
+    const broken = {
+      getItem: () => {
+        throw new Error('denied');
+      },
+      setItem() {},
+      removeItem() {},
+    };
     expect(() => moveFormerKeys(broken)).not.toThrow();
   });
 });

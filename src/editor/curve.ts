@@ -182,15 +182,11 @@ export function expectedSeconds(p: AFlowParams): {
   pause: number;
   pressurize: number;
 } {
-  const pumping = (volume: number, flow: number, limit: number) =>
-    Math.max(0, Math.min(limit, volume / Math.max(flow, FLOW_MIN)));
+  const pumping = (volume: number, flow: number, limit: number) => Math.max(0, Math.min(limit, volume / Math.max(flow, FLOW_MIN)));
   const second = hasSecondFill(p);
   return {
     fill: pumping(FILL_VOLUME, p.fillFlow, p.fillTime),
-    infuse: Math.max(
-      0,
-      p.infuseWeight > 0 ? Math.min(p.infuseTime, infuseWeightSeconds(p.infuseWeight)) : p.infuseTime,
-    ),
+    infuse: Math.max(0, p.infuseWeight > 0 ? Math.min(p.infuseTime, infuseWeightSeconds(p.infuseWeight)) : p.infuseTime),
     secondFill: second ? pumping(SECOND_FILL_VOLUME, p.secondFillFlow, p.secondFillTime) : 0,
     pause: second ? p.pauseDuration * PAUSE_SHOWN : 0,
     pressurize: Math.max(0, p.rampTime),
@@ -286,11 +282,7 @@ export function dragTarget(level: Pick<Level, 'gain'>, startValue: number, rise:
  * stays unless the drag goes beyond it: a touch does not cut a time limit of 60 s to 25 s.
  * Not yet brought into the value's range (fields.ts, snap).
  */
-export function borderTarget(
-  border: Pick<Border, 'weightSeconds'>,
-  time: number,
-  seconds: number,
-): number {
+export function borderTarget(border: Pick<Border, 'weightSeconds'>, time: number, seconds: number): number {
   if (border.weightSeconds !== undefined && seconds > border.weightSeconds - 0.5) {
     return Math.max(time, seconds);
   }
@@ -310,9 +302,7 @@ export function buildCurve(
   const axis = timeAxis(params);
   const second = hasSecondFill(params);
 
-  const order: PhaseId[] = second
-    ? ['fill', 'infuse', 'secondFill', 'pressurize', 'flow']
-    : ['fill', 'infuse', 'pressurize', 'flow'];
+  const order: PhaseId[] = second ? ['fill', 'infuse', 'secondFill', 'pressurize', 'flow'] : ['fill', 'infuse', 'pressurize', 'flow'];
   const phases: PhaseColumn[] = [];
   let x = 0;
   for (const id of order) {
@@ -384,11 +374,7 @@ export function buildCurve(
       { x: pauseX, y: Math.min(p.secondFillFlow, PAUSE_FLOW_LIMIT) },
       { x: column.x1, y: SOAK_FLOW },
     );
-    pressure.push(
-      { x: pauseX, y: p.secondFillExitPressure },
-      { x: pauseX, y: PAUSE_PRESSURE },
-      { x: column.x1, y: PAUSE_PRESSURE },
-    );
+    pressure.push({ x: pauseX, y: p.secondFillExitPressure }, { x: pauseX, y: PAUSE_PRESSURE }, { x: column.x1, y: PAUSE_PRESSURE });
     level('flow', 'secondFillFlow', 'secondFill', from, to);
     borders.push({
       x: column.x1,

@@ -3,15 +3,7 @@
   import NumberPad from '../editor/NumberPad.svelte';
   import type { Skin } from '../shell/skin.svelte';
   import StateLine from '../shell/StateLine.svelte';
-  import {
-    HOT_WATER_FIELDS,
-    WEIGHT_FIELD,
-    heldValue,
-    lastShotGrams,
-    ratioLabel,
-    ratioWeight,
-    type HotWaterField,
-  } from './hot-water';
+  import { HOT_WATER_FIELDS, WEIGHT_FIELD, heldValue, lastShotGrams, ratioLabel, ratioWeight, type HotWaterField } from './hot-water';
 
   interface Props {
     skin: Skin;
@@ -52,12 +44,7 @@
 
   <div class="values">
     {#each HOT_WATER_FIELDS as field (field.id)}
-      <button
-        class="value {field.id}"
-        data-testid="hot-water-{field.id}"
-        disabled={!values}
-        onclick={() => (typing = field)}
-      >
+      <button class="value {field.id}" data-testid="hot-water-{field.id}" disabled={!values} onclick={() => (typing = field)}>
         <small>{field.label}</small>
         <b>{shown(field)}<i>{field.unit}</i></b>
       </button>
@@ -91,16 +78,12 @@
       <small>scale</small>
       <span data-testid="hot-water-scale">{skin.weight === null ? '–' : `${skin.weight.toFixed(1)} g`}</span>
       <!-- The one tare of the skin (Skin.tare, spec 3.7); without a scale it looks for the scale (spec 3.9). -->
-      <button
-        class="tare"
-        data-testid="hot-water-tare"
-        onclick={() => skin.tare()}>tare</button
-      >
+      <button class="tare" data-testid="hot-water-tare" onclick={() => skin.tare()}>tare</button>
     </div>
 
     <p class="hint" data-testid="hot-water-hint">
-      Start hot water at the machine. With a scale Decaid tares it and stops at the weight; without one the
-      machine stops at as many ml, or at the time.
+      Start hot water at the machine. With a scale Decaid tares it and stops at the weight; without one the machine stops at as many
+      ml, or at the time.
     </p>
 
     {#if skin.notice}

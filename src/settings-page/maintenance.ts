@@ -128,7 +128,8 @@ export function advance(
     if (previous.phase === 'running' && milestone === previous.milestone && !previous.stale) return previous;
     return { phase: 'running', milestone, since: previous.since, stale: false };
   }
-  if (previous.phase === 'running') return { phase: 'done', milestone: procedure.milestones.length, since: previous.since, stale: false };
+  if (previous.phase === 'running')
+    return { phase: 'done', milestone: procedure.milestones.length, since: previous.since, stale: false };
   if (previous.phase !== 'waiting') return previous.stale ? { ...previous, stale: false } : previous;
   if (now - previous.since >= START_TIMEOUT_MS) return { phase: 'timeout', milestone: -1, since: previous.since, stale: false };
   return previous.stale ? { ...previous, stale: false } : previous;

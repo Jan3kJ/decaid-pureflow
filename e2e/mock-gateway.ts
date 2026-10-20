@@ -21,9 +21,7 @@ interface RecordedEvent {
  * The simulated machine hardly heats, so 3.9 s of `preparingForShot` frames without flow are
  * added before its first `preinfusion` frame: what a real DE1 does before water moves.
  */
-export const RECORDING: RecordedEvent[] = JSON.parse(
-  readFileSync(new URL('./fixtures/shot.json', import.meta.url), 'utf8'),
-);
+export const RECORDING: RecordedEvent[] = JSON.parse(readFileSync(new URL('./fixtures/shot.json', import.meta.url), 'utf8'));
 
 const isEspresso = (event: RecordedEvent) => event.machine?.state.state === 'espresso';
 /** The recording from its first espresso frame on: what a replay sends. */
@@ -308,7 +306,13 @@ export class MockGateway {
   /** `GET /api/v1/devices/wifi` */
   wifi: string[] = [];
   /** `GET /api/v1/machine/info`, as on the rig */
-  machineInfo: Json = { version: '1337', model: 'DE1Pro', serialNumber: 'mock-de1', GHC: false, extra: { refillKit: true, voltage: 120 } };
+  machineInfo: Json = {
+    version: '1337',
+    model: 'DE1Pro',
+    serialNumber: 'mock-de1',
+    GHC: false,
+    extra: { refillKit: true, voltage: 120 },
+  };
   /** the KV store, as `namespace/key` */
   store: Record<string, unknown> = {};
   /** `GET /api/v1/plugins`: three of the rig's plugins, as Decaid 0.8.8 lists them, and one with an enum */
@@ -360,8 +364,24 @@ export class MockGateway {
   /** `GET /api/v1/machine/firmware`, as on the rig (2026-10-18) */
   firmware: Json = {
     artifacts: [
-      { id: 'de1-1352', source: 'bundled', build: 1352, versionLabel: '1352', channel: 'stable', releaseNotes: 'Fixed an edge case where profile upload would clear NoAC lights.', eligibility: { status: 'applicable', reasons: [] } },
-      { id: 'de1-1358', source: 'bundled', build: 1358, versionLabel: '1358', channel: 'stable', releaseNotes: 'Cold maintenance forwards requests through preheat.', eligibility: { status: 'applicable', reasons: [] } },
+      {
+        id: 'de1-1352',
+        source: 'bundled',
+        build: 1352,
+        versionLabel: '1352',
+        channel: 'stable',
+        releaseNotes: 'Fixed an edge case where profile upload would clear NoAC lights.',
+        eligibility: { status: 'applicable', reasons: [] },
+      },
+      {
+        id: 'de1-1358',
+        source: 'bundled',
+        build: 1358,
+        versionLabel: '1358',
+        channel: 'stable',
+        releaseNotes: 'Cold maintenance forwards requests through preheat.',
+        eligibility: { status: 'applicable', reasons: [] },
+      },
     ],
     machine: { model: 'DE1Pro', build: 1337 },
     recommendedArtifactId: 'de1-1358',
@@ -369,7 +389,11 @@ export class MockGateway {
     operation: { state: 'idle' },
   };
   /** the NDJSON lines `POST /api/v1/machine/firmware/apply` answers */
-  firmwareStream = ['{"status":"erasing","progress":0.0}', '{"status":"uploading","progress":0.5}', '{"status":"done","progress":1.0}'];
+  firmwareStream = [
+    '{"status":"erasing","progress":0.0}',
+    '{"status":"uploading","progress":0.5}',
+    '{"status":"done","progress":1.0}',
+  ];
   /** `GET /api/v1/update`, as on the rig */
   appUpdate: Json = {
     phase: 'idle',
@@ -473,8 +497,7 @@ export class MockGateway {
   /** The calls of one kind, as `METHOD path`. */
   calls(method: string, path: string | RegExp) {
     return this.requests.filter(
-      (request) =>
-        request.method === method && (typeof path === 'string' ? request.path === path : path.test(request.path)),
+      (request) => request.method === method && (typeof path === 'string' ? request.path === path : path.test(request.path)),
     );
   }
 
@@ -523,7 +546,12 @@ export class MockGateway {
 
   /** A frame of `/ws/v1/devices`. */
   devicesFrame(): Json {
-    return { timestamp: new Date().toISOString(), devices: this.devices, scanning: this.scanning, connectionStatus: { phase: 'ready', error: null } };
+    return {
+      timestamp: new Date().toISOString(),
+      devices: this.devices,
+      scanning: this.scanning,
+      connectionStatus: { phase: 'ready', error: null },
+    };
   }
 
   /** Another client or the device itself changed the list: the frame goes out. */
@@ -741,7 +769,13 @@ export class MockGateway {
     if (path === '/api/v1/devices/connect' && method === 'PUT') {
       const found = this.devices.find((entry) => entry.id === body?.deviceId);
       if (!found) return json({ error: 'Device not found' }, 404);
-      const result = (outcome: string, state: string) => ({ deviceId: found.id, operation: 'connect', outcome, state, connectionError: null });
+      const result = (outcome: string, state: string) => ({
+        deviceId: found.id,
+        operation: 'connect',
+        outcome,
+        state,
+        connectionError: null,
+      });
       this.setDevice(found.id, { state: 'connecting' });
       if (this.connectTimesOut.has(found.id)) {
         this.setDevice(found.id, { state: 'disconnected' });
@@ -805,7 +839,8 @@ export class MockGateway {
       return json({ userPresenceEnabled: this.presence.userPresenceEnabled, sleepTimeoutMinutes: this.presence.sleepTimeoutMinutes });
     }
     // As the rig answers (log\s2c-schedule-probe.txt): a null keepAwakeFor is left out.
-    const scheduleOf = (entry: Json) => Object.fromEntries(Object.entries(entry).filter(([, value]) => value !== null && value !== undefined));
+    const scheduleOf = (entry: Json) =>
+      Object.fromEntries(Object.entries(entry).filter(([, value]) => value !== null && value !== undefined));
     if (path === '/api/v1/presence/schedules' && method === 'POST') {
       const created = scheduleOf({ id: `schedule-${++this.scheduleCount}`, daysOfWeek: [], enabled: true, ...body });
       this.presence.schedules = [...this.presence.schedules, created];
@@ -832,7 +867,9 @@ export class MockGateway {
       if (method === 'PUT') {
         // A correction: a ratio multiplies, the temperature's offset adds (rest_v1.yml).
         const { de1ReportedValue: reported, measuredValue: measured } = body;
-        this.calibration[target] = ratio ? this.calibration[target] * (measured / reported) : this.calibration[target] + (measured - reported);
+        this.calibration[target] = ratio
+          ? this.calibration[target] * (measured / reported)
+          : this.calibration[target] + (measured - reported);
         return json(null, 202);
       }
       return json({ target, source: 'current', de1ReportedValue: ratio ? 1.0 : 0.0, measuredValue: this.calibration[target] });
@@ -840,7 +877,12 @@ export class MockGateway {
     if (path === '/api/v1/machine/firmware' && method === 'GET') return json(this.firmware);
     if (path === '/api/v1/machine/firmware' && method === 'DELETE') return json({ operation: { state: 'idle' } }, 202);
     if (path === '/api/v1/machine/firmware/apply' && method === 'POST') {
-      return route.fulfill({ status: 200, headers: CORS, contentType: 'application/x-ndjson', body: this.firmwareStream.join('\n') + '\n' });
+      return route.fulfill({
+        status: 200,
+        headers: CORS,
+        contentType: 'application/x-ndjson',
+        body: this.firmwareStream.join('\n') + '\n',
+      });
     }
     if (path === '/api/v1/update' && method === 'GET') return json(this.appUpdate);
     if (path.startsWith('/api/v1/machine/settings') && !this.machineConnected) return noMachine();
@@ -862,7 +904,14 @@ export class MockGateway {
     }
     if (path === '/api/v1/machine/settings/reset' && method === 'DELETE') {
       this.machineSettings = { ...this.machineSettings, fan: 55, steamPurgeMode: 0 };
-      this.advancedSettings = { ...this.advancedSettings, heaterIdleTemp: 98, heaterPh1Flow: 2.5, heaterPh2Flow: 5, heaterPh2Timeout: 5, refillKitSetting: 2 };
+      this.advancedSettings = {
+        ...this.advancedSettings,
+        heaterIdleTemp: 98,
+        heaterPh1Flow: 2.5,
+        heaterPh2Flow: 5,
+        heaterPh2Timeout: 5,
+        refillKitSetting: 2,
+      };
       return json(null, 202);
     }
     if (path === '/api/v1/machine/waterLevels' && method === 'POST') {
@@ -925,7 +974,9 @@ export class MockGateway {
     if (path.startsWith('/api/v1/shots/') && method === 'GET') {
       const shot = this.shots.find((candidate) => candidate.id === decodeURIComponent(path.split('/').pop()!));
       // Only this call has the measurements (research.md 8.4).
-      return shot ? json({ ...shot, measurements: this.measurements[shot.id] ?? MEASUREMENTS }) : json({ error: 'Shot not found' }, 404);
+      return shot
+        ? json({ ...shot, measurements: this.measurements[shot.id] ?? MEASUREMENTS })
+        : json({ error: 'Shot not found' }, 404);
     }
     if (path === '/api/v1/profiles' && method === 'GET') {
       const hidden = url.searchParams.get('includeHidden') === 'true';

@@ -18,7 +18,10 @@ export const KEEP_AWAKE_MAX = 720;
 
 export function daysText(days: number[]): string {
   if (!days.length || days.length === 7) return 'Every day';
-  return [...days].sort((a, b) => a - b).map((day) => DAYS[day - 1]).join(', ');
+  return [...days]
+    .sort((a, b) => a - b)
+    .map((day) => DAYS[day - 1])
+    .join(', ');
 }
 
 export function keepAwakeText(minutes: number | null | undefined): string {

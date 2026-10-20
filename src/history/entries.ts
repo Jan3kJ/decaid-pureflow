@@ -1,14 +1,7 @@
 // The shot history's logic (spec 3.5): the gateway's shot records in, the entries of the
 // overlay out, and what one entry writes back to the workflow. Pure, except the two calls
 // at the end.
-import type {
-  DecaidClient,
-  Profile,
-  ShotRecord,
-  ShotRecordSummary,
-  Workflow,
-  WorkflowContextPatch,
-} from '../api';
+import type { DecaidClient, Profile, ShotRecord, ShotRecordSummary, Workflow, WorkflowContextPatch } from '../api';
 import { loadProfile } from '../shell/profiles';
 import { TARE_SETTLE_S, emptySeries, frameTime, pushPoint, shotOver, waterMoves, type ShotSeries } from '../shell/shot';
 

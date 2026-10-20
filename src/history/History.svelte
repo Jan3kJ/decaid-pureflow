@@ -48,12 +48,7 @@
   <ul data-testid="history-list">
     {#each entries ?? [] as entry (entry.key)}
       <li>
-        <button
-          class="entry"
-          data-testid="history-entry"
-          data-shot={entry.latest.id}
-          onclick={() => skin.restore(entry)}
-        >
+        <button class="entry" data-testid="history-entry" data-shot={entry.latest.id} onclick={() => skin.restore(entry)}>
           <strong data-testid="entry-profile">{entry.profileTitle}</strong>
           <span class="bean" class:none={!entry.bean} data-testid="entry-bean">{beanLabel(entry.bean)}</span>
           <span class="foot">

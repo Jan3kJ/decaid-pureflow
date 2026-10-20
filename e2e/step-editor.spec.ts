@@ -117,9 +117,7 @@ async function editOnScreen(page: Page): Promise<Profile> {
   return expected;
 }
 
-test('a profile that is not A-Flow 3.0 opens in the step editor; edits saved give its steps, with the parent', async ({
-  page,
-}) => {
+test('a profile that is not A-Flow 3.0 opens in the step editor; edits saved give its steps, with the parent', async ({ page }) => {
   const gateway = await withMine(page);
   await page.goto('/');
   await page.getByTestId('open-editor').click();
@@ -149,9 +147,7 @@ test('a profile that is not A-Flow 3.0 opens in the step editor; edits saved giv
   const stored = gateway.profiles.find((record) => record.parentId === 'profile:mine')!;
   expect(stored.profile.steps).toEqual(expected.steps);
   expect(stored.profile.target_volume_count_start).toBe(expected.target_volume_count_start);
-  expect(gateway.calls('PUT', /\/profiles\/profile%3Amine\/visibility$/).map((call) => call.body)).toEqual([
-    { visibility: 'hidden' },
-  ]);
+  expect(gateway.calls('PUT', /\/profiles\/profile%3Amine\/visibility$/).map((call) => call.body)).toEqual([{ visibility: 'hidden' }]);
   // The save loaded what it stored; back loads nothing more.
   const puts = gateway.calls('PUT', '/api/v1/workflow');
   expect(puts).toHaveLength(1);
@@ -229,9 +225,7 @@ test('an A-Flow 3.0 profile opens in the A-Flow editor, also from the picker of 
   expect(errors).toEqual([]);
 });
 
-test('leaving loads the changed steps; the warning comes before another load, and its save as keeps the parent', async ({
-  page,
-}) => {
+test('leaving loads the changed steps; the warning comes before another load, and its save as keeps the parent', async ({ page }) => {
   const gateway = await withMine(page);
   await page.goto('/');
   await page.getByTestId('open-editor').click();
@@ -272,7 +266,7 @@ test('leaving loads the changed steps; the warning comes before another load, an
   expect(errors).toEqual([]);
 });
 
-test("a bundled default is saved under a new name only, with the default as its parent", async ({ page }) => {
+test('a bundled default is saved under a new name only, with the default as its parent', async ({ page }) => {
   const gateway = await mockGateway(page);
   gateway.workflow.profile = gateway.profiles[0].profile;
   await page.goto('/');

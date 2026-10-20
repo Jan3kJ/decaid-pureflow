@@ -298,7 +298,13 @@
 {/if}
 
 {#if confirming}
-  <Confirm title={confirming.title} text={confirming.text} ok={confirming.ok} onok={confirming.run} oncancel={() => (confirming = null)} />
+  <Confirm
+    title={confirming.title}
+    text={confirming.text}
+    ok={confirming.ok}
+    onok={confirming.run}
+    oncancel={() => (confirming = null)}
+  />
 {/if}
 
 <style>

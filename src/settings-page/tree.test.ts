@@ -85,7 +85,10 @@ describe('the settings tree (research.md 20.3, 20.10 S2a)', () => {
 
   it('keeps the category opened last, and opens on the first without one', () => {
     const store = new Map<string, string>();
-    const storage = { getItem: (key: string) => store.get(key) ?? null, setItem: (key: string, value: string) => void store.set(key, value) };
+    const storage = {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => void store.set(key, value),
+    };
     expect(loadLocation(storage)).toBe(DEFAULT_CATEGORY);
     saveLocation('skin', storage);
     expect(store.get(LOCATION_KEY)).toBe('skin');

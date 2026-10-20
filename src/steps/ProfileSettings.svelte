@@ -63,8 +63,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
         data-testid="setting-notes"
         value={profile.notes ?? ''}
         {disabled}
-        oninput={(e) => onedit(setText(profile, 'notes', e.currentTarget.value))}
-      ></textarea>
+        oninput={(e) => onedit(setText(profile, 'notes', e.currentTarget.value))}></textarea>
     </label>
   </div>
 

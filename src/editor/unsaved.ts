@@ -16,8 +16,7 @@ export interface Unsaved {
 }
 
 /** What a record's id is made of: its steps and its target weight (research.md 9.2). */
-const sameContent = (a: Profile, b: Profile) =>
-  sameSteps(a.steps, b.steps) && (a.target_weight ?? 0) === (b.target_weight ?? 0);
+const sameContent = (a: Profile, b: Profile) => sameSteps(a.steps, b.steps) && (a.target_weight ?? 0) === (b.target_weight ?? 0);
 
 /**
  * The unsaved edits on the machine, or null. `records` must be listed with `includeHidden`.

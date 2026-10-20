@@ -52,14 +52,19 @@ async function snapshot() {
     blockOnNoScale: settings.blockOnNoScale,
     preferredMachineId: settings.preferredMachineId,
     preferredScaleId: settings.preferredScaleId,
-    connected: devices.filter((device) => device.state === 'connected').map((device) => device.id).sort(),
+    connected: devices
+      .filter((device) => device.state === 'connected')
+      .map((device) => device.id)
+      .sort(),
     wifi: await api('GET', '/api/v1/devices/wifi'),
     state: (await api('GET', '/api/v1/machine/state')).state,
     backup: await api('GET', BACKUP),
   };
 }
 
-test("the device lists show the rig's MockDe1 and MockScale connected; power mode and 'scale required' read back and restored", async ({ page }) => {
+test("the device lists show the rig's MockDe1 and MockScale connected; power mode and 'scale required' read back and restored", async ({
+  page,
+}) => {
   test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
   const before = await snapshot();
   console.log('before', JSON.stringify(before));
@@ -71,8 +76,14 @@ test("the device lists show the rig's MockDe1 and MockScale connected; power mod
     await expect(page.getByTestId('device-state-MockScale')).toHaveText('Connected');
     await expect(page.getByTestId('device-MockDe1')).toHaveAttribute('data-state', 'connected');
     await expect(page.getByTestId('devices-machine').getByTestId('device-MockScale')).toHaveCount(0);
-    await expect(page.getByTestId('device-preferred-MockDe1')).toHaveAttribute('aria-checked', String(before.preferredMachineId === 'MockDe1'));
-    await expect(page.getByTestId('device-preferred-MockScale')).toHaveAttribute('aria-checked', String(before.preferredScaleId === 'MockScale'));
+    await expect(page.getByTestId('device-preferred-MockDe1')).toHaveAttribute(
+      'aria-checked',
+      String(before.preferredMachineId === 'MockDe1'),
+    );
+    await expect(page.getByTestId('device-preferred-MockScale')).toHaveAttribute(
+      'aria-checked',
+      String(before.preferredScaleId === 'MockScale'),
+    );
 
     await page.getByTestId(`setting-scale-power-mode-${mode}`).click();
     await expect(page.getByTestId(`setting-scale-power-mode-${mode}`)).toHaveAttribute('aria-pressed', 'true');

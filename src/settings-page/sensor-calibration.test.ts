@@ -77,7 +77,10 @@ describe('the sensor calibration (research.md 20.10 S2c)', () => {
 
   it('keeps the value before the last write by sensor, outside the settings', () => {
     const store = new Map<string, string>();
-    const storage = { getItem: (key: string) => store.get(key) ?? null, setItem: (key: string, value: string) => void store.set(key, value) };
+    const storage = {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => void store.set(key, value),
+    };
     expect(loadPrevious(storage)).toEqual({});
     savePrevious({ flow: 1.02 }, storage);
     expect(store.get(PREVIOUS_KEY)).toBe('{"flow":1.02}');

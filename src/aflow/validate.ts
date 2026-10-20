@@ -81,9 +81,7 @@ export function isFollowField(field: keyof AFlowParams): field is FollowField {
  * The range of every numeric parameter, for validation and for the editor's controls, in the
  * order of the phases. A value that follows another one has the range it has as a number.
  */
-export function paramRanges(
-  limits: MachineLimits = DEFAULT_MACHINE_LIMITS,
-): Record<NumberField | FollowField, Range> {
+export function paramRanges(limits: MachineLimits = DEFAULT_MACHINE_LIMITS): Record<NumberField | FollowField, Range> {
   const temperature = { min: TEMPERATURE_MIN, max: TEMPERATURE_MAX, unit: '°C' };
   const time = { min: 0, max: TIME_MAX, unit: 's' };
   const weight = { min: 0, max: WEIGHT_MAX, unit: 'g' };
@@ -126,10 +124,7 @@ function onStep(value: number, step: number): boolean {
 }
 
 /** Returns the problems found; an empty list means the parameters are valid. */
-export function validateParams(
-  params: AFlowParams,
-  limits: MachineLimits = DEFAULT_MACHINE_LIMITS,
-): Problem[] {
+export function validateParams(params: AFlowParams, limits: MachineLimits = DEFAULT_MACHINE_LIMITS): Problem[] {
   const problems: Problem[] = [];
   const ranges = paramRanges(limits);
 

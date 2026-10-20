@@ -81,7 +81,9 @@ test("the device lists show Decaid's frames: connected first, the preferred one 
   await page.screenshot({ path: 'docs/product/settings-connections.png' });
 });
 
-test('Search scans with connect and quick; the scan and what it found come as frames; Connect sends the id in the body', async ({ page }) => {
+test('Search scans with connect and quick; the scan and what it found come as frames; Connect sends the id in the body', async ({
+  page,
+}) => {
   gateway.scanFinds = [{ name: 'Decent Scale', id: 'AA:BB:CC:00:00:02', state: 'discovered', type: 'scale', available: true }];
   await openCategory(page, 'bluetooth');
   await expect(scales(page)).toHaveCount(1);
@@ -107,7 +109,10 @@ test('Search scans with connect and quick; the scan and what it found come as fr
 });
 
 test('the preferred switch writes preferredScaleId and shows what Decaid read back; off writes null', async ({ page }) => {
-  gateway.devices = [...gateway.devices, { name: 'Decent Scale', id: 'AA:BB:CC:00:00:02', state: 'discovered', type: 'scale', available: true }];
+  gateway.devices = [
+    ...gateway.devices,
+    { name: 'Decent Scale', id: 'AA:BB:CC:00:00:02', state: 'discovered', type: 'scale', available: true },
+  ];
   await openCategory(page, 'bluetooth');
   const other = page.getByTestId('device-preferred-AA:BB:CC:00:00:02');
   await expect(other).toHaveAttribute('aria-checked', 'false');
@@ -121,7 +126,10 @@ test('the preferred switch writes preferredScaleId and shows what Decaid read ba
 });
 
 test('Forget asks first and sends the id; the absent device leaves the list', async ({ page }) => {
-  gateway.devices = [...gateway.devices, { name: 'Old Scale', id: 'AA:BB:CC:00:00:01', state: 'disconnected', type: 'scale', available: false }];
+  gateway.devices = [
+    ...gateway.devices,
+    { name: 'Old Scale', id: 'AA:BB:CC:00:00:01', state: 'disconnected', type: 'scale', available: false },
+  ];
   await openCategory(page, 'bluetooth');
   await page.getByTestId('device-forget-AA:BB:CC:00:00:01').click();
   await expect(page.getByTestId('settings-confirm')).toContainText('Forget Old Scale?');
@@ -134,7 +142,10 @@ test('Forget asks first and sends the id; the absent device leaves the list', as
   expect(writes('PUT', '/api/v1/devices/forget')).toEqual([{ deviceId: 'AA:BB:CC:00:00:01' }]);
 
   // Reconnect of an absent one is a scan that connects.
-  gateway.devices = [...gateway.devices, { name: 'Old Scale', id: 'AA:BB:CC:00:00:01', state: 'disconnected', type: 'scale', available: false }];
+  gateway.devices = [
+    ...gateway.devices,
+    { name: 'Old Scale', id: 'AA:BB:CC:00:00:01', state: 'disconnected', type: 'scale', available: false },
+  ];
   gateway.sendDevices();
   await page.getByTestId('device-rescan-AA:BB:CC:00:00:01').click();
   await expect.poll(() => gateway.requests.filter((request) => request.path === '/api/v1/devices/scan').length).toBe(1);
@@ -215,7 +226,9 @@ test('out of water, Start says so and asks nothing', async ({ page }) => {
   expect(gateway.calls('PUT', /^\/api\/v1\/machine\/state\//)).toHaveLength(0);
 });
 
-test("Machine Information shows the machine's model, firmware and serial; the charging status only where Decaid reports one", async ({ page }) => {
+test("Machine Information shows the machine's model, firmware and serial; the charging status only where Decaid reports one", async ({
+  page,
+}) => {
   await openCategory(page, 'machine');
   await expect(page.getByTestId('machine-info-model')).toHaveText('DE1Pro');
   await expect(page.getByTestId('machine-info-firmware')).toHaveText('1337');
@@ -223,7 +236,10 @@ test("Machine Information shows the machine's model, firmware and serial; the ch
   await expect(page.getByTestId('machine-info')).toContainText('Refill kit');
   await expect(page.getByTestId('charging-status')).toHaveCount(0);
 
-  gateway.decaidSettings = { ...gateway.decaidSettings, chargingState: { batteryPercent: 64, isEmergency: false, currentPhase: 'hovering', usbChargerOn: true } };
+  gateway.decaidSettings = {
+    ...gateway.decaidSettings,
+    chargingState: { batteryPercent: 64, isEmergency: false, currentPhase: 'hovering', usbChargerOn: true },
+  };
   await page.reload();
   await expect(page.getByTestId('charging-status')).toContainText('64%');
   await expect(page.getByTestId('charging-status')).toContainText('Hovering');

@@ -176,11 +176,7 @@ describe('writeParams', () => {
     await writeParams(gateway.client, storedOf(off), off);
     const other = { ...off, secondFillFlow: 7 };
     const record = await writeParams(gateway.client, storedOf(other), other);
-    expect(gateway.sent()).toEqual([
-      'POST /api/v1/profiles',
-      'POST /api/v1/profiles',
-      'PUT /api/v1/profiles/profile:new1',
-    ]);
+    expect(gateway.sent()).toEqual(['POST /api/v1/profiles', 'POST /api/v1/profiles', 'PUT /api/v1/profiles/profile:new1']);
     expect(readRecord(record)).toEqual(other);
   });
 
@@ -229,8 +225,6 @@ describe('writeParams', () => {
     const gateway = fakeGateway();
     // A bundled default with the same steps and title: its content cannot be changed.
     gateway.records.push(gateway.make({ ...profileOf(edited), notes: 'bundled' }, { isDefault: true }));
-    await expect(writeParams(gateway.client, profileOf(edited), edited)).rejects.toThrow(
-      'Cannot modify default profile content',
-    );
+    await expect(writeParams(gateway.client, profileOf(edited), edited)).rejects.toThrow('Cannot modify default profile content');
   });
 });

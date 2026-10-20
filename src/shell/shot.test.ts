@@ -5,12 +5,7 @@ import { isScaleSnapshot, type MachineSnapshot, type MachineState, type ScaleFra
 import recording from '../../e2e/fixtures/shot.json';
 import { TARE_SETTLE_S, recordFrame, shotOver, shotSeconds, shotWeight, waterMoves, type Shot } from './shot';
 
-function frame(
-  state: MachineState,
-  time: string,
-  over: Partial<MachineSnapshot> = {},
-  substate = 'pouring',
-): MachineSnapshot {
+function frame(state: MachineState, time: string, over: Partial<MachineSnapshot> = {}, substate = 'pouring'): MachineSnapshot {
   return {
     timestamp: `2026-10-13T06:37:${time}`,
     state: { state, substate },

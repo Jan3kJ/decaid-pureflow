@@ -89,9 +89,7 @@ test("'save as' does not change the row; a slot chosen in the settings does, and
   expect(gateway.calls('POST', '/api/v1/profiles')).toHaveLength(1);
 });
 
-test('a chosen profile that no longer exists is left out of the row and shown as missing until it is removed', async ({
-  page,
-}) => {
+test('a chosen profile that no longer exists is left out of the row and shown as missing until it is removed', async ({ page }) => {
   await page.addInitScript(() => {
     if (!localStorage.getItem('pureflow.settings')) {
       localStorage.setItem(

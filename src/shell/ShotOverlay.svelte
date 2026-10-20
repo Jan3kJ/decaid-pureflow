@@ -50,13 +50,7 @@
   </header>
 
   <div class="plot">
-    <ShotGraph
-      {...series}
-      fit={ended}
-      minSeconds={skin.expectedSeconds}
-      legend={skin.settings.showGraphLegend}
-      label="live shot"
-    />
+    <ShotGraph {...series} fit={ended} minSeconds={skin.expectedSeconds} legend={skin.settings.showGraphLegend} label="live shot" />
   </div>
 
   {#if table}

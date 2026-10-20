@@ -89,7 +89,9 @@ test('steam on reaches the machine when the workflow already holds the temperatu
   await openMenu(page);
   await expect(page.getByTestId('steam-heater-detail')).toHaveText('steam heater is off');
   await page.getByTestId('steam-heater').click();
-  await expect.poll(() => gateway.calls('POST', '/api/v1/machine/shotSettings').map((call) => call.body.targetSteamTemp)).toEqual([150]);
+  await expect
+    .poll(() => gateway.calls('POST', '/api/v1/machine/shotSettings').map((call) => call.body.targetSteamTemp))
+    .toEqual([150]);
   await openMenu(page);
   await expect(page.getByTestId('steam-heater-detail')).toHaveText('steam heater is on');
   expect(errors).toEqual([]);
@@ -106,9 +108,9 @@ test('machine sleep: the entry says only the machine sleeps and sends the state 
   );
   await expect(page.getByRole('menuitem').filter({ hasText: /Machine off|Exit/ })).toHaveCount(0);
   await page.getByTestId('machine-sleep').click();
-  await expect.poll(() => gateway.calls('PUT', /^\/api\/v1\/machine\/state\//).map((call) => call.path)).toEqual([
-    '/api/v1/machine/state/sleeping',
-  ]);
+  await expect
+    .poll(() => gateway.calls('PUT', /^\/api\/v1\/machine\/state\//).map((call) => call.path))
+    .toEqual(['/api/v1/machine/state/sleeping']);
   await expect(page.getByTestId('asleep')).toBeVisible();
   expect(errors).toEqual([]);
 });

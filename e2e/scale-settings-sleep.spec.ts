@@ -25,7 +25,10 @@ async function overflow(page: Page) {
       !!element.parentElement?.closest('[data-testid="settings-content"], [aria-label="settings categories"]');
     const outside = [...document.querySelectorAll('button, section, header, h1')].filter((element) => {
       const rect = element.getBoundingClientRect();
-      return rect.width > 0 && (rect.left < 0 || rect.right > innerWidth + 0.5 || (!scrolled(element) && (rect.top < 0 || rect.bottom > innerHeight + 0.5)));
+      return (
+        rect.width > 0 &&
+        (rect.left < 0 || rect.right > innerWidth + 0.5 || (!scrolled(element) && (rect.top < 0 || rect.bottom > innerHeight + 0.5)))
+      );
     });
     return { scrolls: root.scrollWidth > innerWidth || root.scrollHeight > innerHeight, outside: outside.length };
   });
@@ -213,7 +216,13 @@ test('settings: the defaults, typed values and both switches survive a reload', 
       showProfileSteps: false,
       firstStepWorkaround: true,
       showGraphLegend: true,
-      startProfiles: ['A-Flow / default-floral', 'A-Flow / default-light', 'A-Flow / default-medium', 'A-Flow / default-dark', 'A-Flow / default-46mm'],
+      startProfiles: [
+        'A-Flow / default-floral',
+        'A-Flow / default-light',
+        'A-Flow / default-medium',
+        'A-Flow / default-dark',
+        'A-Flow / default-46mm',
+      ],
       maxFlow: 12,
       defaultDose: 17.5,
       steam: {

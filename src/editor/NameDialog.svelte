@@ -47,9 +47,7 @@
       <p class="hint" data-testid="save-hint">{exists ? 'This name is in use.' : ' '}</p>
       <div class="actions">
         <button type="button" data-testid="save-cancel" onclick={oncancel}>cancel</button>
-        <button type="submit" class="confirm" data-testid="save-confirm" disabled={!valid}
-          >save</button
-        >
+        <button type="submit" class="confirm" data-testid="save-confirm" disabled={!valid}>save</button>
       </div>
     </form>
   </div>

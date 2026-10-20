@@ -16,14 +16,7 @@ import type { PluginManifest, PluginSettingSchema, PluginSettings } from '../api
  * back for permissions, bundled with Decaid, installed from a file (nothing can check it), the
  * last check failed, never checked, or checked.
  */
-export type PluginStatus =
-  | 'disabled'
-  | 'update-pending'
-  | 'bundled'
-  | 'untracked'
-  | 'check-failed'
-  | 'never-checked'
-  | 'checked';
+export type PluginStatus = 'disabled' | 'update-pending' | 'bundled' | 'untracked' | 'check-failed' | 'never-checked' | 'checked';
 
 const MANAGED = ['github_release', 'github_branch'];
 

@@ -172,14 +172,23 @@ describe('loadProfile', () => {
     const params = DEFAULT_PROFILES[1].params;
     const { client: api, calls } = client(() => ({}));
     await loadRecord(api, record(light, { metadata: { source: 'pureflow', ...paramsMetadata(params) } }));
-    const v1 = { ...light, notes: `${serializeParams(params)}
-mine` };
+    const v1 = {
+      ...light,
+      notes: `${serializeParams(params)}
+mine`,
+    };
     await loadRecord(api, record(v1, { metadata: { source: 'pureflow', aflow: '3.0' } }));
     await loadProfile(api, (calls[0].body as { profile: Profile }).profile);
     expect(calls.map((call) => call.body)).toEqual([
       { profile: workflowProfile(light, params), context: { targetYield: 48, targetDoseWeight: 16 } },
-      { profile: { ...light, notes: `${serializeParams(params)}
-mine` }, context: { targetYield: 48, targetDoseWeight: 16 } },
+      {
+        profile: {
+          ...light,
+          notes: `${serializeParams(params)}
+mine`,
+        },
+        context: { targetYield: 48, targetDoseWeight: 16 },
+      },
       { profile: workflowProfile(light, params), context: { targetYield: 48, targetDoseWeight: 16 } },
     ]);
   });
@@ -234,9 +243,7 @@ describe('doseToSet', () => {
 });
 
 describe('filterProfiles', () => {
-  const records = [light, other, { ...other, title: 'Light roast' }, { ...other, title: 'Dark' }].map((profile) =>
-    record(profile),
-  );
+  const records = [light, other, { ...other, title: 'Light roast' }, { ...other, title: 'Dark' }].map((profile) => record(profile));
   const titles = (filter: string) => filterProfiles(records, filter).map((entry) => entry.profile.title);
 
   it('keeps the titles that hold the filter, in any case', () => {

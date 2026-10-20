@@ -1,11 +1,6 @@
 // What the editor needs to know about each value beyond the generator's ranges: its name on
 // screen, the step it moves in, and which phase it belongs to (spec 3.2).
-import {
-  DEFAULT_MACHINE_LIMITS,
-  DOSE_STEP,
-  paramRanges,
-  type MachineLimits,
-} from '../aflow';
+import { DEFAULT_MACHINE_LIMITS, DOSE_STEP, paramRanges, type MachineLimits } from '../aflow';
 import type { EditField, LineId, PhaseId } from './curve';
 
 /** The full name of a value, for the pop-up of a drag and the number pad. */
@@ -154,11 +149,7 @@ export function snap(
   return Math.min(max, Math.max(min, clean));
 }
 
-export function formatValue(
-  field: EditField,
-  value: number,
-  limits: MachineLimits = DEFAULT_MACHINE_LIMITS,
-): string {
+export function formatValue(field: EditField, value: number, limits: MachineLimits = DEFAULT_MACHINE_LIMITS): string {
   const { unit } = paramRanges(limits)[field];
   const text = Number.isInteger(FIELD_STEP[field]) ? String(value) : value.toFixed(1);
   return `${text.replace(/\.0$/, '')} ${unit}`;

@@ -112,7 +112,8 @@
     <div class="row">
       <span>Status</span>
       <b data-testid="firmware-status" data-status={summary.status}>
-        {STATUS_TEXT[summary.status]}{#if summary.status === 'unknown' && summary.reason}: {REASON_TEXT[summary.reason] ?? summary.reason}{/if}
+        {STATUS_TEXT[summary.status]}{#if summary.status === 'unknown' && summary.reason}: {REASON_TEXT[summary.reason] ??
+            summary.reason}{/if}
       </b>
     </div>
 
@@ -144,7 +145,9 @@
         {#if progress?.status === 'uploading'}
           <div class="bar"><div style="width: {Math.max(0, Math.min(1, progress.progress)) * 100}%"></div></div>
         {/if}
-        <button class="action" data-testid="firmware-cancel" disabled={cancelling} onclick={cancel}>{cancelling ? 'Cancelling…' : 'Cancel'}</button>
+        <button class="action" data-testid="firmware-cancel" disabled={cancelling} onclick={cancel}
+          >{cancelling ? 'Cancelling…' : 'Cancel'}</button
+        >
       </div>
     {:else if summary.status === 'update-available' && latest}
       <div class="row">

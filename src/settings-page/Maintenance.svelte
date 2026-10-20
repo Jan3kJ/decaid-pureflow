@@ -62,7 +62,11 @@
     // While the boiler cools nothing has been asked yet: no timeout.
     if (cooling !== null) return;
     const before = progress;
-    progress = advance(progress, { state: machineState(), substate: skin.snapshot?.state.substate ?? null, now: Date.now() }, procedure);
+    progress = advance(
+      progress,
+      { state: machineState(), substate: skin.snapshot?.state.substate ?? null, now: Date.now() },
+      procedure,
+    );
     if (progress.phase === 'done' && before.phase !== 'done') void restoreHeater();
   }
 

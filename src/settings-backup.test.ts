@@ -41,7 +41,12 @@ describe('the backup of the settings', () => {
 
   it('reads back what it wrote', async () => {
     const gateway = fakeGateway();
-    const backup = new SettingsBackup(gateway, '0.1.1', () => {}, () => NOW);
+    const backup = new SettingsBackup(
+      gateway,
+      '0.1.1',
+      () => {},
+      () => NOW,
+    );
     await backup.write(CHANGED);
     expect(gateway.store[BACKUP_KEY]).toEqual({ savedAt: NOW.toISOString(), version: '0.1.1', settings: CHANGED });
     expect(await backup.read()).toEqual({ savedAt: NOW.toISOString(), settings: CHANGED });
@@ -95,7 +100,12 @@ describe('writing the backup after a save', () => {
   it('waits until the settings stay unchanged, then writes the last ones once', async () => {
     const gateway = fakeGateway();
     const written: Written[] = [];
-    const backup = new SettingsBackup(gateway, '0.1.1', (entry) => written.push(entry), () => NOW);
+    const backup = new SettingsBackup(
+      gateway,
+      '0.1.1',
+      (entry) => written.push(entry),
+      () => NOW,
+    );
     backup.schedule(DEFAULT_SETTINGS);
     await vi.advanceTimersByTimeAsync(BACKUP_DEBOUNCE_MS - 100);
     backup.schedule(CHANGED);
@@ -111,7 +121,12 @@ describe('writing the backup after a save', () => {
     const gateway = fakeGateway();
     gateway.fail = true;
     const written: Written[] = [];
-    const backup = new SettingsBackup(gateway, '0.1.1', (entry) => written.push(entry), () => NOW);
+    const backup = new SettingsBackup(
+      gateway,
+      '0.1.1',
+      (entry) => written.push(entry),
+      () => NOW,
+    );
     backup.schedule(CHANGED);
     await vi.advanceTimersByTimeAsync(BACKUP_DEBOUNCE_MS);
     expect(written).toEqual([{ error: 'gateway away' }]);
@@ -119,7 +134,12 @@ describe('writing the backup after a save', () => {
 
   it('writes nothing after a cancel', async () => {
     const gateway = fakeGateway();
-    const backup = new SettingsBackup(gateway, '0.1.1', () => {}, () => NOW);
+    const backup = new SettingsBackup(
+      gateway,
+      '0.1.1',
+      () => {},
+      () => NOW,
+    );
     backup.schedule(CHANGED);
     backup.cancel();
     await vi.advanceTimersByTimeAsync(BACKUP_DEBOUNCE_MS * 2);
@@ -151,6 +171,12 @@ describe('the backup at the start', () => {
     expect(hasSettings(store)).toBe(false);
     data.set(SETTINGS_KEY, '{}');
     expect(hasSettings(store)).toBe(true);
-    expect(hasSettings({ getItem: () => { throw new Error('no storage'); } })).toBe(false);
+    expect(
+      hasSettings({
+        getItem: () => {
+          throw new Error('no storage');
+        },
+      }),
+    ).toBe(false);
   });
 });

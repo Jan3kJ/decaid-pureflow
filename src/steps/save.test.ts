@@ -12,10 +12,13 @@ const blooming = bundled.find((entry) => entry.title === 'Blooming Espresso') as
 function setup() {
   const gateway = fakeGateway();
   const bundledRecord = gateway.make(blooming, { id: 'profile:blooming', isDefault: true, metadata: null });
-  const mine = gateway.make({ ...blooming, title: 'My blooming', steps: blooming.steps.slice(0, 5) }, {
-    id: 'profile:mine',
-    metadata: { source: 'pureflow', note: 'kept' },
-  });
+  const mine = gateway.make(
+    { ...blooming, title: 'My blooming', steps: blooming.steps.slice(0, 5) },
+    {
+      id: 'profile:mine',
+      metadata: { source: 'pureflow', note: 'kept' },
+    },
+  );
   gateway.records.push(bundledRecord, mine);
   return { gateway, bundledRecord, mine };
 }
@@ -71,7 +74,7 @@ describe('saveStepEdit', () => {
     expect(record.visibility).toBe('visible');
   });
 
-  it("the settings (title, notes, target weight and volume, tank temperature) are in what is stored", async () => {
+  it('the settings (title, notes, target weight and volume, tank temperature) are in what is stored', async () => {
     const { gateway, mine } = setup();
     const edited: Profile = {
       ...mine.profile,
@@ -91,9 +94,9 @@ describe('saveStepEdit', () => {
 
   it('a new title with the steps of another visible profile is still refused', async () => {
     const { gateway, mine, bundledRecord } = setup();
-    await expect(
-      saveStepEdit(gateway.client, { ...bundledRecord.profile, title: 'Elsewhere' }, mine),
-    ).rejects.toBeInstanceOf(StepsTakenError);
+    await expect(saveStepEdit(gateway.client, { ...bundledRecord.profile, title: 'Elsewhere' }, mine)).rejects.toBeInstanceOf(
+      StepsTakenError,
+    );
   });
 
   it('a bundled default is not saved over: only save as', () => {

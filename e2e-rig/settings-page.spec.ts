@@ -119,7 +119,11 @@ test('settings changed through the page are read back from the gateway, and rest
     await expect(shown('flush-duration')).toHaveText(`${flushDuration}s`);
     await type(page, 'setting-flush-flow', String(flushFlow));
     await expect(shown('flush-flow')).toHaveText(`${flushFlow.toFixed(1)}ml/s`);
-    expect((await api('GET', '/api/v1/workflow')).rinseData).toEqual({ ...before.rinseData, duration: flushDuration, flow: flushFlow });
+    expect((await api('GET', '/api/v1/workflow')).rinseData).toEqual({
+      ...before.rinseData,
+      duration: flushDuration,
+      flow: flushFlow,
+    });
     expect((await api('GET', '/api/v1/machine/settings')).flushFlow).toBe(flushFlow);
   } finally {
     await api('POST', '/api/v1/settings', {

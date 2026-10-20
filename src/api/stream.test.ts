@@ -99,12 +99,8 @@ describe('URLs', () => {
   });
 
   it('derives the stream URL from the base URL', () => {
-    expect(streamUrl('http://192.168.1.20:8080/', '/ws/v1/scale/snapshot')).toBe(
-      'ws://192.168.1.20:8080/ws/v1/scale/snapshot',
-    );
-    expect(streamUrl('https://decaid.example', '/ws/v1/machine/snapshot')).toBe(
-      'wss://decaid.example/ws/v1/machine/snapshot',
-    );
+    expect(streamUrl('http://192.168.1.20:8080/', '/ws/v1/scale/snapshot')).toBe('ws://192.168.1.20:8080/ws/v1/scale/snapshot');
+    expect(streamUrl('https://decaid.example', '/ws/v1/machine/snapshot')).toBe('wss://decaid.example/ws/v1/machine/snapshot');
     const stream = scaleSnapshotStream({ baseUrl: 'http://tablet:8080', WebSocket: FakeSocket }).connect();
     expect(FakeSocket.last.url).toBe('ws://tablet:8080/ws/v1/scale/snapshot');
     stream.close();

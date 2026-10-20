@@ -36,12 +36,7 @@ export function canSaveOver(record: ProfileRecord | null | undefined): record is
  * was keeps the id: the record is changed and nothing hidden.
  */
 export async function saveStepEdit(client: DecaidClient, profile: Profile, parent: ProfileRecord): Promise<ProfileRecord> {
-  const record = await writeProfile(
-    client,
-    profile,
-    { parentId: parent.id, metadata: stepMetadata(parent.metadata) },
-    parent.id,
-  );
+  const record = await writeProfile(client, profile, { parentId: parent.id, metadata: stepMetadata(parent.metadata) }, parent.id);
   if (record.id !== parent.id) await client.setProfileVisibility(parent.id, 'hidden');
   return record;
 }

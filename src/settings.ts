@@ -115,8 +115,7 @@ export const SETTINGS_KEY = 'pureflow.settings';
 
 type Store = Pick<Storage, 'getItem' | 'setItem'>;
 
-const isAmount = (value: unknown): value is number =>
-  typeof value === 'number' && Number.isFinite(value) && value >= 0;
+const isAmount = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value) && value >= 0;
 
 /**
  * The stored values of one group over its defaults. A value is taken when it has the
@@ -167,9 +166,7 @@ export function readSettings(stored: unknown): Settings {
     steam: {
       ...settings.steam,
       adjustments: readAdjustments(steam.adjustments),
-      heaterTemperature: isOnTemperature(steam.heaterTemperature)
-        ? steam.heaterTemperature
-        : DEFAULT_STEAM_SETTINGS.heaterTemperature,
+      heaterTemperature: isOnTemperature(steam.heaterTemperature) ? steam.heaterTemperature : DEFAULT_STEAM_SETTINGS.heaterTemperature,
     },
     hotWater: { ratios: readRatios(settings.hotWater.ratios) },
     startProfiles: readStartProfiles(values.startProfiles),
@@ -284,11 +281,7 @@ export const STEAM_FIELDS: { title: string; hint: string; fields: SteamField[] }
   {
     title: 'mugs',
     hint: 'the weight of each empty mug',
-    fields: [
-      grams('mug-small', 's', 'mugSmall', 0),
-      grams('mug-medium', 'm', 'mugMedium', 0),
-      grams('mug-large', 'l', 'mugLarge', 0),
-    ],
+    fields: [grams('mug-small', 's', 'mugSmall', 0), grams('mug-medium', 'm', 'mugMedium', 0), grams('mug-large', 'l', 'mugLarge', 0)],
   },
   // One row with the milk of one drink, so the adjust buttons fit the page (spec 3.7).
   {

@@ -71,8 +71,7 @@ export function isAFlow3(record: Pick<ProfileRecord, 'metadata'>): boolean {
 
 /** The stored profiles as the picker lists them after the defaults: the skin's A-Flow 3.0 profiles, then the other A-Flow ones, then the rest, each by title. */
 export function sortProfiles(records: readonly ProfileRecord[]): ProfileRecord[] {
-  const rank = (record: ProfileRecord) =>
-    isAFlow3(record) ? 0 : record.profile.title.startsWith('A-Flow') ? 1 : 2;
+  const rank = (record: ProfileRecord) => (isAFlow3(record) ? 0 : record.profile.title.startsWith('A-Flow') ? 1 : 2);
   return [...records].sort((a, b) => rank(a) - rank(b) || a.profile.title.localeCompare(b.profile.title));
 }
 

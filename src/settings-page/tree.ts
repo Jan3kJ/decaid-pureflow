@@ -53,8 +53,7 @@ export type View =
   | { kind: 'sensors' };
 
 export type Content =
-  | { kind: 'fields'; fields: Field[]; actions?: Action[]; view?: View; below?: boolean }
-  | { kind: 'skin'; part: SkinPart };
+  { kind: 'fields'; fields: Field[]; actions?: Action[]; view?: View; below?: boolean } | { kind: 'skin'; part: SkinPart };
 
 export interface Subcategory {
   id: string;

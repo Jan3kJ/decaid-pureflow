@@ -209,9 +209,7 @@ test('the steam settings come from the settings store and survive a reload', asy
   expect(errors).toEqual([]);
 });
 
-test('steam started at the machine shows its graph of pressure and temperature, and stops from the page', async ({
-  page,
-}) => {
+test('steam started at the machine shows its graph of pressure and temperature, and stops from the page', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
   await page.getByTestId('open-steam').click();

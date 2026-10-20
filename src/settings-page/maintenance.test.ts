@@ -18,7 +18,10 @@ import {
 
 /** The progress after frames of `[state, substate]`, one a second from a start at 0. */
 function run(procedure: Procedure, frames: [MachineState | null, string | null][], from: Progress = started(0)): Progress {
-  return frames.reduce((progress, [state, substate], i) => advance(progress, { state, substate, now: (i + 1) * 1000 }, procedure), from);
+  return frames.reduce(
+    (progress, [state, substate], i) => advance(progress, { state, substate, now: (i + 1) * 1000 }, procedure),
+    from,
+  );
 }
 
 describe('the maintenance procedures (research.md 20.10 S2b, Streamline maintenance-progress.js)', () => {
@@ -29,24 +32,57 @@ describe('the maintenance procedures (research.md 20.10 S2b, Streamline maintena
   it('a clean waits while the machine has not entered the state, then runs its steps', () => {
     // The first frames after the request still say idle: that is not "finished".
     expect(run(CLEAN, [['idle', 'idle']])).toMatchObject({ phase: 'waiting' });
-    expect(run(CLEAN, [['idle', 'idle'], ['cleaning', 'cleaningStart']])).toMatchObject({ phase: 'running', milestone: 0 });
+    expect(
+      run(CLEAN, [
+        ['idle', 'idle'],
+        ['cleaning', 'cleaningStart'],
+      ]),
+    ).toMatchObject({ phase: 'running', milestone: 0 });
     // Decaid reports fill and flush both as cleaningGroup: before the soak the fill, after it the flush.
-    expect(run(CLEAN, [['cleaning', 'cleaningStart'], ['cleaning', 'cleaningGroup']])).toMatchObject({ milestone: 1 });
-    expect(run(CLEAN, [['cleaning', 'cleaningGroup'], ['cleaning', 'cleanSoaking']])).toMatchObject({ milestone: 2 });
-    expect(run(CLEAN, [['cleaning', 'cleanSoaking'], ['cleaning', 'cleaningGroup']])).toMatchObject({ milestone: 3 });
+    expect(
+      run(CLEAN, [
+        ['cleaning', 'cleaningStart'],
+        ['cleaning', 'cleaningGroup'],
+      ]),
+    ).toMatchObject({ milestone: 1 });
+    expect(
+      run(CLEAN, [
+        ['cleaning', 'cleaningGroup'],
+        ['cleaning', 'cleanSoaking'],
+      ]),
+    ).toMatchObject({ milestone: 2 });
+    expect(
+      run(CLEAN, [
+        ['cleaning', 'cleanSoaking'],
+        ['cleaning', 'cleaningGroup'],
+      ]),
+    ).toMatchObject({ milestone: 3 });
     // A step does not go back.
-    expect(run(CLEAN, [['cleaning', 'cleanSoaking'], ['cleaning', 'cleaningStart']])).toMatchObject({ milestone: 2 });
+    expect(
+      run(CLEAN, [
+        ['cleaning', 'cleanSoaking'],
+        ['cleaning', 'cleaningStart'],
+      ]),
+    ).toMatchObject({ milestone: 2 });
   });
 
   it('a clean that has left the state is done', () => {
-    const done = run(CLEAN, [['cleaning', 'cleaningStart'], ['cleaning', 'cleanSoaking'], ['idle', 'idle']]);
+    const done = run(CLEAN, [
+      ['cleaning', 'cleaningStart'],
+      ['cleaning', 'cleanSoaking'],
+      ['idle', 'idle'],
+    ]);
     expect(done).toMatchObject({ phase: 'done', milestone: CLEAN.milestones.length });
     expect(caption(done, CLEAN)).toEqual({ text: 'Ready', tone: 'success' });
     expect(isActive(done)).toBe(false);
   });
 
   it('the simulated DE1 stays in cleaning with the substate idle: running at its first step (rig, 2026-10-18)', () => {
-    const progress = run(CLEAN, [['idle', 'idle'], ['cleaning', 'idle'], ['cleaning', 'idle']]);
+    const progress = run(CLEAN, [
+      ['idle', 'idle'],
+      ['cleaning', 'idle'],
+      ['cleaning', 'idle'],
+    ]);
     expect(progress).toMatchObject({ phase: 'running', milestone: 0 });
     expect(caption(progress, CLEAN)).toEqual({ text: 'Starting', tone: 'progress' });
   });
@@ -71,12 +107,25 @@ describe('the maintenance procedures (research.md 20.10 S2b, Streamline maintena
   });
 
   it('descaling: start, descale, steam', () => {
-    expect(run(DESCALE, [['descaling', 'cleaningStart'], ['descaling', 'cleaningGroup']])).toMatchObject({ milestone: 1 });
-    expect(run(DESCALE, [['descaling', 'cleaningGroup'], ['descaling', 'cleaningSteam']])).toMatchObject({ milestone: 2 });
+    expect(
+      run(DESCALE, [
+        ['descaling', 'cleaningStart'],
+        ['descaling', 'cleaningGroup'],
+      ]),
+    ).toMatchObject({ milestone: 1 });
+    expect(
+      run(DESCALE, [
+        ['descaling', 'cleaningGroup'],
+        ['descaling', 'cleaningSteam'],
+      ]),
+    ).toMatchObject({ milestone: 2 });
   });
 
   it('transport mode has one step and says the machine can be turned off when it has ended', () => {
-    const done = run(TRANSPORT, [['airPurge', 'idle'], ['idle', 'idle']]);
+    const done = run(TRANSPORT, [
+      ['airPurge', 'idle'],
+      ['idle', 'idle'],
+    ]);
     expect(caption(done, TRANSPORT)?.text).toMatch(/turn your machine off/);
   });
 

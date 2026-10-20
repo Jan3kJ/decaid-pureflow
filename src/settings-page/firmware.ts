@@ -25,7 +25,8 @@ export interface FirmwareSummary {
 }
 
 export function summarize(catalog: FirmwareCatalog | null): FirmwareSummary {
-  if (!catalog) return { status: 'unknown', model: null, installedBuild: null, latest: null, reason: 'unreachable', operation: 'idle' };
+  if (!catalog)
+    return { status: 'unknown', model: null, installedBuild: null, latest: null, reason: 'unreachable', operation: 'idle' };
   const artifacts = Array.isArray(catalog.artifacts) ? catalog.artifacts : [];
   const installedBuild = typeof catalog.machine?.build === 'number' ? catalog.machine.build : null;
   const recommended = artifacts.find((artifact) => artifact.id === catalog.recommendedArtifactId);
@@ -38,8 +39,21 @@ export function summarize(catalog: FirmwareCatalog | null): FirmwareSummary {
   // A machine newer than every bundled build (a beta firmware) is not a failed check.
   const ahead = reason === 'not_newer' && installedBuild !== null && (latest?.build ?? Infinity) < installedBuild;
   const status: FirmwareStatus =
-    catalog.updateAvailable === true ? 'update-available' : catalog.updateAvailable === false ? (ahead ? 'ahead' : 'up-to-date') : 'unknown';
-  return { status, model: catalog.machine?.model ?? null, installedBuild, latest, reason, operation: catalog.operation?.state ?? 'idle' };
+    catalog.updateAvailable === true
+      ? 'update-available'
+      : catalog.updateAvailable === false
+        ? ahead
+          ? 'ahead'
+          : 'up-to-date'
+        : 'unknown';
+  return {
+    status,
+    model: catalog.machine?.model ?? null,
+    installedBuild,
+    latest,
+    reason,
+    operation: catalog.operation?.state ?? 'idle',
+  };
 }
 
 export const STATUS_TEXT: Record<FirmwareStatus, string> = {

@@ -1,12 +1,6 @@
 import { PAUSE_EXIT_FLOW_UNDER } from './constants';
 import { AFLOW_VERSION, type AFlowParams } from './types';
-import {
-  isFollowField,
-  paramRanges,
-  TOGGLE_FIELDS,
-  type FollowField,
-  type NumberField,
-} from './validate';
+import { isFollowField, paramRanges, TOGGLE_FIELDS, type FollowField, type NumberField } from './validate';
 
 // Where the values are stored (a record's `metadata`, a profile's `notes`) is decided in
 // src/editor/storage.ts, not here.

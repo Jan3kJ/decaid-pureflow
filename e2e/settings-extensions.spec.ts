@@ -62,11 +62,11 @@ test('a plugin setting of each type is written alone and the card shows what the
   await openCategory(page, 'extensions');
   await expect(page.getByTestId(`plugin-${VISUALIZER}`)).toBeVisible();
   // Sorted by name: DYE2, Time to Ready, Visualizer.
-  expect(await page.locator('[data-testid^="plugin-"][data-loaded]').evaluateAll((cards) => cards.map((card) => card.getAttribute('data-testid')))).toEqual([
-    'plugin-dye2.reaplugin',
-    'plugin-time-to-ready.reaplugin',
-    `plugin-${VISUALIZER}`,
-  ]);
+  expect(
+    await page
+      .locator('[data-testid^="plugin-"][data-loaded]')
+      .evaluateAll((cards) => cards.map((card) => card.getAttribute('data-testid'))),
+  ).toEqual(['plugin-dye2.reaplugin', 'plugin-time-to-ready.reaplugin', `plugin-${VISUALIZER}`]);
   await expect(page.getByTestId(`plugin-setting-${VISUALIZER}-Username`)).toHaveValue('janek');
   // Not stored: the manifest's default.
   await expect(page.getByTestId(`plugin-setting-${VISUALIZER}-LengthThreshold`)).toHaveText('5');
@@ -123,10 +123,11 @@ test('a plugin is disabled and enabled again, and a held update is approved afte
   await expect(page.getByTestId('plugin-status-time-to-ready.reaplugin')).toHaveText('Not loaded');
   await enabled.click();
   await expect(enabled).toHaveAttribute('aria-checked', 'true');
-  expect(gateway.requests.filter((call) => /plugins\/time-to-ready\.reaplugin\/(en|dis)able$/.test(call.path)).map((call) => call.path.split('/').pop())).toEqual([
-    'disable',
-    'enable',
-  ]);
+  expect(
+    gateway.requests
+      .filter((call) => /plugins\/time-to-ready\.reaplugin\/(en|dis)able$/.test(call.path))
+      .map((call) => call.path.split('/').pop()),
+  ).toEqual(['disable', 'enable']);
 
   await expect(page.getByTestId('plugin-status-dye2.reaplugin')).toHaveText('Update needs approval');
   await page.getByTestId('plugin-approve-dye2.reaplugin').click();
@@ -163,7 +164,9 @@ test('presence: the sleep timeout is written and read back; a wake schedule is a
   await page.getByTestId('schedule-save').click();
   await expect(page.getByTestId('schedule-form')).toHaveCount(0);
   await expect(page.getByTestId('schedule-text-schedule-1')).toHaveText('06:15, Mon, Wed, awake for 1 h 30 min');
-  expect(writes('POST', '/api/v1/presence/schedules')).toEqual([{ time: '06:15', daysOfWeek: [1, 3], enabled: true, keepAwakeFor: 90 }]);
+  expect(writes('POST', '/api/v1/presence/schedules')).toEqual([
+    { time: '06:15', daysOfWeek: [1, 3], enabled: true, keepAwakeFor: 90 },
+  ]);
   await page.getByTestId('settings-sub-presence').click();
   await page.screenshot({ path: 'docs/product/settings-presence.png' });
 

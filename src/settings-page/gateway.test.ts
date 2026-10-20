@@ -22,7 +22,10 @@ function fakeGateway() {
   const state = {
     decaid: { weightFlowMultiplier: 1, stopHotWaterAtWeight: true, gatewayMode: 'tracking' } as Record<string, any>,
     machine: { fan: 55, usb: false, tankTemp: 20, steamPurgeMode: 0, flushFlow: 6, flushTimeout: 10 } as Record<string, any>,
-    advanced: { heaterIdleTemp: 98, heaterPh1Flow: 2.5, heaterPh2Flow: 5, heaterPh2Timeout: 5, heaterVoltage: 120 } as Record<string, any>,
+    advanced: { heaterIdleTemp: 98, heaterPh1Flow: 2.5, heaterPh2Flow: 5, heaterPh2Timeout: 5, heaterVoltage: 120 } as Record<
+      string,
+      any
+    >,
     workflow: {
       steamSettings: { targetTemperature: 150, duration: 50, flow: 0.8 },
       hotWaterData: { targetTemperature: 75, duration: 30, volume: 50, flow: 10 },
@@ -74,7 +77,8 @@ function fakeGateway() {
       case 'GET /api/v1/workflow':
         return json(state.workflow);
       case 'PUT /api/v1/workflow':
-        for (const [group, values] of Object.entries(body)) state.workflow[group] = { ...state.workflow[group], ...(values as object) };
+        for (const [group, values] of Object.entries(body))
+          state.workflow[group] = { ...state.workflow[group], ...(values as object) };
         if (body.rinseData) Object.assign(state.machine, { flushFlow: body.rinseData.flow, flushTimeout: body.rinseData.duration });
         return json(state.workflow);
       case 'GET /api/v1/display':
@@ -243,7 +247,7 @@ describe('writeField', () => {
     expect(order.slice(-2)).toEqual([`POST /api/v1/store/${STREAMLINE_NAMESPACE}/last-steam-flow`, 'PUT /api/v1/workflow']);
   });
 
-  it("does not remember a steam temperature of 0 for Streamline, which keeps only one that is on", async () => {
+  it('does not remember a steam temperature of 0 for Streamline, which keeps only one that is on', async () => {
     const gateway = await opened();
     gateway.state.kv[`${STREAMLINE_NAMESPACE}/last-steam-temp`] = 150;
     const values = await writeField(gateway.client, gateway.values, field('steam-temperature'), 0);

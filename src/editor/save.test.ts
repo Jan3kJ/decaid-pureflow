@@ -2,17 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULT_PROFILES, generateProfile, serializeParams, type AFlowParams } from '../aflow';
 import { loadProfile } from '../shell/profiles';
 import { fakeGateway } from './gateway.fake';
-import {
-  SKIN_METADATA,
-  buildProfile,
-  changed,
-  loadOnLeave,
-  nameOf,
-  saveAs,
-  saveEdit,
-  storeAndLoad,
-  titleOf,
-} from './save';
+import { SKIN_METADATA, buildProfile, changed, loadOnLeave, nameOf, saveAs, saveEdit, storeAndLoad, titleOf } from './save';
 import { StepsTakenError, paramsMetadata, readParams, readRecord, workflowNotes } from './storage';
 
 const light = DEFAULT_PROFILES[1].params;
@@ -70,7 +60,7 @@ describe('saveAs', () => {
 });
 
 describe('saveEdit', () => {
-  it('an edit of the curve: a new record with the parent\'s id, and the parent is hidden', async () => {
+  it("an edit of the curve: a new record with the parent's id, and the parent is hidden", async () => {
     const gateway = fakeGateway();
     const parent = await saveAs(gateway.client, edited, about, false);
     gateway.calls.length = 0;
@@ -107,10 +97,9 @@ describe('saveEdit', () => {
 
   it('a profile of version 1 is moved: the values go to the metadata, the notes keep only the text', async () => {
     const gateway = fakeGateway();
-    const v1 = gateway.make(
-      generateProfile(edited, { ...about, notes: `${serializeParams(edited)}\nfor the morning` }),
-      { metadata: { source: 'pureflow', aflow: '3.0' } },
-    );
+    const v1 = gateway.make(generateProfile(edited, { ...about, notes: `${serializeParams(edited)}\nfor the morning` }), {
+      metadata: { source: 'pureflow', aflow: '3.0' },
+    });
     gateway.records.push(v1);
     // It opens with its values, read from the notes.
     expect(readRecord(v1)).toEqual(edited);
@@ -197,11 +186,7 @@ describe('loading', () => {
 
     const stored = await storeAndLoad(gateway.client, () => saveEdit(gateway.client, next, parent, false));
 
-    expect(gateway.sent()).toEqual([
-      'POST /api/v1/profiles',
-      `PUT /api/v1/profiles/${parent.id}/visibility`,
-      'PUT /api/v1/workflow',
-    ]);
+    expect(gateway.sent()).toEqual(['POST /api/v1/profiles', `PUT /api/v1/profiles/${parent.id}/visibility`, 'PUT /api/v1/workflow']);
     expect(gateway.calls[2].body.profile).toEqual({ ...buildProfile(next, about, false), notes: workflowNotes('', next) });
     expect(stored.record.id).not.toBe(parent.id);
   });

@@ -1,14 +1,5 @@
 import * as C from './constants';
-import type {
-  AFlowParams,
-  FlowStep,
-  GenerateOptions,
-  PressureStep,
-  Profile,
-  ProfileStep,
-  ResolvedParams,
-  StepExit,
-} from './types';
+import type { AFlowParams, FlowStep, GenerateOptions, PressureStep, Profile, ProfileStep, ResolvedParams, StepExit } from './types';
 
 // The plugin's round_to_one_digits; it also keeps 3 * 0.1 from becoming 0.30000000000000004.
 function round1(value: number): number {
@@ -33,8 +24,7 @@ export function resolveParams(p: AFlowParams): ResolvedParams {
     infuseTemperature,
     secondFillTemperature: p.secondFillTemperature ?? infuseTemperature,
     rampTemperature: p.rampTemperature ?? p.pourTemperature,
-    pourEndFlow:
-      p.pourEndFlow ?? (p.flowUp ? round1(p.pourFlow * C.FLOW_UP_FACTOR) : C.FLOW_DOWN_TARGET),
+    pourEndFlow: p.pourEndFlow ?? (p.flowUp ? round1(p.pourFlow * C.FLOW_UP_FACTOR) : C.FLOW_DOWN_TARGET),
     pourPressureLimit: p.pourPressureLimit ?? p.pourPressure,
   };
 }

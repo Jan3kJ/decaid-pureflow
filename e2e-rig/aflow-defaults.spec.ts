@@ -24,8 +24,7 @@ async function api(method: string, path: string, body?: unknown): Promise<any> {
   return text ? JSON.parse(text) : undefined;
 }
 
-const profileIds = async (): Promise<string[]> =>
-  (await api('GET', '/api/v1/profiles')).map((record: { id: string }) => record.id);
+const profileIds = async (): Promise<string[]> => (await api('GET', '/api/v1/profiles')).map((record: { id: string }) => record.id);
 
 let gatewayUp = false;
 

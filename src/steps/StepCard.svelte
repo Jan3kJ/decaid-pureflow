@@ -30,8 +30,21 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     oninsert: () => void;
   }
 
-  let { step, index, count, open, disabled = false, onopen, onstep, ontype, oncycle, onname, onmove, ondelete, oninsert }: Props =
-    $props();
+  let {
+    step,
+    index,
+    count,
+    open,
+    disabled = false,
+    onopen,
+    onstep,
+    ontype,
+    oncycle,
+    onname,
+    onmove,
+    ondelete,
+    oninsert,
+  }: Props = $props();
 
   const exit = $derived(readExitDef(step));
   const pressure = $derived(step.pump === 'pressure');
@@ -62,30 +75,97 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
 
     <div class="rows">
       <div class="pair">
-        <CycleChip label="sensor" value={step.sensor === 'water' ? 'Water' : 'Coffee'} testid="{index}-sensor" tone="temperature" {disabled} oncycle={() => oncycle('sensor')} />
-        <ValueChip label="temperature" value={shown(step, 'temperature')} tone="temperature" testid="{index}-temperature" onstep={(d) => onstep('temperature', d)} onedit={() => ontype('temperature')} />
+        <CycleChip
+          label="sensor"
+          value={step.sensor === 'water' ? 'Water' : 'Coffee'}
+          testid="{index}-sensor"
+          tone="temperature"
+          {disabled}
+          oncycle={() => oncycle('sensor')}
+        />
+        <ValueChip
+          label="temperature"
+          value={shown(step, 'temperature')}
+          tone="temperature"
+          testid="{index}-temperature"
+          onstep={(d) => onstep('temperature', d)}
+          onedit={() => ontype('temperature')}
+        />
       </div>
       <div class="pair">
-        <CycleChip label="pump" value={pumpLabel({ pump: step.pump, transition: step.transition })} testid="{index}-pump" tone={pressure ? 'pressure' : 'flow'} {disabled} oncycle={() => oncycle('pump')} />
-        <ValueChip label={pressure ? 'pressure' : 'flow'} value={shown(step, 'target')} tone={pressure ? 'pressure' : 'flow'} testid="{index}-target" onstep={(d) => onstep('target', d)} onedit={() => ontype('target')} />
+        <CycleChip
+          label="pump"
+          value={pumpLabel({ pump: step.pump, transition: step.transition })}
+          testid="{index}-pump"
+          tone={pressure ? 'pressure' : 'flow'}
+          {disabled}
+          oncycle={() => oncycle('pump')}
+        />
+        <ValueChip
+          label={pressure ? 'pressure' : 'flow'}
+          value={shown(step, 'target')}
+          tone={pressure ? 'pressure' : 'flow'}
+          testid="{index}-target"
+          onstep={(d) => onstep('target', d)}
+          onedit={() => ontype('target')}
+        />
       </div>
       <div class="pair">
         <span class="caption">limit to</span>
-        <ValueChip label={pressure ? 'flow limit' : 'pressure limit'} value={shown(step, 'limiter')} tone={pressure ? 'flow' : 'pressure'} testid="{index}-limiter" onstep={(d) => onstep('limiter', d)} onedit={() => ontype('limiter')} />
+        <ValueChip
+          label={pressure ? 'flow limit' : 'pressure limit'}
+          value={shown(step, 'limiter')}
+          tone={pressure ? 'flow' : 'pressure'}
+          testid="{index}-limiter"
+          onstep={(d) => onstep('limiter', d)}
+          onedit={() => ontype('limiter')}
+        />
       </div>
       <div class="pair">
-        <CycleChip label="move on if" value={exitLabel(exit)} testid="{index}-exit" tone={exit.type === 'off' ? 'none' : TONE[exit.type]} {disabled} oncycle={() => oncycle('exit')} />
+        <CycleChip
+          label="move on if"
+          value={exitLabel(exit)}
+          testid="{index}-exit"
+          tone={exit.type === 'off' ? 'none' : TONE[exit.type]}
+          {disabled}
+          oncycle={() => oncycle('exit')}
+        />
         {#if exit.type !== 'off'}
-          <ValueChip label="exit at" value={shown(step, 'exit')} tone={TONE[exit.type]} testid="{index}-exit" onstep={(d) => onstep('exit', d)} onedit={() => ontype('exit')} />
+          <ValueChip
+            label="exit at"
+            value={shown(step, 'exit')}
+            tone={TONE[exit.type]}
+            testid="{index}-exit"
+            onstep={(d) => onstep('exit', d)}
+            onedit={() => ontype('exit')}
+          />
         {:else}
           <span class="caption">no exit: the step runs to its maximum</span>
         {/if}
       </div>
       <div class="maxima">
         <span class="caption">maximum</span>
-        <ValueChip label="weight" value={shown(step, 'weight')} testid="{index}-weight" onstep={(d) => onstep('weight', d)} onedit={() => ontype('weight')} />
-        <ValueChip label="time" value={shown(step, 'seconds')} testid="{index}-seconds" onstep={(d) => onstep('seconds', d)} onedit={() => ontype('seconds')} />
-        <ValueChip label="volume" value={shown(step, 'volume')} testid="{index}-volume" onstep={(d) => onstep('volume', d)} onedit={() => ontype('volume')} />
+        <ValueChip
+          label="weight"
+          value={shown(step, 'weight')}
+          testid="{index}-weight"
+          onstep={(d) => onstep('weight', d)}
+          onedit={() => ontype('weight')}
+        />
+        <ValueChip
+          label="time"
+          value={shown(step, 'seconds')}
+          testid="{index}-seconds"
+          onstep={(d) => onstep('seconds', d)}
+          onedit={() => ontype('seconds')}
+        />
+        <ValueChip
+          label="volume"
+          value={shown(step, 'volume')}
+          testid="{index}-volume"
+          onstep={(d) => onstep('volume', d)}
+          onedit={() => ontype('volume')}
+        />
       </div>
     </div>
 
@@ -94,19 +174,34 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     {/if}
 
     <footer>
-      <button class="act delete" data-testid="step-delete-{index}" disabled={disabled || count === 1} onclick={ondelete}>delete step</button>
+      <button class="act delete" data-testid="step-delete-{index}" disabled={disabled || count === 1} onclick={ondelete}
+        >delete step</button
+      >
       <span class="moves">
-        <button class="act" data-testid="step-move-left-{index}" disabled={disabled || index === 0} onclick={() => onmove(-1)}>move left</button>
-        <button class="act" data-testid="step-move-right-{index}" disabled={disabled || index === count - 1} onclick={() => onmove(1)}>move right</button>
+        <button class="act" data-testid="step-move-left-{index}" disabled={disabled || index === 0} onclick={() => onmove(-1)}
+          >move left</button
+        >
+        <button class="act" data-testid="step-move-right-{index}" disabled={disabled || index === count - 1} onclick={() => onmove(1)}
+          >move right</button
+        >
         <button class="act" data-testid="step-insert-{index}" {disabled} onclick={oninsert}>+ step after</button>
       </span>
     </footer>
   </article>
 {:else}
-  <button class="card closed" class:warn={problems.length > 0} data-testid="step-card-{index}" data-open="false" {disabled} onclick={onopen}>
+  <button
+    class="card closed"
+    class:warn={problems.length > 0}
+    data-testid="step-card-{index}"
+    data-open="false"
+    {disabled}
+    onclick={onopen}
+  >
     <span class="head"><span class="number">{index + 1}</span><span class="title">{step.name}</span></span>
     <span class="line temperature">{shown(step, 'temperature')} {step.sensor === 'water' ? 'water' : 'coffee'}</span>
-    <span class="line {pressure ? 'pressure' : 'flow'}">{pumpLabel({ pump: step.pump, transition: step.transition })} {shown(step, 'target')}</span>
+    <span class="line {pressure ? 'pressure' : 'flow'}"
+      >{pumpLabel({ pump: step.pump, transition: step.transition })} {shown(step, 'target')}</span
+    >
     {#if !isOff(step, 'limiter')}
       <span class="line {pressure ? 'flow' : 'pressure'}">limit {shown(step, 'limiter')}</span>
     {/if}

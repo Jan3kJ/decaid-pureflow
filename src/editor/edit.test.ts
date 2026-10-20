@@ -1,12 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  DEFAULT_PROFILES,
-  generateProfile,
-  hasSecondFill,
-  resolveParams,
-  validateParams,
-  type AFlowParams,
-} from '../aflow';
+import { DEFAULT_PROFILES, generateProfile, hasSecondFill, resolveParams, validateParams, type AFlowParams } from '../aflow';
 import { dragValue, setValue, toggleFlow, toggleSecondFill } from './edit';
 
 const light: AFlowParams = DEFAULT_PROFILES.find((p) => p.id === 'default-light')!.params;
@@ -14,13 +7,7 @@ const floral: AFlowParams = DEFAULT_PROFILES.find((p) => p.id === 'default-flora
 
 const temperatures = (p: AFlowParams) => {
   const r = resolveParams(p);
-  return [
-    r.fillTemperature,
-    r.infuseTemperature,
-    r.secondFillTemperature,
-    r.rampTemperature,
-    r.pourTemperature,
-  ];
+  return [r.fillTemperature, r.infuseTemperature, r.secondFillTemperature, r.rampTemperature, r.pourTemperature];
 };
 
 describe('setValue (detail mode)', () => {
@@ -84,9 +71,7 @@ describe('dragValue (a line on the graph)', () => {
       pourTemperature: 88,
     };
     expect(temperatures(dragValue(detail, 'fillTemperature', 94))).toEqual([94, 91, 89.5, 90, 88]);
-    expect(temperatures(dragValue(detail, 'pourTemperature', 90.5))).toEqual([
-      96, 93, 91.5, 92.5, 90.5,
-    ]);
+    expect(temperatures(dragValue(detail, 'pourTemperature', 90.5))).toEqual([96, 93, 91.5, 92.5, 90.5]);
   });
 
   it('keeps a 2nd fill temperature that follows a set infuse temperature with it', () => {

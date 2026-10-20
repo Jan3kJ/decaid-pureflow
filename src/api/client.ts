@@ -568,7 +568,6 @@ function stringField(body: unknown, key: string): string | undefined {
 
 function describe(body: unknown): string {
   if (typeof body === 'string') return body ? ` ${body}` : '';
-  const text =
-    stringField(body, 'type') ?? stringField(body, 'message') ?? stringField(body, 'error') ?? stringField(body, 'e');
+  const text = stringField(body, 'type') ?? stringField(body, 'message') ?? stringField(body, 'error') ?? stringField(body, 'e');
   return text ? ` ${text}` : '';
 }

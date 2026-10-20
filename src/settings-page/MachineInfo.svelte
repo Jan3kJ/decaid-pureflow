@@ -56,7 +56,10 @@
 
   /** `refillKit` → 'Refill kit' */
   const labelOf = (key: string) => {
-    const words = key.replace(/([A-Z])/g, ' $1').toLowerCase().trim();
+    const words = key
+      .replace(/([A-Z])/g, ' $1')
+      .toLowerCase()
+      .trim();
     return words.charAt(0).toUpperCase() + words.slice(1);
   };
   const valueOf = (value: unknown) => (typeof value === 'boolean' ? (value ? 'Yes' : 'No') : String(value));
@@ -80,7 +83,8 @@
         <span>Serial number</span>
         <span class="serial">
           {#if info.serialNumber}
-            <button class="action" data-testid="machine-info-copy" onclick={() => copy(info!.serialNumber!)}>{copied ?? 'Copy'}</button>
+            <button class="action" data-testid="machine-info-copy" onclick={() => copy(info!.serialNumber!)}>{copied ?? 'Copy'}</button
+            >
           {/if}
           <b data-testid="machine-info-serial">{info.serialNumber ?? '–'}</b>
         </span>

@@ -39,9 +39,7 @@ async function home(page: Page) {
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
 }
 
-test('the tab opens the overlay: one entry per profile and bean, newest first, with the latest grinder setting', async ({
-  page,
-}) => {
+test('the tab opens the overlay: one entry per profile and bean, newest first, with the latest grinder setting', async ({ page }) => {
   const gateway = await mockGateway(page);
   fourShots(gateway);
   await home(page);
@@ -54,11 +52,7 @@ test('the tab opens the overlay: one entry per profile and bean, newest first, w
 
   const entries = page.getByTestId('history-entry');
   await expect(entries).toHaveCount(3);
-  await expect(entries.getByTestId('entry-profile')).toHaveText([
-    'Best practice',
-    'A-Flow / default-light',
-    'A-Flow / default-light',
-  ]);
+  await expect(entries.getByTestId('entry-profile')).toHaveText(['Best practice', 'A-Flow / default-light', 'A-Flow / default-light']);
   await expect(entries.getByTestId('entry-bean')).toHaveText(['no bean', 'Rig · Yirgacheffe', 'Square Mile · Red Brick']);
   // The grinder setting is the latest shot's; the change from 5.2 to 4.8 made no new entry.
   await expect(entries.getByTestId('entry-grinder')).toHaveText(['', 'grinder 6.0', 'grinder 4.8']);
@@ -122,9 +116,7 @@ test('a tap outside closes the overlay and changes nothing', async ({ page }) =>
   expect(errors).toEqual([]);
 });
 
-test('tapping an entry closes the overlay, restores profile, bean and grinder setting and shows its graph', async ({
-  page,
-}) => {
+test('tapping an entry closes the overlay, restores profile, bean and grinder setting and shows its graph', async ({ page }) => {
   const gateway = await mockGateway(page);
   fourShots(gateway);
   await home(page);

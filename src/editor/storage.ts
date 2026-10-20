@@ -48,7 +48,13 @@ export function splitNotes(notes: string | null | undefined): { params: AFlowPar
   for (const [index, line] of lines.entries()) {
     const parsed = parseParams(line.trim());
     if (!parsed.ok) continue;
-    return { params: parsed.params, text: lines.filter((_, at) => at !== index).join('\n').trim() };
+    return {
+      params: parsed.params,
+      text: lines
+        .filter((_, at) => at !== index)
+        .join('\n')
+        .trim(),
+    };
   }
   return { params: null, text: notes ?? '' };
 }

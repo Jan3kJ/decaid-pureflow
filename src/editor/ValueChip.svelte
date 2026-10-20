@@ -19,8 +19,7 @@
     ondrop?: () => void;
   }
 
-  let { label, value, testid, tone = 'none', compact = false, onstep, onedit, ondrag, ondrop }: Props =
-    $props();
+  let { label, value, testid, tone = 'none', compact = false, onstep, onedit, ondrag, ondrop }: Props = $props();
 
   /** px; how far a finger may move on a press that is a tap */
   const DRAG_SLOP = 10;

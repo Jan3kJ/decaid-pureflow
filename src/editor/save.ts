@@ -44,12 +44,7 @@ export function buildProfile(params: AFlowParams, about: About, firstStepWorkaro
 }
 
 /** 'save as': a new profile under a new name, with `POST /api/v1/profiles` and no parent. */
-export function saveAs(
-  client: DecaidClient,
-  params: AFlowParams,
-  about: About,
-  firstStepWorkaround: boolean,
-): Promise<ProfileRecord> {
+export function saveAs(client: DecaidClient, params: AFlowParams, about: About, firstStepWorkaround: boolean): Promise<ProfileRecord> {
   return writeParams(client, buildProfile(params, about, firstStepWorkaround), params, {
     metadata: SKIN_METADATA,
   });

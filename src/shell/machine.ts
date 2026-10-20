@@ -34,12 +34,7 @@ export type Link = 'connecting' | 'no-gateway' | 'refused' | 'no-machine' | 'mac
 export const FRAME_STALE_MS = 3000;
 
 /** `openedAt` and `lastFrameAt` are times of the skin's own clock, as `now` is. */
-export function linkOf(
-  gateway: Gateway,
-  openedAt: number | null,
-  lastFrameAt: number | null,
-  now: number,
-): Link {
+export function linkOf(gateway: Gateway, openedAt: number | null, lastFrameAt: number | null, now: number): Link {
   if (gateway === 'connecting') return 'connecting';
   if (gateway === 'refused') return 'refused';
   if (gateway === 'lost' || openedAt === null) return 'no-gateway';

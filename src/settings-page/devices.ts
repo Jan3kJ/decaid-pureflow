@@ -77,7 +77,11 @@ export function deviceRows(devices: readonly DeviceInfo[], kind: DeviceKind, pre
 }
 
 /** What a connect answered, as a line for the row; null when it connected. */
-export function connectMessage(result: { outcome: string; error?: string | null; connectionError?: { message: string } | null }): string | null {
+export function connectMessage(result: {
+  outcome: string;
+  error?: string | null;
+  connectionError?: { message: string } | null;
+}): string | null {
   switch (result.outcome) {
     case 'connected':
     case 'alreadyConnected':

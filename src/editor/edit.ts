@@ -1,14 +1,7 @@
 // What an edit does to the parameters, beyond writing one number. Pure: parameters in, new
 // parameters out. The two ways to change a value differ only for the temperatures: detail
 // mode sets one phase's temperature, a drag on the graph moves a group of phases together.
-import {
-  hasSecondFill,
-  paramRanges,
-  resolveParams,
-  type AFlowParams,
-  type FollowField,
-  type NumberField,
-} from '../aflow';
+import { hasSecondFill, paramRanges, resolveParams, type AFlowParams, type FollowField, type NumberField } from '../aflow';
 import { PAUSE_SECONDS } from '../aflow/constants';
 import type { EditField } from './curve';
 
@@ -59,10 +52,7 @@ export function dragValue(p: AFlowParams, field: EditField, value: number): AFlo
   const { min, max } = paramRanges()[lead];
   const own = followers.filter((f) => p[f] !== null);
   const values = [p[lead], ...own.map((f) => p[f] as number)];
-  const delta = Math.min(
-    max - Math.max(...values),
-    Math.max(min - Math.min(...values), value - p[lead]),
-  );
+  const delta = Math.min(max - Math.max(...values), Math.max(min - Math.min(...values), value - p[lead]));
   const next: AFlowParams = { ...p, [lead]: round1(p[lead] + delta) };
   for (const f of own) next[f] = round1((p[f] as number) + delta);
   return next;

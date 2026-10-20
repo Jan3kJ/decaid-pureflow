@@ -24,9 +24,7 @@
   const adjusted = (seconds: number) => adjustedSeconds(seconds, skin.steamAdjustment);
   const calculated = $derived(reading ? adjusted(reading.seconds) : 0);
   /** While steam runs the timer counts down from the set seconds (spec 3.7). */
-  const shown = $derived(
-    timer === null ? null : steaming && skin.steam ? secondsLeft(timer, steamSeconds(skin.steam)) : timer,
-  );
+  const shown = $derived(timer === null ? null : steaming && skin.steam ? secondsLeft(timer, steamSeconds(skin.steam)) : timer);
   const signed = (amount: number) => `${amount > 0 ? '+' : amount < 0 ? '−' : '±'}${Math.abs(amount)} s`;
   /** One adjust button at a time; a tap on the selected one clears it. */
   const select = (index: number) => (skin.steamAdjust = skin.steamAdjust === index ? null : index);
@@ -83,11 +81,7 @@
         <dd>
           <span data-testid="steam-weight">{skin.weight === null ? '–' : `${skin.weight.toFixed(1)} g`}</span>
           <!-- The one tare of the skin (Skin.tare, spec 3.7); without a scale it looks for the scale (spec 3.9). -->
-          <button
-            class="tare"
-            data-testid="steam-tare"
-            onclick={() => skin.tare()}>tare</button
-          >
+          <button class="tare" data-testid="steam-tare" onclick={() => skin.tare()}>tare</button>
         </dd>
       </div>
       <div>

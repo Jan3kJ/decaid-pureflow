@@ -151,7 +151,11 @@ describe('devices (research.md 20.3)', () => {
   });
 
   it('lists, adds and removes the Wi-Fi scales added by host', async () => {
-    const { client, calls } = clientWith({ body: { endpoints: [] } }, { body: { endpoints: ['hds.local'] } }, { body: { endpoints: [] } });
+    const { client, calls } = clientWith(
+      { body: { endpoints: [] } },
+      { body: { endpoints: ['hds.local'] } },
+      { body: { endpoints: [] } },
+    );
     expect(await client.listWifiScales()).toEqual([]);
     expect(await client.addWifiScale('hds.local')).toEqual(['hds.local']);
     expect(await client.removeWifiScale('hds.local')).toEqual([]);
@@ -179,13 +183,16 @@ describe('machine', () => {
     expect(calls[0]).toMatchObject({ method: 'GET', body: undefined });
   });
 
-  it.each(['idle', 'espresso', 'steam', 'sleeping', 'cleaning', 'descaling', 'airPurge'] as const)('requests the state %s', async (state) => {
-    const { client, calls } = clientWith();
-    await expect(client.requestMachineState(state)).resolves.toBeUndefined();
-    expect(calls[0].method).toBe('PUT');
-    expect(calls[0].url).toBe(`http://localhost:8080/api/v1/machine/state/${state}`);
-    expect(calls[0].body).toBeUndefined();
-  });
+  it.each(['idle', 'espresso', 'steam', 'sleeping', 'cleaning', 'descaling', 'airPurge'] as const)(
+    'requests the state %s',
+    async (state) => {
+      const { client, calls } = clientWith();
+      await expect(client.requestMachineState(state)).resolves.toBeUndefined();
+      expect(calls[0].method).toBe('PUT');
+      expect(calls[0].url).toBe(`http://localhost:8080/api/v1/machine/state/${state}`);
+      expect(calls[0].body).toBeUndefined();
+    },
+  );
 
   it('loads a profile to the machine: the profile itself is the body', async () => {
     const { client, calls } = clientWith();
@@ -229,7 +236,16 @@ describe('workflow', () => {
   });
 
   it('writes the settings the machine itself holds as a whole frame, past the workflow', async () => {
-    const settings = { steamSetting: 0, targetSteamTemp: 150, targetSteamDuration: 25, targetHotWaterTemp: 75, targetHotWaterVolume: 50, targetHotWaterDuration: 30, targetShotVolume: 36, groupTemp: 94 };
+    const settings = {
+      steamSetting: 0,
+      targetSteamTemp: 150,
+      targetSteamDuration: 25,
+      targetHotWaterTemp: 75,
+      targetHotWaterVolume: 50,
+      targetHotWaterDuration: 30,
+      targetShotVolume: 36,
+      groupTemp: 94,
+    };
     const { client, calls } = clientWith({ body: null });
     await client.setShotSettings(settings);
     expect(calls[0]).toMatchObject({ method: 'POST', url: 'http://localhost:8080/api/v1/machine/shotSettings' });
@@ -306,9 +322,7 @@ describe('shots', () => {
     expect(await client.listShots()).toEqual(page);
     await client.listShots({ limit: 5, offset: 10, profileTitle: 'A-Flow / default-medium' });
     expect(calls[0]).toMatchObject({ method: 'GET', url: 'http://localhost:8080/api/v1/shots' });
-    expect(calls[1].url).toBe(
-      'http://localhost:8080/api/v1/shots?limit=5&offset=10&profileTitle=A-Flow+%2F+default-medium',
-    );
+    expect(calls[1].url).toBe('http://localhost:8080/api/v1/shots?limit=5&offset=10&profileTitle=A-Flow+%2F+default-medium');
   });
 
   it('reads one shot with its measurements', async () => {

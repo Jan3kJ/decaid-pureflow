@@ -63,12 +63,8 @@ test('hot water and flush started at the machine show the ring and the values in
     await expect(stop.getByTestId('water-flow')).toHaveText(/^\d+\.\d ml\/s$/);
     await expect(stop.getByTestId('water-weight')).toHaveText(/^\d+\.\d g$/);
     // The ring counts and the scale weighs the water.
-    await expect
-      .poll(async () => Number(await page.getByTestId('water-ring').getAttribute('data-share')))
-      .toBeGreaterThan(0);
-    await expect
-      .poll(async () => parseFloat((await stop.getByTestId('water-weight').textContent()) ?? ''))
-      .toBeGreaterThan(5);
+    await expect.poll(async () => Number(await page.getByTestId('water-ring').getAttribute('data-share'))).toBeGreaterThan(0);
+    await expect.poll(async () => parseFloat((await stop.getByTestId('water-weight').textContent()) ?? '')).toBeGreaterThan(5);
     await expect(page.getByTestId('water-view')).toHaveCount(0, { timeout: 30_000 });
     await expect(page.getByTestId('stop')).toHaveCount(0);
 

@@ -18,7 +18,14 @@ describe('serializeParams and parseParams', () => {
   });
 
   it('reads back values that are set instead of following', () => {
-    const p = { ...medium, infuseTemperature: 90, secondFillTemperature: 89.5, rampTemperature: 91, pourEndFlow: 0, pourPressureLimit: 7 };
+    const p = {
+      ...medium,
+      infuseTemperature: 90,
+      secondFillTemperature: 89.5,
+      rampTemperature: 91,
+      pourEndFlow: 0,
+      pourPressureLimit: 7,
+    };
     expect(parseParams(serializeParams(p))).toEqual({ ok: true, params: p });
   });
 
@@ -35,7 +42,23 @@ describe('serializeParams and parseParams', () => {
 
   // A clean break (2026-10-13): no 3.0 string was saved before the format changed.
   it('rejects the 3.0 string of 2026-10-12, which lacks the new values', () => {
-    const old = { dose: 18, fillFlow: 8, fillTemperature: 93, infusePressure: 3, infuseTime: 60, infuseWeight: 3.6, secondFill: false, secondFillFlow: 8, pauseDuration: 15, pourPressure: 10, rampTime: 10, pourFlow: 2, pourTemperature: 93, stopWeight: 42, flowUp: true };
+    const old = {
+      dose: 18,
+      fillFlow: 8,
+      fillTemperature: 93,
+      infusePressure: 3,
+      infuseTime: 60,
+      infuseWeight: 3.6,
+      secondFill: false,
+      secondFillFlow: 8,
+      pauseDuration: 15,
+      pourPressure: 10,
+      rampTime: 10,
+      pourFlow: 2,
+      pourTemperature: 93,
+      stopWeight: 42,
+      flowUp: true,
+    };
     expect(parseParams(JSON.stringify({ aflow: '3.0', params: old }))).toEqual({
       ok: false,
       error: 'fillExitPressure is not a number',
@@ -94,7 +117,7 @@ describe('serializeParams and parseParams', () => {
   });
 
   // founder, 2026-10-13 (request 169): the pause's exit flow came after the first saved strings.
-  it('reads a saved string without the pause\'s exit flow as 1 ml/s, the value that was fixed', () => {
+  it("reads a saved string without the pause's exit flow as 1 ml/s, the value that was fixed", () => {
     for (const { id, params } of DEFAULT_PROFILES) {
       const { pauseExitFlow: _pauseExitFlow, ...saved } = { ...params, pauseDuration: 12 };
       const text = JSON.stringify({ aflow: '3.0', params: saved });
@@ -102,7 +125,7 @@ describe('serializeParams and parseParams', () => {
     }
   });
 
-  it('writes the pause\'s exit flow after the pause time and reads it back', () => {
+  it("writes the pause's exit flow after the pause time and reads it back", () => {
     const p = { ...medium, pauseDuration: 12, pauseExitFlow: 0.6 };
     const text = serializeParams(p);
     expect(text).toContain('"pauseDuration":12,"pauseExitFlow":0.6,');

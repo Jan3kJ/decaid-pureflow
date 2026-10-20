@@ -45,9 +45,7 @@ function memoryStore(initial: Record<string, string> = {}) {
 describe('gatewayBaseUrl', () => {
   it('is port 8080 on the page host', () => {
     expect(gatewayBaseUrl({ protocol: 'http:', hostname: 'localhost', search: '' })).toBe('http://localhost:8080');
-    expect(gatewayBaseUrl({ protocol: 'http:', hostname: '192.168.1.20', search: '' })).toBe(
-      'http://192.168.1.20:8080',
-    );
+    expect(gatewayBaseUrl({ protocol: 'http:', hostname: '192.168.1.20', search: '' })).toBe('http://192.168.1.20:8080');
   });
 
   it('falls back to localhost for a page without a host', () => {
@@ -229,9 +227,7 @@ describe('heating (spec 3.8)', () => {
       tone: 'ok',
     });
     // without a fresh frame the link's status stands
-    expect(heatingStatus(statusOf('no-machine', cold, url), 'no-machine', cold, 'group', null).title).toBe(
-      'No machine connected',
-    );
+    expect(heatingStatus(statusOf('no-machine', cold, url), 'no-machine', cold, 'group', null).title).toBe('No machine connected');
   });
 });
 
@@ -309,17 +305,11 @@ describe('stateLine', () => {
   });
 
   it('warns when the tank is under its refill level', () => {
-    expect(text(stateLine('machine', frame('idle'), { currentLevel: 3, refillLevel: 5 }, 'connected', 0))[2]).toBe(
-      'tank 3 mm!',
-    );
+    expect(text(stateLine('machine', frame('idle'), { currentLevel: 3, refillLevel: 5 }, 'connected', 0))[2]).toBe('tank 3 mm!');
   });
 
   it('assumes nothing without a fresh frame or a level', () => {
-    expect(text(stateLine('no-machine', frame('idle'), water, 'connected', 0)).slice(0, 3)).toEqual([
-      'group –',
-      'steam –',
-      'tank –',
-    ]);
+    expect(text(stateLine('no-machine', frame('idle'), water, 'connected', 0)).slice(0, 3)).toEqual(['group –', 'steam –', 'tank –']);
     expect(text(stateLine('machine', frame('idle'), null, 'connected', 0))[2]).toBe('tank –');
   });
 });

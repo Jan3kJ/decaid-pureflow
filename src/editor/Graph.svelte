@@ -1,11 +1,5 @@
 <script lang="ts">
-  import {
-    DEFAULT_MACHINE_LIMITS,
-    resolveParams,
-    type AFlowParams,
-    type MachineLimits,
-    type NumberField,
-  } from '../aflow';
+  import { DEFAULT_MACHINE_LIMITS, resolveParams, type AFlowParams, type MachineLimits, type NumberField } from '../aflow';
   import {
     GRAPH_WIDTH,
     PHASE_LABEL,
@@ -103,21 +97,16 @@
     x: (units) => box.left + (units / GRAPH_WIDTH) * box.plotW,
     y: (line, value) =>
       line === 'temperature'
-        ? box.tempBottom -
-          ((value - temperature.min) / (temperature.max - temperature.min)) * box.tempH
+        ? box.tempBottom - ((value - temperature.min) / (temperature.max - temperature.min)) * box.tempH
         : box.bottom - (value / yMax) * box.mainH,
   });
 
   function polyline(points: Point[], line: LineId): string {
-    return points
-      .map((pt) => `${projection.x(pt.x).toFixed(1)},${projection.y(line, pt.y).toFixed(1)}`)
-      .join(' ');
+    return points.map((pt) => `${projection.x(pt.x).toFixed(1)},${projection.y(line, pt.y).toFixed(1)}`).join(' ');
   }
 
   function valuePerPixel(line: LineId): number {
-    return line === 'temperature'
-      ? (temperature.max - temperature.min) / box.tempH
-      : yMax / box.mainH;
+    return line === 'temperature' ? (temperature.max - temperature.min) / box.tempH : yMax / box.mainH;
   }
 
   interface Drag {
@@ -185,8 +174,7 @@
       // The end flow may follow the toggle: its drag starts from the value the toggle gives.
       // A border starts where it is drawn: the infuse may be drawn by its weight.
       startValue: hit.kind === 'border' ? hit.border.start : resolved[field],
-      secondsPerPixel:
-        hit.kind === 'border' ? hit.border.secondsPerUnit / (box.plotW / GRAPH_WIDTH) : 0,
+      secondsPerPixel: hit.kind === 'border' ? hit.border.secondsPerUnit / (box.plotW / GRAPH_WIDTH) : 0,
       valuePerPixel: hit.kind === 'level' ? valuePerPixel(hit.level.line) : 0,
       gain: hit.kind === 'level' ? hit.level.gain : 1,
       x,
@@ -246,20 +234,14 @@
   }
 
   const durationOf = $derived(
-    Object.fromEntries(curve.borders.map((b) => [b.phase, b.field])) as Partial<
-      Record<PhaseId, NumberField>
-    >,
+    Object.fromEntries(curve.borders.map((b) => [b.phase, b.field])) as Partial<Record<PhaseId, NumberField>>,
   );
 
   // The flow line has a gap (the infuse phase): one path, one stretch per subpath.
   const flowPath = $derived(
     curve.flow
       .map(
-        (stretch) =>
-          'M' +
-          stretch
-            .map((pt) => `${projection.x(pt.x).toFixed(1)} ${projection.y('flow', pt.y).toFixed(1)}`)
-            .join(' L'),
+        (stretch) => 'M' + stretch.map((pt) => `${projection.x(pt.x).toFixed(1)} ${projection.y('flow', pt.y).toFixed(1)}`).join(' L'),
       )
       .join(' '),
   );
@@ -363,17 +345,9 @@
 
     <polyline class="line temperature" points={polyline(curve.temperature, 'temperature')} />
     {#if curve.pressureLimit}
-      <polyline
-        class="line pressure limit"
-        data-testid="line-pressure-limit"
-        points={polyline(curve.pressureLimit, 'pressure')}
-      />
+      <polyline class="line pressure limit" data-testid="line-pressure-limit" points={polyline(curve.pressureLimit, 'pressure')} />
     {/if}
-    <polyline
-      class="line pressure"
-      data-testid="line-pressure"
-      points={polyline(curve.pressure, 'pressure')}
-    />
+    <polyline class="line pressure" data-testid="line-pressure" points={polyline(curve.pressure, 'pressure')} />
     <path class="line flow" data-testid="line-flow" d={flowPath} />
 
     <!-- The stretches that can be dragged. They are not drawn until one is held. -->

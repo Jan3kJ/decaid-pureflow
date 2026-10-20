@@ -18,8 +18,7 @@ test.beforeEach(({ page }) => {
 
 const svg = (scope: Page | Locator) => scope.getByTestId('shot-graph');
 const attribute = async (scope: Page | Locator, name: string) => Number(await svg(scope).getAttribute(name));
-const ticks = async (scope: Page | Locator) =>
-  (await svg(scope).locator('text.tick:not(.temperature)').allTextContents()).map(Number);
+const ticks = async (scope: Page | Locator) => (await svg(scope).locator('text.tick:not(.temperature)').allTextContents()).map(Number);
 const timer = async (page: Page) => parseFloat((await page.getByTestId('shot-timer').textContent())!);
 
 /** The recorded shot's measurements, each `factor` times as far from the first: a longer shot. */
@@ -128,9 +127,7 @@ test('the live shot ends at the pour: the tail adds no points, the timer stands,
   expect(errors).toEqual([]);
 });
 
-test("the running time axis starts at the last shot's length with the profile and is not rescaled under it", async ({
-  page,
-}) => {
+test("the running time axis starts at the last shot's length with the profile and is not rescaled under it", async ({ page }) => {
   const gateway = await mockGateway(page);
   // A shot with the workflow's profile, the recording at half speed: 55 s from the water on, so 60 s.
   gateway.addShot('shot-50', '2026-10-18T08:00:00.000000', gateway.workflow.profile, gateway.workflow.context);

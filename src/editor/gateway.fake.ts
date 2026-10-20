@@ -15,8 +15,7 @@ export function fakeGateway(initial: ProfileRecord[] = []) {
   const calls: Call[] = [];
   let made = 0;
 
-  const sameContent = (a: Profile, b: Profile) =>
-    sameSteps(a.steps, b.steps) && (a.target_weight ?? 0) === (b.target_weight ?? 0);
+  const sameContent = (a: Profile, b: Profile) => sameSteps(a.steps, b.steps) && (a.target_weight ?? 0) === (b.target_weight ?? 0);
   const json = (value: unknown, status = 200) => new Response(JSON.stringify(value), { status });
 
   function make(profile: Profile, over: Partial<ProfileRecord> = {}): ProfileRecord {

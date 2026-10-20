@@ -62,24 +62,19 @@
 <svelte:window onkeydown={keydown} />
 
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-<div
-  class="backdrop"
-  data-testid="numpad-backdrop"
-  onclick={(e) => e.target === e.currentTarget && oncancel()}
->
+<div class="backdrop" data-testid="numpad-backdrop" onclick={(e) => e.target === e.currentTarget && oncancel()}>
   <div class="pad" role="dialog" aria-modal="true" aria-label="type {label}" data-testid="numpad">
     <div class="head">
       <span class="label">{label}</span>
-      <button class="close" aria-label="cancel" data-testid="numpad-cancel" onclick={oncancel}
-        >×</button
-      >
+      <button class="close" aria-label="cancel" data-testid="numpad-cancel" onclick={oncancel}>×</button>
     </div>
     <div class="display" class:placeholder={typed === ''} class:bad={typed !== '' && !inRange}>
       <span data-testid="numpad-display">{typed === '' ? current : typed}</span>
       <span class="unit">{unit}</span>
     </div>
     <div class="range" class:bad={typed !== '' && !inRange} data-testid="numpad-range">
-      {min} to {max} {unit}
+      {min} to {max}
+      {unit}
     </div>
     <div class="keys">
       {#each ['7', '8', '9', '4', '5', '6', '1', '2', '3'] as k (k)}
@@ -91,15 +86,9 @@
         <button data-testid="numpad-key-dot" disabled={!decimals} onclick={() => key('.')}>.</button>
       {/if}
       <button data-testid="numpad-key-0" onclick={() => key('0')}>0</button>
-      <button
-        aria-label="delete the last digit"
-        data-testid="numpad-back"
-        onclick={() => (typed = typed.slice(0, -1))}>⌫</button
-      >
+      <button aria-label="delete the last digit" data-testid="numpad-back" onclick={() => (typed = typed.slice(0, -1))}>⌫</button>
       <button class="clear" data-testid="numpad-clear" onclick={() => (typed = '')}>clear</button>
-      <button class="confirm" data-testid="numpad-confirm" disabled={!inRange} onclick={confirm}
-        >set</button
-      >
+      <button class="confirm" data-testid="numpad-confirm" disabled={!inRange} onclick={confirm}>set</button>
     </div>
   </div>
 </div>

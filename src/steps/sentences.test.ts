@@ -129,7 +129,12 @@ describe('a tap on a number opens the picker', () => {
 
   it('each number is one of the step values, with the range the cards use', () => {
     expect(values(BLOOMING, 1)).toEqual(['temperature', 'target', 'seconds', 'volume', 'exit']);
-    const pressure = { ...BLOOMING.steps[4], pump: 'pressure' as const, weight: 36, exit: { type: 'flow' as const, condition: 'over' as const, value: 2 } };
+    const pressure = {
+      ...BLOOMING.steps[4],
+      pump: 'pressure' as const,
+      weight: 36,
+      exit: { type: 'flow' as const, condition: 'over' as const, value: 2 },
+    };
     const ranges = (['temperature', 'target', 'limiter', 'weight', 'seconds', 'volume', 'exit'] as StepValue[]).map((value) => {
       const limit = limitOf(pressure, value)!;
       return `${value} ${limit.min}-${limit.max} ${limit.unit}`;

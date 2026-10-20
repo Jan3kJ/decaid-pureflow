@@ -54,7 +54,10 @@ test('a simulated shot: the live graph ends with the shot, as long as its record
     await page.goto('/');
     await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 15_000 });
     await expect(page.getByTestId('profile-name')).toHaveText(PROFILE);
-    if (previous) await page.waitForResponse((response) => response.url().includes(`/api/v1/shots/${previous.id}`), { timeout: 15_000 }).catch(() => undefined);
+    if (previous)
+      await page
+        .waitForResponse((response) => response.url().includes(`/api/v1/shots/${previous.id}`), { timeout: 15_000 })
+        .catch(() => undefined);
 
     await api('PUT', '/api/v1/machine/state/espresso');
     await expect(page.getByTestId('shot-overlay')).toBeVisible({ timeout: 15_000 });

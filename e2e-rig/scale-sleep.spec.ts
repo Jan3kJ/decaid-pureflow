@@ -133,7 +133,9 @@ async function dropScale(page: import('@playwright/test').Page): Promise<void> {
   throw new Error('Decaid connects the simulated scale again by itself');
 }
 
-test('scale: the simulated scale, missing at the start or dropped, is connected again by the skin without a touch (spec 3.9, acceptance 40)', async ({ page }) => {
+test('scale: the simulated scale, missing at the start or dropped, is connected again by the skin without a touch (spec 3.9, acceptance 40)', async ({
+  page,
+}) => {
   test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
   test.setTimeout(400_000);
   // Only a scan connects it, and a scan takes about 15 s with Bluetooth searched too.

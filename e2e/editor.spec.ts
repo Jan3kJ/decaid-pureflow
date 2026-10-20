@@ -74,8 +74,7 @@ async function dragBy(page: Page, from: { x: number; y: number }, dx: number, dy
   await page.mouse.move(from.x + dx, from.y + dy, { steps: 4 });
 }
 
-const number = async (page: Page, testid: string) =>
-  parseFloat((await page.getByTestId(testid).textContent())!.replace('pause', ''));
+const number = async (page: Page, testid: string) => parseFloat((await page.getByTestId(testid).textContent())!.replace('pause', ''));
 
 async function type(page: Page, field: string, keys: string) {
   await page.getByTestId(`chip-edit-${field}`).click();
@@ -83,9 +82,7 @@ async function type(page: Page, field: string, keys: string) {
   for (const key of keys) await page.getByTestId(`numpad-key-${key === '.' ? 'dot' : key}`).click();
 }
 
-test('loads in simple mode with no console errors; its name leads to the picker, the five defaults in order', async ({
-  page,
-}) => {
+test('loads in simple mode with no console errors; its name leads to the picker, the five defaults in order', async ({ page }) => {
   await expect(page.getByTestId('mode-simple')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByTestId('detail-panel')).toHaveCount(0);
   await expect(page.getByTestId('value-infusePressure')).toHaveText('3 bar');
@@ -115,9 +112,7 @@ test('loads in simple mode with no console errors; its name leads to the picker,
   await page.screenshot({ path: 'docs/product/simple.png' });
 });
 
-test('the layout stays inside the viewport and every column is wide enough for a finger', async ({
-  page,
-}) => {
+test('the layout stays inside the viewport and every column is wide enough for a finger', async ({ page }) => {
   const viewport = page.viewportSize()!;
   for (const id of ['floral', 'light', 'medium', 'dark', '46mm']) {
     await pick(page, id);
@@ -142,13 +137,9 @@ test('the layout stays inside the viewport and every column is wide enough for a
   expect(await panel.evaluate((el) => el.scrollHeight <= el.clientHeight)).toBe(true);
 });
 
-test('the time axis follows the set times: thin fill, wide infusion, the rest for the flow', async ({
-  page,
-}) => {
+test('the time axis follows the set times: thin fill, wide infusion, the rest for the flow', async ({ page }) => {
   // light: 60 s of infusion against a fill of 3 to 4 s.
-  expect((await column(page, 'infuse')).width).toBeGreaterThan(
-    4 * (await column(page, 'fill')).width,
-  );
+  expect((await column(page, 'infuse')).width).toBeGreaterThan(4 * (await column(page, 'fill')).width);
   const lightFlow = (await column(page, 'flow')).width;
   // dark: 9 s of infusion (10 s, but 2 g) and 5 s of ramp leave most of the graph to the
   // flow phase; light infuses for 25 s (6 g) and ramps for 10 s.
@@ -159,9 +150,7 @@ test('the time axis follows the set times: thin fill, wide infusion, the rest fo
   expect((await column(page, 'flow')).width).toBeGreaterThan(1.5 * lightFlow);
   // The 2nd fill with its pause is about as thin as the fill.
   await page.getByTestId('toggle-second-fill').click();
-  expect((await column(page, 'secondFill')).width).toBeLessThanOrEqual(
-    2 * (await column(page, 'fill')).width,
-  );
+  expect((await column(page, 'secondFill')).width).toBeLessThanOrEqual(2 * (await column(page, 'fill')).width);
 });
 
 test('no flow line in the infuse phase', async ({ page }) => {
@@ -184,9 +173,7 @@ test('no flow line in the infuse phase', async ({ page }) => {
   }
 });
 
-test('the start flow is written at the left edge of the flow phase, in both modes', async ({
-  page,
-}) => {
+test('the start flow is written at the left edge of the flow phase, in both modes', async ({ page }) => {
   for (const mode of ['simple', 'detail']) {
     await page.getByTestId(`mode-${mode}`).click();
     const flow = await column(page, 'flow');
@@ -195,9 +182,7 @@ test('the start flow is written at the left edge of the flow phase, in both mode
     expect(label.x).toBeGreaterThanOrEqual(flow.x);
     expect(label.x).toBeLessThan(flow.x + 20);
     // Under the left end of the label is the start of the line.
-    const line = await page
-      .locator('line.level[data-field="pourFlow"]')
-      .evaluate((el) => (el as SVGLineElement).y1.baseVal.value);
+    const line = await page.locator('line.level[data-field="pourFlow"]').evaluate((el) => (el as SVGLineElement).y1.baseVal.value);
     const graph = (await page.getByTestId('graph').boundingBox())!;
     expect(label.y + label.height).toBeLessThanOrEqual(graph.y + line);
   }
@@ -303,9 +288,7 @@ test('detail mode lists the values of the review per phase, and the dose once', 
 });
 
 // founder, 2026-10-13 (request 169): 'pause ends at flow under X (editable)', in ml/s, 1 by default.
-test('detail mode: the flow the pause ends under is a value of the 2nd fill, and moves the Pause step’s exit', async ({
-  page,
-}) => {
+test('detail mode: the flow the pause ends under is a value of the 2nd fill, and moves the Pause step’s exit', async ({ page }) => {
   const pauseRow = page.getByTestId('steps').locator('tr', { hasText: 'Pause' });
   // floral has the 2nd fill on. Simple mode has no control for the value.
   await pick(page, 'floral');
@@ -370,9 +353,7 @@ test('detail mode: the same lines are dragged as in simple mode', async ({ page 
 
 // founder, 2026-10-16 (acceptance 23, first half): "end flow"; the last step's flow line is
 // split in detail mode, left half start flow, right half end flow; no buttons above the graph.
-test('detail mode: the left half of the last flow line drags the start flow, the right half the end flow', async ({
-  page,
-}) => {
+test('detail mode: the left half of the last flow line drags the start flow, the right half the end flow', async ({ page }) => {
   await page.getByTestId('mode-detail').click();
   // A tap on a step selects it: there are no phase buttons.
   await expect(page.locator('[data-testid^="phase-"]')).toHaveCount(0);
@@ -429,9 +410,7 @@ test('detail mode: the left half of the last flow line drags the start flow, the
 // founder, 2026-10-16 (acceptance 23, second half): the infuse is as wide as its move-on
 // weight's estimate (1 g ≈ 5 s, 6 g ≈ 25 s); the infuse-to weight is dragged; a phase dragged
 // to 0 s collapses and its button sets it to 5 s.
-test('the infuse is drawn by its weight, and the infuse-to chip is dragged or tapped', async ({
-  page,
-}) => {
+test('the infuse is drawn by its weight, and the infuse-to chip is dragged or tapped', async ({ page }) => {
   // light: 60 s but 6 g, so 25 s; pressurize 10 s.
   await expect(page.getByTestId('value-infuseTime')).toHaveText('60 s');
   const ratio = async () => (await column(page, 'infuse')).width / (await column(page, 'pressurize')).width;
@@ -504,9 +483,7 @@ test('a phase dragged to 0 s collapses, and its button turns it on with 5 s', as
   await page.getByTestId('enable-pressurize').click();
   await expect(page.getByTestId('column-pressurize')).toHaveClass(/selected/);
   await expect(page.getByTestId('chip-value-rampTime')).toHaveText('5 s');
-  expect((await column(page, 'pressurize')).width).toBeGreaterThanOrEqual(
-    (await column(page, 'fill')).width - 1,
-  );
+  expect((await column(page, 'pressurize')).width).toBeGreaterThanOrEqual((await column(page, 'fill')).width - 1);
 });
 
 test('detail mode: the number pad types a value and respects the range', async ({ page }) => {
@@ -558,9 +535,7 @@ test('detail mode: the number pad types a value and respects the range', async (
   await expect(page.getByTestId('chip-value-infuseTime')).toHaveText('11 s');
 });
 
-test('temperatures: detail mode sets one phase, a drag in simple mode keeps the distance', async ({
-  page,
-}) => {
+test('temperatures: detail mode sets one phase, a drag in simple mode keeps the distance', async ({ page }) => {
   await page.getByTestId('mode-detail').click();
   await selectPhase(page, 'infuse');
   await expect(page.getByTestId('chip-value-infuseTemperature')).toHaveText('95 °C');
@@ -585,9 +560,7 @@ test('temperatures: detail mode sets one phase, a drag in simple mode keeps the 
   await expect(page.getByTestId('value-pourTemperature')).toHaveText('95 °C');
 });
 
-test('the temperature axis is 80 to 100 °C and widens for a temperature outside (founder, 2026-10-14)', async ({
-  page,
-}) => {
+test('the temperature axis is 80 to 100 °C and widens for a temperature outside (founder, 2026-10-14)', async ({ page }) => {
   const ticks = page.getByTestId('temperature-tick');
   await expect(ticks).toHaveText(['80', '100']);
   /** pixels per °C of the axis on screen now */
@@ -652,9 +625,7 @@ test('save as stores the profile under its name, loads it, and the picker has it
   await expect(page.getByTestId('save-dialog')).toHaveCount(0);
   await expect(page.getByTestId('editor-notice')).toHaveText('Saved as “morning light” and loaded.');
   await expect(page.getByTestId('editor-profile')).toHaveText('morning light');
-  expect(gateway.calls('PUT', '/api/v1/workflow').map((call) => call.body.profile.title)).toEqual([
-    'A-Flow / morning light',
-  ]);
+  expect(gateway.calls('PUT', '/api/v1/workflow').map((call) => call.body.profile.title)).toEqual(['A-Flow / morning light']);
 
   // Cancel saves nothing.
   await page.getByTestId('save-as').click();

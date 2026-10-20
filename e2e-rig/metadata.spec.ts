@@ -193,7 +193,11 @@ test('metadata takes a large object and refuses one that is not an object', asyn
   const big = { big: 'x'.repeat(1_000_000) };
   const large = await api('POST', '/api/v1/profiles', { profile: testProfile(), metadata: big });
   expect((await api('GET', record(large.id))).metadata).toEqual(big);
-  for (const [shift, value] of [[1, [1, 2, 3]], [2, 'text'], [3, 42]] as const) {
+  for (const [shift, value] of [
+    [1, [1, 2, 3]],
+    [2, 'text'],
+    [3, 42],
+  ] as const) {
     expect((await call('POST', '/api/v1/profiles', { profile: testProfile(shift), metadata: value })).status).toBe(500);
   }
 });

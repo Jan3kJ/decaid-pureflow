@@ -110,9 +110,7 @@ describe('settings', () => {
   it('falls back to the defaults on anything it cannot read', () => {
     expect(loadSettings(fakeStore('not json'))).toEqual(DEFAULT_SETTINGS);
     expect(loadSettings(fakeStore('null'))).toEqual(DEFAULT_SETTINGS);
-    expect(loadSettings(fakeStore('{"showProfileSteps":"no","other":1}'))).toEqual(
-      DEFAULT_SETTINGS,
-    );
+    expect(loadSettings(fakeStore('{"showProfileSteps":"no","other":1}'))).toEqual(DEFAULT_SETTINGS);
   });
 
   it('survives a store that throws', () => {
@@ -147,11 +145,23 @@ describe("the editor's start row (founder, 2026-10-13)", () => {
     const startProfiles = withStartProfile(DEFAULT_START_PROFILES, 1, 'A-Flow / mine');
     saveSettings({ ...DEFAULT_SETTINGS, startProfiles }, store);
     expect(JSON.parse(store.getItem(SETTINGS_KEY)!).startProfiles).toEqual(startProfiles);
-    expect(loadSettings(store).startProfiles).toEqual([FLORAL, 'A-Flow / mine', 'A-Flow / default-medium', 'A-Flow / default-dark', 'A-Flow / default-46mm']);
+    expect(loadSettings(store).startProfiles).toEqual([
+      FLORAL,
+      'A-Flow / mine',
+      'A-Flow / default-medium',
+      'A-Flow / default-dark',
+      'A-Flow / default-46mm',
+    ]);
   });
 
   it('keeps a title it cannot check: a profile that no longer exists stays until it is removed', () => {
-    expect(loadSettings(fakeStore('{"startProfiles":["A-Flow / gone"]}')).startProfiles).toEqual(['A-Flow / gone', null, null, null, null]);
+    expect(loadSettings(fakeStore('{"startProfiles":["A-Flow / gone"]}')).startProfiles).toEqual([
+      'A-Flow / gone',
+      null,
+      null,
+      null,
+      null,
+    ]);
   });
 
   it('takes bad stored data as the defaults, or as an empty slot', () => {
@@ -165,7 +175,13 @@ describe("the editor's start row (founder, 2026-10-13)", () => {
     expect(readStartProfiles([FLORAL, 'b', FLORAL, 'c'])).toEqual([FLORAL, 'b', null, 'c', null]);
     expect(readStartProfiles(['a', 'b', 'c', 'd', 'e', 'f', 'g'])).toEqual(['a', 'b', 'c', 'd', 'e']);
     // a profile chosen for another slot leaves the one it was in
-    expect(withStartProfile(DEFAULT_START_PROFILES, 4, FLORAL)).toEqual([null, 'A-Flow / default-light', 'A-Flow / default-medium', 'A-Flow / default-dark', FLORAL]);
+    expect(withStartProfile(DEFAULT_START_PROFILES, 4, FLORAL)).toEqual([
+      null,
+      'A-Flow / default-light',
+      'A-Flow / default-medium',
+      'A-Flow / default-dark',
+      FLORAL,
+    ]);
     expect(withStartProfile(DEFAULT_START_PROFILES, 0, null)[0]).toBeNull();
     expect(DEFAULT_START_PROFILES[0]).toBe(FLORAL);
   });

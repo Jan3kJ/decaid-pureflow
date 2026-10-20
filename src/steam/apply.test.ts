@@ -130,7 +130,14 @@ describe('setting the steam timer', () => {
       kvGet: async () => null,
       kvSet: async () => {},
     };
-    await expect(applySteamTimer(failing, 25, () => SETTINGS, async () => {})).rejects.toThrow('503');
+    await expect(
+      applySteamTimer(
+        failing,
+        25,
+        () => SETTINGS,
+        async () => {},
+      ),
+    ).rejects.toThrow('503');
   });
 });
 

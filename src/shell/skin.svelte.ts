@@ -168,9 +168,7 @@ export class Skin {
   readonly canSleep = $derived(canSleep(this.link, this.snapshot));
   readonly asleep = $derived(isAsleep(this.link, this.snapshot));
   /** the values of the state line, on home and on the steam page */
-  readonly stateValues = $derived(
-    stateLine(this.link, this.snapshot, this.water, this.scaleLink, this.weight, this.scaleLooking),
-  );
+  readonly stateValues = $derived(stateLine(this.link, this.snapshot, this.water, this.scaleLink, this.weight, this.scaleLooking));
   /**
    * A stream stopped in the state `failed`: the gateway sent an error frame and closed the
    * socket, and did so again while the stream tried for 30 s (founder, 2026-10-15). It does
@@ -182,14 +180,10 @@ export class Skin {
    * The steam timer in s: the machine's own, and the workflow's `steamSettings.duration` only
    * while the machine's settings are not known. The two can differ (research.md, section 16).
    */
-  readonly steamTimer = $derived(
-    this.shotSettings?.targetSteamDuration ?? this.workflow?.steamSettings?.duration ?? null,
-  );
+  readonly steamTimer = $derived(this.shotSettings?.targetSteamDuration ?? this.workflow?.steamSettings?.duration ?? null);
   /** The machine's timer is not the one set here any more: what the steam page says about it. */
   /** s, the amount of the selected adjust button, null without one */
-  readonly steamAdjustment = $derived(
-    this.steamAdjust === null ? null : (this.settings.steam.adjustments[this.steamAdjust] ?? null),
-  );
+  readonly steamAdjustment = $derived(this.steamAdjust === null ? null : (this.settings.steam.adjustments[this.steamAdjust] ?? null));
   /** the steam heater, on or off (spec 3.7, home's menu); null while neither the machine nor the workflow is known */
   readonly steamHeater = $derived(heaterState(this.shotSettings, this.workflow));
   readonly steamMismatch = $derived(timerMismatch(this.steamAsked, this.shotSettings?.targetSteamDuration ?? null));

@@ -17,8 +17,7 @@ test.beforeEach(({ page }) => {
 
 /** The share of the replay before the first frame in which water moves. */
 const HEATING_SHARE =
-  SHOT_EVENTS.findIndex((event) => event.machine && event.machine.state.substate !== 'preparingForShot') /
-  SHOT_EVENTS.length;
+  SHOT_EVENTS.findIndex((event) => event.machine && event.machine.state.substate !== 'preparingForShot') / SHOT_EVENTS.length;
 
 const box = async (locator: Locator) => (await locator.boundingBox())!;
 const points = async (graph: Locator) => Number(await graph.getByTestId('shot-graph').getAttribute('data-points'));
@@ -109,7 +108,10 @@ test('the targets are dashed lines with their quantity, every scale has its unit
   expect(weightTop).toBeGreaterThan(flowTop);
 
   // The finished shot's last point is at the right end of the plot.
-  const plot = await graph.locator('line.grid').first().evaluate((line) => Number(line.getAttribute('x2')));
+  const plot = await graph
+    .locator('line.grid')
+    .first()
+    .evaluate((line) => Number(line.getAttribute('x2')));
   const pressure = await graph.getByTestId('shot-line-pressure').evaluate((path) => {
     const bbox = (path as SVGGraphicsElement).getBBox();
     return bbox.x + bbox.width;
@@ -158,7 +160,10 @@ test('a short shot from the history fills the graph, cut at the water as the liv
   const seconds = Number(await graph.getByTestId('shot-graph').getAttribute('data-seconds'));
   expect(seconds).toBeGreaterThan(14);
   expect(seconds).toBeLessThan(15.5);
-  const plot = await graph.locator('line.grid').first().evaluate((line) => Number(line.getAttribute('x2')));
+  const plot = await graph
+    .locator('line.grid')
+    .first()
+    .evaluate((line) => Number(line.getAttribute('x2')));
   const right = await graph.getByTestId('shot-line-flow').evaluate((path) => {
     const bbox = (path as SVGGraphicsElement).getBBox();
     return bbox.x + bbox.width;
@@ -169,9 +174,7 @@ test('a short shot from the history fills the graph, cut at the water as the liv
   expect(errors).toEqual([]);
 });
 
-test('the legend is under the graph by default, and the settings page switches it off for every graph', async ({
-  page,
-}) => {
+test('the legend is under the graph by default, and the settings page switches it off for every graph', async ({ page }) => {
   const gateway = await mockGateway(page);
   await home(page);
   await gateway.replay(page, 0, 0.5);

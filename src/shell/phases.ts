@@ -136,9 +136,18 @@ export function phaseTable(samples: PhaseSample[], finalWeight: number | null = 
   const row = (from: number, to: number): Omit<PhaseRow, 'seconds' | 'weight' | 'volume'> => {
     const part = samples.slice(from, to + 1);
     return {
-      temperature: formatRange(part.map((s) => s.temperature), 0),
-      flow: formatStartPeakEnd(part.map((s) => s.flow), 1),
-      pressure: formatStartPeakEnd(part.map((s) => s.pressure), 1),
+      temperature: formatRange(
+        part.map((s) => s.temperature),
+        0,
+      ),
+      flow: formatStartPeakEnd(
+        part.map((s) => s.flow),
+        1,
+      ),
+      pressure: formatStartPeakEnd(
+        part.map((s) => s.pressure),
+        1,
+      ),
     };
   };
 

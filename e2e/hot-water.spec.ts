@@ -25,7 +25,10 @@ async function overflow(page: Page) {
       !!element.parentElement?.closest('[data-testid="settings-content"], [aria-label="settings categories"]');
     const outside = [...document.querySelectorAll('button, section, header, aside')].filter((element) => {
       const rect = element.getBoundingClientRect();
-      return rect.width > 0 && (rect.left < 0 || rect.right > innerWidth + 0.5 || (!scrolled(element) && (rect.top < 0 || rect.bottom > innerHeight + 0.5)));
+      return (
+        rect.width > 0 &&
+        (rect.left < 0 || rect.right > innerWidth + 0.5 || (!scrolled(element) && (rect.top < 0 || rect.bottom > innerHeight + 0.5)))
+      );
     });
     return { scrolls: root.scrollWidth > innerWidth || root.scrollHeight > innerHeight, outside: outside.length };
   });
@@ -47,11 +50,12 @@ function shotOf(gateway: MockGateway, grams: number) {
 }
 
 const lastWrite = (gateway: MockGateway) =>
-  gateway.calls('PUT', '/api/v1/workflow').filter((call) => call.body.hotWaterData).at(-1)?.body.hotWaterData;
+  gateway
+    .calls('PUT', '/api/v1/workflow')
+    .filter((call) => call.body.hotWaterData)
+    .at(-1)?.body.hotWaterData;
 
-test('the split steam tab: steam keeps most of it, hot water the rest at the bottom, and opens the page', async ({
-  page,
-}) => {
+test('the split steam tab: steam keeps most of it, hot water the rest at the bottom, and opens the page', async ({ page }) => {
   await mockGateway(page);
   await page.goto('/');
   await expect(page.getByTestId('status-title')).toHaveText('Idle');

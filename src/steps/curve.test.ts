@@ -86,9 +86,7 @@ describe('stepCurve', () => {
   });
 
   it('smooth ramps from 0 after a step of the other pump, as in Streamline', () => {
-    const curve = stepCurve(
-      profile([step({ pump: 'flow', flow: 4 }), step({ pump: 'pressure', pressure: 9, transition: 'smooth' })]),
-    );
+    const curve = stepCurve(profile([step({ pump: 'flow', flow: 4 }), step({ pump: 'pressure', pressure: 9, transition: 'smooth' })]));
     expect(curve.pressure).toEqual([null, null, 0, 9]);
   });
 

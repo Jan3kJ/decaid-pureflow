@@ -57,14 +57,16 @@ describe('validateParams', () => {
   });
 
   it('a value that follows another one may be null, the others may not', () => {
-    const following = { infuseTemperature: null, secondFillTemperature: null, rampTemperature: null, pourEndFlow: null, pourPressureLimit: null };
+    const following = {
+      infuseTemperature: null,
+      secondFillTemperature: null,
+      rampTemperature: null,
+      pourEndFlow: null,
+      pourPressureLimit: null,
+    };
     expect(codes(following)).toEqual([]);
-    expect(codes({ fillTemperature: null } as unknown as Partial<AFlowParams>)).toEqual([
-      'fillTemperature:not-a-number',
-    ]);
-    expect(codes({ pauseDuration: null } as unknown as Partial<AFlowParams>)).toEqual([
-      'pauseDuration:not-a-number',
-    ]);
+    expect(codes({ fillTemperature: null } as unknown as Partial<AFlowParams>)).toEqual(['fillTemperature:not-a-number']);
+    expect(codes({ pauseDuration: null } as unknown as Partial<AFlowParams>)).toEqual(['pauseDuration:not-a-number']);
   });
 
   it('the move-on pressures and the max pressure are 0 to the maximum pressure', () => {
@@ -97,7 +99,7 @@ describe('validateParams', () => {
     for (const dose of [0.3, 17.9, 18.1, 29.7]) expect(codes({ dose })).toEqual([]);
   });
 
-  it('pressures and flows go up to the machine\'s maximum', () => {
+  it("pressures and flows go up to the machine's maximum", () => {
     expect(codes({ infusePressure: 12.1 })).toEqual(['infusePressure:above-max']);
     expect(codes({ pourPressure: -1 })).toEqual(['pourPressure:below-min']);
     expect(codes({ fillFlow: 8.1 })).toEqual(['fillFlow:above-max']);
@@ -105,12 +107,10 @@ describe('validateParams', () => {
     expect(codes({ secondFillFlow: 9 })).toEqual(['secondFillFlow:above-max']);
   });
 
-  it('takes the machine\'s maxima as an argument', () => {
+  it("takes the machine's maxima as an argument", () => {
     const limits = { maxPressure: 10, maxFlow: 6 };
     expect(codes({}, limits)).toEqual(['fillFlow:above-max', 'secondFillFlow:above-max']);
-    expect(codes({ fillFlow: 6, secondFillFlow: 6, pourPressure: 10.5 }, limits)).toEqual([
-      'pourPressure:above-max',
-    ]);
+    expect(codes({ fillFlow: 6, secondFillFlow: 6, pourPressure: 10.5 }, limits)).toEqual(['pourPressure:above-max']);
   });
 
   it('reports values of the wrong type and every problem at once', () => {

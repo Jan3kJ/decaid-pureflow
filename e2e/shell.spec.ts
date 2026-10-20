@@ -26,7 +26,10 @@ async function expectInsideViewport(page: Page) {
       !!element.parentElement?.closest('[data-testid="settings-content"], [aria-label="settings categories"]');
     const outside = [...document.querySelectorAll('button, h1, section, aside, svg')].filter((element) => {
       const rect = element.getBoundingClientRect();
-      return rect.width > 0 && (rect.left < 0 || rect.right > innerWidth + 0.5 || (!scrolled(element) && (rect.top < 0 || rect.bottom > innerHeight + 0.5)));
+      return (
+        rect.width > 0 &&
+        (rect.left < 0 || rect.right > innerWidth + 0.5 || (!scrolled(element) && (rect.top < 0 || rect.bottom > innerHeight + 0.5)))
+      );
     });
     return {
       scrolls: root.scrollWidth > innerWidth || root.scrollHeight > innerHeight,
@@ -44,9 +47,7 @@ async function openMenu(page: Page) {
 
 const points = async (page: Page) => Number(await page.getByTestId('shot-graph').getAttribute('data-points'));
 
-test('home shows the state line the machine sent, the profile, and no start: the DE1 is started at the machine', async ({
-  page,
-}) => {
+test('home shows the state line the machine sent, the profile, and no start: the DE1 is started at the machine', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
 
@@ -299,7 +300,9 @@ test('the shot overlay opens on home when the skin loads in the middle of a shot
   expect(errors).toEqual([]);
 });
 
-test('the picker lists the A-Flow 3.0 defaults of the skin first, offers no add and loads one without storing it', async ({ page }) => {
+test('the picker lists the A-Flow 3.0 defaults of the skin first, offers no add and loads one without storing it', async ({
+  page,
+}) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
   await page.getByTestId('open-profiles').click();
@@ -365,10 +368,14 @@ test('the picker lists a stored profile with a default’s steps under its own t
   // The founder's test-light: the steps of the light default under another title (spec 3.8).
   const light = DEFAULT_PROFILES[1];
   gateway.profiles.push(
-    record('profile:test-light', { ...defaultProfile(light), title: 'A-Flow / test-light' }, {
-      source: 'pureflow',
-      ...paramsMetadata(light.params),
-    }),
+    record(
+      'profile:test-light',
+      { ...defaultProfile(light), title: 'A-Flow / test-light' },
+      {
+        source: 'pureflow',
+        ...paramsMetadata(light.params),
+      },
+    ),
   );
   await page.goto('/');
   await page.getByTestId('open-profiles').click();
@@ -452,9 +459,7 @@ test('every screen is one tap from home and back, and the screen survives a relo
   (await mockGateway(page)).withDefaults('light');
   await page.goto('/');
 
-  for (const [button, screen, title] of [
-    ['open-settings', 'settings', 'Settings'],
-  ]) {
+  for (const [button, screen, title] of [['open-settings', 'settings', 'Settings']]) {
     await openMenu(page);
     await page.getByTestId(button).click();
     await expect(page.getByTestId(`screen-${screen}`).locator('h1')).toHaveText(title);
@@ -465,10 +470,7 @@ test('every screen is one tap from home and back, and the screen survives a relo
   await page.getByTestId('open-editor').click();
   await expect(page.getByTestId('graph')).toBeVisible();
   // localStorage, not sessionStorage: the WebView unloads in the background (spec 4.1).
-  expect(await page.evaluate(() => [localStorage.getItem('pureflow.screen'), sessionStorage.length])).toEqual([
-    'editor',
-    0,
-  ]);
+  expect(await page.evaluate(() => [localStorage.getItem('pureflow.screen'), sessionStorage.length])).toEqual(['editor', 0]);
   await page.reload();
   await expect(page.getByTestId('screen-editor')).toBeVisible();
   await expect(page.getByTestId('graph')).toBeVisible();

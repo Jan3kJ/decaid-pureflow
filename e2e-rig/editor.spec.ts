@@ -147,9 +147,7 @@ test.afterEach(async () => {
   expect(workflowAfter.context).toEqual(workflowBefore.context);
 });
 
-test('simple mode: a changed value redraws the curve, and the gateway holds the generator\'s profile', async ({
-  page,
-}) => {
+test("simple mode: a changed value redraws the curve, and the gateway holds the generator's profile", async ({ page }) => {
   await openEditor(page);
   await expect(page.getByTestId('mode-simple')).toHaveAttribute('aria-pressed', 'true');
   const before = await pressurePoints(page);
@@ -192,9 +190,7 @@ test('simple mode: a changed value redraws the curve, and the gateway holds the 
   expect(await expectWorkflow(about)).toEqual({ ...params, flowUp: false });
 });
 
-test('detail mode: typed values are loaded; a saved profile re-opens with them and an edit keeps the lineage', async ({
-  page,
-}) => {
+test('detail mode: typed values are loaded; a saved profile re-opens with them and an edit keeps the lineage', async ({ page }) => {
   const name = `rig d7 ${Date.now() % 100000}`;
   const about = { title: `A-Flow / ${name}`, author: 'Janek' };
 

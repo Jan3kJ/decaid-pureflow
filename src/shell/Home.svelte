@@ -103,12 +103,7 @@
           <button class="chip" data-testid="dismiss-recalled" onclick={() => skin.dismissRecalled()}>dismiss</button>
         </header>
         <div class="plot" data-testid="history-graph">
-          <ShotGraph
-            {...recalled.series}
-            fit
-            legend={skin.settings.showGraphLegend}
-            label="last shot of the history entry"
-          />
+          <ShotGraph {...recalled.series} fit legend={skin.settings.showGraphLegend} label="last shot of the history entry" />
         </div>
       {:else if last}
         <header>
@@ -122,12 +117,7 @@
           <button class="chip" data-testid="dismiss-shot" onclick={() => skin.dismissShot()}>dismiss</button>
         </header>
         <div class="plot" data-testid="last-shot">
-          <ShotGraph
-            {...last.series}
-            fit
-            legend={skin.settings.showGraphLegend}
-            label="last shot"
-          />
+          <ShotGraph {...last.series} fit legend={skin.settings.showGraphLegend} label="last shot" />
         </div>
       {:else}
         <!-- No shot yet: the graph keeps its place, empty. -->
@@ -158,7 +148,9 @@
         <button role="menuitem" data-testid={entry.id} disabled={entry.disabled?.()} onclick={() => choose(entry)}>
           <span class="label">{entry.label()}</span>
           {#if entry.detail}
-            <small data-testid="{entry.id}-detail" class:off={entry.id === 'steam-heater' && skin.steamHeater === 'off'}>{entry.detail()}</small>
+            <small data-testid="{entry.id}-detail" class:off={entry.id === 'steam-heater' && skin.steamHeater === 'off'}
+              >{entry.detail()}</small
+            >
           {/if}
         </button>
       </li>

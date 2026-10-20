@@ -70,7 +70,7 @@ function lettered(names: string, marked: number): Profile {
 
 const order = (profile: Profile) => profile.steps.map((s) => s.name).join('');
 const marked = (profile: Profile) =>
-  profile.target_volume_count_start ? profile.steps[profile.target_volume_count_start - 1]?.name ?? 'DANGLING' : null;
+  profile.target_volume_count_start ? (profile.steps[profile.target_volume_count_start - 1]?.name ?? 'DANGLING') : null;
 
 describe('the count start moves with the steps', () => {
   it('delete and insert, around and on the marked step', () => {

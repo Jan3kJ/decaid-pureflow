@@ -49,9 +49,7 @@ test.beforeAll(async () => {
   }
 });
 
-test('the hot water page writes hotWaterData, 1:2 of a 40 g shot is 80 g, Decaid stops at it, tare tares', async ({
-  page,
-}) => {
+test('the hot water page writes hotWaterData, 1:2 of a 40 g shot is 80 g, Decaid stops at it, tare tares', async ({ page }) => {
   test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
 
   const workflowBefore = await api('GET', '/api/v1/workflow');
@@ -91,9 +89,7 @@ test('the hot water page writes hotWaterData, 1:2 of a 40 g shot is 80 g, Decaid
     await type(page, 'hot-water-temperature', '80');
     await type(page, 'hot-water-flow', '4');
     await type(page, 'hot-water-time', '60');
-    await expect
-      .poll(hotWaterData)
-      .toEqual({ targetTemperature: 80, duration: 60, volume: 80, flow: 4 });
+    await expect.poll(hotWaterData).toEqual({ targetTemperature: 80, duration: 60, volume: 80, flow: 4 });
     await expect(page.getByTestId('hot-water-weight')).toContainText('80g');
     await page.screenshot({ path: 'e2e-rig/.results/hot-water-rig.png' });
 

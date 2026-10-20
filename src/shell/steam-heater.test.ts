@@ -14,8 +14,7 @@ const SETTINGS: ShotSettings = {
   groupTemp: 94,
 };
 
-const workflowWith = (targetTemperature: number) =>
-  ({ steamSettings: { targetTemperature, duration: 50, flow: 0.8 } }) as Workflow;
+const workflowWith = (targetTemperature: number) => ({ steamSettings: { targetTemperature, duration: 50, flow: 0.8 } }) as Workflow;
 
 /**
  * Decaid as the rig showed it (research.md 22): a workflow write reaches the machine when the
@@ -25,8 +24,7 @@ function decaid(options: { workflow?: number; machine?: number | null; writable?
   const calls: string[] = [];
   const writable = options.writable ?? true;
   let workflow = options.workflow ?? 150;
-  let machine: ShotSettings | null =
-    options.machine === null ? null : { ...SETTINGS, targetSteamTemp: options.machine ?? workflow };
+  let machine: ShotSettings | null = options.machine === null ? null : { ...SETTINGS, targetSteamTemp: options.machine ?? workflow };
   let waited = 0;
   const gateway: HeaterGateway = {
     async updateWorkflow(patch) {
@@ -42,9 +40,15 @@ function decaid(options: { workflow?: number; machine?: number | null; writable?
     },
   };
   const run = (on: boolean, temperature = 150) =>
-    switchHeater(gateway, on, temperature, () => machine, async (ms) => {
-      waited += ms;
-    });
+    switchHeater(
+      gateway,
+      on,
+      temperature,
+      () => machine,
+      async (ms) => {
+        waited += ms;
+      },
+    );
   return { calls, run, machine: () => machine, waited: () => waited };
 }
 

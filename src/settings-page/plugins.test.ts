@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import type { PluginManifest } from '../api';
-import { STATUS_LABEL, controlKind, isStored, pluginControls, pluginStatus, secureIsSet, shownValue, sortedPlugins, written } from './plugins';
+import {
+  STATUS_LABEL,
+  controlKind,
+  isStored,
+  pluginControls,
+  pluginStatus,
+  secureIsSet,
+  shownValue,
+  sortedPlugins,
+  written,
+} from './plugins';
 
 /** The visualizer plugin as the rig's Decaid 0.8.8 lists it, with an enum added. */
 const VISUALIZER: PluginManifest = {

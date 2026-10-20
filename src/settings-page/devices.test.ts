@@ -74,12 +74,16 @@ describe('the device lists of Connections (research.md 20.10 S2b)', () => {
   });
 
   it('a device without a name is not listed; sensors and grinders are in neither list', () => {
-    const devices = [{ ...device('x', 'scale', 'discovered'), name: '' }, device('probe', 'sensor', 'connected'), device('g', 'grinder', 'connected')];
+    const devices = [
+      { ...device('x', 'scale', 'discovered'), name: '' },
+      device('probe', 'sensor', 'connected'),
+      device('g', 'grinder', 'connected'),
+    ];
     expect(deviceRows(devices, 'scale', null)).toEqual([]);
     expect(deviceRows(devices, 'machine', null)).toEqual([]);
   });
 
-  it("says what a connect that did not connect answered", () => {
+  it('says what a connect that did not connect answered', () => {
     expect(connectMessage({ outcome: 'connected' })).toBeNull();
     expect(connectMessage({ outcome: 'alreadyConnected' })).toBeNull();
     expect(connectMessage({ outcome: 'conflict' })).toBe('Already connecting: try again in a moment.');

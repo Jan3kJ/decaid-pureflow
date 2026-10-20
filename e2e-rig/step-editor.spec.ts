@@ -86,9 +86,7 @@ test.afterEach(async () => {
   expect(workflowAfter.profile).toEqual(workflowBefore.profile);
 });
 
-test('a bundled profile opens in the step editor; its edited copy is stored with its steps and in the lineage', async ({
-  page,
-}) => {
+test('a bundled profile opens in the step editor; its edited copy is stored with its steps and in the lineage', async ({ page }) => {
   const source = (await api('GET', '/api/v1/profiles')).find((record: any) => record.profile.title === SOURCE);
   expect(source, `the rig bundles “${SOURCE}”`).toBeTruthy();
   expect(source.isDefault).toBe(true);

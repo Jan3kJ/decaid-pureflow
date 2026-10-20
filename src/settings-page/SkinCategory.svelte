@@ -30,9 +30,7 @@
   // The category Skin of the settings page (research.md 20.6): the skin's own settings, all in
   // the one settings object (src/settings.ts) and so in its KV backup. Moved from the settings
   // page of D8c with its test ids.
-  const SUB = Object.fromEntries(
-    SETTINGS_TREE.find((category) => category.id === 'skin')!.subcategories.map((sub) => [sub.id, sub]),
-  );
+  const SUB = Object.fromEntries(SETTINGS_TREE.find((category) => category.id === 'skin')!.subcategories.map((sub) => [sub.id, sub]));
   type Switch = { key: 'firstStepWorkaround' | 'showProfileSteps' | 'showGraphLegend'; id: string; title: string; hint: string };
   const SWITCHES: Switch[] = [
     {

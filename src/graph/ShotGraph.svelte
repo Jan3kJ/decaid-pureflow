@@ -78,13 +78,7 @@
   const scale = $derived(
     yMax !== undefined
       ? fixedScale(yMax)
-      : shotScale([
-          pressure,
-          flow,
-          weightFlow,
-          pressure ? targetPressure : undefined,
-          flow ? targetFlow : undefined,
-        ]),
+      : shotScale([pressure, flow, weightFlow, pressure ? targetPressure : undefined, flow ? targetFlow : undefined]),
   );
   const top = $derived(scale.max);
   const mainTicks = $derived(scale.ticks);
@@ -103,18 +97,13 @@
   const axis = $derived(timeAxis(t.at(-1) ?? 0, fit, minSeconds));
   const seconds = $derived(axis.seconds);
 
-  const drawn = (values: readonly (number | null)[] | undefined) =>
-    (values ?? []).filter((value): value is number => value !== null);
+  const drawn = (values: readonly (number | null)[] | undefined) => (values ?? []).filter((value): value is number => value !== null);
   // Without a scale there is no weight flow: nothing yellow is drawn.
   const hasWeightFlow = $derived(drawn(weightFlow).length > 0);
-  const hasTargets = $derived(
-    [targetPressure, targetFlow, targetTemperature].some((values) => drawn(values).length > 0),
-  );
+  const hasTargets = $derived([targetPressure, targetFlow, targetTemperature].some((values) => drawn(values).length > 0));
 
   // The temperature band covers 80 to 100 °C and opens for a colder or hotter group or target.
-  const temperatureRange = $derived(
-    temperatureBand([...(temperature ?? []), ...drawn(targetTemperature)], temperatureScale),
-  );
+  const temperatureRange = $derived(temperatureBand([...(temperature ?? []), ...drawn(targetTemperature)], temperatureScale));
 
   // The plot in pixels: a band for the temperature on top, a gap, and the main band. Over
   // each band is a line for its units.
@@ -179,13 +168,18 @@
         {#if temperature}
           {#each [temperatureRange.min, temperatureRange.max] as tick (tick)}
             <line class="grid" x1={box.left} x2={box.right} y1={yTemperature(tick)} y2={yTemperature(tick)} />
-            <text class="tick temperature" data-testid="shot-tick-temperature" x={box.left - 0.5 * rem} y={yTemperature(tick) + 0.3 * rem}>{tick}</text>
+            <text
+              class="tick temperature"
+              data-testid="shot-tick-temperature"
+              x={box.left - 0.5 * rem}
+              y={yTemperature(tick) + 0.3 * rem}>{tick}</text
+            >
           {/each}
           <text class="unit temperature" data-testid="shot-unit-temperature" x={box.left} y={box.top - 0.5 * rem}>°C</text>
-      {/if}
-      {#each axis.ticks as tick (tick)}
-        <text class="time" x={x(tick)} y={box.bottom + 1.4 * rem}>{tick}{tick === 0 ? ' s' : ''}</text>
-      {/each}
+        {/if}
+        {#each axis.ticks as tick (tick)}
+          <text class="time" x={x(tick)} y={box.bottom + 1.4 * rem}>{tick}{tick === 0 ? ' s' : ''}</text>
+        {/each}
       {/if}
 
       {#each shaded as span, i (i)}
@@ -204,7 +198,12 @@
 
       <!-- The targets lie under the curves, each on the scale of its quantity. -->
       {#if temperature && targetTemperature}
-        <path class="target temperature" class:solid={preview} data-testid="shot-target-temperature" d={path(targetTemperature, yTemperature)} />
+        <path
+          class="target temperature"
+          class:solid={preview}
+          data-testid="shot-target-temperature"
+          d={path(targetTemperature, yTemperature)}
+        />
       {/if}
       {#if pressure && targetPressure}
         <path class="target pressure" class:solid={preview} data-testid="shot-target-pressure" d={path(targetPressure, yMain)} />

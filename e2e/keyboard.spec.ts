@@ -48,7 +48,9 @@ async function withKeyboard(page: Page, field: Locator, keep: Locator, shot: str
   await expect(page.locator('[data-lifted]')).toHaveCount(0);
 }
 
-test("the save as dialog keeps its size and stays above the keyboard; the viewport meta resizes only the visual viewport", async ({ page }) => {
+test('the save as dialog keeps its size and stays above the keyboard; the viewport meta resizes only the visual viewport', async ({
+  page,
+}) => {
   await (await mockGateway(page)).withDefaults('light');
   await page.addInitScript(() => localStorage.setItem('pureflow.screen', 'editor'));
   await page.goto('/');

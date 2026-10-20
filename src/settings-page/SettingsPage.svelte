@@ -139,7 +139,8 @@
     reset: {
       label: 'Reset to defaults',
       hint: "The machine's settings above come back as the factory set them. The profile and the workflow are not touched.",
-      confirm: "Fan, idle temperature, heater flows and time-out, refill kit, flow estimation and steam purge go back to the factory's.",
+      confirm:
+        "Fan, idle temperature, heater flows and time-out, refill kit, flow estimation and steam purge go back to the factory's.",
     },
     dashboard: { label: 'Go to dashboard', hint: "Leaves the skin for Decaid's own screens." },
   };
@@ -217,7 +218,9 @@
                 <Devices
                   {skin}
                   kind={view.devices}
-                  preferred={read.decaid ? (read.decaid[view.devices === 'machine' ? 'preferredMachineId' : 'preferredScaleId'] ?? null) : undefined}
+                  preferred={read.decaid
+                    ? (read.decaid[view.devices === 'machine' ? 'preferredMachineId' : 'preferredScaleId'] ?? null)
+                    : undefined}
                   onpreferred={prefer}
                 />
               {:else if view?.kind === 'maintenance'}
@@ -227,7 +230,11 @@
               {:else if view?.kind === 'plugins'}
                 <Plugins {skin} />
               {:else if view?.kind === 'presence'}
-                <Presence {skin} schedules={read.presence ? (read.presence.schedules ?? []) : null} onchanged={() => readAgain('presence')} />
+                <Presence
+                  {skin}
+                  schedules={read.presence ? (read.presence.schedules ?? []) : null}
+                  onchanged={() => readAgain('presence')}
+                />
               {:else if view?.kind === 'firmware' || view?.kind === 'app-update'}
                 <Firmware {skin} part={view.kind === 'firmware' ? 'firmware' : 'app'} />
               {:else if view?.kind === 'sensors'}
@@ -260,8 +267,11 @@
                   <small>{ACTIONS[action].hint}</small>
                   {#if done[sub.id]}<small data-testid="settings-done-{action}">{done[sub.id]}</small>{/if}
                 </div>
-                <button class="action" data-testid="settings-action-{action}" disabled={!!busy[action]} onclick={() => act(sub, action)}
-                  >{ACTIONS[action].label}</button
+                <button
+                  class="action"
+                  data-testid="settings-action-{action}"
+                  disabled={!!busy[action]}
+                  onclick={() => act(sub, action)}>{ACTIONS[action].label}</button
                 >
               </div>
             {/each}

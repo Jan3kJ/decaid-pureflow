@@ -1,12 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  DEFAULT_PROFILES,
-  paramRanges,
-  resolveParams,
-  validateParams,
-  type AFlowParams,
-  machineLimits,
-} from '../aflow';
+import { DEFAULT_PROFILES, paramRanges, resolveParams, validateParams, type AFlowParams, machineLimits } from '../aflow';
 import {
   AXIS_SECONDS,
   FLOW_MIN_UNITS,
@@ -59,9 +52,7 @@ describe('timeAxis', () => {
     expect(expectedSeconds({ ...light, fillTime: 100 }).fill).toBe(expectedSeconds(light).fill);
     // A limit shorter than that, or a slower pump, changes it.
     expect(expectedSeconds({ ...light, fillTime: 2 }).fill).toBe(2);
-    expect(expectedSeconds({ ...light, fillFlow: 4 }).fill).toBeGreaterThan(
-      expectedSeconds(light).fill,
-    );
+    expect(expectedSeconds({ ...light, fillFlow: 4 }).fill).toBeGreaterThan(expectedSeconds(light).fill);
   });
 
   it('expects a 2nd fill with its pause to take about as long as the fill', () => {
@@ -92,15 +83,10 @@ describe('timeAxis', () => {
 
   it('gives the flow phase the rest: more when the phases before it are short', () => {
     expect(width(dark, 'flow')).toBeGreaterThan(width(light, 'flow'));
-    expect(width({ ...dark, infuseTime: 20, infuseWeight: 0 }, 'flow')).toBeLessThan(
-      width(dark, 'flow'),
-    );
+    expect(width({ ...dark, infuseTime: 20, infuseWeight: 0 }, 'flow')).toBeLessThan(width(dark, 'flow'));
     // dark: 3.5 + 9 (its 2 g) + 5 s of 60 s are taken, the flow phase has the other 42.5 s.
     const axis = timeAxis(dark);
-    expect(axis.unitsPerSecond).toBeCloseTo(
-      (GRAPH_WIDTH - MIN_COLUMN_UNITS) / (AXIS_SECONDS - 3.5),
-      6,
-    );
+    expect(axis.unitsPerSecond).toBeCloseTo((GRAPH_WIDTH - MIN_COLUMN_UNITS) / (AXIS_SECONDS - 3.5), 6);
     expect(axis.widths.flow).toBeCloseTo(42.5 * axis.unitsPerSecond, 6);
   });
 
@@ -177,13 +163,7 @@ describe('buildCurve', () => {
   it('adds the 2nd fill column, its level and its border only with the toggle on', () => {
     const off = buildCurve(light);
     const on = buildCurve(withSecondFill);
-    expect(on.phases.map((c) => c.id)).toEqual([
-      'fill',
-      'infuse',
-      'secondFill',
-      'pressurize',
-      'flow',
-    ]);
+    expect(on.phases.map((c) => c.id)).toEqual(['fill', 'infuse', 'secondFill', 'pressurize', 'flow']);
     expect(off.borders.map((b) => b.field)).toEqual(['infuseTime', 'rampTime']);
     expect(on.borders.map((b) => b.field)).toEqual(['infuseTime', 'pauseDuration', 'rampTime']);
     expect(off.levels.some((l) => l.field === 'secondFillFlow')).toBe(false);
@@ -195,9 +175,7 @@ describe('buildCurve', () => {
 
   it('marks the pause border, and only it, as dragged in detail mode only', () => {
     const curve = buildCurve(withSecondFill);
-    expect(curve.borders.filter((b) => b.detailOnly).map((b) => b.field)).toEqual([
-      'pauseDuration',
-    ]);
+    expect(curve.borders.filter((b) => b.detailOnly).map((b) => b.field)).toEqual(['pauseDuration']);
   });
 
   it('puts every border on the right edge of its phase, with the seconds a unit is worth', () => {
@@ -409,9 +387,7 @@ describe('buildCurve', () => {
 
   it('moves the fill group or the flow group with a temperature line', () => {
     const curve = buildCurve(withSecondFill);
-    const drags = Object.fromEntries(
-      curve.levels.filter((l) => l.line === 'temperature').map((l) => [l.phase, l.drags]),
-    );
+    const drags = Object.fromEntries(curve.levels.filter((l) => l.line === 'temperature').map((l) => [l.phase, l.drags]));
     expect(drags).toEqual({
       fill: 'fillTemperature',
       infuse: 'fillTemperature',
@@ -433,11 +409,7 @@ describe('buildCurve', () => {
       'secondFillTemperature',
       'pourTemperature',
     ]);
-    expect(labelled({ ...light, rampTemperature: 90 })).toEqual([
-      'fillTemperature',
-      'rampTemperature',
-      'pourTemperature',
-    ]);
+    expect(labelled({ ...light, rampTemperature: 90 })).toEqual(['fillTemperature', 'rampTemperature', 'pourTemperature']);
   });
 
   it('keeps a column as wide as a finger for a ramp of 1 s', () => {
@@ -553,13 +525,7 @@ describe('fields', () => {
   it('lists per phase exactly the values of the review', () => {
     expect(PHASE_FIELDS).toEqual({
       fill: ['fillFlow', 'fillExitPressure', 'fillTemperature', 'fillTime'],
-      infuse: [
-        'infusePressure',
-        'infuseTime',
-        'infuseWeight',
-        'infuseTemperature',
-        'infuseFlowLimit',
-      ],
+      infuse: ['infusePressure', 'infuseTime', 'infuseWeight', 'infuseTemperature', 'infuseFlowLimit'],
       secondFill: [
         'secondFillFlow',
         'secondFillExitPressure',
@@ -569,14 +535,7 @@ describe('fields', () => {
         'pauseExitFlow',
       ],
       pressurize: ['pourPressure', 'rampTime', 'rampTemperature'],
-      flow: [
-        'pourFlow',
-        'pourEndFlow',
-        'pourTime',
-        'pourTemperature',
-        'stopWeight',
-        'pourPressureLimit',
-      ],
+      flow: ['pourFlow', 'pourEndFlow', 'pourTime', 'pourTemperature', 'stopWeight', 'pourPressureLimit'],
     });
   });
 
@@ -637,8 +596,7 @@ describe('the split flow line of detail mode', () => {
     x: (units) => units * 10,
     y: (line, value) => (line === 'temperature' ? (105 - value) * 20 : 1000 - value * 20),
   };
-  const pourLevels = (curve: ReturnType<typeof buildCurve>) =>
-    curve.levels.filter((l) => l.line === 'flow' && l.phase === 'flow');
+  const pourLevels = (curve: ReturnType<typeof buildCurve>) => curve.levels.filter((l) => l.line === 'flow' && l.phase === 'flow');
   /** What a finger on the pour flow line at a share of the column's width takes hold of. */
   const at = (p: AFlowParams, share: number, mode: 'simple' | 'detail') => {
     const curve = buildCurve(p, undefined, mode);
@@ -737,10 +695,7 @@ describe('the infuse drawn by its weight', () => {
     expect(twelve.widths.infuse! / twelve.widths.pressurize!).toBeCloseTo(12 / 10, 9);
     // A heavier weight is a wider column, up to the time limit.
     expect(width({ ...light, infuseWeight: 8 }, 'infuse')).toBeGreaterThan(width(light, 'infuse'));
-    expect(width({ ...light, infuseWeight: 30 }, 'infuse')).toBeCloseTo(
-      width({ ...light, infuseWeight: 0 }, 'infuse'),
-      9,
-    );
+    expect(width({ ...light, infuseWeight: 30 }, 'infuse')).toBeCloseTo(width({ ...light, infuseWeight: 0 }, 'infuse'), 9);
   });
 
   it('starts the drag of the infuse border where it is drawn', () => {
@@ -803,7 +758,10 @@ describe('a phase dragged to 0 s', () => {
 
   it('collapses to no width, and the others keep the graph filled', () => {
     for (const change of [{ infuseTime: 0 }, { rampTime: 0 }, { infuseTime: 0, rampTime: 0 }]) {
-      for (const p of [{ ...light, ...change }, { ...floral, ...change }]) {
+      for (const p of [
+        { ...light, ...change },
+        { ...floral, ...change },
+      ]) {
         const curve = buildCurve(p);
         for (const id of ['infuse', 'pressurize'] as const) {
           const column = curve.phases.find((c) => c.id === id)!;

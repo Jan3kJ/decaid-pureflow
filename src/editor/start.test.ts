@@ -6,8 +6,7 @@ import { startChoices, startName, startRow } from './start';
 import { workflowNotes } from './storage';
 
 const params = DEFAULT_PROFILES[1].params;
-const aflow = (title: string) =>
-  generateProfile(params, { title, author: 'me', notes: workflowNotes('', params) }) as Profile;
+const aflow = (title: string) => generateProfile(params, { title, author: 'me', notes: workflowNotes('', params) }) as Profile;
 const record = (id: string, profile: Profile) => ({ id, profile }) as ProfileRecord;
 const other = { ...aflow('Best practice'), notes: '' };
 
@@ -26,15 +25,7 @@ describe("the editor's start row", () => {
       record('d', aflow('A-Flow / default-light')),
       record('e', aflow('A-Flow / alpha')),
     ];
-    expect(startChoices(records).map((choice) => choice.name)).toEqual([
-      'floral',
-      'light',
-      'medium',
-      'dark',
-      '46mm',
-      'alpha',
-      'zeta',
-    ]);
+    expect(startChoices(records).map((choice) => choice.name)).toEqual(['floral', 'light', 'medium', 'dark', '46mm', 'alpha', 'zeta']);
     expect(startChoices([]).map((choice) => choice.title)).toEqual(DEFAULT_START_PROFILES);
   });
 

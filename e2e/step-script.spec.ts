@@ -86,7 +86,9 @@ test('SCRIPT: a state word cycles, a number opens the pad, both move the preview
   const posts = gateway.calls('POST', '/api/v1/profiles');
   expect(posts).toHaveLength(1);
   expect(posts[0].body.parentId).toBe('profile:mine');
-  const steps = MINE.steps.map((step, i) => (i === 3 ? { ...step, pump: 'pressure', transition: 'fast' } : i === 4 ? { ...step, flow: 3 } : step));
+  const steps = MINE.steps.map((step, i) =>
+    i === 3 ? { ...step, pump: 'pressure', transition: 'fast' } : i === 4 ? { ...step, flow: 3 } : step,
+  );
   expect(posts[0].body.profile).toEqual({ ...MINE, steps });
   const stored = gateway.profiles.find((record) => record.parentId === 'profile:mine')!;
   expect(stored.profile.steps).toEqual(steps);

@@ -83,8 +83,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   const message = (cause: unknown) => (cause instanceof Error ? cause.message : String(cause));
 
   /** What a record's id is made of: the steps and the target weight. */
-  const sameContent = (a: Profile, b: Profile) =>
-    sameSteps(a.steps, b.steps) && (a.target_weight ?? 0) === (b.target_weight ?? 0);
+  const sameContent = (a: Profile, b: Profile) => sameSteps(a.steps, b.steps) && (a.target_weight ?? 0) === (b.target_weight ?? 0);
 
   /** The visible record of a title, the one with these steps first. */
   function recordOf(of: Profile): ProfileRecord | null {
@@ -201,7 +200,10 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     const left = card.getBoundingClientRect().left - row.getBoundingClientRect().left + row.scrollLeft;
     const smooth = centredIn === row;
     centredIn = row;
-    row.scrollTo({ left: centredScroll(left, card.offsetWidth, row.clientWidth, row.scrollWidth), behavior: smooth ? 'smooth' : 'instant' });
+    row.scrollTo({
+      left: centredScroll(left, card.offsetWidth, row.clientWidth, row.scrollWidth),
+      behavior: smooth ? 'smooth' : 'instant',
+    });
   }
 
   // Whenever another card opens (a tap, a step added, moved or deleted): a short animated scroll.
@@ -256,7 +258,9 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     <div class="group tabs" role="group" aria-label="view">
       <button class="seg" aria-pressed={tab === 'cards'} data-testid="tab-cards" onclick={() => open('cards')}>cards</button>
       <button class="seg" aria-pressed={tab === 'script'} data-testid="tab-script" onclick={() => open('script')}>script</button>
-      <button class="seg" aria-pressed={tab === 'settings'} data-testid="tab-settings" onclick={() => open('settings')}>settings</button>
+      <button class="seg" aria-pressed={tab === 'settings'} data-testid="tab-settings" onclick={() => open('settings')}
+        >settings</button
+      >
     </div>
     <span class="count" data-testid="step-count">{profile.steps.length} {profile.steps.length === 1 ? 'step' : 'steps'}</span>
     <div class="group" role="group" aria-label="profile actions">
@@ -276,32 +280,32 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   {:else if tab === 'script'}
     <ScriptTab {profile} disabled={busy} onedit={edit} ontype={(index, value) => (typing = { index, value })} />
   {:else}
-  <!-- The curve preview: the targets of the steps, redrawn with every edit. -->
-  <StepPreview {profile} />
+    <!-- The curve preview: the targets of the steps, redrawn with every edit. -->
+    <StepPreview {profile} />
 
-  <div class="cards" bind:this={row} data-testid="step-cards">
-    {#each profile.steps as step, index (index)}
-      <StepCard
-        {step}
-        {index}
-        count={profile.steps.length}
-        open={index === openIndex}
-        disabled={busy}
-        onopen={() => (openIndex = index)}
-        onstep={(value, direction) => edit(stepValue(profile, index, value, direction))}
-        ontype={(value) => (typing = { index, value })}
-        oncycle={(what) => cycle(index, what)}
-        onname={(name) => edit(setName(profile, index, name))}
-        onmove={(direction) => move(index, direction)}
-        ondelete={() => (deleting = index)}
-        oninsert={() => insert(index)}
-      />
-    {:else}
-      <button class="add" data-testid="step-insert-first" disabled={busy || !profile.title} onclick={() => insert(-1)}>
-        + add a step
-      </button>
-    {/each}
-  </div>
+    <div class="cards" bind:this={row} data-testid="step-cards">
+      {#each profile.steps as step, index (index)}
+        <StepCard
+          {step}
+          {index}
+          count={profile.steps.length}
+          open={index === openIndex}
+          disabled={busy}
+          onopen={() => (openIndex = index)}
+          onstep={(value, direction) => edit(stepValue(profile, index, value, direction))}
+          ontype={(value) => (typing = { index, value })}
+          oncycle={(what) => cycle(index, what)}
+          onname={(name) => edit(setName(profile, index, name))}
+          onmove={(direction) => move(index, direction)}
+          ondelete={() => (deleting = index)}
+          oninsert={() => insert(index)}
+        />
+      {:else}
+        <button class="add" data-testid="step-insert-first" disabled={busy || !profile.title} onclick={() => insert(-1)}>
+          + add a step
+        </button>
+      {/each}
+    </div>
   {/if}
 </div>
 

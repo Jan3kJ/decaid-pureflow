@@ -7,15 +7,7 @@ import {
   type ShotRecordSummary,
   type WorkflowContext,
 } from '../api';
-import {
-  beanAndGrinder,
-  beanLabel,
-  entryKey,
-  groupShots,
-  readShots,
-  restoreEntry,
-  seriesOf,
-} from './entries';
+import { beanAndGrinder, beanLabel, entryKey, groupShots, readShots, restoreEntry, seriesOf } from './entries';
 import { SWIPE_DISTANCE, SWIPE_EDGE, isOpeningSwipe, startsAtEdge } from './swipe';
 
 function profile(title: string, over: Partial<Profile> = {}): Profile {
@@ -50,11 +42,7 @@ describe('groupShots', () => {
   });
 
   it('makes a new entry for another bean and for another profile', () => {
-    const entries = groupShots([
-      shot('A-Flow / light', beanA, 1),
-      shot('A-Flow / light', beanB, 2),
-      shot('A-Flow / dark', beanA, 3),
-    ]);
+    const entries = groupShots([shot('A-Flow / light', beanA, 1), shot('A-Flow / light', beanB, 2), shot('A-Flow / dark', beanA, 3)]);
 
     expect(entries.map((entry) => [entry.profileTitle, entry.bean?.name])).toEqual([
       ['A-Flow / dark', 'Yirgacheffe'],
@@ -68,7 +56,11 @@ describe('groupShots', () => {
     const other = shot('A-Flow / dark', beanA, 2);
     const again = shot('A-Flow / light', beanA, 3);
 
-    for (const order of [[old, other, again], [again, other, old], [other, again, old]]) {
+    for (const order of [
+      [old, other, again],
+      [again, other, old],
+      [other, again, old],
+    ]) {
       const entries = groupShots(order);
       expect(entries.map((entry) => entry.profileTitle)).toEqual(['A-Flow / light', 'A-Flow / dark']);
       expect(entries[0].latest).toBe(again);
@@ -113,9 +105,7 @@ describe('groupShots', () => {
   it('groups many shots into as many entries as there are combinations', () => {
     const titles = ['floral', 'light', 'medium', 'dark'];
     const beans = [beanA, beanB, {}];
-    const shots = Array.from({ length: 600 }, (_, i) =>
-      shot(titles[i % 4], { ...beans[i % 3], grinderSetting: String(i) }, i),
-    );
+    const shots = Array.from({ length: 600 }, (_, i) => shot(titles[i % 4], { ...beans[i % 3], grinderSetting: String(i) }, i));
     const entries = groupShots(shots);
 
     expect(entries).toHaveLength(12);

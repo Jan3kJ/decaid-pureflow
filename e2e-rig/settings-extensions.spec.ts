@@ -85,7 +85,9 @@ test('a plugin setting changed through the page is read back and restored', asyn
   expect(await pluginStates()).toEqual(states);
 });
 
-test('the sleep timeout changed through the page is read back and restored; a wake schedule is created and deleted', async ({ page }) => {
+test('the sleep timeout changed through the page is read back and restored; a wake schedule is created and deleted', async ({
+  page,
+}) => {
   test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
   const before = await api('GET', '/api/v1/presence/settings');
   console.log('before', JSON.stringify(before));
@@ -134,11 +136,14 @@ test('the sleep timeout changed through the page is read back and restored; a wa
   expect(after).toEqual(before);
 });
 
-test("the firmware catalog is shown; Install asks first and is cancelled, nothing is applied", async ({ page }) => {
+test('the firmware catalog is shown; Install asks first and is cancelled, nothing is applied', async ({ page }) => {
   test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
   const catalog = await api('GET', '/api/v1/machine/firmware');
   const update = await api('GET', '/api/v1/update');
-  console.log('catalog', JSON.stringify({ machine: catalog.machine, recommended: catalog.recommendedArtifactId, updateAvailable: catalog.updateAvailable }));
+  console.log(
+    'catalog',
+    JSON.stringify({ machine: catalog.machine, recommended: catalog.recommendedArtifactId, updateAvailable: catalog.updateAvailable }),
+  );
 
   const applies: string[] = [];
   page.on('request', (request) => {
@@ -147,7 +152,8 @@ test("the firmware catalog is shown; Install asks first and is cancelled, nothin
   await openCategory(page, 'updates');
   for (const artifact of catalog.artifacts) await expect(page.getByTestId(`firmware-artifact-${artifact.id}`)).toBeVisible();
   await expect(page.getByTestId('firmware-installed')).toHaveText(String(catalog.machine?.build ?? '–'));
-  const status = catalog.updateAvailable === true ? 'update-available' : catalog.updateAvailable === false ? /up-to-date|ahead/ : 'unknown';
+  const status =
+    catalog.updateAvailable === true ? 'update-available' : catalog.updateAvailable === false ? /up-to-date|ahead/ : 'unknown';
   await expect(page.getByTestId('firmware-status')).toHaveAttribute('data-status', status);
   await expect(page.getByTestId('app-update')).toContainText(update.currentVersion);
 

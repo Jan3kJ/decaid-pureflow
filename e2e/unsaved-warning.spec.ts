@@ -76,7 +76,7 @@ test('Discard and load loads the profile selected', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test('Save as… opens the editor\'s save as on the values on the machine', async ({ page }) => {
+test("Save as… opens the editor's save as on the values on the machine", async ({ page }) => {
   const gateway = await leaveWithChange(page);
   await pickFloral(page);
   await page.getByTestId('unsaved-save-as').click();
@@ -127,7 +127,7 @@ async function withUnsaved(page: Page, screen: string): Promise<MockGateway> {
   return gateway;
 }
 
-test('another profile of the editor\'s start row asks too', async ({ page }) => {
+test("another profile of the editor's start row asks too", async ({ page }) => {
   const gateway = await withUnsaved(page, 'editor');
 
   // The editor opens on the unsaved edits again.

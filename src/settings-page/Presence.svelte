@@ -90,8 +90,11 @@
       <small>The machine wakes at these times, and stays awake for the time given.</small>
       {#if error}<small class="warn" data-testid="schedule-error">{error}</small>{/if}
     </div>
-    <button class="action" data-testid="schedule-add" disabled={busy || schedules === null || editing !== null} onclick={() => edit(null)}
-      >Add schedule</button
+    <button
+      class="action"
+      data-testid="schedule-add"
+      disabled={busy || schedules === null || editing !== null}
+      onclick={() => edit(null)}>Add schedule</button
     >
   </div>
 
@@ -112,10 +115,15 @@
           data-testid="schedule-enabled-{schedule.id}"
           onclick={() => toggle(schedule)}><span class="lever"><span></span></span></button
         >
-        <button class="action" data-testid="schedule-edit-{schedule.id}" disabled={busy || editing !== null} onclick={() => edit(schedule)}
-          >Edit</button
+        <button
+          class="action"
+          data-testid="schedule-edit-{schedule.id}"
+          disabled={busy || editing !== null}
+          onclick={() => edit(schedule)}>Edit</button
         >
-        <button class="action" data-testid="schedule-delete-{schedule.id}" disabled={busy} onclick={() => (deleting = schedule)}>Delete</button>
+        <button class="action" data-testid="schedule-delete-{schedule.id}" disabled={busy} onclick={() => (deleting = schedule)}
+          >Delete</button
+        >
       </div>
     </div>
   {/each}
@@ -131,14 +139,19 @@
         <div class="about"><strong>days</strong><small>None chosen: every day.</small></div>
         <div class="choices">
           {#each DAYS as day, i (day)}
-            <button class="chip" aria-pressed={form.days.includes(i + 1)} data-testid="schedule-day-{i + 1}" onclick={() => toggleDay(i + 1)}
-              >{day}</button
+            <button
+              class="chip"
+              aria-pressed={form.days.includes(i + 1)}
+              data-testid="schedule-day-{i + 1}"
+              onclick={() => toggleDay(i + 1)}>{day}</button
             >
           {/each}
         </div>
       </div>
       <div class="row">
-        <div class="about"><strong>keep awake for</strong><small>Minutes after it wakes, at most 720 (12 hours); 0 only wakes.</small></div>
+        <div class="about">
+          <strong>keep awake for</strong><small>Minutes after it wakes, at most 720 (12 hours); 0 only wakes.</small>
+        </div>
         <button class="value" data-testid="schedule-keep-awake" onclick={() => (typing = 'keep-awake')}
           ><b>{form.keepAwake}<i>min</i></b></button
         >

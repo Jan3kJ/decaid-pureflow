@@ -148,7 +148,8 @@
 <div class="devices" data-testid="devices-{kind}">
   <div class="head">
     <small>
-      {#if !frame}Waiting for Decaid's device list…{:else if frame.scanning}Searching…{:else}Search finds nearby machines and scales and connects a missing one.{/if}
+      {#if !frame}Waiting for Decaid's device list…{:else if frame.scanning}Searching…{:else}Search finds nearby machines and scales
+        and connects a missing one.{/if}
     </small>
     <button class="action" data-testid="devices-scan-{kind}" disabled={!frame || frame.scanning} onclick={() => scan()}>Search</button>
   </div>
@@ -163,7 +164,8 @@
       <div class="about">
         <strong>{row.device.name}</strong>
         <small class="id">{row.device.id}</small>
-        {#if messages[row.device.id]}<small class="warn" data-testid="device-message-{row.device.id}">{messages[row.device.id]}</small>{/if}
+        {#if messages[row.device.id]}<small class="warn" data-testid="device-message-{row.device.id}">{messages[row.device.id]}</small
+          >{/if}
       </div>
       <button
         class="lever-button"

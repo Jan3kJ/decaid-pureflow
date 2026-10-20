@@ -15,30 +15,11 @@
   import type { Skin } from '../shell/skin.svelte';
   import { PHASE_LABEL, type EditField, type PhaseId } from './curve';
   import { dragValue, setValue, toggleFlow, toggleSecondFill } from './edit';
-  import {
-    FIELD_LABEL,
-    FIELD_STEP,
-    FIELD_TONE,
-    PANEL_LABEL,
-    PHASE_FIELDS,
-    formatValue,
-    snap,
-    typedStep,
-  } from './fields';
+  import { FIELD_LABEL, FIELD_STEP, FIELD_TONE, PANEL_LABEL, PHASE_FIELDS, formatValue, snap, typedStep } from './fields';
   import Graph from './Graph.svelte';
   import NameDialog from './NameDialog.svelte';
   import NumberPad from './NumberPad.svelte';
-  import {
-    TITLE_PREFIX,
-    changed,
-    loadOnLeave,
-    nameOf,
-    saveAs,
-    saveEdit,
-    storeAndLoad,
-    titleOf,
-    type Stored,
-  } from './save';
+  import { TITLE_PREFIX, changed, loadOnLeave, nameOf, saveAs, saveEdit, storeAndLoad, titleOf, type Stored } from './save';
   import { startRow } from './start';
   import { DEFAULT_SAVE_HINT, noticeLasts, type Notice } from './status';
   import StepList from './StepList.svelte';
@@ -278,9 +259,7 @@
   const saveUnder = (name: string) =>
     act('The profile was not saved', async () => {
       const about = { title: titleOf(name), author: origin.author };
-      const stored = await storeAndLoad(skin.client, () =>
-        saveAs(skin.client, params, about, settings.firstStepWorkaround),
-      );
+      const stored = await storeAndLoad(skin.client, () => saveAs(skin.client, params, about, settings.firstStepWorkaround));
       await adopt(stored, `Saved as “${name}”`);
     });
 
@@ -292,9 +271,7 @@
     return act('The profile was not saved', async () => {
       const name = origin.name;
       const parent = origin.record!;
-      const stored = await storeAndLoad(skin.client, () =>
-        saveEdit(skin.client, params, parent, settings.firstStepWorkaround),
-      );
+      const stored = await storeAndLoad(skin.client, () => saveEdit(skin.client, params, parent, settings.firstStepWorkaround));
       await adopt(stored, `Saved “${name}”`);
     });
   };
@@ -357,22 +334,12 @@
     <div class="group">
       <div class="group" role="group" aria-label="profile actions">
         <button class="seg action" data-testid="save" disabled={busy || !canSave} onclick={save}>save</button>
-        <button class="seg action" data-testid="save-as" disabled={busy} onclick={() => (naming = true)}>
-          save as
-        </button>
+        <button class="seg action" data-testid="save-as" disabled={busy} onclick={() => (naming = true)}> save as </button>
       </div>
       <div class="group" role="group" aria-label="editor mode">
-        <button
-          class="seg"
-          aria-pressed={mode === 'simple'}
-          data-testid="mode-simple"
-          onclick={() => (mode = 'simple')}>simple</button
+        <button class="seg" aria-pressed={mode === 'simple'} data-testid="mode-simple" onclick={() => (mode = 'simple')}>simple</button
         >
-        <button
-          class="seg"
-          aria-pressed={mode === 'detail'}
-          data-testid="mode-detail"
-          onclick={() => (mode = 'detail')}>detail</button
+        <button class="seg" aria-pressed={mode === 'detail'} data-testid="mode-detail" onclick={() => (mode = 'detail')}>detail</button
         >
       </div>
     </div>
@@ -389,15 +356,7 @@
   <section class="stage">
     <!-- No phase buttons: in detail mode a tap on a step of the graph selects it (founder, 2026-10-16). -->
     <div class="plot">
-      <Graph
-        {params}
-        {limits}
-        {mode}
-        {selected}
-        ondrag={drag}
-        onedit={edit}
-        onselect={(id) => (selected = id)}
-      />
+      <Graph {params} {limits} {mode} {selected} ondrag={drag} onedit={edit} onselect={(id) => (selected = id)} />
     </div>
   </section>
 
@@ -426,23 +385,11 @@
   {/if}
 
   <footer>
-    <button
-      class="toggle"
-      aria-pressed={hasSecondFill(params)}
-      data-testid="toggle-second-fill"
-      onclick={switchSecondFill}
-    >
+    <button class="toggle" aria-pressed={hasSecondFill(params)} data-testid="toggle-second-fill" onclick={switchSecondFill}>
       <span class="lamp"></span>2nd fill
     </button>
-    <button
-      class="toggle"
-      data-testid="toggle-flow"
-      aria-label="flow direction"
-      onclick={switchFlow}
-    >
-      <span class="arrow" class:down={!params.flowUp}>↗</span>{params.flowUp
-        ? 'flow up'
-        : 'flow down'}
+    <button class="toggle" data-testid="toggle-flow" aria-label="flow direction" onclick={switchFlow}>
+      <span class="arrow" class:down={!params.flowUp}>↗</span>{params.flowUp ? 'flow up' : 'flow down'}
     </button>
     <div class="legend">
       <span class="flow">flow ml/s</span>
@@ -451,12 +398,7 @@
     </div>
     <!-- Hidden by the setting 'profile steps'; shown, it opens and closes the panel. -->
     {#if settings.showProfileSteps}
-      <button
-        class="toggle setting"
-        aria-pressed={stepsOpen}
-        data-testid="toggle-steps"
-        onclick={() => (stepsOpen = !stepsOpen)}
-      >
+      <button class="toggle setting" aria-pressed={stepsOpen} data-testid="toggle-steps" onclick={() => (stepsOpen = !stepsOpen)}>
         <span class="lamp"></span>profile steps
       </button>
     {/if}

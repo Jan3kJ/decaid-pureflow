@@ -15,7 +15,7 @@ const RIG: FirmwareCatalog = {
 };
 
 describe('the firmware status (research.md 20.10 S2c)', () => {
-  it("names the recommended build when an update is available", () => {
+  it('names the recommended build when an update is available', () => {
     const summary = summarize(RIG);
     expect([summary.status, summary.model, summary.installedBuild, summary.latest?.id, summary.operation]).toEqual([
       'update-available',
@@ -33,7 +33,10 @@ describe('the firmware status (research.md 20.10 S2c)', () => {
       machine: null,
       updateAvailable: null,
       recommendedArtifactId: null,
-      artifacts: RIG.artifacts!.map((artifact) => ({ ...artifact, eligibility: { status: 'unknown', reasons: ['machine_not_connected'] } })),
+      artifacts: RIG.artifacts!.map((artifact) => ({
+        ...artifact,
+        eligibility: { status: 'unknown', reasons: ['machine_not_connected'] },
+      })),
     });
     expect([offline.status, offline.reason, offline.latest?.id]).toEqual(['unknown', 'machine_not_connected', 'de1-1358']);
     expect(summarize(null).status).toBe('unknown');
@@ -59,7 +62,13 @@ describe('the firmware status (research.md 20.10 S2c)', () => {
   });
 
   it("says Decaid's own update as the gateway reports it", () => {
-    const state = { phase: 'idle' as const, currentVersion: '0.8.8', latestVersion: null, releaseUrl: 'https://github.com/decentespresso/decaid/releases', installable: false };
+    const state = {
+      phase: 'idle' as const,
+      currentVersion: '0.8.8',
+      latestVersion: null,
+      releaseUrl: 'https://github.com/decentespresso/decaid/releases',
+      installable: false,
+    };
     expect(appUpdateText(state)).toBe('No update known.');
     expect(appUpdateText({ ...state, phase: 'available', latestVersion: '0.8.9' })).toBe('Decaid 0.8.9 is available.');
     expect(appUpdateText({ ...state, phase: 'downloading', progress: 0.5 })).toBe('Downloading 50 %');

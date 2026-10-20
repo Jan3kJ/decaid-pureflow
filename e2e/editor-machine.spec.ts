@@ -196,9 +196,7 @@ test('a profile with the values in its notes opens right and is moved on its nex
   expect(errors).toEqual([]);
 });
 
-test('simple mode: a changed value redraws the curve and back sends the generator\'s profile', async ({
-  page,
-}) => {
+test("simple mode: a changed value redraws the curve and back sends the generator's profile", async ({ page }) => {
   const gateway = (await mockGateway(page)).withDefaults('light');
   await openEditor(page);
   await expect(pressed(page)).toHaveText('light');
@@ -331,13 +329,9 @@ test('save as stores a new named profile, loads it, and it re-opens with the sam
   expect(errors).toEqual([]);
 });
 
-test('the first-step workaround is off by default and adds the Pre Fill step when the setting is on', async ({
-  page,
-}) => {
+test('the first-step workaround is off by default and adds the Pre Fill step when the setting is on', async ({ page }) => {
   const gateway = (await mockGateway(page)).withDefaults('medium');
-  await page.addInitScript(() =>
-    localStorage.setItem('pureflow.settings', JSON.stringify({ firstStepWorkaround: true })),
-  );
+  await page.addInitScript(() => localStorage.setItem('pureflow.settings', JSON.stringify({ firstStepWorkaround: true })));
   await openEditor(page);
   await page.getByTestId('toggle-steps').click();
   await expect(page.getByTestId('steps').locator('tbody tr').first()).toContainText('Pre Fill');

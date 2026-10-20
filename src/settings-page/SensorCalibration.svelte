@@ -164,8 +164,8 @@
 
 <div data-testid="sensor-calibration">
   <p class="hint">
-    A wrong calibration can make the machine unusable. Run the machine, capture its reading, type what your own instrument measured at the
-    same time, and apply.
+    A wrong calibration can make the machine unusable. Run the machine, capture its reading, type what your own instrument measured at
+    the same time, and apply.
   </p>
   {#if loading}
     <p class="dim">Reading the calibration from the machine…</p>
@@ -183,14 +183,24 @@
         <div class="row">
           <strong>{sensor.label}</strong>
           <span class="cell">stored <b data-testid="sensor-stored-{sensor.id}">{calibrationText(sensor.kind, entry.current)}</b></span>
-          <span class="cell">previous <b data-testid="sensor-previous-{sensor.id}">{calibrationText(sensor.kind, previous[sensor.id] ?? null)}</b></span>
-          <button class="action" data-testid="sensor-restore-{sensor.id}" disabled={entry.busy || !canRestore(sensor, entry)} onclick={() => restore(sensor)}
-            >Restore</button
+          <span class="cell"
+            >previous <b data-testid="sensor-previous-{sensor.id}">{calibrationText(sensor.kind, previous[sensor.id] ?? null)}</b
+            ></span
+          >
+          <button
+            class="action"
+            data-testid="sensor-restore-{sensor.id}"
+            disabled={entry.busy || !canRestore(sensor, entry)}
+            onclick={() => restore(sensor)}>Restore</button
           >
         </div>
         <div class="row">
           <span class="cell">machine reads <b data-testid="sensor-reading-{sensor.id}">{readingText(sensor, live)}</b></span>
-          <button class="action" data-testid="sensor-capture-{sensor.id}" disabled={entry.busy || live === null} onclick={() => capture(sensor)}
+          <button
+            class="action"
+            data-testid="sensor-capture-{sensor.id}"
+            disabled={entry.busy || live === null}
+            onclick={() => capture(sensor)}
             >{entry.captured === null ? 'Capture' : `Captured ${readingText(sensor, entry.captured)}`}</button
           >
           <button class="value" data-testid="sensor-measured-{sensor.id}" disabled={entry.busy} onclick={() => (typing = sensor)}
@@ -240,7 +250,10 @@
   {@const { sensor, from, to } = confirming}
   <Confirm
     title="Correct the {sensor.label.toLowerCase()} calibration?"
-    text="{calibrationText(sensor.kind, from)} becomes {calibrationText(sensor.kind, to)}. A wrong calibration can make the machine unusable; Restore puts the one before back."
+    text="{calibrationText(sensor.kind, from)} becomes {calibrationText(
+      sensor.kind,
+      to,
+    )}. A wrong calibration can make the machine unusable; Restore puts the one before back."
     ok="Apply"
     onok={() => void apply(sensor)}
     oncancel={() => (confirming = null)}

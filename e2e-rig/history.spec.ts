@@ -76,9 +76,7 @@ test.beforeAll(async () => {
   }
 });
 
-test('the history: shots with another profile or bean are entries, a tap restores one and shows its graph', async ({
-  page,
-}) => {
+test('the history: shots with another profile or bean are entries, a tap restores one and shows its graph', async ({ page }) => {
   test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
 
   const workflowBefore = await api('GET', '/api/v1/workflow');
