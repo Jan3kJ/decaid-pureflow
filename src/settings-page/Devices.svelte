@@ -17,6 +17,7 @@
   import type { Skin } from '../shell/skin.svelte';
   import Confirm from './Confirm.svelte';
   import { PREFERRED_KEY, connectMessage, deviceRows, type DeviceKind, type DeviceRow } from './devices';
+  import { errorMessage } from '../error-message';
 
   interface Props {
     skin: Skin;
@@ -47,15 +48,13 @@
 
   onDestroy(() => stream?.close());
 
-  const text = (cause: unknown) => (cause instanceof Error ? cause.message : String(cause));
-
   async function scan(connect = true) {
     message = null;
     try {
       // `quick`: the answer comes at once; the stream says while the scan runs and what it found.
       await skin.client.scanDevices({ connect, quick: true });
     } catch (cause) {
-      message = `The search did not start: ${text(cause)}`;
+      message = `The search did not start: ${errorMessage(cause)}`;
     }
   }
 
@@ -75,7 +74,7 @@
     } catch (cause) {
       // A conflict, an absent transport or a time-out answers with the connect's result.
       const body = cause instanceof DecaidApiError ? (cause.body as { outcome?: string } | undefined) : undefined;
-      messages[id] = body?.outcome ? (connectMessage(body as { outcome: string }) ?? text(cause)) : text(cause);
+      messages[id] = body?.outcome ? (connectMessage(body as { outcome: string }) ?? errorMessage(cause)) : errorMessage(cause);
     } finally {
       busy[id] = false;
     }
@@ -88,7 +87,7 @@
       // Decaid sends the list again; until then it is gone here (Streamline).
       if (frame) frame = { ...frame, devices: frame.devices.filter((entry) => entry.id !== device.id) };
     } catch (cause) {
-      messages[device.id] = `Not forgotten: ${text(cause)}`;
+      messages[device.id] = `Not forgotten: ${errorMessage(cause)}`;
     }
   }
 
@@ -99,7 +98,7 @@
     try {
       await onpreferred(PREFERRED_KEY[kind], row.preferred ? null : id);
     } catch (cause) {
-      messages[id] = text(cause);
+      messages[id] = errorMessage(cause);
     } finally {
       busy[`preferred-${id}`] = false;
     }
@@ -117,7 +116,7 @@
       wifiMessage = null;
     } catch (cause) {
       // "Not read" must not look like "none added".
-      wifiMessage = `The Wi-Fi scales were not read: ${text(cause)}`;
+      wifiMessage = `The Wi-Fi scales were not read: ${errorMessage(cause)}`;
     }
   }
 
@@ -129,7 +128,7 @@
       host = '';
       wifiMessage = null;
     } catch (cause) {
-      wifiMessage = `Not added: ${text(cause)}`;
+      wifiMessage = `Not added: ${errorMessage(cause)}`;
     }
   }
 
@@ -138,7 +137,7 @@
       hosts = await skin.client.removeWifiScale(entry);
       wifiMessage = null;
     } catch (cause) {
-      wifiMessage = `Not removed: ${text(cause)}`;
+      wifiMessage = `Not removed: ${errorMessage(cause)}`;
     }
   }
 

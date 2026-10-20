@@ -25,6 +25,7 @@
   import StepList from './StepList.svelte';
   import { readParams, readRecord } from './storage';
   import ValueChip from './ValueChip.svelte';
+  import { errorMessage } from '../error-message';
 
   interface Props {
     skin: Skin;
@@ -125,7 +126,6 @@
   // is and kept until it is edited: ±, the number pad and a drag bring it into the range.
   const limits = $derived(machineLimits(settings.maxFlow));
   const ranges = $derived(paramRanges(limits));
-  const message = (cause: unknown) => (cause instanceof Error ? cause.message : String(cause));
 
   function open(key: string, values: AFlowParams) {
     originKey = key;
@@ -147,7 +147,7 @@
     } catch (cause) {
       notice = {
         tone: 'warn',
-        text: `Decaid did not answer, so nothing can be saved or loaded now: ${message(cause)}`,
+        text: `Decaid did not answer, so nothing can be saved or loaded now: ${errorMessage(cause)}`,
       };
       return;
     }
@@ -183,7 +183,7 @@
       refused = now;
       notice = {
         tone: 'warn',
-        text: `The changes were not loaded: ${message(cause)}. Back again leaves without them.`,
+        text: `The changes were not loaded: ${errorMessage(cause)}. Back again leaves without them.`,
       };
       return false;
     } finally {
@@ -236,7 +236,7 @@
     try {
       await run();
     } catch (cause) {
-      notice = { tone: 'warn', text: `${failure}: ${message(cause)}` };
+      notice = { tone: 'warn', text: `${failure}: ${errorMessage(cause)}` };
     } finally {
       busy = false;
     }
@@ -251,7 +251,7 @@
       openedWith = { ...params };
       notice = { tone: 'info', text: `${text} and loaded.` };
     } else {
-      notice = { tone: 'warn', text: `${text}, but not loaded: ${message(stored.error)}` };
+      notice = { tone: 'warn', text: `${text}, but not loaded: ${errorMessage(stored.error)}` };
     }
   }
 

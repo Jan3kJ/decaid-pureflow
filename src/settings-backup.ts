@@ -5,6 +5,7 @@
 // gateway and the clock are parameters.
 import { FORMER_NAME } from './former-name';
 import { readSettings, type Settings } from './settings';
+import { errorMessage } from './error-message';
 
 /** The key in the skin's namespace (`pureflow`, the client's default): `pureflow/settings-backup`. */
 export const BACKUP_KEY = 'settings-backup';
@@ -113,7 +114,7 @@ export class SettingsBackup {
       await this.gateway.kvSet(BACKUP_KEY, backup);
       this.onWritten({ savedAt: backup.savedAt });
     } catch (cause) {
-      this.onWritten({ error: cause instanceof Error ? cause.message : String(cause) });
+      this.onWritten({ error: errorMessage(cause) });
     }
   }
 

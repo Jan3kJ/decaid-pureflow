@@ -28,6 +28,7 @@
     written,
     type PluginControl,
   } from './plugins';
+  import { errorMessage } from '../error-message';
 
   interface Props {
     skin: Skin;
@@ -50,14 +51,12 @@
   let checking = $state(false);
   let checked: string | null = $state(null);
 
-  const message = (cause: unknown) => (cause instanceof Error ? cause.message : String(cause));
-
   async function readSettings(plugin: PluginManifest) {
     try {
       stored[plugin.id] = await skin.client.getPluginSettings(plugin.id);
       delete failed[plugin.id];
     } catch (cause) {
-      failed[plugin.id] = `Settings not read: ${message(cause)}`;
+      failed[plugin.id] = `Settings not read: ${errorMessage(cause)}`;
     }
   }
 
@@ -66,7 +65,7 @@
       plugins = sortedPlugins(await skin.client.listPlugins());
       readError = null;
     } catch (cause) {
-      readError = message(cause);
+      readError = errorMessage(cause);
       return;
     }
     await Promise.all(plugins.filter((plugin) => pluginControls(plugin).length).map(readSettings));
@@ -86,7 +85,7 @@
       // The answer is redacted too, but a read is what the gateway holds (acceptance 22).
       stored[plugin.id] = await skin.client.getPluginSettings(plugin.id);
     } catch (cause) {
-      failed[at] = `${control.label} was not set: ${message(cause)}`;
+      failed[at] = `${control.label} was not set: ${errorMessage(cause)}`;
     } finally {
       busy[at] = false;
     }
@@ -99,7 +98,7 @@
       await skin.client.setPluginEnabled(plugin.id, on);
       plugins = sortedPlugins(await skin.client.listPlugins());
     } catch (cause) {
-      failed[plugin.id] = `${on ? 'Not enabled' : 'Not disabled'}: ${message(cause)}`;
+      failed[plugin.id] = `${on ? 'Not enabled' : 'Not disabled'}: ${errorMessage(cause)}`;
     } finally {
       busy[plugin.id] = false;
     }
@@ -123,7 +122,7 @@
       await skin.client.approvePluginUpdate(plugin.id);
       plugins = sortedPlugins(await skin.client.listPlugins());
     } catch (cause) {
-      failed[plugin.id] = `Not updated: ${message(cause)}`;
+      failed[plugin.id] = `Not updated: ${errorMessage(cause)}`;
     } finally {
       busy[plugin.id] = false;
     }
@@ -137,7 +136,7 @@
       plugins = sortedPlugins(await skin.client.listPlugins());
       checked = 'Checked; the states below are what Decaid reports now.';
     } catch (cause) {
-      checked = `The check did not run: ${message(cause)}`;
+      checked = `The check did not run: ${errorMessage(cause)}`;
     } finally {
       checking = false;
     }

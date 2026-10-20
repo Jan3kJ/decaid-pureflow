@@ -4,6 +4,7 @@
   import type { Skin } from '../shell/skin.svelte';
   import StateLine from '../shell/StateLine.svelte';
   import { HOT_WATER_FIELDS, WEIGHT_FIELD, heldValue, lastShotGrams, ratioLabel, ratioWeight, type HotWaterField } from './hot-water';
+  import { errorMessage } from '../error-message';
 
   interface Props {
     skin: Skin;
@@ -31,7 +32,7 @@
     try {
       lastShot = await lastShotGrams(skin.client);
     } catch (cause) {
-      unread = `The last shot could not be read: ${cause instanceof Error ? cause.message : String(cause)}`;
+      unread = `The last shot could not be read: ${errorMessage(cause)}`;
     }
   });
 </script>

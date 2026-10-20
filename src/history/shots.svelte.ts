@@ -4,6 +4,7 @@
 // the rest after them; later only what is newer than the newest one held.
 import type { DecaidClient, ShotRecord, ShotRecordSummary } from '../api';
 import { Records, merge, newerThan } from './shot-list';
+import { errorMessage } from '../error-message';
 
 /** How many shots the first read asks for: the history shows them before the rest arrive. */
 export const FIRST_SHOTS = 20;
@@ -63,7 +64,7 @@ export class ShotCache {
       }
       this.read = 'all';
     } catch (cause) {
-      this.error = message(cause);
+      this.error = errorMessage(cause);
       throw cause;
     }
   }
@@ -120,5 +121,3 @@ export class ShotCache {
     return find();
   }
 }
-
-const message = (cause: unknown) => (cause instanceof Error ? cause.message : String(cause));

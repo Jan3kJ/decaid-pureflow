@@ -41,6 +41,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   import ScriptTab from './ScriptTab.svelte';
   import StepCard from './StepCard.svelte';
   import StepPreview from './StepPreview.svelte';
+  import { errorMessage } from '../error-message';
 
   interface Props {
     skin: Skin;
@@ -80,7 +81,6 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   });
   const dirty = $derived(profileChanged(profile, origin));
   const canSave = $derived(canSaveOver(record) && dirty && profile.steps.length > 0 && !titleProblem);
-  const message = (cause: unknown) => (cause instanceof Error ? cause.message : String(cause));
 
   /** What a record's id is made of: the steps and the target weight. */
   const sameContent = (a: Profile, b: Profile) => sameSteps(a.steps, b.steps) && (a.target_weight ?? 0) === (b.target_weight ?? 0);
@@ -109,7 +109,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     try {
       records = await skin.client.listProfiles();
     } catch (cause) {
-      notice = { tone: 'warn', text: `Decaid did not answer, so nothing can be saved now: ${message(cause)}` };
+      notice = { tone: 'warn', text: `Decaid did not answer, so nothing can be saved now: ${errorMessage(cause)}` };
       return;
     }
     // Edits the user made meanwhile stay; the record only says what 'save' continues.
@@ -134,7 +134,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
       return true;
     } catch (cause) {
       refused = profile;
-      notice = { tone: 'warn', text: `The changes were not loaded: ${message(cause)}. Back again leaves without them.` };
+      notice = { tone: 'warn', text: `The changes were not loaded: ${errorMessage(cause)}. Back again leaves without them.` };
       return false;
     } finally {
       busy = false;
@@ -155,7 +155,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     try {
       await run();
     } catch (cause) {
-      notice = { tone: 'warn', text: `${failure}: ${message(cause)}` };
+      notice = { tone: 'warn', text: `${failure}: ${errorMessage(cause)}` };
     } finally {
       busy = false;
     }
@@ -170,7 +170,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
       openedWith = stored.record.profile;
       notice = { tone: 'info', text: `${text} and loaded.` };
     } else {
-      notice = { tone: 'warn', text: `${text}, but not loaded: ${message(stored.error)}` };
+      notice = { tone: 'warn', text: `${text}, but not loaded: ${errorMessage(stored.error)}` };
     }
   }
 

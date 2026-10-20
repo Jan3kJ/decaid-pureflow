@@ -13,6 +13,7 @@
   import { onMount } from 'svelte';
   import type { DecaidSettings, MachineInfo } from '../api';
   import type { Skin } from '../shell/skin.svelte';
+  import { errorMessage } from '../error-message';
 
   interface Props {
     skin: Skin;
@@ -34,7 +35,7 @@
       info = await skin.client.getMachineInfo();
       error = null;
     } catch (cause) {
-      error = cause instanceof Error ? cause.message : String(cause);
+      error = errorMessage(cause);
     } finally {
       reading = false;
     }

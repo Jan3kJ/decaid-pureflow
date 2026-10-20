@@ -22,6 +22,7 @@ import { SteamControl } from './steam-control.svelte';
 import { Streams } from './streams.svelte';
 import { recordWaterFrame, type WaterRun } from './water';
 import { writeHotWater, type HotWaterField } from '../hotwater/hot-water';
+import { errorMessage } from '../error-message';
 
 export class Skin {
   readonly baseUrl: string;
@@ -293,7 +294,7 @@ export class Skin {
     try {
       this.workflow = await writeHotWater(this.client, current, field, value);
     } catch (error) {
-      this.notice = `The hot water values were not set: ${error instanceof Error ? error.message : String(error)}`;
+      this.notice = `The hot water values were not set: ${errorMessage(error)}`;
     }
   }
 
@@ -337,7 +338,7 @@ export class Skin {
       await this.client.tareScale();
     } catch (error) {
       if (isTareBlocked(error)) this.info = 'No tare while a shot runs: Decaid blocks it (its setting "block tare during shot").';
-      else this.notice = `The scale was not tared: ${error instanceof Error ? error.message : String(error)}`;
+      else this.notice = `The scale was not tared: ${errorMessage(error)}`;
     }
   }
 
@@ -397,7 +398,7 @@ export class Skin {
     try {
       await this.client.requestMachineState(state);
     } catch (error) {
-      this.notice = `${failure}: ${error instanceof Error ? error.message : String(error)}`;
+      this.notice = `${failure}: ${errorMessage(error)}`;
     }
   }
 }

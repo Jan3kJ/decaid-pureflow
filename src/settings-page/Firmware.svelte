@@ -16,6 +16,7 @@
   import type { Skin } from '../shell/skin.svelte';
   import Confirm from './Confirm.svelte';
   import { DURATION_NOTE, REASON_TEXT, STATUS_TEXT, appUpdateText, progressText, summarize } from './firmware';
+  import { errorMessage } from '../error-message';
 
   interface Props {
     skin: Skin;
@@ -39,8 +40,6 @@
   /** an update runs, this page's or one started elsewhere */
   const busy = $derived(running || (summary !== null && summary.operation !== 'idle'));
 
-  const message = (cause: unknown) => (cause instanceof Error ? cause.message : String(cause));
-
   async function read() {
     reading = true;
     try {
@@ -48,7 +47,7 @@
       else app = await skin.client.getAppUpdate();
       error = null;
     } catch (cause) {
-      error = message(cause);
+      error = errorMessage(cause);
     } finally {
       reading = false;
     }
@@ -64,7 +63,7 @@
     try {
       await skin.client.applyFirmware(artifactId, (event) => (progress = event));
     } catch (cause) {
-      failed = message(cause);
+      failed = errorMessage(cause);
     } finally {
       running = false;
       cancelling = false;
@@ -78,7 +77,7 @@
     try {
       await skin.client.cancelFirmware();
     } catch (cause) {
-      failed = `Not cancelled: ${message(cause)}`;
+      failed = `Not cancelled: ${errorMessage(cause)}`;
       cancelling = false;
     }
     // the stream's error line ends the update

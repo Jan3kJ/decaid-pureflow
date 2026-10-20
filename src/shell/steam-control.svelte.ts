@@ -6,6 +6,7 @@ import type { Settings } from '../settings';
 import { applySteamTimer, timerMismatch } from '../steam/apply';
 import { recordSteamFrame, type SteamRun } from '../steam/run';
 import { heaterState, isOnTemperature, switchHeater } from './steam-heater';
+import { errorMessage } from '../error-message';
 
 /** What the steam part reads and writes of the skin. */
 export interface SteamHost {
@@ -68,7 +69,7 @@ export class SteamControl {
       host.workflow = (await applySteamTimer(host.client, asked, () => host.shotSettings)).workflow;
       this.asked = asked;
     } catch (error) {
-      host.notice = `The timer was not set: ${error instanceof Error ? error.message : String(error)}`;
+      host.notice = `The timer was not set: ${errorMessage(error)}`;
     }
   }
 
@@ -95,7 +96,7 @@ export class SteamControl {
       host.workflow = await switchHeater(host.client, on, host.settings.steam.heaterTemperature, () => host.shotSettings);
       return true;
     } catch (error) {
-      host.notice = `The steam heater was not switched ${on ? 'on' : 'off'}: ${error instanceof Error ? error.message : String(error)}`;
+      host.notice = `The steam heater was not switched ${on ? 'on' : 'off'}: ${errorMessage(error)}`;
       return false;
     }
   }

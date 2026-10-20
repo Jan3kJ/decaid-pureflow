@@ -9,6 +9,7 @@ import type { ShotCache } from '../history/shots.svelte';
 import type { LoadAnswer } from './load-warning.svelte';
 import { expectedShotSeconds, lastShotSeconds } from './expected';
 import { shotSeconds, type Shot, type ShotSeries } from './shot';
+import { errorMessage } from '../error-message';
 
 /** An entry of the shot history that was made the current one, with its latest shot's graph. */
 export interface Recalled {
@@ -96,7 +97,7 @@ export class Recall {
       host.workflow = await restoreEntry(host.client, entry);
       this.recalled = { entry, series: seriesOf(await host.shots.record(entry.latest.id)) };
     } catch (error) {
-      host.notice = `The entry was not restored: ${error instanceof Error ? error.message : String(error)}`;
+      host.notice = `The entry was not restored: ${errorMessage(error)}`;
     }
   }
 }

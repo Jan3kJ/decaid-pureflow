@@ -16,6 +16,7 @@
   import Confirm from './Confirm.svelte';
   import { clock, minutesOf } from './fields';
   import { DAYS, KEEP_AWAKE_MAX, NEW_SCHEDULE, formOf, scheduleOf, scheduleText, type ScheduleForm } from './presence';
+  import { errorMessage } from '../error-message';
 
   interface Props {
     skin: Skin;
@@ -35,8 +36,6 @@
   let error: string | null = $state(null);
   let deleting: WakeSchedule | null = $state(null);
 
-  const message = (cause: unknown) => (cause instanceof Error ? cause.message : String(cause));
-
   function edit(schedule: WakeSchedule | null) {
     error = null;
     editing = schedule ? schedule.id : 'new';
@@ -55,7 +54,7 @@
       await onchanged();
       return true;
     } catch (cause) {
-      error = `${what}: ${message(cause)}`;
+      error = `${what}: ${errorMessage(cause)}`;
       return false;
     } finally {
       busy = false;

@@ -13,6 +13,7 @@
     type PickerEntry,
   } from './profiles';
   import type { Skin } from './skin.svelte';
+  import { errorMessage } from '../error-message';
 
   interface Props {
     skin: Skin;
@@ -35,7 +36,6 @@
   const selected = $derived(shown.find((entry) => entry.id === selectedId) ?? null);
   const current = $derived(skin.workflow?.profile);
   const isLoaded = (entry: PickerEntry) => !!current && sameProfile(entry.profile, current);
-  const message = (cause: unknown) => (cause instanceof Error ? cause.message : String(cause));
 
   async function read() {
     error = null;
@@ -43,7 +43,7 @@
       records = await skin.client.listProfiles();
       selectedId ??= pickerEntries(records).find(isLoaded)?.id ?? null;
     } catch (cause) {
-      error = `The profiles could not be read: ${message(cause)}`;
+      error = `The profiles could not be read: ${errorMessage(cause)}`;
     }
   }
 
@@ -53,7 +53,7 @@
     try {
       await run();
     } catch (cause) {
-      error = `${what}: ${message(cause)}`;
+      error = `${what}: ${errorMessage(cause)}`;
     } finally {
       busy = false;
     }

@@ -39,6 +39,7 @@
     type Values,
   } from './gateway';
   import { SETTINGS_TREE, loadLocation, saveLocation, type Action, type Subcategory } from './tree';
+  import { errorMessage } from '../error-message';
 
   interface Props {
     skin: Skin;
@@ -82,7 +83,7 @@
       read = { ...read, [part]: await readPart(skin.client, part) };
       delete readErrors[part];
     } catch (cause) {
-      readErrors[part] = cause instanceof Error ? cause.message : String(cause);
+      readErrors[part] = errorMessage(cause);
     }
   }
 
@@ -120,7 +121,7 @@
       read = await writeField(skin.client, values, field, value);
       if (field.source.startsWith('workflow.')) skin.workflow = read.workflow;
     } catch (cause) {
-      failed[field.id] = cause instanceof Error ? cause.message : String(cause);
+      failed[field.id] = errorMessage(cause);
     } finally {
       busy[field.id] = false;
     }
@@ -166,7 +167,7 @@
       read = action === 'reset' ? await resetMachine(skin.client, values) : await applyFastStart(skin.client, values);
       done[sub.id] = action === 'reset' ? 'Reset; the values read back are shown.' : 'Set; the values read back are shown.';
     } catch (cause) {
-      done[sub.id] = cause instanceof Error ? cause.message : String(cause);
+      done[sub.id] = errorMessage(cause);
     } finally {
       busy[action] = false;
     }

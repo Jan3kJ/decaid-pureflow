@@ -33,6 +33,7 @@
     type Sample,
     type Sensor,
   } from './sensor-calibration';
+  import { errorMessage } from '../error-message';
 
   interface Props {
     skin: Skin;
@@ -57,8 +58,6 @@
   let confirming: { sensor: Sensor; from: number; to: number } | null = $state(null);
   const samples: Record<SensorTarget, Sample[]> = { temperature: [], pressure: [], flow: [] };
 
-  const message = (cause: unknown) => (cause instanceof Error ? cause.message : String(cause));
-
   async function readOne(sensor: Sensor) {
     entries[sensor.id].current = (await skin.client.getSensorCalibration(sensor.id)).measuredValue;
   }
@@ -70,7 +69,7 @@
       // One after the other: the machine answers one calibration request at a time.
       for (const sensor of SENSORS) await readOne(sensor);
     } catch (cause) {
-      loadError = message(cause);
+      loadError = errorMessage(cause);
     } finally {
       loading = false;
     }
@@ -127,7 +126,7 @@
       entry.captured = null;
       entry.measured = null;
     } catch (cause) {
-      entry.error = `Not written: ${message(cause)}`;
+      entry.error = `Not written: ${errorMessage(cause)}`;
     } finally {
       entry.busy = false;
     }
@@ -152,7 +151,7 @@
       entry.captured = null;
       entry.measured = null;
     } catch (cause) {
-      entry.error = `Not restored: ${message(cause)}`;
+      entry.error = `Not restored: ${errorMessage(cause)}`;
     } finally {
       entry.busy = false;
     }

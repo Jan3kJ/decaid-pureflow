@@ -29,6 +29,7 @@
     type Progress,
   } from './maintenance';
   import { CLEAN_WATER_MIN_ML, cleanWater } from './water-tank';
+  import { errorMessage } from '../error-message';
 
   interface Props {
     skin: Skin;
@@ -116,7 +117,7 @@
       cooling = null;
       void restoreHeater();
       progress = IDLE;
-      message = `${procedure.title} did not start: ${cause instanceof Error ? cause.message : String(cause)}`;
+      message = `${procedure.title} did not start: ${errorMessage(cause)}`;
     }
   }
 
@@ -145,7 +146,7 @@
       await skin.client.requestMachineState('idle');
       if (mounted) progress = IDLE;
     } catch (cause) {
-      message = `${procedure.title} was not stopped: ${cause instanceof Error ? cause.message : String(cause)}`;
+      message = `${procedure.title} was not stopped: ${errorMessage(cause)}`;
     }
   }
 

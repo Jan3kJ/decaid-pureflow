@@ -20,6 +20,7 @@
   import { backupTime } from '../settings-backup';
   import type { Skin } from '../shell/skin.svelte';
   import { SETTINGS_TREE } from './tree';
+  import { errorMessage } from '../error-message';
 
   interface Props {
     skin: Skin;
@@ -106,7 +107,7 @@
     try {
       records = await skin.client.listProfiles();
     } catch (cause) {
-      unread = `The profiles could not be read: ${cause instanceof Error ? cause.message : String(cause)}`;
+      unread = `The profiles could not be read: ${errorMessage(cause)}`;
     }
   }
 
@@ -130,7 +131,7 @@
         ? `Restored the backup${backup.savedAt ? ` of ${backupTime(backup.savedAt)}` : ''}.`
         : 'There is no backup in Decaid.';
     } catch (cause) {
-      restored = `The backup could not be read: ${cause instanceof Error ? cause.message : String(cause)}`;
+      restored = `The backup could not be read: ${errorMessage(cause)}`;
     }
   }
 </script>

@@ -39,6 +39,7 @@ import type {
   Workflow,
   WorkflowPatch,
 } from './types';
+import { errorMessage } from '../error-message';
 
 /** Decaid's gateway. The skin only connects to this port; it never serves on it. */
 export const DEFAULT_BASE_URL = 'http://localhost:8080';
@@ -93,7 +94,7 @@ export class DecaidNetworkError extends Error {
   readonly path: string;
 
   constructor(method: string, path: string, cause: unknown) {
-    super(`${method} ${path}: no answer (${cause instanceof Error ? cause.message : String(cause)})`, {
+    super(`${method} ${path}: no answer (${errorMessage(cause)})`, {
       cause,
     });
     this.name = 'DecaidNetworkError';

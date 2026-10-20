@@ -56,6 +56,20 @@ export default tseslint.config(
       '@typescript-eslint/no-floating-promises': 'error',
     },
   },
+  {
+    // The skin's code imports the one helper; the scripts outside src/ cannot import TypeScript.
+    files: ['src/**/*.ts', 'src/**/*.svelte'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "ConditionalExpression[test.type='BinaryExpression'][test.operator='instanceof'][test.right.name='Error'][consequent.property.name='message']",
+          message: 'Use errorMessage(e) from src/error-message.ts for the text of a thrown value.',
+        },
+      ],
+    },
+  },
   prettier,
   svelte.configs.prettier,
 );

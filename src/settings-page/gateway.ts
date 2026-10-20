@@ -22,6 +22,7 @@ import type {
 import { heldHotWater } from '../hotwater/hot-water';
 import { STREAMLINE_NAMESPACE } from '../steam/apply';
 import { FAST_START, type Field, type Source } from './fields';
+import { errorMessage } from '../error-message';
 
 /** What the page reads: one request each. */
 export type Part = 'decaid' | 'machine' | 'advanced' | 'workflow' | 'display' | 'info' | 'presence';
@@ -112,8 +113,6 @@ export function readPart(gateway: SettingsGateway, part: Part): Promise<unknown>
   }
 }
 
-const message = (cause: unknown) => (cause instanceof Error ? cause.message : String(cause));
-
 /** Every part, each read once; a part that fails stays null and has its message. */
 export async function readAll(
   gateway: SettingsGateway,
@@ -125,7 +124,7 @@ export async function readAll(
       try {
         return await readPart(gateway, part);
       } catch (cause) {
-        errors[part] = message(cause);
+        errors[part] = errorMessage(cause);
         return null;
       }
     }),
@@ -219,7 +218,7 @@ export async function writeField(gateway: SettingsGateway, values: Values, field
     await send(gateway, values, field, sent);
   } catch (cause) {
     if (cause instanceof WriteError) throw cause;
-    throw new WriteError(`${field.label} was not set: ${message(cause)}`);
+    throw new WriteError(`${field.label} was not set: ${errorMessage(cause)}`);
   }
   const part = partOf(field.source);
   return part ? reread(gateway, values, [part], field.label) : values;
@@ -231,7 +230,7 @@ async function reread(gateway: SettingsGateway, values: Values, parts: Part[], w
     try {
       (next as Record<Part, unknown>)[part] = await readPart(gateway, part);
     } catch (cause) {
-      throw new WriteError(`${what} was written but not read back: ${message(cause)}`);
+      throw new WriteError(`${what} was written but not read back: ${errorMessage(cause)}`);
     }
   }
   return next;
@@ -242,7 +241,7 @@ export async function applyFastStart(gateway: SettingsGateway, values: Values): 
   try {
     await gateway.updateAdvancedSettings(FAST_START);
   } catch (cause) {
-    throw new WriteError(`Fast Start Defaults were not set: ${message(cause)}`);
+    throw new WriteError(`Fast Start Defaults were not set: ${errorMessage(cause)}`);
   }
   return reread(gateway, values, ['advanced'], 'Fast Start Defaults');
 }
@@ -252,7 +251,7 @@ export async function resetMachine(gateway: SettingsGateway, values: Values): Pr
   try {
     await gateway.resetMachineSettings();
   } catch (cause) {
-    throw new WriteError(`The machine settings were not reset: ${message(cause)}`);
+    throw new WriteError(`The machine settings were not reset: ${errorMessage(cause)}`);
   }
   return reread(gateway, values, ['machine', 'advanced'], 'The reset');
 }
