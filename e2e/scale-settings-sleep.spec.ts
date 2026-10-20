@@ -51,7 +51,7 @@ test('scale: there is no scale page and no menu entry; a tap on the weight tares
   await expect(page.getByTestId('screen-home')).toBeVisible();
   await expect(page.getByTestId('screen-scale')).toHaveCount(0);
   await page.getByTestId('menu').click();
-  await expect(page.getByRole('menuitem')).toHaveText(['Settings', /^Steam off/, /^Machine sleep/]);
+  await expect(page.getByRole('menuitem')).toHaveText(['Settings', /^Clean/, /^Steam off/, /^Machine sleep/]);
   await expect(page.getByTestId('open-scale')).toHaveCount(0);
   await page.getByTestId('menu-backdrop').click();
 

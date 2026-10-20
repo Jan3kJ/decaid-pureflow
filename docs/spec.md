@@ -494,6 +494,13 @@ level, warns when it is under 350 ml, as a clean uses about 300 ml, and says to 
 tray before starting (founder, 2026-10-17). The tank's level is in mm (`WaterLevels`,
 `src/api/types.ts`); Streamline shows it in ml too (its `waterTankUnit`, research.md 20.3), so
 the builder takes Streamline's conversion from mm to ml. The warning does not block Start.
+*Built (T9):* the menu's **Clean** (under Settings) opens the settings page on 5 Maintenance,
+whose first procedure is the clean. The clean in `Maintenance.svelte`, here and in the settings
+page alike, shows 'Water tank: … ml', under 350 ml 'Under 350 ml: a clean uses about 300 ml.
+Fill the tank first.' in red, and 'Empty the drip tray before starting.'; the level is the
+skin's stream `/ws/v1/machine/waterLevels` (Decaid 0.8.8 has no REST request for it), turned
+into ml with Streamline's table, rounded to whole mm (`src/settings-page/water-tank.ts`). A
+level not read shows '–' and no warning.
 
 **Menu: exit (T9).** Home's menu gets **Exit**, which leaves the Decaid app and sends the
 machine to sleep, or off if that is possible (founder, 2026-10-17). Off is not: Decaid 0.8.8 has

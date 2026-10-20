@@ -90,7 +90,9 @@ test('the state line warns in place of the weight when the scale is not connecte
   expect(errors).toEqual([]);
 });
 
-test('the menu opens with settings, steam off and machine sleep, and closes on a choice and on a tap outside', async ({ page }) => {
+test('the menu opens with settings, clean, steam off and machine sleep, and closes on a choice and on a tap outside', async ({
+  page,
+}) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
@@ -98,14 +100,17 @@ test('the menu opens with settings, steam off and machine sleep, and closes on a
 
   // A tap outside closes it and does nothing else.
   await openMenu(page);
-  await expect(page.getByRole('menuitem')).toHaveText(['Settings', /^Steam off/, /^Machine sleep/]);
+  await expect(page.getByRole('menuitem')).toHaveText(['Settings', /^Clean/, /^Steam off/, /^Machine sleep/]);
   await expectInsideViewport(page);
   await page.screenshot({ path: 'docs/product/home-menu.png' });
   await page.mouse.click(400, 500);
   await expect(page.getByTestId('menu-list')).toHaveCount(0);
   await expect(page.getByTestId('screen-home')).toBeVisible();
 
-  for (const [entry, screen] of [['open-settings', 'settings']]) {
+  for (const [entry, screen] of [
+    ['open-settings', 'settings'],
+    ['open-clean', 'settings'],
+  ]) {
     await openMenu(page);
     await page.getByTestId(entry).click();
     await expect(page.getByTestId(`screen-${screen}`)).toBeVisible();

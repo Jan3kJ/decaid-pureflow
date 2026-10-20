@@ -28,6 +28,7 @@
     type ProcedureId,
     type Progress,
   } from './maintenance';
+  import { CLEAN_WATER_MIN_ML, cleanWater } from './water-tank';
 
   interface Props {
     skin: Skin;
@@ -154,6 +155,9 @@
       : caption(progress, procedure),
   );
   const active = $derived(isActive(progress) || cooling !== null);
+  // A clean uses about 300 ml and flushes it into the drip tray (spec 3.8 'Menu: clean'); the
+  // warning does not stop Start.
+  const water = $derived(procedure.id === 'clean' ? cleanWater(skin.link === 'machine' ? skin.water : null) : null);
 </script>
 
 <div class="procedure" data-testid="maintenance-{procedure.id}">
@@ -163,6 +167,15 @@
       <small>{procedure.description}</small>
       {#if procedure.link}
         <small><a href={procedure.link.href} target="_blank" rel="noreferrer">{procedure.link.label}</a></small>
+      {/if}
+      {#if water}
+        <small data-testid="maintenance-water-{procedure.id}">Water tank: {water.ml === null ? '–' : `${water.ml} ml`}</small>
+        {#if water.low}
+          <small class="low" data-testid="maintenance-water-low-{procedure.id}">
+            Under {CLEAN_WATER_MIN_ML} ml: a clean uses about 300 ml. Fill the tank first.
+          </small>
+        {/if}
+        <small data-testid="maintenance-drip-tray-{procedure.id}">Empty the drip tray before starting.</small>
       {/if}
     </div>
     {#if active}
@@ -305,7 +318,8 @@
   }
 
   .caption.error,
-  .warn {
+  .warn,
+  small.low {
     color: var(--temperature);
   }
 

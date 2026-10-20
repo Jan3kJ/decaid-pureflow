@@ -1,6 +1,7 @@
 <script lang="ts">
   import ShotGraph from '../graph/ShotGraph.svelte';
   import { beanLabel } from '../history/entries';
+  import { saveLocation } from '../settings-page/tree';
   import { emptySeries, shotSeconds, shotWeight } from './shot';
   import ShotOverlay from './ShotOverlay.svelte';
   import type { Skin } from './skin.svelte';
@@ -25,7 +26,8 @@
    * The menu of the top right corner (founder, 2026-10-13): what is rarely used. A list, so
    * that an entry is one more line here. The steam switch and machine sleep are the shortcuts of
    * spec 3.7; machine sleep sends only the machine to sleep, since Decaid cannot switch the DE1
-   * off (research.md 22, spec 3.9 item 1).
+   * off (research.md 22, spec 3.9 item 1). Clean opens the settings page on Maintenance, whose
+   * first procedure is the clean (spec 3.8 'Menu: clean').
    */
   interface Entry {
     id: string;
@@ -37,6 +39,15 @@
   }
   const MENU: Entry[] = [
     { id: 'open-settings', label: () => 'Settings', choose: () => skin.go('settings') },
+    {
+      id: 'open-clean',
+      label: () => 'Clean',
+      detail: () => 'the cleaning cycle of the settings page',
+      choose: () => {
+        saveLocation('maintenance');
+        skin.go('settings');
+      },
+    },
     {
       id: 'steam-heater',
       label: () => (skin.steamHeater === 'off' ? 'Steam on' : 'Steam off'),
