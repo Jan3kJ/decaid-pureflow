@@ -34,6 +34,8 @@ if (typeof id !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(id) || id.end
 if (typeof version !== 'string' || !/^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/.test(version)) {
   problems.push(`manifest.json: ${JSON.stringify(version)} is not a version`);
 }
+// Decaid counts its insert before </head> without CRs: a CR moves it into an earlier tag.
+if (html.includes('\r')) problems.push('index.html: CRLF line endings; Decaid would insert its token in the wrong place');
 // The skin is served from a port of its own, but a relative path works from any path.
 for (const [, url] of html.matchAll(/(?:src|href)="([^"]*)"/g)) {
   if (!url.startsWith('./')) problems.push(`index.html: ${url} is not a relative path`);
