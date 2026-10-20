@@ -623,6 +623,18 @@ and which could not be read. Default (section 8): Decaid's bundled de1app A-Flow
 (`A-Flow / default-…`, `default-very-dark` and `default-like-dflow` among them) are skipped, as
 the skin's own defaults stand for them (T5), and so is every profile that already has 3.0
 values.
+Built (U7, 2026-10-20): 'Convert to 3.0' (`aflow-import`) in Skin > Profile. `planImport` in
+`src/editor/import.ts` reads the visible profiles again and sorts them: a profile with 3.0
+values (in `metadata` or the notes, its steps changed or not) or whose steps are not A-Flow's
+is left out; of the rest, a bundled one (`isDefault`) or one under the title of a skin default
+is skipped, one `readSteps` reads is converted, the others cannot be read. `runImport`
+converts one after another with the editor's `saveEdit` and the setting `firstStepWorkaround`;
+one that Decaid refuses (the same steps as another visible profile: one profile per set of
+steps) is named and the rest go on. The question names how many will be stored and lists the
+skipped count and the unreadable titles; with nothing to convert it is not asked and the line
+under the button says so. The result reads 'Converted n, skipped n, could not read n.' with
+the unread titles and each refusal (`docs/product/aflow-import.png`). Nothing is loaded to
+the machine.
 
 **Step editor: 0 s steps not drawn (item 7; U6).** For profiles that are not A-Flow, a step of
 0 s is not drawn in the curve; it stays in the cards and in SCRIPT, where it can be seen and
@@ -1500,7 +1512,7 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
     means, and does the tablet's screen go off and wake with one touch?
   - Old A-Flow profiles (items 4-6): converting drops ramp down, which 3.0 removed, without
     asking; the old version stays in Decaid's lineage, hidden. The import button skips Decaid's
-    bundled de1app A-Flow profiles, since the skin's defaults stand for them.
+    bundled de1app A-Flow profiles, since the skin's defaults stand for them (built in U7).
   - Feedback (item 15): Send Feedback goes to Decent through Decaid (`POST /api/v1/feedback`),
     an outside service spec 6 asks the founder to approve; item 15 is taken as that approval.
   - The camera (item 20): only the founder can check it, with the hand-over's test page on the

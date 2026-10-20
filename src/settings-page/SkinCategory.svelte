@@ -21,6 +21,8 @@
   import type { Skin } from '../shell/skin.svelte';
   import { SETTINGS_TREE } from './tree';
   import { errorMessage } from '../error-message';
+  import { importQuestion, importReport, planImport, runImport, type ImportPlan } from '../editor/import';
+  import Confirm from './Confirm.svelte';
 
   interface Props {
     skin: Skin;
@@ -118,6 +120,37 @@
 
   onMount(readProfiles);
 
+  // The import of old A-Flow profiles (spec 3.9, U7): it reads the list again, asks, converts.
+  /** what the question is about; null while it is not asked */
+  let importing: ImportPlan | null = $state.raw(null);
+  let importBusy = $state(false);
+  /** what the last import, or the look for one, found */
+  let imported: string | null = $state(null);
+
+  async function findOld() {
+    imported = null;
+    importBusy = true;
+    try {
+      const plan = planImport(await skin.client.listProfiles());
+      if (plan.convert.length) importing = plan;
+      else imported = importQuestion(plan);
+    } catch (cause) {
+      imported = `The profiles could not be read: ${errorMessage(cause)}`;
+    }
+    importBusy = false;
+  }
+
+  async function convertOld() {
+    const plan = importing!;
+    importing = null;
+    importBusy = true;
+    imported = 'Converting …';
+    const result = await runImport(skin.client, plan, settings.firstStepWorkaround);
+    imported = importReport(plan, result);
+    importBusy = false;
+    await readProfiles();
+  }
+
   // The backup in Decaid's KV store (founder, 2026-10-14): its time, and a restore with a confirm.
   let confirming = $state(false);
   /** what the last restore did */
@@ -197,6 +230,15 @@
   {#each SWITCHES as item (item.key)}
     {@render lever(item)}
   {/each}
+
+  <div class="row">
+    <span class="about">
+      <strong>old A-Flow profiles</strong>
+      <small>Converts every older A-Flow profile to A-Flow 3.0, as the editor's save does; Decaid's bundled ones are skipped.</small>
+      {#if imported}<small data-testid="aflow-import-result">{imported}</small>{/if}
+    </span>
+    <button class="retry" data-testid="aflow-import" disabled={importBusy} onclick={findOld}>Convert to 3.0</button>
+  </div>
 
   <div class="start" data-testid="settings-start">
     <div class="row">
@@ -288,6 +330,16 @@
       </div>
     </div>
   </div>
+{/if}
+
+{#if importing}
+  <Confirm
+    title="Convert old A-Flow profiles?"
+    text={importQuestion(importing)}
+    ok="Convert"
+    onok={convertOld}
+    oncancel={() => (importing = null)}
+  />
 {/if}
 
 {#if choosing !== null}

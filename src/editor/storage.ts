@@ -102,6 +102,11 @@ export function readRecord(record: Pick<ProfileRecord, 'profile' | 'metadata'>):
   return readParams(record.profile, record.metadata);
 }
 
+/** Whether a profile holds A-Flow 3.0 parameters in its metadata or its notes, whether its steps fit them or not. */
+export function hasParams(profile: Pick<Profile, 'notes'>, metadata?: Record<string, unknown> | null): boolean {
+  return storedParams(profile, metadata) !== null;
+}
+
 /** The parameters a profile holds in its metadata or its notes, whether its steps fit them or not. */
 function storedParams(profile: Pick<Profile, 'notes'>, metadata?: Record<string, unknown> | null): AFlowParams | null {
   const stored = decodeParams(metadata);
