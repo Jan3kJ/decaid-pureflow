@@ -423,3 +423,41 @@ test("the steam page's tare button tares the scale, and without one looks for it
   expect(gateway.calls('PUT', '/api/v1/scale/tare')).toHaveLength(1);
   expect(errors).toEqual([]);
 });
+
+test('with the steam heater off the page says so and Steam on switches it on; the favourites come back (spec 3.9 item 18)', async ({
+  page,
+}) => {
+  const gateway = await mockGateway(page);
+  await page.goto('/');
+  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await page.getByTestId('open-steam').click();
+  await expect(page.getByTestId('steam-favourite')).toHaveCount(3);
+  await expect(page.getByTestId('steam-heater-off')).toHaveCount(0);
+  // No state dot on the left edge (spec 3.9 item 12): the state line says it.
+  await expect(page.getByTestId('nav-status')).toHaveCount(0);
+  await expect(page.locator('.page:not([inert]) nav span')).toHaveCount(0);
+
+  // Another client switches the heater off: the machine's own target is 0.
+  gateway.setMachineSteamTarget(0);
+  await expect(page.getByTestId('steam-heater-off')).toContainText('The steam heater is off');
+  await expect(page.getByTestId('steam-favourite')).toHaveCount(0);
+  // In the favourites' place, at the top of the right column.
+  const message = (await page.getByTestId('steam-heater-off').boundingBox())!;
+  const timer = (await page.getByTestId('steam-timer').boundingBox())!;
+  expect(message.y + message.height).toBeLessThan(timer.y);
+  await page.screenshot({ path: 'docs/product/steam-heater-off.png' });
+
+  await page.getByTestId('steam-heater-on').click();
+  await expect
+    .poll(() =>
+      gateway
+        .calls('PUT', '/api/v1/workflow')
+        .map((call) => call.body?.steamSettings)
+        .filter(Boolean),
+    )
+    .toEqual([{ targetTemperature: 150 }]);
+  await expect.poll(() => gateway.shotSettings.targetSteamTemp).toBe(150);
+  await expect(page.getByTestId('steam-heater-off')).toHaveCount(0);
+  await expect(page.getByTestId('steam-favourite')).toHaveCount(3);
+  expect(errors).toEqual([]);
+});

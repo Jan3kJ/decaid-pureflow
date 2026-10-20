@@ -4,12 +4,14 @@ import {
   HOT_WATER_FIELDS,
   FLOW_FIELD,
   WEIGHT_FIELD,
+  fieldStep,
   heldHotWater,
   heldValue,
   lastShotGrams,
   ratioLabel,
   ratioWeight,
   shotGrams,
+  shownValue,
   writeHotWater,
 } from './hot-water';
 
@@ -122,5 +124,24 @@ describe('the workflow write', () => {
     for (const entry of HOT_WATER_FIELDS) {
       expect(heldValue(entry, RIG[entry.key])).toBe(entry.key === 'flow' ? 8 : RIG[entry.key]);
     }
+  });
+});
+
+describe('the rows and their sliders (spec 3.9, item 11)', () => {
+  it('step flow by 0.1 and the other values by 1', () => {
+    expect(HOT_WATER_FIELDS.map(fieldStep)).toEqual([1, 0.1, 1, 1]);
+  });
+
+  it("show a value with its field's decimals, and a dash without one", () => {
+    expect(shownValue(FLOW_FIELD, 6.5)).toBe('6.5');
+    expect(shownValue(FLOW_FIELD, 10)).toBe('10');
+    expect(shownValue(field('temperature'), 74.6)).toBe('75');
+    expect(shownValue(WEIGHT_FIELD, null)).toBe('–');
+    expect(shownValue(WEIGHT_FIELD, Number.NaN)).toBe('–');
+  });
+
+  it("hold a dragged value to the field's step: what a slider shows is what it writes", () => {
+    expect(heldValue(FLOW_FIELD, 6.499999)).toBe(6.5);
+    expect(heldValue(field('time'), 44.6)).toBe(45);
   });
 });

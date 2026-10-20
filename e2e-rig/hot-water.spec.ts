@@ -8,7 +8,8 @@ import { IDLE } from './idle';
 // tab opens the page, 1:2 sets 80 g, and the four values land in the workflow's hotWaterData.
 // Hot water is then asked for through the API, as the DE1's own button would (the skin starts
 // nothing): Decaid tares the mock scale and stops it at the weight, long before its duration
-// (research.md 21). Last, the page's tare button tares the scale. The test deletes the shot,
+// (research.md 21); the page shows the ring while it pours (spec 3.9). Last, the page's tare
+// button tares the scale. The test deletes the shot,
 // puts the workflow back and leaves the skin's KV namespace as it was.
 
 const GATEWAY = 'http://localhost:8080';
@@ -90,7 +91,9 @@ test('the hot water page writes hotWaterData, 1:2 of a 40 g shot is 80 g, Decaid
     await expect.poll(async () => (await hotWaterData()).volume).toBe(80);
     await type(page, 'hot-water-temperature', '80');
     await type(page, 'hot-water-flow', '4');
-    await type(page, 'hot-water-time', '60');
+    // The time by its slider (spec 3.9 item 11): written once when it is let go.
+    await page.getByTestId('hot-water-slider-time').fill('60');
+    await expect(page.getByTestId('hot-water-time')).toContainText('60s');
     await expect.poll(hotWaterData).toEqual({ targetTemperature: 80, duration: 60, volume: 80, flow: 4 });
     await expect(page.getByTestId('hot-water-weight')).toContainText('80g');
     await page.screenshot({ path: 'e2e-rig/.results/hot-water-rig.png' });
@@ -100,6 +103,9 @@ test('the hot water page writes hotWaterData, 1:2 of a 40 g shot is 80 g, Decaid
     await api('PUT', '/api/v1/machine/state/hotWater');
     await expect.poll(machineState, { timeout: 10_000, intervals: [200] }).toBe('hotWater');
     const started = Date.now();
+    // While it pours the page shows the ring in place of the rows (spec 3.9 item 13).
+    await expect(page.getByTestId('water-view')).toHaveAttribute('data-kind', 'hotWater', { timeout: 5_000 });
+    await expect(page.getByTestId('hot-water-time')).toHaveCount(0);
     await expect.poll(machineState, { timeout: 70_000, intervals: [300] }).not.toBe('hotWater');
     const seconds = (Date.now() - started) / 1000;
     expect(seconds).toBeLessThan(40);
@@ -108,6 +114,8 @@ test('the hot water page writes hotWaterData, 1:2 of a 40 g shot is 80 g, Decaid
     expect(weighed).toBeGreaterThan(75);
     expect(weighed).toBeLessThan(85);
     console.log(`hot water stopped after ${seconds.toFixed(1)} s at ${weighed} g`);
+    await expect(page.getByTestId('water-view')).toHaveCount(0);
+    await expect(page.getByTestId('hot-water-time')).toContainText('60s');
 
     // The tare button tares.
     await page.getByTestId('hot-water-tare').click();

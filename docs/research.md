@@ -3200,3 +3200,22 @@ hidden), one shot, the KV namespaces `pureflow` and `decaid-skin` empty, steam 1
 workflow on `A-Flow / default-medium` as before, Streamline the default skin. The rig now serves
 Streamline 0.2.17 (0.2.14 on 2026-10-19). Decaid was ended with `Stop-Process -Force`; port 8080
 was free afterwards.
+
+## 28. The steam heater off, read again for the steam page (U3, 2026-10-20)
+
+Against Decaid 0.8.8 with device simulation (8.8); the rig served Streamline 0.2.17. The probe
+is the rig's `log\u3-steam-heater-probe.mjs`, its output `log\u3-steam-heater-probe.txt`. It
+confirms 22.1 unchanged:
+
+| Claim | Status |
+|---|---|
+| `PUT /api/v1/workflow` `{"steamSettings":{"targetTemperature":0}}`: 200; 2 s later the workflow reads 0 and the machine's `/ws/v1/machine/shotSettings` `targetSteamTemp: 0` | seen running |
+| The same with 150: both read 150 again; duration 50 s and flow 0.8 unchanged | seen running |
+
+So the steam page reads the heater as home's menu does (`heaterState`: the machine's
+`targetSteamTemp`, 0 is off), and its **Steam on** is the menu's request (`Skin.setSteamHeater`,
+the workflow's temperature, with the machine's settings written directly if they lag).
+`e2e-rig/steam.spec.ts` switches the heater off through the API, sees the page's message, taps
+**Steam on** and reads 150 back from the workflow and the machine. Full `npm run e2e:rig`: 39 of
+39 passed; afterwards 73 profiles, one shot, both KV namespaces empty, steam 150 °C, Streamline
+the default skin. Decaid was ended with `Stop-Process -Force`; port 8080 was free.

@@ -115,12 +115,10 @@
         <span>history</span>
       </button>
     {:else}
-      {@const navStatus = skin.statusFor(screen === 'steam' ? 'steam' : null)}
+      <!-- Only the way back: the page's state line says the machine's state (spec 3.9). -->
       <button class="back" data-testid="nav-home" aria-label="back to home" onclick={() => skin.leave('home')}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4l-8 8 8 8" /></svg>
       </button>
-      <!-- The steam page's dot says what its state line says: heating against the steam target (spec 3.8). -->
-      <span class="dot {navStatus.tone}" title={navStatus.title} data-testid="nav-status"></span>
     {/if}
   </nav>
 
@@ -327,22 +325,6 @@
   nav.right .tab.water {
     flex: 1;
     border-top: 1px solid var(--line);
-  }
-
-  .dot {
-    width: 0.8rem;
-    height: 0.8rem;
-    border-radius: 50%;
-    background: var(--dim);
-  }
-  .dot.ok {
-    background: var(--pressure);
-  }
-  .dot.busy {
-    background: var(--flow);
-  }
-  .dot.warn {
-    background: var(--warn);
   }
 
   .screen {

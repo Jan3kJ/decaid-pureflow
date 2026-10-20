@@ -135,18 +135,15 @@ test('a drag on a control moves no page: a slider, the number pad', async ({ pag
   await page.getByTestId('open-hot-water').tap();
   await expect(shown(page, 'hot-water')).toBeVisible();
 
-  // A slider on the page (the hot water page's own come with its rows, spec 3.9 item 11).
-  await page.getByTestId('screen-hot-water').evaluate((screen) => {
-    const slider = Object.assign(document.createElement('input'), { type: 'range', min: '0', max: '100', value: '100' });
-    slider.dataset.testid = 'slider';
-    slider.style.cssText = 'position: fixed; left: 200px; top: 400px; width: 600px; height: 60px; z-index: 5';
-    screen.append(slider);
-  });
-  await swipe(page, { x: 780, y: 430 }, { x: 220, y: 430 });
+  // The page's own slider, the time's (spec 3.9 item 11): a drag along it to the left moves
+  // its value, not the page. The workflow's time is 30 s.
+  const slider = (await page.getByTestId('hot-water-slider-time').boundingBox())!;
+  const y = slider.y + slider.height / 2;
+  await swipe(page, { x: slider.x + slider.width * 0.7, y }, { x: slider.x + slider.width * 0.1, y });
   await page.waitForTimeout(400);
   await expect(shown(page, 'hot-water')).toBeVisible();
   await expect(page.locator('.page')).toHaveCount(1);
-  expect(Number(await page.getByTestId('slider').inputValue())).toBeLessThan(50);
+  expect(Number(await page.getByTestId('hot-water-slider-time').inputValue())).toBeLessThan(30);
 
   // The number pad: a drag over its keys and over its backdrop.
   await page.getByTestId('hot-water-temperature').tap();

@@ -255,3 +255,40 @@ test("steam: the page's tare button tares the simulated scale (item 17)", async 
   await expect(page.getByTestId('steam-weight')).toHaveText(/^-?0\.\d g$/, { timeout: 5000 });
   await expect(page.getByTestId('notice')).toHaveCount(0);
 });
+
+test('steam: with the heater off the page says so, and Steam on switches it on, read back from the machine (spec 3.9 item 18)', async ({
+  page,
+}) => {
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  const BACKUP = '/api/v1/store/pureflow/settings-backup';
+  const temperatureBefore = (await steamSettings()).targetTemperature;
+  const backupBefore = await api('GET', BACKUP);
+  expect(temperatureBefore).toBeGreaterThanOrEqual(135);
+
+  try {
+    // Off as another client switches it: the workflow's 0, which Decaid writes to the machine.
+    await api('PUT', '/api/v1/workflow', { steamSettings: { targetTemperature: 0 } });
+    await expect.poll(async () => (await machineSettings()).targetSteamTemp, { timeout: 10_000 }).toBe(0);
+
+    await page.goto('/');
+    await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 30_000 });
+    await page.getByTestId('open-steam').click();
+    await expect(page.getByTestId('steam-heater-off')).toContainText('The steam heater is off');
+    await expect(page.getByTestId('steam-favourite')).toHaveCount(0);
+    await page.screenshot({ path: 'e2e-rig/.results/steam-heater-off-rig.png' });
+
+    await page.getByTestId('steam-heater-on').click();
+    await expect.poll(async () => (await steamSettings()).targetTemperature, { timeout: 10_000 }).toBe(temperatureBefore);
+    await expect.poll(async () => (await machineSettings()).targetSteamTemp, { timeout: 10_000 }).toBe(temperatureBefore);
+    await expect(page.getByTestId('steam-heater-off')).toHaveCount(0);
+    await expect(page.getByTestId('steam-favourite')).toHaveCount(3);
+  } finally {
+    await api('PUT', '/api/v1/workflow', { steamSettings: { targetTemperature: temperatureBefore } });
+    await page.waitForTimeout(2000);
+    if (backupBefore === null) await api('DELETE', BACKUP).catch(() => undefined);
+    else await api('POST', BACKUP, backupBefore);
+  }
+  expect((await steamSettings()).targetTemperature).toBe(temperatureBefore);
+  expect((await machineSettings()).targetSteamTemp).toBe(temperatureBefore);
+  expect(await api('GET', BACKUP)).toEqual(backupBefore);
+});

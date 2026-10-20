@@ -34,6 +34,14 @@ export const HOT_WATER_FIELDS: HotWaterField[] = [
 export const WEIGHT_FIELD = HOT_WATER_FIELDS.find((field) => field.key === 'volume')!;
 export const FLOW_FIELD = HOT_WATER_FIELDS.find((field) => field.key === 'flow')!;
 
+/** The step of a field's slider and number pad: 0.1 for flow, 1 for the others. */
+export const fieldStep = (field: HotWaterField): number => (field.decimals ? 0.1 : 1);
+
+/** A value as its row shows it, without the unit: '6.5', '75'; '–' when there is none. */
+export function shownValue(field: HotWaterField, value: number | null | undefined): string {
+  return typeof value === 'number' && Number.isFinite(value) ? `${+value.toFixed(field.decimals ? 1 : 0)}` : '–';
+}
+
 /** A value held inside its field's range and step. */
 export function heldValue(field: HotWaterField, value: number): number {
   const stepped = field.decimals ? Math.round(value * 10) / 10 : Math.round(value);

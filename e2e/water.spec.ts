@@ -37,6 +37,27 @@ async function expectNoPicture(page: Page) {
   for (const id of ['water-stream', 'water-cup-fill', 'water-amount']) await expect(page.getByTestId(id)).toHaveCount(0);
 }
 
+/**
+ * The ring's and the stop button's height against the water view's inner height, to two
+ * decimals, and whether the ring's centre is the view's.
+ */
+async function ringShare(page: Page) {
+  return page.evaluate(() => {
+    const view = document.querySelector('[data-testid="water-view"]')!;
+    const style = getComputedStyle(view);
+    const outer = view.getBoundingClientRect();
+    const top = outer.top + view.clientTop + parseFloat(style.paddingTop);
+    const inner = view.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
+    const ring = view.querySelector('[data-testid="water-ring"]')!.getBoundingClientRect();
+    const stop = view.querySelector('[data-testid="stop"]')!.getBoundingClientRect();
+    const round = (value: number) => Math.round(value * 100) / 100;
+    const centred =
+      Math.abs(ring.top + ring.height / 2 - (top + inner / 2)) < 1 &&
+      Math.abs(ring.left + ring.width / 2 - (outer.left + outer.width / 2)) < 1;
+    return { ring: round(ring.height / inner), stop: round(stop.height / inner), centred };
+  });
+}
+
 /** The values sit inside the stop button. */
 async function expectInStop(page: Page, ids: string[]) {
   for (const id of ids) await expect(page.getByTestId('stop').getByTestId(id)).toBeVisible();
@@ -63,6 +84,8 @@ test('flush: no picture, the ring counts against rinseData, stop shows temperatu
   // Flush shows no weight, though the mock's scale is connected.
   await expect(page.getByTestId('water-weight')).toHaveCount(0);
   await expectInsideViewport(page);
+  // The ring is 85 % of the panel's height, centred (spec 3.9 item 14), stop scaled with it.
+  expect(await ringShare(page)).toEqual({ ring: 0.85, stop: 0.7, centred: true });
   await page.screenshot({ path: 'docs/product/water-flush.png' });
 
   // The simulated flush has flow 0 all along (research.md 19); the ring goes on.

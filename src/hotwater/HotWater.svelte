@@ -3,7 +3,19 @@
   import NumberPad from '../editor/NumberPad.svelte';
   import type { Skin } from '../shell/skin.svelte';
   import StateLine from '../shell/StateLine.svelte';
-  import { HOT_WATER_FIELDS, WEIGHT_FIELD, heldValue, lastShotGrams, ratioLabel, ratioWeight, type HotWaterField } from './hot-water';
+  import Water from '../shell/Water.svelte';
+  import { shownRun } from '../shell/water';
+  import {
+    HOT_WATER_FIELDS,
+    WEIGHT_FIELD,
+    fieldStep,
+    heldValue,
+    lastShotGrams,
+    ratioLabel,
+    ratioWeight,
+    shownValue,
+    type HotWaterField,
+  } from './hot-water';
   import { errorMessage } from '../error-message';
 
   interface Props {
@@ -14,7 +26,25 @@
 
   // The values are the workflow's: what Decaid sends to the machine when hot water starts.
   const values = $derived(skin.workflow?.hotWaterData ?? null);
-  const shown = (field: HotWaterField) => (values ? `${+values[field.key].toFixed(field.decimals ? 1 : 0)}` : '–');
+  /** While hot water pours the page shows the ring in place of the rows (spec 3.9). */
+  const pouring = $derived(shownRun(skin.waterRun, skin.canStop, 'hotWater'));
+
+  /** The value a slider is dragged to: shown while it moves, written once when it is let go. */
+  let dragged: { id: string; value: number } | null = $state.raw(null);
+  const valueOf = (field: HotWaterField) => (dragged?.id === field.id ? dragged.value : (values?.[field.key] ?? null));
+  const shown = (field: HotWaterField) => shownValue(field, valueOf(field));
+
+  function drag(field: HotWaterField, event: Event) {
+    dragged = { id: field.id, value: heldValue(field, Number((event.currentTarget as HTMLInputElement).value)) };
+  }
+
+  async function release(field: HotWaterField, event: Event) {
+    const value = heldValue(field, Number((event.currentTarget as HTMLInputElement).value));
+    dragged = { id: field.id, value };
+    // The dragged value stays shown until Decaid answers, so the row does not jump back.
+    await skin.setHotWater(field, value);
+    if (dragged?.id === field.id) dragged = null;
+  }
 
   /** the value the number pad is open for */
   let typing: HotWaterField | null = $state.raw(null);
@@ -43,14 +73,35 @@
     <StateLine {skin} />
   </header>
 
-  <div class="values">
-    {#each HOT_WATER_FIELDS as field (field.id)}
-      <button class="value {field.id}" data-testid="hot-water-{field.id}" disabled={!values} onclick={() => (typing = field)}>
-        <small>{field.label}</small>
-        <b>{shown(field)}<i>{field.unit}</i></b>
-      </button>
-    {/each}
-  </div>
+  {#if pouring}
+    <div class="pouring">
+      <Water {skin} run={pouring} />
+    </div>
+  {:else}
+    <!-- A row per value with a slider under it (spec 3.9); a tap on the value opens the number pad. -->
+    <div class="values">
+      {#each HOT_WATER_FIELDS as field (field.id)}
+        <div class="row {field.id}">
+          <span class="label">{field.label}</span>
+          <button class="value" data-testid="hot-water-{field.id}" disabled={!values} onclick={() => (typing = field)}>
+            <b>{shown(field)}<i>{field.unit}</i></b>
+          </button>
+          <input
+            type="range"
+            aria-label={field.label}
+            data-testid="hot-water-slider-{field.id}"
+            min={field.min}
+            max={field.max}
+            step={fieldStep(field)}
+            value={valueOf(field) ?? field.min}
+            disabled={!values}
+            oninput={(event) => drag(field, event)}
+            onchange={(event) => release(field, event)}
+          />
+        </div>
+      {/each}
+    </div>
+  {/if}
 
   <aside>
     <div class="shot">
@@ -95,7 +146,8 @@
       <p class="notice" data-testid="hot-water-unread">{unread}</p>
     {/if}
 
-    {#if skin.canStop}
+    <!-- The ring holds stop while hot water pours; this one stops anything else that runs. -->
+    {#if skin.canStop && !pouring}
       <button class="stop" data-testid="hot-water-stop" onclick={() => skin.stop()}>stop</button>
     {/if}
   </aside>
@@ -157,32 +209,99 @@
     color: var(--dim);
   }
 
-  .values {
+  .values,
+  .pouring {
     grid-area: values;
     min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .values {
+    gap: 0.6rem;
+  }
+
+  .row {
+    flex: 1;
+    min-height: 0;
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-rows: repeat(2, minmax(0, 1fr));
-    gap: 0.8rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    align-content: center;
+    column-gap: 1rem;
+    padding: 0.4rem 1.4rem;
+    border: 1px solid var(--line);
+    border-radius: 0.9rem;
+    background: var(--panel);
+  }
+
+  .label {
+    align-self: center;
+    color: var(--dim);
+    font-size: var(--text-value);
   }
 
   .value {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.4rem;
-  }
-
-  .value small {
-    font-size: var(--text-body);
+    min-width: 9rem;
+    min-height: 3.5rem;
+    padding: 0 0.8rem;
+    border-color: transparent;
+    background: none;
+    text-align: right;
   }
 
   .value b {
-    font-size: var(--text-big);
+    font-size: var(--text-large);
     font-weight: 600;
     line-height: 1.1;
     font-variant-numeric: tabular-nums;
+  }
+
+  /* The slider: the whole row wide, its thumb a finger's target, in the value's colour. */
+  input[type='range'] {
+    --tint: var(--fg);
+    grid-column: 1 / -1;
+    width: 100%;
+    height: 3rem;
+    margin: 0;
+    background: none;
+    appearance: none;
+    touch-action: none;
+    cursor: pointer;
+  }
+
+  input[type='range']:disabled {
+    --tint: var(--dim);
+  }
+
+  input[type='range']::-webkit-slider-runnable-track {
+    height: 0.5rem;
+    border-radius: 0.25rem;
+    background: var(--line);
+  }
+
+  input[type='range']::-moz-range-track {
+    height: 0.5rem;
+    border-radius: 0.25rem;
+    background: var(--line);
+  }
+
+  input[type='range']::-webkit-slider-thumb {
+    appearance: none;
+    width: 2.4rem;
+    height: 2.4rem;
+    margin-top: -0.95rem;
+    border: 0;
+    border-radius: 50%;
+    background: var(--tint);
+  }
+
+  input[type='range']::-moz-range-thumb {
+    width: 2.4rem;
+    height: 2.4rem;
+    border: 0;
+    border-radius: 50%;
+    background: var(--tint);
   }
 
   /* The skin's colours: temperature red, flow blue, weight yellow. */
@@ -190,18 +309,30 @@
     color: var(--temperature);
   }
 
+  .temperature input {
+    --tint: var(--temperature);
+  }
+
   .flow b {
     color: var(--flow);
   }
 
-  .value.weight b {
+  .flow input {
+    --tint: var(--flow);
+  }
+
+  .weight b {
     color: var(--weight);
+  }
+
+  .weight input {
+    --tint: var(--weight);
   }
 
   i {
     margin-left: 0.2em;
     font-style: normal;
-    font-size: 0.4em;
+    font-size: 0.5em;
     font-weight: 400;
     color: var(--dim);
   }

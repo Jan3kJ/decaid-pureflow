@@ -30,7 +30,6 @@ test('the steam page says Heating against the steam target, not when the heater 
   await expect(page.getByTestId('screen-steam')).toBeVisible();
   await expect(title).toHaveText('Heating');
   await expect(page.getByTestId('status')).toHaveClass(/busy/);
-  await expect(page.getByTestId('nav-status')).toHaveClass(/busy/);
   gateway.heatTo({ steam: 146.9 });
   await expect(title).toHaveText('Heating');
   gateway.heatTo({ steam: 147 });

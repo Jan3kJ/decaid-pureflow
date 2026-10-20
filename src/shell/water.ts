@@ -44,6 +44,14 @@ export function recordWaterFrame(run: WaterRun | null, frame: MachineSnapshot): 
   return { ...run, at: Math.max(at, run.at), flow, temperature };
 }
 
+/**
+ * The run a page draws as the ring: one that has not ended while the machine can be stopped,
+ * of `kind` when one is given (the hot water page shows only hot water); else null.
+ */
+export function shownRun(run: WaterRun | null, canStop: boolean, kind?: WaterKind): WaterRun | null {
+  return canStop && run && !run.ended && (kind === undefined || run.kind === kind) ? run : null;
+}
+
 /** s from the run's first frame to its latest */
 export function waterSeconds(run: WaterRun): number {
   return Math.max(0, (run.at - run.startedAt) / 1000);

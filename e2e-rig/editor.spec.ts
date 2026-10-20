@@ -83,7 +83,7 @@ async function openEditor(page: Page) {
   await page.addInitScript(() => localStorage.setItem('pureflow.screen', 'editor'));
   await page.goto('/');
   await expect(page.getByTestId('graph')).toBeVisible();
-  await expect(page.getByTestId('nav-status')).toBeVisible();
+  await expect(page.getByTestId('nav-home')).toBeVisible();
   await expect(pressed(page)).toHaveText('light');
 }
 

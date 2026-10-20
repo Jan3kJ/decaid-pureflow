@@ -55,19 +55,27 @@
   </div>
 
   <aside>
-    <div class="favourites">
-      <!-- A chip shows the seconds it sends: its own with the selected adjust button's amount. -->
-      {#each settings.favourites as seconds, i (i)}
-        <button
-          class="chip"
-          class:on={adjusted(seconds) === timer}
-          data-testid="steam-favourite"
-          onclick={() => skin.setSteamTimer(adjusted(seconds))}
-        >
-          {adjusted(seconds)} s
-        </button>
-      {/each}
-    </div>
+    <!-- With the heater off the favourites give way to the switch that turns it on (spec 3.9). -->
+    {#if skin.steamHeater === 'off'}
+      <div class="heater-off" data-testid="steam-heater-off">
+        <p>The steam heater is off</p>
+        <button class="heater-on" data-testid="steam-heater-on" onclick={() => skin.setSteamHeater(true)}>Steam on</button>
+      </div>
+    {:else}
+      <div class="favourites">
+        <!-- A chip shows the seconds it sends: its own with the selected adjust button's amount. -->
+        {#each settings.favourites as seconds, i (i)}
+          <button
+            class="chip"
+            class:on={adjusted(seconds) === timer}
+            data-testid="steam-favourite"
+            onclick={() => skin.setSteamTimer(adjusted(seconds))}
+          >
+            {adjusted(seconds)} s
+          </button>
+        {/each}
+      </div>
+    {/if}
 
     <!-- In the centre of the column, in line with 'set timer' (spec 3.7). -->
     <div class="big">
@@ -208,6 +216,30 @@
     border-radius: 0.9rem;
     touch-action: manipulation;
     user-select: none;
+  }
+
+  .heater-off {
+    min-height: 4rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+  }
+
+  /* said in the colour of temperature, as home's menu says it */
+  .heater-off p {
+    margin: 0;
+    color: var(--temperature);
+    font-size: var(--text-value);
+  }
+
+  .heater-on {
+    flex: none;
+    min-height: 4rem;
+    padding: 0 1.4rem;
+    white-space: nowrap;
+    font-size: var(--text-value);
+    font-weight: 600;
   }
 
   .favourites,

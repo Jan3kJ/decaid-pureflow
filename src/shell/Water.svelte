@@ -1,5 +1,5 @@
 <script lang="ts">
-  // Hot water and flush on home (spec 3.6, 3.7): the countdown ring around the stop button, and
+  // Hot water and flush on home, and hot water on its page (spec 3.6, 3.7, 3.9): the countdown ring around the stop button, and
   // inside the button what runs: temperature, flow, time and, for hot water with a scale, the
   // weight. The numbers come from water.ts.
   import type { Skin } from './skin.svelte';
@@ -51,6 +51,7 @@
     background: var(--panel);
   }
 
+  /* 85 % of the panel's height, centred, with stop and its values scaled with it (spec 3.9). */
   .ring {
     position: relative;
     height: 100%;
@@ -58,6 +59,7 @@
     flex: none;
     display: grid;
     place-items: center;
+    transform: scale(0.85);
   }
 
   .ring svg {

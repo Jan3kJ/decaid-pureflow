@@ -735,6 +735,20 @@ known), and switching on is `Skin.setSteamHeater(true)`, which the menu's 'Steam
 and which writes `steam.heaterTemperature` (150 °C by default). Default: the message ('The steam
 heater is off') and **Steam on** sit at the top of the right column of `src/steam/Steam.svelte`,
 in the place of the favourites, which come back when the heater is on.
+Built (U3, 2026-10-20), items 11-14 and 18: each hot water row is the label and the value (a
+button, `hot-water-{id}`, opening the number pad) over a slider (`hot-water-slider-{id}`) with the
+field's range and step (`fieldStep`, `shownValue` in `src/hotwater/hot-water.ts`); a drag shows
+the value as it moves, `change` writes once, and the dragged value stays shown until Decaid
+answers. A slider is an `input`, which T6's `onControl` already leaves to the control. While hot
+water pours (`shownRun` in `src/shell/water.ts`, which home uses too) the page shows
+`Water.svelte` in place of the rows and hides its own stop, so the ring's stop is the only one;
+a flush stays home's. The dot and its `nav-status` are gone from `App.svelte`. The ring is
+`transform: scale(0.85)` of its full height, so stop and its values shrink with it, on home and
+on the hot water page alike (`docs/product/water-flush.png`, `hot-water-pouring.png`). The
+heater's message is red, as home's menu says it, and **Steam on** calls `setSteamHeater(true)`;
+on the rig (Decaid 0.8.8, research.md 28) the machine's `targetSteamTemp` reads 0 when the
+workflow's `steamSettings.targetTemperature` is 0, and `PUT /api/v1/workflow` with 150 brings
+both back (`docs/product/steam-heater-off.png`).
 
 **SCRIPT offers off (item 17; U6).** In the step editor's SCRIPT, the exit and both limits (the
 limit and the maximum) can be set to off, as on the cards (founder, 2026-10-18). The founder

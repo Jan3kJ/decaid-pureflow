@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { MachineSnapshot, MachineState, Workflow } from '../api';
-import { recordWaterFrame, ringOf, waterDuration, waterKindOf, waterSeconds, waterValues, type WaterRun } from './water';
+import { recordWaterFrame, ringOf, shownRun, waterDuration, waterKindOf, waterSeconds, waterValues, type WaterRun } from './water';
 
 function frame(state: MachineState, second: number, flow = 0, mixTemperature = 75): MachineSnapshot {
   return {
@@ -134,5 +134,26 @@ describe('the values in the stop button', () => {
 
   it("show '–' for a temperature the machine did not send", () => {
     expect(waterValues(run('flush', 0, Number.NaN), ringOf(0, null), null).temperature).toBe('– °C');
+  });
+});
+
+describe('the run a page draws as the ring', () => {
+  const hot = record([frame('hotWater', 0, 6), frame('hotWater', 1, 6)])!;
+  const flush = record([frame('flush', 0, 6), frame('flush', 1, 6)])!;
+
+  it('is the run while it pours and the machine can be stopped', () => {
+    expect(shownRun(hot, true)).toBe(hot);
+    expect(shownRun(flush, true)).toBe(flush);
+    expect(shownRun(hot, false)).toBeNull();
+    expect(shownRun(null, true)).toBeNull();
+  });
+
+  it('is gone when the run has ended', () => {
+    expect(shownRun({ ...hot, ended: true }, true)).toBeNull();
+  });
+
+  it('is only hot water on the hot water page', () => {
+    expect(shownRun(hot, true, 'hotWater')).toBe(hot);
+    expect(shownRun(flush, true, 'hotWater')).toBeNull();
   });
 });

@@ -7,6 +7,7 @@
   import type { Skin } from './skin.svelte';
   import StateLine from './StateLine.svelte';
   import Water from './Water.svelte';
+  import { shownRun } from './water';
 
   interface Props {
     skin: Skin;
@@ -20,7 +21,7 @@
   // An entry restored from the shot history, with the graph of its latest shot (spec 3.5).
   const recalled = $derived(skin.recalled);
   // Hot water or flush runs: home shows it in place of the graph, with stop in its ring (spec 3.6).
-  const water = $derived(skin.canStop && skin.waterRun && !skin.waterRun.ended ? skin.waterRun : null);
+  const water = $derived(shownRun(skin.waterRun, skin.canStop));
 
   /**
    * The menu of the top right corner (founder, 2026-10-13): what is rarely used. A list, so
