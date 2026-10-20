@@ -1,72 +1,27 @@
-// The skin's live state: the two snapshot streams, the workflow, the settings and the screen.
-// One object, made once by App.svelte; the screens read it and call its actions.
-import { untrack } from 'svelte';
-import {
-  DecaidClient,
-  devicesStream,
-  isScaleSnapshot,
-  isScaleStatus,
-  isTareBlocked,
-  machineShotSettingsStream,
-  machineSnapshotStream,
-  machineWaterLevelsStream,
-  scaleSnapshotStream,
-  type DevicesState,
-  type MachineSnapshot,
-  type MachineState,
-  type RequestedMachineState,
-  type ScaleFrame,
-  type ShotSettings,
-  type SnapshotStream,
-  type StreamErrorFrame,
-  type StreamState,
-  type WaterLevels,
-  type Workflow,
-} from '../api';
-import { readUnsaved, type Unsaved } from '../editor/unsaved';
-import { restoreEntry, seriesOf, type HistoryEntry } from '../history/entries';
+// The skin's live state: the screen, the workflow, the shot and the actions the screens call.
+// One object, made once by App.svelte; the screens read it and call its actions. It hands the
+// work to its parts: the streams (streams.svelte.ts), the settings and their backup
+// (settings-store.svelte.ts), steam (steam-control.svelte.ts), the history and its restore
+// (recall.svelte.ts), the warning before a load (load-warning.svelte.ts) and the screen's
+// brightness in sleep (dimmer.ts).
+import { DecaidClient, isTareBlocked, type MachineSnapshot, type RequestedMachineState, type Workflow } from '../api';
+import type { HistoryEntry } from '../history/entries';
 import { ShotCache } from '../history/shots.svelte';
-import { PRODUCT_VERSION } from '../product';
-import { hasSettings, loadSettings, saveSettings, type Settings } from '../settings';
-import { SettingsBackup, atStart, type ReadBackup, type Written } from '../settings-backup';
+import type { Settings } from '../settings';
+import type { ReadBackup } from '../settings-backup';
+import { Dimmer } from './dimmer';
 import { gatewayBaseUrl } from './gateway';
-import {
-  canSleep,
-  canStop,
-  gatewayAfter,
-  heatingStatus,
-  isAsleep,
-  linkOf,
-  stateLine,
-  statusOf,
-  type Gateway,
-  type HeatTarget,
-  type ScaleLink,
-  type Status,
-} from './machine';
+import { LoadWarning, type LoadAnswer } from './load-warning.svelte';
+import { canSleep, canStop, heatingStatus, isAsleep, stateLine, statusOf, type HeatTarget, type Status } from './machine';
 import { followMachine, loadScreen, saveScreen, shotOverlay, type Screen } from './nav';
 import { doseToSet } from './profiles';
-import { expectedShotSeconds, lastShotSeconds } from './expected';
-import { recordFrame, settleWeight, shotSeconds, type Shot, type ShotSeries } from './shot';
-import { heaterState, isOnTemperature, switchHeater } from './steam-heater';
+import { Recall, type Recalled } from './recall.svelte';
+import { SettingsStore } from './settings-store.svelte';
+import { recordFrame, settleWeight, type Shot } from './shot';
+import { SteamControl } from './steam-control.svelte';
+import { Streams } from './streams.svelte';
 import { recordWaterFrame, type WaterRun } from './water';
-import { ScaleRetry } from './scale-retry';
 import { writeHotWater, type HotWaterField } from '../hotwater/hot-water';
-import { applySteamTimer, timerMismatch } from '../steam/apply';
-import { recordSteamFrame, type SteamRun } from '../steam/run';
-
-const CLOCK_MS = 500;
-/** The screen's brightness while the machine sleeps, 0-100; 100 is the system's own. */
-export const SLEEP_BRIGHTNESS = 5;
-
-/** The answer to the warning before a load (founder, 2026-10-14). */
-export type LoadAnswer = 'load' | 'cancel' | 'save-as';
-
-/** An entry of the shot history that was made the current one, with its latest shot's graph. */
-export interface Recalled {
-  entry: HistoryEntry;
-  series: ShotSeries;
-}
 
 export class Skin {
   readonly baseUrl: string;
@@ -75,15 +30,7 @@ export class Skin {
   readonly shots: ShotCache;
 
   screen: Screen = $state(loadScreen());
-  /** the machine's latest frame; old while `link` is not 'machine' */
-  snapshot: MachineSnapshot | null = $state.raw(null);
-  /** the scale's latest weight in g, null without a connected scale */
-  weight: number | null = $state(null);
-  /** g/s, the scale's latest weight flow; only the shot graph draws it, next to `weight` */
-  private weightFlow: number | null = null;
   workflow: Workflow | null = $state.raw(null);
-  /** the settings the machine itself holds, null until its stream has sent them */
-  shotSettings: ShotSettings | null = $state.raw(null);
   /** the running shot, or the finished one until it is dismissed */
   shot: Shot | null = $state.raw(null);
   /**
@@ -91,77 +38,29 @@ export class Skin {
    * it (`closeShot`); the next shot opens it again (`shotOverlay` in nav.ts).
    */
   shotOpen = $state(false);
-  /** s, the length of the last shot with a profile title, null when it has none; see `expectedSeconds` */
-  private lastShot: { title: string; seconds: number | null } | null = $state.raw(null);
-  /** the shot history's overlay is open (spec 3.1); only home shows it */
-  historyOpen = $state(false);
-  /** the history entry that was restored, until it is dismissed or a shot starts */
-  recalled: Recalled | null = $state.raw(null);
-  /** the running steam, or the finished one until the next */
-  steam: SteamRun | null = $state.raw(null);
-  /**
-   * The adjust button selected on the steam page (spec 3.7): its place in the settings'
-   * list, null for none. One at a time; it is cleared when a steam ends.
-   */
-  steamAdjust: number | null = $state(null);
   /** the running hot water or flush, or the finished one until the next (spec 3.6) */
   waterRun: WaterRun | null = $state.raw(null);
-  /** the tank's water level, null while its stream is not open or has sent nothing */
-  water: WaterLevels | null = $state.raw(null);
-  /** what the scale stream said about the scale */
-  scaleLink: ScaleLink = $state('unknown');
-  /** a round of scans for the scale runs (spec 3.9, `ScaleRetry`) */
-  scaleLooking = $state(false);
-  /** the skin's settings; changed with `setSettings` only, so they are stored */
-  settings: Settings = $state.raw(loadSettings());
-  /** the time of the last backup of the settings in Decaid's KV store, ISO 8601; null while none is known */
-  backupAt: string | null = $state(null);
-  /** why the last backup was not written, for the settings page; null after one that was */
-  backupError: string | null = $state(null);
-  /**
-   * The skin started without settings and took them from the backup: its time ('' when the
-   * backup has none), said once until it is dismissed (founder, 2026-10-14).
-   */
-  restoredFrom: string | null = $state(null);
   /** what went wrong with the last action, for the user */
   notice: string | null = $state(null);
   /** what the last action answered that is not an error: a tare Decaid blocks during a shot */
   info: string | null = $state(null);
-  /** the error frame of a stream the gateway closed */
-  streamError: string | null = $state(null);
   /** where the profile picker goes after a load: back to the editor when it was opened there */
   pickerReturn: 'home' | 'editor' = $state('home');
   /**
    * What the open screen does before it is left with `leave`; false keeps it open. The editor
-   * loads changed values here (founder, 2026-10-13).
+   * loads changed values here.
    */
   leaving: (() => Promise<boolean>) | null = null;
-  /** the unsaved edits the warning before a load asks about, while it is open */
-  unsaved: Unsaved | null = $state.raw(null);
   /** the editor opens its 'save as' on the machine's values: the warning's 'Save as…' */
   saveAsNext = false;
-  private answerUnsaved: ((answer: LoadAnswer) => void) | null = null;
 
-  private gateway: Gateway = $state('connecting');
-  private openedAt: number | null = $state(null);
-  private lastFrameAt: number | null = $state(null);
-  private now = $state(Date.now());
-  /** the steam timer this skin set last, in s */
-  private steamAsked: number | null = $state(null);
-  private machineStream: StreamState = $state('idle');
-  private scaleStream: StreamState = $state('idle');
+  private readonly streams: Streams;
+  private readonly store: SettingsStore;
+  private readonly steamer: SteamControl;
+  private readonly recall: Recall;
+  private readonly warning: LoadWarning;
+  private readonly dimmer: Dimmer;
 
-  /**
-   * s, where the running shot graph's time axis starts (spec 3.8): the last shot with the
-   * workflow's profile title, else the profile's estimate, else 30 s, rounded up to 10 s.
-   */
-  readonly expectedSeconds = $derived.by(() => {
-    const profile = this.workflow?.profile;
-    const last = this.lastShot && this.lastShot.title === profile?.title ? this.lastShot.seconds : null;
-    return expectedShotSeconds(profile, last);
-  });
-
-  readonly link = $derived(linkOf(this.gateway, this.openedAt, this.lastFrameAt, this.now));
   readonly status = $derived.by(() => statusOf(this.link, this.snapshot, this.baseUrl));
   /** The status of a page that waits for a heater (spec 3.8): home the group, steam the steam heater. */
   statusFor(target: HeatTarget | null): Status {
@@ -172,234 +71,177 @@ export class Skin {
   readonly asleep = $derived(isAsleep(this.link, this.snapshot));
   /** the values of the state line, on home and on the steam page */
   readonly stateValues = $derived(stateLine(this.link, this.snapshot, this.water, this.scaleLink, this.weight, this.scaleLooking));
-  /**
-   * A stream stopped in the state `failed`: the gateway sent an error frame and closed the
-   * socket, and did so again while the stream tried for 30 s (founder, 2026-10-15). It does
-   * not try again by itself after that; `reconnect` does.
-   */
-  readonly refused = $derived(this.machineStream === 'failed' || this.scaleStream === 'failed');
-
-  /**
-   * The steam timer in s: the machine's own, and the workflow's `steamSettings.duration` only
-   * while the machine's settings are not known. The two can differ (research.md, section 16).
-   */
-  readonly steamTimer = $derived(this.shotSettings?.targetSteamDuration ?? this.workflow?.steamSettings?.duration ?? null);
-  /** The machine's timer is not the one set here any more: what the steam page says about it. */
-  /** s, the amount of the selected adjust button, null without one */
-  readonly steamAdjustment = $derived(this.steamAdjust === null ? null : (this.settings.steam.adjustments[this.steamAdjust] ?? null));
-  /** the steam heater, on or off (spec 3.7, home's menu); null while neither the machine nor the workflow is known */
-  readonly steamHeater = $derived(heaterState(this.shotSettings, this.workflow));
-  readonly steamMismatch = $derived(timerMismatch(this.steamAsked, this.shotSettings?.targetSteamDuration ?? null));
-
-  private machine: SnapshotStream<MachineSnapshot> | undefined;
-  private machineSettings: SnapshotStream<ShotSettings> | undefined;
-  private waterLevels: SnapshotStream<WaterLevels> | undefined;
-  private scale: SnapshotStream<ScaleFrame> | undefined;
-  /** `/ws/v1/devices`, read only for whether Decaid scans: no round scans while it does */
-  private devices: SnapshotStream<DevicesState> | undefined;
-  private decaidScanning = false;
-  /** ms, when the machine last left `sleeping` */
-  private wokeAt: number | null = null;
-  private readonly scaleRetry: ScaleRetry;
-  private clock: ReturnType<typeof setInterval> | undefined;
-  private machineState: MachineState | undefined;
-  /** the skin lowered the screen's brightness for a sleeping machine */
-  private dimmed = false;
-  private readonly backup: SettingsBackup;
-  /** localStorage held settings when the skin started; without them a backup is restored */
-  private readonly hadSettings = hasSettings();
-  /** the settings were changed since the start: a backup read later must not replace them */
-  private settingsChanged = false;
-  /** the backup was read once at the start, or is being read */
-  private backupRead: Promise<void> | null = null;
 
   constructor(baseUrl: string = gatewayBaseUrl(location)) {
     this.baseUrl = baseUrl;
     this.client = new DecaidClient({ baseUrl });
     this.shots = new ShotCache(this.client);
-    this.backup = new SettingsBackup(this.client, PRODUCT_VERSION, (written) => this.onBackupWritten(written));
-    this.scaleRetry = new ScaleRetry({
-      scaleConnected: () => this.scaleLink === 'connected',
-      machineAsleep: () => this.machineState === 'sleeping',
-      wokeAt: () => this.wokeAt,
-      decaidScanning: () => this.decaidScanning,
-      preferredScale: async () => {
-        try {
-          return (await this.client.getSettings()).preferredScaleId ?? null;
-        } catch {
-          return null;
-        }
+    this.store = new SettingsStore(this.client);
+    this.steamer = new SteamControl(this);
+    this.recall = new Recall(this);
+    this.warning = new LoadWarning(this.client);
+    this.dimmer = new Dimmer(this.client);
+    this.streams = new Streams(baseUrl, this.client, {
+      onOpen: () => {
+        // The workflow may have changed while the gateway was away.
+        void this.refreshWorkflow();
+        void this.store.readAtStart();
+        // Once in the background after the start; after a lost connection, what is new.
+        this.shots.sync().catch(() => undefined);
       },
-      scan: async () => {
-        await this.client.scanDevices({ connect: true, quick: true });
-      },
-      onLooking: (looking) => (this.scaleLooking = looking),
+      onMachineFrame: (frame) => this.onMachineFrame(frame),
+      onWeight: (weight) => (this.shot = settleWeight(this.shot, weight)),
     });
+  }
+
+  // --- the streams (streams.svelte.ts) ---
+
+  /** the machine's latest frame; old while `link` is not 'machine' */
+  get snapshot(): MachineSnapshot | null {
+    return this.streams.snapshot;
+  }
+  /** the scale's latest weight in g, null without a connected scale */
+  get weight(): number | null {
+    return this.streams.weight;
+  }
+  /** the settings the machine itself holds, null until its stream has sent them */
+  get shotSettings(): Streams['shotSettings'] {
+    return this.streams.shotSettings;
+  }
+  /** the tank's water level, null while its stream is not open or has sent nothing */
+  get water(): Streams['water'] {
+    return this.streams.water;
+  }
+  /** what the scale stream said about the scale */
+  get scaleLink(): Streams['scaleLink'] {
+    return this.streams.scaleLink;
+  }
+  set scaleLink(link: Streams['scaleLink']) {
+    this.streams.scaleLink = link;
+  }
+  /** a round of scans for the scale runs (spec 3.9, `ScaleRetry`) */
+  get scaleLooking(): boolean {
+    return this.streams.scaleLooking;
+  }
+  /** the error frame of a stream the gateway closed */
+  get streamError(): string | null {
+    return this.streams.streamError;
+  }
+  get link(): Streams['link'] {
+    return this.streams.link;
+  }
+  /** A stream stopped in the state `failed`; `reconnect` opens it again. */
+  get refused(): boolean {
+    return this.streams.refused;
+  }
+
+  // --- the settings and their backup (settings-store.svelte.ts) ---
+
+  /** the skin's settings; changed with `setSettings` only, so they are stored */
+  get settings(): Settings {
+    return this.store.settings;
+  }
+  /** the time of the last backup of the settings in Decaid's KV store, ISO 8601; null while none is known */
+  get backupAt(): string | null {
+    return this.store.backupAt;
+  }
+  /** why the last backup was not written, for the settings page; null after one that was */
+  get backupError(): string | null {
+    return this.store.backupError;
+  }
+  /** The skin started without settings and took them from the backup: its time, said once until it is dismissed. */
+  get restoredFrom(): string | null {
+    return this.store.restoredFrom;
+  }
+  set restoredFrom(from: string | null) {
+    this.store.restoredFrom = from;
+  }
+
+  // --- steam (steam-control.svelte.ts) ---
+
+  /** the running steam, or the finished one until the next */
+  get steam(): SteamControl['run'] {
+    return this.steamer.run;
+  }
+  /** the adjust button selected on the steam page (spec 3.7): its place in the settings' list, null for none */
+  get steamAdjust(): number | null {
+    return this.steamer.adjust;
+  }
+  set steamAdjust(index: number | null) {
+    this.steamer.adjust = index;
+  }
+  /** The steam timer in s: the machine's own, the workflow's only while the machine's settings are not known. */
+  get steamTimer(): number | null {
+    return this.steamer.timer;
+  }
+  /** s, the amount of the selected adjust button, null without one */
+  get steamAdjustment(): number | null {
+    return this.steamer.adjustment;
+  }
+  /** the steam heater, on or off (spec 3.7, home's menu); null while neither the machine nor the workflow is known */
+  get steamHeater(): SteamControl['heater'] {
+    return this.steamer.heater;
+  }
+  /** The machine's timer is not the one set here any more: what the steam page says about it. */
+  get steamMismatch(): SteamControl['mismatch'] {
+    return this.steamer.mismatch;
+  }
+
+  // --- the history and its restore (recall.svelte.ts) ---
+
+  /** the shot history's overlay is open (spec 3.1); only home shows it */
+  get historyOpen(): boolean {
+    return this.recall.historyOpen;
+  }
+  set historyOpen(open: boolean) {
+    this.recall.historyOpen = open;
+  }
+  /** the history entry that was restored, until it is dismissed or a shot starts */
+  get recalled(): Recalled | null {
+    return this.recall.recalled;
+  }
+  /** s, where the running shot graph's time axis starts (spec 3.8) */
+  get expectedSeconds(): number {
+    return this.recall.expectedSeconds;
+  }
+
+  // --- the warning before a load (load-warning.svelte.ts) ---
+
+  /** the unsaved edits the warning before a load asks about, while it is open */
+  get unsaved(): LoadWarning['unsaved'] {
+    return this.warning.unsaved;
   }
 
   /** Opens the streams. Returns what closes them again. */
   connect(): () => void {
-    this.machine = machineSnapshotStream({
-      baseUrl: this.baseUrl,
-      onState: (state) => {
-        this.machineStream = state;
-        this.gateway = gatewayAfter(this.gateway, state);
-        if (state === 'open') {
-          this.openedAt = Date.now();
-          // The workflow may have changed while the gateway was away.
-          void this.refreshWorkflow();
-          void this.readBackup();
-          // Once in the background after the start; after a lost connection, what is new.
-          this.shots.sync().catch(() => undefined);
-          // The settings' stream ends with an error frame while no machine is connected.
-          this.machineSettings?.connect();
-          this.waterLevels?.connect();
-        } else {
-          // What the machine did while the stream was closed is not known.
-          this.machineState = undefined;
-        }
-      },
-      onFrame: (frame) => this.onMachineFrame(frame),
-      onError: (frame) => this.onStreamError(frame),
-    }).connect();
-    // Without this stream the steam page shows the workflow's timer, so its failure is silent.
-    this.machineSettings = machineShotSettingsStream({
-      baseUrl: this.baseUrl,
-      onState: (state) => {
-        if (state !== 'open') this.shotSettings = null;
-      },
-      onFrame: (frame) => (this.shotSettings = frame),
-    }).connect();
-    // The tank is only a value of the state line, so a failure of its stream is silent too.
-    this.waterLevels = machineWaterLevelsStream({
-      baseUrl: this.baseUrl,
-      onState: (state) => {
-        if (state !== 'open') this.water = null;
-      },
-      onFrame: (frame) => (this.water = frame),
-    }).connect();
-    this.scale = scaleSnapshotStream({
-      baseUrl: this.baseUrl,
-      onState: (state) => {
-        this.scaleStream = state;
-        if (state !== 'open') {
-          this.weight = null;
-          this.scaleLink = 'unknown';
-        }
-      },
-      // The first frame is a status frame without a weight; a weight only comes from a scale.
-      onFrame: (frame) => {
-        const before = this.scaleLink;
-        if (isScaleSnapshot(frame)) {
-          this.weight = frame.weight;
-          this.weightFlow = typeof frame.weightFlow === 'number' ? frame.weightFlow : null;
-          this.shot = settleWeight(this.shot, frame.weight);
-          this.scaleLink = 'connected';
-        } else if (isScaleStatus(frame)) {
-          this.scaleLink = frame.status === 'connected' ? 'connected' : 'disconnected';
-          if (this.scaleLink === 'disconnected') this.weight = null;
-        }
-        // A drop, or no scale in the stream's first frame: a round looks for it (spec 3.9).
-        if (this.scaleLink === 'connected') this.scaleRetry.stop();
-        else if (before !== 'disconnected' && !this.scaleRetry.looking) this.scaleRetry.start(false);
-      },
-      onError: (frame) => this.onStreamError(frame),
-    }).connect();
-    this.devices = devicesStream({
-      baseUrl: this.baseUrl,
-      onState: (state) => {
-        if (state !== 'open') this.decaidScanning = false;
-      },
-      onFrame: (frame) => (this.decaidScanning = frame.scanning === true),
-    }).connect();
-    this.clock = setInterval(() => (this.now = Date.now()), CLOCK_MS);
-    // The last shot with the profile is read whenever another profile is loaded.
-    const stopEffects = $effect.root(() => {
-      $effect(() => {
-        const title = this.workflow?.profile?.title;
-        if (title) void untrack(() => this.readLastShot(title));
-      });
-    });
+    const closeStreams = this.streams.connect();
+    const stopFollowing = this.recall.follow();
     return () => {
-      stopEffects();
-      this.machine?.close();
-      this.machineSettings?.close();
-      this.waterLevels?.close();
-      this.scale?.close();
-      this.devices?.close();
-      this.scaleRetry.stop();
-      clearInterval(this.clock);
+      stopFollowing();
+      closeStreams();
     };
   }
 
   private onMachineFrame(frame: MachineSnapshot): void {
-    this.lastFrameAt = this.now = Date.now();
-    this.snapshot = frame;
+    const before = this.streams.machineFrame(frame);
     const state = frame.state.state;
-    const next = followMachine(this.screen, this.machineState, state);
-    const open = shotOverlay(this.shotOpen, this.machineState, state);
+    const next = followMachine(this.screen, before, state);
+    const open = shotOverlay(this.shotOpen, before, state);
     if (open && !this.shotOpen) this.historyOpen = false;
     this.shotOpen = open;
-    if (this.machineState === 'sleeping' && state !== 'sleeping') this.wokeAt = Date.now();
-    this.machineState = state;
     const running = this.shot !== null && !this.shot.ended;
-    this.shot = recordFrame(this.shot, frame, this.weight, this.weightFlow);
-    if (this.shot && !this.shot.ended) this.recalled = null;
-    // A shot that ends is the last one with its profile: the next one's axis starts at its length.
-    const title = this.workflow?.profile?.title;
-    if (running && this.shot?.ended && title && shotSeconds(this.shot) > 0) {
-      this.lastShot = { title, seconds: shotSeconds(this.shot) };
-    }
-    if (running && this.shot?.ended) void this.shots.shotEnded();
-    const steaming = this.steam !== null && !this.steam.ended;
-    this.steam = recordSteamFrame(this.steam, frame);
-    if (steaming && this.steam?.ended) this.steamAdjust = null;
+    this.shot = recordFrame(this.shot, frame, this.weight, this.streams.weightFlow);
+    if (this.shot && !this.shot.ended) this.recall.recalled = null;
+    if (running && this.shot?.ended) this.recall.shotEnded(this.shot);
+    this.steamer.frame(frame);
     this.waterRun = recordWaterFrame(this.waterRun, frame);
     if (next !== this.screen) this.go(next);
-    void this.dim(state === 'sleeping');
-  }
-
-  /** Reads the length of the last shot with this title from the shots held; a failure leaves the estimate. */
-  private async readLastShot(title: string): Promise<void> {
-    if (this.lastShot?.title === title) return;
-    try {
-      const seconds = await lastShotSeconds(this.shots, title);
-      // A shot that ended meanwhile is newer than the record read.
-      if (this.workflow?.profile?.title === title && this.lastShot?.title !== title) this.lastShot = { title, seconds };
-    } catch {
-      // The axis starts at the profile's estimate instead.
-    }
-  }
-
-  private onStreamError(frame: StreamErrorFrame): void {
-    this.streamError = frame.error ?? frame.e ?? null;
+    void this.dimmer.follow(state === 'sleeping');
   }
 
   /** Opens a stream that stopped in `failed` again; the others are left as they are. */
   reconnect(): void {
-    this.streamError = null;
-    this.machine?.connect();
-    this.machineSettings?.connect();
-    this.waterLevels?.connect();
-    this.scale?.connect();
-    this.devices?.connect();
-  }
-
-  /**
-   * The screen follows the machine's sleep: dim while it sleeps, the system's own brightness
-   * again when it is awake. Only where Decaid says the platform can (spec 3.1); elsewhere the
-   * brightness is not touched.
-   */
-  private async dim(asleep: boolean): Promise<void> {
-    if (asleep === this.dimmed) return;
-    this.dimmed = asleep;
-    try {
-      const display = await this.client.getDisplay();
-      if (display.platformSupported?.brightness !== true) return;
-      await this.client.setBrightness(asleep ? SLEEP_BRIGHTNESS : 100);
-    } catch {
-      // The brightness is a comfort; the machine's state is on screen either way.
-    }
+    this.streams.reconnect();
   }
 
   go(screen: Screen): void {
@@ -432,20 +274,9 @@ export class Skin {
     }
   }
 
-  /**
-   * Writes the steam timer, whole seconds (spec 3.4): to the workflow's `steamSettings.duration`,
-   * and to the machine's own settings where Decaid did not pass it on (`applySteamTimer`).
-   */
-  async setSteamTimer(seconds: number): Promise<void> {
-    this.notice = null;
-    this.steamAsked = null;
-    const asked = Math.max(0, Math.round(seconds));
-    try {
-      this.workflow = (await applySteamTimer(this.client, asked, () => this.shotSettings)).workflow;
-      this.steamAsked = asked;
-    } catch (error) {
-      this.notice = `The timer was not set: ${error instanceof Error ? error.message : String(error)}`;
-    }
+  /** Writes the steam timer, whole seconds (spec 3.4); see `SteamControl.setTimer`. */
+  setSteamTimer(seconds: number): Promise<void> {
+    return this.steamer.setTimer(seconds);
   }
 
   /**
@@ -475,31 +306,14 @@ export class Skin {
     return this.request('sleeping', 'The machine did not go to sleep');
   }
 
-  /**
-   * The menu's steam switch (spec 3.7): off writes 0 °C, after it remembered the temperature
-   * the heater had in the settings; on writes that temperature again.
-   */
-  async toggleSteamHeater(): Promise<void> {
-    this.notice = this.info = null;
-    await this.setSteamHeater(this.steamHeater === 'off');
+  /** The menu's steam switch (spec 3.7); see `SteamControl.toggleHeater`. */
+  toggleSteamHeater(): Promise<void> {
+    return this.steamer.toggleHeater();
   }
 
-  /**
-   * The steam heater on or off, as the menu's switch does; the descale switches it off for the
-   * cycle (research.md 20.3). False when it was not switched: the notice says why.
-   */
-  async setSteamHeater(on: boolean): Promise<boolean> {
-    const current = this.workflow?.steamSettings?.targetTemperature;
-    if (!on && isOnTemperature(current) && current !== this.settings.steam.heaterTemperature) {
-      this.setSettings({ steam: { ...this.settings.steam, heaterTemperature: current } });
-    }
-    try {
-      this.workflow = await switchHeater(this.client, on, this.settings.steam.heaterTemperature, () => this.shotSettings);
-      return true;
-    } catch (error) {
-      this.notice = `The steam heater was not switched ${on ? 'on' : 'off'}: ${error instanceof Error ? error.message : String(error)}`;
-      return false;
-    }
+  /** The steam heater on or off; false when it was not switched, and the notice says why (`SteamControl.setHeater`). */
+  setSteamHeater(on: boolean): Promise<boolean> {
+    return this.steamer.setHeater(on);
   }
 
   wake(): Promise<void> {
@@ -530,66 +344,17 @@ export class Skin {
   /** A tap on the scale's warning or on a tare button without a scale: a round by hand, scanning at once. */
   findScale(): void {
     this.notice = this.info = null;
-    this.scaleRetry.start(true);
+    this.streams.findScale();
   }
 
-  /**
-   * Changes settings and stores them (localStorage: they survive a reload and the WebView),
-   * and writes their backup to Decaid's KV store a moment later (founder, 2026-10-14).
-   */
+  /** Changes settings and stores them, with their backup in Decaid's KV store a moment later (`SettingsStore.set`). */
   setSettings(change: Partial<Settings>): void {
-    this.settings = { ...this.settings, ...change };
-    this.settingsChanged = true;
-    saveSettings(this.settings);
-    this.backup.schedule(this.settings);
-  }
-
-  /**
-   * Reads the backup once the gateway answers, until it was read once. A start without
-   * settings in localStorage takes the backup's; settings that differ from the backup, or
-   * have none yet, are backed up.
-   */
-  private readBackup(): Promise<void> {
-    this.backupRead ??= (async () => {
-      let backup: ReadBackup | null;
-      try {
-        backup = await this.backup.read();
-      } catch {
-        this.backupRead = null;
-        return;
-      }
-      if (!this.backupAt) this.backupAt = backup?.savedAt ?? null;
-      const action = atStart(this.hadSettings, this.settingsChanged, backup, this.settings);
-      if (action === 'restore' && backup) {
-        this.settings = backup.settings;
-        saveSettings(this.settings);
-        this.restoredFrom = backup.savedAt ?? '';
-      } else if (action === 'write') {
-        this.backup.schedule(this.settings);
-      }
-    })();
-    return this.backupRead;
+    this.store.set(change);
   }
 
   /** The settings page's 'Restore from backup': the backup's settings, or null when there is none. Throws when it cannot be read. */
-  async restoreBackup(): Promise<ReadBackup | null> {
-    const backup = await this.backup.read();
-    if (!backup) return null;
-    this.backup.cancel();
-    this.settings = backup.settings;
-    this.settingsChanged = true;
-    saveSettings(this.settings);
-    this.backupAt = backup.savedAt;
-    return backup;
-  }
-
-  private onBackupWritten(written: Written): void {
-    if ('savedAt' in written) {
-      this.backupAt = written.savedAt;
-      this.backupError = null;
-    } else {
-      this.backupError = `The backup in Decaid was not written: ${written.error}`;
-    }
+  restoreBackup(): Promise<ReadBackup | null> {
+    return this.store.restore();
   }
 
   /** A tap anywhere after the shot closes its overlay; home then shows it as the last shot. */
@@ -602,50 +367,19 @@ export class Skin {
     if (this.shot?.ended) this.shot = null;
   }
 
-  /**
-   * An entry of the shot history was tapped (spec 3.5): the overlay closes, the entry's
-   * profile, bean and grinder setting become the current ones, and home shows the graph of
-   * the last shot made with it. Only its record (`ShotCache.record`) has the measurements.
-   */
-  async restore(entry: HistoryEntry): Promise<void> {
-    this.historyOpen = false;
-    this.notice = this.info = null;
-    const answer = await this.mayLoad();
-    if (answer === 'save-as') this.openSaveAs();
-    if (answer !== 'load') return;
-    try {
-      this.workflow = await restoreEntry(this.client, entry);
-      this.recalled = { entry, series: seriesOf(await this.shots.record(entry.latest.id)) };
-    } catch (error) {
-      this.notice = `The entry was not restored: ${error instanceof Error ? error.message : String(error)}`;
-    }
+  /** An entry of the shot history was tapped (spec 3.5); see `Recall.restore`. */
+  restore(entry: HistoryEntry): Promise<void> {
+    return this.recall.restore(entry);
   }
 
-  /**
-   * Asked before every load of the skin (founder, 2026-10-14): while the machine holds unsaved
-   * edits from the editor (`readUnsaved`), the warning is shown and nothing is loaded before its
-   * answer. 'load' when there are none, or when they could not be read: the load then says
-   * what went wrong. 'save-as' leaves the opening of the editor's save as to the caller
-   * (`openSaveAs`, or the editor itself).
-   */
-  async mayLoad(): Promise<LoadAnswer> {
-    let unsaved: Unsaved | null;
-    try {
-      unsaved = await readUnsaved(this.client);
-    } catch {
-      return 'load';
-    }
-    if (!unsaved) return 'load';
-    this.unsaved = unsaved;
-    const answer = await new Promise<LoadAnswer>((resolve) => (this.answerUnsaved = resolve));
-    this.unsaved = null;
-    this.answerUnsaved = null;
-    return answer;
+  /** Asked before every load of the skin; see `LoadWarning.ask`. */
+  mayLoad(): Promise<LoadAnswer> {
+    return this.warning.ask();
   }
 
   /** The warning's buttons. */
   answerLoad(answer: LoadAnswer): void {
-    this.answerUnsaved?.(answer);
+    this.warning.answer(answer);
   }
 
   /** The warning's 'Save as…' outside the editor: the editor opens on the machine's values and asks for a name. */
@@ -655,7 +389,7 @@ export class Skin {
   }
 
   dismissRecalled(): void {
-    this.recalled = null;
+    this.recall.recalled = null;
   }
 
   private async request(state: RequestedMachineState, failure: string): Promise<void> {

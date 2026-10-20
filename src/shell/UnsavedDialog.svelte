@@ -3,7 +3,7 @@
   // 2026-10-14). Nothing is loaded before one of its three answers (`Skin.mayLoad`).
   import { startName } from '../editor/start';
   import type { Unsaved } from '../editor/unsaved';
-  import type { LoadAnswer } from './skin.svelte';
+  import type { LoadAnswer } from './load-warning.svelte';
 
   interface Props {
     unsaved: Unsaved;

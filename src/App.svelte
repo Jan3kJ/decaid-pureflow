@@ -8,7 +8,8 @@
   import type { Screen } from './shell/nav';
   import Profiles from './shell/Profiles.svelte';
   import SettingsPage from './settings-page/SettingsPage.svelte';
-  import { Skin, type LoadAnswer } from './shell/skin.svelte';
+  import type { LoadAnswer } from './shell/load-warning.svelte';
+  import { Skin } from './shell/skin.svelte';
   import { backupTime } from './settings-backup';
   import Steam from './steam/Steam.svelte';
   import StepEditor from './steps/StepEditor.svelte';
