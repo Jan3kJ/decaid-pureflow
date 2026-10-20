@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import {
-    DEFAULT_AUTHOR,
     DEFAULT_PROFILES,
     hasSecondFill,
     machineLimits,
@@ -11,20 +10,23 @@
     type AFlowParams,
   } from '../aflow';
   import type { ProfileRecord } from '../api';
-  import { defaultProfile, sameProfile } from '../shell/profiles';
   import type { Skin } from '../shell/skin.svelte';
-  import { PHASE_LABEL, type EditField, type PhaseId } from './curve';
+  import type { EditField, PhaseId } from './curve';
+  import DetailPanel from './DetailPanel.svelte';
   import { dragValue, setValue, toggleFlow, toggleSecondFill } from './edit';
-  import { FIELD_LABEL, FIELD_STEP, FIELD_TONE, PANEL_LABEL, PHASE_FIELDS, formatValue, snap, typedStep } from './fields';
+  import EditorFooter from './EditorFooter.svelte';
+  import EditorHeader from './EditorHeader.svelte';
+  import { LOADED, canSave as mayBeSaved, editorEntries, takenNames, type Loaded } from './entries';
+  import { FIELD_LABEL, FIELD_STEP, formatValue, snap, typedStep } from './fields';
   import Graph from './Graph.svelte';
   import NameDialog from './NameDialog.svelte';
   import NumberPad from './NumberPad.svelte';
-  import { TITLE_PREFIX, changed, loadOnLeave, nameOf, saveAs, saveEdit, storeAndLoad, titleOf, type Stored } from './save';
+  import { changed, loadOnLeave, saveAs, saveEdit, storeAndLoad, titleOf, type Stored } from './save';
+  import { afterSecondFillToggle, keepSelection } from './selection';
   import { startRow } from './start';
   import { DEFAULT_SAVE_HINT, convertedNotice, noticeLasts, type Notice } from './status';
   import StepList from './StepList.svelte';
-  import { openParams, openRecord, readRecord } from './storage';
-  import ValueChip from './ValueChip.svelte';
+  import { openParams, readRecord } from './storage';
   import { errorMessage } from '../error-message';
 
   interface Props {
@@ -33,26 +35,9 @@
 
   let { skin }: Props = $props();
 
-  /** A profile the editor can open: a default, a saved A-Flow profile, or the loaded one. */
-  interface Entry {
-    key: string;
-    name: string;
-    title: string;
-    author: string;
-    params: AFlowParams;
-    /** the gateway's record of it, where it has one */
-    record: ProfileRecord | null;
-    isDefault: boolean;
-    /** read from an older A-Flow profile's steps: 'save' stores it as 3.0 without an edit too */
-    converted: boolean;
-  }
-
-  /** the key of the loaded profile when the gateway has no record under its title */
-  const LOADED = 'loaded';
-
   let records: ProfileRecord[] = $state.raw([]);
   /** the workflow's profile, when the editor can open it */
-  let loaded: { title: string; author: string; params: AFlowParams; converted: boolean } | null = $state.raw(null);
+  let loaded: Loaded | null = $state.raw(null);
   let originKey = $state(DEFAULT_PROFILES[0].id);
   let params: AFlowParams = $state({ ...DEFAULT_PROFILES[0].params });
   /** the values on the machine as far as the editor knows: leaving loads what differs from them */
@@ -69,73 +54,28 @@
   let notice: Notice | null = $state(null);
   /** the value the number pad is open for */
   let typing: EditField | null = $state(null);
-  /** the profile steps are shown; closed whenever the editor opens (founder, 2026-10-13) */
+  /** the profile steps are shown; closed whenever the editor opens */
   let stepsOpen = $state(false);
   // The skin's one copy of the settings, set on the settings page only.
   const settings = $derived(skin.settings);
 
-  const entries: Entry[] = $derived.by(() => {
-    const defaults: Entry[] = DEFAULT_PROFILES.map((entry) => {
-      const profile = defaultProfile(entry);
-      return {
-        key: entry.id,
-        name: entry.id.replace('default-', ''),
-        title: entry.title,
-        author: DEFAULT_AUTHOR,
-        params: entry.params,
-        record: records.find((record) => sameProfile(record.profile, profile)) ?? null,
-        isDefault: true,
-        converted: false,
-      };
-    });
-    const saved: Entry[] = [];
-    for (const record of records) {
-      // A profile under a default's title counts as that default (spec 3.8 T5, 3.9 U2).
-      const read = openRecord(record);
-      if (!read || defaults.some((entry) => entry.title === record.profile.title)) continue;
-      saved.push({
-        key: record.id,
-        name: nameOf(record.profile.title),
-        title: record.profile.title,
-        author: record.profile.author ?? '',
-        params: read.params,
-        record,
-        isDefault: false,
-        converted: read.dropped !== null,
-      });
-    }
-    const all = [...defaults, ...saved];
-    if (loaded && !all.some((entry) => entry.title === loaded!.title)) {
-      all.push({ key: LOADED, name: nameOf(loaded.title), ...loaded, record: null, isDefault: false });
-    }
-    return all;
-  });
-  /** the row to start from: the profiles chosen in the settings, in their order (founder, 2026-10-13) */
+  const entries = $derived(editorEntries(records, loaded));
+  /** the row to start from: the profiles chosen in the settings, in their order */
   const row = $derived(startRow(settings.startProfiles, entries));
   const origin = $derived(entries.find((entry) => entry.key === originKey) ?? entries[0]);
   const dirty = $derived(serializeParams(params) !== serializeParams(origin.params));
-  /**
-   * 'save' writes a new version of a saved profile; a default is saved under a new name, so
-   * there 'save' only says so (founder, 2026-10-17).
-   */
-  const canSave = $derived(origin.isDefault || (!!origin.record && (dirty || origin.converted)));
-  const taken = $derived([
-    ...entries.map((entry) => entry.name),
-    ...records
-      .map((record) => record.profile.title)
-      .filter((title) => title.startsWith(TITLE_PREFIX))
-      .map(nameOf),
-  ]);
+  const canSave = $derived(mayBeSaved(origin, dirty));
+  const taken = $derived(takenNames(entries, records));
   const resolved = $derived(resolveParams(params));
-  // The maximum flow is a setting (founder, 2026-10-15). A saved value above it is shown as it
-  // is and kept until it is edited: ±, the number pad and a drag bring it into the range.
+  // The maximum flow is a setting. A saved value above it is shown as it is and kept until it
+  // is edited: ±, the number pad and a drag bring it into the range.
   const limits = $derived(machineLimits(settings.maxFlow));
   const ranges = $derived(paramRanges(limits));
 
   function open(key: string, values: AFlowParams) {
     originKey = key;
     params = { ...values };
-    if (selected === 'secondFill' && !hasSecondFill(params)) selected = 'infuse';
+    selected = keepSelection(selected, params);
   }
 
   /**
@@ -144,7 +84,7 @@
    * steps, says so and what was dropped.
    */
   async function init() {
-    // The warning before a load asked for 'save as' on the machine's values (founder, 2026-10-14).
+    // The warning before a load asked for 'save as' on the machine's values.
     const saveAsNext = skin.saveAsNext;
     skin.saveAsNext = false;
     try {
@@ -172,7 +112,7 @@
   }
 
   /**
-   * Leaving the editor, by the back arrow or the shortcut to the picker (founder, 2026-10-13):
+   * Leaving the editor, by the back arrow or the shortcut to the picker:
    * changed values are loaded to the machine first. A failed load keeps the editor open and
    * says so; 'back' again with the same values leaves without loading them.
    */
@@ -199,9 +139,9 @@
   }
 
   /**
-   * A profile of the row opens in the editor; leaving loads it, as any change (founder,
-   * 2026-10-13). Unsaved edits on the machine are asked about first (founder, 2026-10-14):
-   * 'Save as…' opens the editor on them again and asks for a name.
+   * A profile of the row opens in the editor; leaving loads it, as any change. Unsaved edits
+   * on the machine are asked about first: 'Save as…' opens the editor on them again and asks
+   * for a name.
    */
   async function pick(key: string) {
     busy = true;
@@ -262,7 +202,7 @@
     }
   }
 
-  // 'save' and 'save as' load what they stored (founder, 2026-10-13).
+  // 'save' and 'save as' load what they stored.
   const saveUnder = (name: string) =>
     act('The profile was not saved', async () => {
       const about = { title: titleOf(name), author: origin.author };
@@ -286,7 +226,7 @@
   function edit(field: EditField, value: number) {
     touched = true;
     params = setValue(params, field, value);
-    if (selected === 'secondFill' && !hasSecondFill(params)) selected = 'infuse';
+    selected = keepSelection(selected, params);
   }
 
   function drag(field: EditField, value: number) {
@@ -301,8 +241,7 @@
   function switchSecondFill() {
     touched = true;
     params = toggleSecondFill(params);
-    if (hasSecondFill(params)) selected = mode === 'detail' ? 'secondFill' : selected;
-    else if (selected === 'secondFill') selected = 'infuse';
+    selected = afterSecondFillToggle(selected, params, mode);
   }
 
   function switchFlow() {
@@ -312,48 +251,21 @@
 </script>
 
 <div class="editor" class:detail={mode === 'detail'}>
-  <header>
-    <!-- The shortcut to the profile picker (founder, 2026-10-13): a profile chosen there is loaded. -->
-    <button
-      class="seg name"
-      data-testid="editor-profile"
-      aria-label="choose another profile"
-      disabled={busy}
-      onclick={() => skin.leave('profiles')}
-    >
-      <span>{origin.name}</span>
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h9" /></svg>
-    </button>
-    <!-- The profiles to start from, chosen in the settings; 'save as' does not add to them. -->
-    <div class="group start" role="group" aria-label="start from" data-testid="start-row">
-      {#each row as entry (entry.key)}
-        <button
-          class="seg"
-          aria-pressed={entry.key === origin.key}
-          data-testid="start-{entry.name}"
-          disabled={busy}
-          onclick={() => pick(entry.key)}
-        >
-          {entry.name}
-        </button>
-      {/each}
-    </div>
-    <div class="group">
-      <div class="group" role="group" aria-label="profile actions">
-        <button class="seg action" data-testid="save" disabled={busy || !canSave} onclick={save}>save</button>
-        <button class="seg action" data-testid="save-as" disabled={busy} onclick={() => (naming = true)}> save as </button>
-      </div>
-      <div class="group" role="group" aria-label="editor mode">
-        <button class="seg" aria-pressed={mode === 'simple'} data-testid="mode-simple" onclick={() => (mode = 'simple')}>simple</button
-        >
-        <button class="seg" aria-pressed={mode === 'detail'} data-testid="mode-detail" onclick={() => (mode = 'detail')}>detail</button
-        >
-      </div>
-    </div>
-  </header>
+  <EditorHeader
+    {origin}
+    {row}
+    {busy}
+    {canSave}
+    {mode}
+    onprofile={() => skin.leave('profiles')}
+    onpick={pick}
+    onsave={save}
+    onsaveas={() => (naming = true)}
+    onmode={(next: 'simple' | 'detail') => (mode = next)}
+  />
 
   <!-- One line under the start row for what a save or a load answered; it keeps its height
-       while it is empty, so the graph does not move (founder, 2026-10-18). -->
+       while it is empty, so the graph does not move. -->
   <div class="status" role="status" data-testid="editor-status">
     {#if notice}
       <p class="notice {notice.tone}" data-testid="editor-notice" title={notice.text}>{notice.text}</p>
@@ -361,55 +273,25 @@
   </div>
 
   <section class="stage">
-    <!-- No phase buttons: in detail mode a tap on a step of the graph selects it (founder, 2026-10-16). -->
+    <!-- No phase buttons: in detail mode a tap on a step of the graph selects it. -->
     <div class="plot">
       <Graph {params} {limits} {mode} {selected} ondrag={drag} onedit={edit} onselect={(id: PhaseId) => (selected = id)} />
     </div>
   </section>
 
   {#if mode === 'detail'}
-    <aside data-testid="detail-panel">
-      <h2>{PHASE_LABEL[selected]}</h2>
-      {#each PHASE_FIELDS[selected] as field (field)}
-        <ValueChip
-          label={PANEL_LABEL[field]}
-          value={formatValue(field, resolved[field])}
-          tone={FIELD_TONE[field] ?? 'none'}
-          testid={field}
-          onstep={(d: 1 | -1) => step(field, d)}
-          onedit={() => (typing = field)}
-        />
-      {/each}
-      <h2 class="shot">shot</h2>
-      <ValueChip
-        label={PANEL_LABEL.dose}
-        value={formatValue('dose', params.dose)}
-        testid="dose"
-        onstep={(d: 1 | -1) => step('dose', d)}
-        onedit={() => (typing = 'dose')}
-      />
-    </aside>
+    <DetailPanel {selected} {params} {resolved} onstep={step} ontype={(field: EditField) => (typing = field)} />
   {/if}
 
-  <footer>
-    <button class="toggle" aria-pressed={hasSecondFill(params)} data-testid="toggle-second-fill" onclick={switchSecondFill}>
-      <span class="lamp"></span>2nd fill
-    </button>
-    <button class="toggle" data-testid="toggle-flow" aria-label="flow direction" onclick={switchFlow}>
-      <span class="arrow" class:down={!params.flowUp}>↗</span>{params.flowUp ? 'flow up' : 'flow down'}
-    </button>
-    <div class="legend">
-      <span class="flow">flow ml/s</span>
-      <span class="pressure">pressure bar</span>
-      <span class="temperature">temperature °C</span>
-    </div>
-    <!-- Hidden by the setting 'profile steps'; shown, it opens and closes the panel. -->
-    {#if settings.showProfileSteps}
-      <button class="toggle setting" aria-pressed={stepsOpen} data-testid="toggle-steps" onclick={() => (stepsOpen = !stepsOpen)}>
-        <span class="lamp"></span>profile steps
-      </button>
-    {/if}
-  </footer>
+  <EditorFooter
+    secondFill={hasSecondFill(params)}
+    flowUp={params.flowUp}
+    showSteps={settings.showProfileSteps}
+    {stepsOpen}
+    onsecondfill={switchSecondFill}
+    onflow={switchFlow}
+    onsteps={() => (stepsOpen = !stepsOpen)}
+  />
 
   {#if settings.showProfileSteps && stepsOpen}
     <section class="steps">
@@ -464,107 +346,6 @@
     grid-template-areas: 'header header' 'status panel' 'stage panel' 'footer panel' 'steps panel';
   }
 
-  header {
-    grid-area: header;
-    display: flex;
-    justify-content: space-between;
-    gap: 2rem;
-  }
-
-  /* The header is one row at 1280 px: the name, the start row, save and save as, the mode. */
-  .group {
-    flex: none;
-    display: flex;
-    gap: 0.75rem;
-  }
-
-  header > .group:last-child {
-    gap: 2rem;
-  }
-
-  /* The profile's name, and the way to the picker. */
-  .name {
-    flex: none;
-    min-width: 0;
-    max-width: 16rem;
-    display: flex;
-    align-items: center;
-    gap: 0.7rem;
-    font-size: 1.15rem;
-    font-weight: 600;
-  }
-
-  .name span {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .name svg {
-    flex: none;
-    width: 1.3rem;
-    height: 1.3rem;
-    fill: none;
-    stroke: var(--dim);
-    stroke-width: 2.4;
-    stroke-linecap: round;
-  }
-
-  /* The row takes the room between the name and the actions and scrolls when it has no more. */
-  .start {
-    flex: 1;
-    min-width: 0;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .start .seg {
-    flex: none;
-    min-width: 4.5rem;
-    max-width: 11rem;
-    padding: 0 0.9rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  button {
-    font: inherit;
-    color: var(--fg);
-    border: 1px solid var(--line);
-    background: var(--panel);
-    touch-action: manipulation;
-    user-select: none;
-  }
-
-  .seg {
-    min-height: 3rem;
-    min-width: 6rem;
-    padding: 0 1.1rem;
-    border-radius: 0.9rem;
-    font-size: 1rem;
-  }
-
-  .seg[aria-pressed='true'] {
-    background: var(--fg);
-    border-color: var(--fg);
-    color: var(--bg);
-    font-weight: 600;
-  }
-
-  .seg.action {
-    min-width: 0;
-    background: var(--raised);
-    white-space: nowrap;
-  }
-
-  .seg:disabled {
-    background: var(--panel);
-    border-color: var(--line);
-    color: var(--dim);
-    font-weight: 400;
-  }
-
   /* One line: what the editor is on, and what a save or a load answered. */
   .status {
     grid-area: status;
@@ -601,126 +382,6 @@
     min-height: 0;
     background: var(--panel);
     border-radius: 1rem;
-  }
-
-  aside {
-    grid-area: panel;
-    min-height: 0;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  h2 {
-    margin: 0;
-    min-height: 3rem;
-    display: flex;
-    align-items: center;
-    font-size: 1.3rem;
-    font-weight: 600;
-  }
-
-  h2.shot {
-    min-height: 0;
-    margin-top: auto;
-    padding-top: 0.5rem;
-    font-size: 0.9rem;
-    font-weight: 400;
-    color: var(--dim);
-  }
-
-  footer {
-    grid-area: footer;
-    display: flex;
-    align-items: center;
-    gap: 0.8rem;
-  }
-
-  .toggle {
-    min-height: 3rem;
-    min-width: 9rem;
-    padding: 0 1.2rem;
-    border-radius: 1.5rem;
-    font-size: 1.05rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.6rem;
-    white-space: nowrap;
-  }
-
-  .lamp {
-    width: 0.8rem;
-    height: 0.8rem;
-    border-radius: 50%;
-    border: 2px solid var(--dim);
-  }
-
-  .toggle[aria-pressed='true'] {
-    border-color: var(--flow);
-  }
-
-  .toggle[aria-pressed='true'] .lamp {
-    background: var(--flow);
-    border-color: var(--flow);
-  }
-
-  .arrow {
-    display: inline-block;
-    color: var(--flow);
-    font-size: 1.2rem;
-    line-height: 1;
-  }
-
-  .arrow.down {
-    transform: scaleY(-1);
-  }
-
-  /* A setting, not a part of the profile: it is quieter than the two toggles. */
-  .setting {
-    margin-left: auto;
-    min-width: 0;
-    color: var(--dim);
-  }
-
-  .setting[aria-pressed='true'] {
-    border-color: var(--line);
-  }
-
-  .setting[aria-pressed='true'] .lamp {
-    background: var(--dim);
-    border-color: var(--dim);
-  }
-
-  .legend {
-    margin-left: 0.6rem;
-    display: flex;
-    gap: 1rem;
-    font-size: 0.85rem;
-    color: var(--dim);
-    white-space: nowrap;
-  }
-
-  .legend span::before {
-    content: '';
-    display: inline-block;
-    width: 1.1rem;
-    height: 0.24rem;
-    margin-right: 0.4rem;
-    border-radius: 0.12rem;
-    vertical-align: middle;
-    background: var(--tone);
-  }
-
-  .legend .flow {
-    --tone: var(--flow);
-  }
-  .legend .pressure {
-    --tone: var(--pressure);
-  }
-  .legend .temperature {
-    --tone: var(--temperature);
   }
 
   .steps {

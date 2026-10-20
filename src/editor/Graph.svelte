@@ -1,25 +1,22 @@
 <script lang="ts">
-  import { DEFAULT_MACHINE_LIMITS, resolveParams, type AFlowParams, type MachineLimits, type NumberField } from '../aflow';
-  import {
-    GRAPH_WIDTH,
-    PHASE_LABEL,
-    PHASE_TIME,
-    REENABLE_SECONDS,
-    borderTarget,
-    buildCurve,
-    dragTarget,
-    weightTarget,
-    hitTest,
-    temperatureAxis,
-    type Border,
-    type EditField,
-    type LineId,
-    type PhaseId,
-    type Point,
-    type Projection,
-  } from './curve';
+  import { DEFAULT_MACHINE_LIMITS, resolveParams, type AFlowParams, type MachineLimits } from '../aflow';
+  import { PHASE_TIME, REENABLE_SECONDS, buildCurve, hitTest, temperatureAxis, type EditField, type PhaseId } from './curve';
+  import { dragged, startDrag, startWeightDrag, type Drag } from './drag';
   import { FIELD_LABEL, FIELD_STEP, formatValue, snap } from './fields';
-  import ValueChip from './ValueChip.svelte';
+  import GraphChips from './GraphChips.svelte';
+  import GraphGrid from './GraphGrid.svelte';
+  import {
+    flowPath,
+    mainTicks,
+    plotBox,
+    plotProjection,
+    polylinePoints,
+    popupAt,
+    secondsPerPixel,
+    sharedMax,
+    valuePerPixel,
+  } from './plot';
+  import { graphUnits, phaseAt } from './selection';
 
   interface Props {
     params: AFlowParams;
@@ -38,14 +35,7 @@
 
   const resolved = $derived(resolveParams(params));
   const curve = $derived(buildCurve(params, limits, mode));
-  /**
-   * Pressure and flow share one scale: 1 bar is as high as 1 ml/s. It reaches the maxima, and
-   * a saved flow above a lowered maximum flow, so that one is drawn where it is.
-   */
-  const yMax = $derived(
-    Math.max(limits.maxPressure, limits.maxFlow, ...curve.pressure.map((pt) => pt.y), ...curve.flow.flat().map((pt) => pt.y)),
-  );
-  const mainTicks = $derived(Array.from({ length: Math.floor(yMax / 3) + 1 }, (_, i) => i * 3));
+  const yMax = $derived(sharedMax(limits, curve));
 
   let width = $state(0);
   let height = $state(0);
@@ -59,127 +49,40 @@
     rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
   });
 
-  // 80 to 100 °C, wider while a temperature is outside (founder, 2026-10-14). It follows a
-  // drag as it goes: the line stays in its lane, the finger may leave it.
+  // 80 to 100 °C, wider while a temperature is outside. It follows a drag as it goes: the line
+  // stays in its lane, the finger may leave it.
   const temperature = $derived(temperatureAxis(curve.temperature.map((pt) => pt.y)));
-  const temperatureTicks = $derived([temperature.min, temperature.max]);
-  // The pause's border is dragged in detail mode only (founder, 2026-10-12).
+  // The pause's border is dragged in detail mode only.
   const draggable = $derived({
     levels: curve.levels,
     borders: curve.borders.filter((b) => !b.off && (mode === 'detail' || !b.detailOnly)),
   });
-
-  // The plot in pixels: a band for the temperature on top, a gap that holds the weight chips,
-  // and the band of pressure and flow.
-  const box = $derived.by(() => {
-    const left = 2.8 * rem;
-    const right = Math.max(left + 1, width - 1.2 * rem);
-    const top = 1.8 * rem;
-    const bottom = Math.max(top + 3, height - 3.4 * rem);
-    const gap = 3.4 * rem;
-    const tempH = Math.max(1, Math.min(bottom - top - gap, Math.max((bottom - top - gap) * 0.22, 3.2 * rem)));
-    const mainTop = top + tempH + gap;
-    return {
-      left,
-      right,
-      top,
-      bottom,
-      plotW: right - left,
-      tempBottom: top + tempH,
-      tempH,
-      gapMiddle: top + tempH + gap / 2,
-      mainTop,
-      mainH: Math.max(1, bottom - mainTop),
-    };
-  });
-
-  const projection: Projection = $derived({
-    x: (units) => box.left + (units / GRAPH_WIDTH) * box.plotW,
-    y: (line, value) =>
-      line === 'temperature'
-        ? box.tempBottom - ((value - temperature.min) / (temperature.max - temperature.min)) * box.tempH
-        : box.bottom - (value / yMax) * box.mainH,
-  });
-
-  function polyline(points: Point[], line: LineId): string {
-    return points.map((pt) => `${projection.x(pt.x).toFixed(1)},${projection.y(line, pt.y).toFixed(1)}`).join(' ');
-  }
-
-  function valuePerPixel(line: LineId): number {
-    return line === 'temperature' ? (temperature.max - temperature.min) / box.tempH : yMax / box.mainH;
-  }
-
-  interface Drag {
-    /** the value the drag changes */
-    field: EditField;
-    /** the value under the finger, which the pop-up shows */
-    shown: EditField;
-    /** a level line, or null for a border and the infuse weight */
-    line: LineId | null;
-    /** the border that is dragged, or that moves with the infuse weight */
-    border: Border | null;
-    /** the duration as it was when the drag of a border began (curve.ts, borderTarget) */
-    time: number;
-    pointer: number;
-    startX: number;
-    startY: number;
-    startValue: number;
-    /** seconds per pixel to the right, as it was when the drag of a border or the weight began */
-    secondsPerPixel: number;
-    /**
-     * a line's value per pixel up, as it was when the drag began: the temperature axis widens
-     * under a drag, and the value keeps following the finger at the same pace
-     */
-    valuePerPixel: number;
-    /** how far the value moves per unit the line under the finger moves (curve.ts, Level) */
-    gain: number;
-    x: number;
-    y: number;
-  }
+  const box = $derived(plotBox(width, height, rem));
+  const projection = $derived(plotProjection(box, temperature, yMax));
 
   let drag = $state<Drag | null>(null);
 
-  function local(event: PointerEvent): { x: number; y: number } {
+  function local(event: PointerEvent): { x: number; y: number; pointer: number } {
     const rect = svg!.getBoundingClientRect();
-    return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+    return { x: event.clientX - rect.left, y: event.clientY - rect.top, pointer: event.pointerId };
   }
 
   function down(event: PointerEvent) {
     if (!svg) return;
-    const { x, y } = local(event);
+    const finger = local(event);
     // A finger covers about 9 mm: reach that far around a line, a little less around a border.
-    const hit = hitTest(draggable, x, y, projection, 1.8 * rem, 1.4 * rem);
+    const hit = hitTest(draggable, finger.x, finger.y, projection, 1.8 * rem, 1.4 * rem);
     if (mode === 'detail') {
-      const units = ((x - box.left) / box.plotW) * GRAPH_WIDTH;
-      const phase = hit
-        ? hit.kind === 'level'
-          ? hit.level.phase
-          : hit.border.phase
-        : curve.phases.find((c) => units >= c.x0 && units <= c.x1)?.id;
+      const phase = phaseAt(hit, curve, graphUnits(finger.x, box.left, box.plotW));
       if (phase) onselect(phase);
     }
     if (!hit) return;
     event.preventDefault();
     svg.setPointerCapture(event.pointerId);
-    const field = hit.kind === 'level' ? hit.level.drags : hit.border.field;
-    drag = {
-      field,
-      shown: hit.kind === 'level' ? hit.level.field : hit.border.field,
-      line: hit.kind === 'level' ? hit.level.line : null,
-      border: hit.kind === 'border' ? hit.border : null,
-      time: resolved[field],
-      pointer: event.pointerId,
-      startX: x,
-      startY: y,
-      // The end flow may follow the toggle: its drag starts from the value the toggle gives.
-      // A border starts where it is drawn: the infuse may be drawn by its weight.
-      startValue: hit.kind === 'border' ? hit.border.start : resolved[field],
-      secondsPerPixel: hit.kind === 'border' ? hit.border.secondsPerUnit / (box.plotW / GRAPH_WIDTH) : 0,
-      valuePerPixel: hit.kind === 'level' ? valuePerPixel(hit.level.line) : 0,
-      gain: hit.kind === 'level' ? hit.level.gain : 1,
-      x,
-      y,
-    };
+    drag = startDrag(hit, finger, resolved, {
+      seconds: (border) => secondsPerPixel(border.secondsPerUnit, box),
+      value: (line) => valuePerPixel(line, box, temperature, yMax),
+    });
   }
 
   function move(event: PointerEvent) {
@@ -187,40 +90,17 @@
     const { x, y } = local(event);
     drag.x = x;
     drag.y = y;
-    const seconds = (x - drag.startX) * drag.secondsPerPixel;
-    const value = drag.line
-      ? dragTarget(drag, drag.startValue, (drag.startY - y) * drag.valuePerPixel)
-      : drag.field === 'infuseWeight'
-        ? weightTarget(drag.startValue, seconds)
-        : borderTarget(drag.border!, drag.time, drag.startValue + seconds);
-    const next = snap(drag.field, value, limits);
+    const next = snap(drag.field, dragged(drag, x, y), limits);
     if (next !== params[drag.field]) ondrag(drag.field, next);
   }
 
-  // The infuse-to chip is dragged left or right (founder, 2026-10-16): the weight moves with
-  // the finger as the infuse's border would, through the weight's estimate (curve.ts). A tap
-  // still opens its plus and minus.
+  // The infuse-to chip is dragged left or right: the weight moves with the finger as the
+  // infuse's border would, through the weight's estimate (curve.ts).
   function weightDrag(dx: number, event: PointerEvent) {
     const border = curve.borders.find((b) => b.phase === 'infuse')!;
     if (!drag) {
       if (mode === 'detail') onselect('infuse');
-      const { x, y } = local(event);
-      drag = {
-        field: 'infuseWeight',
-        shown: 'infuseWeight',
-        line: null,
-        border,
-        time: resolved.infuseWeight,
-        pointer: event.pointerId,
-        startX: x - dx,
-        startY: y,
-        startValue: resolved.infuseWeight,
-        secondsPerPixel: border.secondsPerUnit / (box.plotW / GRAPH_WIDTH),
-        valuePerPixel: 0,
-        gain: 1,
-        x,
-        y,
-      };
+      drag = startWeightDrag(border, local(event), dx, resolved.infuseWeight, secondsPerPixel(border.secondsPerUnit, box));
     }
     move(event);
   }
@@ -233,46 +113,12 @@
     if (drag && event.pointerId === drag.pointer) drag = null;
   }
 
-  const durationOf = $derived(
-    Object.fromEntries(curve.borders.map((b) => [b.phase, b.field])) as Partial<Record<PhaseId, NumberField>>,
-  );
-
-  // The flow line has a gap (the infuse phase): one path, one stretch per subpath.
-  const flowPath = $derived(
-    curve.flow
-      .map(
-        (stretch) => 'M' + stretch.map((pt) => `${projection.x(pt.x).toFixed(1)} ${projection.y('flow', pt.y).toFixed(1)}`).join(' L'),
-      )
-      .join(' '),
-  );
-
-  const infuseEnd = $derived(curve.phases.find((c) => c.id === 'infuse')!.x1);
-  const infuseOff = $derived(curve.off.includes('infuse'));
-
-  // The phases that are off, by where they collapsed: two may collapse at one place.
-  const offAt = $derived.by(() => {
-    const groups: [number, PhaseId[]][] = [];
-    for (const id of curve.off) {
-      const x = curve.phases.find((c) => c.id === id)!.x0;
-      const group = groups.find(([at]) => at === x);
-      if (group) group[1].push(id);
-      else groups.push([x, [id]]);
-    }
-    return groups;
-  });
-
   function reenable(phase: PhaseId) {
     onedit(PHASE_TIME[phase]!, REENABLE_SECONDS);
     if (mode === 'detail') onselect(phase);
   }
 
-  // The pop-up stays on the graph and above the finger.
-  const popup = $derived(
-    drag && {
-      left: Math.min(Math.max(drag.x, 7 * rem), width - 7 * rem),
-      top: Math.max(drag.y - 4.2 * rem, 0.2 * rem),
-    },
-  );
+  const popup = $derived(drag && popupAt(drag.x, drag.y, width, rem));
 
   function step(field: EditField, direction: 1 | -1) {
     onedit(field, snap(field, resolved[field] + direction * FIELD_STEP[field], limits));
@@ -293,64 +139,30 @@
     onpointerup={up}
     onpointercancel={up}
   >
-    {#each curve.phases as phase (phase.id)}
-      {@const x0 = projection.x(phase.x0)}
-      {@const x1 = projection.x(phase.x1)}
-      {@const duration = durationOf[phase.id]}
-      <rect
-        class="column"
-        class:selected={mode === 'detail' && phase.id === selected}
-        data-testid="column-{phase.id}"
-        x={x0}
-        y={box.top - 0.6 * rem}
-        width={x1 - x0}
-        height={Math.max(0, height - box.top)}
-        rx={0.5 * rem}
-      />
-      {#if x1 > x0}
-        <text class="phase" x={(x0 + x1) / 2} y={box.bottom + 1.35 * rem}>
-          {PHASE_LABEL[phase.id]}
-        </text>
-      {/if}
-      {#if duration && x1 > x0}
-        <text
-          class="duration"
-          class:active={drag?.field === duration}
-          data-testid="value-{duration}"
-          x={(x0 + x1) / 2}
-          y={box.bottom + 2.65 * rem}
-        >
-          {phase.id === 'secondFill' ? 'pause ' : ''}{formatValue(duration, params[duration])}
-        </text>
-      {/if}
-    {/each}
+    <GraphGrid
+      {curve}
+      {params}
+      {box}
+      {projection}
+      {height}
+      {rem}
+      {mode}
+      {selected}
+      mainTicks={mainTicks(yMax)}
+      temperatureTicks={[temperature.min, temperature.max]}
+      dragging={drag?.field}
+    />
 
-    {#each mainTicks as tick (tick)}
-      {@const y = projection.y('pressure', tick)}
-      <line class="grid" x1={box.left} x2={box.right} y1={y} y2={y} />
-      <text class="tick" x={box.left - 0.5 * rem} y={y + 0.3 * rem}>{tick}</text>
-    {/each}
-    {#each temperatureTicks as tick (tick)}
-      {@const y = projection.y('temperature', tick)}
-      <line class="grid" x1={box.left} x2={box.right} y1={y} y2={y} />
-      <text class="tick" data-testid="temperature-tick" x={box.left - 0.5 * rem} y={y + 0.3 * rem}>{tick}</text>
-    {/each}
-
-    {#each curve.phases.slice(1) as phase (phase.id)}
-      {@const x = projection.x(phase.x0)}
-      <line class="border" x1={x} x2={x} y1={box.top} y2={box.bottom} />
-    {/each}
-    {#if curve.pauseX !== undefined}
-      {@const x = projection.x(curve.pauseX)}
-      <line class="border inner" x1={x} x2={x} y1={box.mainTop} y2={box.bottom} />
-    {/if}
-
-    <polyline class="line temperature" points={polyline(curve.temperature, 'temperature')} />
+    <polyline class="line temperature" points={polylinePoints(curve.temperature, 'temperature', projection)} />
     {#if curve.pressureLimit}
-      <polyline class="line pressure limit" data-testid="line-pressure-limit" points={polyline(curve.pressureLimit, 'pressure')} />
+      <polyline
+        class="line pressure limit"
+        data-testid="line-pressure-limit"
+        points={polylinePoints(curve.pressureLimit, 'pressure', projection)}
+      />
     {/if}
-    <polyline class="line pressure" data-testid="line-pressure" points={polyline(curve.pressure, 'pressure')} />
-    <path class="line flow" data-testid="line-flow" d={flowPath} />
+    <polyline class="line pressure" data-testid="line-pressure" points={polylinePoints(curve.pressure, 'pressure', projection)} />
+    <path class="line flow" data-testid="line-flow" d={flowPath(curve.flow, projection)} />
 
     <!-- The stretches that can be dragged. They are not drawn until one is held. -->
     {#each curve.levels as level (level.field)}
@@ -389,43 +201,16 @@
     {/if}
   </svg>
 
-  {#if !infuseOff}
-    <div class="on-graph" style:left="{projection.x(infuseEnd)}px" style:top="{box.gapMiddle}px">
-      <ValueChip
-        compact
-        label="infuse to"
-        value={formatValue('infuseWeight', params.infuseWeight)}
-        testid="graph-infuseWeight"
-        onstep={(d: 1 | -1) => step('infuseWeight', d)}
-        ondrag={weightDrag}
-        ondrop={weightDrop}
-      />
-    </div>
-  {/if}
-  <!-- A phase that is off has no width; its button turns it on again with 5 s (founder, 2026-10-16). -->
-  {#each offAt as [x, ids] (x)}
-    <div class="on-graph off" style:left="{projection.x(x)}px" style:top="{box.gapMiddle}px">
-      {#each ids as id (id)}
-        <button
-          class="enable"
-          data-testid="enable-{id}"
-          aria-label="turn {PHASE_LABEL[id]} on with {REENABLE_SECONDS} s"
-          onclick={() => reenable(id)}
-        >
-          <span class="plus">+</span>{PHASE_LABEL[id]}
-        </button>
-      {/each}
-    </div>
-  {/each}
-  <div class="on-graph end" style:left="{box.right}px" style:top="{box.gapMiddle}px">
-    <ValueChip
-      compact
-      label="stop at"
-      value={formatValue('stopWeight', params.stopWeight)}
-      testid="graph-stopWeight"
-      onstep={(d: 1 | -1) => step('stopWeight', d)}
-    />
-  </div>
+  <GraphChips
+    {curve}
+    {params}
+    {box}
+    {projection}
+    onstep={step}
+    onweightdrag={weightDrag}
+    onweightdrop={weightDrop}
+    onreenable={reenable}
+  />
 
   {#if drag && popup}
     <div class="popup" data-testid="popup" style:left="{popup.left}px" style:top="{popup.top}px">
@@ -461,8 +246,6 @@
     font-variant-numeric: tabular-nums;
   }
 
-  .phase,
-  .duration,
   .value {
     text-anchor: middle;
   }
@@ -475,51 +258,11 @@
     text-anchor: end;
   }
 
-  .phase {
-    fill: var(--fg);
-    font-size: 0.9rem;
-  }
-
-  .duration.active {
-    fill: var(--fg);
-    font-weight: 600;
-  }
-
-  .tick {
-    text-anchor: end;
-    font-size: 0.75rem;
-  }
-
-  .grid {
-    stroke: var(--line);
-    stroke-width: 1;
-    opacity: 0.55;
-  }
-
-  .border {
-    stroke: var(--dim);
-    stroke-width: 1.5;
-    stroke-dasharray: 2 6;
-    stroke-linecap: round;
-  }
-
-  .border.inner {
-    opacity: 0.5;
-  }
-
+  /* The border that is dragged; the others are drawn under the lines (GraphGrid). */
   .border.active {
     stroke: var(--fg);
     stroke-width: 3;
-    stroke-dasharray: none;
-  }
-
-  .column {
-    fill: none;
-  }
-
-  .column.selected {
-    fill: var(--raised);
-    stroke: var(--line);
+    stroke-linecap: round;
   }
 
   .line {
@@ -573,41 +316,6 @@
   }
   text.value.temperature {
     fill: var(--temperature);
-  }
-
-  .on-graph {
-    position: absolute;
-    transform: translate(-50%, -50%);
-  }
-
-  .on-graph.end {
-    transform: translate(-100%, -50%);
-  }
-
-  .on-graph.off {
-    display: flex;
-    gap: 0.5rem;
-  }
-
-  .enable {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    min-height: 2.75rem;
-    padding: 0 0.9rem;
-    background: var(--panel);
-    border: 1px dashed var(--dim);
-    border-radius: 1.4rem;
-    color: var(--dim);
-    font: inherit;
-    font-size: 0.9rem;
-    white-space: nowrap;
-  }
-
-  .enable .plus {
-    color: var(--fg);
-    font-size: 1.2rem;
-    line-height: 1;
   }
 
   .popup {
