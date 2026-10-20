@@ -1,9 +1,10 @@
 // How long the next shot is expected to take (spec 3.8): where the running shot graph's time
 // axis starts, so a 50 s shot is not rescaled at 30, 40 and 50 s. Pure, except `lastShotSeconds`.
-import type { DecaidClient, Profile } from '../api';
+import type { Profile } from '../api';
 import { drawnShotSeconds } from '../editor/curve';
 import { readParams } from '../editor/storage';
 import { seriesOf } from '../history/entries';
+import type { ShotCache } from '../history/shots.svelte';
 import { stepCurve } from '../steps/curve';
 import { startSeconds } from '../graph/axis';
 
@@ -32,14 +33,12 @@ export function expectedShotSeconds(
 }
 
 /**
- * s, the length of the newest shot in Decaid's history with this profile title (the filter
- * `profileTitle` matches the whole title, research.md 23), as its graph draws it (`seriesOf`);
- * null without one.
+ * s, the length of the newest shot the skin holds with this profile title (`ShotCache`), as
+ * its graph draws it (`seriesOf`); null without one.
  */
-export async function lastShotSeconds(client: DecaidClient, title: string): Promise<number | null> {
-  const page = await client.listShots({ profileTitle: title, limit: 1, order: 'desc' });
-  const latest = page.items[0];
+export async function lastShotSeconds(shots: Pick<ShotCache, 'latestWithTitle' | 'record'>, title: string): Promise<number | null> {
+  const latest = await shots.latestWithTitle(title);
   if (!latest) return null;
-  const seconds = seriesOf(await client.getShot(latest.id)).t.at(-1) ?? 0;
+  const seconds = seriesOf(await shots.record(latest.id)).t.at(-1) ?? 0;
   return seconds > 0 ? seconds : null;
 }

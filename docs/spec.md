@@ -476,6 +476,17 @@ being read every time the overlay opens (founder, 2026-10-17). Today `History.sv
 by the skin (`src/shell/skin.svelte.ts`) for the session, read in the background once after the
 start; a shot that ends adds its record; an entry list built from the first 20 is replaced when
 the rest arrive, without moving the list under the finger.
+*Built (T8, research.md 26):* `ShotCache` (`src/history/shots.svelte.ts`, held by the skin as
+`Skin.shots`) is the one place the history's list, the restore's record and the expected
+duration's last shot (`lastShotSeconds`, `src/shell/expected.ts`) come from. It reads when the
+machine stream opens: `GET /api/v1/shots?limit=20&offset=0`, then pages of 100 up to 500 shots
+(`HISTORY_SHOTS`). Later reads (the stream opened again, the overlay opened) ask
+`GET /api/v1/shots/latest` and read pages of 20 from the newest only when that shot is not held.
+A shot that ends looks for its record every 2 s for up to 30 s. Records with measurements are
+kept for the 20 shots read last. While the older shots are read the list ends with 'Reading the
+older shots …' (`history-more`); entries are ordered by their newest shot, so the older shots
+only add entries below. The expected duration takes the newest held shot with the title, so a
+profile whose last shot is older than the newest 500 starts at its estimate.
 
 **Menu: clean (T9).** After the settings port, home's menu gets a shortcut to the maintenance
 page's clean (S2b, `Maintenance.svelte`, research.md 20.10), and that page shows the tank's water
@@ -1333,8 +1344,8 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
   - The swipe opens the overlay only when it starts in the left fifth of the screen
     (`SWIPE_EDGE` in `src/shell/swipe.ts`), so it cannot pass over a button of home. The
     graph of the entry's last shot is shown on home, in the place of the last shot, until
-    it is dismissed or a shot starts. The list reads the newest 500 shots
-    (`HISTORY_SHOTS`). (owner)
+    it is dismissed or a shot starts. The skin holds the newest 500 shots for the session
+    (`HISTORY_SHOTS` in `src/history/shots.svelte.ts`). (owner)
   - After a very fast flick the first tap outside may not close the overlay (seen with
     synthetic touch events only, research.md section 14): a check on the tablet with
     item 8. (owner)

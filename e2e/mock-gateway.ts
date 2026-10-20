@@ -467,6 +467,8 @@ export class MockGateway {
   shots: ShotRecordSummary[] = [];
   /** the measurements of a shot that has not the whole recording, by the shot's id */
   measurements: Record<string, ShotMeasurement[]> = {};
+  /** while set, a page of the shot list after the first waits for it: a slow, long history */
+  olderShots: Promise<void> | null = null;
 
   private readonly up: boolean;
   private readonly machineSockets = new Set<WebSocketRoute>();
@@ -538,12 +540,14 @@ export class MockGateway {
     return this;
   }
 
-  /**
-   * The history's reads of the shot list: not the skin's look-up of the last shot with the
-   * loaded profile (`profileTitle`, spec 3.8), which reads its record too.
-   */
+  /** The reads of the shot list. */
   historyListCalls() {
-    return this.calls('GET', '/api/v1/shots').filter((request) => !request.query.includes('profileTitle'));
+    return this.calls('GET', '/api/v1/shots');
+  }
+
+  /** The reads of one shot's record, with its measurements: not of `/api/v1/shots/latest`. */
+  recordCalls() {
+    return this.calls('GET', /^\/api\/v1\/shots\/(?!latest$)./);
   }
 
   /** The calls of one kind, as `METHOD path`. */
@@ -1021,7 +1025,12 @@ export class MockGateway {
       const title = url.searchParams.get('profileTitle');
       const matching = this.shots.filter((shot) => title === null || shot.workflow?.profile?.title === title);
       const newestFirst = matching.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+      if (offset > 0 && this.olderShots) await this.olderShots;
       return json({ items: newestFirst.slice(offset, offset + limit), total: matching.length, limit, offset });
+    }
+    if (path === '/api/v1/shots/latest' && method === 'GET') {
+      const newest = [...this.shots].sort((a, b) => b.timestamp.localeCompare(a.timestamp))[0];
+      return newest ? json(newest) : json({ error: 'Shot not found' }, 404);
     }
     if (path.startsWith('/api/v1/shots/') && method === 'GET') {
       const shot = this.shots.find((candidate) => candidate.id === decodeURIComponent(path.split('/').pop()!));

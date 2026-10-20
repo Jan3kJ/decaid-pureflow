@@ -7,7 +7,7 @@ import {
   type ShotRecordSummary,
   type WorkflowContext,
 } from '../api';
-import { beanAndGrinder, beanLabel, entryKey, groupShots, readShots, restoreEntry, seriesOf } from './entries';
+import { beanAndGrinder, beanLabel, entryKey, groupShots, restoreEntry, seriesOf } from './entries';
 
 function profile(title: string, over: Partial<Profile> = {}): Profile {
   return { title, steps: [], target_weight: 36, target_volume_count_start: 0, tank_temperature: 0, ...over };
@@ -207,39 +207,6 @@ describe('restoreEntry', () => {
       grinderModel: null,
       grinderId: null,
     });
-  });
-});
-
-describe('readShots', () => {
-  it('reads the list page by page until it has every shot', async () => {
-    const all = Array.from({ length: 230 }, (_, i) => shot('p', {}, i));
-    const { client: api, calls } = client((_method, url) => {
-      const offset = Number(url.searchParams.get('offset'));
-      const limit = Number(url.searchParams.get('limit'));
-      return { items: all.slice(offset, offset + limit), total: all.length, limit, offset };
-    });
-
-    expect(await readShots(api)).toHaveLength(230);
-    expect(calls.map((call) => call.path)).toEqual([
-      '/api/v1/shots?limit=100&offset=0&order=desc',
-      '/api/v1/shots?limit=100&offset=100&order=desc',
-      '/api/v1/shots?limit=100&offset=200&order=desc',
-    ]);
-  });
-
-  it('stops at the most it may read, and at an empty page', async () => {
-    const all = Array.from({ length: 230 }, (_, i) => shot('p', {}, i));
-    const paged = client((_method, url) => {
-      const offset = Number(url.searchParams.get('offset'));
-      const limit = Number(url.searchParams.get('limit'));
-      return { items: all.slice(offset, offset + limit), total: all.length, limit, offset };
-    });
-    expect(await readShots(paged.client, 150)).toHaveLength(150);
-    expect(paged.calls).toHaveLength(2);
-
-    const empty = client(() => ({ items: [], total: 7, limit: 100, offset: 0 }));
-    expect(await readShots(empty.client)).toEqual([]);
-    expect(empty.calls).toHaveLength(1);
   });
 });
 

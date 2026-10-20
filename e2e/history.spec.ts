@@ -59,10 +59,11 @@ test('the tab opens the overlay: one entry per profile and bean, newest first, w
   await expect(entries.nth(2).getByTestId('entry-when')).toContainText('2 shots');
   await expect(entries.nth(2)).toHaveAttribute('data-shot', 'shot-2');
 
-  // The list is read without measurements; nothing is written by opening it. (The workflow's
-  // profile has no shot, so the look-up of its last shot, spec 3.8, reads no record.)
+  // The list is read once, after the start, without measurements; nothing is written by
+  // opening it. (The workflow's profile has no shot, so the look-up of its last shot, spec 3.8,
+  // reads no record.)
   expect(gateway.historyListCalls()).toHaveLength(1);
-  expect(gateway.calls('GET', /^\/api\/v1\/shots\/./)).toHaveLength(0);
+  expect(gateway.recordCalls()).toHaveLength(0);
   expect(written(gateway)).toEqual([]);
   expect(errors).toEqual([]);
 });
@@ -169,7 +170,7 @@ test('tapping an entry closes the overlay, restores profile, bean and grinder se
   await expect(page.getByTestId('recalled-grinder')).toHaveText('grinder 4.8');
   // The entry's latest shot is read for its graph; the restored profile's newest shot (shot-3,
   // another bean) may be read for the next shot's time axis (spec 3.8), nothing else.
-  const read = gateway.calls('GET', /^\/api\/v1\/shots\/./).map((call) => call.path);
+  const read = gateway.recordCalls().map((call) => call.path);
   expect(read).toContain('/api/v1/shots/shot-2');
   expect(read.filter((path) => path !== '/api/v1/shots/shot-2' && path !== '/api/v1/shots/shot-3')).toEqual([]);
   // One point per measurement from the first one in which water moves.
@@ -269,7 +270,8 @@ test('the history is on home only: the editor has no tab, and its drags never op
   await page.waitForTimeout(200);
   await expect(page.getByTestId('history')).toHaveCount(0);
   await expect(page.getByTestId('screen-editor')).toBeVisible();
-  expect(gateway.historyListCalls()).toHaveLength(0);
+  // The list was read once, after the start, and not again.
+  expect(gateway.historyListCalls()).toHaveLength(1);
   expect(errors).toEqual([]);
 });
 
@@ -282,10 +284,66 @@ test('a history without shots says so, and one the gateway cannot give says why'
   await page.touchscreen.tap(1100, 400);
 
   // A shot whose record is gone when the entry is tapped: the notice is on home.
+  // A shot made by another client is read when the overlay opens again.
   gateway.addShot('shot-9', '2026-10-12T09:00:00.000000', BEST, null);
   await page.getByTestId('nav-history').tap();
+  await expect(page.getByTestId('history-entry')).toHaveCount(1);
   gateway.shots = [];
   await page.getByTestId('history-entry').tap();
   await expect(page.getByTestId('notice')).toContainText('The entry was not restored');
   await expect(page.getByTestId('history-graph')).toHaveCount(0);
+});
+
+test('a slow, long history: the newest 20 first, the rest after them, kept for a second opening and a new shot', async ({ page }) => {
+  const gateway = await mockGateway(page);
+  // 150 shots with 40 profiles: the newest 20 shots have 20 of them, all have 40.
+  const at = (minute: number) => new Date(Date.UTC(2026, 9, 1, 8, minute)).toISOString().replace('Z', '000');
+  for (let i = 0; i < 150; i++) gateway.addShot(`shot-${i}`, at(i), profile(`P${String(i % 40).padStart(2, '0')}`, 36, 4), null);
+  let release!: () => void;
+  gateway.olderShots = new Promise((resolve) => (release = resolve));
+  await home(page);
+
+  await page.getByTestId('nav-history').tap();
+  const entries = page.getByTestId('history-entry');
+  await expect(entries).toHaveCount(20);
+  await expect(page.getByTestId('history-more')).toBeVisible();
+  const first = await entries.getByTestId('entry-profile').allTextContents();
+  expect(first[0]).toBe('P29');
+  await page.screenshot({ path: 'e2e/.results/history-first-20.png' });
+  // The finger is on the list: where it is scrolled to stays when the rest arrive.
+  await page.getByTestId('history-list').evaluate((list) => (list.scrollTop = 200));
+
+  release();
+  await expect(entries).toHaveCount(40);
+  await expect(page.getByTestId('history-more')).toHaveCount(0);
+  expect((await entries.getByTestId('entry-profile').allTextContents()).slice(0, 20)).toEqual(first);
+  expect(await page.getByTestId('history-list').evaluate((list) => list.scrollTop)).toBe(200);
+  await expect(entries.first().getByTestId('entry-when')).toContainText('4 shots');
+  expect(gateway.historyListCalls().map((call) => call.query)).toEqual([
+    '?limit=20&offset=0&order=desc',
+    '?limit=100&offset=20&order=desc',
+    '?limit=100&offset=120&order=desc',
+  ]);
+
+  // Opened again: all at once, and only the latest shot is asked for.
+  await page.touchscreen.tap(1100, 400);
+  await expect(page.getByTestId('history')).toHaveCount(0);
+  const before = gateway.requests.length;
+  await page.getByTestId('nav-history').tap();
+  await expect(entries).toHaveCount(40, { timeout: 300 });
+  await expect.poll(() => gateway.requests.slice(before).map((request) => request.path)).toContain('/api/v1/shots/latest');
+  expect(gateway.requests.slice(before).filter((request) => request.path.startsWith('/api/v1/shots'))).toHaveLength(1);
+  await page.touchscreen.tap(1100, 400);
+
+  // A shot ends: its record, written a moment later, is added without reading the old ones.
+  await gateway.replay(page);
+  gateway.addShot('shot-new', at(200), profile('P-new', 36, 4), null);
+  await expect.poll(() => gateway.historyListCalls().length, { timeout: 10_000 }).toBe(4);
+  expect(gateway.historyListCalls().at(-1)!.query).toBe('?limit=20&offset=0&order=desc');
+  await page.getByTestId('shot-close').click();
+  await page.getByTestId('nav-history').tap();
+  await expect(entries).toHaveCount(41);
+  await expect(entries.first().getByTestId('entry-profile')).toHaveText('P-new');
+  expect(gateway.historyListCalls()).toHaveLength(4);
+  expect(errors).toEqual([]);
 });

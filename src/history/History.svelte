@@ -1,9 +1,10 @@
 <script lang="ts">
   // The shot history (spec 3.1, 3.5): an overlay from the left edge over home. One entry per
-  // profile and bean; a tap on one restores it, a tap outside closes the overlay.
+  // profile and bean; a tap on one restores it, a tap outside closes the overlay. The shots are
+  // the skin's (`ShotCache`, spec 3.8): shown at once, and what is new is read on opening.
   import { onMount } from 'svelte';
   import type { Skin } from '../shell/skin.svelte';
-  import { beanLabel, groupShots, readShots, type HistoryEntry } from './entries';
+  import { beanLabel, groupShots } from './entries';
 
   interface Props {
     skin: Skin;
@@ -11,16 +12,12 @@
 
   let { skin }: Props = $props();
 
-  let entries: HistoryEntry[] | null = $state.raw(null);
-  let error: string | null = $state(null);
+  // An entry's place depends on its newest shot, so the older shots arriving add entries below.
+  const entries = $derived(groupShots(skin.shots.shots));
+  const error = $derived(skin.shots.error && `The shots could not be read: ${skin.shots.error}`);
 
-  async function read() {
-    error = null;
-    try {
-      entries = groupShots(await readShots(skin.client));
-    } catch (cause) {
-      error = `The shots could not be read: ${cause instanceof Error ? cause.message : String(cause)}`;
-    }
+  function read() {
+    skin.shots.sync().catch(() => undefined);
   }
 
   /** A shot's start is local time without a zone. */
@@ -46,7 +43,7 @@
     <button class="retry" data-testid="history-retry" onclick={read}>try again</button>
   {/if}
   <ul data-testid="history-list">
-    {#each entries ?? [] as entry (entry.key)}
+    {#each entries as entry (entry.key)}
       <li>
         <button class="entry" data-testid="history-entry" data-shot={entry.latest.id} onclick={() => skin.restore(entry)}>
           <strong data-testid="entry-profile">{entry.profileTitle}</strong>
@@ -61,9 +58,12 @@
       </li>
     {:else}
       {#if !error}
-        <li class="empty" data-testid="history-empty">{entries ? 'No shots yet.' : 'Reading the shots …'}</li>
+        <li class="empty" data-testid="history-empty">{skin.shots.read === 'all' ? 'No shots yet.' : 'Reading the shots …'}</li>
       {/if}
     {/each}
+    {#if skin.shots.read === 'first' && entries.length > 0 && !error}
+      <li class="empty" data-testid="history-more">Reading the older shots …</li>
+    {/if}
   </ul>
 </aside>
 

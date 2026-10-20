@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { DecaidClient, Profile, ShotMeasurement } from '../api';
+import type { Profile, ShotMeasurement } from '../api';
 import { DEFAULT_PROFILES } from '../aflow';
 import { drawnShotSeconds } from '../editor/curve';
 import { workflowProfile } from '../editor/storage';
+import type { ShotCache } from '../history/shots.svelte';
 import { expectedShotSeconds, lastShotSeconds, profileSeconds } from './expected';
 import { defaultProfile } from './profiles';
 
@@ -81,16 +82,16 @@ describe('lastShotSeconds', () => {
     scale: null,
   });
 
-  it('asks the history for the newest shot with the title and measures it as its graph draws it', async () => {
+  it('takes the newest shot with the title the skin holds and measures it as its graph draws it', async () => {
     const asked: unknown[] = [];
-    const client = {
-      listShots: (query: unknown) => {
-        asked.push(query);
-        return Promise.resolve({ items: [{ id: 'shot-1', timestamp: '2026-10-19T08:00:00' }], total: 1, limit: 1, offset: 0 });
+    const shots = {
+      latestWithTitle: (title: string) => {
+        asked.push(title);
+        return Promise.resolve({ id: 'shot-1', timestamp: '2026-10-19T08:00:00' });
       },
-      getShot: () =>
+      record: (id: string) =>
         Promise.resolve({
-          id: 'shot-1',
+          id,
           timestamp: '2026-10-19T08:00:00',
           measurements: [
             measurement(0, 'preparingForShot'),
@@ -100,13 +101,13 @@ describe('lastShotSeconds', () => {
             measurement(57, 'pouringDone'),
           ],
         }),
-    } as unknown as DecaidClient;
-    expect(await lastShotSeconds(client, 'A-Flow / default-medium')).toBeCloseTo(48.5, 5);
-    expect(asked).toEqual([{ profileTitle: 'A-Flow / default-medium', limit: 1, order: 'desc' }]);
+    } as unknown as ShotCache;
+    expect(await lastShotSeconds(shots, 'A-Flow / default-medium')).toBeCloseTo(48.5, 5);
+    expect(asked).toEqual(['A-Flow / default-medium']);
   });
 
   it('is null without a shot of that title', async () => {
-    const client = { listShots: () => Promise.resolve({ items: [], total: 0, limit: 1, offset: 0 }) } as unknown as DecaidClient;
-    expect(await lastShotSeconds(client, 'nothing')).toBeNull();
+    const shots = { latestWithTitle: () => Promise.resolve(null) } as unknown as ShotCache;
+    expect(await lastShotSeconds(shots, 'nothing')).toBeNull();
   });
 });

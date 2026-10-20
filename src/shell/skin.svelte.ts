@@ -25,6 +25,7 @@ import {
 } from '../api';
 import { readUnsaved, type Unsaved } from '../editor/unsaved';
 import { restoreEntry, seriesOf, type HistoryEntry } from '../history/entries';
+import { ShotCache } from '../history/shots.svelte';
 import { PRODUCT_VERSION } from '../product';
 import { hasSettings, loadSettings, saveSettings, type Settings } from '../settings';
 import { SettingsBackup, atStart, type ReadBackup, type Written } from '../settings-backup';
@@ -70,6 +71,8 @@ export interface Recalled {
 export class Skin {
   readonly baseUrl: string;
   readonly client: DecaidClient;
+  /** the shots read from Decaid for the session: the history, the restore and the expected length (spec 3.8) */
+  readonly shots: ShotCache;
 
   screen: Screen = $state(loadScreen());
   /** the machine's latest frame; old while `link` is not 'machine' */
@@ -213,6 +216,7 @@ export class Skin {
   constructor(baseUrl: string = gatewayBaseUrl(location)) {
     this.baseUrl = baseUrl;
     this.client = new DecaidClient({ baseUrl });
+    this.shots = new ShotCache(this.client);
     this.backup = new SettingsBackup(this.client, PRODUCT_VERSION, (written) => this.onBackupWritten(written));
     this.scaleRetry = new ScaleRetry({
       scaleConnected: () => this.scaleLink === 'connected',
@@ -245,6 +249,8 @@ export class Skin {
           // The workflow may have changed while the gateway was away.
           void this.refreshWorkflow();
           void this.readBackup();
+          // Once in the background after the start; after a lost connection, what is new.
+          this.shots.sync().catch(() => undefined);
           // The settings' stream ends with an error frame while no machine is connected.
           this.machineSettings?.connect();
           this.waterLevels?.connect();
@@ -344,6 +350,7 @@ export class Skin {
     if (running && this.shot?.ended && title && shotSeconds(this.shot) > 0) {
       this.lastShot = { title, seconds: shotSeconds(this.shot) };
     }
+    if (running && this.shot?.ended) void this.shots.shotEnded();
     const steaming = this.steam !== null && !this.steam.ended;
     this.steam = recordSteamFrame(this.steam, frame);
     if (steaming && this.steam?.ended) this.steamAdjust = null;
@@ -352,11 +359,11 @@ export class Skin {
     void this.dim(state === 'sleeping');
   }
 
-  /** Reads the length of the last shot with this title from the history; a failure leaves the estimate. */
+  /** Reads the length of the last shot with this title from the shots held; a failure leaves the estimate. */
   private async readLastShot(title: string): Promise<void> {
     if (this.lastShot?.title === title) return;
     try {
-      const seconds = await lastShotSeconds(this.client, title);
+      const seconds = await lastShotSeconds(this.shots, title);
       // A shot that ended meanwhile is newer than the record read.
       if (this.workflow?.profile?.title === title && this.lastShot?.title !== title) this.lastShot = { title, seconds };
     } catch {
@@ -598,7 +605,7 @@ export class Skin {
   /**
    * An entry of the shot history was tapped (spec 3.5): the overlay closes, the entry's
    * profile, bean and grinder setting become the current ones, and home shows the graph of
-   * the last shot made with it. Only `GET /api/v1/shots/{id}` has the measurements.
+   * the last shot made with it. Only its record (`ShotCache.record`) has the measurements.
    */
   async restore(entry: HistoryEntry): Promise<void> {
     this.historyOpen = false;
@@ -608,7 +615,7 @@ export class Skin {
     if (answer !== 'load') return;
     try {
       this.workflow = await restoreEntry(this.client, entry);
-      this.recalled = { entry, series: seriesOf(await this.client.getShot(entry.latest.id)) };
+      this.recalled = { entry, series: seriesOf(await this.shots.record(entry.latest.id)) };
     } catch (error) {
       this.notice = `The entry was not restored: ${error instanceof Error ? error.message : String(error)}`;
     }

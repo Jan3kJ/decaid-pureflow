@@ -3076,3 +3076,67 @@ one `PUT /api/v1/workflow`, no `POST /api/v1/profiles`; `test-light` under its o
 Rig (2026-10-19, log `..\decaid-rig\log\t5-rig-suite.txt`): full `npm run e2e:rig` 34 of
 34 passed; afterwards 73 profiles, one shot, the KV namespaces `pureflow` and `decaid-skin`
 empty, steam 150 °C, Streamline the default skin.
+
+## 26. The shot history's reads on the rig (T8)
+
+Spec 3.8 'Shot history: faster'. Run on 2026-10-20 against Decaid 0.8.8 with device
+simulation, Streamline 0.2.15 served as the default skin (0.2.14 on 2026-10-19).
+
+### 26.1 What the history read before T8
+
+Every opening of the overlay mounted `History.svelte`, which called `readShots`: pages of
+`GET /api/v1/shots?limit=100&offset=…&order=desc` until all shots or 500, then grouped them;
+nothing was shown before the last page. `scripts/rig-history-probe.mjs` (log
+`..\decaid-rig\log\t8-history-probe.txt`, 10 runs each, rig with one shot of 278
+measurements):
+
+| Request | Median | Size |
+|---|---|---|
+| `GET /api/v1/shots?limit=100&offset=0&order=desc` (the one page of the rig) | 18.6 ms (max 184 ms, the first) | 3 189 bytes |
+| `GET /api/v1/shots?limit=20&offset=0&order=desc` | 17.3 ms | 3 188 bytes |
+| `GET /api/v1/shots/ids` | 1.6 ms | 40 bytes |
+| `GET /api/v1/shots/{id}` (278 measurements) | 23.1 ms | 150 174 bytes |
+| `GET /api/v1/shots?profileTitle=…&limit=1` (the expected duration) | 17.4 ms | 3 187 bytes |
+
+A summary is about 3 000 bytes (the workflow with the profile's copy). The list costs about
+1 ms more per stored shot: `scripts/rig-history-scale-probe.mjs` pulled 12 short simulated
+shots (Rao Allongé to 3 g, 18 measurements each) and timed the list after every four (log
+`t8-history-scale-probe.txt`): 18.6, 21.8, 25.6 and 29.4 ms for 1, 5, 9 and 13 shots, with
+`limit` 20 and 100 alike; the shots were deleted afterwards. So a tablet with 500 shots read
+five pages, about 1.5 MB of JSON, at every opening, and the time of each page grows with the
+shots stored; the rig's PC cannot show the tablet's time, which the founder saw as the delay.
+The gateway has no 'newer than' filter: `limit` (1 to 100) and `offset` page the list, newest
+first; `/api/v1/shots/latest` gives the newest summary, `/api/v1/shots/ids` all ids unordered,
+and the list answers an `ETag` (`If-None-Match` gives 304; not used).
+
+### 26.2 Built (T8)
+
+`ShotCache` (`src/history/shots.svelte.ts`; its plain parts `merge`, `newerThan` and `Records`
+in `src/history/shot-list.ts`), held by the skin as `Skin.shots`:
+
+- `sync()`: the first time, `limit=20&offset=0`, shown at once (`read` 'first'), then
+  `limit=100` pages from offset 20 up to 500 shots (`read` 'all'). Later: one
+  `GET /api/v1/shots/latest`; only when that shot is not held, pages of 20 from the newest until
+  one that is held (an empty history reads the newest page instead, as it has no latest). The
+  skin calls it when the machine stream opens (the start, and after a lost connection), the
+  overlay when it opens.
+- `shotEnded()`: called when the live shot ends; looks every 2 s, up to 15 times, as Decaid
+  writes the record a few seconds after the end (10.1).
+- `record(id)`: `GET /api/v1/shots/{id}` once, kept for the 20 shots read last; the restore and
+  the expected duration read it.
+- `latestWithTitle(title)`: the expected duration's last shot (spec 3.8, T1) from the held
+  shots, waiting for the older ones when the newest 20 lack the title. It replaces the query
+  `profileTitle=…&limit=1`.
+
+Tests: Vitest `src/history/shots.test.ts` (the paging, the first 20 before the rest, the most,
+a second read, new shots, a shot that ends, the record and the title). `npm run e2e`:
+`e2e/history.spec.ts` 'a slow, long history' (150 shots, the mock gateway holds the pages after
+the first until the test releases them: 20 entries and 'Reading the older shots …', then 40
+with the first 20 and the scroll unchanged; a second opening asks only `/shots/latest`; a
+replayed shot's record read with one page of 20). Rig: `e2e-rig/history.spec.ts` checks that
+a second opening reads no shot list and that a shot pulled while the skin is open is a new
+entry on top, read with offset 0 only. Full `npm run e2e:rig` 35 of 35 passed (log
+`t8-rig-suite.txt`); afterwards one shot, 73 profiles, the KV namespaces `pureflow` and
+`decaid-skin` empty, steam 150 °C, the workflow and the settings equal to
+`t8-workflow-before.json` and `t8-settings-before.json`, Streamline the default skin. Decaid
+was ended with `Stop-Process -Force`; port 8080 was free afterwards.

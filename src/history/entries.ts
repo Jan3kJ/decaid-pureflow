@@ -1,6 +1,6 @@
 // The shot history's logic (spec 3.5): the gateway's shot records in, the entries of the
-// overlay out, and what one entry writes back to the workflow. Pure, except the two calls
-// at the end.
+// overlay out, and what one entry writes back to the workflow. Pure, except `restoreEntry`;
+// the shots themselves are held by `ShotCache` (shots.svelte.ts).
 import type { DecaidClient, Profile, ShotRecord, ShotRecordSummary, Workflow, WorkflowContextPatch } from '../api';
 import { loadProfile } from '../shell/profiles';
 import { TARE_SETTLE_S, emptySeries, frameTime, pushPoint, shotOver, waterMoves, type ShotSeries } from '../shell/shot';
@@ -27,10 +27,6 @@ export interface HistoryEntry {
   /** how many shots the entry has */
   shots: number;
 }
-
-/** How many shots the history reads at most, newest first: five pages of the gateway's list. */
-export const HISTORY_SHOTS = 500;
-const PAGE = 100;
 
 const text = (value: string | null | undefined): string | null => value?.trim() || null;
 
@@ -145,17 +141,6 @@ export function seriesOf(record: Pick<ShotRecord, 'measurements'>): ShotSeries {
     pushPoint(series, t, machine, weight, typeof scale?.weightFlow === 'number' ? scale.weightFlow : null);
   }
   return series;
-}
-
-/** The newest shots of the gateway, without measurements, at most `HISTORY_SHOTS`. */
-export async function readShots(client: DecaidClient, most = HISTORY_SHOTS): Promise<ShotRecordSummary[]> {
-  const shots: ShotRecordSummary[] = [];
-  while (shots.length < most) {
-    const page = await client.listShots({ limit: Math.min(PAGE, most - shots.length), offset: shots.length, order: 'desc' });
-    shots.push(...page.items);
-    if (page.items.length === 0 || shots.length >= page.total) break;
-  }
-  return shots;
 }
 
 /**

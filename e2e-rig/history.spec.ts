@@ -6,8 +6,9 @@ import { IDLE } from './idle';
 // Acceptance item 5 (spec section 5) against the rig: simulated shots with another profile
 // or another bean give one entry each, a changed grinder setting does not; tapping an entry
 // restores profile, bean and grinder setting (the workflow is read back) and shows its
-// graph; the overlay closes on selection and on a tap outside it. The test deletes the shots
-// it makes and puts the workflow back as it was.
+// graph; the overlay closes on selection and on a tap outside it. The shots are read once
+// (spec 3.8, T8): a second opening reads no shot list, and a shot pulled while the skin is
+// open is in it. The test deletes the shots it makes and puts the workflow back as it was.
 
 const GATEWAY = 'http://localhost:8080';
 // Two bundled profiles of a few flow steps: the simulated cup has 3 g after about 3 s.
@@ -101,6 +102,12 @@ test('the history: shots with another profile or bean are entries, a tap restore
       profile: workflowBefore.profile,
       context: { coffeeName: 'D8b Other', coffeeRoaster: null, grinderSetting: '1' },
     });
+    // The skin's reads of the shot list, not the test's own.
+    const lists: string[] = [];
+    page.on('request', (request) => {
+      const url = new URL(request.url());
+      if (url.pathname === '/api/v1/shots') lists.push(url.search);
+    });
     await page.goto('/');
     await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 15_000 });
     await expect(page.getByTestId('profile-name')).toHaveText(workflowBefore.profile.title);
@@ -128,7 +135,11 @@ test('the history: shots with another profile or bean are entries, a tap restore
     expect((await api<RigWorkflow>('GET', '/api/v1/workflow')).context.coffeeName).toBe('D8b Other');
 
     // A tap on an entry closes it, restores the entry and shows the graph of its latest shot.
+    // Opened a second time, it reads no shot list.
+    const listsBefore = lists.length;
     await page.getByTestId('nav-history').tap();
+    await expect(mine).toHaveCount(3);
+    expect(lists.slice(listsBefore)).toEqual([]);
     await mine.nth(1).tap();
     await expect(page.getByTestId('history')).toHaveCount(0);
     await expect(page.getByTestId('history-graph')).toBeVisible();
@@ -161,6 +172,19 @@ test('the history: shots with another profile or bean are entries, a tap restore
     expect(workflow.profile).toEqual(shotC.workflow!.profile);
     expect(workflow.context.coffeeName).toBe(BEAN_B);
     expect(workflow.context.grinderSetting).toBe('6.0');
+
+    // A shot pulled while the skin is open is a new entry on top; only the newest page is read.
+    const listsBeforeShot = lists.length;
+    const shotD = await pull(page, profileB, { coffeeName: BEAN_A, coffeeRoaster: ROASTER, grinderSetting: '3.3' });
+    await page.getByTestId('shot-close').click();
+    await expect(page.getByTestId('shot-overlay')).toHaveCount(0);
+    await expect.poll(() => lists.length, { timeout: 30_000 }).toBeGreaterThan(listsBeforeShot);
+    await page.getByTestId('nav-history').tap();
+    await expect(mine).toHaveCount(4);
+    await expect(mine.first()).toHaveAttribute('data-shot', shotD.id);
+    await expect(mine.first().getByTestId('entry-bean')).toHaveText(`${ROASTER} · ${BEAN_A}`);
+    expect(lists.slice(listsBeforeShot).every((query) => query.includes('offset=0'))).toBe(true);
+    await page.touchscreen.tap(1100, 400);
   } finally {
     if ((await machineState().catch(() => undefined)) === 'espresso') await api('PUT', '/api/v1/machine/state/idle');
     await page.waitForTimeout(5000);
