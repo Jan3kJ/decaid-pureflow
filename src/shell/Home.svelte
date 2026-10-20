@@ -141,7 +141,8 @@
 
 {#if menuOpen}
   <!-- A tap outside the menu closes it and does nothing else. -->
-  <button class="backdrop" data-testid="menu-backdrop" aria-label="close the menu" onclick={() => (menuOpen = false)}></button>
+  <button class="backdrop" data-no-swipe data-testid="menu-backdrop" aria-label="close the menu" onclick={() => (menuOpen = false)}
+  ></button>
   <ul class="menu" data-testid="menu-list" role="menu">
     {#each MENU as entry (entry.id)}
       <li>

@@ -72,12 +72,20 @@ test('a swipe from the left edge to the right opens the overlay, and no other sw
   fourShots(gateway);
   await home(page);
 
-  // From the middle of the screen, to the left, and down along the edge: nothing.
+  // From the middle of the screen and to the left: a page (spec 3.8), not the history; down
+  // along the edge: nothing.
   await swipe(page, { x: 600, y: 400 }, { x: 900, y: 400 });
+  await expect(page.getByTestId('screen-hot-water')).toBeVisible();
+  await page.getByTestId('nav-home').tap();
+  // To the left from the left fifth: a page's swipe, too short to move on unless flicked.
   await swipe(page, { x: 200, y: 400 }, { x: 20, y: 400 });
-  await swipe(page, { x: 30, y: 200 }, { x: 60, y: 600 });
-  await page.waitForTimeout(200);
+  await page.waitForTimeout(400);
   await expect(page.getByTestId('history')).toHaveCount(0);
+  if (await page.getByTestId('nav-home').count()) await page.getByTestId('nav-home').tap();
+  await swipe(page, { x: 30, y: 200 }, { x: 60, y: 600 });
+  await page.waitForTimeout(400);
+  await expect(page.getByTestId('history')).toHaveCount(0);
+  await expect(page.getByTestId('screen-home')).toBeVisible();
 
   await swipe(page, { x: 10, y: 400 }, { x: 260, y: 420 });
   await expect(page.getByTestId('history')).toBeVisible();

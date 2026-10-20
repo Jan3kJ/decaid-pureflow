@@ -62,7 +62,7 @@
 <svelte:window onkeydown={keydown} />
 
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-<div class="backdrop" data-testid="numpad-backdrop" onclick={(e) => e.target === e.currentTarget && oncancel()}>
+<div class="backdrop" data-no-swipe data-testid="numpad-backdrop" onclick={(e) => e.target === e.currentTarget && oncancel()}>
   <div class="pad" role="dialog" aria-modal="true" aria-label="type {label}" data-testid="numpad">
     <div class="head">
       <span class="label">{label}</span>

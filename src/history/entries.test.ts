@@ -8,7 +8,6 @@ import {
   type WorkflowContext,
 } from '../api';
 import { beanAndGrinder, beanLabel, entryKey, groupShots, readShots, restoreEntry, seriesOf } from './entries';
-import { SWIPE_DISTANCE, SWIPE_EDGE, isOpeningSwipe, startsAtEdge } from './swipe';
 
 function profile(title: string, over: Partial<Profile> = {}): Profile {
   return { title, steps: [], target_weight: 36, target_volume_count_start: 0, tank_temperature: 0, ...over };
@@ -329,49 +328,5 @@ describe('seriesOf', () => {
   it('is empty for a shot without measurements, and never steps back in time', () => {
     expect(seriesOf({ measurements: [] }).t).toEqual([]);
     expect(seriesOf({ measurements: [measurement(0, 0), measurement(2, 1), measurement(1, 2)] }).t).toEqual([0, 2, 2]);
-  });
-});
-
-describe('the opening swipe', () => {
-  const width = 1280;
-  const edge = width * SWIPE_EDGE;
-  const far = width * SWIPE_DISTANCE;
-
-  it('is a move to the right that starts near the left edge', () => {
-    expect(isOpeningSwipe({ x: 20, y: 400 }, { x: 20 + far, y: 400 }, width)).toBe(true);
-    expect(isOpeningSwipe({ x: edge, y: 400 }, { x: edge + far + 40, y: 430 }, width)).toBe(true);
-  });
-
-  it('is not a short move, a move to the left, a move down or one from the middle of the screen', () => {
-    expect(isOpeningSwipe({ x: 20, y: 400 }, { x: 20 + far - 1, y: 400 }, width)).toBe(false);
-    expect(isOpeningSwipe({ x: 200, y: 400 }, { x: 200 - far, y: 400 }, width)).toBe(false);
-    expect(isOpeningSwipe({ x: 20, y: 400 }, { x: 20 + far, y: 400 + far }, width)).toBe(false);
-    expect(isOpeningSwipe({ x: edge + 1, y: 400 }, { x: edge + 1 + 2 * far, y: 400 }, width)).toBe(false);
-    expect(startsAtEdge({ x: edge + 1, y: 0 }, width)).toBe(false);
-  });
-
-  it('scales with the viewport', () => {
-    expect(isOpeningSwipe({ x: 20, y: 100 }, { x: 70, y: 100 }, 640)).toBe(true);
-    expect(isOpeningSwipe({ x: 20, y: 100 }, { x: 70, y: 100 }, 1280)).toBe(false);
-  });
-});
-
-describe("the steam page's swipe, the mirror from the right edge (spec 3.7)", () => {
-  const width = 1280;
-  const edge = width - width * SWIPE_EDGE;
-  const far = width * SWIPE_DISTANCE;
-
-  it('is a move to the left that starts near the right edge', () => {
-    expect(isOpeningSwipe({ x: 1260, y: 400 }, { x: 1260 - far - 1, y: 400 }, width, 'right')).toBe(true);
-    expect(isOpeningSwipe({ x: edge, y: 400 }, { x: edge - far - 40, y: 430 }, width, 'right')).toBe(true);
-  });
-
-  it("is not a short move, a move to the right, a move down, one from the middle, or the history's swipe", () => {
-    expect(isOpeningSwipe({ x: 1260, y: 400 }, { x: 1260 - far + 1, y: 400 }, width, 'right')).toBe(false);
-    expect(isOpeningSwipe({ x: 1100, y: 400 }, { x: 1100 + far, y: 400 }, width, 'right')).toBe(false);
-    expect(isOpeningSwipe({ x: 1260, y: 400 }, { x: 1260 - far, y: 400 + far }, width, 'right')).toBe(false);
-    expect(isOpeningSwipe({ x: edge - 1, y: 400 }, { x: edge - 1 - 2 * far, y: 400 }, width, 'right')).toBe(false);
-    expect(isOpeningSwipe({ x: 20, y: 400 }, { x: 20 + far, y: 400 }, width, 'right')).toBe(false);
-    expect(isOpeningSwipe({ x: 1260, y: 400 }, { x: 1260 - far, y: 400 }, width)).toBe(false);
   });
 });

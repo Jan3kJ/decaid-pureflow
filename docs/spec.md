@@ -437,7 +437,17 @@ pages, so from home hot water is reached by a swipe that starts right of that fi
 tab (section 8). The slide follows the finger and finishes or springs back when it is let go;
 a swipe never starts on a drag of a control (the steam page's chips, the number pad). `go` in
 `src/shell/skin.svelte.ts` and `App.svelte` show one screen at a time today; the three pages
-are then one strip.
+are then one strip. *Built (T6):* one gesture for the pages and the history, decided in
+`src/shell/swipe.ts` (which replaces `src/history/swipe.ts`) and handled in `App.svelte`. A page
+follows the finger after 10 CSS pixels more along than across; let go, it moves on after a
+quarter of the width or a flick of 0.5 px/ms, and otherwise springs back in 220 ms; at the
+row's ends it gives a fifth of the move and springs back. The neighbour is drawn beside the
+page only while it comes in, inert. With `prefers-reduced-motion` nothing slides: the page
+changes when the finger lets go. A control is a field or slider, a dialog (the number pad), a
+backdrop (home's menu), anything with `touch-action: none` (the editor's graph and chips) and a
+list that scrolls; the shot graphs of home and steam only show and are not controls, nor are
+buttons: a swipe may start on one, and the button is then not pressed
+(swipe-mid-slide.png (screenshot in the team repository)).
 
 **A-Flow editor: steps panel and save feedback (T7).** In the profile steps panel the last line
 'The shot stops at … g.' (`StepList.svelte`'s footer) goes; the stop weight is written in the
@@ -1321,7 +1331,7 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
     those of the shot. An entry without a bean or a grinder setting clears the current
     ones. (owner)
   - The swipe opens the overlay only when it starts in the left fifth of the screen
-    (`SWIPE_EDGE` in `src/history/swipe.ts`), so it cannot pass over a button of home. The
+    (`SWIPE_EDGE` in `src/shell/swipe.ts`), so it cannot pass over a button of home. The
     graph of the entry's last shot is shown on home, in the place of the last shot, until
     it is dismissed or a shot starts. The list reads the newest 500 shots
     (`HISTORY_SHOTS`). (owner)

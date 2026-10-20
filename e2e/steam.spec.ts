@@ -382,21 +382,22 @@ test("while steam runs the timer counts down; after the steam the graph adds no 
   expect(errors).toEqual([]);
 });
 
-test('a swipe from the right edge to the left opens the steam page, and no other swipe does', async ({ page }) => {
+test('a swipe to the left opens the steam page, from the right edge too (spec 3.7, 3.8)', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
 
-  // From the middle, to the right, and down along the edge: nothing.
-  await swipe(page, { x: 700, y: 400 }, { x: 400, y: 400 });
-  await swipe(page, { x: 1100, y: 400 }, { x: 1270, y: 400 });
+  // Down along the edge: nothing.
   await swipe(page, { x: 1250, y: 200 }, { x: 1220, y: 600 });
-  await page.waitForTimeout(200);
+  await page.waitForTimeout(400);
   await expect(page.getByTestId('screen-home')).toBeVisible();
 
-  await swipe(page, { x: 1180, y: 400 }, { x: 930, y: 420 });
+  await swipe(page, { x: 1180, y: 400 }, { x: 760, y: 420 });
   await expect(page.getByTestId('screen-steam')).toBeVisible();
-  // The history's swipe still opens the history, not the steam page.
+  await page.getByTestId('nav-home').click();
+  await swipe(page, { x: 700, y: 400 }, { x: 400, y: 400 });
+  await expect(page.getByTestId('screen-steam')).toBeVisible();
+  // The history's swipe still opens the history, not a page.
   await page.getByTestId('nav-home').click();
   await swipe(page, { x: 10, y: 400 }, { x: 260, y: 420 });
   await expect(page.getByTestId('history')).toBeVisible();

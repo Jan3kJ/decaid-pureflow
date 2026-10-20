@@ -4,86 +4,149 @@
   import { editorFor } from './editor/route';
   import History from './history/History.svelte';
   import HotWater from './hotwater/HotWater.svelte';
-  import { isOpeningSwipe, startsAtEdge, type Edge, type Point } from './history/swipe';
   import Home from './shell/Home.svelte';
+  import type { Screen } from './shell/nav';
   import Profiles from './shell/Profiles.svelte';
   import SettingsPage from './settings-page/SettingsPage.svelte';
   import { Skin, type LoadAnswer } from './shell/skin.svelte';
   import { backupTime } from './settings-backup';
   import Steam from './steam/Steam.svelte';
   import StepEditor from './steps/StepEditor.svelte';
+  import { PAGES, commits, decide, isPage, neighbour, offset, onControl, type Page, type Point } from './shell/swipe';
   import UnsavedDialog from './shell/UnsavedDialog.svelte';
 
   const skin = new Skin();
   onMount(() => skin.connect());
 
-  // The shot history opens by its tab or by a swipe from the left edge, on home only: the
-  // editor's drags and every other screen never see the gesture (spec 3.1). Its mirror from
-  // the right edge opens the steam page, as the steam tab does (spec 3.7). Not over the shot's
-  // overlay: after the shot a touch there closes it (spec 3.8).
+  // One horizontal gesture for the pages and the shot history (src/shell/swipe.ts, spec 3.8):
+  // hot water, home and steam are one row, and a swipe slides to the neighbour, which is drawn
+  // beside the page only while it comes in; on home a swipe to the right from the left fifth
+  // opens the history instead. Not over the shot's overlay: after the shot a touch there closes
+  // it. A drag that starts on a control is the control's.
   const home = $derived(skin.screen === 'home');
-  // The steam page's dot says what its state line says: heating against the steam target (spec 3.8).
-  const navStatus = $derived(skin.statusFor(skin.screen === 'steam' ? 'steam' : null));
-  let swipe: (Point & { id: number; edge: Edge }) | null = null;
+  /** The slide's length, in milliseconds; with reduced motion there is no slide. */
+  const SLIDE_MS = 220;
+  let main: HTMLElement;
+  let swipe: (Point & { id: number; page: boolean; dx: number; last: number; time: number; velocity: number }) | null = null;
+  /** The drawn offset of the pages, in CSS pixels. */
+  let dx = $state(0);
+  /** The neighbour coming in, drawn beside the page. */
+  let incoming: Page | null = $state(null);
+  /** The slide finishing or springing back after the finger let go. */
+  let settling = $state(false);
+  const strip = $derived(incoming ? [skin.screen, incoming] : [skin.screen]);
+  const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /** Where a screen of the strip lies, as a CSS transform; none for the page at rest. */
+  function placed(screen: Screen): string {
+    const index = isPage(screen) && isPage(skin.screen) ? PAGES.indexOf(screen) - PAGES.indexOf(skin.screen) : 0;
+    return index === 0 && dx === 0 ? '' : `translateX(calc(${index * 100}% + ${dx}px))`;
+  }
 
   function onpointerdown(event: PointerEvent) {
-    const start = { x: event.clientX, y: event.clientY };
-    const edge = (['left', 'right'] as const).find((side) => startsAtEdge(start, innerWidth, side));
-    swipe = home && !skin.historyOpen && !skin.shotOpen && edge ? { ...start, id: event.pointerId, edge } : null;
+    swipe = null;
+    if (settling || !isPage(skin.screen) || skin.historyOpen || (home && skin.shotOpen)) return;
+    if (onControl(event.target as Element, main)) return;
+    swipe = {
+      x: event.clientX,
+      y: event.clientY,
+      id: event.pointerId,
+      page: false,
+      dx: 0,
+      last: event.clientX,
+      time: event.timeStamp,
+      velocity: 0,
+    };
   }
 
   function onpointermove(event: PointerEvent) {
-    if (!swipe || event.pointerId !== swipe.id) return;
-    if (isOpeningSwipe(swipe, { x: event.clientX, y: event.clientY }, innerWidth, swipe.edge)) {
-      const edge = swipe.edge;
-      swipe = null;
-      if (edge === 'left') skin.historyOpen = true;
-      else skin.go('steam');
+    if (!swipe || event.pointerId !== swipe.id || !isPage(skin.screen)) return;
+    const now = { x: event.clientX, y: event.clientY };
+    if (!swipe.page) {
+      const gesture = decide(swipe, now, innerWidth, skin.screen);
+      if (gesture === null) return;
+      if (gesture !== 'page') {
+        swipe = null;
+        if (gesture === 'history') skin.historyOpen = true;
+        return;
+      }
+      // Held by the strip from here: the button the finger went down on gets no click.
+      swipe.page = true;
+      main.setPointerCapture(event.pointerId);
     }
+    const elapsed = event.timeStamp - swipe.time;
+    if (elapsed > 0) swipe.velocity = (now.x - swipe.last) / elapsed;
+    swipe.last = now.x;
+    swipe.time = event.timeStamp;
+    swipe.dx = now.x - swipe.x;
+    incoming = neighbour(skin.screen, swipe.dx);
+    dx = still() ? 0 : offset(skin.screen, swipe.dx);
   }
 
-  const endSwipe = () => (swipe = null);
+  function endSwipe(event: PointerEvent) {
+    if (!swipe || event.pointerId !== swipe.id) return;
+    const { page, dx: moved, velocity } = swipe;
+    swipe = null;
+    if (!page || !isPage(skin.screen)) return;
+    const target = event.type === 'pointerup' && commits(moved, velocity, innerWidth) ? neighbour(skin.screen, moved) : null;
+    if (still()) {
+      incoming = null;
+      if (target) skin.go(target);
+      return;
+    }
+    settling = true;
+    dx = target ? Math.sign(moved) * main.clientWidth : 0;
+    setTimeout(() => {
+      if (target) skin.go(target);
+      settling = false;
+      incoming = null;
+      dx = 0;
+    }, SLIDE_MS);
+  }
 </script>
 
-<main class:home {onpointerdown} {onpointermove} onpointerup={endSwipe} onpointercancel={endSwipe}>
+{#snippet frame(screen: Screen)}
+  {@const atHome = screen === 'home'}
   <!-- The left edge: the way back to home, and on home the tab of the shot history (spec 3.1). -->
   <nav>
-    {#if home}
+    {#if atHome}
       <button class="tab" data-testid="nav-history" onclick={() => (skin.historyOpen = true)}>
         <span>history</span>
       </button>
     {:else}
+      {@const navStatus = skin.statusFor(screen === 'steam' ? 'steam' : null)}
       <button class="back" data-testid="nav-home" aria-label="back to home" onclick={() => skin.leave('home')}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4l-8 8 8 8" /></svg>
       </button>
+      <!-- The steam page's dot says what its state line says: heating against the steam target (spec 3.8). -->
       <span class="dot {navStatus.tone}" title={navStatus.title} data-testid="nav-status"></span>
     {/if}
   </nav>
 
-  <div class="screen" data-testid="screen-{skin.screen}">
-    {#if skin.screen === 'home'}
+  <div class="screen" data-testid="screen-{screen}">
+    {#if screen === 'home'}
       <Home {skin} />
-    {:else if skin.screen === 'profiles'}
+    {:else if screen === 'profiles'}
       <Profiles {skin} />
-    {:else if skin.screen === 'editor'}
+    {:else if screen === 'editor'}
       <!-- Every profile that is not A-Flow opens in the step editor (spec 3.6, research.md 17.5). -->
       {#if editorFor(skin.workflow?.profile) === 'steps'}
         <StepEditor {skin} />
       {:else}
         <Editor {skin} />
       {/if}
-    {:else if skin.screen === 'steam'}
+    {:else if screen === 'steam'}
       <Steam {skin} />
-    {:else if skin.screen === 'hot-water'}
+    {:else if screen === 'hot-water'}
       <HotWater {skin} />
-    {:else if skin.screen === 'settings'}
+    {:else if screen === 'settings'}
       <SettingsPage {skin} />
     {/if}
   </div>
 
   <!-- The right edge of home: the tab of the steam page, the mirror of the history's (founder, 2026-10-13).
        It is split (spec 3.7): steam keeps most of it, hot water takes the rest at the bottom. -->
-  {#if home}
+  {#if atHome}
     <nav class="right">
       <button class="tab" data-testid="open-steam" onclick={() => skin.go('steam')}>
         <span>steam</span>
@@ -93,6 +156,29 @@
       </button>
     </nav>
   {/if}
+{/snippet}
+
+<main
+  bind:this={main}
+  class:pages={isPage(skin.screen)}
+  {onpointerdown}
+  {onpointermove}
+  onpointerup={endSwipe}
+  onpointercancel={endSwipe}
+>
+  {#each strip as screen (screen)}
+    <!-- The neighbour coming in is only a picture of its page until it is the page. -->
+    <div
+      class="page"
+      class:home={screen === 'home'}
+      class:settling
+      style:transform={placed(screen)}
+      inert={screen !== skin.screen}
+      aria-hidden={screen !== skin.screen}
+    >
+      {@render frame(screen)}
+    </div>
+  {/each}
 
   {#if home && skin.historyOpen}
     <History {skin} />
@@ -139,19 +225,31 @@
   main {
     position: relative;
     height: 100%;
+    overflow: hidden;
+  }
+
+  /* A finger that moves sideways on the pages is the strip's swipe, not the browser's pan. */
+  main.pages {
+    touch-action: pan-y;
+  }
+
+  /* A page of the strip fills the screen; the neighbour coming in lies beside it. */
+  .page {
+    position: absolute;
+    inset: 0;
     display: grid;
     grid-template-columns: 4rem minmax(0, 1fr);
+    background: var(--bg);
+  }
+
+  .page.settling {
+    transition: transform 220ms ease-out;
   }
 
   /* Home's edge tabs are thinner than the way back, their labels larger (founder, 2026-10-17):
      56 CSS pixels, still a finger's target. */
-  main.home {
+  .page.home {
     grid-template-columns: 3.5rem minmax(0, 1fr) 3.5rem;
-  }
-
-  /* A finger that moves sideways on home is a swipe of the history or the steam page, not the browser's pan. */
-  main.home {
-    touch-action: pan-y;
   }
 
   nav {
