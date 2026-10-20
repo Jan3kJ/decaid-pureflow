@@ -624,6 +624,11 @@ passes a 0 s step at once (that is how the de1app A-Flow editor switches a step 
 fallback), so the 10 s rule goes: a 0 s step has no width and no shading. The builder checks on
 the rig that the simulation passes a 0 s step at once. The same curve is T4's preview in the
 picker and T1's estimate of a step profile's length; both follow.
+Built (U6, 2026-10-20): `stepCurve` leaves a step of 0 s (or without a time) out: no points, no
+gap in the other pump's line, no border, and the next step's slow ramp starts from the target of
+the drawn step before it. `UNTIMED_STEP_SECONDS`, the shading (`shaded` of `ShotGraph`) and the
+preview's note 'shaded: a step without a time' are gone. On the rig (Decaid 0.8.8, simulated
+DE1) a profile of 4 s, 0 s and 4 s steps passed the 0 s frame within one snapshot (0.1 s).
 
 **A-Flow editor: status line and spacing (items 8 and 9; U5).** The status line ('saved as …',
 'loaded', a failure) moves to the row below the default profiles, and the profile buttons get
@@ -752,6 +757,17 @@ at off the line stays, muted, without its value pill, and the next tap brings th
 with its remembered value. A limit and each amount of the maximum typed 0 on the number pad is
 off and stays as a muted line or pill; switched on, a limit takes its remembered value or the
 range's default, as the card does. Streamline's ISC notice stays on the file.
+Built (U6, 2026-10-20): the lines read 'No limit' with a chip **switch on**, 'Move on:' with the
+exit chip **off**, and, with every amount off, 'No maximum' before the three muted pills; an
+amount that is off is a dashed pill 'weight off', 'time off' or 'volume off' in its place, and a
+tap opens the number pad on it. A live limit typed 0 (on the cards too) becomes `limiter: null`,
+what Decaid stores for most steps without a limit on the rig (246 of its steps; the others hold
+`{ value: 0, range }`, which the editor keeps as it came); no exit is `exit: null` as before.
+Switched on, a limit takes its value and range from before it was switched off, else 9 bar (a
+flow step) or 6 ml/s (a pressure step) and `newLimiterRange`; the exit takes its remembered
+value, else 9 bar or 6 ml/s, as on the cards. What is remembered lasts while the profile is
+edited: a save reopens the stored profile and starts afresh. The step model's `switchLimiterOn`
+and `cycleExit` serve SCRIPT; `cycleScriptExit` is gone.
 
 **The screenshots of 2026-10-17 (T1, T2).** The screenshots of messages 38 and 39 were resent as
 files (review-10-17-espresso-tail.png (screenshot in the team repository),

@@ -8,25 +8,24 @@
 // targets over time out, as `ShotGraph` draws them. It is a schematic of the targets, not a
 // simulation of a shot. Pure: no DOM and no Svelte.
 //
-// The drawn length of a step is Streamline's rule: its `seconds`, and 10 s when it has none.
-// A step's volume, weight and exit do not change it, since how soon they end the step depends
-// on the coffee; so a step that ends on volume or weight is drawn as long as its time, or 10 s.
+// The drawn length of a step is its `seconds`. A step's volume, weight and exit do not change
+// it, since how soon they end the step depends on the coffee. A step of 0 s is not drawn at
+// all: the machine passes it at once (the de1app A-Flow editor switches a step off so), so it
+// adds no point, no gap and no border, and the next step ramps from the target before it.
+// Streamline draws such a step 10 s long and shaded; the skin departs from it here.
 import type { Profile } from '../api';
 import { num } from './model';
 
-/** The drawn length of a step without a time (Streamline's `renderScriptGraph`). */
-export const UNTIMED_STEP_SECONDS = 10;
-
 export interface StepSpan {
+  /** the step's place in the profile */
+  index: number;
   /** s */
   start: number;
   end: number;
-  /** the step has no time of its own: it is drawn UNTIMED_STEP_SECONDS long */
-  untimed: boolean;
 }
 
 export interface StepCurve {
-  /** s, two points per step: its start and its end */
+  /** s, two points per drawn step: its start and its end */
   t: number[];
   /** bar; null where the step drives the flow */
   pressure: (number | null)[];
@@ -34,6 +33,7 @@ export interface StepCurve {
   flow: (number | null)[];
   /** °C */
   temperature: number[];
+  /** the drawn steps: those longer than 0 s */
   steps: StepSpan[];
   /** s, the end of the last step */
   seconds: number;
@@ -57,7 +57,7 @@ export function pushChannel(
   y.push(transition === 'smooth' ? prevVal : target, target);
 }
 
-/** The targets of a profile over time, step after step. */
+/** The targets of a profile over time, step after step; a step of 0 s is left out. */
 export function stepCurve(profile: Pick<Profile, 'steps'>): StepCurve {
   const t: number[] = [];
   const pressure: (number | null)[] = [];
@@ -68,11 +68,11 @@ export function stepCurve(profile: Pick<Profile, 'steps'>): StepCurve {
   // A pump the step does not drive counts as 0 for the next step's ramp, as in Streamline.
   let prevPressure = 0;
   let prevFlow = 0;
-  for (const step of profile.steps ?? []) {
+  for (const [index, step] of (profile.steps ?? []).entries()) {
     const seconds = num(step.seconds);
-    const untimed = !(seconds > 0);
+    if (!(seconds > 0)) continue;
     const start = time;
-    const end = start + (untimed ? UNTIMED_STEP_SECONDS : seconds);
+    const end = start + seconds;
     if (step.pump === 'pressure') {
       const target = num(step.pressure);
       pushChannel(t, pressure, start, end, prevPressure, target, step.transition);
@@ -88,7 +88,7 @@ export function stepCurve(profile: Pick<Profile, 'steps'>): StepCurve {
     }
     const degrees = num(step.temperature);
     temperature.push(degrees, degrees);
-    steps.push({ start, end, untimed });
+    steps.push({ index, start, end });
     time = end;
   }
   return { t, pressure, flow, temperature, steps, seconds: time };

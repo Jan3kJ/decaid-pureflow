@@ -6,32 +6,40 @@
 import { describe, expect, it } from 'vitest';
 import type { Profile } from '../api';
 import bundled from './fixtures/bundled-profiles.json' with { type: 'json' };
-import { cyclePump, cycleSensor, limitOf, setValue, type StepValue } from './model';
-import { cycleScriptExit, scriptNumber, stepSentences, temperatureVerb, type Part } from './sentences';
+import { cycleExit, cyclePump, cycleSensor, limitOf, setValue, switchLimiterOn, type StepValue } from './model';
+import { scriptNumber, stepSentences, temperatureVerb, type Part } from './sentences';
 
 const profiles = bundled as unknown as Profile[];
 const BLOOMING = profiles.find((entry) => entry.title === 'Blooming Espresso')!;
 
-/** A sentence as it reads, chips in [brackets] and values in {braces}. */
+/** A sentence as it reads, chips in [brackets], values in {braces}, muted values and lines in ~tildes~. */
 const read = (parts: Part[]) =>
-  parts.map((part) => (part.kind === 'text' ? part.text : part.kind === 'chip' ? `[${part.text}]` : `{${part.text}}`)).join(' ');
-const script = (profile: Profile, index: number) => stepSentences(profile, index).map((sentence) => read(sentence.parts));
+  parts
+    .map((part) =>
+      part.kind === 'text' ? part.text : part.kind === 'chip' ? `[${part.text}]` : part.off ? `{~${part.text}~}` : `{${part.text}}`,
+    )
+    .join(' ');
+const script = (profile: Profile, index: number) =>
+  stepSentences(profile, index).map((sentence) => (sentence.off ? `~${read(sentence.parts)}~` : read(sentence.parts)));
 const chipOf = (profile: Profile, index: number, chip: string) =>
   stepSentences(profile, index)
     .flatMap((sentence) => sentence.parts)
     .find((part) => part.kind === 'chip' && part.chip === chip)?.text;
 
 describe('the sentences', () => {
-  it("read Streamline's words in its order, the off values left out", () => {
+  it("read Streamline's words in its order, the off values muted in their place", () => {
     expect(script(BLOOMING, 0)).toEqual([
       'Set [Coffee] temperature to {97.5 °C}',
       '[Flow quickly] at a rate of {4.0 mL/s}',
-      'For a maximum of {2.0 sec} or {500.0 ml}',
+      '~No limit [switch on]~',
+      'For a maximum of {~weight off~} or {2.0 sec} or {500.0 ml}',
+      '~Move on: [off]~',
     ]);
     expect(script(BLOOMING, 1)).toEqual([
       'Maintain [Coffee] temperature at {97.5 °C}',
       '[Flow quickly] at a rate of {4.0 mL/s}',
-      'For a maximum of {23.0 sec} or {500.0 ml}',
+      '~No limit [switch on]~',
+      'For a maximum of {~weight off~} or {23.0 sec} or {500.0 ml}',
       'Move on if [Pressure is over] {4.0 bar}',
     ]);
     expect(script(BLOOMING, 2)[0]).toBe('Start tracking water volume');
@@ -50,6 +58,16 @@ describe('the sentences', () => {
       '[Pressure quickly] to {9.0 bar}',
       'Limit to {0.75 mL/s}',
       'For a maximum of {36.0 g} or {2.0 sec} or {500.0 ml}',
+      '~Move on: [off]~',
+    ]);
+  });
+
+  it('a step with nothing but its target reads its limit, maximum and exit as off', () => {
+    const bare: Profile = { ...BLOOMING, steps: [{ ...BLOOMING.steps[0], seconds: 0, volume: 0 }] };
+    expect(script(bare, 0).slice(2)).toEqual([
+      '~No limit [switch on]~',
+      '~No maximum {~weight off~} or {~time off~} or {~volume off~}~',
+      '~Move on: [off]~',
     ]);
   });
 
@@ -67,12 +85,13 @@ describe('the sentences', () => {
     expect(scriptNumber(-4e-16)).toBe('0.0');
   });
 
-  it('every bundled profile has a temperature and a pump sentence per step', () => {
+  it('every step of every bundled profile has all its lines, the volume marker where it is', () => {
     for (const profile of profiles) {
       profile.steps.forEach((_, i) => {
-        const kinds = stepSentences(profile, i).map((sentence) => sentence.kind);
-        expect(kinds, `${profile.title} ${i + 1}`).toContain('temperature');
-        expect(kinds, `${profile.title} ${i + 1}`).toContain('pump');
+        const kinds = stepSentences(profile, i)
+          .map((sentence) => sentence.kind)
+          .filter((kind) => kind !== 'volumeStart');
+        expect(kinds, `${profile.title} ${i + 1}`).toEqual(['temperature', 'pump', 'limit', 'maximum', 'exit']);
       });
     }
   });
@@ -104,20 +123,34 @@ describe('a tap on a state word cycles it', () => {
     expect(script(pressure, 4)).toContain('Limit to {8.6 mL/s}');
   });
 
-  it('the exit: pressure over, pressure under, flow over, flow under, and round, never off', () => {
+  it('the exit: pressure over, pressure under, flow over, flow under, off, and round; off keeps its line', () => {
     let profile = BLOOMING;
     const seen = [chipOf(profile, 1, 'exit')];
-    for (let n = 0; n < 4; n++) {
-      profile = cycleScriptExit(profile, 1);
+    for (let n = 0; n < 5; n++) {
+      profile = cycleExit(profile, 1);
       seen.push(chipOf(profile, 1, 'exit'));
+      if (n === 3) expect(script(profile, 1)).toContain('~Move on: [off]~');
     }
-    expect(seen).toEqual(['Pressure is over', 'Pressure is under', 'Flow is over', 'Flow is under', 'Pressure is over']);
+    expect(seen).toEqual(['Pressure is over', 'Pressure is under', 'Flow is over', 'Flow is under', 'off', 'Pressure is over']);
+    // Back from off, pressure over has the step's 4 bar again.
     expect(profile.steps[1].exit).toEqual({ type: 'pressure', condition: 'over', value: 4 });
-    // Flow takes 6 ml/s the first time; back on pressure the step's 4 bar returns.
-    expect(cycleScriptExit(cycleScriptExit(BLOOMING, 1), 1).steps[1].exit).toEqual({ type: 'flow', condition: 'over', value: 6 });
-    // A step without an exit has no chip and is not changed.
-    expect(chipOf(BLOOMING, 0, 'exit')).toBeUndefined();
-    expect(cycleScriptExit(BLOOMING, 0)).toBe(BLOOMING);
+    // Flow takes 6 ml/s the first time.
+    expect(cycleExit(cycleExit(BLOOMING, 1), 1).steps[1].exit).toEqual({ type: 'flow', condition: 'over', value: 6 });
+    // A step without an exit has the off chip; a tap gives it the first exit, 9 bar.
+    expect(chipOf(BLOOMING, 0, 'exit')).toBe('off');
+    expect(script(cycleExit(BLOOMING, 0), 0)).toContain('Move on if [Pressure is over] {9.0 bar}');
+  });
+
+  it('the limit: off switched on, typed 0 off again, then on with its value back', () => {
+    expect(chipOf(BLOOMING, 0, 'limit')).toBe('switch on');
+    const on = switchLimiterOn(BLOOMING, 0);
+    expect(script(on, 0)).toContain('Limit to {9.0 bar}');
+    expect(chipOf(on, 0, 'limit')).toBeUndefined();
+    const typed = setValue(on, 0, 'limiter', 7.5);
+    const off = setValue(typed, 0, 'limiter', 0);
+    expect(off.steps[0].limiter).toBeNull();
+    expect(script(off, 0)).toContain('~No limit [switch on]~');
+    expect(script(switchLimiterOn(off, 0), 0)).toContain('Limit to {7.5 bar}');
   });
 });
 
@@ -128,7 +161,7 @@ describe('a tap on a number opens the picker', () => {
       .flatMap((part) => (part.kind === 'value' ? [part.value] : []));
 
   it('each number is one of the step values, with the range the cards use', () => {
-    expect(values(BLOOMING, 1)).toEqual(['temperature', 'target', 'seconds', 'volume', 'exit']);
+    expect(values(BLOOMING, 1)).toEqual(['temperature', 'target', 'weight', 'seconds', 'volume', 'exit']);
     const pressure = {
       ...BLOOMING.steps[4],
       pump: 'pressure' as const,
@@ -152,10 +185,12 @@ describe('a tap on a number opens the picker', () => {
     expect(limitOf(BLOOMING.steps[1], 'exit')!.max).toBe(12);
   });
 
-  it('a value picked shows in its sentence; a limit or maximum set to 0 leaves it', () => {
+  it('a value picked shows in its sentence; a limit or maximum amount typed 0 is off and stays muted', () => {
     expect(script(setValue(BLOOMING, 4, 'target', 3), 4)).toContain('[Flow quickly] at a rate of {3.0 mL/s}');
     expect(setValue(BLOOMING, 4, 'target', 99).steps[4].flow).toBe(15);
-    expect(stepSentences(setValue(BLOOMING, 4, 'limiter', 0), 4).map((sentence) => sentence.kind)).not.toContain('limit');
-    expect(script(setValue(BLOOMING, 0, 'volume', 0), 0)).toContain('For a maximum of {2.0 sec}');
+    expect(script(setValue(BLOOMING, 4, 'limiter', 0), 4)).toContain('~No limit [switch on]~');
+    expect(script(setValue(BLOOMING, 0, 'volume', 0), 0)).toContain('For a maximum of {~weight off~} or {2.0 sec} or {~volume off~}');
+    // The muted amount opens the pad too: typed, it is on again.
+    expect(script(setValue(BLOOMING, 0, 'weight', 36), 0)).toContain('For a maximum of {36.0 g} or {2.0 sec} or {500.0 ml}');
   });
 });

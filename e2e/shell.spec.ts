@@ -429,7 +429,6 @@ test('the picker filters by title, a tap selects and shows the description and p
   await expect(preview.getByTestId('shot-border')).toHaveCount(4);
   await expect(preview.getByTestId('shot-target-pressure')).toHaveCount(1);
   await expect(preview.locator('text')).toHaveCount(0);
-  await expect(preview.getByTestId('preview-untimed')).toHaveCount(0);
 
   // An A-Flow default: no line of its values in the description, the same preview of its targets.
   await items.filter({ hasText: 'A-Flow / default-medium' }).filter({ hasText: 'A-Flow 3.0' }).click();

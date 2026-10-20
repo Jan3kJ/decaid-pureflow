@@ -95,14 +95,29 @@ test('the curve preview draws the steps and changes with each kind of step edit'
   });
   await expect(preview.getByTestId('shot-border')).toHaveCount(5);
 
-  // A step without a time is drawn 10 s long and shaded.
-  await expect(preview.getByTestId('shot-shaded')).toHaveCount(0);
+  // A step of 0 s is not drawn: no width, no border; the card and SCRIPT still show it, and
+  // a time typed again draws it again.
   await page.getByTestId('step-card-0').click();
+  const seconds = Number(await preview.getAttribute('data-seconds'));
+  const first = Number((await page.getByTestId('chip-value-0-seconds').textContent())?.split(' ')[0]);
   await page.getByTestId('chip-edit-0-seconds').click();
   await page.getByTestId('numpad-key-0').click();
   await page.getByTestId('numpad-confirm').click();
-  await expect(preview.getByTestId('shot-shaded')).toHaveCount(1);
-  await expect(page.getByTestId('preview-untimed')).toBeVisible();
+  await expect(preview).toHaveAttribute('data-seconds', String(seconds - first));
+  await expect(preview.getByTestId('shot-border')).toHaveCount(4);
+  await expect(page.getByTestId('step-card-0')).toBeVisible();
+  await expect(page.getByTestId('chip-value-0-seconds')).toHaveText('off');
+  await expect(page.getByTestId('step-count')).toHaveText('6 steps');
+  await page.screenshot({ path: 'docs/product/step-zero-seconds.png' });
+  await page.getByTestId('tab-script').click();
+  await expect(page.getByTestId('script-step-0')).toBeVisible();
+  await expect(page.getByTestId('script-value-0-seconds')).toHaveText('time off');
+  await expect(page.getByTestId('step-preview').getByTestId('shot-border')).toHaveCount(4);
+  await page.getByTestId('script-value-0-seconds').click();
+  await page.getByTestId('numpad-key-3').click();
+  await page.getByTestId('numpad-confirm').click();
+  await expect(page.getByTestId('step-preview')).toHaveAttribute('data-seconds', String(seconds - first + 3));
+  await expect(page.getByTestId('step-preview').getByTestId('shot-border')).toHaveCount(5);
   expect(errors).toEqual([]);
 });
 

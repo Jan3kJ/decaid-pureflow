@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Profile, ProfileStep } from '../api';
 import bundled from './fixtures/bundled-profiles.json' with { type: 'json' };
-import { UNTIMED_STEP_SECONDS, pushChannel, stepCurve } from './curve';
+import { pushChannel, stepCurve } from './curve';
 import { insertStepAfter, moveStep, removeStepAt, setPump, setValue } from './model';
 
 const profiles = bundled as unknown as Profile[];
@@ -100,20 +100,27 @@ describe('stepCurve', () => {
     expect(curve.seconds).toBe(55);
   });
 
-  it('a step without a time is drawn 10 s long, whatever its volume, weight or exit', () => {
-    const curve = stepCurve(
-      profile([
-        step({ seconds: 0, volume: 100 }),
-        step({ seconds: 0, weight: 36, exit: { type: 'pressure', condition: 'over', value: 4 } }),
-        step({ seconds: 20, volume: 50 }),
-      ]),
-    );
-    expect(UNTIMED_STEP_SECONDS).toBe(10);
+  it('a step of 0 s is not drawn: no width, no point, no gap, whatever its volume, weight or exit', () => {
+    const steps = [
+      step({ seconds: 5, flow: 2 }),
+      step({ seconds: 0, volume: 100 }),
+      step({ seconds: 0, pump: 'pressure', pressure: 9, weight: 36, exit: { type: 'pressure', condition: 'over', value: 4 } }),
+      step({ seconds: 20, flow: 4, transition: 'smooth' }),
+    ];
+    const curve = stepCurve(profile(steps));
     expect(curve.steps).toEqual([
-      { start: 0, end: 10, untimed: true },
-      { start: 10, end: 20, untimed: true },
-      { start: 20, end: 40, untimed: false },
+      { index: 0, start: 0, end: 5 },
+      { index: 3, start: 5, end: 25 },
     ]);
+    expect(curve.t).toEqual([0, 5, 5, 25]);
+    // The pressure step of 0 s leaves no gap in the flow, and the ramp starts from the step before.
+    expect(curve.flow).toEqual([2, 2, 2, 4]);
+    expect(curve.pressure).toEqual([null, null, null, null]);
+    expect(curve.seconds).toBe(25);
+    // The same as without the 0 s steps.
+    expect(curve).toEqual({ ...stepCurve(profile([steps[0], steps[3]])), steps: curve.steps });
+    // A time missing or not a number counts as 0 s.
+    expect(stepCurve(profile([step({ seconds: undefined }), step({ seconds: NaN })])).seconds).toBe(0);
   });
 
   it('a profile without steps has no curve', () => {
@@ -135,10 +142,10 @@ describe('stepCurve', () => {
     expect(curve.pressure.every((v) => v === null)).toBe(true);
   });
 
-  it('every bundled profile gives two points per step, all series as long as the times', () => {
+  it('every bundled profile gives two points per step longer than 0 s, all series as long as the times', () => {
     for (const p of profiles) {
       const curve = stepCurve(p);
-      expect(curve.t.length).toBe(2 * p.steps.length);
+      expect(curve.t.length).toBe(2 * p.steps.filter((s) => Number(s.seconds) > 0).length);
       for (const series of [curve.pressure, curve.flow, curve.temperature]) expect(series.length).toBe(curve.t.length);
       expect(curve.t.every((t) => Number.isFinite(t))).toBe(true);
     }

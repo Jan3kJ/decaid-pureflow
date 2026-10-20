@@ -286,3 +286,46 @@ test('the SCRIPT tab: a cycled word and a typed number are stored', async ({ pag
   expect(read.profile.target_volume_count_start).toBe(source.profile.target_volume_count_start);
   expect(canonical((await api<RigWorkflow>('GET', '/api/v1/workflow')).profile.steps)).toEqual(canonical(expected.steps));
 });
+
+// Acceptance item 50 (spec 3.9, item 17) against the rig: in SCRIPT step 2's exit cycled to off
+// and step 5's limit typed 0 stay muted lines; 'save as' stores them as Decaid stores a step
+// without them (`exit: null`, `limiter: null`, as the bundled profiles hold), and they read back
+// so. The test purges the copy and puts the workflow back.
+test('SCRIPT: an exit and a limit set off are stored as none and read back', async ({ page }) => {
+  const source = (await api<ProfileRecord[]>('GET', '/api/v1/profiles')).find((record) => record.profile.title === SOURCE)!;
+  expect(source, `the rig bundles “${SOURCE}”`).toBeTruthy();
+  expect(source.profile.steps[1].exit).not.toBeNull();
+  expect(source.profile.steps[4].limiter?.value).toBeGreaterThan(0);
+  await api('PUT', '/api/v1/workflow', { profile: source.profile });
+
+  await page.addInitScript(() => localStorage.setItem('pureflow.screen', 'editor'));
+  await page.goto('/');
+  await expect(page.getByTestId('step-cards')).toBeVisible();
+  await page.getByTestId('tab-script').click();
+  for (let n = 0; n < 4; n++) await page.getByTestId('script-chip-1-exit').click();
+  await expect(page.getByTestId('script-line-1-exit')).toHaveText(/Move on:\s+off/);
+  await page.getByTestId('script-value-4-limiter').click();
+  await page.getByTestId('numpad-key-0').click();
+  await page.getByTestId('numpad-confirm').click();
+  await expect(page.getByTestId('script-line-4-limit')).toHaveText(/No limit\s+switch on/);
+
+  const title = `U6 rig ${Date.now().toString(36)}`;
+  await page.getByTestId('save-as').click();
+  await page.getByTestId('save-name').fill(title);
+  await page.getByTestId('save-confirm').click();
+  await expect(notice(page)).toHaveText(`Saved as “${title}” and loaded.`);
+  const copies = (await api<ProfileRecord[]>('GET', '/api/v1/profiles')).filter((record) => record.profile.title === title);
+  expect(copies).toHaveLength(1);
+  const read = await api<ProfileRecord>('GET', `/api/v1/profiles/${encodeURIComponent(copies[0].id)}`);
+  expect(read.profile.steps[1].exit ?? null).toBeNull();
+  expect(read.profile.steps[4].limiter ?? null).toBeNull();
+  const expected = structuredClone(source.profile);
+  expected.steps[1].exit = null;
+  expected.steps[4].limiter = null;
+  expect(canonical(read.profile.steps)).toEqual(canonical(expected.steps));
+  // Opened again from Decaid, SCRIPT shows them off.
+  await page.reload();
+  await page.getByTestId('tab-script').click();
+  await expect(page.getByTestId('script-line-1-exit')).toHaveAttribute('data-off', 'true');
+  await expect(page.getByTestId('script-line-4-limit')).toHaveAttribute('data-off', 'true');
+});

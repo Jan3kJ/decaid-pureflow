@@ -15,7 +15,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
 
   interface Props {
     profile: Profile;
-    /** the picker's small preview: no labels and no note on untimed steps (spec 3.8) */
+    /** the picker's small preview: no labels (spec 3.8) */
     bare?: boolean;
   }
 
@@ -38,16 +38,12 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     targetFlow={curve.flow}
     targetTemperature={curve.temperature}
     borders={curve.steps.slice(1).map((span) => span.start)}
-    shaded={curve.steps.filter((span) => span.untimed)}
     yMax={previewMax}
     fit
     preview
     {bare}
     label="curve preview"
   />
-  {#if !bare && curve.steps.some((span) => span.untimed)}
-    <p class="untimed" data-testid="preview-untimed">shaded: a step without a time, drawn 10 s long</p>
-  {/if}
 </div>
 
 <style>
@@ -64,14 +60,5 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
 
   .preview.bare {
     min-height: 0;
-  }
-
-  .untimed {
-    position: absolute;
-    top: 0.3rem;
-    right: 1rem;
-    margin: 0;
-    color: var(--dim);
-    font-size: 0.8rem;
   }
 </style>

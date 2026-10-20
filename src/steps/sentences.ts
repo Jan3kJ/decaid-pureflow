@@ -8,30 +8,37 @@
 // words, cycling chips and value pills, in Streamline's order (marker, temperature, pump,
 // limit, maximum, exit). Nothing is typed, so nothing can fail to parse: a chip is one of the
 // model's cycles, a pill opens the number pad on one of the model's values (`limitOf`).
+//
+// Unlike Streamline, a limit, maximum or exit that is off keeps its line, muted ('No limit',
+// 'No maximum', 'Move on: off'), so it can be switched on here as on the cards, and the exit
+// chip cycles to off without its line going away under the finger.
 import type { Profile, ProfileStep } from '../api';
-import { EXIT_CYCLE_STATES, exitCycleIndex, isOff, num, pumpLabel, readExitDef, setExit, valueOf, type StepValue } from './model';
+import { isOff, num, pumpLabel, readExitDef, valueOf, type StepValue } from './model';
 
 export type Tone = 'flow' | 'pressure' | 'temperature' | 'weight' | 'none';
 
-/** The state words a tap cycles. */
-export type ScriptChip = 'sensor' | 'pump' | 'exit';
+/** The state words a tap cycles; `limit` switches a limit that is off on. */
+export type ScriptChip = 'sensor' | 'pump' | 'exit' | 'limit';
 
 export type Part =
   | { kind: 'text'; text: string }
   | { kind: 'chip'; chip: ScriptChip; text: string; tone: Tone }
-  | { kind: 'value'; value: StepValue; text: string; tone: Tone };
+  /** `off`: a maximum's amount that is off, shown muted */
+  | { kind: 'value'; value: StepValue; text: string; tone: Tone; off?: boolean };
 
 export interface Sentence {
   kind: 'volumeStart' | 'temperature' | 'pump' | 'limit' | 'maximum' | 'exit';
   parts: Part[];
+  /** a limit, maximum or exit that is off: the line is muted */
+  off?: boolean;
 }
 
 /** Streamline's units; the number pad shows the model's (ml/s, s). */
 const UNIT = { flow: 'mL/s', pressure: 'bar' } as const;
 const MAXIMA = [
-  { value: 'weight', unit: 'g', tone: 'weight' },
-  { value: 'seconds', unit: 'sec', tone: 'none' },
-  { value: 'volume', unit: 'ml', tone: 'none' },
+  { value: 'weight', unit: 'g', tone: 'weight', name: 'weight' },
+  { value: 'seconds', unit: 'sec', tone: 'none', name: 'time' },
+  { value: 'volume', unit: 'ml', tone: 'none', name: 'volume' },
 ] as const;
 
 /** "Set" on the first step, then Increase, Decrease or Maintain against the step before. */
@@ -57,8 +64,9 @@ const pill = (step: ProfileStep, value: StepValue, unit: string, tone: Tone): Pa
 });
 
 /**
- * The sentences of step `index`. A limit, a maximum and an exit that are off have no sentence,
- * as in Streamline: "Limit to 0.0 bar" says what the step does not do; the cards add them.
+ * The sentences of step `index`. A limit, a maximum and an exit that are off keep their line,
+ * muted, with the chip or pills that switch them on; a maximum's amount that is off is a muted
+ * pill in its place.
  */
 export function stepSentences(profile: Profile, index: number): Sentence[] {
   const step = profile.steps[index];
@@ -98,22 +106,36 @@ export function stepSentences(profile: Profile, index: number): Sentence[] {
     ],
   });
 
-  if (!isOff(step, 'limiter')) {
+  if (isOff(step, 'limiter')) {
+    sentences.push({
+      kind: 'limit',
+      off: true,
+      parts: [text('No limit'), { kind: 'chip', chip: 'limit', text: 'switch on', tone: 'none' }],
+    });
+  } else {
     sentences.push({ kind: 'limit', parts: [text('Limit to'), pill(step, 'limiter', UNIT[other], other)] });
   }
 
-  const maxima = MAXIMA.filter((maximum) => !isOff(step, maximum.value));
-  if (maxima.length > 0) {
-    const parts: Part[] = [text('For a maximum of')];
-    maxima.forEach((maximum, n) => {
-      if (n > 0) parts.push(text('or'));
-      parts.push(pill(step, maximum.value, maximum.unit, maximum.tone));
-    });
-    sentences.push({ kind: 'maximum', parts });
-  }
+  const allOff = MAXIMA.every((maximum) => isOff(step, maximum.value));
+  const maximumParts: Part[] = [text(allOff ? 'No maximum' : 'For a maximum of')];
+  MAXIMA.forEach((maximum, n) => {
+    if (n > 0) maximumParts.push(text('or'));
+    maximumParts.push(
+      isOff(step, maximum.value)
+        ? { kind: 'value', value: maximum.value, text: `${maximum.name} off`, tone: 'none', off: true }
+        : pill(step, maximum.value, maximum.unit, maximum.tone),
+    );
+  });
+  sentences.push({ kind: 'maximum', parts: maximumParts, ...(allOff ? { off: true } : {}) });
 
   const exit = readExitDef(step);
-  if (exit.type !== 'off') {
+  if (exit.type === 'off') {
+    sentences.push({
+      kind: 'exit',
+      off: true,
+      parts: [text('Move on:'), { kind: 'chip', chip: 'exit', text: 'off', tone: 'none' }],
+    });
+  } else {
     sentences.push({
       kind: 'exit',
       parts: [
@@ -129,15 +151,4 @@ export function stepSentences(profile: Profile, index: number): Sentence[] {
     });
   }
   return sentences;
-}
-
-/** The exits the SCRIPT chip cycles: off is left out, as it would remove the chip being tapped. */
-const SCRIPT_EXITS = EXIT_CYCLE_STATES.filter((state) => state.type !== 'off');
-
-/** The next exit of a step that has one: pressure over, pressure under, flow over, flow under, round again. */
-export function cycleScriptExit(profile: Profile, index: number): Profile {
-  const exit = readExitDef(profile.steps[index]);
-  if (exit.type === 'off') return profile;
-  const next = SCRIPT_EXITS[(exitCycleIndex(exit.type, exit.condition) + 1) % SCRIPT_EXITS.length];
-  return setExit(profile, index, next);
 }

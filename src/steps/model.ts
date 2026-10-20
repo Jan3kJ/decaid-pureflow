@@ -217,28 +217,40 @@ const clamp = (value: number, limit: Limit) => Math.min(limit.max, Math.max(limi
 /** Without the float's noise of a sum of tenths; a value with two decimals (0.75) keeps them. */
 const tidy = (value: number) => Number(value.toFixed(2));
 
-// The last real exit value of each type, per step, so that switching an exit off and on again,
-// or from pressure to flow and back, gives the old value back instead of 0: a live "pressure
-// is over 0 bar" would end the step at once. Each edit makes a new step object, which takes
-// the old one's memory along.
-const lastExitValue = new WeakMap<ProfileStep, { pressure?: number; flow?: number }>();
-const EXIT_FALLBACK_VALUE = { pressure: 9.0, flow: 6.0 };
+// The last real exit value of each type, and the last live limiter, per step, so that
+// switching an exit or a limit off and on again, or an exit from pressure to flow and back,
+// gives the old value back instead of 0: a live "pressure is over 0 bar" would end the step at
+// once. Each edit makes a new step object, which takes the old one's memory along.
+interface StepMemory {
+  pressure?: number;
+  flow?: number;
+  limiter?: { value: number; range: number };
+}
+const stepMemory = new WeakMap<ProfileStep, StepMemory>();
+/** What an exit or a limit takes when the step remembers none: 9 bar, 6 ml/s. */
+const FALLBACK_VALUE = { pressure: 9.0, flow: 6.0 };
 
 function rememberExitValue(step: ProfileStep, type: string, value: number) {
   if ((type !== 'pressure' && type !== 'flow') || !(value > 0)) return;
-  lastExitValue.set(step, { ...lastExitValue.get(step), [type]: value });
+  stepMemory.set(step, { ...stepMemory.get(step), [type]: value });
 }
 
 function recallExitValue(step: ProfileStep, type: 'pressure' | 'flow'): number {
-  const remembered = lastExitValue.get(step)?.[type] ?? 0;
-  return Math.min(remembered > 0 ? remembered : EXIT_FALLBACK_VALUE[type], EXIT_MAX_MAP[type]);
+  const remembered = stepMemory.get(step)?.[type] ?? 0;
+  return Math.min(remembered > 0 ? remembered : FALLBACK_VALUE[type], EXIT_MAX_MAP[type]);
+}
+
+function rememberLimiter(step: ProfileStep) {
+  const limiter = step.limiter;
+  if (!limiter || !(num(limiter.value) > 0)) return;
+  stepMemory.set(step, { ...stepMemory.get(step), limiter: { value: num(limiter.value), range: num(limiter.range) } });
 }
 
 function updateStep(profile: Profile, index: number, change: (step: ProfileStep) => ProfileStep): Profile {
   const old = profile.steps[index];
   const next = change(old);
-  const memory = lastExitValue.get(old);
-  if (memory) lastExitValue.set(next, memory);
+  const memory = stepMemory.get(old);
+  if (memory) stepMemory.set(next, memory);
   return { ...profile, steps: profile.steps.map((step, i) => (i === index ? next : step)) };
 }
 
@@ -253,9 +265,15 @@ export function newLimiterRange(profile: Profile, pump: ProfileStep['pump']): nu
   return Number.isFinite(range) ? range : DEFAULT_LIMITER_RANGE;
 }
 
+/** The range a limiter switched on takes: the one it had before it was switched off, else `newLimiterRange`. */
+function limiterRangeOf(profile: Profile, step: ProfileStep): number {
+  return stepMemory.get(step)?.limiter?.range ?? newLimiterRange(profile, step.pump);
+}
+
 /**
- * Sets a value of the step, inside its range. A limiter set to 0 is off and keeps its range;
- * a new one takes `newLimiterRange`. The exit of a step without one is not set.
+ * Sets a value of the step, inside its range. A live limiter set to 0 is off: `limiter: null`,
+ * as Decaid stores a step without one; a new one takes the range it had, else
+ * `newLimiterRange`. The exit of a step without one is not set.
  */
 export function setValue(profile: Profile, index: number, value: StepValue, to: number): Profile {
   const step = profile.steps[index];
@@ -267,8 +285,13 @@ export function setValue(profile: Profile, index: number, value: StepValue, to: 
       case 'target':
         return isPressure(old) ? { ...old, pressure: v } : { ...old, flow: v };
       case 'limiter':
+        if (v === 0) {
+          if (!old.limiter || !(num(old.limiter.value) > 0)) return old;
+          rememberLimiter(old);
+          return { ...old, limiter: null };
+        }
         if (old.limiter) return { ...old, limiter: { ...old.limiter, value: v } };
-        return v > 0 ? { ...old, limiter: { value: v, range: newLimiterRange(profile, old.pump) } } : old;
+        return { ...old, limiter: { value: v, range: limiterRangeOf(profile, old) } };
       case 'exit': {
         const exit = old.exit as StepExit;
         rememberExitValue(old, exit.type, v);
@@ -322,6 +345,23 @@ export function setExit(profile: Profile, index: number, state: ExitState): Prof
     const value = recallExitValue(old, state.type);
     return { ...old, exit: { type: state.type, condition: state.condition ?? 'over', value } };
   });
+}
+
+/**
+ * A limit that is off switched on: the value and range it had before it was switched off,
+ * else 9 bar or 6 ml/s (inside the limit's range) and `newLimiterRange`; the SCRIPT tab's
+ * chip. A live limit stays.
+ */
+export function switchLimiterOn(profile: Profile, index: number): Profile {
+  const step = profile.steps[index];
+  if (!isOff(step, 'limiter')) return profile;
+  const limit = limitOf(step, 'limiter')!;
+  const remembered = stepMemory.get(step)?.limiter?.value;
+  const value = Math.min(remembered ?? FALLBACK_VALUE[isPressure(step) ? 'flow' : 'pressure'], limit.max);
+  // A limiter kept at 0 (a profile of another app) keeps its own range.
+  return updateStep(profile, index, (old) =>
+    old.limiter ? { ...old, limiter: { ...old.limiter, value } } : { ...old, limiter: { value, range: limiterRangeOf(profile, old) } },
+  );
 }
 
 export function cycleExit(profile: Profile, index: number): Profile {

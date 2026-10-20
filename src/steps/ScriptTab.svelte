@@ -9,10 +9,11 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
 <script lang="ts">
   // The step editor's SCRIPT tab (spec 3.7, research.md 17.18): each step its name and
   // Streamline's sentences, the preview beside them. A tap on a state word cycles it, a tap on
-  // a number opens the number pad; either is an edit of the editor's profile at once.
+  // a number opens the number pad; either is an edit of the editor's profile at once. A limit,
+  // maximum or exit that is off stays as a muted line: its chip or pill switches it on.
   import type { Profile } from '../api';
-  import { cyclePump, cycleSensor, type StepValue } from './model';
-  import { cycleScriptExit, stepSentences, type ScriptChip } from './sentences';
+  import { cycleExit, cyclePump, cycleSensor, switchLimiterOn, type StepValue } from './model';
+  import { stepSentences, type ScriptChip } from './sentences';
   import StepPreview from './StepPreview.svelte';
 
   interface Props {
@@ -27,7 +28,8 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   function cycle(index: number, chip: ScriptChip) {
     if (chip === 'sensor') onedit(cycleSensor(profile, index));
     else if (chip === 'pump') onedit(cyclePump(profile, index));
-    else onedit(cycleScriptExit(profile, index));
+    else if (chip === 'limit') onedit(switchLimiterOn(profile, index));
+    else onedit(cycleExit(profile, index));
   }
 </script>
 
@@ -38,7 +40,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
         <p class="name">{index + 1}: {step.name || 'Step'}</p>
         <ul>
           {#each stepSentences(profile, index) as sentence (sentence.kind)}
-            <li data-testid="script-line-{index}-{sentence.kind}">
+            <li class:off={sentence.off} data-testid="script-line-{index}-{sentence.kind}" data-off={sentence.off ? 'true' : 'false'}>
               {#each sentence.parts as part, n (n)}
                 {n > 0 ? ' ' : ''}{#if part.kind === 'text'}
                   <span>{part.text}</span>
@@ -53,7 +55,9 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
                 {:else}
                   <button
                     class="pill {part.tone}"
+                    class:off={part.off}
                     data-testid="script-value-{index}-{part.value}"
+                    data-off={part.off ? 'true' : 'false'}
                     aria-label="{part.text}, tap to type"
                     {disabled}
                     onclick={() => ontype(index, part.value)}>{part.text}</button
@@ -171,6 +175,19 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   }
   .weight {
     --tone: var(--weight);
+  }
+
+  /* Off: a limit, maximum or exit the step does not have, said in dim words. */
+  li.off,
+  li.off .chip,
+  .pill.off {
+    color: var(--dim);
+  }
+
+  .pill.off {
+    background: none;
+    border-style: dashed;
+    font-weight: 400;
   }
 
   button:disabled {

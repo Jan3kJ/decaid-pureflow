@@ -43,8 +43,6 @@
     preview?: boolean;
     /** s, dashed lines across the plot: where a step starts */
     borders?: number[];
-    /** s, stretches drawn shaded: steps whose drawn length is not their own */
-    shaded?: { start: number; end: number }[];
     /** no ticks, units or times: the picker's small preview of a profile (spec 3.8) */
     bare?: boolean;
   }
@@ -66,7 +64,6 @@
     label = 'shot graph',
     preview = false,
     borders = [],
-    shaded = [],
     bare = false,
   }: Props = $props();
 
@@ -182,16 +179,6 @@
         {/each}
       {/if}
 
-      {#each shaded as span, i (i)}
-        <rect
-          class="shaded"
-          data-testid="shot-shaded"
-          x={x(span.start)}
-          y={box.top}
-          width={Math.max(0, x(span.end) - x(span.start))}
-          height={box.bottom - box.top}
-        />
-      {/each}
       {#each borders as border, i (i)}
         <line class="border" data-testid="shot-border" x1={x(border)} x2={x(border)} y1={box.top} y2={box.bottom} />
       {/each}
@@ -314,11 +301,6 @@
     stroke-width: 1;
     stroke-dasharray: 0.5rem 0.35rem;
     opacity: 0.6;
-  }
-
-  .shaded {
-    fill: var(--line);
-    opacity: 0.35;
   }
 
   .flow {

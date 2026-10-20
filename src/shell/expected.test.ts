@@ -42,9 +42,9 @@ describe('profileSeconds', () => {
     expect(seconds).toBeLessThan(90);
   });
 
-  it("is the step editor's curve for another profile: a step without time counts 10 s", () => {
+  it("is the step editor's curve for another profile: a step of 0 s adds nothing", () => {
     expect(profileSeconds(stepProfile([8, 25]))).toBe(33);
-    expect(profileSeconds(stepProfile([8, 0]))).toBe(18);
+    expect(profileSeconds(stepProfile([8, 0]))).toBe(8);
     expect(profileSeconds(stepProfile([]))).toBeNull();
   });
 });

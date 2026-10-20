@@ -19,6 +19,7 @@ import {
   formatSetting,
   formatValue,
   insertStepAfter,
+  isOff,
   moveStep,
   newLimiterRange,
   openProfile,
@@ -35,6 +36,7 @@ import {
   setValue,
   stepProblems,
   stepValue,
+  switchLimiterOn,
   type StepValue,
 } from './model';
 
@@ -217,9 +219,50 @@ describe('editing a step', () => {
     expect(newLimiterRange(ranged, 'pressure')).toBe(0.6);
     const limited = setValue(ranged, 1, 'limiter', 7);
     expect(limited.steps[1].limiter).toEqual({ value: 7, range: 0.9 });
-    // A limiter set to 0 is off and keeps its range; without one, 0 adds none.
-    expect(setValue(limited, 1, 'limiter', 0).steps[1].limiter).toEqual({ value: 0, range: 0.9 });
+    // A limiter set to 0 is off, as Decaid stores a step without one; without one, 0 adds none.
+    const off = setValue(limited, 1, 'limiter', 0);
+    expect(off.steps[1].limiter).toBeNull();
     expect(setValue(ranged, 2, 'limiter', 0).steps[2]).toBe(ranged.steps[2]);
+    // Typed again, it has its range back.
+    expect(setValue(off, 1, 'limiter', 5).steps[1].limiter).toEqual({ value: 5, range: 0.9 });
+  });
+
+  it('off in the step model: exit null, no limiter, 0 amounts; each switched on again with its value', () => {
+    const live = step('a', {
+      pump: 'pressure',
+      pressure: 9,
+      seconds: 25,
+      weight: 36,
+      volume: 80,
+      limiter: { value: 3.5, range: 0.4 },
+      exit: { type: 'flow', condition: 'over', value: 2.5 },
+    });
+    let profile: Profile = { title: 'off', steps: [live], target_volume_count_start: 0, tank_temperature: 0 };
+    // The exit cycles to off from flow under.
+    profile = cycleExit(profile, 0);
+    expect(profile.steps[0].exit).toEqual({ type: 'flow', condition: 'under', value: 2.5 });
+    profile = cycleExit(profile, 0);
+    profile = setValue(profile, 0, 'limiter', 0);
+    for (const value of ['weight', 'seconds', 'volume'] as const) profile = setValue(profile, 0, value, 0);
+    expect(profile.steps[0]).toEqual({ ...live, exit: null, limiter: null, weight: 0, seconds: 0, volume: 0 });
+    for (const value of ['exit', 'limiter', 'weight', 'seconds', 'volume'] as const) {
+      expect(isOff(profile.steps[0], value), value).toBe(true);
+      expect(formatValue(profile.steps[0], value), value).toBe('off');
+    }
+    // On again: the first exit with this step's pressure value (none: 9 bar), the limit with its value and range.
+    const on = switchLimiterOn(cycleExit(profile, 0), 0);
+    expect(on.steps[0].exit).toEqual({ type: 'pressure', condition: 'over', value: 9 });
+    expect(on.steps[0].limiter).toEqual({ value: 3.5, range: 0.4 });
+    expect(switchLimiterOn(on, 0)).toBe(on);
+    // A limit never set takes 9 bar on a flow step, 6 ml/s on a pressure step, and the profile's range.
+    const fresh = lettered('ab', 0);
+    expect(switchLimiterOn(fresh, 0).steps[0].limiter).toEqual({ value: 9, range: 0.6 });
+    const pressure: Profile = { ...fresh, steps: [step('p', { pump: 'pressure', pressure: 9 })] };
+    expect(switchLimiterOn(pressure, 0).steps[0].limiter).toEqual({ value: 6, range: 0.6 });
+    // A limiter kept at 0 by another app keeps its own range.
+    const kept: Profile = { ...fresh, steps: [step('k', { limiter: { value: 0, range: 0.2 } })] };
+    expect(switchLimiterOn(kept, 0).steps[0].limiter).toEqual({ value: 9, range: 0.2 });
+    expect(setValue(kept, 0, 'limiter', 0).steps[0]).toBe(kept.steps[0]);
   });
 
   it('± and typed values stay inside the ranges; a value brought from outside comes back in', () => {
