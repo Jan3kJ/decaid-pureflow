@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import type { DisplayState, MachineSnapshot, DecaidSettings, DeviceInfo, PaginatedShots } from '../src/api';
 import { IDLE } from './idle';
 
 // Acceptance items 6 and 21 (spec section 5) against the rig: a tap on the weight in the state
@@ -11,7 +12,7 @@ import { IDLE } from './idle';
 
 const GATEWAY = 'http://localhost:8080';
 
-async function api(method: string, path: string, body?: unknown): Promise<any> {
+async function api<T = unknown>(method: string, path: string, body?: unknown): Promise<T> {
   const response = await fetch(GATEWAY + path, {
     method,
     headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
@@ -20,12 +21,12 @@ async function api(method: string, path: string, body?: unknown): Promise<any> {
   });
   const text = await response.text();
   if (!response.ok) throw new Error(`${method} ${path}: ${response.status} ${text.slice(0, 200)}`);
-  return text ? JSON.parse(text) : undefined;
+  return (text ? JSON.parse(text) : undefined) as T;
 }
 
-const machineState = async (): Promise<string> => (await api('GET', '/api/v1/machine/state')).state.state;
+const machineState = async (): Promise<string> => (await api<MachineSnapshot>('GET', '/api/v1/machine/state')).state.state;
 const shotIds = async (): Promise<string[]> =>
-  (await api('GET', '/api/v1/shots?limit=100')).items.map((shot: { id: string }) => shot.id);
+  (await api<PaginatedShots>('GET', '/api/v1/shots?limit=100')).items.map((shot: { id: string }) => shot.id);
 
 /** The next weight of the scale stream, read outside the skin. */
 function scaleWeight(): Promise<number> {
@@ -36,7 +37,7 @@ function scaleWeight(): Promise<number> {
       reject(new Error('no weight from /ws/v1/scale/snapshot in 10 s'));
     }, 10_000);
     socket.onmessage = (event) => {
-      const frame = JSON.parse(String(event.data));
+      const frame = JSON.parse(String(event.data)) as { weight?: unknown };
       if (typeof frame.weight !== 'number') return;
       clearTimeout(timer);
       socket.close();
@@ -78,7 +79,7 @@ test('scale: no scale page; a tap on the weight tares, and the scale reads about
 test('scale: with blockTareDuringShot on, a tare during a simulated shot shows the notice', async ({ page }) => {
   test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
 
-  const settingBefore: boolean = (await api('GET', '/api/v1/settings')).blockTareDuringShot ?? false;
+  const settingBefore: boolean = (await api<DecaidSettings>('GET', '/api/v1/settings')).blockTareDuringShot ?? false;
   const shotsBefore = await shotIds();
 
   try {
@@ -96,7 +97,7 @@ test('scale: with blockTareDuringShot on, a tare during a simulated shot shows t
     await page.getByTestId('state-scale').click();
     const response = await answer;
     expect(response.status()).toBe(400);
-    expect((await response.json()).type).toBe('block_tare_during_shot');
+    expect(((await response.json()) as { type: string }).type).toBe('block_tare_during_shot');
     await expect(page.getByTestId('tare-notice')).toContainText('No tare while a shot runs');
     await expect(page.getByTestId('notice')).toHaveCount(0);
     await page.screenshot({ path: 'e2e-rig/.results/tare-blocked-rig.png' });
@@ -110,13 +111,13 @@ test('scale: with blockTareDuringShot on, a tare during a simulated shot shows t
     }
   }
 
-  expect((await api('GET', '/api/v1/settings')).blockTareDuringShot ?? false).toBe(settingBefore);
+  expect((await api<DecaidSettings>('GET', '/api/v1/settings')).blockTareDuringShot ?? false).toBe(settingBefore);
   expect(await shotIds()).toEqual(shotsBefore);
   await expect.poll(machineState, { timeout: 30_000 }).toBe('idle');
 });
 
 const scaleState = async (): Promise<string | undefined> =>
-  (await api('GET', '/api/v1/devices')).find((device: { id: string }) => device.id === 'MockScale')?.state;
+  (await api<DeviceInfo[]>('GET', '/api/v1/devices')).find((device: { id: string }) => device.id === 'MockScale')?.state;
 
 /**
  * Disconnects the simulated scale until it stays away for 30 s without a skin: for a while
@@ -172,7 +173,7 @@ test('scale: the simulated scale, missing at the start or dropped, is connected 
 test('sleep: the button puts the machine into sleeping, a touch wakes it', async ({ page }) => {
   test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
 
-  const displayBefore = await api('GET', '/api/v1/display');
+  const displayBefore = await api<DisplayState>('GET', '/api/v1/display');
   const sent: string[] = [];
   page.on('request', (request) => {
     if (request.url().startsWith(GATEWAY) && request.method() !== 'GET' && request.method() !== 'OPTIONS') {
@@ -218,5 +219,5 @@ test('sleep: the button puts the machine into sleeping, a touch wakes it', async
   }
 
   expect(await machineState()).not.toBe('sleeping');
-  expect((await api('GET', '/api/v1/display')).requestedBrightness).toBe(displayBefore.requestedBrightness);
+  expect((await api<DisplayState>('GET', '/api/v1/display')).requestedBrightness).toBe(displayBefore.requestedBrightness);
 });

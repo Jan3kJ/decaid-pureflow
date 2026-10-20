@@ -166,7 +166,7 @@
       <small>last shot × ratio is the stop at weight</small>
     </div>
     <div class="values">
-      {#each settings.hotWater.ratios as _, index (index)}
+      {#each settings.hotWater.ratios, index}
         <button class="value" data-testid="setting-ratio-{index + 1}" onclick={() => (typingRatio = index)}>
           <small>{index + 1}</small>
           <b><i class="lead">1:</i>{shownRatio(index)}</b>

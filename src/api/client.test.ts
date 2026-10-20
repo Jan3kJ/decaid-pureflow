@@ -28,7 +28,7 @@ interface Answer {
 /** A fetch that records every call and answers from a list, then with `200 null`. */
 function stubFetch(...answers: Answer[]) {
   const calls: Call[] = [];
-  const fetch: FetchLike = async (url, init = {}) => {
+  const fetch: FetchLike = (url, init = {}) => {
     calls.push({
       url,
       method: init.method ?? 'GET',
@@ -38,7 +38,7 @@ function stubFetch(...answers: Answer[]) {
     const { status = 200, body = null } = answers.shift() ?? {};
     const text = typeof body === 'string' ? body : JSON.stringify(body);
     // A 204 must not have a body.
-    return new Response(status === 204 ? null : text, { status });
+    return Promise.resolve(new Response(status === 204 ? null : text, { status }));
   };
   return { fetch, calls };
 }
@@ -489,9 +489,7 @@ describe('errors', () => {
 
   it('gives a DecaidNetworkError when the gateway does not answer', async () => {
     const client = new DecaidClient({
-      fetch: async () => {
-        throw new TypeError('fetch failed');
-      },
+      fetch: () => Promise.reject(new TypeError('fetch failed')),
     });
     const error = await client.getMachineState().catch((e: unknown) => e);
     expect(error).toBeInstanceOf(DecaidNetworkError);

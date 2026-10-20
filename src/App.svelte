@@ -8,7 +8,7 @@
   import Home from './shell/Home.svelte';
   import Profiles from './shell/Profiles.svelte';
   import SettingsPage from './settings-page/SettingsPage.svelte';
-  import { Skin } from './shell/skin.svelte';
+  import { Skin, type LoadAnswer } from './shell/skin.svelte';
   import { backupTime } from './settings-backup';
   import Steam from './steam/Steam.svelte';
   import StepEditor from './steps/StepEditor.svelte';
@@ -101,7 +101,7 @@
 
 <!-- Unsaved edits on the machine: asked before any load of the skin (founder, 2026-10-14). -->
 {#if skin.unsaved}
-  <UnsavedDialog unsaved={skin.unsaved} onanswer={(answer) => skin.answerLoad(answer)} />
+  <UnsavedDialog unsaved={skin.unsaved} onanswer={(answer: LoadAnswer) => skin.answerLoad(answer)} />
 {/if}
 
 <!-- A stream the gateway closed with an error is tried again for 30 s by itself, then waits for this button. -->

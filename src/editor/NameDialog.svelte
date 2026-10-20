@@ -25,7 +25,7 @@
   }
 </script>
 
-<svelte:window onkeydown={(e) => e.key === 'Escape' && oncancel()} />
+<svelte:window onkeydown={(e: KeyboardEvent) => e.key === 'Escape' && oncancel()} />
 
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 <div class="backdrop" onclick={(e) => e.target === e.currentTarget && oncancel()}>

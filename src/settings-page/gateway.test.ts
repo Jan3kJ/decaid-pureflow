@@ -10,7 +10,7 @@ const field = (id: string) => TREE_FIELDS.find((entry) => entry.id === id)!;
 interface Call {
   method: string;
   path: string;
-  body: any;
+  body: unknown;
 }
 
 /**
@@ -20,29 +20,33 @@ interface Call {
 function fakeGateway() {
   const calls: Call[] = [];
   const state = {
-    decaid: { weightFlowMultiplier: 1, stopHotWaterAtWeight: true, gatewayMode: 'tracking' } as Record<string, any>,
-    machine: { fan: 55, usb: false, tankTemp: 20, steamPurgeMode: 0, flushFlow: 6, flushTimeout: 10 } as Record<string, any>,
+    decaid: { weightFlowMultiplier: 1, stopHotWaterAtWeight: true, gatewayMode: 'tracking' } as Record<string, unknown>,
+    machine: { fan: 55, usb: false, tankTemp: 20, steamPurgeMode: 0, flushFlow: 6, flushTimeout: 10 } as Record<string, unknown>,
     advanced: { heaterIdleTemp: 98, heaterPh1Flow: 2.5, heaterPh2Flow: 5, heaterPh2Timeout: 5, heaterVoltage: 120 } as Record<
       string,
-      any
+      unknown
     >,
     workflow: {
       steamSettings: { targetTemperature: 150, duration: 50, flow: 0.8 },
       hotWaterData: { targetTemperature: 75, duration: 30, volume: 50, flow: 10 },
       rinseData: { targetTemperature: 90, duration: 10, flow: 6 },
-    } as Record<string, any>,
-    display: { brightness: 100, requestedBrightness: 100, wakeLockOverride: false } as Record<string, any>,
-    presence: { userPresenceEnabled: true, sleepTimeoutMinutes: 30, schedules: [] } as Record<string, any>,
+    } as Record<string, object>,
+    display: { brightness: 100, requestedBrightness: 100, wakeLockOverride: false },
+    presence: { userPresenceEnabled: true, sleepTimeoutMinutes: 30, schedules: [] },
     kv: {} as Record<string, unknown>,
   };
   /** a path that answers 500 */
   const failing = new Set<string>();
   const json = (value: unknown, status = 200) => new Response(value === undefined ? '' : JSON.stringify(value), { status });
 
-  async function fetch(url: string, init?: RequestInit): Promise<Response> {
+  function fetch(url: string, init?: RequestInit): Promise<Response> {
+    return Promise.resolve(answer(url, init));
+  }
+
+  function answer(url: string, init?: RequestInit): Response {
     const path = decodeURIComponent(new URL(url).pathname);
     const method = init?.method ?? 'GET';
-    const body = init?.body ? JSON.parse(String(init.body)) : undefined;
+    const body = init?.body ? (JSON.parse(init.body as string) as Record<string, unknown>) : undefined;
     calls.push({ method, path, body });
     if (failing.has(`${method} ${path}`)) return json({ error: 'DeviceNotConnectedException' }, 500);
     const kv = /^\/api\/v1\/store\/(.+)$/.exec(path)?.[1];
@@ -60,7 +64,7 @@ function fakeGateway() {
       case 'GET /api/v1/machine/settings':
         return json(state.machine);
       case 'POST /api/v1/machine/settings':
-        for (const [key, value] of Object.entries(body)) {
+        for (const [key, value] of Object.entries(body!)) {
           if (key === 'tankTemp') continue;
           state.machine[key] = key === 'usb' ? value === 'enable' : value;
         }
@@ -76,15 +80,17 @@ function fakeGateway() {
         return json(undefined, 202);
       case 'GET /api/v1/workflow':
         return json(state.workflow);
-      case 'PUT /api/v1/workflow':
-        for (const [group, values] of Object.entries(body))
+      case 'PUT /api/v1/workflow': {
+        for (const [group, values] of Object.entries(body!))
           state.workflow[group] = { ...state.workflow[group], ...(values as object) };
-        if (body.rinseData) Object.assign(state.machine, { flushFlow: body.rinseData.flow, flushTimeout: body.rinseData.duration });
+        const rinse = body!.rinseData as { flow: number; duration: number } | undefined;
+        if (rinse) Object.assign(state.machine, { flushFlow: rinse.flow, flushTimeout: rinse.duration });
         return json(state.workflow);
+      }
       case 'GET /api/v1/display':
         return json(state.display);
       case 'PUT /api/v1/display/brightness':
-        state.display.requestedBrightness = body.brightness;
+        state.display.requestedBrightness = body!.brightness as number;
         return json(state.display);
       case 'POST /api/v1/display/wakelock':
       case 'DELETE /api/v1/display/wakelock':

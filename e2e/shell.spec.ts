@@ -163,7 +163,7 @@ test('the way back to home is a large target in the accent colour', async ({ pag
 });
 
 test("the settings page names the skin's version in its top right corner", async ({ page }) => {
-  const manifest = JSON.parse(readFileSync('public/manifest.json', 'utf8'));
+  const manifest = JSON.parse(readFileSync('public/manifest.json', 'utf8')) as { name: string; version: string };
   await mockGateway(page);
   await page.goto('/');
   await page.getByTestId('menu').click();

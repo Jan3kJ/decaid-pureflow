@@ -25,9 +25,9 @@ let calls: { method: string; url: string }[];
 beforeEach(() => {
   calls = [];
   vi.stubGlobal('localStorage', memoryStorage());
-  vi.stubGlobal('fetch', async (url: string, init?: RequestInit) => {
+  vi.stubGlobal('fetch', (url: string, init?: RequestInit) => {
     calls.push({ method: init?.method ?? 'GET', url });
-    return new Response(null, { status: 200 });
+    return Promise.resolve(new Response(null, { status: 200 }));
   });
 });
 
@@ -59,8 +59,8 @@ describe('tare', () => {
   });
 
   it('a tare Decaid blocks during a shot is a notice, not an error', async () => {
-    vi.stubGlobal('fetch', async () =>
-      Response.json({ type: 'block_tare_during_shot', details: 'A shot is brewing' }, { status: 400 }),
+    vi.stubGlobal('fetch', () =>
+      Promise.resolve(Response.json({ type: 'block_tare_during_shot', details: 'A shot is brewing' }, { status: 400 })),
     );
     const skin = new Skin(GATEWAY);
     skin.scaleLink = 'connected';

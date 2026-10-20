@@ -1,4 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
+import type { MachineSnapshot, ShotRecord, ProfileRecord } from '../src/api';
+import type { RigWorkflow } from './gateway';
 import { IDLE } from './idle';
 
 // The hot water page against the rig (R5, spec 3.7, acceptance item 20). A short simulated
@@ -14,7 +16,7 @@ const PROFILE = 'Rao Allongé';
 const SHOT_GRAMS = 40;
 const BACKUP = '/api/v1/store/pureflow/settings-backup';
 
-async function api(method: string, path: string, body?: unknown): Promise<any> {
+async function api<T = unknown>(method: string, path: string, body?: unknown): Promise<T> {
   const response = await fetch(GATEWAY + path, {
     method,
     headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
@@ -23,12 +25,12 @@ async function api(method: string, path: string, body?: unknown): Promise<any> {
   });
   const text = await response.text();
   if (!response.ok) throw new Error(`${method} ${path}: ${response.status} ${text.slice(0, 200)}`);
-  return text ? JSON.parse(text) : undefined;
+  return (text ? JSON.parse(text) : undefined) as T;
 }
 
-const machineState = async (): Promise<string> => (await api('GET', '/api/v1/machine/state')).state.state;
+const machineState = async (): Promise<string> => (await api<MachineSnapshot>('GET', '/api/v1/machine/state')).state.state;
 const shotIds = (): Promise<string[]> => api('GET', '/api/v1/shots/ids');
-const hotWaterData = async () => (await api('GET', '/api/v1/workflow')).hotWaterData;
+const hotWaterData = async () => (await api<RigWorkflow>('GET', '/api/v1/workflow')).hotWaterData;
 
 /** Types a value on the number pad that a tap on `testid` opens. */
 async function type(page: Page, testid: string, value: string) {
@@ -52,10 +54,10 @@ test.beforeAll(async () => {
 test('the hot water page writes hotWaterData, 1:2 of a 40 g shot is 80 g, Decaid stops at it, tare tares', async ({ page }) => {
   test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
 
-  const workflowBefore = await api('GET', '/api/v1/workflow');
+  const workflowBefore = await api<RigWorkflow>('GET', '/api/v1/workflow');
   const shotsBefore = await shotIds();
   const backupBefore = await api('GET', BACKUP);
-  const profiles: { profile: { title: string } }[] = await api('GET', '/api/v1/profiles');
+  const profiles: { profile: { title: string } }[] = await api<ProfileRecord[]>('GET', '/api/v1/profiles');
   const shotProfile = profiles.find((record) => record.profile.title === PROFILE)!.profile;
 
   try {
@@ -68,11 +70,11 @@ test('the hot water page writes hotWaterData, 1:2 of a 40 g shot is 80 g, Decaid
     await expect
       .poll(async () => (shotId = (await shotIds()).find((id) => !shotsBefore.includes(id))), { timeout: 30_000 })
       .toBeTruthy();
-    const shot = await api('GET', `/api/v1/shots/${encodeURIComponent(shotId!)}`);
+    const shot = await api<ShotRecord>('GET', `/api/v1/shots/${encodeURIComponent(shotId!)}`);
     await api('PUT', `/api/v1/shots/${encodeURIComponent(shotId!)}`, {
       annotations: { ...shot.annotations, actualYield: SHOT_GRAMS },
     });
-    expect((await api('GET', '/api/v1/shots/latest')).annotations.actualYield).toBe(SHOT_GRAMS);
+    expect((await api<ShotRecord>('GET', '/api/v1/shots/latest')).annotations!.actualYield).toBe(SHOT_GRAMS);
 
     // The split tab's hot water part opens the page.
     await page.goto('/');
@@ -128,5 +130,5 @@ test('the hot water page writes hotWaterData, 1:2 of a 40 g shot is 80 g, Decaid
     if (backupBefore === null) await api('DELETE', BACKUP).catch(() => undefined);
   }
   expect(await shotIds()).toEqual(shotsBefore);
-  expect((await api('GET', '/api/v1/workflow')).hotWaterData).toEqual(workflowBefore.hotWaterData);
+  expect((await api<RigWorkflow>('GET', '/api/v1/workflow')).hotWaterData).toEqual(workflowBefore.hotWaterData);
 });

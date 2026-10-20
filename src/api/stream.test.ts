@@ -19,14 +19,14 @@ class FakeSocket implements SocketLike {
 
   readonly url: string;
   closedByClient = false;
-  private listeners: Record<string, Array<(event: any) => void>> = {};
+  private listeners: Record<string, Array<(event: never) => void>> = {};
 
   constructor(url: string) {
     this.url = url;
     FakeSocket.instances.push(this);
   }
 
-  addEventListener(type: string, listener: (event: any) => void): void {
+  addEventListener(type: string, listener: (event: never) => void): void {
     (this.listeners[type] ??= []).push(listener);
   }
 
@@ -51,7 +51,7 @@ class FakeSocket implements SocketLike {
   }
 
   private emit(type: string, event: unknown): void {
-    for (const listener of this.listeners[type] ?? []) listener(event);
+    for (const listener of this.listeners[type] ?? []) listener(event as never);
   }
 }
 
@@ -345,7 +345,7 @@ describe('connection-error frames', () => {
     refuse();
     for (let elapsed = 0; elapsed < 29_900; elapsed += 100) {
       vi.advanceTimersByTime(100);
-      if ((stream.state as StreamState) === 'connecting') refuse();
+      if (stream.state === 'connecting') refuse();
       expect(stream.state).not.toBe('failed');
     }
     expect(states).not.toContain('failed');

@@ -114,9 +114,9 @@ export const PREVIOUS_KEY = 'pureflow.sensor-calibration-previous';
 
 export function loadPrevious(store: Pick<Storage, 'getItem'> = localStorage): Partial<Record<SensorTarget, number>> {
   try {
-    const parsed = JSON.parse(store.getItem(PREVIOUS_KEY) ?? '{}');
+    const parsed = JSON.parse(store.getItem(PREVIOUS_KEY) ?? '{}') as Partial<Record<SensorTarget, number>> | null;
     return Object.fromEntries(
-      SENSORS.filter((sensor) => Number.isFinite(parsed?.[sensor.id])).map((sensor) => [sensor.id, parsed[sensor.id]]),
+      SENSORS.filter((sensor) => Number.isFinite(parsed?.[sensor.id])).map((sensor) => [sensor.id, parsed![sensor.id]]),
     );
   } catch {
     return {};

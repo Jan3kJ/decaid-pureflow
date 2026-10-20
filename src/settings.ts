@@ -134,7 +134,7 @@ function merged<T extends object>(defaults: T, stored: unknown): T {
       if (isAmount(value)) result[key] = value;
     } else if (Array.isArray(standard)) {
       if (Array.isArray(value) && value.length === standard.length && value.every(isAmount)) result[key] = [...value];
-      else result[key] = [...standard];
+      else result[key] = [...(standard as unknown[])];
     } else {
       result[key] = merged(standard as object, value);
     }
@@ -178,7 +178,7 @@ export function readAdjustments(stored: unknown): number[] {
   const fits = (value: unknown) =>
     Number.isInteger(value) && (value as number) >= ADJUST_RANGE.min && (value as number) <= ADJUST_RANGE.max;
   const defaults = DEFAULT_STEAM_SETTINGS.adjustments;
-  return Array.isArray(stored) && stored.length === defaults.length && stored.every(fits) ? [...stored] : [...defaults];
+  return Array.isArray(stored) && stored.length === defaults.length && stored.every(fits) ? [...(stored as number[])] : [...defaults];
 }
 
 /** The ratio favourites: three amounts in their range, else the defaults. */

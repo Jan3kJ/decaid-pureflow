@@ -1,4 +1,6 @@
 import { expect, test } from '@playwright/test';
+import type { MachineSnapshot } from '../src/api';
+import type { RigWorkflow } from './gateway';
 import { IDLE } from './idle';
 
 // The water view against the rig (V1 and R3, acceptance items 9 and 19): no picture, the
@@ -11,7 +13,7 @@ import { IDLE } from './idle';
 
 const GATEWAY = 'http://localhost:8080';
 
-async function api(method: string, path: string, body?: unknown): Promise<any> {
+async function api<T = unknown>(method: string, path: string, body?: unknown): Promise<T> {
   const response = await fetch(GATEWAY + path, {
     method,
     headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
@@ -20,10 +22,10 @@ async function api(method: string, path: string, body?: unknown): Promise<any> {
   });
   const text = await response.text();
   if (!response.ok) throw new Error(`${method} ${path}: ${response.status} ${text.slice(0, 200)}`);
-  return text ? JSON.parse(text) : undefined;
+  return (text ? JSON.parse(text) : undefined) as T;
 }
 
-const machineState = async () => (await api('GET', '/api/v1/machine/state')).state.state;
+const machineState = async () => (await api<MachineSnapshot>('GET', '/api/v1/machine/state')).state.state;
 const ids = (kind: 'shots' | 'steams'): Promise<string[]> => api('GET', `/api/v1/${kind}/ids`);
 
 let gatewayUp = false;
@@ -39,7 +41,7 @@ test.beforeAll(async () => {
 test('hot water and flush started at the machine show the ring and the values in stop; stop ends the flush', async ({ page }) => {
   test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
 
-  const workflow = await api('GET', '/api/v1/workflow');
+  const workflow = await api<RigWorkflow>('GET', '/api/v1/workflow');
   const hotSeconds = Math.round(workflow.hotWaterData.duration);
   const flushSeconds = Math.round(workflow.rinseData.duration);
   const before = { shots: await ids('shots'), steams: await ids('steams') };

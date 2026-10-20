@@ -172,7 +172,7 @@
     max={2359}
     decimals={false}
     current={clock(form.minutes).replace(':', '')}
-    onconfirm={(typed) => {
+    onconfirm={(typed: number) => {
       typing = null;
       const minutes = minutesOf(typed);
       if (minutes !== null) form.minutes = minutes;
@@ -187,7 +187,7 @@
     max={KEEP_AWAKE_MAX}
     decimals={false}
     current={String(form.keepAwake)}
-    onconfirm={(typed) => {
+    onconfirm={(typed: number) => {
       typing = null;
       form.keepAwake = Math.round(typed);
     }}

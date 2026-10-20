@@ -1,4 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
+import type { Settings } from '../src/settings';
+import type { Backup } from '../src/settings-backup';
 import { mockGateway } from './mock-gateway';
 
 // Acceptance item 18 (spec 3.7, R4) against a mocked gateway: the home menu's steam switch
@@ -66,10 +68,12 @@ test('steam on brings back the temperature the heater had, and it is in the sett
   await openMenu(page);
   await page.getByTestId('steam-heater').click();
   await expect.poll(() => gateway.shotSettings.targetSteamTemp).toBe(0);
-  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('pureflow.settings') ?? '{}'));
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('pureflow.settings') ?? '{}') as Settings);
   expect(stored.steam.heaterTemperature).toBe(158);
   await expect
-    .poll(() => (gateway.store['pureflow/settings-backup'] as any)?.settings?.steam?.heaterTemperature, { timeout: 10_000 })
+    .poll(() => (gateway.store['pureflow/settings-backup'] as Backup | undefined)?.settings?.steam?.heaterTemperature, {
+      timeout: 10_000,
+    })
     .toBe(158);
 
   // After a reload the remembered temperature is still the one switched on with.

@@ -33,7 +33,7 @@ const feed = (skin: Skin, list: MachineSnapshot[]) => {
 
 beforeEach(() => {
   vi.stubGlobal('localStorage', memoryStorage());
-  vi.stubGlobal('fetch', async () => new Response('{}', { status: 200 }));
+  vi.stubGlobal('fetch', () => Promise.resolve(new Response('{}', { status: 200 })));
 });
 
 afterEach(() => vi.unstubAllGlobals());

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_PROFILES, generateProfile, serializeParams, type AFlowParams } from '../aflow';
+import type { DecaidClient } from '../api';
 import { loadProfile } from '../shell/profiles';
 import { fakeGateway } from './gateway.fake';
 import { SKIN_METADATA, buildProfile, changed, loadOnLeave, nameOf, saveAs, saveEdit, storeAndLoad, titleOf } from './save';
@@ -203,9 +204,9 @@ describe('loading', () => {
   it('a load that fails after the save keeps the record and says why', async () => {
     const gateway = fakeGateway();
     const record = gateway.make(buildProfile(edited, about, false));
-    const failing = Object.create(gateway.client);
+    const failing = Object.create(gateway.client) as DecaidClient;
     failing.updateWorkflow = () => Promise.reject(new Error('no machine'));
-    const stored = await storeAndLoad(failing, async () => record);
+    const stored = await storeAndLoad(failing, () => Promise.resolve(record));
     expect(stored.record).toBe(record);
     expect('error' in stored && (stored.error as Error).message).toBe('no machine');
   });

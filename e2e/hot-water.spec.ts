@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import type { Backup } from '../src/settings-backup';
 import { mockGateway, profile, type MockGateway } from './mock-gateway';
 
 // The hot water page (R5, spec 3.7, acceptance item 20) against a mocked gateway: the split
@@ -46,7 +47,7 @@ async function type(page: Page, testid: string, value: string) {
 /** A shot in the history whose final weight is `grams`. */
 function shotOf(gateway: MockGateway, grams: number) {
   gateway.addShot('shot-40', '2026-10-17T07:00:00', profile('A-Flow / default-medium', 42, 9), { targetYield: 40 });
-  gateway.shots.at(-1)!.annotations.actualYield = grams;
+  gateway.shots.at(-1)!.annotations!.actualYield = grams;
 }
 
 const lastWrite = (gateway: MockGateway) =>
@@ -172,7 +173,7 @@ test('the favourites come from the settings; without a last shot or a scale noth
   expect(gateway.calls('PUT', '/api/v1/scale/tare')).toHaveLength(tares);
   // The ratios are a part of the settings object, so the KV backup carries them.
   await expect
-    .poll(() => (gateway.store['pureflow/settings-backup'] as any)?.settings?.hotWater?.ratios ?? null)
+    .poll(() => (gateway.store['pureflow/settings-backup'] as Backup | undefined)?.settings?.hotWater?.ratios ?? null)
     .toEqual([1.5, 2.5, 3]);
   expect(errors).toEqual([]);
 });

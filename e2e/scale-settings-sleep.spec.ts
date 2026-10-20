@@ -206,7 +206,7 @@ test('settings: the defaults, typed values and both switches survive a reload', 
     await page.evaluate(() => ({
       keys: Object.keys(localStorage).sort(),
       session: sessionStorage.length,
-      settings: JSON.parse(localStorage.getItem('pureflow.settings')!),
+      settings: JSON.parse(localStorage.getItem('pureflow.settings')!) as unknown,
     })),
   ).toEqual({
     // The page's last category is not a setting (research.md 20.7).

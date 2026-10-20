@@ -1,4 +1,6 @@
 import { expect, test } from '@playwright/test';
+import type { MachineSnapshot, PaginatedShots, ShotRecord, ProfileRecord } from '../src/api';
+import type { RigWorkflow } from './gateway';
 import { IDLE } from './idle';
 
 // T1 (spec 3.8, acceptance 27) against the rig: a simulated shot's live graph ends where the
@@ -11,7 +13,7 @@ const GATEWAY = 'http://localhost:8080';
 const PROFILE = 'A-Flow / default-medium';
 const TARGET = 36;
 
-async function api(method: string, path: string, body?: unknown): Promise<any> {
+async function api<T = unknown>(method: string, path: string, body?: unknown): Promise<T> {
   const response = await fetch(GATEWAY + path, {
     method,
     headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
@@ -20,17 +22,17 @@ async function api(method: string, path: string, body?: unknown): Promise<any> {
   });
   const text = await response.text();
   if (!response.ok) throw new Error(`${method} ${path}: ${response.status} ${text.slice(0, 200)}`);
-  return text ? JSON.parse(text) : undefined;
+  return (text ? JSON.parse(text) : undefined) as T;
 }
 
 const shotIds = async (): Promise<string[]> =>
-  (await api('GET', '/api/v1/shots?limit=100')).items.map((shot: { id: string }) => shot.id);
+  (await api<PaginatedShots>('GET', '/api/v1/shots?limit=100')).items.map((shot: { id: string }) => shot.id);
 
 let gatewayUp = false;
 
 test.beforeAll(async () => {
   try {
-    gatewayUp = (await api('GET', '/api/v1/machine/state')).state.state !== undefined;
+    gatewayUp = (await api<MachineSnapshot>('GET', '/api/v1/machine/state')).state.state !== undefined;
   } catch {
     gatewayUp = false;
   }
@@ -40,17 +42,17 @@ test('a simulated shot: the live graph ends with the shot, as long as its record
   test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
   test.setTimeout(240_000);
 
-  const workflowBefore = await api('GET', '/api/v1/workflow');
+  const workflowBefore = await api<RigWorkflow>('GET', '/api/v1/workflow');
   const shotsBefore = await shotIds();
-  const record = (await api('GET', '/api/v1/profiles')).find(
+  const record = (await api<ProfileRecord[]>('GET', '/api/v1/profiles')).find(
     (candidate: { profile: { title: string } }) => candidate.profile.title === PROFILE,
   );
   expect(record, `the rig has ${PROFILE}`).toBeTruthy();
   // The rig's one shot is of this profile: the running axis starts at its length.
-  const previous = (await api('GET', `/api/v1/shots?profileTitle=${encodeURIComponent(PROFILE)}&limit=1`)).items[0];
+  const previous = (await api<PaginatedShots>('GET', `/api/v1/shots?profileTitle=${encodeURIComponent(PROFILE)}&limit=1`)).items[0];
 
   try {
-    await api('PUT', '/api/v1/workflow', { profile: record.profile, context: { targetDoseWeight: 18, targetYield: TARGET } });
+    await api('PUT', '/api/v1/workflow', { profile: record!.profile, context: { targetDoseWeight: 18, targetYield: TARGET } });
     await page.goto('/');
     await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 15_000 });
     await expect(page.getByTestId('profile-name')).toHaveText(PROFILE);
@@ -79,18 +81,18 @@ test('a simulated shot: the live graph ends with the shot, as long as its record
     expect(await last.getByTestId('shot-graph').getAttribute('data-scale')).toBe('10');
 
     // Decaid's record of the same shot: from its first frame with water to its last.
-    let shot: any;
+    let shot!: ShotRecord;
     await expect
       .poll(
         async () => {
-          shot = await api('GET', '/api/v1/shots/latest');
+          shot = await api<ShotRecord>('GET', '/api/v1/shots/latest');
           return shotsBefore.includes(shot.id);
         },
         { timeout: 30_000 },
       )
       .toBe(false);
     const measurements: { machine: { timestamp: string; state: { substate: string } } }[] = (
-      await api('GET', `/api/v1/shots/${encodeURIComponent(shot.id)}`)
+      await api<ShotRecord>('GET', `/api/v1/shots/${encodeURIComponent(shot.id)}`)
     ).measurements;
     const waiting = ['idle', 'preparingForShot'];
     const first = measurements.findIndex((m) => !waiting.includes(m.machine.state.substate));
@@ -103,7 +105,7 @@ test('a simulated shot: the live graph ends with the shot, as long as its record
     expect(Math.abs(seconds - recorded)).toBeLessThan(1);
     expect(Math.abs(points - (measurements.length - first))).toBeLessThanOrEqual(10);
   } finally {
-    const state = await api('GET', '/api/v1/machine/state').catch(() => undefined);
+    const state = await api<MachineSnapshot>('GET', '/api/v1/machine/state').catch(() => undefined);
     if (state?.state.state === 'espresso') await api('PUT', '/api/v1/machine/state/idle');
     await page.waitForTimeout(5000);
     for (const id of await shotIds()) {
@@ -119,7 +121,7 @@ test('a simulated shot: the live graph ends with the shot, as long as its record
   }
 
   expect(await shotIds()).toEqual(shotsBefore);
-  const workflowAfter = await api('GET', '/api/v1/workflow');
+  const workflowAfter = await api<RigWorkflow>('GET', '/api/v1/workflow');
   expect(workflowAfter.profile).toEqual(workflowBefore.profile);
   expect(workflowAfter.context).toEqual(workflowBefore.context);
 });

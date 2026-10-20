@@ -88,7 +88,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
           value={shown(step, 'temperature')}
           tone="temperature"
           testid="{index}-temperature"
-          onstep={(d) => onstep('temperature', d)}
+          onstep={(d: 1 | -1) => onstep('temperature', d)}
           onedit={() => ontype('temperature')}
         />
       </div>
@@ -106,7 +106,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
           value={shown(step, 'target')}
           tone={pressure ? 'pressure' : 'flow'}
           testid="{index}-target"
-          onstep={(d) => onstep('target', d)}
+          onstep={(d: 1 | -1) => onstep('target', d)}
           onedit={() => ontype('target')}
         />
       </div>
@@ -117,7 +117,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
           value={shown(step, 'limiter')}
           tone={pressure ? 'flow' : 'pressure'}
           testid="{index}-limiter"
-          onstep={(d) => onstep('limiter', d)}
+          onstep={(d: 1 | -1) => onstep('limiter', d)}
           onedit={() => ontype('limiter')}
         />
       </div>
@@ -136,7 +136,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
             value={shown(step, 'exit')}
             tone={TONE[exit.type]}
             testid="{index}-exit"
-            onstep={(d) => onstep('exit', d)}
+            onstep={(d: 1 | -1) => onstep('exit', d)}
             onedit={() => ontype('exit')}
           />
         {:else}
@@ -149,21 +149,21 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
           label="weight"
           value={shown(step, 'weight')}
           testid="{index}-weight"
-          onstep={(d) => onstep('weight', d)}
+          onstep={(d: 1 | -1) => onstep('weight', d)}
           onedit={() => ontype('weight')}
         />
         <ValueChip
           label="time"
           value={shown(step, 'seconds')}
           testid="{index}-seconds"
-          onstep={(d) => onstep('seconds', d)}
+          onstep={(d: 1 | -1) => onstep('seconds', d)}
           onedit={() => ontype('seconds')}
         />
         <ValueChip
           label="volume"
           value={shown(step, 'volume')}
           testid="{index}-volume"
-          onstep={(d) => onstep('volume', d)}
+          onstep={(d: 1 | -1) => onstep('volume', d)}
           onedit={() => ontype('volume')}
         />
       </div>

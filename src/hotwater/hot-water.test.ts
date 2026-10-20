@@ -54,14 +54,14 @@ describe('the last measured shot', () => {
     const asked: unknown[] = [];
     const page = (items: PaginatedShots['items']): PaginatedShots => ({ items, total: items.length, limit: 1, offset: 0 });
     const client = {
-      listShots: async (query: unknown) => {
+      listShots: (query: unknown) => {
         asked.push(query);
-        return page([{ id: 'new', timestamp: '2026-10-17T07:00:00', annotations: { actualYield: 40 } }]);
+        return Promise.resolve(page([{ id: 'new', timestamp: '2026-10-17T07:00:00', annotations: { actualYield: 40 } }]));
       },
     };
     expect(await lastShotGrams(client)).toBe(40);
     expect(asked).toEqual([{ limit: 1, order: 'desc' }]);
-    expect(await lastShotGrams({ listShots: async () => page([]) })).toBeNull();
+    expect(await lastShotGrams({ listShots: () => Promise.resolve(page([])) })).toBeNull();
   });
 });
 
@@ -70,9 +70,9 @@ describe('the workflow write', () => {
     const patches: WorkflowPatch[] = [];
     return {
       patches,
-      updateWorkflow: async (patch: WorkflowPatch) => {
+      updateWorkflow: (patch: WorkflowPatch) => {
         patches.push(patch);
-        return { hotWaterData: { ...RIG, ...patch.hotWaterData } };
+        return Promise.resolve({ hotWaterData: { ...RIG, ...patch.hotWaterData } });
       },
     };
   }

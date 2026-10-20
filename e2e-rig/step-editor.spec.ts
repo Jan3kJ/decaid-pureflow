@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
-import type { Profile } from '../src/api';
+import type { Profile, MachineSnapshot, ProfileRecord } from '../src/api';
+import type { RigWorkflow } from './gateway';
 import { cyclePump, insertStepAfter, moveStep, removeStepAt, setValue, stepValue } from '../src/steps/model';
 
 // Acceptance item 10 (spec 3.6, research.md 17.11) against the rig: a profile that is not
@@ -12,7 +13,7 @@ import { cyclePump, insertStepAfter, moveStep, removeStepAt, setValue, stepValue
 const GATEWAY = 'http://localhost:8080';
 const SOURCE = 'Blooming Espresso';
 
-async function api(method: string, path: string, body?: unknown): Promise<any> {
+async function api<T = unknown>(method: string, path: string, body?: unknown): Promise<T> {
   const response = await fetch(GATEWAY + path, {
     method,
     headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
@@ -21,24 +22,25 @@ async function api(method: string, path: string, body?: unknown): Promise<any> {
   });
   const text = await response.text();
   if (!response.ok) throw new Error(`${method} ${path}: ${response.status} ${text.slice(0, 200)}`);
-  return text ? JSON.parse(text) : undefined;
+  return (text ? JSON.parse(text) : undefined) as T;
 }
 
 /** Every stored profile: the visible, the hidden and the soft-deleted ones. */
 async function profileIds(): Promise<string[]> {
   const lists = await Promise.all([
-    api('GET', '/api/v1/profiles?includeHidden=true'),
-    api('GET', '/api/v1/profiles?visibility=deleted'),
+    api<ProfileRecord[]>('GET', '/api/v1/profiles?includeHidden=true'),
+    api<ProfileRecord[]>('GET', '/api/v1/profiles?visibility=deleted'),
   ]);
-  return [...new Set(lists.flat().map((record: { id: string }) => record.id))].sort();
+  return [...new Set(lists.flat().map((record) => record.id))].sort();
 }
 
 /** A value with its keys in order and without nulls: the gateway returns `null` for a field left out. */
-function canonical(value: any): any {
-  if (Array.isArray(value)) return value.map(canonical);
+function canonical(value: unknown): unknown {
+  if (Array.isArray(value)) return (value as unknown[]).map(canonical);
   if (typeof value !== 'object' || value === null) return value;
+  const fields = value as Record<string, unknown>;
   const sorted: Record<string, unknown> = {};
-  for (const key of Object.keys(value).sort()) if (value[key] !== null) sorted[key] = canonical(value[key]);
+  for (const key of Object.keys(fields).sort()) if (fields[key] !== null) sorted[key] = canonical(fields[key]);
   return sorted;
 }
 
@@ -52,12 +54,12 @@ async function type(page: Page, testid: string, keys: string) {
 }
 
 let gatewayUp = false;
-let workflowBefore: any;
+let workflowBefore: RigWorkflow;
 let profilesBefore: string[] = [];
 
 test.beforeAll(async () => {
   try {
-    gatewayUp = (await api('GET', '/api/v1/machine/state')).state.state !== undefined;
+    gatewayUp = (await api<MachineSnapshot>('GET', '/api/v1/machine/state')).state.state !== undefined;
   } catch {
     gatewayUp = false;
   }
@@ -65,7 +67,7 @@ test.beforeAll(async () => {
 
 test.beforeEach(async () => {
   test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
-  workflowBefore = await api('GET', '/api/v1/workflow');
+  workflowBefore = await api<RigWorkflow>('GET', '/api/v1/workflow');
   profilesBefore = await profileIds();
 });
 
@@ -82,12 +84,12 @@ test.afterEach(async () => {
     },
   });
   expect(await profileIds()).toEqual(profilesBefore);
-  const workflowAfter = await api('GET', '/api/v1/workflow');
+  const workflowAfter = await api<RigWorkflow>('GET', '/api/v1/workflow');
   expect(workflowAfter.profile).toEqual(workflowBefore.profile);
 });
 
 test('a bundled profile opens in the step editor; its edited copy is stored with its steps and in the lineage', async ({ page }) => {
-  const source = (await api('GET', '/api/v1/profiles')).find((record: any) => record.profile.title === SOURCE);
+  const source = (await api<ProfileRecord[]>('GET', '/api/v1/profiles')).find((record) => record.profile.title === SOURCE)!;
   expect(source, `the rig bundles “${SOURCE}”`).toBeTruthy();
   expect(source.isDefault).toBe(true);
   await api('PUT', '/api/v1/workflow', { profile: source.profile });
@@ -126,7 +128,7 @@ test('a bundled profile opens in the step editor; its edited copy is stored with
   await page.getByTestId('save-name').fill(title);
   await page.getByTestId('save-confirm').click();
   await expect(notice(page)).toHaveText(`Saved as “${title}” and loaded.`);
-  const copies = (await api('GET', '/api/v1/profiles')).filter((record: any) => record.profile.title === title);
+  const copies = (await api<ProfileRecord[]>('GET', '/api/v1/profiles')).filter((record) => record.profile.title === title);
   expect(copies).toHaveLength(1);
   const copy = copies[0];
   expect(copy.parentId).toBe(source.id);
@@ -140,7 +142,7 @@ test('a bundled profile opens in the step editor; its edited copy is stored with
   await expect(notice(page)).toHaveText(`Saved “${title}” and loaded.`);
 
   // Read back: one visible profile of that title, a new record whose parent is the copy.
-  const listed = (await api('GET', '/api/v1/profiles')).filter((record: any) => record.profile.title === title);
+  const listed = (await api<ProfileRecord[]>('GET', '/api/v1/profiles')).filter((record) => record.profile.title === title);
   expect(listed).toHaveLength(1);
   const saved = listed[0];
   expect(saved.id).not.toBe(copy.id);
@@ -150,15 +152,15 @@ test('a bundled profile opens in the step editor; its edited copy is stored with
   // The parent's metadata (a bundled profile's `filename`), marked as the skin's.
   expect(saved.metadata).toEqual({ ...source.metadata, source: 'pureflow' });
   // Decaid's lineage holds both versions: the copy hidden, the edit visible.
-  const lineage = await api('GET', `/api/v1/profiles/${encodeURIComponent(saved.id)}/lineage`);
-  const versions = Object.fromEntries(lineage.map((record: any) => [record.id, record.visibility]));
+  const lineage = await api<ProfileRecord[]>('GET', `/api/v1/profiles/${encodeURIComponent(saved.id)}/lineage`);
+  const versions = Object.fromEntries(lineage.map((record) => [record.id, record.visibility]));
   expect(versions[copy.id]).toBe('hidden');
   expect(versions[saved.id]).toBe('visible');
   // The bundled profile is as it was, and the machine has the saved steps.
-  const after = await api('GET', `/api/v1/profiles/${encodeURIComponent(source.id)}`);
+  const after = await api<ProfileRecord>('GET', `/api/v1/profiles/${encodeURIComponent(source.id)}`);
   expect(after.visibility).toBe('visible');
   expect(canonical(after.profile)).toEqual(canonical(source.profile));
-  const workflow = await api('GET', '/api/v1/workflow');
+  const workflow = await api<RigWorkflow>('GET', '/api/v1/workflow');
   expect(canonical(workflow.profile.steps)).toEqual(canonical(expected.steps));
   await expect(page.getByTestId('save')).toBeDisabled();
 });
@@ -168,7 +170,7 @@ test('a bundled profile opens in the step editor; its edited copy is stored with
 // stored with the profile and read back; a later change of the title alone, and of the notes
 // alone, is stored too. What Decaid hashes of them is written to the test's output.
 test('the profile settings are saved with the steps and read back', async ({ page }) => {
-  const source = (await api('GET', '/api/v1/profiles')).find((record: any) => record.profile.title === SOURCE);
+  const source = (await api<ProfileRecord[]>('GET', '/api/v1/profiles')).find((record) => record.profile.title === SOURCE)!;
   expect(source, `the rig bundles “${SOURCE}”`).toBeTruthy();
   await api('PUT', '/api/v1/workflow', { profile: source.profile });
 
@@ -187,7 +189,7 @@ test('the profile settings are saved with the steps and read back', async ({ pag
   await page.getByTestId('save-name').fill(title);
   await page.getByTestId('save-confirm').click();
   await expect(notice(page)).toHaveText(`Saved as “${title}” and loaded.`);
-  const copy = (await api('GET', '/api/v1/profiles')).find((record: any) => record.profile.title === title);
+  const copy = (await api<ProfileRecord[]>('GET', '/api/v1/profiles')).find((record) => record.profile.title === title)!;
 
   // SETTINGS: every value, then 'save'.
   const renamed = `${title} b`;
@@ -200,18 +202,18 @@ test('the profile settings are saved with the steps and read back', async ({ pag
   await page.getByTestId('save').click();
   await expect(notice(page)).toHaveText(`Saved “${renamed}” and loaded.`);
   const wanted = { title: renamed, notes: 'E3 rig notes', target_weight: 40.5, target_volume: 60, tank_temperature: 35 };
-  const listed = (await api('GET', '/api/v1/profiles')).filter((record: any) => record.profile.title === renamed);
+  const listed = (await api<ProfileRecord[]>('GET', '/api/v1/profiles')).filter((record) => record.profile.title === renamed);
   expect(listed).toHaveLength(1);
   const saved = listed[0];
   expect(saved.profile).toMatchObject(wanted);
-  const read = await api('GET', `/api/v1/profiles/${encodeURIComponent(saved.id)}`);
+  const read = await api<ProfileRecord>('GET', `/api/v1/profiles/${encodeURIComponent(saved.id)}`);
   expect(read.profile).toMatchObject(wanted);
   expect(canonical(read.profile.steps)).toEqual(canonical(copy.profile.steps));
   // The target weight is in the id (research.md 11): a new version, the copy hidden.
   expect(saved.id).not.toBe(copy.id);
   expect(saved.parentId).toBe(copy.id);
-  expect((await api('GET', `/api/v1/profiles/${encodeURIComponent(copy.id)}`)).visibility).toBe('hidden');
-  expect((await api('GET', '/api/v1/workflow')).profile).toMatchObject(wanted);
+  expect((await api<ProfileRecord>('GET', `/api/v1/profiles/${encodeURIComponent(copy.id)}`)).visibility).toBe('hidden');
+  expect((await api<RigWorkflow>('GET', '/api/v1/workflow')).profile).toMatchObject(wanted);
 
   // The title alone, then the notes alone: the same record, changed.
   const third = `${title} c`;
@@ -221,15 +223,15 @@ test('the profile settings are saved with the steps and read back', async ({ pag
   await page.getByTestId('setting-notes').fill('E3 rig notes, again');
   await page.getByTestId('save').click();
   await expect(notice(page)).toHaveText(`Saved “${third}” and loaded.`);
-  const last = (await api('GET', '/api/v1/profiles')).filter((record: any) => record.profile.title === third);
+  const last = (await api<ProfileRecord[]>('GET', '/api/v1/profiles')).filter((record) => record.profile.title === third);
   expect(last).toHaveLength(1);
   expect(last[0].profile).toMatchObject({ ...wanted, title: third, notes: 'E3 rig notes, again' });
   expect(last[0].id).toBe(saved.id);
-  expect((await api('GET', '/api/v1/profiles')).some((record: any) => record.profile.title === renamed)).toBe(false);
+  expect((await api<ProfileRecord[]>('GET', '/api/v1/profiles')).some((record) => record.profile.title === renamed)).toBe(false);
 
   // What Decaid hashes: does a change of the tank temperature, or of the target volume, alone give a new id?
   const probe = async (change: Record<string, number>) => {
-    const answer = await api('POST', '/api/v1/profiles', { profile: { ...read.profile, ...change } });
+    const answer = await api<ProfileRecord>('POST', '/api/v1/profiles', { profile: { ...read.profile, ...change } });
     const fresh = answer.id !== read.id;
     if (fresh) await api('DELETE', `/api/v1/profiles/${encodeURIComponent(answer.id)}/purge`);
     return fresh;
@@ -243,7 +245,7 @@ test('the profile settings are saved with the steps and read back', async ({ pag
 // on a state word cycles it and a tap on a number opens the pad; both move the preview, and
 // 'save as' from the tab stores exactly those steps, which are read back; all made is purged.
 test('the SCRIPT tab: a cycled word and a typed number are stored', async ({ page }) => {
-  const source = (await api('GET', '/api/v1/profiles')).find((record: any) => record.profile.title === SOURCE);
+  const source = (await api<ProfileRecord[]>('GET', '/api/v1/profiles')).find((record) => record.profile.title === SOURCE)!;
   expect(source, `the rig bundles “${SOURCE}”`).toBeTruthy();
   await api('PUT', '/api/v1/workflow', { profile: source.profile });
 
@@ -271,7 +273,7 @@ test('the SCRIPT tab: a cycled word and a typed number are stored', async ({ pag
   await page.getByTestId('save-name').fill(title);
   await page.getByTestId('save-confirm').click();
   await expect(notice(page)).toHaveText(`Saved as “${title}” and loaded.`);
-  const copies = (await api('GET', '/api/v1/profiles')).filter((record: any) => record.profile.title === title);
+  const copies = (await api<ProfileRecord[]>('GET', '/api/v1/profiles')).filter((record) => record.profile.title === title);
   expect(copies).toHaveLength(1);
   expect(copies[0].parentId).toBe(source.id);
   const expected = setValue(cyclePump(structuredClone(source.profile), 3), 4, 'target', 3);
@@ -279,8 +281,8 @@ test('the SCRIPT tab: a cycled word and a typed number are stored', async ({ pag
   // The skin sends the ramp's old flow along (the cards keep it to switch back to); Decaid
   // stores a pressure step without the unused pump's value.
   delete expected.steps[3].flow;
-  const read = await api('GET', `/api/v1/profiles/${encodeURIComponent(copies[0].id)}`);
+  const read = await api<ProfileRecord>('GET', `/api/v1/profiles/${encodeURIComponent(copies[0].id)}`);
   expect(canonical(read.profile.steps)).toEqual(canonical(expected.steps));
   expect(read.profile.target_volume_count_start).toBe(source.profile.target_volume_count_start);
-  expect(canonical((await api('GET', '/api/v1/workflow')).profile.steps)).toEqual(canonical(expected.steps));
+  expect(canonical((await api<RigWorkflow>('GET', '/api/v1/workflow')).profile.steps)).toEqual(canonical(expected.steps));
 });

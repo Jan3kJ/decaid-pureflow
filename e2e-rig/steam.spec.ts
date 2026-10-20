@@ -1,4 +1,6 @@
 import { expect, test } from '@playwright/test';
+import type { MachineSnapshot, WebUiServerStatus, ShotSettings } from '../src/api';
+import type { RigWorkflow } from './gateway';
 import { IDLE } from './idle';
 
 // The steam page against the rig (D8a): the duration the skin writes can be read back from
@@ -24,7 +26,7 @@ const STREAMLINE_SECONDS = 30;
 /** A timer nobody set: written to the machine past the workflow. */
 const DRIFTED = 41;
 
-async function api(method: string, path: string, body?: unknown): Promise<any> {
+async function api<T = unknown>(method: string, path: string, body?: unknown): Promise<T> {
   const response = await fetch(GATEWAY + path, {
     method,
     headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
@@ -33,15 +35,15 @@ async function api(method: string, path: string, body?: unknown): Promise<any> {
   });
   const text = await response.text();
   if (!response.ok) throw new Error(`${method} ${path}: ${response.status} ${text.slice(0, 200)}`);
-  return text ? JSON.parse(text) : undefined;
+  return (text ? JSON.parse(text) : undefined) as T;
 }
 
 const steamIds = (): Promise<string[]> => api('GET', '/api/v1/steams/ids');
-const steamSettings = async () => (await api('GET', '/api/v1/workflow')).steamSettings;
-const machineState = async () => (await api('GET', '/api/v1/machine/state')).state.state;
+const steamSettings = async () => (await api<RigWorkflow>('GET', '/api/v1/workflow')).steamSettings;
+const machineState = async () => (await api<MachineSnapshot>('GET', '/api/v1/machine/state')).state.state;
 
 /** The settings the machine itself holds: the first frame of their stream. */
-function machineSettings(): Promise<any> {
+function machineSettings(): Promise<ShotSettings> {
   return new Promise((resolve, reject) => {
     const socket = new WebSocket(`${GATEWAY.replace('http', 'ws')}/ws/v1/machine/shotSettings`);
     const timeout = setTimeout(() => {
@@ -51,7 +53,7 @@ function machineSettings(): Promise<any> {
     socket.onmessage = (event) => {
       clearTimeout(timeout);
       socket.close();
-      resolve(JSON.parse(String(event.data)));
+      resolve(JSON.parse(String(event.data)) as ShotSettings);
     };
   });
 }
@@ -100,7 +102,7 @@ test('steam: the written timer is read back from the workflow and from the machi
     // has the same seconds when it opens, so it has nothing to write back yet.
     await api('PUT', '/api/v1/workflow', { steamSettings: { duration: STREAMLINE_SECONDS } });
     await api('POST', REMEMBERED, STREAMLINE_SECONDS);
-    const { port } = await api('GET', '/api/v1/webui/server/status');
+    const { port } = await api<WebUiServerStatus>('GET', '/api/v1/webui/server/status');
     await streamline.goto(`http://localhost:${port}/`);
     await streamline.waitForTimeout(8000);
     expect(await machineTimer()).toBe(STREAMLINE_SECONDS);
@@ -223,7 +225,7 @@ test('steam: the written timer is read back from the workflow and from the machi
     // Streamline's store as it was: its remembered steam time, and no key its page added.
     if (rememberedBefore === null || rememberedBefore === undefined) await api('DELETE', REMEMBERED);
     else await api('POST', REMEMBERED, rememberedBefore);
-    for (const key of (await api('GET', STREAMLINE_STORE)) as string[]) {
+    for (const key of await api<string[]>('GET', STREAMLINE_STORE)) {
       if (!storeBefore.includes(key)) await api('DELETE', `${STREAMLINE_STORE}/${encodeURIComponent(key)}`);
     }
     await api('PUT', '/api/v1/workflow', { steamSettings: before });

@@ -21,14 +21,15 @@ function fakeGateway(initial: Record<string, unknown> = {}) {
     store,
     fail: false,
     writes: 0,
-    async kvGet(key: string) {
-      if (this.fail) throw new Error('gateway away');
-      return store[key] ?? null;
+    kvGet(key: string) {
+      if (this.fail) return Promise.reject(new Error('gateway away'));
+      return Promise.resolve(store[key] ?? null);
     },
-    async kvSet(key: string, value: unknown) {
-      if (this.fail) throw new Error('gateway away');
+    kvSet(key: string, value: unknown) {
+      if (this.fail) return Promise.reject(new Error('gateway away'));
       this.writes += 1;
       store[key] = JSON.parse(JSON.stringify(value));
+      return Promise.resolve();
     },
   };
 }

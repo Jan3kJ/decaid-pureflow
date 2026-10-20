@@ -24,6 +24,7 @@
   import SensorCalibration from './SensorCalibration.svelte';
   import SkinCategory from './SkinCategory.svelte';
   import { PREFERRED_DEVICES, STEAM_TEMPERATURE, type Field } from './fields';
+  import { textOf } from './text';
   import {
     NO_VALUES,
     applyFastStart,
@@ -102,7 +103,7 @@
   function write(field: Field, value: unknown) {
     if (field.confirm) {
       const label = field.kind === 'choice' ? field.options.find((option) => option.value === value)?.label : value;
-      confirming = { title: `${field.label}: ${label}?`, text: field.confirm, run: () => void store(field, value) };
+      confirming = { title: `${field.label}: ${textOf(label)}?`, text: field.confirm, run: () => void store(field, value) };
     } else void store(field, value);
   }
 

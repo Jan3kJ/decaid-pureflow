@@ -1,4 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
+import type { MachineSnapshot, DecaidSettings, MachineSettings, AdvancedSettings } from '../src/api';
+import type { RigWorkflow } from './gateway';
 import { IDLE } from './idle';
 
 // The ported settings page against the rig (acceptance 22, research.md 20.10 S2a): Decaid's
@@ -13,7 +15,7 @@ const BACKUP = '/api/v1/store/pureflow/settings-backup';
 /** Streamline's keys the page moves with its values, where Streamline has them */
 const STREAMLINE_KEYS = ['last-steam-flow', 'last-flush-duration'];
 
-async function api(method: string, path: string, body?: unknown): Promise<any> {
+async function api<T = unknown>(method: string, path: string, body?: unknown): Promise<T> {
   const response = await fetch(GATEWAY + path, {
     method,
     headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
@@ -22,14 +24,14 @@ async function api(method: string, path: string, body?: unknown): Promise<any> {
   });
   const text = await response.text();
   if (!response.ok) throw new Error(`${method} ${path}: ${response.status} ${text.slice(0, 200)}`);
-  return text ? JSON.parse(text) : undefined;
+  return (text ? JSON.parse(text) : undefined) as T;
 }
 
 let gatewayUp = false;
 
 test.beforeAll(async () => {
   try {
-    gatewayUp = (await api('GET', '/api/v1/machine/state')).state.state !== undefined;
+    gatewayUp = (await api<MachineSnapshot>('GET', '/api/v1/machine/state')).state.state !== undefined;
   } catch {
     gatewayUp = false;
   }
@@ -47,13 +49,15 @@ async function type(page: Page, testid: string, value: string) {
 /** Everything the test may change, as the gateway holds it. */
 async function snapshot() {
   const [settings, machine, advanced, workflow] = await Promise.all([
-    api('GET', '/api/v1/settings'),
-    api('GET', '/api/v1/machine/settings'),
-    api('GET', '/api/v1/machine/settings/advanced'),
-    api('GET', '/api/v1/workflow'),
+    api<DecaidSettings>('GET', '/api/v1/settings'),
+    api<MachineSettings>('GET', '/api/v1/machine/settings'),
+    api<AdvancedSettings>('GET', '/api/v1/machine/settings/advanced'),
+    api<RigWorkflow>('GET', '/api/v1/workflow'),
   ]);
   const streamline = Object.fromEntries(
-    await Promise.all(STREAMLINE_KEYS.map(async (key) => [key, await api('GET', `/api/v1/store/streamline-app/${key}`)])),
+    await Promise.all(
+      STREAMLINE_KEYS.map(async (key): Promise<[string, unknown]> => [key, await api('GET', `/api/v1/store/streamline-app/${key}`)]),
+    ),
   );
   return {
     weightFlowMultiplier: settings.weightFlowMultiplier,
@@ -87,29 +91,29 @@ test('settings changed through the page are read back from the gateway, and rest
     await page.getByTestId('open-settings').click();
     await page.getByTestId('settings-category-quickadjustments').click();
     const shown = (id: string) => page.getByTestId(`setting-${id}`).locator('b');
-    await expect(shown('weight-flow-multiplier')).toHaveText(before.weightFlowMultiplier.toFixed(1));
+    await expect(shown('weight-flow-multiplier')).toHaveText(before.weightFlowMultiplier!.toFixed(1));
 
     await type(page, 'setting-weight-flow-multiplier', String(multiplier));
     await expect(shown('weight-flow-multiplier')).toHaveText(multiplier.toFixed(1));
-    expect((await api('GET', '/api/v1/settings')).weightFlowMultiplier).toBe(multiplier);
+    expect((await api<DecaidSettings>('GET', '/api/v1/settings')).weightFlowMultiplier).toBe(multiplier);
 
     await page.getByTestId(`setting-steam-purge-mode-${purge}`).click();
     await expect(page.getByTestId(`setting-steam-purge-mode-${purge}`)).toHaveAttribute('aria-pressed', 'true');
-    expect((await api('GET', '/api/v1/machine/settings')).steamPurgeMode).toBe(purge);
+    expect((await api<MachineSettings>('GET', '/api/v1/machine/settings')).steamPurgeMode).toBe(purge);
 
     await type(page, 'setting-heater-idle-temperature', String(idle));
     await expect(shown('heater-idle-temperature')).toHaveText(`${idle}°C`);
-    expect((await api('GET', '/api/v1/machine/settings/advanced')).heaterIdleTemp).toBe(idle);
+    expect((await api<AdvancedSettings>('GET', '/api/v1/machine/settings/advanced')).heaterIdleTemp).toBe(idle);
 
     const stop = page.getByTestId('setting-stop-hot-water-at-weight');
     await expect(stop).toHaveAttribute('aria-checked', String(before.stopHotWaterAtWeight));
     await stop.click();
     await expect(stop).toHaveAttribute('aria-checked', String(!before.stopHotWaterAtWeight));
-    expect((await api('GET', '/api/v1/settings')).stopHotWaterAtWeight).toBe(!before.stopHotWaterAtWeight);
+    expect((await api<DecaidSettings>('GET', '/api/v1/settings')).stopHotWaterAtWeight).toBe(!before.stopHotWaterAtWeight);
 
     await type(page, 'setting-steam-flow', String(steamFlow));
     await expect(shown('steam-flow')).toHaveText(`${steamFlow.toFixed(1)}ml/s`);
-    const steam = (await api('GET', '/api/v1/workflow')).steamSettings;
+    const steam = (await api<RigWorkflow>('GET', '/api/v1/workflow')).steamSettings;
     expect(steam).toEqual({ ...before.steamSettings, flow: steamFlow });
 
     // The flush (founder, 2026-10-17): the workflow's rinseData, which Decaid writes to the
@@ -119,12 +123,12 @@ test('settings changed through the page are read back from the gateway, and rest
     await expect(shown('flush-duration')).toHaveText(`${flushDuration}s`);
     await type(page, 'setting-flush-flow', String(flushFlow));
     await expect(shown('flush-flow')).toHaveText(`${flushFlow.toFixed(1)}ml/s`);
-    expect((await api('GET', '/api/v1/workflow')).rinseData).toEqual({
+    expect((await api<RigWorkflow>('GET', '/api/v1/workflow')).rinseData).toEqual({
       ...before.rinseData,
       duration: flushDuration,
       flow: flushFlow,
     });
-    expect((await api('GET', '/api/v1/machine/settings')).flushFlow).toBe(flushFlow);
+    expect((await api<MachineSettings>('GET', '/api/v1/machine/settings')).flushFlow).toBe(flushFlow);
   } finally {
     await api('POST', '/api/v1/settings', {
       weightFlowMultiplier: before.weightFlowMultiplier,

@@ -1,13 +1,21 @@
 // A stubbed fetch for the tests of storage.ts and save.ts: it keeps profiles the way Decaid
 // 0.8.8 does on the rig (research.md 9.2 and 11). A record's id comes from its steps and its
 // target weight alone, so a POST with steps that exist answers with the existing record.
-import { DecaidClient, type Profile, type ProfileRecord } from '../api';
+import { DecaidClient, type Profile, type ProfileRecord, type ProfileVisibility } from '../api';
 import { sameSteps } from './storage';
+
+/** A request's body, with the fields the profile requests send; a GET has none. */
+export interface Body {
+  profile: Profile;
+  parentId?: string | null;
+  metadata?: Record<string, unknown> | null;
+  visibility: ProfileVisibility;
+}
 
 export interface Call {
   method: string;
   path: string;
-  body: any;
+  body: Body;
 }
 
 export function fakeGateway(initial: ProfileRecord[] = []) {
@@ -35,11 +43,15 @@ export function fakeGateway(initial: ProfileRecord[] = []) {
     };
   }
 
-  async function fetch(url: string, init?: RequestInit): Promise<Response> {
+  function fetch(url: string, init?: RequestInit): Promise<Response> {
+    return Promise.resolve(answer(url, init));
+  }
+
+  function answer(url: string, init?: RequestInit): Response {
     const { pathname, searchParams } = new URL(url);
     const path = decodeURIComponent(pathname);
     const method = init?.method ?? 'GET';
-    const body = init?.body ? JSON.parse(String(init.body)) : undefined;
+    const body = (init?.body ? JSON.parse(init.body as string) : undefined) as Body;
     calls.push({ method, path, body });
 
     if (path === '/api/v1/profiles' && method === 'GET') {

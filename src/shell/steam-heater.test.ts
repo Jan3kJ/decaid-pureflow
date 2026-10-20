@@ -27,16 +27,17 @@ function decaid(options: { workflow?: number; machine?: number | null; writable?
   let machine: ShotSettings | null = options.machine === null ? null : { ...SETTINGS, targetSteamTemp: options.machine ?? workflow };
   let waited = 0;
   const gateway: HeaterGateway = {
-    async updateWorkflow(patch) {
+    updateWorkflow(patch) {
       const target = patch.steamSettings.targetTemperature;
       calls.push(`workflow ${target}`);
       if (writable && target !== workflow && machine) machine = { ...machine, targetSteamTemp: target < 135 ? 0 : target };
       workflow = target;
-      return workflowWith(target);
+      return Promise.resolve(workflowWith(target));
     },
-    async setShotSettings(settings) {
+    setShotSettings(settings) {
       calls.push(`machine ${settings.targetSteamTemp}`);
       if (writable) machine = settings;
+      return Promise.resolve();
     },
   };
   const run = (on: boolean, temperature = 150) =>
@@ -45,8 +46,9 @@ function decaid(options: { workflow?: number; machine?: number | null; writable?
       on,
       temperature,
       () => machine,
-      async (ms) => {
+      (ms) => {
         waited += ms;
+        return Promise.resolve();
       },
     );
   return { calls, run, machine: () => machine, waited: () => waited };
@@ -66,7 +68,7 @@ describe('heaterState', () => {
 
   it('is not known without either', () => {
     expect(heaterState(null, null)).toBeNull();
-    expect(heaterState(null, {} as Workflow)).toBeNull();
+    expect(heaterState(null, {})).toBeNull();
   });
 });
 
@@ -105,9 +107,7 @@ describe('switchHeater', () => {
 
   it('passes on a refused write', async () => {
     const gateway: HeaterGateway = {
-      updateWorkflow: async () => {
-        throw new Error('503');
-      },
+      updateWorkflow: () => Promise.reject(new Error('503')),
       setShotSettings: async () => {},
     };
     await expect(switchHeater(gateway, false, 150, () => SETTINGS)).rejects.toThrow('503');

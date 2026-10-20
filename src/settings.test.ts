@@ -18,6 +18,7 @@ import {
   withRatio,
   withStartProfile,
   withSteamValue,
+  type Settings,
 } from './settings';
 
 function fakeStore(initial?: string) {
@@ -144,7 +145,7 @@ describe("the editor's start row (founder, 2026-10-13)", () => {
     const store = fakeStore();
     const startProfiles = withStartProfile(DEFAULT_START_PROFILES, 1, 'A-Flow / mine');
     saveSettings({ ...DEFAULT_SETTINGS, startProfiles }, store);
-    expect(JSON.parse(store.getItem(SETTINGS_KEY)!).startProfiles).toEqual(startProfiles);
+    expect((JSON.parse(store.getItem(SETTINGS_KEY)!) as Settings).startProfiles).toEqual(startProfiles);
     expect(loadSettings(store).startProfiles).toEqual([
       FLORAL,
       'A-Flow / mine',
@@ -237,7 +238,7 @@ describe('the steam values of the settings page', () => {
     const steam = withSteamValue(DEFAULT_STEAM_SETTINGS, field('favourite-3'), 35);
     saveSettings({ ...DEFAULT_SETTINGS, steam }, store);
     expect(steamValue(loadSettings(store).steam, field('favourite-3'))).toBe(35);
-    expect(JSON.parse(store.getItem(SETTINGS_KEY)!).steam.favourites).toEqual([25, 50, 35]);
+    expect((JSON.parse(store.getItem(SETTINGS_KEY)!) as Settings).steam.favourites).toEqual([25, 50, 35]);
   });
 });
 

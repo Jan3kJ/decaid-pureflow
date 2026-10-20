@@ -1,4 +1,7 @@
 import { readFileSync } from 'node:fs';
+import type { MachineSnapshot } from '../src/api';
+import type { Settings } from '../src/settings';
+import type { Backup } from '../src/settings-backup';
 import { expect, test } from '@playwright/test';
 import { IDLE } from './idle';
 
@@ -9,11 +12,11 @@ import { IDLE } from './idle';
 // localStorage, which ends with the test. Without a gateway: e2e/settings-backup.spec.ts.
 
 /** the skin's version, which the backup names */
-const VERSION: string = JSON.parse(readFileSync('public/manifest.json', 'utf8')).version;
+const VERSION = (JSON.parse(readFileSync('public/manifest.json', 'utf8')) as { version: string }).version;
 const GATEWAY = 'http://localhost:8080';
 const BACKUP = '/api/v1/store/pureflow/settings-backup';
 
-async function api(method: string, path: string, body?: unknown): Promise<any> {
+async function api<T = unknown>(method: string, path: string, body?: unknown): Promise<T> {
   const response = await fetch(GATEWAY + path, {
     method,
     headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
@@ -22,14 +25,14 @@ async function api(method: string, path: string, body?: unknown): Promise<any> {
   });
   const text = await response.text();
   if (!response.ok) throw new Error(`${method} ${path}: ${response.status} ${text.slice(0, 200)}`);
-  return text ? JSON.parse(text) : undefined;
+  return (text ? JSON.parse(text) : undefined) as T;
 }
 
 let gatewayUp = false;
 
 test.beforeAll(async () => {
   try {
-    gatewayUp = (await api('GET', '/api/v1/machine/state')).state.state !== undefined;
+    gatewayUp = (await api<MachineSnapshot>('GET', '/api/v1/machine/state')).state.state !== undefined;
   } catch {
     gatewayUp = false;
   }
@@ -51,8 +54,10 @@ test('a changed setting is backed up in the KV store and comes back after localS
     await expect(legend).toHaveAttribute('aria-checked', 'true');
     await legend.click();
 
-    await expect.poll(async () => (await api('GET', BACKUP))?.settings?.showGraphLegend, { timeout: 10_000 }).toBe(false);
-    const stored = await api('GET', BACKUP);
+    await expect
+      .poll(async () => (await api<Backup | null>('GET', BACKUP))?.settings?.showGraphLegend, { timeout: 10_000 })
+      .toBe(false);
+    const stored = await api<Backup>('GET', BACKUP);
     expect(stored.version).toBe(VERSION);
     expect(Date.now() - Date.parse(stored.savedAt)).toBeLessThan(60_000);
     await expect(page.getByTestId('backup-time')).toContainText('in Decaid, 20');
@@ -65,7 +70,9 @@ test('a changed setting is backed up in the KV store and comes back after localS
     await page.getByTestId('open-settings').click();
     await page.getByTestId('settings-category-skin').click();
     await expect(page.getByTestId('setting-show-graph-legend')).toHaveAttribute('aria-checked', 'false');
-    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('pureflow.settings')!).showGraphLegend)).toBe(false);
+    expect(await page.evaluate(() => (JSON.parse(localStorage.getItem('pureflow.settings')!) as Settings).showGraphLegend)).toBe(
+      false,
+    );
   } finally {
     if (before === null || before === undefined) await api('DELETE', BACKUP);
     else await api('POST', BACKUP, before);

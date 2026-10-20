@@ -28,7 +28,7 @@ function stepProfile(seconds: number[]): Profile {
       sensor: 'coffee',
       pressure: 9,
       limiter: null,
-    })) as Profile['steps'],
+    })),
   };
 }
 
@@ -84,28 +84,29 @@ describe('lastShotSeconds', () => {
   it('asks the history for the newest shot with the title and measures it as its graph draws it', async () => {
     const asked: unknown[] = [];
     const client = {
-      listShots: async (query: unknown) => {
+      listShots: (query: unknown) => {
         asked.push(query);
-        return { items: [{ id: 'shot-1', timestamp: '2026-10-19T08:00:00' }], total: 1, limit: 1, offset: 0 };
+        return Promise.resolve({ items: [{ id: 'shot-1', timestamp: '2026-10-19T08:00:00' }], total: 1, limit: 1, offset: 0 });
       },
-      getShot: async () => ({
-        id: 'shot-1',
-        timestamp: '2026-10-19T08:00:00',
-        measurements: [
-          measurement(0, 'preparingForShot'),
-          measurement(4),
-          measurement(52.5),
-          measurement(52.6, 'pouringDone'),
-          measurement(57, 'pouringDone'),
-        ],
-      }),
+      getShot: () =>
+        Promise.resolve({
+          id: 'shot-1',
+          timestamp: '2026-10-19T08:00:00',
+          measurements: [
+            measurement(0, 'preparingForShot'),
+            measurement(4),
+            measurement(52.5),
+            measurement(52.6, 'pouringDone'),
+            measurement(57, 'pouringDone'),
+          ],
+        }),
     } as unknown as DecaidClient;
     expect(await lastShotSeconds(client, 'A-Flow / default-medium')).toBeCloseTo(48.5, 5);
     expect(asked).toEqual([{ profileTitle: 'A-Flow / default-medium', limit: 1, order: 'desc' }]);
   });
 
   it('is null without a shot of that title', async () => {
-    const client = { listShots: async () => ({ items: [], total: 0, limit: 1, offset: 0 }) } as unknown as DecaidClient;
+    const client = { listShots: () => Promise.resolve({ items: [], total: 0, limit: 1, offset: 0 }) } as unknown as DecaidClient;
     expect(await lastShotSeconds(client, 'nothing')).toBeNull();
   });
 });

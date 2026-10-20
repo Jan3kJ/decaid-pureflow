@@ -62,12 +62,13 @@ function kvGateway(initial: Record<string, unknown> = {}) {
   return {
     store,
     failWrite: false,
-    async kvGet(key: string, namespace?: string) {
-      return store[at(key, namespace)] ?? null;
+    kvGet(key: string, namespace?: string) {
+      return Promise.resolve(store[at(key, namespace)] ?? null);
     },
-    async kvSet(key: string, value: unknown, namespace?: string) {
-      if (this.failWrite) throw new Error('gateway away');
+    kvSet(key: string, value: unknown, namespace?: string) {
+      if (this.failWrite) return Promise.reject(new Error('gateway away'));
       store[at(key, namespace)] = value;
+      return Promise.resolve();
     },
   };
 }

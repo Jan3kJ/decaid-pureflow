@@ -728,7 +728,7 @@ test('the flows of the editor follow the maximum flow of the settings', async ({
   await page.getByTestId('numpad-cancel').click();
 
   await page.evaluate(() => {
-    const settings = JSON.parse(localStorage.getItem('pureflow.settings') ?? '{}');
+    const settings = JSON.parse(localStorage.getItem('pureflow.settings') ?? '{}') as Record<string, unknown>;
     localStorage.setItem('pureflow.settings', JSON.stringify({ ...settings, maxFlow: 12 }));
   });
   await page.reload();

@@ -17,6 +17,7 @@
   import NumberPad from '../editor/NumberPad.svelte';
   import type { Skin } from '../shell/skin.svelte';
   import Confirm from './Confirm.svelte';
+  import { textOf } from './text';
   import {
     STATUS_LABEL,
     isStored,
@@ -236,8 +237,8 @@
               class="value"
               disabled={!read || !!busy[at]}
               data-testid="plugin-setting-{plugin.id}-{control.key}"
-              onclick={() => (typing = { plugin, control, current: value === null ? '' : String(value) })}
-              ><b>{value === null ? '–' : String(value)}</b></button
+              onclick={() => (typing = { plugin, control, current: value === null ? '' : textOf(value) })}
+              ><b>{value === null ? '–' : textOf(value)}</b></button
             >
           {:else if control.kind === 'enum'}
             <div class="choices" data-testid="plugin-setting-{plugin.id}-{control.key}">
@@ -268,7 +269,7 @@
               autocomplete="off"
               disabled={!read || !!busy[at]}
               data-testid="plugin-setting-{plugin.id}-{control.key}"
-              value={value === null ? '' : String(value)}
+              value={value === null ? '' : textOf(value)}
               onchange={(event) => write(plugin, control, event.currentTarget.value)}
             />
           {/if}

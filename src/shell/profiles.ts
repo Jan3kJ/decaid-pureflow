@@ -13,7 +13,7 @@ export const SKIN_SOURCES: readonly string[] = [SKIN_SOURCE, FORMER_NAME];
 
 /** A default as the v2 profile the generator writes for it; its parameters go with it as metadata (`pickerEntries`). */
 export function defaultProfile(entry: DefaultProfile): Profile {
-  return generateProfile(entry.params, { title: entry.title, author: DEFAULT_AUTHOR }) as Profile;
+  return generateProfile(entry.params, { title: entry.title, author: DEFAULT_AUTHOR });
 }
 
 /** The same title and the same steps. A title alone is not enough: Decaid bundles the plugin's defaults under three of the 3.0 titles. */

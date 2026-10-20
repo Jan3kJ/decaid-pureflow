@@ -40,7 +40,7 @@ export function buildProfile(params: AFlowParams, about: About, firstStepWorkaro
     author: about.author ?? '',
     notes: notesText(about.notes),
     firstStepWorkaround,
-  }) as Profile;
+  });
 }
 
 /** 'save as': a new profile under a new name, with `POST /api/v1/profiles` and no parent. */

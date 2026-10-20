@@ -1,4 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
+import type { MachineSnapshot, ProfileRecord } from '../src/api';
+import type { RigWorkflow } from './gateway';
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
 import { serializeParams } from '../src/aflow/codec';
 import type { AFlowParams } from '../src/aflow/types';
@@ -50,11 +52,11 @@ async function call(method: string, path: string, body?: unknown): Promise<Respo
   });
 }
 
-async function api(method: string, path: string, body?: unknown): Promise<any> {
+async function api<T = unknown>(method: string, path: string, body?: unknown): Promise<T> {
   const response = await call(method, path, body);
   const text = await response.text();
   if (!response.ok) throw new Error(`${method} ${path}: ${response.status} ${text.slice(0, 200)}`);
-  return text ? JSON.parse(text) : undefined;
+  return (text ? JSON.parse(text) : undefined) as T;
 }
 
 const record = (id: string) => `/api/v1/profiles/${encodeURIComponent(id)}`;
@@ -62,8 +64,8 @@ const record = (id: string) => `/api/v1/profiles/${encodeURIComponent(id)}`;
 /** Every stored profile: the visible, the hidden and the soft-deleted ones. */
 async function profileIds(): Promise<string[]> {
   const lists = await Promise.all([
-    api('GET', '/api/v1/profiles?includeHidden=true'),
-    api('GET', '/api/v1/profiles?visibility=deleted'),
+    api<ProfileRecord[]>('GET', '/api/v1/profiles?includeHidden=true'),
+    api<ProfileRecord[]>('GET', '/api/v1/profiles?visibility=deleted'),
   ]);
   return [...new Set(lists.flat().map((stored: { id: string }) => stored.id))].sort();
 }
@@ -80,11 +82,11 @@ function testProfile(shift = 0) {
 
 let gatewayUp = false;
 let profilesBefore: string[] = [];
-let workflowBefore: any;
+let workflowBefore: RigWorkflow;
 
 test.beforeAll(async () => {
   try {
-    gatewayUp = (await api('GET', '/api/v1/machine/state')).state.state !== undefined;
+    gatewayUp = (await api<MachineSnapshot>('GET', '/api/v1/machine/state')).state.state !== undefined;
   } catch {
     gatewayUp = false;
   }
@@ -93,7 +95,7 @@ test.beforeAll(async () => {
 test.beforeEach(async () => {
   test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
   profilesBefore = await profileIds();
-  workflowBefore = await api('GET', '/api/v1/workflow');
+  workflowBefore = await api<RigWorkflow>('GET', '/api/v1/workflow');
 });
 
 test.afterEach(async () => {
@@ -109,90 +111,94 @@ test.afterEach(async () => {
     },
   });
   expect(await profileIds()).toEqual(profilesBefore);
-  const workflowAfter = await api('GET', '/api/v1/workflow');
+  const workflowAfter = await api<RigWorkflow>('GET', '/api/v1/workflow');
   expect(workflowAfter.profile).toEqual(workflowBefore.profile);
   expect(workflowAfter.context).toEqual(workflowBefore.context);
 });
 
 test('metadata holds through GET, PUT and the lineage', async () => {
   const profile = testProfile();
-  const created = await api('POST', '/api/v1/profiles', { profile, metadata: METADATA });
+  const created = await api<ProfileRecord>('POST', '/api/v1/profiles', { profile, metadata: METADATA });
   expect(created.metadata).toEqual(METADATA);
-  expect((await api('GET', record(created.id))).metadata).toEqual(METADATA);
+  expect((await api<ProfileRecord>('GET', record(created.id))).metadata).toEqual(METADATA);
 
   // Title and notes: same id, metadata kept.
-  const renamed = await api('PUT', record(created.id), { profile: { ...profile, title: 'M1 renamed', notes: 'n' } });
+  const renamed = await api<ProfileRecord>('PUT', record(created.id), { profile: { ...profile, title: 'M1 renamed', notes: 'n' } });
   expect(renamed.id).toBe(created.id);
   expect(renamed.metadata).toEqual(METADATA);
 
   // Other steps: a new id replaces the record, metadata kept.
   const stepped = testProfile(0.5);
-  const moved = await api('PUT', record(created.id), { profile: stepped });
+  const moved = await api<ProfileRecord>('PUT', record(created.id), { profile: stepped });
   expect(moved.id).not.toBe(created.id);
   expect(moved.metadata).toEqual(METADATA);
   expect((await call('GET', record(created.id))).status).toBe(404);
 
   // Supplied metadata replaces the stored one; it is not merged.
   const partial = { source: 'pureflow', aflow: '3.0', params: { dose: 20 } };
-  expect((await api('PUT', record(moved.id), { metadata: partial })).metadata).toEqual(partial);
-  expect((await api('PUT', record(moved.id), { metadata: METADATA })).metadata).toEqual(METADATA);
+  expect((await api<ProfileRecord>('PUT', record(moved.id), { metadata: partial })).metadata).toEqual(partial);
+  expect((await api<ProfileRecord>('PUT', record(moved.id), { metadata: METADATA })).metadata).toEqual(METADATA);
 
   // A child posted with parentId does not inherit metadata: it has only what it is sent.
-  const bare = await api('POST', '/api/v1/profiles', { profile: testProfile(1), parentId: moved.id });
+  const bare = await api<ProfileRecord>('POST', '/api/v1/profiles', { profile: testProfile(1), parentId: moved.id });
   expect(bare.parentId).toBe(moved.id);
   expect(bare.metadata).toBeNull();
-  const child = await api('POST', '/api/v1/profiles', { profile: testProfile(1.5), parentId: moved.id, metadata: METADATA });
+  const child = await api<ProfileRecord>('POST', '/api/v1/profiles', {
+    profile: testProfile(1.5),
+    parentId: moved.id,
+    metadata: METADATA,
+  });
   expect(child.metadata).toEqual(METADATA);
 
   // A hidden parent keeps its metadata, in the lineage too.
   await api('PUT', `${record(moved.id)}/visibility`, { visibility: 'hidden' });
-  expect((await api('GET', record(moved.id))).metadata).toEqual(METADATA);
-  const lineage = await api('GET', `${record(child.id)}/lineage`);
-  expect(lineage.map((stored: any) => stored.id)).toEqual([moved.id, child.id]);
-  expect(lineage.every((stored: any) => JSON.stringify(stored.metadata) === JSON.stringify(METADATA))).toBe(true);
+  expect((await api<ProfileRecord>('GET', record(moved.id))).metadata).toEqual(METADATA);
+  const lineage = await api<ProfileRecord[]>('GET', `${record(child.id)}/lineage`);
+  expect(lineage.map((stored) => stored.id)).toEqual([moved.id, child.id]);
+  expect(lineage.every((stored) => JSON.stringify(stored.metadata) === JSON.stringify(METADATA))).toBe(true);
 });
 
 test('metadata holds through the profile export and import', async () => {
-  const created = await api('POST', '/api/v1/profiles', { profile: testProfile(), metadata: METADATA });
+  const created = await api<ProfileRecord>('POST', '/api/v1/profiles', { profile: testProfile(), metadata: METADATA });
   await api('PUT', `${record(created.id)}/visibility`, { visibility: 'hidden' });
 
-  const exported = await api('GET', '/api/v1/profiles/export?includeHidden=true');
-  const mine = exported.find((stored: any) => stored.id === created.id);
+  const exported = await api<ProfileRecord[]>('GET', '/api/v1/profiles/export?includeHidden=true');
+  const mine = exported.find((stored) => stored.id === created.id)!;
   expect(mine.metadata).toEqual(METADATA);
 
   await api('DELETE', `${record(created.id)}/purge`);
   expect((await call('GET', record(created.id))).status).toBe(404);
   expect(await api('POST', '/api/v1/profiles/import', [mine])).toMatchObject({ imported: 1, failed: 0 });
-  expect((await api('GET', record(created.id))).metadata).toEqual(METADATA);
+  expect((await api<ProfileRecord>('GET', record(created.id))).metadata).toEqual(METADATA);
 });
 
 test('metadata holds through the data export and import', async () => {
-  const created = await api('POST', '/api/v1/profiles', { profile: testProfile(), metadata: METADATA });
+  const created = await api<ProfileRecord>('POST', '/api/v1/profiles', { profile: testProfile(), metadata: METADATA });
 
   const response = await call('GET', '/api/v1/data/export');
   expect(response.status).toBe(200);
   const entries = unzipSync(new Uint8Array(await response.arrayBuffer()));
-  const mine = JSON.parse(strFromU8(entries['profiles.json'])).find((stored: any) => stored.id === created.id);
+  const mine = (JSON.parse(strFromU8(entries['profiles.json'])) as ProfileRecord[]).find((stored) => stored.id === created.id)!;
   expect(mine.metadata).toEqual(METADATA);
 
   // Decaid's own export, cut down to this profile: the import touches nothing else.
   const archive = zipSync({ 'metadata.json': entries['metadata.json'], 'profiles.json': strToU8(JSON.stringify([mine])) });
   await api('DELETE', `${record(created.id)}/purge`);
   expect(await api('POST', '/api/v1/data/import', archive)).toMatchObject({ profiles: { imported: 1, status: 'complete' } });
-  expect((await api('GET', record(created.id))).metadata).toEqual(METADATA);
+  expect((await api<ProfileRecord>('GET', record(created.id))).metadata).toEqual(METADATA);
 
   // onConflict=skip keeps a stored record's metadata, overwrite takes the archive's.
-  await api('PUT', record(created.id), { metadata: { other: 1 } });
+  await api<ProfileRecord>('PUT', record(created.id), { metadata: { other: 1 } });
   expect(await api('POST', '/api/v1/data/import?onConflict=skip', archive)).toMatchObject({ profiles: { skipped: 1 } });
-  expect((await api('GET', record(created.id))).metadata).toEqual({ other: 1 });
+  expect((await api<ProfileRecord>('GET', record(created.id))).metadata).toEqual({ other: 1 });
   await api('POST', '/api/v1/data/import?onConflict=overwrite', archive);
-  expect((await api('GET', record(created.id))).metadata).toEqual(METADATA);
+  expect((await api<ProfileRecord>('GET', record(created.id))).metadata).toEqual(METADATA);
 });
 
 test('metadata takes a large object and refuses one that is not an object', async () => {
   const big = { big: 'x'.repeat(1_000_000) };
-  const large = await api('POST', '/api/v1/profiles', { profile: testProfile(), metadata: big });
-  expect((await api('GET', record(large.id))).metadata).toEqual(big);
+  const large = await api<ProfileRecord>('POST', '/api/v1/profiles', { profile: testProfile(), metadata: big });
+  expect((await api<ProfileRecord>('GET', record(large.id))).metadata).toEqual(big);
   for (const [shift, value] of [
     [1, [1, 2, 3]],
     [2, 'text'],
@@ -274,12 +280,12 @@ test('the skin saves the A-Flow values in metadata, none in notes; they re-open 
   await expect(page.getByTestId('editor-notice')).toHaveText(`Saved as “${name}” and loaded.`);
 
   // The record: the values in its metadata, its notes empty.
-  const saved = (await api('GET', '/api/v1/profiles')).find((stored: any) => stored.profile.title === title);
+  const saved = (await api<ProfileRecord[]>('GET', '/api/v1/profiles')).find((stored) => stored.profile.title === title)!;
   expect(profilesBefore).not.toContain(saved.id);
   expect(saved.metadata).toEqual({ source: 'pureflow', ...paramsMetadata(wanted) });
   expect(saved.profile.notes ?? '').toBe('');
   // The workflow's copy carries them in its notes: the workflow has no metadata.
-  expect(splitNotes((await api('GET', '/api/v1/workflow')).profile.notes).params).toEqual(wanted);
+  expect(splitNotes((await api<RigWorkflow>('GET', '/api/v1/workflow')).profile.notes).params).toEqual(wanted);
 
   // Re-opened after a reload, every value as saved.
   await page.reload();
@@ -290,13 +296,13 @@ test('the skin saves the A-Flow values in metadata, none in notes; they re-open 
   const response = await call('GET', '/api/v1/data/export');
   expect(response.status).toBe(200);
   const entries = unzipSync(new Uint8Array(await response.arrayBuffer()));
-  const mine = JSON.parse(strFromU8(entries['profiles.json'])).find((stored: any) => stored.id === saved.id);
+  const mine = (JSON.parse(strFromU8(entries['profiles.json'])) as ProfileRecord[]).find((stored) => stored.id === saved.id)!;
   expect(mine.metadata).toEqual(saved.metadata);
   const archive = zipSync({ 'metadata.json': entries['metadata.json'], 'profiles.json': strToU8(JSON.stringify([mine])) });
   await api('DELETE', `${record(saved.id)}/purge`);
   expect((await call('GET', record(saved.id))).status).toBe(404);
   expect(await api('POST', '/api/v1/data/import', archive)).toMatchObject({ profiles: { imported: 1, status: 'complete' } });
-  expect((await api('GET', record(saved.id))).metadata).toEqual(saved.metadata);
+  expect((await api<ProfileRecord>('GET', record(saved.id))).metadata).toEqual(saved.metadata);
 
   // Loaded from the picker, the imported record opens in the editor with every value.
   await page.reload();
@@ -307,7 +313,7 @@ test('the skin saves the A-Flow values in metadata, none in notes; they re-open 
   await page.getByTestId('load-profile').click();
   await expect(page.getByTestId('screen-editor')).toBeVisible();
   await expectOnScreen(page, name);
-  expect(splitNotes((await api('GET', '/api/v1/workflow')).profile.notes).params).toEqual(wanted);
+  expect(splitNotes((await api<RigWorkflow>('GET', '/api/v1/workflow')).profile.notes).params).toEqual(wanted);
 });
 
 test('a profile with the A-Flow values in its notes opens right and is moved on its next save', async ({ page }) => {
@@ -316,7 +322,7 @@ test('a profile with the A-Flow values in its notes opens right and is moved on 
   const params: AFlowParams = { ...light, pourPressure: 8.2, rampTime: 6, dose: 17 };
   // As version 1 of the skin stored it: the values in the notes, here beside a text of the user.
   const profile = { ...buildProfile(params, { title, author: 'Janek' }, false), notes: `${serializeParams(params)}\nrig note` };
-  const v1 = await api('POST', '/api/v1/profiles', { profile, metadata: { source: 'pureflow', aflow: '3.0' } });
+  const v1 = await api<ProfileRecord>('POST', '/api/v1/profiles', { profile, metadata: { source: 'pureflow', aflow: '3.0' } });
   expect(profilesBefore).not.toContain(v1.id);
   // Loaded as another skin loads it: the record's profile as it is.
   await api('PUT', '/api/v1/workflow', { profile: v1.profile, context: { targetYield: params.stopWeight } });
@@ -332,7 +338,7 @@ test('a profile with the A-Flow values in its notes opens right and is moved on 
   await type(page, 'dose', '19');
   await page.getByTestId('save').click();
   await expect(page.getByTestId('editor-notice')).toHaveText(`Saved “${name}” and loaded.`);
-  const moved = await api('GET', record(v1.id));
+  const moved = await api<ProfileRecord>('GET', record(v1.id));
   expect(moved.profile.notes).toBe('rig note');
   expect(moved.metadata).toEqual({ source: 'pureflow', aflow: '3.0', ...paramsMetadata({ ...params, dose: 19 }) });
   expect(moved.visibility).toBe('visible');

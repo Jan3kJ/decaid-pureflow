@@ -109,10 +109,10 @@ describe('readUnsaved', () => {
     const profile = loaded(edited, { title: light.title });
     const client = new DecaidClient({
       baseUrl: 'http://gateway',
-      fetch: async (url) => {
+      fetch: (url) => {
         asked.push(String(url));
         const body = String(url).includes('/workflow') ? { profile } : [];
-        return new Response(JSON.stringify(body), { status: 200 });
+        return Promise.resolve(new Response(JSON.stringify(body), { status: 200 }));
       },
     });
     expect(await readUnsaved(client)).toEqual({ title: light.title, params: edited, profile });

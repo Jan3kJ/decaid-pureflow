@@ -145,7 +145,8 @@
       const { reported, measured } = absolute(current, wanted);
       await skin.client.correctSensorCalibration(sensor.id, reported, measured);
       await readOne(sensor);
-      const { [sensor.id]: _gone, ...rest } = previous;
+      const rest = { ...previous };
+      delete rest[sensor.id];
       previous = rest;
       savePrevious(previous);
       entry.captured = null;
@@ -236,7 +237,7 @@
     decimals={true}
     places={2}
     current={entries[sensor.id].measured === null ? '' : String(entries[sensor.id].measured)}
-    onconfirm={(typed) => {
+    onconfirm={(typed: number) => {
       // `sensor` follows `typing`: set the value before it is cleared
       entries[sensor.id].measured = measuredOf(typed);
       entries[sensor.id].error = '';

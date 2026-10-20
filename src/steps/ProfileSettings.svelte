@@ -75,7 +75,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
           value={formatSetting(profile, field)}
           {tone}
           testid="setting-{field}"
-          onstep={(d) => !disabled && onedit(stepSetting(profile, field, d))}
+          onstep={(d: 1 | -1) => !disabled && onedit(stepSetting(profile, field, d))}
           onedit={() => !disabled && (typing = field)}
         />
         <span class="hint">{caption}; 0 is off</span>
@@ -94,7 +94,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     max={limit.max}
     decimals={limit.step < 1}
     current={settingOf(profile, field).toFixed(limit.step < 1 ? 1 : 0)}
-    onconfirm={(typed) => {
+    onconfirm={(typed: number) => {
       onedit(setSetting(profile, field, typed));
       typing = null;
     }}

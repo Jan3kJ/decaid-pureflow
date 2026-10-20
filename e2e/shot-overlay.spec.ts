@@ -23,7 +23,7 @@ async function home(page: Page) {
 const cells = async (page: Page, phase: string) =>
   Object.fromEntries(
     await Promise.all(
-      ['seconds', 'weight', 'volume', 'temperature', 'flow', 'pressure'].map(async (key) => [
+      ['seconds', 'weight', 'volume', 'temperature', 'flow', 'pressure'].map(async (key): Promise<[string, string]> => [
         key,
         (await page.getByTestId(`phase-${phase}-${key}`).textContent())!.trim(),
       ]),

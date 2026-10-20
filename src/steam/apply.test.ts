@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ShotSettings, Workflow } from '../api';
+import type { ShotSettings } from '../api';
 import { applySteamTimer, MACHINE_WAIT_MS, timerMismatch, type SteamTimerGateway } from './apply';
 
 const SETTINGS: ShotSettings = {
@@ -36,23 +36,25 @@ function decaid(options: RigOptions = {}) {
   let remembered: unknown = options.remembered ?? null;
   let waited = 0;
   const gateway: SteamTimerGateway = {
-    async setSteamDuration(seconds) {
+    setSteamDuration(seconds) {
       calls.push(`workflow ${seconds}`);
       if (writable && seconds !== workflow && machine) machine = { ...machine, targetSteamDuration: seconds };
       workflow = seconds;
-      return { steamSettings: { targetTemperature: 150, duration: seconds, flow: 0.8 } } as Workflow;
+      return Promise.resolve({ steamSettings: { targetTemperature: 150, duration: seconds, flow: 0.8 } });
     },
-    async setShotSettings(settings) {
+    setShotSettings(settings) {
       calls.push(`machine ${JSON.stringify(settings)}`);
       if (writable) machine = settings;
+      return Promise.resolve();
     },
-    async kvGet<T>() {
-      if (options.store === false) throw new Error('no store');
-      return remembered as T | null;
+    kvGet<T>() {
+      if (options.store === false) return Promise.reject(new Error('no store'));
+      return Promise.resolve(remembered as T | null);
     },
-    async kvSet(key, value, namespace) {
+    kvSet(key, value, namespace) {
       calls.push(`kv ${namespace}/${key} ${JSON.stringify(value)}`);
       remembered = value;
+      return Promise.resolve();
     },
   };
   const apply = (seconds: number) =>
@@ -60,7 +62,10 @@ function decaid(options: RigOptions = {}) {
       gateway,
       seconds,
       () => machine,
-      async (ms) => void (waited += ms),
+      (ms) => {
+        waited += ms;
+        return Promise.resolve();
+      },
     );
   return { apply, calls, waited: () => waited, remembered: () => remembered };
 }
@@ -123,11 +128,9 @@ describe('setting the steam timer', () => {
 
   it('fails when the workflow write fails', async () => {
     const failing: SteamTimerGateway = {
-      setSteamDuration: async () => {
-        throw new Error('503');
-      },
+      setSteamDuration: () => Promise.reject(new Error('503')),
       setShotSettings: async () => {},
-      kvGet: async () => null,
+      kvGet: () => Promise.resolve(null),
       kvSet: async () => {},
     };
     await expect(

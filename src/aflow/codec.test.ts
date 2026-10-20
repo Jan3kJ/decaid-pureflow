@@ -30,14 +30,14 @@ describe('serializeParams and parseParams', () => {
   });
 
   it('writes a value that follows another one as null', () => {
-    const written = JSON.parse(serializeParams(medium)).params;
+    const { params: written } = JSON.parse(serializeParams(medium)) as { params: Record<string, unknown> };
     for (const field of ['infuseTemperature', 'secondFillTemperature', 'rampTemperature', 'pourEndFlow', 'pourPressureLimit']) {
       expect(written[field], field).toBeNull();
     }
   });
 
   it('has no key for the 2nd fill: the pause says it', () => {
-    expect(Object.keys(JSON.parse(serializeParams(medium)).params)).not.toContain('secondFill');
+    expect(Object.keys((JSON.parse(serializeParams(medium)) as { params: object }).params)).not.toContain('secondFill');
   });
 
   // A clean break (2026-10-13): no 3.0 string was saved before the format changed.
@@ -92,7 +92,8 @@ describe('serializeParams and parseParams', () => {
   });
 
   it('rejects a missing value or one of the wrong type', () => {
-    const { rampTime: _rampTime, ...withoutRamp } = medium;
+    const withoutRamp: Partial<AFlowParams> = { ...medium };
+    delete withoutRamp.rampTime;
     expect(parseParams(JSON.stringify({ aflow: '3.0', params: withoutRamp }))).toEqual({
       ok: false,
       error: 'rampTime is not a number',
@@ -105,7 +106,8 @@ describe('serializeParams and parseParams', () => {
       ok: false,
       error: 'pauseDuration is not a number',
     });
-    const { pourEndFlow: _pourEndFlow, ...withoutEndFlow } = medium;
+    const withoutEndFlow: Partial<AFlowParams> = { ...medium };
+    delete withoutEndFlow.pourEndFlow;
     expect(parseParams(JSON.stringify({ aflow: '3.0', params: withoutEndFlow }))).toEqual({
       ok: false,
       error: 'pourEndFlow is not a number or null',
@@ -119,7 +121,8 @@ describe('serializeParams and parseParams', () => {
   // founder, 2026-10-13 (request 169): the pause's exit flow came after the first saved strings.
   it("reads a saved string without the pause's exit flow as 1 ml/s, the value that was fixed", () => {
     for (const { id, params } of DEFAULT_PROFILES) {
-      const { pauseExitFlow: _pauseExitFlow, ...saved } = { ...params, pauseDuration: 12 };
+      const saved: Partial<AFlowParams> = { ...params, pauseDuration: 12 };
+      delete saved.pauseExitFlow;
       const text = JSON.stringify({ aflow: '3.0', params: saved });
       expect(parseParams(text), id).toEqual({ ok: true, params: { ...saved, pauseExitFlow: 1 } });
     }
@@ -129,7 +132,7 @@ describe('serializeParams and parseParams', () => {
     const p = { ...medium, pauseDuration: 12, pauseExitFlow: 0.6 };
     const text = serializeParams(p);
     expect(text).toContain('"pauseDuration":12,"pauseExitFlow":0.6,');
-    expect(JSON.parse(text).aflow).toBe('3.0');
+    expect((JSON.parse(text) as { aflow: string }).aflow).toBe('3.0');
     expect(parseParams(text)).toEqual({ ok: true, params: p });
   });
 

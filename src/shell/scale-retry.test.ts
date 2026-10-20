@@ -60,9 +60,10 @@ describe('ScaleRetry', () => {
       machineAsleep: () => state.asleep,
       wokeAt: () => state.wokeAt,
       decaidScanning: () => state.scanning,
-      preferredScale: async () => state.preferred,
-      scan: async () => {
+      preferredScale: () => Promise.resolve(state.preferred),
+      scan: () => {
         state.scans += 1;
+        return Promise.resolve();
       },
       onLooking: (looking) => state.looking.push(looking),
       now: () => Date.now(),
@@ -168,10 +169,10 @@ describe('ScaleRetry', () => {
       machineAsleep: () => false,
       wokeAt: () => null,
       decaidScanning: () => false,
-      preferredScale: async () => 'MockScale',
-      scan: async () => {
+      preferredScale: () => Promise.resolve('MockScale'),
+      scan: () => {
         state.scans += 1;
-        throw new Error('500');
+        return Promise.reject(new Error('500'));
       },
       onLooking: () => undefined,
     });

@@ -21,12 +21,12 @@ const off: AFlowParams = { ...light, pauseDuration: 0, secondFillFlow: 6.5, seco
 
 /** A profile that carries its parameters in its notes: of version 1, or the workflow's copy. */
 function profileOf(params: AFlowParams, title = 'A-Flow / mine', firstStepWorkaround = false): Profile {
-  return generateProfile(params, { title, notes: serializeParams(params), firstStepWorkaround }) as Profile;
+  return generateProfile(params, { title, notes: serializeParams(params), firstStepWorkaround });
 }
 
 /** A profile as the skin stores it now: no parameters in its notes. */
 function storedOf(params: AFlowParams, title = 'A-Flow / mine'): Profile {
-  return generateProfile(params, { title }) as Profile;
+  return generateProfile(params, { title });
 }
 
 /** A profile as the gateway returns it: other key order, `null` where a field was left out. */
@@ -64,7 +64,7 @@ describe('readParams', () => {
   });
 
   it("keeps the 2nd fill's values while it is off, through JSON as the gateway answers", () => {
-    const metadata = JSON.parse(JSON.stringify({ source: 'pureflow', ...paramsMetadata(off) }));
+    const metadata = JSON.parse(JSON.stringify({ source: 'pureflow', ...paramsMetadata(off) })) as Record<string, unknown>;
     expect(readParams(storedOf(off), metadata)).toEqual(off);
   });
 

@@ -356,7 +356,7 @@
   <section class="stage">
     <!-- No phase buttons: in detail mode a tap on a step of the graph selects it (founder, 2026-10-16). -->
     <div class="plot">
-      <Graph {params} {limits} {mode} {selected} ondrag={drag} onedit={edit} onselect={(id) => (selected = id)} />
+      <Graph {params} {limits} {mode} {selected} ondrag={drag} onedit={edit} onselect={(id: PhaseId) => (selected = id)} />
     </div>
   </section>
 
@@ -369,7 +369,7 @@
           value={formatValue(field, resolved[field])}
           tone={FIELD_TONE[field] ?? 'none'}
           testid={field}
-          onstep={(d) => step(field, d)}
+          onstep={(d: 1 | -1) => step(field, d)}
           onedit={() => (typing = field)}
         />
       {/each}
@@ -378,7 +378,7 @@
         label={PANEL_LABEL.dose}
         value={formatValue('dose', params.dose)}
         testid="dose"
-        onstep={(d) => step('dose', d)}
+        onstep={(d: 1 | -1) => step('dose', d)}
         onedit={() => (typing = 'dose')}
       />
     </aside>
@@ -414,7 +414,7 @@
 {#if naming}
   <NameDialog
     {taken}
-    onconfirm={(name) => {
+    onconfirm={(name: string) => {
       naming = false;
       void saveUnder(name);
     }}
@@ -431,7 +431,7 @@
     max={ranges[field].max}
     decimals={typedStep(field) < 1}
     current={formatValue(field, resolved[field]).replace(/ .*$/, '')}
-    onconfirm={(value) => {
+    onconfirm={(value: number) => {
       edit(field, snap(field, value, limits, typedStep(field)));
       typing = null;
     }}

@@ -1,4 +1,6 @@
 import { expect, test } from '@playwright/test';
+import type { DisplayState, MachineSnapshot, ShotSettings } from '../src/api';
+import type { RigWorkflow } from './gateway';
 import { IDLE } from './idle';
 
 // Acceptance item 18 (spec 3.7, R4) against the rig: the home menu's steam off writes the
@@ -11,7 +13,7 @@ import { IDLE } from './idle';
 const GATEWAY = 'http://localhost:8080';
 const BACKUP = '/api/v1/store/pureflow/settings-backup';
 
-async function api(method: string, path: string, body?: unknown): Promise<any> {
+async function api<T = unknown>(method: string, path: string, body?: unknown): Promise<T> {
   const response = await fetch(GATEWAY + path, {
     method,
     headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
@@ -20,11 +22,11 @@ async function api(method: string, path: string, body?: unknown): Promise<any> {
   });
   const text = await response.text();
   if (!response.ok) throw new Error(`${method} ${path}: ${response.status} ${text.slice(0, 200)}`);
-  return text ? JSON.parse(text) : undefined;
+  return (text ? JSON.parse(text) : undefined) as T;
 }
 
-const machineState = async (): Promise<string> => (await api('GET', '/api/v1/machine/state')).state.state;
-const workflowSteam = async (): Promise<number> => (await api('GET', '/api/v1/workflow')).steamSettings.targetTemperature;
+const machineState = async (): Promise<string> => (await api<MachineSnapshot>('GET', '/api/v1/machine/state')).state.state;
+const workflowSteam = async (): Promise<number> => (await api<RigWorkflow>('GET', '/api/v1/workflow')).steamSettings.targetTemperature;
 
 /** The machine's own steam target, from the first frame of `/ws/v1/machine/shotSettings`. */
 function machineSteamTemp(): Promise<number> {
@@ -37,7 +39,7 @@ function machineSteamTemp(): Promise<number> {
     socket.onmessage = (event) => {
       clearTimeout(timer);
       socket.close();
-      resolve(JSON.parse(String(event.data)).targetSteamTemp);
+      resolve((JSON.parse(String(event.data)) as ShotSettings).targetSteamTemp);
     };
   });
 }
@@ -58,7 +60,7 @@ test('home menu: steam off and on again, read back from the machine; machine sle
   const temperatureBefore = await workflowSteam();
   const machineBefore = await machineSteamTemp();
   const backupBefore = await api('GET', BACKUP);
-  const displayBefore = await api('GET', '/api/v1/display');
+  const displayBefore = await api<DisplayState>('GET', '/api/v1/display');
   expect(temperatureBefore, 'the rig starts with the steam heater on').toBeGreaterThanOrEqual(135);
 
   try {

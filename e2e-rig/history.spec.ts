@@ -1,4 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
+import type { MachineSnapshot, PaginatedShots, ProfileRecord, ShotRecord } from '../src/api';
+import type { RigWorkflow } from './gateway';
 import { IDLE } from './idle';
 
 // Acceptance item 5 (spec section 5) against the rig: simulated shots with another profile
@@ -16,9 +18,9 @@ const ROASTER = 'D8b Rig';
 const BEAN_A = 'D8b Bean A';
 const BEAN_B = 'D8b Bean B';
 /** Every field of the context the skin or the test writes; what the workflow lacked is cleared at the end. */
-const WRITTEN = ['coffeeName', 'coffeeRoaster', 'beanBatchId', 'grinderSetting', 'grinderModel', 'grinderId'];
+const WRITTEN = ['coffeeName', 'coffeeRoaster', 'beanBatchId', 'grinderSetting', 'grinderModel', 'grinderId'] as const;
 
-async function api(method: string, path: string, body?: unknown): Promise<any> {
+async function api<T = unknown>(method: string, path: string, body?: unknown): Promise<T> {
   const response = await fetch(GATEWAY + path, {
     method,
     headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
@@ -27,12 +29,12 @@ async function api(method: string, path: string, body?: unknown): Promise<any> {
   });
   const text = await response.text();
   if (!response.ok) throw new Error(`${method} ${path}: ${response.status} ${text.slice(0, 200)}`);
-  return text ? JSON.parse(text) : undefined;
+  return (text ? JSON.parse(text) : undefined) as T;
 }
 
 const shotIds = async (): Promise<string[]> =>
-  (await api('GET', '/api/v1/shots?limit=100')).items.map((shot: { id: string }) => shot.id);
-const machineState = async (): Promise<string> => (await api('GET', '/api/v1/machine/state')).state.state;
+  (await api<PaginatedShots>('GET', '/api/v1/shots?limit=100')).items.map((shot: { id: string }) => shot.id);
+const machineState = async (): Promise<string> => (await api<MachineSnapshot>('GET', '/api/v1/machine/state')).state.state;
 
 /** The points of a record's graph: its measurements from the first one in which water moves (src/shell/shot.ts). */
 function withWater(record: { measurements: { machine: { state: { substate: string } } }[] }): number {
@@ -43,7 +45,7 @@ function withWater(record: { measurements: { machine: { state: { substate: strin
 }
 
 /** One simulated shot with the given workflow; returns its record, with measurements. */
-async function pull(page: Page, profile: unknown, context: Record<string, unknown>): Promise<any> {
+async function pull(page: Page, profile: unknown, context: Record<string, unknown>): Promise<ShotRecord> {
   const known = await shotIds();
   await api('PUT', '/api/v1/workflow', { profile, context: { ...context, targetYield: YIELD } });
   await api('PUT', '/api/v1/machine/state/espresso');
@@ -63,14 +65,14 @@ async function pull(page: Page, profile: unknown, context: Record<string, unknow
     })
     .toBeTruthy();
   await page.waitForTimeout(500);
-  return api('GET', `/api/v1/shots/${encodeURIComponent(id!)}`);
+  return api<ShotRecord>('GET', `/api/v1/shots/${encodeURIComponent(id!)}`);
 }
 
 let gatewayUp = false;
 
 test.beforeAll(async () => {
   try {
-    gatewayUp = (await api('GET', '/api/v1/machine/state')).state.state !== undefined;
+    gatewayUp = (await api<MachineSnapshot>('GET', '/api/v1/machine/state')).state.state !== undefined;
   } catch {
     gatewayUp = false;
   }
@@ -79,9 +81,9 @@ test.beforeAll(async () => {
 test('the history: shots with another profile or bean are entries, a tap restores one and shows its graph', async ({ page }) => {
   test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
 
-  const workflowBefore = await api('GET', '/api/v1/workflow');
+  const workflowBefore = await api<RigWorkflow>('GET', '/api/v1/workflow');
   const shotsBefore = await shotIds();
-  const profiles: { profile: { title: string } }[] = await api('GET', '/api/v1/profiles');
+  const profiles: { profile: { title: string } }[] = await api<ProfileRecord[]>('GET', '/api/v1/profiles');
   const profileA = profiles.find((record) => record.profile.title === PROFILE_A)!.profile;
   const profileB = profiles.find((record) => record.profile.title === PROFILE_B)!.profile;
 
@@ -123,7 +125,7 @@ test('the history: shots with another profile or bean are entries, a tap restore
     // A tap outside closes it and leaves the workflow alone.
     await page.touchscreen.tap(1100, 400);
     await expect(page.getByTestId('history')).toHaveCount(0);
-    expect((await api('GET', '/api/v1/workflow')).context.coffeeName).toBe('D8b Other');
+    expect((await api<RigWorkflow>('GET', '/api/v1/workflow')).context.coffeeName).toBe('D8b Other');
 
     // A tap on an entry closes it, restores the entry and shows the graph of its latest shot.
     await page.getByTestId('nav-history').tap();
@@ -133,8 +135,8 @@ test('the history: shots with another profile or bean are entries, a tap restore
     await expect(page.getByTestId('profile-name')).toHaveText(PROFILE_A);
     await expect(page.getByTestId('recalled-bean')).toHaveText(`${ROASTER} · ${BEAN_A}`);
     await expect(page.getByTestId('recalled-grinder')).toHaveText('grinder 4.8');
-    let workflow = await api('GET', '/api/v1/workflow');
-    expect(workflow.profile).toEqual(shotA.workflow.profile);
+    let workflow = await api<RigWorkflow>('GET', '/api/v1/workflow');
+    expect(workflow.profile).toEqual(shotA.workflow!.profile);
     expect(workflow.context.coffeeName).toBe(BEAN_A);
     expect(workflow.context.coffeeRoaster).toBe(ROASTER);
     expect(workflow.context.grinderSetting).toBe('4.8');
@@ -155,8 +157,8 @@ test('the history: shots with another profile or bean are entries, a tap restore
     await expect(page.getByTestId('history')).toHaveCount(0);
     await expect(page.getByTestId('profile-name')).toHaveText(PROFILE_B);
     await expect(graph.getByTestId('shot-graph')).toHaveAttribute('data-points', String(withWater(shotC)));
-    workflow = await api('GET', '/api/v1/workflow');
-    expect(workflow.profile).toEqual(shotC.workflow.profile);
+    workflow = await api<RigWorkflow>('GET', '/api/v1/workflow');
+    expect(workflow.profile).toEqual(shotC.workflow!.profile);
     expect(workflow.context.coffeeName).toBe(BEAN_B);
     expect(workflow.context.grinderSetting).toBe('6.0');
   } finally {
@@ -177,7 +179,7 @@ test('the history: shots with another profile or bean are entries, a tap restore
   }
 
   expect(await shotIds()).toEqual(shotsBefore);
-  const workflowAfter = await api('GET', '/api/v1/workflow');
+  const workflowAfter = await api<RigWorkflow>('GET', '/api/v1/workflow');
   expect(workflowAfter.profile).toEqual(workflowBefore.profile);
   expect(workflowAfter.context).toEqual(workflowBefore.context);
 });

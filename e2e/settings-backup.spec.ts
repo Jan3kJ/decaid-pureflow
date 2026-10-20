@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
+import type { Settings } from '../src/settings';
 import { GATEWAY, mockGateway, type MockGateway } from './mock-gateway';
 
 // The backup of the settings in Decaid's KV store (founder, 2026-10-14): every save writes it
@@ -8,7 +9,7 @@ import { GATEWAY, mockGateway, type MockGateway } from './mock-gateway';
 
 const KEY = 'pureflow/settings-backup';
 /** the skin's version, which the backup names */
-const VERSION: string = JSON.parse(readFileSync('public/manifest.json', 'utf8')).version;
+const VERSION = (JSON.parse(readFileSync('public/manifest.json', 'utf8')) as { version: string }).version;
 const errors: string[] = [];
 let gateway: MockGateway;
 
@@ -34,7 +35,7 @@ async function openSettings(page: Page) {
 }
 
 const workaround = (page: Page) => page.getByTestId('setting-first-step-workaround');
-const backup = () => gateway.store[KEY] as { savedAt: string; version: string; settings: any } | undefined;
+const backup = () => gateway.store[KEY] as { savedAt: string; version: string; settings: Settings } | undefined;
 
 test('a change is backed up; a start without settings takes them back and says so once', async ({ page }) => {
   await page.goto('/');
@@ -61,7 +62,9 @@ test('a change is backed up; a start without settings takes them back and says s
   await expect(workaround(page)).toHaveAttribute('aria-checked', 'true');
   await page.getByTestId('settings-restored-ok').click();
   await expect(page.getByTestId('settings-restored')).toHaveCount(0);
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('pureflow.settings')!).firstStepWorkaround)).toBe(true);
+  expect(await page.evaluate(() => (JSON.parse(localStorage.getItem('pureflow.settings')!) as Settings).firstStepWorkaround)).toBe(
+    true,
+  );
 
   // Said once: the next start has settings of its own.
   await page.reload();
@@ -111,7 +114,9 @@ test('a failed write is shown on the settings page and the setting is saved all 
   await workaround(page).click();
   await expect(page.getByTestId('backup-error')).toContainText('The backup in Decaid was not written');
   await expect(page.getByTestId('backup-error')).toHaveCount(1);
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('pureflow.settings')!).firstStepWorkaround)).toBe(true);
+  expect(await page.evaluate(() => (JSON.parse(localStorage.getItem('pureflow.settings')!) as Settings).firstStepWorkaround)).toBe(
+    true,
+  );
   expect(backup()).toBeUndefined();
 
   // The next write that works clears it.

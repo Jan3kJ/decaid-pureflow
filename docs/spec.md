@@ -810,6 +810,11 @@ Rules from `doc/Skins.md`:
   bundle size.
 - **Tests:** Vitest for the generator and the API client; Playwright against Decaid's device
   simulation for the screens.
+- **Formatting and lint (Q1, 2026-10-20):** the tree is formatted with Prettier
+  (`prettier-plugin-svelte`; `npm run format`, `npm run format:check`) and linted with ESLint
+  (`typescript-eslint`'s type-checked recommended rules, `eslint-plugin-svelte`,
+  `eslint-config-prettier`; `npm run lint`). The check every task runs (`check_command` in
+  `stint.toml`) runs both after the unit tests and svelte-check.
 - All packages open source, free, no registration.
 
 ### 4.3 Build targets
@@ -1115,6 +1120,10 @@ The weeks are a capacity guess on one Pro plan.
 | 3 | U12 | review 2026-10-18, low priority: settings: Bengle pages, manual, feedback, firmware upload from a file (3.9 item 15) | U11 |
 | 3 | H3 | review 2026-10-18: hand-over ZIP 0.4.0, install.md with the new checks, the open ones and the camera test page | U1-U12, H2 |
 | 3 | U13 | review 2026-10-18, low priority: a bean from a photo of its bag, Tesseract.js pre-fills name and roaster; only if the founder's camera check passes (3.9 item 20) | U9, founder |
+| 2 (Oct 19-25) | Q1 | code quality review 2026-10-19: Prettier and ESLint, the tree formatted in one commit (in `.git-blame-ignore-revs`), lint errors fixed, both in the check ([review-code-quality-10-19-26.md](review-code-quality-10-19-26.md), steps 1-3) | - |
+| 2 | Q2 | code quality review 2026-10-19: split `src/shell/skin.svelte.ts` along its seams; `Skin` stays the one object the screens read ([review-code-quality-10-19-26.md](review-code-quality-10-19-26.md), step 4) | Q1 |
+| 2 | Q3 | code quality review 2026-10-19: one `errorMessage` helper in place of the repeated error idiom ([review-code-quality-10-19-26.md](review-code-quality-10-19-26.md), step 5) | Q2 |
+| 3 (Oct 26-Nov 1) | Q4 | code quality review 2026-10-19: split `Editor.svelte` and `Graph.svelte` ([review-code-quality-10-19-26.md](review-code-quality-10-19-26.md), step 6) | Q2 |
 
 ## 8. Open questions
 Answered by the first research task ([research.md](research.md)) and no longer open: Decaid

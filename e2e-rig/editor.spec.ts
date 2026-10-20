@@ -1,4 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
+import type { MachineSnapshot, ProfileRecord } from '../src/api';
+import type { RigWorkflow } from './gateway';
 import { decodeParams } from '../src/aflow/codec';
 import type { AFlowParams } from '../src/aflow/types';
 import { buildProfile } from '../src/editor/save';
@@ -15,7 +17,7 @@ import { selectPhase } from '../e2e/touch';
 const GATEWAY = 'http://localhost:8080';
 const LIGHT = { title: 'A-Flow / default-light', author: 'Janek' };
 
-async function api(method: string, path: string, body?: unknown): Promise<any> {
+async function api<T = unknown>(method: string, path: string, body?: unknown): Promise<T> {
   const response = await fetch(GATEWAY + path, {
     method,
     headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
@@ -24,41 +26,42 @@ async function api(method: string, path: string, body?: unknown): Promise<any> {
   });
   const text = await response.text();
   if (!response.ok) throw new Error(`${method} ${path}: ${response.status} ${text.slice(0, 200)}`);
-  return text ? JSON.parse(text) : undefined;
+  return (text ? JSON.parse(text) : undefined) as T;
 }
 
 /** Every stored profile: the visible, the hidden and the soft-deleted ones. */
 async function profileIds(): Promise<string[]> {
   const lists = await Promise.all([
-    api('GET', '/api/v1/profiles?includeHidden=true'),
-    api('GET', '/api/v1/profiles?visibility=deleted'),
+    api<ProfileRecord[]>('GET', '/api/v1/profiles?includeHidden=true'),
+    api<ProfileRecord[]>('GET', '/api/v1/profiles?visibility=deleted'),
   ]);
-  return [...new Set(lists.flat().map((record: { id: string }) => record.id))].sort();
+  return [...new Set(lists.flat().map((record) => record.id))].sort();
 }
 
 /** A value with its keys in order and without nulls: the gateway returns `null` where the generator leaves a field out. */
-function canonical(value: any): any {
-  if (Array.isArray(value)) return value.map(canonical);
+function canonical(value: unknown): unknown {
+  if (Array.isArray(value)) return (value as unknown[]).map(canonical);
   if (typeof value !== 'object' || value === null) return value;
+  const fields = value as Record<string, unknown>;
   const sorted: Record<string, unknown> = {};
-  for (const key of Object.keys(value).sort()) if (value[key] !== null) sorted[key] = canonical(value[key]);
+  for (const key of Object.keys(fields).sort()) if (fields[key] !== null) sorted[key] = canonical(fields[key]);
   return sorted;
 }
 
 /** The fields the generator writes, as the gateway holds them. */
-function held(profile: Record<string, unknown>, expected: object): unknown {
-  return canonical(Object.fromEntries(Object.keys(expected).map((key) => [key, profile[key]])));
+function held(profile: object, expected: object): unknown {
+  return canonical(Object.fromEntries(Object.keys(expected).map((key) => [key, (profile as Record<string, unknown>)[key]])));
 }
 
 /** The values of the workflow's copy of a profile: in its notes, as the workflow has no metadata. */
-function paramsOf(profile: { notes: string }): AFlowParams {
+function paramsOf(profile: { notes?: string }): AFlowParams {
   const params = splitNotes(profile.notes).params;
   if (!params) throw new Error('the notes hold no A-Flow parameters');
   return params;
 }
 
 /** The values of a stored record: in its metadata, none in its notes (spec 3.6). */
-function recordParams(record: { profile: { notes: string }; metadata: unknown }): AFlowParams {
+function recordParams(record: { profile: { notes?: string }; metadata?: unknown }): AFlowParams {
   expect(splitNotes(record.profile.notes).params).toBeNull();
   const parsed = decodeParams(record.metadata);
   if (!parsed.ok) throw new Error(`the metadata holds no A-Flow parameters: ${parsed.error}`);
@@ -86,7 +89,7 @@ async function openEditor(page: Page) {
 
 /** The workflow of the gateway, read back, against the generator. */
 async function expectWorkflow(about: { title: string; author: string }): Promise<AFlowParams> {
-  const workflow = await api('GET', '/api/v1/workflow');
+  const workflow = await api<RigWorkflow>('GET', '/api/v1/workflow');
   const params = paramsOf(workflow.profile);
   const expected = workflowProfile(buildProfile(params, about, false), params);
   expect(held(workflow.profile, expected)).toEqual(canonical(expected));
@@ -112,12 +115,12 @@ async function saveAs(page: Page, name: string) {
 }
 
 let gatewayUp = false;
-let workflowBefore: any;
+let workflowBefore: RigWorkflow;
 let profilesBefore: string[] = [];
 
 test.beforeAll(async () => {
   try {
-    gatewayUp = (await api('GET', '/api/v1/machine/state')).state.state !== undefined;
+    gatewayUp = (await api<MachineSnapshot>('GET', '/api/v1/machine/state')).state.state !== undefined;
   } catch {
     gatewayUp = false;
   }
@@ -125,7 +128,7 @@ test.beforeAll(async () => {
 
 test.beforeEach(async () => {
   test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
-  workflowBefore = await api('GET', '/api/v1/workflow');
+  workflowBefore = await api<RigWorkflow>('GET', '/api/v1/workflow');
   profilesBefore = await profileIds();
 });
 
@@ -142,7 +145,7 @@ test.afterEach(async () => {
     },
   });
   expect(await profileIds()).toEqual(profilesBefore);
-  const workflowAfter = await api('GET', '/api/v1/workflow');
+  const workflowAfter = await api<RigWorkflow>('GET', '/api/v1/workflow');
   expect(workflowAfter.profile).toEqual(workflowBefore.profile);
   expect(workflowAfter.context).toEqual(workflowBefore.context);
 });
@@ -175,7 +178,7 @@ test("simple mode: a changed value redraws the curve, and the gateway holds the 
   const params = await expectLoaded(page, LIGHT);
   expect(params).toEqual({ ...light, infusePressure: pressure, stopWeight: 47, pauseDuration: 15 });
   // Dose and stop weight are not on home: the workflow holds them.
-  expect((await api('GET', '/api/v1/workflow')).context).toMatchObject({ targetYield: 47, targetDoseWeight: 16 });
+  expect((await api<RigWorkflow>('GET', '/api/v1/workflow')).context).toMatchObject({ targetYield: 47, targetDoseWeight: 16 });
   // Loading saves nothing.
   expect(await profileIds()).toEqual(profilesBefore);
 
@@ -216,7 +219,7 @@ test('detail mode: typed values are loaded; a saved profile re-opens with them a
 
   // Save as: a new record of the gateway, with the parameters and no parent.
   await saveAs(page, name);
-  const saved = (await api('GET', '/api/v1/profiles')).find((record: any) => record.profile.title === about.title);
+  const saved = (await api<ProfileRecord[]>('GET', '/api/v1/profiles')).find((record) => record.profile.title === about.title)!;
   expect(profilesBefore).not.toContain(saved.id);
   expect(saved.parentId).toBeNull();
   expect(saved.metadata).toEqual({ source: 'pureflow', ...paramsMetadata(wanted) });
@@ -226,7 +229,7 @@ test('detail mode: typed values are loaded; a saved profile re-opens with them a
 
   // Save as loaded it: the workflow holds the generator's profile for the typed values.
   expect(await expectWorkflow(about)).toEqual(wanted);
-  expect((await api('GET', '/api/v1/workflow')).context).toMatchObject({ targetYield: 48, targetDoseWeight: 18.5 });
+  expect((await api<RigWorkflow>('GET', '/api/v1/workflow')).context).toMatchObject({ targetYield: 48, targetDoseWeight: 18.5 });
   // Back has nothing more to load.
   await page.getByTestId('nav-home').click();
   await expect(page.getByTestId('profile-name')).toHaveText(about.title);
@@ -257,17 +260,17 @@ test('detail mode: typed values are loaded; a saved profile re-opens with them a
   await type(page, 'dose', '17');
   await page.getByTestId('save').click();
   await expect(page.getByTestId('editor-notice')).toHaveText(`Saved “${name}” and loaded.`);
-  const redosed = await api('GET', `/api/v1/profiles/${encodeURIComponent(saved.id)}`);
+  const redosed = await api<ProfileRecord>('GET', `/api/v1/profiles/${encodeURIComponent(saved.id)}`);
   expect(recordParams(redosed)).toEqual({ ...wanted, dose: 17 });
 
   // An edit of the curve: a new record with the old one as its parent; the old one is hidden.
   await page.getByTestId('toggle-flow').click();
   await page.getByTestId('save').click();
   // The button is also disabled while the save runs: wait for what the gateway lists.
-  let listed: any[] = [];
+  let listed: ProfileRecord[] = [];
   await expect
     .poll(async () => {
-      listed = (await api('GET', '/api/v1/profiles')).filter((record: any) => record.profile.title === about.title);
+      listed = (await api<ProfileRecord[]>('GET', '/api/v1/profiles')).filter((record) => record.profile.title === about.title);
       return listed.map((record) => record.id === saved.id);
     })
     .toEqual([false]);
@@ -275,8 +278,8 @@ test('detail mode: typed values are loaded; a saved profile re-opens with them a
   expect(listed[0].id).not.toBe(saved.id);
   expect(listed[0].parentId).toBe(saved.id);
   expect(recordParams(listed[0])).toEqual({ ...wanted, dose: 17, flowUp: false });
-  const lineage = await api('GET', `/api/v1/profiles/${encodeURIComponent(listed[0].id)}/lineage`);
-  expect(lineage.map((record: any) => [record.id, record.visibility])).toEqual([
+  const lineage = await api<ProfileRecord[]>('GET', `/api/v1/profiles/${encodeURIComponent(listed[0].id)}/lineage`);
+  expect(lineage.map((record) => [record.id, record.visibility])).toEqual([
     [saved.id, 'hidden'],
     [listed[0].id, 'visible'],
   ]);
@@ -315,7 +318,7 @@ test('unsaved edits on the machine: the picker asks before it loads (founder, 20
   // Not A-Flow 3.0: the picker opened from the editor comes back to the step editor on it (spec 3.6).
   await expect(page.getByTestId('step-cards')).toBeVisible();
   await expect(pressed(page)).toHaveText(title);
-  expect((await api('GET', '/api/v1/workflow')).profile.title).toBe(title);
+  expect((await api<RigWorkflow>('GET', '/api/v1/workflow')).profile.title).toBe(title);
   expect(await profileIds()).toEqual(profilesBefore);
 });
 
@@ -354,11 +357,11 @@ test('a phase turned off and on again at 5 s, and a dragged infuse weight, save 
 
   const wanted: AFlowParams = { ...light, infuseTime: 5, infuseWeight: weight };
   await saveAs(page, name);
-  const saved = (await api('GET', '/api/v1/profiles')).find((record: any) => record.profile.title === about.title);
+  const saved = (await api<ProfileRecord[]>('GET', '/api/v1/profiles')).find((record) => record.profile.title === about.title)!;
   expect(recordParams(saved)).toEqual(wanted);
   const expected = buildProfile(wanted, about, false);
   expect(held(saved.profile, expected)).toEqual(canonical(expected));
-  const read = await api('GET', `/api/v1/profiles/${encodeURIComponent(saved.id)}`);
+  const read = await api<ProfileRecord>('GET', `/api/v1/profiles/${encodeURIComponent(saved.id)}`);
   expect(recordParams(read)).toEqual(wanted);
   expect(await expectWorkflow(about)).toEqual(wanted);
 

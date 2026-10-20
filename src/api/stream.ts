@@ -29,7 +29,7 @@ export interface StreamErrorFrame {
 
 /** The part of a WebSocket the stream uses. The browser's and Node's WebSocket both fit. */
 export interface SocketLike {
-  addEventListener(type: string, listener: (event: any) => void): void;
+  addEventListener(type: string, listener: (event: never) => void): void;
   close(): void;
 }
 
@@ -66,7 +66,7 @@ export interface SnapshotStreamOptions<Frame> {
   refusedRetryMs?: number;
   WebSocket?: SocketConstructor;
   setTimeout?: (callback: () => void, ms: number) => unknown;
-  clearTimeout?: (handle: any) => void;
+  clearTimeout?: (handle: unknown) => void;
   /** The clock, in ms; default `Date.now`. */
   now?: () => number;
 }
@@ -215,7 +215,8 @@ export class SnapshotStream<Frame> {
 
   private cancelTimer(): void {
     if (this.timer === undefined) return;
-    const cancel = this.options.clearTimeout ?? ((handle) => globalThis.clearTimeout(handle));
+    const cancel =
+      this.options.clearTimeout ?? ((handle) => globalThis.clearTimeout(handle as ReturnType<typeof globalThis.setTimeout>));
     cancel(this.timer);
     this.timer = undefined;
   }

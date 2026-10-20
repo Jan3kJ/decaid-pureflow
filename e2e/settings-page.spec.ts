@@ -1,4 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
+import type { Settings } from '../src/settings';
+import type { Backup } from '../src/settings-backup';
 import { mockGateway, type MockGateway } from './mock-gateway';
 
 // The settings page ported from Streamline (spec 3.7 'Settings', acceptance 22, research.md
@@ -270,9 +272,9 @@ test("the skin's own settings are in Skin, saved and backed up as before", async
   await page.getByTestId('settings-sub-skin-steam').click();
   await type(page, 'setting-mug-small', '160');
   await expect(page.getByTestId('setting-mug-small').locator('b')).toHaveText('160g');
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('pureflow.settings')!).steam.mugSmall)).toBe(160);
+  expect(await page.evaluate(() => (JSON.parse(localStorage.getItem('pureflow.settings')!) as Settings).steam.mugSmall)).toBe(160);
   await expect
-    .poll(() => (gateway.store['pureflow/settings-backup'] as any)?.settings?.steam?.mugSmall, { timeout: 10_000 })
+    .poll(() => (gateway.store['pureflow/settings-backup'] as Backup | undefined)?.settings?.steam?.mugSmall, { timeout: 10_000 })
     .toBe(160);
   // Nothing of Decaid's was written for it.
   expect(gateway.requests.filter((request) => request.method !== 'GET' && !request.path.startsWith('/api/v1/store'))).toEqual([]);

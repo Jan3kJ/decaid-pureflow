@@ -1,4 +1,6 @@
 import { expect, test } from '@playwright/test';
+import type { MachineSnapshot, ProfileRecord } from '../src/api';
+import type { RigWorkflow } from './gateway';
 import { DEFAULT_PROFILES } from '../src/aflow';
 import { workflowProfile } from '../src/editor/storage';
 import { defaultProfile } from '../src/shell/profiles';
@@ -12,7 +14,7 @@ import { defaultProfile } from '../src/shell/profiles';
 const GATEWAY = 'http://localhost:8080';
 const LIGHT = DEFAULT_PROFILES[1];
 
-async function api(method: string, path: string, body?: unknown): Promise<any> {
+async function api<T = unknown>(method: string, path: string, body?: unknown): Promise<T> {
   const response = await fetch(GATEWAY + path, {
     method,
     headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
@@ -21,16 +23,16 @@ async function api(method: string, path: string, body?: unknown): Promise<any> {
   });
   const text = await response.text();
   if (!response.ok) throw new Error(`${method} ${path}: ${response.status} ${text.slice(0, 200)}`);
-  return text ? JSON.parse(text) : undefined;
+  return (text ? JSON.parse(text) : undefined) as T;
 }
 
-const profileIds = async (): Promise<string[]> => (await api('GET', '/api/v1/profiles')).map((record: { id: string }) => record.id);
+const profileIds = async (): Promise<string[]> => (await api<ProfileRecord[]>('GET', '/api/v1/profiles')).map((record) => record.id);
 
 let gatewayUp = false;
 
 test.beforeAll(async () => {
   try {
-    gatewayUp = (await api('GET', '/api/v1/machine/state')).state.state !== undefined;
+    gatewayUp = (await api<MachineSnapshot>('GET', '/api/v1/machine/state')).state.state !== undefined;
   } catch {
     gatewayUp = false;
   }
@@ -39,7 +41,7 @@ test.beforeAll(async () => {
 test('the picker lists the skin’s defaults and loads one into the workflow without storing it', async ({ page }) => {
   test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
 
-  const workflowBefore = await api('GET', '/api/v1/workflow');
+  const workflowBefore = await api<RigWorkflow>('GET', '/api/v1/workflow');
   const profilesBefore = await profileIds();
   const sent: string[] = [];
   page.on('request', (request) => {
@@ -71,7 +73,7 @@ test('the picker lists the skin’s defaults and loads one into the workflow wit
     await expect(page.getByTestId('profile-name')).toHaveText(LIGHT.title);
 
     // What Decaid's workflow holds after a default is loaded without a record (research.md 25).
-    const workflow = await api('GET', '/api/v1/workflow');
+    const workflow = await api<RigWorkflow>('GET', '/api/v1/workflow');
     console.log(
       `rig workflow after loading ${LIGHT.title}: ${JSON.stringify({
         id: workflow.id,
@@ -109,7 +111,7 @@ test('the picker lists the skin’s defaults and loads one into the workflow wit
   }
 
   expect(await profileIds()).toEqual(profilesBefore);
-  const workflowAfter = await api('GET', '/api/v1/workflow');
+  const workflowAfter = await api<RigWorkflow>('GET', '/api/v1/workflow');
   expect(workflowAfter.profile).toEqual(workflowBefore.profile);
   expect(workflowAfter.context).toEqual(workflowBefore.context);
 });

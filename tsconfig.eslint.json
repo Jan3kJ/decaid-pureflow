@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": false,
+    "lib": ["ES2023", "DOM", "DOM.Iterable"]
+  },
+  "include": ["src/**/*.ts", "src/**/*.svelte", "e2e/**/*.ts", "e2e-rig/**/*.ts", "scripts/**/*.mjs", "*.ts", "*.js"]
+}

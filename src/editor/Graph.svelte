@@ -251,12 +251,14 @@
 
   // The phases that are off, by where they collapsed: two may collapse at one place.
   const offAt = $derived.by(() => {
-    const groups = new Map<number, PhaseId[]>();
+    const groups: [number, PhaseId[]][] = [];
     for (const id of curve.off) {
       const x = curve.phases.find((c) => c.id === id)!.x0;
-      groups.set(x, [...(groups.get(x) ?? []), id]);
+      const group = groups.find(([at]) => at === x);
+      if (group) group[1].push(id);
+      else groups.push([x, [id]]);
     }
-    return [...groups];
+    return groups;
   });
 
   function reenable(phase: PhaseId) {
@@ -394,7 +396,7 @@
         label="infuse to"
         value={formatValue('infuseWeight', params.infuseWeight)}
         testid="graph-infuseWeight"
-        onstep={(d) => step('infuseWeight', d)}
+        onstep={(d: 1 | -1) => step('infuseWeight', d)}
         ondrag={weightDrag}
         ondrop={weightDrop}
       />
@@ -421,7 +423,7 @@
       label="stop at"
       value={formatValue('stopWeight', params.stopWeight)}
       testid="graph-stopWeight"
-      onstep={(d) => step('stopWeight', d)}
+      onstep={(d: 1 | -1) => step('stopWeight', d)}
     />
   </div>
 

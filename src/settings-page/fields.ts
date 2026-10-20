@@ -7,7 +7,7 @@
 // Every gateway setting of the settings page (spec 3.7 'Settings', research.md 20.3): where it
 // is read and written, its range and its wording. One definition per setting: the page and the
 // tests read them here. Streamline's ranges and labels, not its code. No UI.
-import type { AdvancedSettings } from '../api';
+import type { AdvancedSettings, DecaidInfo } from '../api';
 import { HOT_WATER_FIELDS, type HotWaterField } from '../hotwater/hot-water';
 import { STEAM_ON_MAX, STEAM_ON_MIN } from '../shell/steam-heater';
 
@@ -499,7 +499,10 @@ export const DECAID_SETTINGS: Field[] = [
     label: 'Decaid version',
     source: 'info',
     key: 'version',
-    format: (raw, all) => (typeof raw === 'string' ? `${raw}${all.buildNumber ? ` (${all.buildNumber})` : ''}` : null),
+    format: (raw, all) => {
+      const { buildNumber } = all as DecaidInfo;
+      return typeof raw === 'string' ? `${raw}${buildNumber ? ` (${buildNumber})` : ''}` : null;
+    },
   },
   { kind: 'info', id: 'web-ui-path', label: 'web UI path', source: 'decaid', key: 'webUiPath' },
 ];

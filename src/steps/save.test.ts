@@ -178,7 +178,7 @@ describe('a profile the editor cannot show fully', () => {
     gateway.records.push(parent);
     const edited = setValue(openProfile(odd), 3, 'seconds', 6);
     await saveStepEdit(gateway.client, edited, parent);
-    const sent = gateway.calls[0].body.profile;
+    const sent: Profile & { legacy_profile_type?: string } = gateway.calls[0].body.profile;
     expect(sent.legacy_profile_type).toBe('settings_2c');
     expect(sent.steps[0]).toEqual(odd.steps[0]);
     expect(sent.steps[3]).toEqual({ ...odd.steps[3], seconds: 6 });

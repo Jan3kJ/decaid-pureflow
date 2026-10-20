@@ -27,7 +27,7 @@ const notice = (page: Page) => page.getByTestId('editor-notice');
 const graphBox = async (page: Page) => (await page.getByTestId('graph').boundingBox())!;
 
 test("the profile steps have no 'shot stops at' line; the flow step's exit holds the stop weight", async ({ page }) => {
-  await (await mockGateway(page)).withDefaults('light');
+  (await mockGateway(page)).withDefaults('light');
   await openEditor(page);
   await page.getByTestId('toggle-steps').click();
   await expect(page.getByTestId('steps')).toBeVisible();

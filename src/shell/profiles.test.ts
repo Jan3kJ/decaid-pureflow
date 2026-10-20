@@ -51,11 +51,11 @@ const other: Profile = { title: 'Best practice', steps: [], target_volume_count_
 /** A client whose requests are recorded and answered with `answer`. */
 function client(answer: (method: string, path: string, body: unknown) => unknown) {
   const calls: { method: string; path: string; body: unknown }[] = [];
-  const fetch = vi.fn(async (url: string, init?: RequestInit) => {
+  const fetch = vi.fn((url: string, init?: RequestInit) => {
     const path = new URL(url).pathname;
-    const body = init?.body ? JSON.parse(String(init.body)) : undefined;
+    const body: unknown = init?.body ? JSON.parse(init.body as string) : undefined;
     calls.push({ method: init?.method ?? 'GET', path, body });
-    return new Response(JSON.stringify(answer(init?.method ?? 'GET', path, body)), { status: 200 });
+    return Promise.resolve(new Response(JSON.stringify(answer(init?.method ?? 'GET', path, body)), { status: 200 }));
   });
   return { client: new DecaidClient({ fetch }), calls };
 }

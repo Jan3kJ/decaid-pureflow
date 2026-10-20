@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import type { MachineSnapshot, DecaidSettings, DeviceInfo, MachineInfo } from '../src/api';
 import { IDLE } from './idle';
 
 // Connections, Maintenance and Machine Information against the rig (research.md 20.10 S2b):
@@ -12,7 +13,7 @@ import { IDLE } from './idle';
 const GATEWAY = 'http://localhost:8080';
 const BACKUP = '/api/v1/store/pureflow/settings-backup';
 
-async function api(method: string, path: string, body?: unknown): Promise<any> {
+async function api<T = unknown>(method: string, path: string, body?: unknown): Promise<T> {
   const response = await fetch(GATEWAY + path, {
     method,
     headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
@@ -21,14 +22,14 @@ async function api(method: string, path: string, body?: unknown): Promise<any> {
   });
   const text = await response.text();
   if (!response.ok) throw new Error(`${method} ${path}: ${response.status} ${text.slice(0, 200)}`);
-  return text ? JSON.parse(text) : undefined;
+  return (text ? JSON.parse(text) : undefined) as T;
 }
 
 let gatewayUp = false;
 
 test.beforeAll(async () => {
   try {
-    gatewayUp = (await api('GET', '/api/v1/machine/state')).state.state !== undefined;
+    gatewayUp = (await api<MachineSnapshot>('GET', '/api/v1/machine/state')).state.state !== undefined;
   } catch {
     gatewayUp = false;
   }
@@ -45,8 +46,8 @@ async function openCategory(page: Page, id: string) {
 
 /** What the test may change or must not change, as the gateway holds it. */
 async function snapshot() {
-  const settings = await api('GET', '/api/v1/settings');
-  const devices: any[] = await api('GET', '/api/v1/devices');
+  const settings = await api<DecaidSettings>('GET', '/api/v1/settings');
+  const devices = await api<DeviceInfo[]>('GET', '/api/v1/devices');
   return {
     scalePowerMode: settings.scalePowerMode,
     blockOnNoScale: settings.blockOnNoScale,
@@ -57,7 +58,7 @@ async function snapshot() {
       .map((device) => device.id)
       .sort(),
     wifi: await api('GET', '/api/v1/devices/wifi'),
-    state: (await api('GET', '/api/v1/machine/state')).state,
+    state: (await api<MachineSnapshot>('GET', '/api/v1/machine/state')).state,
     backup: await api('GET', BACKUP),
   };
 }
@@ -87,13 +88,13 @@ test("the device lists show the rig's MockDe1 and MockScale connected; power mod
 
     await page.getByTestId(`setting-scale-power-mode-${mode}`).click();
     await expect(page.getByTestId(`setting-scale-power-mode-${mode}`)).toHaveAttribute('aria-pressed', 'true');
-    expect((await api('GET', '/api/v1/settings')).scalePowerMode).toBe(mode);
+    expect((await api<DecaidSettings>('GET', '/api/v1/settings')).scalePowerMode).toBe(mode);
 
     const required = page.getByTestId('setting-block-on-no-scale');
     await expect(required).toHaveAttribute('aria-checked', String(before.blockOnNoScale));
     await required.click();
     await expect(required).toHaveAttribute('aria-checked', String(!before.blockOnNoScale));
-    expect((await api('GET', '/api/v1/settings')).blockOnNoScale).toBe(!before.blockOnNoScale);
+    expect((await api<DecaidSettings>('GET', '/api/v1/settings')).blockOnNoScale).toBe(!before.blockOnNoScale);
   } finally {
     await api('POST', '/api/v1/settings', { scalePowerMode: before.scalePowerMode, blockOnNoScale: before.blockOnNoScale });
     if (before.backup === null || before.backup === undefined) await api('DELETE', BACKUP);
@@ -109,7 +110,7 @@ test('a clean is started through the page and cancelled on the simulated DE1; th
   test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
   const before = await snapshot();
   expect(before.state.state).toBe('idle');
-  const state = async () => (await api('GET', '/api/v1/machine/state')).state.state;
+  const state = async () => (await api<MachineSnapshot>('GET', '/api/v1/machine/state')).state.state;
 
   try {
     await openCategory(page, 'maintenance');
@@ -134,9 +135,9 @@ test('a clean is started through the page and cancelled on the simulated DE1; th
 
 test("Machine Information shows the simulated DE1's model, firmware and serial as the gateway reports them", async ({ page }) => {
   test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
-  const info = await api('GET', '/api/v1/machine/info');
+  const info = await api<MachineInfo>('GET', '/api/v1/machine/info');
   await openCategory(page, 'machine');
-  await expect(page.getByTestId('machine-info-model')).toHaveText(info.model);
-  await expect(page.getByTestId('machine-info-firmware')).toHaveText(info.version);
-  await expect(page.getByTestId('machine-info-serial')).toHaveText(info.serialNumber);
+  await expect(page.getByTestId('machine-info-model')).toHaveText(info.model!);
+  await expect(page.getByTestId('machine-info-firmware')).toHaveText(info.version!);
+  await expect(page.getByTestId('machine-info-serial')).toHaveText(info.serialNumber!);
 });

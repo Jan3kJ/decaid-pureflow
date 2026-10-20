@@ -156,11 +156,11 @@ describe('entryKey', () => {
 /** A client whose requests are recorded and answered with `answer`. */
 function client(answer: (method: string, url: URL, body: unknown) => unknown) {
   const calls: { method: string; path: string; body: unknown }[] = [];
-  const fetch = vi.fn(async (address: string, init?: RequestInit) => {
+  const fetch = vi.fn((address: string, init?: RequestInit) => {
     const url = new URL(address);
-    const body = init?.body ? JSON.parse(String(init.body)) : undefined;
+    const body: unknown = init?.body ? JSON.parse(init.body as string) : undefined;
     calls.push({ method: init?.method ?? 'GET', path: url.pathname + url.search, body });
-    return new Response(JSON.stringify(answer(init?.method ?? 'GET', url, body)), { status: 200 });
+    return Promise.resolve(new Response(JSON.stringify(answer(init?.method ?? 'GET', url, body)), { status: 200 }));
   });
   return { client: new DecaidClient({ fetch }), calls };
 }

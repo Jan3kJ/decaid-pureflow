@@ -3,25 +3,72 @@
 import { readFileSync } from 'node:fs';
 import type { Page, Route, WebSocketRoute } from '@playwright/test';
 import { DEFAULT_PROFILES } from '../src/aflow';
+import type {
+  DeviceInfo,
+  DisplayState,
+  HotWaterData,
+  MachineSnapshot,
+  MachineState,
+  PluginManifest,
+  Profile,
+  ProfileRecord,
+  ProfileStep,
+  ProfileVisibility,
+  RinseData,
+  ScaleFrame,
+  ShotMeasurement,
+  ShotRecordSummary,
+  SteamSettings,
+  Workflow,
+  WorkflowContext,
+} from '../src/api';
 import { paramsMetadata, workflowProfile } from '../src/editor/storage';
 import { defaultProfile } from '../src/shell/profiles';
 
 export const GATEWAY = 'http://localhost:8080';
 
-type Json = Record<string, any>;
+type Json = Record<string, unknown>;
 
 interface RecordedEvent {
   at: number;
-  machine?: Json;
-  scale?: Json;
+  machine?: MachineSnapshot;
+  scale?: ScaleFrame;
 }
+
+/**
+ * A request's JSON body: the fields of the requests the mock answers. A request sends some of
+ * them; the mock and the tests read the ones of the request at hand.
+ */
+export interface RequestBody {
+  [key: string]: unknown;
+  brightness: number;
+  deviceId: string;
+  host: string;
+  userPresenceEnabled?: boolean;
+  sleepTimeoutMinutes?: number;
+  de1ReportedValue: number;
+  measuredValue: number;
+  refillLevel: number;
+  context?: WorkflowContext;
+  steamSettings?: Partial<SteamSettings>;
+  rinseData?: RinseData;
+  hotWaterData?: HotWaterData;
+  profile: Profile;
+  metadata?: Record<string, unknown> | null;
+  parentId?: string | null;
+  visibility: ProfileVisibility;
+}
+
+/** The workflow as the mock holds it: every part is there. */
+type MockWorkflow = Workflow &
+  Required<Pick<Workflow, 'profile' | 'steamSettings' | 'hotWaterData' | 'rinseData'>> & { context: WorkflowContext };
 
 /**
  * A simulated shot recorded on the rig: Decaid 0.8.8, A-Flow / default-medium, target 36 g.
  * The simulated machine hardly heats, so 3.9 s of `preparingForShot` frames without flow are
  * added before its first `preinfusion` frame: what a real DE1 does before water moves.
  */
-export const RECORDING: RecordedEvent[] = JSON.parse(readFileSync(new URL('./fixtures/shot.json', import.meta.url), 'utf8'));
+export const RECORDING = JSON.parse(readFileSync(new URL('./fixtures/shot.json', import.meta.url), 'utf8')) as RecordedEvent[];
 
 const isEspresso = (event: RecordedEvent) => event.machine?.state.state === 'espresso';
 /** The recording from its first espresso frame on: what a replay sends. */
@@ -35,18 +82,18 @@ export const WATER_FRAMES = RECORDING.slice(
 export const HEATING_SECONDS = 4.5;
 
 /** Recorded events as a shot record's measurements: one per espresso frame, with the scale's latest weight. */
-export function measurementsFrom(events: readonly RecordedEvent[]): Json[] {
-  const measurements: Json[] = [];
-  let scale: Json | null = null;
+export function measurementsFrom(events: readonly RecordedEvent[]): ShotMeasurement[] {
+  const measurements: ShotMeasurement[] = [];
+  let scale: ShotMeasurement['scale'] = null;
   for (const event of events) {
     if (event.scale && 'weight' in event.scale) scale = event.scale;
-    if (isEspresso(event)) measurements.push({ machine: event.machine, scale, volume: null });
+    if (isEspresso(event)) measurements.push({ machine: event.machine!, scale, volume: null });
   }
   return measurements;
 }
 
 /** The recorded shot as a shot record's measurements. */
-export const MEASUREMENTS: Json[] = measurementsFrom(RECORDING);
+export const MEASUREMENTS: ShotMeasurement[] = measurementsFrom(RECORDING);
 /** How a replay changes the recorded shot. */
 export interface ReplayOptions {
   /** s of the real DE1's tail after the stop: espresso frames in `pouringDone` (spec 3.8) */
@@ -88,7 +135,7 @@ export function shotEvents(options: ReplayOptions = {}): RecordedEvent[] {
       frames.push({
         at: last.at + i * 100,
         machine: {
-          ...last.machine,
+          ...last.machine!,
           timestamp: stamp(lastAt + i * 100),
           state: { state: 'espresso', substate: 'pouringDone' },
           pressure: last.machine!.pressure * (1 - share) + 0.5 * share,
@@ -116,7 +163,7 @@ export function espressoShare(options: ReplayOptions = {}): number {
 }
 
 /** The measurements of a shorter shot: the recorded one, ended `seconds` after its first espresso frame. */
-export function measurementsOf(seconds: number): Json[] {
+export function measurementsOf(seconds: number): ShotMeasurement[] {
   const start = Date.parse(MEASUREMENTS[0].machine.timestamp);
   return MEASUREMENTS.filter((measurement) => Date.parse(measurement.machine.timestamp) - start <= seconds * 1000);
 }
@@ -127,7 +174,7 @@ const CORS = {
   'access-control-allow-headers': 'Content-Type',
 };
 
-function step(name: string, seconds: number): Json {
+function step(name: string, seconds: number): ProfileStep {
   return {
     name,
     pump: 'pressure',
@@ -143,7 +190,7 @@ function step(name: string, seconds: number): Json {
   };
 }
 
-export function profile(title: string, targetWeight: number, steps = 1): Json {
+export function profile(title: string, targetWeight: number, steps = 1): Profile {
   return {
     version: '2',
     title,
@@ -159,7 +206,7 @@ export function profile(title: string, targetWeight: number, steps = 1): Json {
   };
 }
 
-export function record(id: string, body: Json, metadata: Json | null): Json {
+export function record(id: string, body: Profile, metadata: Json | null): ProfileRecord {
   return {
     id,
     profile: body,
@@ -175,7 +222,7 @@ export function record(id: string, body: Json, metadata: Json | null): Json {
 }
 
 /** What a record's id is made of. */
-const content = (body: Json) => JSON.stringify([body.steps, body.target_weight ?? 0]);
+const content = (body: Profile) => JSON.stringify([body.steps, body.target_weight ?? 0]);
 
 export interface MockOptions {
   /** false: nothing answers on port 8080 */
@@ -188,10 +235,10 @@ export interface MockOptions {
 
 export class MockGateway {
   /** every REST call the page made, in order */
-  readonly requests: { method: string; path: string; body: any; query: string }[] = [];
+  readonly requests: { method: string; path: string; body: RequestBody; query: string }[] = [];
   machineConnected: boolean;
   /** the machine's state outside a replay */
-  state = 'idle';
+  state: MachineState = 'idle';
   /** °C of the frames outside a replay: a warm machine, as the rig's (target 93 °C, steam 150 °C) */
   groupTemperature = 92.6;
   steamTemperature = 148;
@@ -202,7 +249,7 @@ export class MockGateway {
   /** sockets refused with an error frame, every stream counted */
   refused = 0;
   /** `GET /api/v1/display` */
-  display: Json = {
+  display: DisplayState = {
     wakeLockEnabled: true,
     wakeLockOverride: false,
     brightness: 100,
@@ -210,7 +257,7 @@ export class MockGateway {
     lowBatteryBrightnessActive: false,
     platformSupported: { brightness: true, wakeLock: true },
   };
-  workflow: Json = {
+  workflow: MockWorkflow = {
     id: 'workflow',
     name: 'Workflow',
     // The plugin's default as Decaid bundles it: the title of a 3.0 default, other steps.
@@ -221,7 +268,7 @@ export class MockGateway {
     hotWaterData: { targetTemperature: 75, duration: 30, volume: 50, flow: 10 },
     rinseData: { targetTemperature: 90, duration: 10, flow: 6 },
   };
-  profiles: Json[] = [
+  profiles: ProfileRecord[] = [
     record('profile:best', profile('Best practice', 40, 4), { source: 'bundled' }),
     record('profile:medium', this.workflow.profile, { source: 'bundled' }),
     record('profile:light', profile('A-Flow / default-light', 48, 9), { source: 'bundled' }),
@@ -246,7 +293,7 @@ export class MockGateway {
   /** `GET /api/v1/settings`: Decaid's own settings, as on the rig (research.md 20.4) */
   decaidSettings: Json = {
     gatewayMode: 'tracking',
-    webUiPath: '/web-ui/streamline.js',
+    webUiPath: 'C:Decaidweb-uistreamline.js',
     logLevel: 'INFO',
     weightFlowMultiplier: 1.0,
     volumeFlowMultiplier: 0.3,
@@ -292,13 +339,13 @@ export class MockGateway {
   /** `/ws/v1/machine/waterLevels`: the tank, in mm */
   water: Json = { currentLevel: 38, refillLevel: 5 };
   /** `/ws/v1/devices` and `GET /api/v1/devices`: the devices Decaid knows, as on the rig (2026-10-18) */
-  devices: Json[] = [
+  devices: DeviceInfo[] = [
     { name: 'Mock Scale', id: 'MockScale', state: 'connected', type: 'scale', available: true, connectionRole: 'primary' },
     { name: 'MockDe1', id: 'MockDe1', state: 'connected', type: 'machine', available: true },
   ];
   scanning = false;
   /** what the next scan finds */
-  scanFinds: Json[] = [];
+  scanFinds: DeviceInfo[] = [];
   /** a scan connects the scale again, as Decaid's scan connects a missing preferred scale (spec 3.9) */
   scanConnectsScale = false;
   /** device ids whose connect times out */
@@ -316,7 +363,7 @@ export class MockGateway {
   /** the KV store, as `namespace/key` */
   store: Record<string, unknown> = {};
   /** `GET /api/v1/plugins`: three of the rig's plugins, as Decaid 0.8.8 lists them, and one with an enum */
-  plugins: Json[] = [
+  plugins: PluginManifest[] = [
     {
       id: 'visualizer.reaplugin',
       name: 'Visualizer',
@@ -357,10 +404,15 @@ export class MockGateway {
   /** the plugins' stored values, by id; a secure one is kept as typed and answered as `{ isSet }` */
   pluginSettings: Record<string, Json> = { 'visualizer.reaplugin': { Username: 'janek' } };
   /** `GET /api/v1/presence/settings`, as on the rig */
-  presence: Json = { userPresenceEnabled: true, sleepTimeoutMinutes: 30, keepAwakeUntil: null, schedules: [] };
+  presence: { userPresenceEnabled: boolean; sleepTimeoutMinutes: number; keepAwakeUntil: string | null; schedules: Json[] } = {
+    userPresenceEnabled: true,
+    sleepTimeoutMinutes: 30,
+    keepAwakeUntil: null,
+    schedules: [],
+  };
   private scheduleCount = 0;
   /** `GET /api/v1/machine/calibration/{target}`: the stored value of each sensor */
-  calibration: Json = { flow: 1.0, pressure: 1.0, temperature: 0.0 };
+  calibration: Record<string, number> = { flow: 1.0, pressure: 1.0, temperature: 0.0 };
   /** `GET /api/v1/machine/firmware`, as on the rig (2026-10-18) */
   firmware: Json = {
     artifacts: [
@@ -412,9 +464,9 @@ export class MockGateway {
   streamlineOpen = false;
 
   /** the shot records, without measurements: `GET /api/v1/shots` */
-  shots: Json[] = [];
+  shots: ShotRecordSummary[] = [];
   /** the measurements of a shot that has not the whole recording, by the shot's id */
-  measurements: Record<string, Json[]> = {};
+  measurements: Record<string, ShotMeasurement[]> = {};
 
   private readonly up: boolean;
   private readonly machineSockets = new Set<WebSocketRoute>();
@@ -431,13 +483,13 @@ export class MockGateway {
   private scaleConnected = true;
   private replaying = false;
   /** the frame a machine in the middle of a shot repeats */
-  private held: Json | undefined;
+  private held: MachineSnapshot | undefined;
   private heartbeat: ReturnType<typeof setInterval> | undefined;
 
   constructor(options: MockOptions = {}) {
     this.up = options.gateway ?? true;
     this.machineConnected = options.machine ?? true;
-    this.display.platformSupported.brightness = options.brightness ?? true;
+    this.display.platformSupported!.brightness = options.brightness ?? true;
   }
 
   async install(page: Page): Promise<this> {
@@ -502,7 +554,7 @@ export class MockGateway {
   }
 
   /** A shot in Decaid's history: the workflow as it was, as a shot record copies it (research.md 8.4). */
-  addShot(id: string, timestamp: string, shotProfile: Json, context: Json | null): void {
+  addShot(id: string, timestamp: string, shotProfile: Profile, context: WorkflowContext | null): void {
     this.shots.push({
       id,
       timestamp,
@@ -522,7 +574,7 @@ export class MockGateway {
   }
 
   /** Decaid's workflow write: the machine gets the steam timer only when the workflow's changes. */
-  private putWorkflowSteam(patch: Json | undefined): void {
+  private putWorkflowSteam(patch: Partial<SteamSettings> | undefined): void {
     const before = this.workflow.steamSettings.duration;
     const temperatureBefore = this.workflow.steamSettings.targetTemperature;
     // What a patch leaves out keeps its value (research.md 8.3).
@@ -639,7 +691,7 @@ export class MockGateway {
     this.sendMachine(this.frame());
   }
 
-  frame(at = Date.now()): Json {
+  frame(at = Date.now()): MachineSnapshot {
     return {
       timestamp: new Date(at).toISOString().replace('Z', '000'),
       state: { state: this.state, substate: this.substate ?? (this.state === 'hotWater' ? 'pouring' : 'idle') },
@@ -680,11 +732,11 @@ export class MockGateway {
     this.replaying = false;
   }
 
-  private sendMachine(frame: Json): void {
+  private sendMachine(frame: MachineSnapshot): void {
     for (const ws of this.machineSockets) ws.send(JSON.stringify(frame));
   }
 
-  private sendScale(frame: Json): void {
+  private sendScale(frame: ScaleFrame): void {
     for (const ws of this.scaleSockets) ws.send(JSON.stringify(frame));
   }
 
@@ -710,7 +762,7 @@ export class MockGateway {
     const url = new URL(request.url());
     const path = url.pathname;
     if (method === 'OPTIONS') return route.fulfill({ status: 204, headers: CORS });
-    const body = request.postData() ? JSON.parse(request.postData()!) : undefined;
+    const body = (request.postData() ? JSON.parse(request.postData()!) : undefined) as RequestBody;
     this.requests.push({ method, path, body, query: url.search });
 
     const json = (value: unknown, status = 200) =>
@@ -727,7 +779,7 @@ export class MockGateway {
       const asked = path.split('/').pop()!;
       // The maintenance states are entered and left at once, as the simulated DE1 does (research.md 20.14).
       const own = ['sleeping', 'cleaning', 'descaling', 'airPurge'];
-      if (own.includes(asked) || own.includes(this.state)) this.state = asked;
+      if (own.includes(asked) || own.includes(this.state)) this.state = asked as MachineState;
       return json(null);
     }
     if (method === 'PUT' && path === '/api/v1/scale/tare') {
@@ -817,8 +869,8 @@ export class MockGateway {
       }
       const redacted = Object.fromEntries(
         Object.entries(plugin.settings ?? {})
-          .filter(([key, schema]: [string, any]) => schema.secure || key in stored)
-          .map(([key, schema]: [string, any]) => [key, schema.secure ? { isSet: key in stored } : stored[key]]),
+          .filter(([key, schema]) => schema.secure || key in stored)
+          .map(([key, schema]) => [key, schema.secure ? { isSet: key in stored } : stored[key]]),
       );
       return json(redacted);
     }

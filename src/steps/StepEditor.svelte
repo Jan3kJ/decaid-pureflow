@@ -278,7 +278,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   {#if tab === 'settings'}
     <ProfileSettings {profile} {titleProblem} disabled={busy} onedit={edit} />
   {:else if tab === 'script'}
-    <ScriptTab {profile} disabled={busy} onedit={edit} ontype={(index, value) => (typing = { index, value })} />
+    <ScriptTab {profile} disabled={busy} onedit={edit} ontype={(index: number, value: StepValue) => (typing = { index, value })} />
   {:else}
     <!-- The curve preview: the targets of the steps, redrawn with every edit. -->
     <StepPreview {profile} />
@@ -292,11 +292,11 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
           open={index === openIndex}
           disabled={busy}
           onopen={() => (openIndex = index)}
-          onstep={(value, direction) => edit(stepValue(profile, index, value, direction))}
-          ontype={(value) => (typing = { index, value })}
-          oncycle={(what) => cycle(index, what)}
-          onname={(name) => edit(setName(profile, index, name))}
-          onmove={(direction) => move(index, direction)}
+          onstep={(value: StepValue, direction: 1 | -1) => edit(stepValue(profile, index, value, direction))}
+          ontype={(value: StepValue) => (typing = { index, value })}
+          oncycle={(what: 'sensor' | 'pump' | 'exit') => cycle(index, what)}
+          onname={(name: string) => edit(setName(profile, index, name))}
+          onmove={(direction: 1 | -1) => move(index, direction)}
           ondelete={() => (deleting = index)}
           oninsert={() => insert(index)}
         />
@@ -309,12 +309,12 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   {/if}
 </div>
 
-<svelte:window onkeydown={(e) => e.key === 'Escape' && deleting !== null && (deleting = null)} />
+<svelte:window onkeydown={(e: KeyboardEvent) => e.key === 'Escape' && deleting !== null && (deleting = null)} />
 
 {#if naming}
   <NameDialog
     {taken}
-    onconfirm={(name) => {
+    onconfirm={(name: string) => {
       naming = false;
       void saveUnder(name);
     }}
@@ -334,7 +334,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
       max={limit.max}
       decimals={limit.step < 1}
       current={formatNumber(step, value)}
-      onconfirm={(typed) => {
+      onconfirm={(typed: number) => {
         edit(setValue(profile, index, value, typed));
         typing = null;
       }}
