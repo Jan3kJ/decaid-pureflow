@@ -349,7 +349,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
 {#if deleting !== null}
   {@const index = deleting}
   <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-  <div class="backdrop" onclick={(e) => e.target === e.currentTarget && (deleting = null)}>
+  <div class="backdrop" data-no-swipe onclick={(e) => e.target === e.currentTarget && (deleting = null)}>
     <div class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="delete-text" data-testid="delete-dialog">
       <p id="delete-text">Delete step {index + 1}?</p>
       <p class="hint">“{profile.steps[index].name}” and its values go; saving makes it final.</p>

@@ -269,8 +269,12 @@ export class Skin {
 
   /** `go`, after the open screen's `leaving` agreed: the back arrow and the editor's shortcut. */
   async leave(screen: Screen): Promise<void> {
-    if (this.leaving && !(await this.leaving())) return;
-    this.go(screen);
+    if (await this.mayLeave()) this.go(screen);
+  }
+
+  /** Whether the open screen agrees to be left, after doing what it does then (`leaving`). */
+  async mayLeave(): Promise<boolean> {
+    return !this.leaving || (await this.leaving());
   }
 
   /**

@@ -1063,7 +1063,13 @@ leaving rules unchanged: leaving loads the values on screen when they differ fro
 opened with (`loadOnLeave`, `loadStepsOnLeave`, through `Skin.leaving`) and loads nothing when
 nothing changed; a load that fails keeps the editor open with its line and the editor springs back,
 and a second swipe or 'back' leaves without loading. Nothing is asked: unsaved edits are on the
-machine, as after 'back'.
+machine, as after 'back'. *Built (W6):* `swipes` and `destination` in `src/shell/swipe.ts` add
+the editor to the one gesture; `App.svelte` slides the editor out in 220 ms, then asks
+`skin.mayLeave()` (the editor's `leaving`, which `skin.leave` asks for the back arrow too) and
+goes home, or, when the load failed, the editor stays and springs back in another 220 ms; with `prefers-reduced-motion` nothing slides and the swipe leaves when
+the finger lets go. The step editor's preview only shows, so a swipe may start on it; the
+backdrops of the name dialog ('save as') and of the step editor's delete question are marked
+`data-no-swipe`, so a swipe there neither leaves nor answers.
 
 ## 4. Technical approach
 

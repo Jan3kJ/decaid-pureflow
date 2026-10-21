@@ -28,7 +28,7 @@
 <svelte:window onkeydown={(e: KeyboardEvent) => e.key === 'Escape' && oncancel()} />
 
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-<div class="backdrop" onclick={(e) => e.target === e.currentTarget && oncancel()}>
+<div class="backdrop" data-no-swipe onclick={(e) => e.target === e.currentTarget && oncancel()}>
   <div class="dialog" role="dialog" aria-modal="true" aria-label="save as" data-testid="save-dialog">
     <form onsubmit={submit}>
       <label for="save-name">save the profile as</label>

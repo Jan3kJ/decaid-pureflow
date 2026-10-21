@@ -15,7 +15,19 @@
   import { backupTime } from './settings-backup';
   import Steam from './steam/Steam.svelte';
   import StepEditor from './steps/StepEditor.svelte';
-  import { PAGES, commits, decide, isPage, neighbour, offset, onControl, type Page, type Point } from './shell/swipe';
+  import {
+    PAGES,
+    commits,
+    decide,
+    destination,
+    isPage,
+    neighbour,
+    offset,
+    onControl,
+    swipes,
+    type Page,
+    type Point,
+  } from './shell/swipe';
   import UnsavedDialog from './shell/UnsavedDialog.svelte';
   import { smallRingRun } from './shell/water';
 
@@ -25,8 +37,9 @@
   // One horizontal gesture for the pages and the shot history (src/shell/swipe.ts, spec 3.8):
   // hot water, home and steam are one row, and a swipe slides to the neighbour, which is drawn
   // beside the page only while it comes in; on home a swipe to the right from the left fifth
-  // opens the history instead. Not over the shot's overlay: after the shot a touch there closes
-  // it. A drag that starts on a control is the control's.
+  // opens the history instead. In the editor a swipe to the right leaves for home as its back
+  // arrow does, with home not drawn beside it. Not over the shot's overlay: after the shot a touch
+  // there closes it. A drag that starts on a control is the control's.
   const home = $derived(skin.screen === 'home');
   // Hot water or flush on a screen without its large ring: one small ring in the left column (spec 3.10).
   const smallRing = $derived(smallRingRun(skin.waterRun, skin.canStop, skin.screen, skin.historyOpen));
@@ -51,7 +64,7 @@
 
   function onpointerdown(event: PointerEvent) {
     swipe = null;
-    if (settling || !isPage(skin.screen) || skin.historyOpen || (home && skin.shotOpen)) return;
+    if (settling || !swipes(skin.screen) || skin.historyOpen || (home && skin.shotOpen)) return;
     if (onControl(event.target as Element, main)) return;
     swipe = {
       x: event.clientX,
@@ -66,7 +79,7 @@
   }
 
   function onpointermove(event: PointerEvent) {
-    if (!swipe || event.pointerId !== swipe.id || !isPage(skin.screen)) return;
+    if (!swipe || event.pointerId !== swipe.id || !swipes(skin.screen)) return;
     const now = { x: event.clientX, y: event.clientY };
     if (!swipe.page) {
       const gesture = decide(swipe, now, innerWidth, skin.screen);
@@ -85,7 +98,7 @@
     swipe.last = now.x;
     swipe.time = event.timeStamp;
     swipe.dx = now.x - swipe.x;
-    incoming = neighbour(skin.screen, swipe.dx);
+    incoming = isPage(skin.screen) ? neighbour(skin.screen, swipe.dx) : null;
     dx = still() ? 0 : offset(skin.screen, swipe.dx);
   }
 
@@ -93,21 +106,32 @@
     if (!swipe || event.pointerId !== swipe.id) return;
     const { page, dx: moved, velocity } = swipe;
     swipe = null;
-    if (!page || !isPage(skin.screen)) return;
-    const target = event.type === 'pointerup' && commits(moved, velocity, innerWidth) ? neighbour(skin.screen, moved) : null;
+    const screen = skin.screen;
+    if (!page || !swipes(screen)) return;
+    const target = event.type === 'pointerup' && commits(moved, velocity, innerWidth) ? destination(screen, moved) : null;
     if (still()) {
       incoming = null;
-      if (target) skin.go(target);
+      if (target && screen === 'editor') void skin.leave(target);
+      else if (target) skin.go(target);
       return;
     }
-    settling = true;
-    dx = target ? Math.sign(moved) * main.clientWidth : 0;
-    setTimeout(() => {
-      if (target) skin.go(target);
+    // Rests the strip, in the same task as the move, so no frame draws the new page displaced.
+    const settle = (to: Page | null) => {
+      if (to) skin.go(to);
       settling = false;
       incoming = null;
       dx = 0;
-    }, SLIDE_MS);
+    };
+    // The editor is left as by its back arrow: its changed values are loaded first; if that
+    // fails it stays, saying so, and springs back.
+    const leave = async (to: Page) => {
+      if (await skin.mayLeave()) return settle(to);
+      dx = 0;
+      setTimeout(() => settle(null), SLIDE_MS);
+    };
+    settling = true;
+    dx = target ? Math.sign(moved) * main.clientWidth : 0;
+    setTimeout(() => (target && screen === 'editor' ? void leave(target) : settle(target)), SLIDE_MS);
   }
 </script>
 
@@ -166,7 +190,7 @@
 
 <main
   bind:this={main}
-  class:pages={isPage(skin.screen)}
+  class:pages={swipes(skin.screen)}
   {onpointerdown}
   {onpointermove}
   onpointerup={endSwipe}
@@ -239,7 +263,7 @@
     overflow: hidden;
   }
 
-  /* A finger that moves sideways on the pages is the strip's swipe, not the browser's pan. */
+  /* A finger that moves sideways on the pages or the editor is the strip's swipe, not the browser's pan. */
   main.pages {
     touch-action: pan-y;
   }

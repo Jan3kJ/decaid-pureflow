@@ -7,6 +7,7 @@ import {
   SWIPE_SLOP,
   commits,
   decide,
+  destination,
   neighbour,
   offset,
   onControl,
@@ -53,10 +54,16 @@ describe("a page's swipe", () => {
     expect(decide({ x: 100, y: 400 }, { x: 80, y: 400 }, width, 'home')).toBe('page');
   });
 
-  it('is never one on a screen outside the row', () => {
-    for (const screen of ['editor', 'profiles', 'settings'] as const) {
+  it('is never one on a screen outside the row but the editor', () => {
+    for (const screen of ['profiles', 'settings', 'beans'] as const) {
       expect(decide({ x: 600, y: 400 }, { x: 300, y: 400 }, width, screen)).toBe('across');
     }
+  });
+
+  it("is one in the editor, with no history's edge there", () => {
+    expect(decide({ x: 20, y: 400 }, { x: 20 + SWIPE_SLOP, y: 400 }, width, 'editor')).toBe('page');
+    expect(decide({ x: 600, y: 400 }, { x: 300, y: 400 }, width, 'editor')).toBe('page');
+    expect(decide({ x: 600, y: 400 }, { x: 604, y: 400 + SWIPE_SLOP }, width, 'editor')).toBe('across');
   });
 });
 
@@ -75,6 +82,20 @@ describe('the row of pages', () => {
     expect(offset('home', -300)).toBe(-300);
     expect(offset('steam', -300)).toBe(-60);
     expect(offset('hot-water', 300)).toBe(60);
+  });
+});
+
+describe("the editor's swipe", () => {
+  it('goes home to the right and nowhere to the left', () => {
+    expect(destination('editor', 1)).toBe('home');
+    expect(destination('editor', -1)).toBeNull();
+    expect(destination('editor', 0)).toBeNull();
+    expect(destination('home', -1)).toBe('steam');
+  });
+
+  it('follows the finger to the right and gives a little to the left', () => {
+    expect(offset('editor', 300)).toBe(300);
+    expect(offset('editor', -300)).toBe(-60);
   });
 });
 

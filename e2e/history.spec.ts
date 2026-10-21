@@ -259,9 +259,9 @@ test('the history is on home only: the editor has no tab, and its drags never op
   await expect(page.getByTestId('graph')).toBeVisible();
   await expect(page.getByTestId('nav-history')).toHaveCount(0);
 
-  // The gesture that opens the history on home, with a finger and with the mouse.
+  // The gesture that opens the history on home, on the graph with a finger and with the mouse:
+  // the graph's drags.
   const graph = (await page.getByTestId('graph').boundingBox())!;
-  await swipe(page, { x: 10, y: 400 }, { x: 300, y: 400 });
   await swipe(page, { x: graph.x + 20, y: graph.y + graph.height / 2 }, { x: graph.x + 320, y: graph.y + graph.height / 2 });
   await page.mouse.move(graph.x + 20, graph.y + graph.height / 2);
   await page.mouse.down();
@@ -270,6 +270,11 @@ test('the history is on home only: the editor has no tab, and its drags never op
   await page.waitForTimeout(200);
   await expect(page.getByTestId('history')).toHaveCount(0);
   await expect(page.getByTestId('screen-editor')).toBeVisible();
+  // From the left edge, off the graph: the editor's swipe home (spec 3.10), not the history.
+  await swipe(page, { x: 10, y: 400 }, { x: 300, y: 400 });
+  await expect(page.getByTestId('screen-home')).toBeVisible();
+  await page.waitForTimeout(200);
+  await expect(page.getByTestId('history')).toHaveCount(0);
   // The list was read once, after the start, and not again.
   expect(gateway.historyListCalls()).toHaveLength(1);
   expect(errors).toEqual([]);
