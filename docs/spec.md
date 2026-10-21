@@ -530,7 +530,8 @@ sleep**, and its line says that Decaid cannot switch the DE1 off and that the bu
 the machine to sleep, not the app (founder, 2026-10-18). Today it is R4's entry in
 `src/shell/Home.svelte`, 'Machine off' with the line 'sleeps: Decaid cannot switch the DE1
 off', calling `Skin.machineOff` (`sleeping`, research.md 22.3); only the words change, and the
-method may be renamed with them. This overrides 3.7's label 'machine off'.
+method may be renamed with them. This overrides 3.7's label 'machine off'. The line goes in 3.10
+(founder, 2026-10-20): each entry is its label alone.
 
 **Menu: machine and app sleep (item 2; U4).** A second entry sends both the machine and the app
 to sleep (founder, 2026-10-18). This replaces 3.8's **Exit** (T9): Decaid cannot be closed by a
@@ -554,6 +555,9 @@ machine is awake anyway, research.md 13.1), and sets the brightness to 0
 (`APP_SLEEP_BRIGHTNESS`); at the wake it switches them on again and the brightness goes to 100,
 as after a machine sleep. What is to be put back is kept in `localStorage`
 (`pureflow.app-sleep`, not a setting), so a reload while asleep puts it back at the next wake.
+Overridden by 3.10 (founder, 2026-10-20, messages 42 and 43): 'app sleep' is the Asleep screen
+as 0.3.0 shows it; the brightness 0, the released wake lock and the line go, and **Machine
+sleep** keeps the app awake without the Asleep screen (W1).
 
 **Scale: reconnect (item 3, bug; U1).** The scale is connected again when its connection is
 lost, and when it was not there at the app's start: the skin retries with a time-out, and tries
@@ -882,6 +886,144 @@ stays out.
 **No change:** 'Steam on' falling back to 150 °C is fine, because it returns to the previously
 set values (founder, 2026-10-18).
 
+### 3.10 Founder's review of 2026-10-20
+
+From the founder's feedback on hand-over 0.3.0 ([review-10-20-26.md](review-10-20-26.md)) of 2026-10-20. 0.3.0 held T1-T9
+and U1, not U2-U9, so some of what the founder saw has changed since (said where it matters).
+Where an item leaves a choice open, the default below is built unless the founder says otherwise
+(section 8). Where an item changes something 3.9 decided, it says so and wins; that paragraph
+stays as history. Hand-over 0.4.0 (H3) carries these changes with 3.9's.
+
+**Home menu: two sleeps (item 4 and message 42; W1).** The menu offers two entries, **Machine
+sleep** and **Machine and app sleep**, each its label alone: the long explanation lines go
+(founder, 2026-10-20). **Machine sleep** puts only the machine to sleep and keeps the app awake:
+it does not show the Asleep screen and does not dim. **Machine and app sleep** puts the machine to
+sleep and the app shows the Asleep screen: 'app sleep' is the black screen with 'Asleep, touch to
+wake' that 0.3.0 shows (founder, 2026-10-20, message 42), whose touch wakes the machine. This
+answers section 8's question on 3.9 item 2 and overrides 3.9's 'Menu: machine sleep' (its line)
+and 'Menu: machine and app sleep' (U4's brightness 0 and released wake lock). Today the two
+entries are in `src/shell/Home.svelte`'s menu (`machine-sleep` with the detail 'only the machine
+sleeps, not the app: Decaid cannot switch the DE1 off', `app-sleep` with U4's line), calling
+`Skin.sleep` and `Skin.sleepApp`; the Asleep screen is the `.asleep` button in `App.svelte`, shown
+whenever `Skin.asleep` (`isAsleep` in `src/shell/machine.ts`: the machine sleeps), whoever put it
+to sleep; `Dimmer` (`src/shell/dimmer.ts`) sets `SLEEP_BRIGHTNESS` (5) for every sleep and, after
+`sleepApp`, `APP_SLEEP_BRIGHTNESS` (0) with Decaid's `keepAwake` and wake lock override switched
+off and kept in `localStorage` (`pureflow.app-sleep`). Default, the simplest: **what of U4 goes:**
+the brightness 0, the switching of `keepAwake` and the override, `Released` and the key
+`pureflow.app-sleep` (no hand-over carried U4, so no tablet holds it); a sleep never touches
+Decaid's wake lock or `keepAwake`. **What stays:** both entries, both sending `sleeping`, and the
+Asleep screen with its brightness 5 and its touch to wake, as 0.3.0 has it (5 kept by the founder
+on 2026-10-15). **What is new:** **Machine sleep** marks the sleep as the machine's only (a flag of
+`Skin`, cleared when the machine is awake again, not stored); while it is set the Asleep screen is
+not shown and `Dimmer` leaves the brightness alone; the state line shows the machine's sleeping
+state, and home's menu offers **Wake machine** (`Skin.wake`, `idle`) in the place of the two sleep
+entries while the machine sleeps; the machine's own button wakes it too. A sleep the skin did not
+ask for (Decaid's sleep timeout, presence detection, the machine's button) shows the Asleep screen
+as today (section 8).
+
+**Countdown ring on every screen (item 6; W2).** While hot water or flush runs, the countdown
+ring shows on every screen, not only on home (founder, 2026-10-20). Today `Water.svelte`
+(`src/shell/Water.svelte`; `ringOf`, `waterValues` and `shownRun` in `src/shell/water.ts`) is
+drawn by home, in the place of its graph, while hot water or flush runs, and by the hot water page
+while hot water pours (U3, built after 0.3.0); the steam page, the editors, the picker, the
+settings and the beans screen show only the state line's state. `Skin.waterRun` and
+`Skin.canStop` hold what runs on every screen. Default: home and the hot water page keep their
+large ring; every other screen (and the hot water page during a flush) shows a small ring at the
+bottom of the left column, `App.svelte`'s `nav`, under the back arrow. That column is 4 rem wide on
+every screen but home, holds only the back arrow since U3 removed the state dot, and its lower
+part is empty, so the ring covers no control. The small ring is the column's width less its
+padding, fills with `ringOf`'s share as the large one does, shows the time ('6 / 10 s',
+`waterValues`) inside, and is one button that stops what runs (`Skin.stop`), named by its kind
+('flush', 'hot water') for a screen reader; it goes when the run ends.
+
+**Profile picker: graphs (item 1; W3).** In the picker's preview a step of 0 s is not drawn, a
+step's limit is drawn with its target, and the graph matches the profile: default-dark's flow does
+not drop to 0 (founder, 2026-10-20). The preview is `StepPreview` (`src/steps/StepPreview.svelte`,
+`bare`), drawn from `stepCurve` in `src/steps/curve.ts`, the step editor's curve, for every
+profile, the A-Flow ones too. **0 s steps:** since U6 (2026-10-20, after 0.3.0) `stepCurve` leaves
+a step of 0 s out (no points, no border, the next step ramps from the drawn step before it), so the
+picker already hides them, as the step editor does; W3 adds the picker's test. **The 0 flow:**
+`stepCurve` counts the pump a step does not drive as 0 for the next step's ramp (Streamline's rule,
+`prevFlow = 0` after a pressure step). An A-Flow pour is a smooth flow step after Ramp Up, a
+pressure step, so default-dark (pour flow 2 ml/s, flow down: the Pouring step's target is 0 over
+its 60 s) is drawn from 0 to 0, a flat 0 through the whole pour, and the flow-up defaults rise
+from 0 instead of from the pour flow. The machine starts a smooth step from where the flow is,
+and Ramp Up ends on 'flow over' the pour flow, so the pour starts there. Default: a smooth step
+after a step of the other pump starts from that step's exit value when the exit is on this step's
+quantity (Ramp Up's 'flow over 2'), else from that step's limit on it, else from 0 as today. The
+A-Flow editor draws only the first 30 s of the pour (`POUR_SHOWN_SECONDS` in
+`src/editor/curve.ts`), because the stop weight ends the shot long before 60 s, so its line for
+default-dark runs from 2 to 1 ml/s; for an A-Flow profile (one whose values `openParams` in
+`src/editor/storage.ts` reads) the picker draws the last step as far as the editor does, so both
+end at 1 ml/s. The step editor's preview takes the start rule and draws every step whole.
+**Limits:** a flow step's pressure limit (`limiter`, for example the 9 bar of default-dark's
+Pouring step) is drawn as a pressure line at that value across the step, and a pressure step's
+flow limit as a flow line, both dotted, thinner and in the quantity's colour muted, so they read as
+a limit, not a target (in the preview the targets are solid and the step borders dashed); a step
+without a limit (`limiter` null or 0) draws none. `stepCurve` gives two more series
+(`pressureLimit`, `flowLimit`, null where a step has none), `ShotGraph` draws them in its
+`preview`, and the scale (`previewMax`) counts them. The step editor's preview shows them too.
+
+**Profile picker: delete a profile (item 2; W4).** A profile can be removed in the picker: a swipe
+from right to left on its row shows a **delete** button at the row's right end (founder,
+2026-10-20, the founder's idea). Today `src/shell/Profiles.svelte` lists `pickerEntries`
+(`src/shell/profiles.ts`): the skin's five A-Flow 3.0 defaults first (`isDefault`, kept in the
+skin since T5, no record), then the gateway's visible records; a row is a button that selects, and
+the client (`src/api/client.ts`) has `setProfileVisibility` but no delete. Decaid 0.8.8 has
+`DELETE /api/v1/profiles/{id}`, which 'soft deletes a user profile or hides a default profile'
+(its `rest_v1.yml`), `PUT /api/v1/profiles/{id}/visibility` with `visible`, `hidden` or `deleted`,
+and `DELETE /api/v1/profiles/{id}/purge`, a permanent delete that refuses Decaid's bundled profiles
+(research.md 10, 11.2). Default, the simplest: a drag of a row to the left by more than a third of
+the button's width opens it (the row slides left by the button's width; the list still scrolls up
+and down, `touch-action: pan-y` on the rows), one row open at a time; a tap elsewhere or a swipe
+back closes it, and a tap on the row still selects it. **delete** sends
+`DELETE /api/v1/profiles/{id}` (a new `deleteProfile` in the client) and the picker reads the list
+again; nothing more is asked, since the swipe and the button are two deliberate actions, and
+nothing is purged: Decaid keeps the record as deleted, with its lineage and in its data export. A
+user's profile is soft-deleted; Decaid's bundled profiles (records with `isDefault`, the de1app
+A-Flow ones among them) take the same request, which hides them. The skin's five defaults are not
+records and cannot be deleted: their rows do not open. The profile on the machine (the row tagged
+'loaded') does not open either and shows 'loaded on the machine: load another first' while it is
+swiped: its record would go while the workflow still holds its copy, and `unsavedOnMachine`
+(`src/editor/unsaved.ts`, which lists records with `includeHidden`) could then take the loaded
+A-Flow profile for unsaved edits. A failed delete is the picker's error line. A deleted profile in
+a slot of the editor's start row is 'missing' there, as section 8 has it. The builder checks on
+the rig what `GET /api/v1/profiles` and `?includeHidden=true` list after a delete, and what a
+'save as' with a deleted profile's steps does (11.1: a `POST` with the steps of a hidden record
+returns it, still hidden, and `writeParams` takes a hidden record over).
+
+**Shot overlay: rounded frame, values off (item 3; W5).** The overlay's per-phase values are right
+(Streamline's), but their frame has square corners; it gets the rounded corners of the graph's
+frame. A new setting turns the shot values in the overlay off (founder, 2026-10-20). Today
+`src/shell/ShotOverlay.svelte` draws the values as the `table` `shot-phases` (Preinfusion,
+Extraction, Total; T2, acceptance 51) with `border-radius: 0.9rem` like the graph's `.plot`, but
+with `border-collapse: collapse`, which drops a table's `border-radius`, so its corners are square
+(shot-overlay-after.png (screenshot in the team repository)). Default: the table gets
+`border-collapse: separate` with `border-spacing: 0` (or a frame of its own around it), so its
+corners are those of `.plot`. The setting is `showShotValues` in `src/settings.ts`, a switch 'Shot
+values' among the switches of `src/settings-page/SkinCategory.svelte` beside `showGraphLegend`, on
+by default (the values shown) and backed up as every setting; off, the overlay draws no per-phase
+table after the shot and the graph takes its height. The live numbers on the right (time, weight,
+pressure, flow, temperature) are not the table and stay.
+
+**Profile editor: swipe back to home (item 5; W6).** A swipe from left to right in the profile
+editor returns to home, as home's swipes move between pages (founder, 2026-10-20). Today the one
+gesture is `App.svelte`'s pointer handling with `src/shell/swipe.ts` (T6): `decide` returns
+'across' on every screen that is not one of `PAGES` (hot water, home, steam), so the editor (the
+screen `editor`, the A-Flow editor or the step editor) has no swipe, and its back arrow calls
+`skin.leave('home')`. Default: on `editor` a drag to the right that `decide`'s rules take as along
+(`SWIPE_SLOP`, more along than across) and that does not start on a control (`onControl`: the
+A-Flow graph and its chips take drags with `touch-action: none`, the step cards' row scrolls, the
+fields and the number pad are controls) moves the editor with the finger; let go past
+`SWIPE_COMMIT` or after a flick (`commits`), it calls `skin.leave('home')`, exactly what the back
+arrow does, else it springs back; a drag to the left only gives a little at the edge (`offset`'s
+fifth). Home is not drawn beside the editor during the drag. **Unsaved edits** follow section 8's
+leaving rules unchanged: leaving loads the values on screen when they differ from those the editor
+opened with (`loadOnLeave`, `loadStepsOnLeave`, through `Skin.leaving`) and loads nothing when
+nothing changed; a load that fails keeps the editor open with its line and the editor springs back,
+and a second swipe or 'back' leaves without loading. Nothing is asked: unsaved edits are on the
+machine, as after 'back'.
+
 ## 4. Technical approach
 
 ### 4.1 What a Decaid skin is
@@ -1155,6 +1297,48 @@ Where an item here and one of 27-37 disagree, the item here wins (3.9 overrides 
 55. **Hand-over (founder).** The 0.4.0 ZIP installs on the tablet; the checks of
     [install.md](install.md) still open are asked again with the new ones.
 
+The founder's review of 2026-10-20 (3.10); items marked (test) are tests, (founder) the founder's.
+Where an item here and one of 27-55 disagree, the item here wins (3.10 overrides 3.9):
+
+56. **Two sleeps (test).** Home's menu has 'Machine sleep' and 'Machine and app sleep' with no
+    line under either. 'Machine sleep' sends `sleeping`; while the machine sleeps no Asleep
+    screen is shown, the brightness is not set, and the menu offers 'Wake machine', which asks
+    for `idle`. 'Machine and app sleep' sends `sleeping` and shows the Asleep screen, with the
+    brightness 5 where `platformSupported.brightness`; a touch wakes the machine. Neither
+    changes Decaid's `keepAwake` or wake lock (this replaces item 39). A sleep the skin did not
+    ask for shows the Asleep screen.
+57. **Two sleeps on the tablet (founder).** 'Machine sleep' leaves the skin on screen with the
+    machine asleep, and 'Wake machine' or the machine's button wakes it; 'Machine and app sleep'
+    shows the black Asleep screen, and a touch wakes the machine.
+58. **Ring on every screen (test).** While hot water or flush runs (the mocked gateway), the
+    steam page, both editors, the picker, the settings page and the beans screen show the small
+    ring at the bottom of the left column with the time, its box overlaps no other button, and a
+    tap on it sends the stop; home and the hot water page show their large ring as before; with
+    the run over no ring is shown.
+59. **Picker graph (test).** In the picker's preview a 0 s step adds no width; default-dark's
+    pour starts at 2 ml/s and ends at 1 ml/s, where the A-Flow editor's line ends, and a flow-up
+    default's pour starts at its pour flow; the 9 bar pressure limit of default-dark's Pouring
+    step is drawn as a dotted pressure line across that step; a step without a limit draws none.
+60. **Picker delete (test).** A swipe from right to left on a stored profile's row shows
+    'delete'; a tap on it sends `DELETE /api/v1/profiles/{id}` and the profile is no longer
+    listed; the rows of the skin's five defaults and of the loaded profile do not show 'delete';
+    a vertical drag on the list still scrolls it and a tap on a row still selects it.
+61. **Picker delete on the tablet (founder).** Swiping a row to the left with a finger shows
+    'delete', and the deleted profile is gone from the picker.
+62. **Overlay frame (test).** After a shot the per-phase table's frame has the same corner
+    radius as the graph's (computed `border-radius` and `border-collapse: separate`).
+63. **Shot values off (test).** With the setting 'Shot values' off, the overlay shows no
+    per-phase table after a shot and the live values stay; it is on by default.
+64. **Editor swipe (test).** In the A-Flow editor and in the step editor, a swipe from left to
+    right that starts off the graph and the cards returns to home; with changed values it loads
+    them once (one `PUT /api/v1/workflow`), as 'back' does, and without changes it loads
+    nothing; a drag on the A-Flow graph moves its line and not the editor; a drag to the left
+    stays in the editor.
+65. **Editor swipe on the tablet (founder).** A swipe to the right in the editor goes home as
+    home's swipes move between pages, and the edited values are on the machine afterwards.
+66. **Hand-over (founder).** The 0.4.0 ZIP carries 3.10 with 3.9; the checks of
+    [install.md](install.md) for items 56-65 are asked with item 55's.
+
 ## 6. Constraints
 - **Budget:** one Claude Pro plan. This product may use all of it up to 90% of the weekly
   limit; the team plans by capacity.
@@ -1231,8 +1415,14 @@ The weeks are a capacity guess on one Pro plan.
 | 3 | U10 | review 2026-10-18: the history filtered by bean and grinder, its entries with the catalogue's beans (3.9 item 19) | U9, T8 |
 | 3 | U11 | review 2026-10-18, low priority: settings: Streamline's skin switch and display options (3.9 item 15) | U2-U7, U10 |
 | 3 | U12 | review 2026-10-18, low priority: settings: Bengle pages, manual, feedback, firmware upload from a file (3.9 item 15) | U11 |
-| 3 | H3 | review 2026-10-18: hand-over ZIP 0.4.0, install.md with the new checks, the open ones and the camera test page | U1-U12, H2 |
+| 3 | H3 | review 2026-10-18 and 2026-10-20: hand-over ZIP 0.4.0 (still a minor bump), carrying 3.10 too since the founder is testing now; install.md with the new checks, the open ones and the camera test page | U1-U12, W1-W6, H2 |
 | 3 | U13 | review 2026-10-18, low priority: a bean from a photo of its bag, Tesseract.js pre-fills name and roaster; only if the founder's camera check passes (3.9 item 20) | U9, founder |
+| 3 (Oct 26-Nov 1) | W1 | review 2026-10-20: menu 'Machine sleep' keeps the app awake, 'Machine and app sleep' shows the Asleep screen, no explanation lines; U4's brightness 0 and wake lock release go (3.10 'Home menu: two sleeps') | U4 |
+| 3 | W2 | review 2026-10-20: the hot water / flush countdown ring on every screen, small in the left column (3.10 'Countdown ring on every screen') | U3 |
+| 3 | W3 | review 2026-10-20: picker graph: 0 s steps hidden, step limits drawn, the pour starting from Ramp Up's exit and drawn as far as the editor's (3.10 'Profile picker: graphs') | T4, U6 |
+| 3 | W4 | review 2026-10-20: picker: swipe a row left for delete, `DELETE /api/v1/profiles/{id}`; not the skin's defaults nor the loaded profile (3.10 'Profile picker: delete a profile') | T4, T5 |
+| 3 | W5 | review 2026-10-20: shot overlay's table with rounded corners, setting 'Shot values' (3.10 'Shot overlay: rounded frame, values off') | T2 |
+| 3 | W6 | review 2026-10-20: a swipe to the right in the editor goes home through the leaving rules (3.10 'Profile editor: swipe back to home') | T6 |
 | 2 (Oct 19-25) | Q1 | code quality review 2026-10-19: Prettier and ESLint, the tree formatted in one commit (in `.git-blame-ignore-revs`), lint errors fixed, both in the check ([review-code-quality-10-19-26.md](review-code-quality-10-19-26.md), steps 1-3) | - |
 | 2 | Q2 | code quality review 2026-10-19: split `src/shell/skin.svelte.ts` along its seams; `Skin` stays the one object the screens read ([review-code-quality-10-19-26.md](review-code-quality-10-19-26.md), step 4) | Q1 |
 | 2 | Q3 | code quality review 2026-10-19: one `errorMessage` helper in place of the repeated error idiom ([review-code-quality-10-19-26.md](review-code-quality-10-19-26.md), step 5) | Q2 |
@@ -1309,7 +1499,7 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
 - The version is `0.3.0`, a beta (founder, 2026-10-13; 0.1.x for fix rounds); it is in
   `package.json` and `public/manifest.json`. Versions are semantic (founder, 2026-10-16): a
   hand-over raises the minor version, so H1 built `0.2.0` (2026-10-18), H2 built `0.3.0`
-  (2026-10-20), and H3 (the review of 2026-10-18) `0.4.0`; a major version (such as the
+  (2026-10-20), and H3 (the reviews of 2026-10-18 and 2026-10-20) `0.4.0`; a major version (such as the
   reverted 1.1.0, commit `ad378f9`) only after asking the founder. (answered)
 - Other profiles (founder's question of 2026-10-14, [answers-2026-10-14.md](answers-2026-10-14.md)):
   answered by version 1.1: they open in the skin's own step editor, ported from Streamline
@@ -1413,7 +1603,8 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
     `platformSupported.brightness` is true the brightness goes to 5 (`SLEEP_BRIGHTNESS` in
     `src/shell/skin.svelte.ts`) and back to 100, the system's own, at the wake. Is 5 right,
     and should the skin dim at all, or leave that to Decaid? (answered: keep 5 for now;
-    founder 2026-10-15)
+    founder 2026-10-15) Since 3.10: not after the menu's 'Machine sleep', which keeps the app
+    awake (founder, 2026-10-20).
   - Sleep is offered whenever the machine is awake and runs nothing, also while it heats.
     (owner)
   - A shot started in the seconds after a wake, before the scale is back, did not stop at
@@ -1520,7 +1711,12 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
     its own timeout; a touch wakes both and puts the wake lock back. It replaces T9's Exit to
     Decaid's dashboard, which is not built. Built in U4: the lock is released by switching
     Decaid's `keepAwake` off for the sleep (research.md 13.1). Is that what 'the app sleeps'
-    means, and does the tablet's screen go off and wake with one touch?
+    means, and does the tablet's screen go off and wake with one touch? Answered (founder,
+    2026-10-20, message 42): 'app sleep: means it shows the black screen with "Asleep" message as
+    of today', the Asleep screen of 0.3.0, not a released wake lock; with message 43's item 4
+    there are two entries, 'Machine sleep' (the app stays awake, no Asleep screen) and 'Machine
+    and app sleep' (the Asleep screen), without lines; U4's brightness 0 and wake lock release go
+    (3.10, W1). (answered)
   - Old A-Flow profiles (items 4-6): converting drops ramp down, which 3.0 removed, without
     asking; the old version stays in Decaid's lineage, hidden. The import button skips Decaid's
     bundled de1app A-Flow profiles, since the skin's defaults stand for them (built in U7).
@@ -1534,3 +1730,22 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
   state dot goes from every page; the flush ring is 85 % of its panel; the steam page's heater
   message stands in the place of the favourites; SCRIPT keeps a muted line for an exit, limit
   or maximum that is off.
+- The review of 2026-10-20 (3.10), choices only the founder can make; the default is built
+  unless the founder says otherwise (founder):
+  - Sleep (item 4): after 'Machine sleep' home's menu offers 'Wake machine' while the machine
+    sleeps; a sleep the skin did not ask for (Decaid's timeout, presence, the machine's button)
+    shows the Asleep screen as today; neither sleep touches Decaid's wake lock, so the tablet's
+    screen follows Decaid's own `keepAwake`.
+  - Ring (item 6): on every screen but home and the hot water page it is a small ring at the
+    bottom of the left column, with the time inside and a tap to stop.
+  - Picker graph (item 1): limits are dotted, muted lines of their quantity; an A-Flow profile's
+    pour is drawn as far as the editor draws it (30 s), so default-dark ends at 1 ml/s as in the
+    editor; the steps keep their own widths (the editor's infuse by weight is not copied).
+  - Delete (item 2): a stored profile is soft-deleted by Decaid (`DELETE /api/v1/profiles/{id}`),
+    a bundled one hidden, with no further question and no undo; the skin's five defaults and the
+    profile on the machine cannot be deleted.
+  - Shot values (item 3): the setting 'Shot values', on by default, hides only the per-phase
+    table; the live numbers beside the graph stay.
+  - Editor swipe (item 5): from left to right only, from anywhere in the editor that is not a
+    control (the A-Flow graph, the step cards' row); home is not drawn beside it while it moves;
+    unsaved edits are loaded on leaving as with 'back', nothing is asked.
