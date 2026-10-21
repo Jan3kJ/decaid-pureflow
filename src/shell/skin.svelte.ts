@@ -3,8 +3,8 @@
 // work to its parts: the streams (streams.svelte.ts), the settings and their backup
 // (settings-store.svelte.ts), steam (steam-control.svelte.ts), the history and its restore
 // (recall.svelte.ts), the warning before a load (load-warning.svelte.ts), the screen's
-// brightness and wake lock in sleep (dimmer.ts) and the bean and grinder catalogue
-// (src/beans/catalogue.svelte.ts).
+// brightness in sleep (dimmer.ts), who asked for a sleep (sleep.ts) and the bean and grinder
+// catalogue (src/beans/catalogue.svelte.ts).
 import { Catalogue } from '../beans/catalogue.svelte';
 import { DecaidClient, isTareBlocked, type MachineSnapshot, type RequestedMachineState, type Workflow } from '../api';
 import type { HistoryEntry } from '../history/entries';
@@ -19,6 +19,7 @@ import { followMachine, loadScreen, saveScreen, shotOverlay, type Screen } from 
 import { doseToSet } from './profiles';
 import { Recall, type Recalled } from './recall.svelte';
 import { SettingsStore } from './settings-store.svelte';
+import { AWAKE, askSleep, followSleep, type SleepMark } from './sleep';
 import { recordFrame, settleWeight, type Shot } from './shot';
 import { SteamControl } from './steam-control.svelte';
 import { Streams } from './streams.svelte';
@@ -65,6 +66,8 @@ export class Skin {
   private readonly recall: Recall;
   private readonly warning: LoadWarning;
   private readonly dimmer: Dimmer;
+  /** who asked for the machine's sleep (`followSleep`) */
+  private sleepMark: SleepMark = $state.raw(AWAKE);
 
   readonly status = $derived.by(() => statusOf(this.link, this.snapshot, this.baseUrl));
   /** The status of a page that waits for a heater (spec 3.8): home the group, steam the steam heater. */
@@ -73,7 +76,10 @@ export class Skin {
   }
   readonly canStop = $derived(canStop(this.link, this.snapshot));
   readonly canSleep = $derived(canSleep(this.link, this.snapshot));
-  readonly asleep = $derived(isAsleep(this.link, this.snapshot));
+  /** the machine sleeps, whoever put it to sleep */
+  readonly machineAsleep = $derived(isAsleep(this.link, this.snapshot));
+  /** the Asleep screen is shown: the machine sleeps, and not by 'Machine sleep' (spec 3.10) */
+  readonly asleep = $derived(this.machineAsleep && !this.sleepMark.machineOnly);
   /** the values of the state line, on home and on the steam page */
   readonly stateValues = $derived(stateLine(this.link, this.snapshot, this.water, this.scaleLink, this.weight, this.scaleLooking));
 
@@ -242,7 +248,8 @@ export class Skin {
     this.steamer.frame(frame);
     this.waterRun = recordWaterFrame(this.waterRun, frame);
     if (next !== this.screen) this.go(next);
-    void this.dimmer.follow(state === 'sleeping');
+    this.sleepMark = followSleep(this.sleepMark, before, state);
+    void this.dimmer.follow(state === 'sleeping' && !this.sleepMark.machineOnly);
   }
 
   /** Opens a stream that stopped in `failed` again; the others are left as they are. */
@@ -307,19 +314,24 @@ export class Skin {
     return this.request('idle', 'The machine did not stop');
   }
 
-  /** The state for sleep is `sleeping` (research.md, section 9). */
+  /**
+   * The menu's 'Machine sleep' (spec 3.10): only the machine sleeps, the app stays awake, without
+   * the Asleep screen and without dimming, until the machine wakes. The state for sleep is
+   * `sleeping` (research.md, section 9).
+   */
   sleep(): Promise<void> {
-    return this.request('sleeping', 'The machine did not go to sleep');
+    return this.askSleep(true);
   }
 
-  /**
-   * The menu's 'Machine and app sleep' (spec 3.9 item 2): the machine sleeps, and the screen
-   * goes to 0 with Decaid's wake lock released, until the wake (`Dimmer`).
-   */
-  async sleepApp(): Promise<void> {
-    this.dimmer.sleepApp();
-    await this.sleep();
-    if (this.notice) this.dimmer.cancelApp();
+  /** The menu's 'Machine and app sleep' (spec 3.10): the machine sleeps and the app shows the Asleep screen. */
+  sleepApp(): Promise<void> {
+    return this.askSleep(false);
+  }
+
+  private async askSleep(machineOnly: boolean): Promise<void> {
+    this.sleepMark = askSleep(machineOnly);
+    await this.request('sleeping', 'The machine did not go to sleep');
+    if (this.notice) this.sleepMark = { ...this.sleepMark, asked: false };
   }
 
   /** The menu's steam switch (spec 3.7); see `SteamControl.toggleHeater`. */

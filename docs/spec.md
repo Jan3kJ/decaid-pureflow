@@ -920,6 +920,13 @@ state, and home's menu offers **Wake machine** (`Skin.wake`, `idle`) in the plac
 entries while the machine sleeps; the machine's own button wakes it too. A sleep the skin did not
 ask for (Decaid's sleep timeout, presence detection, the machine's button) shows the Asleep screen
 as today (section 8).
+Built in W1 (2026-10-21): the mark is `SleepMark` in `src/shell/sleep.ts` (`askSleep`,
+`followSleep`): 'Machine sleep' sets an ask that the next `sleeping` frame turns into the mark,
+and the first frame after a sleep that is not `sleeping` clears it, whoever woke the machine; a
+failed request takes the ask back. `Dimmer` is again as before U4 and dims only while the Asleep
+screen is shown. The Asleep screen is `Skin.asleep`, the machine's sleep `Skin.machineAsleep`;
+'Wake machine' is the menu entry `wake-machine`
+(home-menu-asleep.png (screenshot in the team repository)).
 
 **Countdown ring on every screen (item 6; W2).** While hot water or flush runs, the countdown
 ring shows on every screen, not only on home (founder, 2026-10-20). Today `Water.svelte`

@@ -31,9 +31,9 @@
   /**
    * The menu of the top right corner (founder, 2026-10-13): what is rarely used. A list, so
    * that an entry is one more line here. The steam switch and machine sleep are the shortcuts of
-   * spec 3.7; machine sleep sends only the machine to sleep, since Decaid cannot switch the DE1
-   * off (research.md 22, spec 3.9 item 1); machine and app sleep also lets the tablet's screen
-   * go off (spec 3.9 item 2). Beans and grinders opens the catalogue (spec 3.9 item 19). Clean opens the settings page on Maintenance, whose
+   * spec 3.7; machine sleep puts only the machine to sleep and keeps the app awake, machine and
+   * app sleep shows the Asleep screen too; while the machine sleeps, wake machine stands in their
+   * place (spec 3.10). Beans and grinders opens the catalogue (spec 3.9 item 19). Clean opens the settings page on Maintenance, whose
    * first procedure is the clean (spec 3.8 'Menu: clean').
    */
   interface Entry {
@@ -42,6 +42,8 @@
     /** a second, smaller line: the state the entry is in, or what it really does */
     detail?: () => string;
     disabled?: () => boolean;
+    /** the entry is in the menu; always when left out */
+    shown?: () => boolean;
     choose: () => void;
   }
   const MENU: Entry[] = [
@@ -71,16 +73,22 @@
     {
       id: 'machine-sleep',
       label: () => 'Machine sleep',
-      detail: () => 'only the machine sleeps, not the app: Decaid cannot switch the DE1 off',
+      shown: () => !skin.machineAsleep,
       disabled: () => !skin.canSleep,
       choose: () => void skin.sleep(),
     },
     {
       id: 'app-sleep',
       label: () => 'Machine and app sleep',
-      detail: () => "the screen goes dark and then off by the tablet's own timeout; a touch wakes both",
+      shown: () => !skin.machineAsleep,
       disabled: () => !skin.canSleep,
       choose: () => void skin.sleepApp(),
+    },
+    {
+      id: 'wake-machine',
+      label: () => 'Wake machine',
+      shown: () => skin.machineAsleep,
+      choose: () => void skin.wake(),
     },
   ];
   let menuOpen = $state(false);
@@ -184,7 +192,7 @@
   <button class="backdrop" data-no-swipe data-testid="menu-backdrop" aria-label="close the menu" onclick={() => (menuOpen = false)}
   ></button>
   <ul class="menu" data-testid="menu-list" role="menu">
-    {#each MENU as entry (entry.id)}
+    {#each MENU.filter((entry) => entry.shown?.() ?? true) as entry (entry.id)}
       <li>
         <button role="menuitem" data-testid={entry.id} disabled={entry.disabled?.()} onclick={() => choose(entry)}>
           <span class="label">{entry.label()}</span>

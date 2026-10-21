@@ -309,7 +309,7 @@ test('settings: stored data that cannot be read gives the defaults, and the page
   expect(errors).toEqual([]);
 });
 
-test('sleep: the button sends the state sleeping, the skin goes dark, a touch anywhere wakes', async ({ page }) => {
+test('machine and app sleep sends the state sleeping, the skin goes dark, a touch anywhere wakes', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
@@ -318,7 +318,7 @@ test('sleep: the button sends the state sleeping, the skin goes dark, a touch an
 
   await page.getByTestId('menu').click();
 
-  await page.getByTestId('machine-sleep').click();
+  await page.getByTestId('app-sleep').click();
   await expect.poll(() => gateway.calls('PUT', '/api/v1/machine/state/sleeping').length).toBe(1);
   // The skin shows sleep when the machine says so, not when the button was tapped.
   await expect(page.getByTestId('asleep')).toBeVisible();

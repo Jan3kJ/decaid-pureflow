@@ -1,13 +1,14 @@
 import { expect, test, type Page } from '@playwright/test';
 import type { Settings } from '../src/settings';
 import type { Backup } from '../src/settings-backup';
-import { mockGateway } from './mock-gateway';
+import { mockGateway, type MockGateway } from './mock-gateway';
 
 // Acceptance item 18 (spec 3.7, R4) against a mocked gateway: the home menu's steam switch
-// writes the workflow's steam temperature (0 is off) and shows the heater's state; machine sleep
-// is sleep, as Decaid cannot switch the DE1 off (research.md 22); machine and app sleep also
-// releases Decaid's wake lock and dims the screen to 0 until the wake (spec 3.9 item 2). The same against the
-// running gateway: e2e-rig/menu-shortcuts.spec.ts.
+// writes the workflow's steam temperature (0 is off) and shows the heater's state. The two sleeps
+// (spec 3.10, acceptance 56): machine sleep sends the machine to sleep and keeps the app awake,
+// with 'Wake machine' in the menu; machine and app sleep shows the Asleep screen, dimmed to 5,
+// until a touch; neither touches Decaid's wake lock or keepAwake. The same against the running
+// gateway: e2e-rig/menu-shortcuts.spec.ts.
 
 const errors: string[] = [];
 
@@ -102,56 +103,93 @@ test('steam on reaches the machine when the workflow already holds the temperatu
   expect(errors).toEqual([]);
 });
 
-test('machine sleep: the entry says only the machine sleeps and sends the state sleeping (spec 3.9 item 1)', async ({ page }) => {
-  const gateway = await mockGateway(page);
+/** what a sleep and a wake asked of Decaid, in order, from the request `start` on */
+function askedOf(gateway: MockGateway, start: number): () => string[] {
+  return () =>
+    gateway.requests
+      .slice(start)
+      .filter((call) => /^\/api\/v1\/(machine\/state\/|display\/|settings$)/.test(call.path) && call.method !== 'GET')
+      .map((call) => `${call.method} ${call.path}${call.body === undefined ? '' : ` ${JSON.stringify(call.body)}`}`);
+}
+
+test('the two sleep entries have their labels alone, no line under either (spec 3.10, acceptance 56)', async ({ page }) => {
+  await mockGateway(page);
   await page.goto('/');
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
   await openMenu(page);
-  await expect(page.getByTestId('machine-sleep')).toContainText('Machine sleep');
-  await expect(page.getByTestId('machine-sleep-detail')).toHaveText(
-    'only the machine sleeps, not the app: Decaid cannot switch the DE1 off',
-  );
-  await expect(page.getByRole('menuitem').filter({ hasText: /Machine off|Exit/ })).toHaveCount(0);
-  await page.getByTestId('machine-sleep').click();
-  await expect
-    .poll(() => gateway.calls('PUT', /^\/api\/v1\/machine\/state\//).map((call) => call.path))
-    .toEqual(['/api/v1/machine/state/sleeping']);
-  await expect(page.getByTestId('asleep')).toBeVisible();
+  await expect(page.getByTestId('machine-sleep')).toHaveText('Machine sleep');
+  await expect(page.getByTestId('app-sleep')).toHaveText('Machine and app sleep');
+  await expect(page.getByTestId('machine-sleep-detail')).toHaveCount(0);
+  await expect(page.getByTestId('app-sleep-detail')).toHaveCount(0);
+  await expect(page.getByTestId('wake-machine')).toHaveCount(0);
+  await expect(page.getByRole('menuitem').filter({ hasText: /Machine off|Exit|Decaid cannot|timeout/ })).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 
-test('machine and app sleep: sleeping, the wake lock released and the screen at 0; a touch puts both back (spec 3.9 item 2)', async ({
+test("machine sleep: sleeping, the app stays awake and undimmed, 'Wake machine' asks for idle (spec 3.10, acceptance 56)", async ({
+  page,
+}) => {
+  const gateway = await mockGateway(page);
+  await page.goto('/');
+  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  const asked = askedOf(gateway, gateway.requests.length);
+  await openMenu(page);
+  await page.getByTestId('machine-sleep').click();
+  await expect.poll(asked).toEqual(['PUT /api/v1/machine/state/sleeping']);
+  await expect(page.getByTestId('status-title')).toHaveText('Asleep');
+  // The skin stays on screen: no Asleep screen, the brightness and the wake lock not touched.
+  await expect(page.getByTestId('asleep')).toHaveCount(0);
+  await expect(page.getByTestId('screen-home')).toBeVisible();
+  await page.waitForTimeout(500);
+  expect(asked()).toEqual(['PUT /api/v1/machine/state/sleeping']);
+  expect(gateway.decaidSettings.keepAwake).toBe(true);
+
+  // The menu offers the wake in the place of the two sleeps.
+  await openMenu(page);
+  await expect(page.getByTestId('machine-sleep')).toHaveCount(0);
+  await expect(page.getByTestId('app-sleep')).toHaveCount(0);
+  await expect(page.getByTestId('wake-machine')).toHaveText('Wake machine');
+  await page.screenshot({ path: 'docs/product/home-menu-asleep.png' });
+  await page.getByTestId('wake-machine').click();
+  await expect.poll(asked).toEqual(['PUT /api/v1/machine/state/sleeping', 'PUT /api/v1/machine/state/idle']);
+  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await openMenu(page);
+  await expect(page.getByTestId('machine-sleep')).toBeEnabled();
+  await expect(page.getByTestId('wake-machine')).toHaveCount(0);
+  await page.getByTestId('menu-backdrop').click();
+
+  // Woken elsewhere (the machine's button): the next sleep Decaid starts shows the Asleep screen.
+  await openMenu(page);
+  await page.getByTestId('machine-sleep').click();
+  await expect(page.getByTestId('status-title')).toHaveText('Asleep');
+  gateway.state = 'idle';
+  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  gateway.state = 'sleeping';
+  await expect(page.getByTestId('asleep')).toBeVisible();
+  await expect
+    .poll(asked)
+    .toEqual([
+      'PUT /api/v1/machine/state/sleeping',
+      'PUT /api/v1/machine/state/idle',
+      'PUT /api/v1/machine/state/sleeping',
+      'PUT /api/v1/display/brightness {"brightness":5}',
+    ]);
+  expect(errors).toEqual([]);
+});
+
+test('machine and app sleep: sleeping and the Asleep screen at 5, a touch wakes and puts 100 back; the wake lock is not touched (spec 3.10, acceptance 56)', async ({
   page,
 }) => {
   const gateway = await mockGateway(page);
   gateway.display = { ...gateway.display, wakeLockOverride: true };
   await page.goto('/');
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  const asked = askedOf(gateway, gateway.requests.length);
   await openMenu(page);
-  await expect(page.getByTestId('app-sleep')).toContainText('Machine and app sleep');
-  await expect(page.getByTestId('app-sleep-detail')).toHaveText(
-    "the screen goes dark and then off by the tablet's own timeout; a touch wakes both",
-  );
-  const start = gateway.requests.length;
-  /** what the sleep and the wake asked of Decaid, in order */
-  const asked = () =>
-    gateway.requests
-      .slice(start)
-      .filter((call) => /^\/api\/v1\/(machine\/state\/|display\/|settings$)/.test(call.path) && call.method !== 'GET')
-      .map((call) => `${call.method} ${call.path}${call.body === undefined ? '' : ` ${JSON.stringify(call.body)}`}`);
-
   await page.getByTestId('app-sleep').click();
   await expect(page.getByTestId('asleep')).toBeVisible();
-  await expect
-    .poll(asked)
-    .toEqual([
-      'PUT /api/v1/machine/state/sleeping',
-      'DELETE /api/v1/display/wakelock',
-      'POST /api/v1/settings {"keepAwake":false}',
-      'PUT /api/v1/display/brightness {"brightness":0}',
-    ]);
-  expect(gateway.display.wakeLockOverride).toBe(false);
-  expect(gateway.decaidSettings.keepAwake).toBe(false);
+  await expect(page.getByTestId('asleep')).toContainText('touch to wake');
+  await expect.poll(asked).toEqual(['PUT /api/v1/machine/state/sleeping', 'PUT /api/v1/display/brightness {"brightness":5}']);
 
   await page.touchscreen.tap(1200, 760);
   await expect(page.getByTestId('asleep')).toHaveCount(0);
@@ -159,25 +197,21 @@ test('machine and app sleep: sleeping, the wake lock released and the screen at 
     .poll(asked)
     .toEqual([
       'PUT /api/v1/machine/state/sleeping',
-      'DELETE /api/v1/display/wakelock',
-      'POST /api/v1/settings {"keepAwake":false}',
-      'PUT /api/v1/display/brightness {"brightness":0}',
+      'PUT /api/v1/display/brightness {"brightness":5}',
       'PUT /api/v1/machine/state/idle',
-      'POST /api/v1/settings {"keepAwake":true}',
-      'POST /api/v1/display/wakelock',
       'PUT /api/v1/display/brightness {"brightness":100}',
     ]);
   expect(gateway.display.wakeLockOverride).toBe(true);
   expect(gateway.decaidSettings.keepAwake).toBe(true);
   expect(gateway.display.requestedBrightness).toBe(100);
 
-  // The next machine sleep is the machine's alone: dimmed, the wake lock left as it is.
+  // The next 'Machine sleep' is the machine's alone: no Asleep screen, no dimming.
   await openMenu(page);
   await page.getByTestId('machine-sleep').click();
-  await expect(page.getByTestId('asleep')).toBeVisible();
-  await expect
-    .poll(() => asked().slice(8))
-    .toEqual(['PUT /api/v1/machine/state/sleeping', 'PUT /api/v1/display/brightness {"brightness":5}']);
+  await expect(page.getByTestId('status-title')).toHaveText('Asleep');
+  await expect(page.getByTestId('asleep')).toHaveCount(0);
+  await page.waitForTimeout(500);
+  expect(asked().slice(4)).toEqual(['PUT /api/v1/machine/state/sleeping']);
   expect(errors).toEqual([]);
 });
 
@@ -189,6 +223,7 @@ test('without a machine the steam switch is offered from the workflow, machine s
   await openMenu(page);
   await expect(page.getByTestId('machine-sleep')).toBeDisabled();
   await expect(page.getByTestId('app-sleep')).toBeDisabled();
+  await expect(page.getByTestId('wake-machine')).toHaveCount(0);
   await expect(page.getByTestId('steam-heater-detail')).toHaveText('steam heater is on');
   expect(errors).toEqual([]);
 });

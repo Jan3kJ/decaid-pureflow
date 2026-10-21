@@ -212,7 +212,7 @@
   </div>
 {/if}
 
-<!-- The machine sleeps: the skin is dark, and a touch anywhere wakes the machine (spec 3.1). -->
+<!-- The machine sleeps, and not by the menu's 'Machine sleep': the skin is dark, and a touch anywhere wakes the machine (spec 3.1, 3.10). -->
 {#if skin.asleep}
   <button class="asleep" data-testid="asleep" onpointerdown={() => skin.wake()}>
     <strong>Asleep</strong>

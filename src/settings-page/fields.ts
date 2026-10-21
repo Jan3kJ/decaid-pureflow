@@ -511,7 +511,7 @@ export const BRIGHTNESS: Field[] = [
   number({
     id: 'brightness',
     label: 'brightness',
-    hint: "100 hands the screen's brightness back to the system. The skin dims to 5 while the machine sleeps, to 0 for machine and app sleep.",
+    hint: "100 hands the screen's brightness back to the system. The skin dims to 5 while it shows the Asleep screen.",
     source: 'display',
     key: 'requestedBrightness',
     unit: '',

@@ -170,7 +170,7 @@ test('scale: the simulated scale, missing at the start or dropped, is connected 
   expect(await scaleState()).toBe('connected');
 });
 
-test('sleep: the button puts the machine into sleeping, a touch wakes it', async ({ page }) => {
+test('sleep: machine and app sleep puts the machine into sleeping with the Asleep screen, a touch wakes it', async ({ page }) => {
   test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
 
   const displayBefore = await api<DisplayState>('GET', '/api/v1/display');
@@ -187,7 +187,7 @@ test('sleep: the button puts the machine into sleeping, a touch wakes it', async
 
     // Sleep is an entry of home's menu.
     await page.getByTestId('menu').click();
-    await page.getByTestId('machine-sleep').click();
+    await page.getByTestId('app-sleep').click();
     await expect.poll(machineState, { timeout: 15_000 }).toBe('sleeping');
     await expect(page.getByTestId('asleep')).toBeVisible({ timeout: 15_000 });
     await page.screenshot({ path: 'e2e-rig/.results/asleep-rig.png' });
