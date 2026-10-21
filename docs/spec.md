@@ -1001,8 +1001,7 @@ the button's width opens it (the row slides left by the button's width; the list
 and down, `touch-action: pan-y` on the rows), one row open at a time; a tap elsewhere or a swipe
 back closes it, and a tap on the row still selects it. **delete** sends
 `DELETE /api/v1/profiles/{id}` (a new `deleteProfile` in the client) and the picker reads the list
-again; nothing more is asked, since the swipe and the button are two deliberate actions, and
-nothing is purged: Decaid keeps the record as deleted, with its lineage and in its data export. A
+again; nothing is purged: Decaid keeps the record as deleted, with its lineage and in its data export. A
 user's profile is soft-deleted; Decaid's bundled profiles (records with `isDefault`, the de1app
 A-Flow ones among them) take the same request, which hides them. The skin's five defaults are not
 records and cannot be deleted: their rows do not open. The profile on the machine (the row tagged
@@ -1013,7 +1012,17 @@ A-Flow profile for unsaved edits. A failed delete is the picker's error line. A 
 a slot of the editor's start row is 'missing' there, as section 8 has it. The builder checks on
 the rig what `GET /api/v1/profiles` and `?includeHidden=true` list after a delete, and what a
 'save as' with a deleted profile's steps does (11.1: a `POST` with the steps of a hidden record
-returns it, still hidden, and `writeParams` takes a hidden record over).
+returns it, still hidden, and `writeParams` takes a hidden record over). *Built (W4):* the open
+row narrows by the button's width (7 rem) instead of sliding, so its title stays readable;
+**delete** asks once, in the settings' `Confirm` ('Delete <title>?', Cancel and Delete), and the
+Cancel, a tap outside the row, closes the row too; the loaded row's 'loaded on the machine: load
+another first' stands in place of its tags until the next tap. `deleteRefusal` and `deleteEntry`
+(`src/shell/profiles.ts`) decide and delete, `src/shell/row-swipe.ts` holds the row's gesture;
+the rows are `data-no-swipe`. On the rig (Decaid 0.8.8): after a delete `GET /api/v1/profiles`
+no longer lists the record, `?includeHidden=true` still does, with `visibility: deleted`;
+`GET /api/v1/profiles/{id}` answers it; a `POST` of its steps returns it still deleted, and
+`PUT .../visibility` `visible` brings it back, so a 'save' or 'save as' of the same steps
+(`writeProfile`) makes it visible again; a second delete answers 200, an unknown id 404.
 
 **Shot overlay: rounded frame, values off (item 3; W5).** The overlay's per-phase values are right
 (Streamline's), but their frame has square corners; it gets the rounded corners of the graph's
@@ -1765,7 +1774,7 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
     pour is drawn as far as the editor draws it (30 s), so default-dark ends at 1 ml/s as in the
     editor; the steps keep their own widths (the editor's infuse by weight is not copied).
   - Delete (item 2): a stored profile is soft-deleted by Decaid (`DELETE /api/v1/profiles/{id}`),
-    a bundled one hidden, with no further question and no undo; the skin's five defaults and the
+    a bundled one hidden, after one confirm and with no undo; the skin's five defaults and the
     profile on the machine cannot be deleted.
   - Shot values (item 3): the setting 'Shot values', on by default, hides only the per-phase
     table; the live numbers beside the graph stay.

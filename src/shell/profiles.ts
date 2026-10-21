@@ -153,3 +153,31 @@ export function loadEntry(client: DecaidClient, entry: PickerEntry): Promise<Wor
 export function loadRecord(client: DecaidClient, record: ProfileRecord, more: WorkflowContextPatch = {}): Promise<Workflow> {
   return loadProfile(client, record.profile, more, record.metadata);
 }
+
+/** The text a row shows when it cannot be deleted because its profile is the one on the machine. */
+export const LOADED_REFUSAL = 'loaded on the machine: load another first';
+
+/**
+ * Whether the picker may delete an entry (spec 3.10): a stored profile, Decaid's bundled ones
+ * among them, may; the skin's defaults are no records ('default'); the profile on the machine
+ * may not ('loaded'), since the workflow still holds its copy and the editor would take that
+ * copy, without its record, for unsaved edits.
+ */
+export function deleteRefusal(
+  entry: Pick<PickerEntry, 'profile' | 'isDefault'>,
+  loaded: Profile | undefined,
+): 'default' | 'loaded' | null {
+  if (entry.isDefault) return 'default';
+  return loaded && sameProfile(entry.profile, loaded) ? 'loaded' : null;
+}
+
+/**
+ * Deletes a stored profile (`DELETE /api/v1/profiles/{id}`) and answers the list as the gateway
+ * then has it. Nothing is purged: Decaid keeps the record, marked deleted (a bundled one hidden),
+ * with its lineage; saving its steps again makes it visible (`writeProfile`).
+ */
+export async function deleteEntry(client: DecaidClient, entry: Pick<PickerEntry, 'id' | 'isDefault'>): Promise<ProfileRecord[]> {
+  if (entry.isDefault) throw new Error('A default of the skin is not stored, so it cannot be deleted.');
+  await client.deleteProfile(entry.id);
+  return client.listProfiles();
+}

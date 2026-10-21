@@ -308,6 +308,15 @@ export class DecaidClient {
     return this.request('PUT', `/api/v1/profiles/${segment(id)}/visibility`, { visibility });
   }
 
+  /**
+   * Removes a profile from the list: Decaid marks a user's profile `deleted` and hides one of its
+   * bundled profiles. The record stays, in the lineage and under `includeHidden`; a `POST` of its
+   * steps answers with it, still deleted. An unknown id is 404.
+   */
+  async deleteProfile(id: string): Promise<void> {
+    await this.request('DELETE', `/api/v1/profiles/${segment(id)}`);
+  }
+
   /** The versions of a profile, parents and children, hidden ones too. */
   getProfileLineage(id: string): Promise<ProfileRecord[]> {
     return this.request('GET', `/api/v1/profiles/${segment(id)}/lineage`);

@@ -313,6 +313,12 @@ describe('profiles', () => {
     expect(await client.getProfileLineage('profile:1')).toEqual([]);
     expect(calls[1]).toMatchObject({ method: 'GET', url: 'http://localhost:8080/api/v1/profiles/profile%3A1/lineage' });
   });
+
+  it('deletes a profile', async () => {
+    const { client, calls } = clientWith({ body: { success: true, message: 'Profile deleted', id: 'profile:1' } });
+    await client.deleteProfile('profile:1');
+    expect(calls[0]).toMatchObject({ method: 'DELETE', url: 'http://localhost:8080/api/v1/profiles/profile%3A1' });
+  });
 });
 
 describe('shots', () => {

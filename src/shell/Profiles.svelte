@@ -1,8 +1,12 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { ProfileRecord } from '../api';
+  import Confirm from '../settings-page/Confirm.svelte';
   import StepPreview from '../steps/StepPreview.svelte';
   import {
+    LOADED_REFUSAL,
+    deleteEntry,
+    deleteRefusal,
     doseOf,
     filterProfiles,
     isAFlow3,
@@ -15,6 +19,7 @@
   } from './profiles';
   import type { Skin } from './skin.svelte';
   import { errorMessage } from '../error-message';
+  import { rowGesture, rowOffset, settlesOpen, type RowGesture } from './row-swipe';
 
   interface Props {
     skin: Skin;
@@ -37,6 +42,18 @@
   const selected = $derived(shown.find((entry) => entry.id === selectedId) ?? null);
   const current = $derived(skin.workflow?.profile);
   const isLoaded = (entry: PickerEntry) => !!current && sameProfile(entry.profile, current);
+
+  /** rem, the width of a row's delete button, and so how far an open row is moved */
+  const DELETE_REM = 7;
+  /** the row whose delete button shows, one at a time */
+  let openId: string | null = $state(null);
+  /** the loaded row, swiped: it says why it does not open */
+  let refusedId: string | null = $state(null);
+  let asking: PickerEntry | null = $state(null);
+  let drag: { id: string; pointer: number; x: number; y: number; dx: number; width: number; gesture: RowGesture } | null =
+    $state(null);
+  /** A drag of a row ends in a click on it, which must not select. */
+  let dragged = false;
 
   async function read() {
     error = null;
@@ -76,8 +93,89 @@
       skin.go(skin.pickerReturn === 'editor' ? 'editor' : 'home');
     });
 
+  /**
+   * A row's swipe (spec 3.10): to the left opens its delete button, back to the right closes
+   * it; a vertical drag is the list's (`touch-action: pan-y`). The skin's defaults do not move;
+   * the loaded profile does not either, and says why.
+   */
+  function down(event: PointerEvent, entry: PickerEntry) {
+    if (busy || !event.isPrimary) return;
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+    drag = {
+      id: entry.id,
+      pointer: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+      dx: 0,
+      width: DELETE_REM * rem,
+      gesture: null,
+    };
+    dragged = false;
+  }
+
+  function move(event: PointerEvent, entry: PickerEntry) {
+    if (!drag || drag.pointer !== event.pointerId) return;
+    const dx = event.clientX - drag.x;
+    if (!drag.gesture) {
+      drag.gesture = rowGesture(dx, event.clientY - drag.y);
+      if (drag.gesture !== 'row') {
+        if (drag.gesture === 'scroll') drag = null;
+        return;
+      }
+      dragged = true;
+      const refusal = deleteRefusal(entry, current);
+      if (refusal) {
+        if (refusal === 'loaded' && dx < 0) refusedId = entry.id;
+        drag = null;
+        return;
+      }
+      if (openId !== entry.id) openId = null;
+      (event.currentTarget as Element).setPointerCapture(event.pointerId);
+    }
+    drag.dx = dx;
+  }
+
+  function up(event: PointerEvent) {
+    if (!drag || drag.pointer !== event.pointerId) return;
+    if (drag.gesture === 'row') openId = settlesOpen(openId === drag.id, drag.dx, drag.width) ? drag.id : null;
+    drag = null;
+  }
+
+  /** How far a row's right end is moved, in px, while it is dragged; null while it rests. */
+  function dragOffset(entry: PickerEntry): number | null {
+    if (drag?.id !== entry.id || drag.gesture !== 'row') return null;
+    return rowOffset(openId === entry.id, drag.dx, drag.width);
+  }
+
+  /** A tap anywhere but the open row closes it; the loaded row's reason goes with the next tap. */
+  function outside(event: PointerEvent) {
+    refusedId = null;
+    if (openId && !(event.target as Element).closest('[data-open="true"]')) openId = null;
+  }
+
+  /** A tap on a row selects it and closes an open row; a drag that ended on it does not select. */
+  function tap(entry: PickerEntry) {
+    if (dragged) {
+      dragged = false;
+      return;
+    }
+    openId = null;
+    selectedId = entry.id;
+  }
+
+  /** 'delete' asks once, then Decaid deletes the record and the list is read again. */
+  const remove = (entry: PickerEntry) =>
+    act('The profile could not be deleted', async () => {
+      asking = null;
+      openId = null;
+      records = await deleteEntry(skin.client, entry);
+      if (selectedId === entry.id) selectedId = null;
+    });
+
   onMount(read);
 </script>
+
+<svelte:window onpointerdown={outside} />
 
 <div class="profiles">
   <section class="list">
@@ -99,20 +197,41 @@
     />
     <ul data-testid="profile-list">
       {#each shown as entry (entry.id)}
-        <li>
+        {@const offset = dragOffset(entry)}
+        {@const open = openId === entry.id}
+        <!-- The row's drags are its own, never the shell's page swipe (data-no-swipe). -->
+        <li
+          class="row"
+          class:open
+          style:--delete-width={`${DELETE_REM}rem`}
+          data-open={open}
+          data-no-swipe
+          onpointerdown={(event) => down(event, entry)}
+          onpointermove={(event) => move(event, entry)}
+          onpointerup={up}
+          onpointercancel={() => (drag = null)}
+        >
+          {#if open || offset !== null}
+            <button class="delete" data-testid="profile-delete" disabled={busy} onclick={() => (asking = entry)}>delete</button>
+          {/if}
           <button
             class="item"
+            class:dragging={offset !== null}
+            style:width={offset === null ? undefined : `calc(100% + ${offset}px)`}
             aria-pressed={entry.id === selectedId}
             data-testid="profile-item"
             data-id={entry.id}
             data-default={entry.isDefault}
             disabled={busy}
-            onclick={() => (selectedId = entry.id)}
+            onclick={() => tap(entry)}
           >
             <span class="title">{entry.profile.title}</span>
-            {#if isLoaded(entry)}<span class="tag loaded">loaded</span>{/if}
-            {#if entry.isDefault}<span class="tag" data-testid="default-tag">A-Flow 3.0 default</span>
-            {:else if isAFlow3(entry)}<span class="tag">A-Flow 3.0</span>{/if}
+            {#if refusedId === entry.id}<span class="refusal" data-testid="profile-refusal">{LOADED_REFUSAL}</span>
+            {:else}
+              {#if isLoaded(entry)}<span class="tag loaded">loaded</span>{/if}
+              {#if entry.isDefault}<span class="tag" data-testid="default-tag">A-Flow 3.0 default</span>
+              {:else if isAFlow3(entry)}<span class="tag">A-Flow 3.0</span>{/if}
+            {/if}
           </button>
         </li>
       {:else}
@@ -161,6 +280,17 @@
     {/if}
   </aside>
 </div>
+
+{#if asking}
+  {@const entry = asking}
+  <Confirm
+    title={`Delete ${entry.profile.title}?`}
+    text="The picker no longer lists it. Decaid keeps the record, marked deleted, with its versions."
+    ok="Delete"
+    onok={() => remove(entry)}
+    oncancel={() => (asking = null)}
+  />
+{/if}
 
 <style>
   .profiles {
@@ -249,7 +379,30 @@
     scrollbar-width: thin;
   }
 
+  /* The delete button rests under the row's right end; the row narrows to show it, its title kept. */
+  .row {
+    position: relative;
+    flex: none;
+    touch-action: pan-y;
+  }
+
+  .delete {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: calc(var(--delete-width) - 0.4rem);
+    font-size: 1.1rem;
+    font-weight: 600;
+    background: var(--warn);
+    border-color: var(--warn);
+    color: var(--bg);
+  }
+
   .item {
+    position: relative;
+    touch-action: pan-y;
+    transition: width 0.2s ease;
     width: 100%;
     min-height: 3.4rem;
     padding: 0 1rem;
@@ -258,6 +411,24 @@
     gap: 0.6rem;
     font-size: 1.1rem;
     text-align: left;
+  }
+
+  .item.dragging {
+    transition: none;
+  }
+
+  .open .item {
+    width: calc(100% - var(--delete-width));
+  }
+
+  .refusal {
+    flex: none;
+    color: var(--warn);
+    font-size: 0.9rem;
+  }
+
+  .item[aria-pressed='true'] .refusal {
+    color: inherit;
   }
 
   .item[aria-pressed='true'] {

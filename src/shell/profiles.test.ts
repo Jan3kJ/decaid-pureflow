@@ -4,6 +4,8 @@ import { paramsMetadata, workflowProfile } from '../editor/storage';
 import { DecaidClient, type Profile, type ProfileRecord } from '../api';
 import {
   defaultProfile,
+  deleteEntry,
+  deleteRefusal,
   doseOf,
   doseToSet,
   filterProfiles,
@@ -278,5 +280,39 @@ describe('profileDescription', () => {
 
   it('keeps notes of other skins as they are', () => {
     expect(profileDescription({ notes: 'Turbo shot.\nGrind fine.' })).toBe('Turbo shot.\nGrind fine.');
+  });
+});
+
+describe('deleteRefusal', () => {
+  const [lightEntry] = pickerEntries([]).filter((entry) => entry.id === 'default-light');
+  const [best] = pickerEntries([record(other)]).filter((entry) => !entry.isDefault);
+
+  it("refuses the skin's defaults and the profile on the machine", () => {
+    expect(deleteRefusal(lightEntry, undefined)).toBe('default');
+    expect(deleteRefusal(best, fromGateway(other))).toBe('loaded');
+  });
+
+  it('lets any other stored profile go', () => {
+    expect(deleteRefusal(best, undefined)).toBeNull();
+    expect(deleteRefusal(best, light)).toBeNull();
+    expect(deleteRefusal({ profile: light, isDefault: false }, other)).toBeNull();
+  });
+});
+
+describe('deleteEntry', () => {
+  it('deletes the record and answers the list as the gateway then has it', async () => {
+    const kept = record(light, { id: 'profile:kept' });
+    const { client: stub, calls } = client((method) => (method === 'DELETE' ? { success: true } : [kept]));
+    expect(await deleteEntry(stub, { id: 'profile:gone', isDefault: false })).toEqual([kept]);
+    expect(calls.map((call) => `${call.method} ${call.path}`)).toEqual([
+      'DELETE /api/v1/profiles/profile%3Agone',
+      'GET /api/v1/profiles',
+    ]);
+  });
+
+  it("sends nothing for one of the skin's defaults", async () => {
+    const { client: stub, calls } = client(() => []);
+    await expect(deleteEntry(stub, { id: 'default-light', isDefault: true })).rejects.toThrow('cannot be deleted');
+    expect(calls).toEqual([]);
   });
 });

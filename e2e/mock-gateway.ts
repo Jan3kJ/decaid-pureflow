@@ -1073,6 +1073,13 @@ export class MockGateway {
       }
       return json(stored);
     }
+    if (method === 'DELETE' && id && !action) {
+      // As Decaid: a user's profile is marked deleted, a bundled one hidden; the record stays.
+      const stored = this.profiles.find((candidate) => candidate.id === id);
+      if (!stored) return json({ error: 'Not found', message: `Profile not found: ${id}` }, 404);
+      stored.visibility = stored.isDefault ? 'hidden' : 'deleted';
+      return json({ success: true, message: 'Profile deleted', id });
+    }
     const catalogue = this.answerCatalogue(method, path, url, body);
     if (catalogue) return json(catalogue.value, catalogue.status);
     return json({ error: `the mock has no ${method} ${path}` }, 404);
