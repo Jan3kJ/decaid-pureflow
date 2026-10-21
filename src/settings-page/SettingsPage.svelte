@@ -13,10 +13,12 @@
   import { onMount } from 'svelte';
   import { PRODUCT_NAME, PRODUCT_VERSION } from '../product';
   import type { Skin } from '../shell/skin.svelte';
+  import Bengle from './Bengle.svelte';
   import Confirm from './Confirm.svelte';
   import Devices from './Devices.svelte';
   import FieldRow from './FieldRow.svelte';
   import Firmware from './Firmware.svelte';
+  import Help from './Help.svelte';
   import MachineInfo from './MachineInfo.svelte';
   import Maintenance from './Maintenance.svelte';
   import Plugins from './Plugins.svelte';
@@ -38,7 +40,8 @@
     type Part,
     type Values,
   } from './gateway';
-  import { SETTINGS_TREE, loadLocation, saveLocation, type Action, type Subcategory } from './tree';
+  import { isBengle } from './bengle';
+  import { SETTINGS_TREE, loadLocation, saveLocation, visibleSubcategories, type Action, type Subcategory } from './tree';
   import { errorMessage } from '../error-message';
 
   interface Props {
@@ -75,7 +78,16 @@
     reading = false;
   }
 
-  onMount(readValues);
+  /** the connected machine is a Bengle: its pages show */
+  let bengle = $state(false);
+
+  onMount(() => {
+    void readValues();
+    skin.client
+      .getMachineInfo()
+      .then((info) => (bengle = isBengle(info.model)))
+      .catch(() => (bengle = false));
+  });
 
   /** One source read again, after a change that is not a field's (a wake schedule). */
   async function readAgain(part: Part) {
@@ -198,7 +210,7 @@
         onclick={() => open(entry.id)}><span class="number">{entry.number}.</span> {entry.name}</button
       >
       {#if entry.id === category.id}
-        {#each entry.subcategories as sub (sub.id)}
+        {#each visibleSubcategories(entry, bengle) as sub (sub.id)}
           <button class="sub" data-testid="settings-sub-{sub.id}" onclick={() => jump(sub)}>{sub.name}</button>
         {/each}
       {/if}
@@ -209,7 +221,7 @@
     {#if category.id === 'skin'}
       <SkinCategory {skin} />
     {:else}
-      {#each category.subcategories as sub (sub.id)}
+      {#each visibleSubcategories(category, bengle) as sub (sub.id)}
         <section id="sub-{sub.id}" data-testid="settings-section-{sub.id}">
           <h2>{sub.name}</h2>
           {#if sub.hint}<p class="hint">{sub.hint}</p>{/if}
@@ -241,6 +253,10 @@
                 <Firmware {skin} part={view.kind === 'firmware' ? 'firmware' : 'app'} />
               {:else if view?.kind === 'sensors'}
                 <SensorCalibration {skin} />
+              {:else if view?.kind === 'bengle'}
+                <Bengle {skin} part={view.part} />
+              {:else if view?.kind === 'help'}
+                <Help {skin} part={view.part} />
               {/if}
             {/snippet}
             {#each unreadOf(sub) as error (error)}

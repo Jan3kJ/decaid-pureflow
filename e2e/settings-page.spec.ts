@@ -71,6 +71,7 @@ test("each category opens in Streamline's order and the page fits 1280 x 800 wit
     '8. Extensions',
     '9. Miscellaneous',
     '10. Updates',
+    '11. User Manual',
   ]);
   const sections: Record<string, string[]> = {
     quickadjustments: ['flowmultiplier', 'steam', 'hotwater', 'watertank', 'flush', 'machineadvancedsettings'],
@@ -81,6 +82,7 @@ test("each category opens in Streamline's order and the page fits 1280 x 800 wit
     extensions: ['extention2'],
     miscellaneous: ['reasettings', 'brightness', 'wakelock', 'presence'],
     updates: ['firmwareupdate', 'appupdate'],
+    usermanual: ['quickstart', 'feedback'],
   };
   await expect(shown(page, 'weight-flow-multiplier')).toHaveText('1.0');
   expect(await fitsWidth(page)).toEqual({ scrollsX: false, scrollsY: false, wide: 0 });

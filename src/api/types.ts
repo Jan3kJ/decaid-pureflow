@@ -631,6 +631,56 @@ export interface FirmwareProgress {
   error?: string;
 }
 
+/** `CupWarmerState`: the Bengle's mat. */
+export interface CupWarmerState {
+  /** whole °C, 0..80; 0 is off */
+  temperature: number;
+  enabled: boolean;
+  /** null without a valid reading */
+  currentTemperature: number | null;
+}
+
+/** `CupWarmerPreheatState`: the firmware's scheduled pre-warm. */
+export interface CupWarmerPreheat {
+  enabled: boolean;
+  /** minutes before a scheduled wake, 0..120 */
+  leadMinutes: number;
+  /** the wake schedule, not the manual switch, drives the mat now */
+  active: boolean;
+}
+
+/** One strip's colours awake and asleep, each 12 hex digits 'RRRRGGGGBBBB'. */
+export interface ZoneLedState {
+  awake: string;
+  sleeping: string;
+}
+
+/** `LedStripState` */
+export interface LedStripState {
+  frontStrip: ZoneLedState;
+  backStrip: ZoneLedState;
+  /** derived from the front strip by the firmware, read only */
+  frontSwitch?: ZoneLedState;
+}
+
+/** `ScaleCalibrationState`: the Bengle's load-cell calibration procedure. */
+export interface ScaleCalibrationState {
+  step: 'idle' | 'zeroing' | 'calLatch' | 'taring' | 'complete' | 'error';
+  detectedCell: 'none' | 'a' | 'b';
+  subState: 'settling' | 'averaging' | 'done' | 'error';
+  secondsRemaining: number;
+  /** the result of the last latch: `ok`, `badWeight`, `notIsolated`, ...; `none` while in progress */
+  status: string;
+}
+
+/** `FeedbackRequest` */
+export interface FeedbackRequest {
+  description: string;
+  type: 'bug' | 'feature' | 'question' | 'other';
+  includeLogs: boolean;
+  includeSystemInfo: boolean;
+}
+
 /** `AppUpdateState`: Decaid's own update. */
 export interface AppUpdateState {
   phase: 'idle' | 'checking' | 'available' | 'downloading' | 'installing' | 'error';

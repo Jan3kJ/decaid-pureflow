@@ -896,6 +896,10 @@ the screen saver are left out. Feedback goes to Decent through Decaid,
 an outside service that spec 6 asks the founder to approve; item 15 asks for it, and the default
 takes that as the approval (section 8). Talk to Decent (a Decent account) is not asked for and
 stays out.
+Built (U12, research.md 31): 3. Calibration > Load Cells, 4. Machine > Cup Warmer and Lighting (only
+when the machine's model names a Bengle), 11. User Manual (Quick Start Guide, this skin's README)
+and Send Feedback (confirm first), and Updates > Firmware Update > Install from a file (confirm
+first, the machine must stay on).
 
 **No change:** 'Steam on' falling back to 150 °C is fine, because it returns to the previously
 set values (founder, 2026-10-18).

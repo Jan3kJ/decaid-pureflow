@@ -9,7 +9,8 @@
 <script lang="ts">
   // Updates (research.md 20.3, 20.10 S2c). 'firmware': the machine's build, what the bundled
   // firmware catalog says about it, every bundled build with its eligibility, and Install of
-  // the recommended build after a confirm, with its progress and Cancel. No file upload (20.11).
+  // the recommended build after a confirm, with its progress and Cancel, and (research.md 31) a
+  // firmware file chosen on the device, flashed after a confirm that says the machine must stay on.
   // 'app': Decaid's own update as the gateway reports it; the skin asks no outside service.
   import { onMount } from 'svelte';
   import type { AppUpdateState, FirmwareCatalog, FirmwareProgress } from '../api';
@@ -35,6 +36,9 @@
   let progress: FirmwareProgress | null = $state(null);
   let failed: string | null = $state(null);
   let cancelling = $state(false);
+  /** a firmware file chosen, waiting for its confirm */
+  let picked: File | null = $state(null);
+  let chooser: HTMLInputElement | undefined = $state();
 
   const summary = $derived(catalog ? summarize(catalog) : null);
   /** an update runs, this page's or one started elsewhere */
@@ -55,13 +59,16 @@
 
   onMount(() => void read());
 
-  async function install(artifactId: string) {
+  async function install(source: string | File) {
     confirming = false;
+    picked = null;
     running = true;
     failed = null;
     progress = null;
     try {
-      await skin.client.applyFirmware(artifactId, (event) => (progress = event));
+      const onProgress = (event: FirmwareProgress) => (progress = event);
+      if (typeof source === 'string') await skin.client.applyFirmware(source, onProgress);
+      else await skin.client.uploadFirmware(source, onProgress);
     } catch (cause) {
       failed = errorMessage(cause);
     } finally {
@@ -71,6 +78,15 @@
       void read();
     }
   }
+
+  function choose(event: Event & { currentTarget: HTMLInputElement }) {
+    picked = event.currentTarget.files?.[0] ?? null;
+    // the same file can be chosen again
+    event.currentTarget.value = '';
+  }
+
+  const sizeText = (bytes: number) =>
+    bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} kB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 
   async function cancel() {
     cancelling = true;
@@ -157,6 +173,16 @@
         <button class="action" data-testid="firmware-install" onclick={() => (confirming = true)}>Install</button>
       </div>
     {/if}
+    {#if !busy}
+      <div class="row">
+        <div class="about">
+          <span>Install from a file</span>
+          <small>A firmware image from this device. Only for a file you trust; the machine must stay on until it is done.</small>
+        </div>
+        <button class="action" data-testid="firmware-file" onclick={() => chooser?.click()}>Choose file</button>
+        <input type="file" hidden bind:this={chooser} data-testid="firmware-file-input" onchange={choose} />
+      </div>
+    {/if}
     {#if failed}<p class="warn" data-testid="firmware-failed">{failed}</p>{/if}
     {#if progress?.status === 'done' && !running}<p data-testid="firmware-done">{progressText(progress)}</p>{/if}
   </div>
@@ -172,6 +198,19 @@
     ok="Install"
     onok={() => void install(latest.id)}
     oncancel={() => (confirming = false)}
+  />
+{/if}
+
+{#if picked}
+  {@const file = picked}
+  <Confirm
+    title="Install {file.name}?"
+    text="{DURATION_NOTE} The file ({sizeText(
+      file.size,
+    )}) is sent to the machine as it is and replaces its firmware. Keep the machine switched on."
+    ok="Install"
+    onok={() => void install(file)}
+    oncancel={() => (picked = null)}
   />
 {/if}
 

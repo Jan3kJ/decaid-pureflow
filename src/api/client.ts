@@ -9,17 +9,21 @@ import type {
   BeanInput,
   BeanPatch,
   CatalogueBean,
+  CupWarmerPreheat,
+  CupWarmerState,
   DecaidInfo,
   DeviceConnectResult,
   DeviceInfo,
   DecaidSettings,
   DisplayState,
+  FeedbackRequest,
   FirmwareCatalog,
   FirmwareOperation,
   FirmwareProgress,
   Grinder,
   GrinderInput,
   GrinderPatch,
+  LedStripState,
   ListProfilesQuery,
   ListShotsQuery,
   MachineInfo,
@@ -36,6 +40,7 @@ import type {
   ProfileUpdate,
   ProfileVisibility,
   SaveProfileOptions,
+  ScaleCalibrationState,
   SensorCalibration,
   SensorTarget,
   ShotRecord,
@@ -50,6 +55,7 @@ import type {
   WorkflowPatch,
 } from './types';
 import { errorMessage } from '../error-message';
+import { readNdjson } from './ndjson';
 
 /** Decaid's gateway. The skin only connects to this port; it never serves on it. */
 export const DEFAULT_BASE_URL = 'http://localhost:8080';
@@ -213,39 +219,36 @@ export class DecaidClient {
    * then `done` or `error`), each line given to `onProgress`; resolves with `done` only, and a
    * stream that ends without it throws.
    */
-  async applyFirmware(artifactId: string, onProgress: (progress: FirmwareProgress) => void): Promise<void> {
-    const path = '/api/v1/machine/firmware/apply';
+  applyFirmware(artifactId: string, onProgress: (progress: FirmwareProgress) => void): Promise<void> {
+    return this.firmwareStream(
+      '/api/v1/machine/firmware/apply',
+      { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ artifactId }) },
+      onProgress,
+    );
+  }
+
+  /** Flashes a firmware file the user chose (the raw image is the body); the progress is `applyFirmware`'s. */
+  uploadFirmware(file: Blob, onProgress: (progress: FirmwareProgress) => void): Promise<void> {
+    return this.firmwareStream('/api/v1/machine/firmware', { body: file }, onProgress);
+  }
+
+  private async firmwareStream(
+    path: string,
+    init: { headers?: Record<string, string>; body: string | Blob },
+    onProgress: (progress: FirmwareProgress) => void,
+  ): Promise<void> {
     let response: Response;
     try {
-      response = await this.fetchFn(this.baseUrl + path, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ artifactId }),
-      });
+      response = await this.fetchFn(this.baseUrl + path, { method: 'POST', ...init });
     } catch (cause) {
       throw new DecaidNetworkError('POST', path, cause);
     }
     if (!response.ok) throw new DecaidApiError('POST', path, response.status, parse(await response.text()));
     let last: FirmwareProgress | null = null;
-    const take = (line: string) => {
-      if (!line.trim()) return;
-      last = JSON.parse(line) as FirmwareProgress;
-      onProgress(last);
-    };
-    const reader = response.body?.getReader();
-    if (reader) {
-      const decoder = new TextDecoder();
-      let rest = '';
-      for (;;) {
-        const { value, done } = await reader.read();
-        rest += done ? decoder.decode() : decoder.decode(value, { stream: true });
-        const lines = rest.split('\n');
-        rest = lines.pop() ?? '';
-        lines.forEach(take);
-        if (done) break;
-      }
-      take(rest);
-    } else (await response.text()).split('\n').forEach(take);
+    await readNdjson<FirmwareProgress>(response, (event) => {
+      last = event;
+      onProgress(event);
+    });
     const end = last as FirmwareProgress | null;
     if (end?.status === 'error') throw new Error(`The firmware update failed: ${end.error ?? 'no reason given'}`);
     if (end?.status !== 'done') throw new Error('The firmware stream ended before the update was confirmed');
@@ -255,6 +258,52 @@ export class DecaidClient {
   async cancelFirmware(): Promise<FirmwareOperation | undefined> {
     const answer = await this.request<{ operation?: { state?: FirmwareOperation } } | undefined>('DELETE', '/api/v1/machine/firmware');
     return answer?.operation?.state;
+  }
+
+  // --- Bengle: cup warmer, lighting, load cells (404 on any other machine) ---
+
+  getCupWarmer(): Promise<CupWarmerState> {
+    return this.request('GET', '/api/v1/machine/cupWarmer');
+  }
+
+  /** A temperature alone also switches the mat on; `enabled` alone leaves the setpoint. */
+  async setCupWarmer(update: { temperature?: number; enabled?: boolean }): Promise<void> {
+    await this.request('PUT', '/api/v1/machine/cupWarmer', update);
+  }
+
+  getCupWarmerPreheat(): Promise<CupWarmerPreheat> {
+    return this.request('GET', '/api/v1/machine/cupWarmer/preheat');
+  }
+
+  async setCupWarmerPreheat(update: { enabled?: boolean; leadMinutes?: number }): Promise<void> {
+    await this.request('PUT', '/api/v1/machine/cupWarmer/preheat', update);
+  }
+
+  /** Answers 503 until Decaid has read the palette from the machine. */
+  getLedStrip(): Promise<LedStripState> {
+    return this.request('GET', '/api/v1/machine/ledStrip');
+  }
+
+  /** Writes the whole palette; the machine stores it at once (`frontSwitch` is derived and ignored). */
+  async setLedStrip(state: Pick<LedStripState, 'frontStrip' | 'backStrip'>): Promise<void> {
+    await this.request('PUT', '/api/v1/machine/ledStrip', state);
+  }
+
+  getScaleCalibration(): Promise<ScaleCalibrationState> {
+    return this.request('GET', '/api/v1/machine/scaleCalibration');
+  }
+
+  /** One step of the integrated scale's calibration; `latch` takes the known mass in grams. A busy machine answers 409. */
+  async commandScaleCalibration(command: 'zero' | 'abort' | { latch: number }): Promise<void> {
+    const body = typeof command === 'string' ? { command } : { command: 'latch', weightGrams: command.latch };
+    await this.request('PUT', '/api/v1/machine/scaleCalibration', body);
+  }
+
+  // --- feedback ---
+
+  /** Sends feedback to Decent through Decaid; it becomes a public GitHub issue. */
+  sendFeedback(feedback: FeedbackRequest): Promise<{ issueUrl?: string } | undefined> {
+    return this.request('POST', '/api/v1/feedback', feedback);
   }
 
   // --- workflow ---

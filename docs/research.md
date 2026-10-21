@@ -3632,3 +3632,49 @@ Ported from Streamline **0.2.17**, the version the rig served at the start
   checked the default, the served path (port 27906 as before), Decaid's settings, the
   workflow's profile and the KV backup. Full rig suite 47 of 47; afterwards 73 profiles, one
   shot, the `pureflow` and `decaid-skin` namespaces empty, steam 150 °C, Streamline the default.
+
+## 31. The rest of Streamline's settings (U12, 2026-10-21)
+
+Ported from Streamline **0.2.17**, the version the rig served at the start (`GET
+/api/v1/webui/skins/default`: `0.2.17`); the clone `../streamline-js` was read at that tag.
+Spec 3.9 item 15, roadmap U12. GPL notice as 20.8 in every file that takes from Streamline.
+
+- **Bengle pages** (`Bengle.svelte`, `bengle.ts`). `SettingsPage` reads `GET /api/v1/machine/info`
+  once and shows three subcategories only when the model names a Bengle (`isBengle`, Streamline's
+  `isBengleModel`): 3. Calibration > **Load Cells**, 4. Machine > **Cup Warmer** and
+  **Lighting**. The rig simulates a DE1, so they are absent there and the gateway answers 404
+  for `machine/cupWarmer`, `cupWarmer/preheat`, `ledStrip` and `scaleCalibration` (checked by
+  `e2e-rig/settings-help.spec.ts`); everything else about them is tested against the mocked
+  gateway, which follows `rest_v1.yml` of the tag.
+  - Cup Warmer: the mat's reading (`currentTemperature`, null reads 'No reading', never 0), a
+    switch, the target 0-80 °C on the number pad, and the firmware's scheduled pre-warm
+    (`GET/PUT cupWarmer/preheat`: switch and lead 0-120 min) when the firmware has it. The switch
+    on sends the target alone (which also enables the mat, `rest_v1.yml`), off sends
+    `{enabled:false}` so the setpoint stays. The page reads again after each write and every 3 s.
+    Streamline's warnings about an empty wake schedule are left out.
+  - Lighting: the front and back strip, awake and asleep, as four colour inputs; Save writes the
+    whole palette with `PUT machine/ledStrip` (the machine stores it at once, there is no
+    staging), Discard reads it again. A strip colour is 12 hex digits `RRRRGGGGBBBB`; the input's
+    `#rrggbb` becomes each byte twice. Streamline's colour sequences and preview are left out.
+  - Load Cells: `GET/PUT machine/scaleCalibration`: the step and seconds left, the last latch's
+    result, Find zero (platform empty), a known mass 1-10000 g on the pad and Latch (once per
+    load cell, the platform off), Abort. No command is sent while a step runs; a 409 is shown.
+- **User Manual** (11, `Help.svelte`): Streamline's Quick Start Guide (`decentespresso.com/doc/
+  quickstart/`) and this skin's README, as links that open outside the skin; they need the
+  internet. Streamline's 'Show help button' belongs to its overlay and does not apply, and 'Talk
+  to Decent' (a Decent account) stays out.
+- **Send Feedback** (`Help.svelte`): type (bug, feature, general), title, description and one
+  switch for the logs and system information, as `POST /api/v1/feedback`
+  (`{description: '**title**\n\ntext', type, includeLogs, includeSystemInfo}`). It becomes a
+  public GitHub issue, so Send asks first. No test sends it: the mocked gateway answers, the rig
+  spec only opens the confirm and cancels it.
+- **Firmware from a file** (`Firmware.svelte`, Updates > Firmware Update): 'Install from a file'
+  chooses a file on the device, a confirm names the file and its size and says the update takes
+  at least 50 minutes and the machine must stay on, and `POST /api/v1/machine/firmware` takes
+  the raw file as its body. The NDJSON answer (`erasing`, `uploading`, `done` or `error`) is read
+  by `readNdjson` (`src/api/ndjson.ts`, Streamline's `splitNdjson`) and shown as the bundled
+  build's progress is, with Cancel. Refusals (400 empty, 409 running, 413 over 16 MB, 503 no
+  machine) show as the gateway's error. No firmware is uploaded on the rig or in a test.
+- **Tests.** Vitest: the NDJSON framing, the upload and the other calls, the helpers, the tree.
+  Playwright (mocked gateway): `e2e/settings-help.spec.ts`. Rig: `e2e-rig/settings-help.spec.ts`
+  (read only).

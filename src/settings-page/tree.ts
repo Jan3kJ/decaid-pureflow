@@ -50,7 +50,9 @@ export type View =
   | { kind: 'presence' }
   | { kind: 'firmware' }
   | { kind: 'app-update' }
-  | { kind: 'sensors' };
+  | { kind: 'sensors' }
+  | { kind: 'bengle'; part: 'cup-warmer' | 'lighting' | 'load-cells' }
+  | { kind: 'help'; part: 'manual' | 'feedback' };
 
 export type Content =
   { kind: 'fields'; fields: Field[]; actions?: Action[]; view?: View; below?: boolean } | { kind: 'skin'; part: SkinPart };
@@ -60,6 +62,8 @@ export interface Subcategory {
   name: string;
   /** a line under the name */
   hint?: string;
+  /** shown only when the connected machine is a Bengle */
+  bengle?: boolean;
   content: Content;
 }
 
@@ -137,6 +141,13 @@ export const SETTINGS_TREE: Category[] = [
         hint: "Corrections of the machine's temperature, pressure and flow sensors against your own instrument.",
         content: view({ kind: 'sensors' }),
       },
+      {
+        id: 'loadcell',
+        name: 'Load Cells',
+        hint: "The Bengle's integrated scale: find the zero, then latch a known mass on each load cell.",
+        bengle: true,
+        content: view({ kind: 'bengle', part: 'load-cells' }),
+      },
     ],
   },
   {
@@ -145,6 +156,14 @@ export const SETTINGS_TREE: Category[] = [
     name: 'Machine',
     subcategories: [
       { id: 'usbchargermode', name: 'USB', content: view({ kind: 'charging' }, USB, true) },
+      { id: 'cupwarmer', name: 'Cup Warmer', bengle: true, content: view({ kind: 'bengle', part: 'cup-warmer' }) },
+      {
+        id: 'ledstrip',
+        name: 'Lighting',
+        hint: 'The colours of the strips while the machine is awake and while it sleeps.',
+        bengle: true,
+        content: view({ kind: 'bengle', part: 'lighting' }),
+      },
       { id: 'machineinfo', name: 'Machine Information', content: view({ kind: 'machine-info' }) },
     ],
   },
@@ -230,12 +249,26 @@ export const SETTINGS_TREE: Category[] = [
       { id: 'appupdate', name: 'Decaid', hint: "Decaid's own update, as Decaid reports it.", content: view({ kind: 'app-update' }) },
     ],
   },
+  {
+    id: 'usermanual',
+    number: 11,
+    name: 'User Manual',
+    subcategories: [
+      { id: 'quickstart', name: 'Quick Start Guide', content: view({ kind: 'help', part: 'manual' }) },
+      { id: 'feedback', name: 'Send Feedback', hint: 'To Decent, through Decaid.', content: view({ kind: 'help', part: 'feedback' }) },
+    ],
+  },
 ];
 
 /** Every field of the page, in the tree's order. */
 export const TREE_FIELDS: Field[] = SETTINGS_TREE.flatMap((category) =>
   category.subcategories.flatMap((sub) => (sub.content.kind === 'fields' ? sub.content.fields : [])),
 );
+
+/** The subcategories shown for the connected machine: the Bengle's only on a Bengle. */
+export function visibleSubcategories(category: Category, bengle: boolean): Subcategory[] {
+  return category.subcategories.filter((sub) => bengle || !sub.bengle);
+}
 
 export const DEFAULT_CATEGORY = SETTINGS_TREE[0].id;
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_CATEGORY, LOCATION_KEY, SETTINGS_TREE, loadLocation, saveLocation } from './tree';
+import { DEFAULT_CATEGORY, LOCATION_KEY, SETTINGS_TREE, loadLocation, saveLocation, visibleSubcategories } from './tree';
 
 describe('the settings tree (research.md 20.3, 20.10 S2a)', () => {
   it("has Streamline's categories of S2 in its order and with its numbers", () => {
@@ -13,6 +13,7 @@ describe('the settings tree (research.md 20.3, 20.10 S2a)', () => {
       '8. Extensions',
       '9. Miscellaneous',
       '10. Updates',
+      '11. User Manual',
     ]);
   });
 
@@ -26,9 +27,16 @@ describe('the settings tree (research.md 20.3, 20.10 S2a)', () => {
       'Flush',
       'Machine Advanced Settings',
     ]);
-    expect(names('calibration')).toEqual(['Default load settings', 'Refill Kit', 'Voltage', 'Fan', 'Sensor Calibration']);
+    expect(names('calibration')).toEqual([
+      'Default load settings',
+      'Refill Kit',
+      'Voltage',
+      'Fan',
+      'Sensor Calibration',
+      'Load Cells',
+    ]);
     expect(names('bluetooth')).toEqual(['1. Machine', '2. Scale']);
-    expect(names('machine')).toEqual(['USB', 'Machine Information']);
+    expect(names('machine')).toEqual(['USB', 'Cup Warmer', 'Lighting', 'Machine Information']);
     expect(names('maintenance')).toEqual(['Clean', 'Machine Descaling', 'Transport Mode']);
     expect(names('skin')).toEqual([
       'Steam',
@@ -43,6 +51,7 @@ describe('the settings tree (research.md 20.3, 20.10 S2a)', () => {
     // Visualizer and Shot Uploader are plugin cards of Plugins (research.md 20.3).
     expect(names('extensions')).toEqual(['Plugins']);
     expect(names('updates')).toEqual(['Firmware Update', 'Decaid']);
+    expect(names('usermanual')).toEqual(['Quick Start Guide', 'Send Feedback']);
   });
 
   it('leaves out what the port leaves out', () => {
@@ -51,19 +60,14 @@ describe('the settings tree (research.md 20.3, 20.10 S2a)', () => {
       // Streamline's own, Bengle only, the manual (research.md 20.11)
       'Theme',
       'Language',
-      'Load Cells',
-      'Cup Warmer',
-      'Lighting',
       'Temperature',
       'Screen Saver',
       'Keyboard Shortcuts',
       'Home Assistant',
-      'User Manual',
       // shown once, in Quick Adjustments
       'Calibration Steam',
-      // outside services (spec 6)
+      // a Decent account (spec 3.9 item 15)
       'Talk to Decent',
-      'Send Feedback',
     ]) {
       expect(all).not.toContain(absent);
     }
@@ -87,7 +91,21 @@ describe('the settings tree (research.md 20.3, 20.10 S2a)', () => {
       presence: { kind: 'presence' },
       firmwareupdate: { kind: 'firmware' },
       appupdate: { kind: 'app-update' },
+      loadcell: { kind: 'bengle', part: 'load-cells' },
+      cupwarmer: { kind: 'bengle', part: 'cup-warmer' },
+      ledstrip: { kind: 'bengle', part: 'lighting' },
+      quickstart: { kind: 'help', part: 'manual' },
+      feedback: { kind: 'help', part: 'feedback' },
     });
+  });
+
+  it("shows the Bengle's pages only on a Bengle", () => {
+    const shown = (bengle: boolean) =>
+      SETTINGS_TREE.flatMap((category) => visibleSubcategories(category, bengle))
+        .filter((sub) => sub.bengle)
+        .map((sub) => sub.id);
+    expect(shown(false)).toEqual([]);
+    expect(shown(true)).toEqual(['loadcell', 'cupwarmer', 'ledstrip']);
   });
 
   it('keeps the category opened last, and opens on the first without one', () => {

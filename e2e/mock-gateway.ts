@@ -460,6 +460,22 @@ export class MockGateway {
     updateAvailable: true,
     operation: { state: 'idle' },
   };
+  /** the bytes of the last file `POST /api/v1/machine/firmware` got */
+  firmwareUpload: number | null = null;
+  /** `GET /api/v1/machine/cupWarmer` (a Bengle) */
+  cupWarmer = { temperature: 60, enabled: false, currentTemperature: 38.4 as number | null };
+  /** `GET /api/v1/machine/cupWarmer/preheat` */
+  cupWarmerPreheat = { enabled: false, leadMinutes: 30, active: false };
+  /** `GET /api/v1/machine/ledStrip` */
+  ledStrip = {
+    frontStrip: { awake: 'ffff00000000', sleeping: '000000000000' },
+    backStrip: { awake: '0000ffff0000', sleeping: '000000000000' },
+    frontSwitch: { awake: 'ffff00000000', sleeping: '000000000000' },
+  };
+  /** `GET /api/v1/machine/scaleCalibration` */
+  scaleCalibration = { step: 'idle', detectedCell: 'none', subState: 'done', secondsRemaining: 0, status: 'none' };
+  /** `POST /api/v1/feedback` answers an error with this status when it is not 201 */
+  feedbackStatus = 201;
   /** the NDJSON lines `POST /api/v1/machine/firmware/apply` answers */
   firmwareStream = [
     '{"status":"erasing","progress":0.0}',
@@ -786,7 +802,9 @@ export class MockGateway {
     const url = new URL(request.url());
     const path = url.pathname;
     if (method === 'OPTIONS') return route.fulfill({ status: 204, headers: CORS });
-    const body = (request.postData() ? JSON.parse(request.postData()!) : undefined) as RequestBody;
+    // A firmware file is binary: only its size is recorded.
+    const raw = path === '/api/v1/machine/firmware' && method === 'POST';
+    const body = (request.postData() && !raw ? JSON.parse(request.postData()!) : undefined) as RequestBody;
     this.requests.push({ method, path, body, query: url.search });
 
     const json = (value: unknown, status = 200) =>
@@ -951,6 +969,15 @@ export class MockGateway {
       return json({ target, source: 'current', de1ReportedValue: ratio ? 1.0 : 0.0, measuredValue: this.calibration[target] });
     }
     if (path === '/api/v1/machine/firmware' && method === 'GET') return json(this.firmware);
+    if (path === '/api/v1/machine/firmware' && method === 'POST') {
+      this.firmwareUpload = request.postDataBuffer()?.length ?? 0;
+      return route.fulfill({
+        status: 200,
+        headers: CORS,
+        contentType: 'application/x-ndjson',
+        body: this.firmwareStream.join('\n') + '\n',
+      });
+    }
     if (path === '/api/v1/machine/firmware' && method === 'DELETE') return json({ operation: { state: 'idle' } }, 202);
     if (path === '/api/v1/machine/firmware/apply' && method === 'POST') {
       return route.fulfill({
@@ -959,6 +986,48 @@ export class MockGateway {
         contentType: 'application/x-ndjson',
         body: this.firmwareStream.join('\n') + '\n',
       });
+    }
+    if (/^\/api\/v1\/machine\/(cupWarmer|ledStrip|scaleCalibration)/.test(path)) {
+      if (!String(this.machineInfo.model).toLowerCase().includes('bengle')) {
+        return json({ error: 'Machine does not support this' }, 404);
+      }
+      if (path === '/api/v1/machine/cupWarmer') {
+        if (method === 'PUT') {
+          // A temperature alone also enables the mat; `enabled` alone leaves the setpoint (rest_v1.yml).
+          if (body.temperature !== undefined) this.cupWarmer.temperature = body.temperature as number;
+          this.cupWarmer.enabled = (body.enabled as boolean | undefined) ?? (body.temperature as number) > 0;
+          return json(null);
+        }
+        return json(this.cupWarmer);
+      }
+      if (path === '/api/v1/machine/cupWarmer/preheat') {
+        if (method === 'PUT') this.cupWarmerPreheat = { ...this.cupWarmerPreheat, ...body };
+        return method === 'PUT' ? json(null) : json(this.cupWarmerPreheat);
+      }
+      if (path === '/api/v1/machine/ledStrip') {
+        if (method === 'PUT') {
+          this.ledStrip = { ...this.ledStrip, frontStrip: body.frontStrip, backStrip: body.backStrip } as typeof this.ledStrip;
+          this.ledStrip.frontSwitch = this.ledStrip.frontStrip;
+          return json(this.ledStrip);
+        }
+        return json(this.ledStrip);
+      }
+      if (path === '/api/v1/machine/scaleCalibration') {
+        if (method === 'PUT') {
+          const next = { zero: 'zeroing', latch: 'calLatch', abort: 'idle' } as Record<string, string>;
+          this.scaleCalibration = {
+            ...this.scaleCalibration,
+            step: next[body.command as string],
+            secondsRemaining: body.command === 'abort' ? 0 : 8,
+          };
+          return json({ accepted: true, state: this.scaleCalibration }, 202);
+        }
+        return json(this.scaleCalibration);
+      }
+    }
+    if (path === '/api/v1/feedback' && method === 'POST') {
+      if (this.feedbackStatus !== 201) return json({ success: false, error: 'Decent account required' }, this.feedbackStatus);
+      return json({ success: true, issueUrl: 'https://github.com/decentespresso/decaid/issues/1' }, 201);
     }
     if (path.startsWith('/api/v1/webui/')) {
       const skinOf = (id: string | null) => this.skins.find((skin) => skin.id === id);

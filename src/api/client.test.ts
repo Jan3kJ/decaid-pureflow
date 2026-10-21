@@ -605,6 +605,79 @@ describe('plugins, presence, calibration, firmware (S2c)', () => {
   });
 });
 
+describe('firmware upload from a file, Bengle pages and feedback (U12)', () => {
+  it('posts the raw file and reads the same progress stream', async () => {
+    const lines = [
+      '{"status":"erasing","progress":0.0}',
+      '{"status":"uploading","progress":0.99}',
+      '{"status":"done","progress":1.0}',
+    ];
+    const { fetch, calls } = stubFetch({ body: lines.join('\n') + '\n' });
+    const sent: Array<{ url: string; method?: string; body?: unknown; headers?: unknown }> = [];
+    const client = new DecaidClient({
+      fetch: (url, init) => {
+        sent.push({ url, method: init?.method, body: init?.body, headers: init?.headers });
+        return fetch(url, init);
+      },
+    });
+    const file = new Blob([new Uint8Array([1, 2, 3])]);
+    const seen: string[] = [];
+    await client.uploadFirmware(file, (event) => seen.push(`${event.status} ${event.progress}`));
+    expect(seen).toEqual(['erasing 0', 'uploading 0.99', 'done 1']);
+    expect(calls).toHaveLength(1);
+    expect([sent[0].method, sent[0].url.replace(DEFAULT_BASE_URL, ''), sent[0].body, sent[0].headers]).toEqual([
+      'POST',
+      '/api/v1/machine/firmware',
+      file,
+      undefined,
+    ]);
+  });
+
+  it('fails on the stream error, on an unfinished stream and on the refusals', async () => {
+    const error = clientWith({ body: '{"status":"erasing","progress":0}\n{"status":"error","progress":-1,"error":"bad image"}' });
+    await expect(error.client.uploadFirmware(new Blob(['x']), () => {})).rejects.toThrow(/bad image/);
+    const cut = clientWith({ body: '{"status":"uploading","progress":0.4}\n' });
+    await expect(cut.client.uploadFirmware(new Blob(['x']), () => {})).rejects.toThrow(/before the update was confirmed/);
+    for (const status of [400, 409, 413, 503]) {
+      const refused = clientWith({ status, body: { error: 'no' } });
+      await expect(refused.client.uploadFirmware(new Blob(['x']), () => {})).rejects.toMatchObject({ status });
+    }
+  });
+
+  it('sends each Bengle request and the feedback to its path', async () => {
+    const { client, calls } = clientWith();
+    await client.getCupWarmer();
+    await client.setCupWarmer({ temperature: 60 });
+    await client.setCupWarmer({ enabled: false });
+    await client.getCupWarmerPreheat();
+    await client.setCupWarmerPreheat({ enabled: true, leadMinutes: 30 });
+    await client.getLedStrip();
+    const zone = { awake: 'ffff00000000', sleeping: '000000000000' };
+    await client.setLedStrip({ frontStrip: zone, backStrip: zone });
+    await client.getScaleCalibration();
+    await client.commandScaleCalibration('zero');
+    await client.commandScaleCalibration({ latch: 500.5 });
+    await client.commandScaleCalibration('abort');
+    await client.sendFeedback({ description: 'It works', type: 'other', includeLogs: false, includeSystemInfo: true });
+    expect(
+      calls.map((call) => `${call.method} ${call.url.replace(DEFAULT_BASE_URL, '')} ${JSON.stringify(call.body ?? null)}`),
+    ).toEqual([
+      'GET /api/v1/machine/cupWarmer null',
+      'PUT /api/v1/machine/cupWarmer {"temperature":60}',
+      'PUT /api/v1/machine/cupWarmer {"enabled":false}',
+      'GET /api/v1/machine/cupWarmer/preheat null',
+      'PUT /api/v1/machine/cupWarmer/preheat {"enabled":true,"leadMinutes":30}',
+      'GET /api/v1/machine/ledStrip null',
+      `PUT /api/v1/machine/ledStrip ${JSON.stringify({ frontStrip: zone, backStrip: zone })}`,
+      'GET /api/v1/machine/scaleCalibration null',
+      'PUT /api/v1/machine/scaleCalibration {"command":"zero"}',
+      'PUT /api/v1/machine/scaleCalibration {"command":"latch","weightGrams":500.5}',
+      'PUT /api/v1/machine/scaleCalibration {"command":"abort"}',
+      'POST /api/v1/feedback {"description":"It works","type":"other","includeLogs":false,"includeSystemInfo":true}',
+    ]);
+  });
+});
+
 describe('beans and grinders (U9)', () => {
   it('sends each request to its path, archived ones only when asked for', async () => {
     const { client, calls } = clientWith();
