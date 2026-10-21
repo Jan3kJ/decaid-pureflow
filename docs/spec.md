@@ -942,6 +942,15 @@ part is empty, so the ring covers no control. The small ring is the column's wid
 padding, fills with `ringOf`'s share as the large one does, shows the time ('6 / 10 s',
 `waterValues`) inside, and is one button that stops what runs (`Skin.stop`), named by its kind
 ('flush', 'hot water') for a screen reader; it goes when the run ends.
+Built in W2 (2026-10-21): the small ring is `SmallRing.svelte` (`src/shell/`), drawn once by
+`App.svelte` over the pages (not inside each page's column), at the column's bottom left, 3.4 rem
+across, above the dialogs' backdrops and under the stream's banner and the Asleep screen; which
+run it shows is `smallRingRun` in `water.ts` (none on home and on the hot water page while hot
+water pours), its time on two lines `smallTime` ('6' over '/ 10 s'). The shot history covers
+home's ring, so while it is open the small ring shows over the history's lower left, and the
+history's list keeps room under its last entry
+(small-ring-steam.png (screenshot in the team repository),
+small-ring-step-editor.png (screenshot in the team repository)).
 
 **Profile picker: graphs (item 1; W3).** In the picker's preview a step of 0 s is not drawn, a
 step's limit is drawn with its target, and the graph matches the profile: default-dark's flow does

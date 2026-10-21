@@ -117,7 +117,8 @@
     flex: 1;
     min-height: 0;
     margin: 0;
-    padding: 0 0 1rem;
+    /* room under the last entry for the small ring of hot water or flush (spec 3.10) */
+    padding: 0 0 5rem;
     list-style: none;
     overflow-y: auto;
     overscroll-behavior: contain;

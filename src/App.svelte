@@ -11,11 +11,13 @@
   import SettingsPage from './settings-page/SettingsPage.svelte';
   import type { LoadAnswer } from './shell/load-warning.svelte';
   import { Skin } from './shell/skin.svelte';
+  import SmallRing from './shell/SmallRing.svelte';
   import { backupTime } from './settings-backup';
   import Steam from './steam/Steam.svelte';
   import StepEditor from './steps/StepEditor.svelte';
   import { PAGES, commits, decide, isPage, neighbour, offset, onControl, type Page, type Point } from './shell/swipe';
   import UnsavedDialog from './shell/UnsavedDialog.svelte';
+  import { smallRingRun } from './shell/water';
 
   const skin = new Skin();
   onMount(() => skin.connect());
@@ -26,6 +28,8 @@
   // opens the history instead. Not over the shot's overlay: after the shot a touch there closes
   // it. A drag that starts on a control is the control's.
   const home = $derived(skin.screen === 'home');
+  // Hot water or flush on a screen without its large ring: one small ring in the left column (spec 3.10).
+  const smallRing = $derived(smallRingRun(skin.waterRun, skin.canStop, skin.screen, skin.historyOpen));
   /** The slide's length, in milliseconds; with reduced motion there is no slide. */
   const SLIDE_MS = 220;
   let main: HTMLElement;
@@ -184,6 +188,11 @@
 
   {#if home && skin.historyOpen}
     <History {skin} />
+  {/if}
+
+  <!-- Over the pages, the history and the dialogs, under the stream's banner and the sleep screen. -->
+  {#if smallRing}
+    <SmallRing {skin} run={smallRing} />
   {/if}
 </main>
 
