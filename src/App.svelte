@@ -13,6 +13,7 @@
   import { Skin } from './shell/skin.svelte';
   import SmallRing from './shell/SmallRing.svelte';
   import { backupTime } from './settings-backup';
+  import { applyDisplay } from './display';
   import Steam from './steam/Steam.svelte';
   import StepEditor from './steps/StepEditor.svelte';
   import {
@@ -33,6 +34,7 @@
 
   const skin = new Skin();
   onMount(() => skin.connect());
+  $effect(() => applyDisplay(skin.settings));
 
   // One horizontal gesture for the pages and the shot history (src/shell/swipe.ts, spec 3.8):
   // hot water, home and steam are one row, and a swipe slides to the neighbour, which is drawn

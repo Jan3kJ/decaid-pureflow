@@ -4,6 +4,7 @@
 // A copy in Decaid's KV store is its backup (settings-backup.ts, founder, 2026-10-14).
 import { DEFAULT_PROFILES } from './aflow/defaults';
 import { DOSE_MAX, MAX_FLOW_RANGE } from './aflow/validate';
+import { DISPLAY_SIZES, LINE_WIDTHS, type DisplayChoice } from './display';
 import { isOnTemperature } from './shell/steam-heater';
 
 export interface Settings {
@@ -18,6 +19,10 @@ export interface Settings {
   showGraphLegend: boolean;
   /** the shot overlay shows the per-phase values after a shot (spec 3.10); off, the graph takes their room */
   showShotValues: boolean;
+  /** Skin > Display: the size of everything, a factor on the type scale (`DISPLAY_SIZES`) */
+  displaySize: number;
+  /** Skin > Display: a factor on the width of every graph's lines (`LINE_WIDTHS`) */
+  lineWidth: number;
   /**
    * The editor's row of profiles to start from (founder, 2026-10-13): five slots, each the
    * title of an A-Flow 3.0 profile or null for an empty one. A title, not an id: the id is a
@@ -107,12 +112,17 @@ export const DEFAULT_SETTINGS: Settings = {
   firstStepWorkaround: false,
   showGraphLegend: true,
   showShotValues: true,
+  displaySize: 1,
+  lineWidth: 1,
   startProfiles: DEFAULT_START_PROFILES,
   maxFlow: 8,
   defaultDose: 18,
   steam: DEFAULT_STEAM_SETTINGS,
   hotWater: DEFAULT_HOT_WATER_SETTINGS,
 };
+
+/** A stored factor when it is one of the choices, else 1. */
+const choiceOf = (choices: readonly DisplayChoice[], value: number) => (choices.some((choice) => choice.value === value) ? value : 1);
 
 export const SETTINGS_KEY = 'pureflow.settings';
 
@@ -173,6 +183,8 @@ export function readSettings(stored: unknown): Settings {
     },
     hotWater: { ratios: readRatios(settings.hotWater.ratios) },
     startProfiles: readStartProfiles(values.startProfiles),
+    displaySize: choiceOf(DISPLAY_SIZES, settings.displaySize),
+    lineWidth: choiceOf(LINE_WIDTHS, settings.lineWidth),
   };
 }
 

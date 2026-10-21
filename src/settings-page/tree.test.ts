@@ -30,7 +30,15 @@ describe('the settings tree (research.md 20.3, 20.10 S2a)', () => {
     expect(names('bluetooth')).toEqual(['1. Machine', '2. Scale']);
     expect(names('machine')).toEqual(['USB', 'Machine Information']);
     expect(names('maintenance')).toEqual(['Clean', 'Machine Descaling', 'Transport Mode']);
-    expect(names('skin')).toEqual(['Steam', 'Hot water', 'Profile', 'Shot graph', 'Backup and version']);
+    expect(names('skin')).toEqual([
+      'Steam',
+      'Hot water',
+      'Profile',
+      'Shot graph',
+      'Display Size',
+      'Active Skin',
+      'Backup and version',
+    ]);
     expect(names('miscellaneous')).toEqual(['Decaid Settings', 'Brightness', 'Wake Lock', 'Presence Detection']);
     // Visualizer and Shot Uploader are plugin cards of Plugins (research.md 20.3).
     expect(names('extensions')).toEqual(['Plugins']);
@@ -40,14 +48,13 @@ describe('the settings tree (research.md 20.3, 20.10 S2a)', () => {
   it('leaves out what the port leaves out', () => {
     const all = SETTINGS_TREE.flatMap((category) => [category.name, ...category.subcategories.map((sub) => sub.name)]);
     for (const absent of [
-      // Streamline's own, Bengle only, the skin switch, the manual (research.md 20.11)
+      // Streamline's own, Bengle only, the manual (research.md 20.11)
       'Theme',
-      'Active Skin',
       'Language',
       'Load Cells',
       'Cup Warmer',
       'Lighting',
-      'Display Size',
+      'Temperature',
       'Screen Saver',
       'Keyboard Shortcuts',
       'Home Assistant',

@@ -169,12 +169,14 @@ test('settings: the defaults, typed values and both switches survive a reload', 
   const steps = page.getByTestId('setting-show-profile-steps');
   await expect(workaround).toHaveAttribute('aria-checked', 'false');
   await expect(steps).toHaveAttribute('aria-checked', 'true');
-  // The category Skin of the ported page (research.md 20.6): its five subcategories, nothing else.
+  // The category Skin of the ported page (research.md 20.6): its subcategories, nothing else.
   await expect(page.locator('[data-testid="screen-settings"] h2')).toHaveText([
     'Steam',
     'Hot water',
     'Profile',
     'Shot graph',
+    'Display Size',
+    'Active Skin',
     'Backup and version',
   ]);
   await expect(page.getByTestId('settings-start').locator('b')).toHaveText(['floral', 'light', 'medium', 'dark', '46mm']);
@@ -224,6 +226,8 @@ test('settings: the defaults, typed values and both switches survive a reload', 
       firstStepWorkaround: true,
       showGraphLegend: true,
       showShotValues: true,
+      displaySize: 1,
+      lineWidth: 1,
       startProfiles: [
         'A-Flow / default-floral',
         'A-Flow / default-light',

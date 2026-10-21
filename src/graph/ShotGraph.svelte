@@ -291,19 +291,20 @@
     stroke-linejoin: round;
   }
 
+  /* Skin > Display's line width is a factor on every curve's stroke (src/display.ts). */
   .line {
-    stroke-width: 0.2rem;
+    stroke-width: calc(0.2rem * var(--line-width, 1));
     stroke-linecap: round;
   }
 
   .target {
-    stroke-width: 0.09rem;
+    stroke-width: calc(0.09rem * var(--line-width, 1));
     stroke-dasharray: 0.4rem 0.3rem;
     opacity: 0.85;
   }
 
   .target.solid {
-    stroke-width: 0.2rem;
+    stroke-width: calc(0.2rem * var(--line-width, 1));
     stroke-dasharray: none;
     stroke-linecap: round;
     opacity: 1;
@@ -312,7 +313,7 @@
   /* A limit, not a target: dotted, thinner, muted. */
   .limit {
     fill: none;
-    stroke-width: 0.13rem;
+    stroke-width: calc(0.13rem * var(--line-width, 1));
     stroke-dasharray: 0.01rem 0.32rem;
     stroke-linecap: round;
     opacity: 0.55;

@@ -888,7 +888,11 @@ Quick Start Guide text) and Send Feedback (`POST /api/v1/feedback`), and 10's fi
 (`POST /api/v1/machine/firmware` with a file, NDJSON progress). **U11** builds the skin switch
 (the installed skins; switching after a confirm, since it leaves this skin) and the display
 options that apply to this skin; **U12** the Bengle pages (shown only on a Bengle), the manual,
-feedback and the firmware upload behind S2c's confirm. Feedback goes to Decent through Decaid,
+feedback and the firmware upload behind S2c's confirm. Built (U11, research.md 30): Skin > Display
+Size (Streamline's display size and chart line width, in the settings object) and Skin > Active
+Skin (the installed skins, the default first; after the confirm the default is set, Decaid's skin
+server started again and the port it serves on opened, not port 3000); the temperature unit and
+the screen saver are left out. Feedback goes to Decent through Decaid,
 an outside service that spec 6 asks the founder to approve; item 15 asks for it, and the default
 takes that as the approval (section 8). Talk to Decent (a Decent account) is not asked for and
 stays out.

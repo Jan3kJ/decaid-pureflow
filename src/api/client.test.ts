@@ -468,6 +468,36 @@ describe('skin server', () => {
     expect((await client.getWebUiServerStatus()).port).toBe(27906);
     expect(calls[0]).toMatchObject({ method: 'GET', url: 'http://localhost:8080/api/v1/webui/server/status' });
   });
+
+  it('lists the installed skins and reads the default one', async () => {
+    const skin = { id: 'streamline.js', name: 'Streamline.js', path: '/web-ui/streamline.js', version: '0.2.17', isBundled: true };
+    const { client, calls } = clientWith({ body: [skin] }, { body: skin });
+    expect(await client.listSkins()).toEqual([skin]);
+    expect((await client.getDefaultSkin()).id).toBe('streamline.js');
+    expect(calls.map((call) => [call.method, call.url])).toEqual([
+      ['GET', 'http://localhost:8080/api/v1/webui/skins'],
+      ['GET', 'http://localhost:8080/api/v1/webui/skins/default'],
+    ]);
+  });
+
+  it('sets the default skin, checks for updates, stops and starts the skin server', async () => {
+    const { client, calls } = clientWith(
+      { body: { success: true, skinId: 'insight' } },
+      { body: { message: 'Skin update check completed' } },
+      { body: { message: 'stopped' } },
+      { body: { message: 'started' } },
+    );
+    await client.setDefaultSkin('insight');
+    await client.updateSkins();
+    await client.stopWebUiServer();
+    await client.startWebUiServer();
+    expect(calls.map((call) => [call.method, call.url, call.body])).toEqual([
+      ['PUT', 'http://localhost:8080/api/v1/webui/skins/default', { skinId: 'insight' }],
+      ['POST', 'http://localhost:8080/api/v1/webui/skins/update', undefined],
+      ['POST', 'http://localhost:8080/api/v1/webui/server/stop', undefined],
+      ['POST', 'http://localhost:8080/api/v1/webui/server/start', undefined],
+    ]);
+  });
 });
 
 describe('errors', () => {

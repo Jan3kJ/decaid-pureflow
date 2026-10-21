@@ -504,6 +504,19 @@ export interface WebUiServerStatus {
   ip?: string | null;
 }
 
+/** `WebUISkin`: an installed skin, from `GET /api/v1/webui/skins`. */
+export interface WebUiSkin {
+  /** the manifest's id, or the folder's name */
+  id: string;
+  name: string;
+  path: string;
+  description?: string | null;
+  version?: string | null;
+  /** one of the skins Decaid brings along */
+  isBundled: boolean;
+  reaMetadata?: { sourceUrl?: string | null; commitHash?: string | null } | null;
+}
+
 // --- plugins, presence, calibration, firmware, Decaid's update (research.md 20.3, S2c) ---
 
 /** `PluginSettingSchema`: one setting a plugin's manifest declares. */

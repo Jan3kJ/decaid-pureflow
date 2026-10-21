@@ -44,6 +44,7 @@ import type {
   WakeSchedule,
   WakeScheduleInput,
   WebUiServerStatus,
+  WebUiSkin,
   WifiEndpoints,
   Workflow,
   WorkflowPatch,
@@ -571,6 +572,35 @@ export class DecaidClient {
   /** Where Decaid serves the skin. The port is not fixed: read it here. */
   getWebUiServerStatus(): Promise<WebUiServerStatus> {
     return this.request('GET', '/api/v1/webui/server/status');
+  }
+
+  /** Decaid's installed skins. */
+  async listSkins(): Promise<WebUiSkin[]> {
+    return (await this.request<WebUiSkin[] | undefined>('GET', '/api/v1/webui/skins')) ?? [];
+  }
+
+  /** The skin Decaid serves: the default one. */
+  getDefaultSkin(): Promise<WebUiSkin> {
+    return this.request('GET', '/api/v1/webui/skins/default');
+  }
+
+  /** Makes a skin the default; Decaid serves it after its skin server is started again. */
+  async setDefaultSkin(skinId: string): Promise<void> {
+    await this.request('PUT', '/api/v1/webui/skins/default', { skinId });
+  }
+
+  /** Decaid looks for newer versions of every skin at its source and installs them. */
+  async updateSkins(): Promise<void> {
+    await this.request('POST', '/api/v1/webui/skins/update');
+  }
+
+  async stopWebUiServer(): Promise<void> {
+    await this.request('POST', '/api/v1/webui/server/stop');
+  }
+
+  /** Serves the default skin. */
+  async startWebUiServer(): Promise<void> {
+    await this.request('POST', '/api/v1/webui/server/start');
   }
 
   // --- transport ---

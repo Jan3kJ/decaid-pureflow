@@ -37,9 +37,10 @@
   font-family: system-ui, sans-serif;
   /*
    * 16 px on the 1280 x 800 design target; every size is in rem and follows the viewport, as
-   * src/viewport.ts stores it: not shrunk by the keyboard (spec 3.9).
+   * src/viewport.ts stores it: not shrunk by the keyboard (spec 3.9). Skin > Display's size is
+   * a factor on it (src/display.ts).
    */
-  font-size: min(calc(var(--app-h, 100vh) * 0.02), calc(var(--app-w, 100vw) * 0.0125));
+  font-size: calc(min(calc(var(--app-h, 100vh) * 0.02), calc(var(--app-w, 100vw) * 0.0125)) * var(--display-size, 1));
 }
 
 html,
@@ -68,5 +69,5 @@ body {
 
 /* Portrait by the stored size (src/viewport.ts), not by a viewport the keyboard shrank. */
 :root[data-portrait] {
-  font-size: min(calc(var(--app-w) * 0.02), calc(var(--app-h) * 0.0125));
+  font-size: calc(min(calc(var(--app-w) * 0.02), calc(var(--app-h) * 0.0125)) * var(--display-size, 1));
 }

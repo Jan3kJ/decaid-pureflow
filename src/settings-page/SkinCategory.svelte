@@ -23,6 +23,8 @@
   import { errorMessage } from '../error-message';
   import { importQuestion, importReport, planImport, runImport, type ImportPlan } from '../editor/import';
   import Confirm from './Confirm.svelte';
+  import Skins from './Skins.svelte';
+  import { DISPLAY_SIZES, LINE_WIDTHS, type DisplayChoice } from '../display';
 
   interface Props {
     skin: Skin;
@@ -67,6 +69,24 @@
       id: 'show-shot-values',
       title: 'shot values',
       hint: 'After a shot its overlay shows the values of preinfusion, extraction and the whole shot under the graph.',
+    },
+  ];
+
+  /** Skin > Display Size: Streamline's two choices, each a factor of the settings object */
+  const DISPLAY: { key: 'displaySize' | 'lineWidth'; id: string; title: string; hint: string; choices: DisplayChoice[] }[] = [
+    {
+      key: 'displaySize',
+      id: 'display-size',
+      title: 'display size',
+      hint: 'Every text, button and graph of the skin, larger or smaller. Medium fits the screen as designed.',
+      choices: DISPLAY_SIZES,
+    },
+    {
+      key: 'lineWidth',
+      id: 'line-width',
+      title: 'chart line width',
+      hint: 'The curves of the shot graph, the profile previews and the A-Flow editor.',
+      choices: LINE_WIDTHS,
     },
   ];
 
@@ -287,6 +307,35 @@
   {#each GRAPH_SWITCHES as item (item.key)}
     {@render lever(item)}
   {/each}
+</section>
+
+<section id="sub-skin-display" data-testid="settings-display">
+  <h2>{SUB['skin-display'].name}</h2>
+  <p class="hint">{SUB['skin-display'].hint}</p>
+  {#each DISPLAY as item (item.key)}
+    <div class="row">
+      <span class="about">
+        <strong>{item.title}</strong>
+        <small>{item.hint}</small>
+      </span>
+      <div class="chips" data-testid="setting-{item.id}">
+        {#each item.choices as choice (choice.value)}
+          <button
+            class="chip"
+            aria-pressed={settings[item.key] === choice.value}
+            data-testid="setting-{item.id}-{choice.value}"
+            onclick={() => skin.setSettings({ [item.key]: choice.value })}>{choice.label}</button
+          >
+        {/each}
+      </div>
+    </div>
+  {/each}
+</section>
+
+<section id="sub-skin-active" data-testid="settings-skins">
+  <h2>{SUB['skin-active'].name}</h2>
+  <p class="hint">{SUB['skin-active'].hint}</p>
+  <Skins {skin} />
 </section>
 
 <!-- The backup in Decaid's KV store (founder, 2026-10-14), and the skin's name and version. -->
@@ -623,6 +672,27 @@
   }
 
   .choice[aria-pressed='true'] {
+    background: var(--fg);
+    border-color: var(--fg);
+    color: var(--bg);
+    font-weight: 600;
+  }
+
+  .chips {
+    flex: none;
+    display: flex;
+    gap: 0.4rem;
+  }
+
+  .chip {
+    min-height: 3rem;
+    padding: 0 0.9rem;
+    background: var(--raised);
+    border: 1px solid var(--line);
+    border-radius: 1.5rem;
+  }
+
+  .chip[aria-pressed='true'] {
     background: var(--fg);
     border-color: var(--fg);
     color: var(--bg);

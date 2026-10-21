@@ -3589,3 +3589,46 @@ The rig served Streamline 0.2.17 (unchanged since 29.1).
   list read twice), `e2e-rig/history.spec.ts` (two beans of the test's own with a bag each, a
   shot with each, the filter by one shows one entry; shots, bags, beans and the context put
   back and checked). Full rig suite 46 of 46.
+
+## 30. Skin switch and display options (U11, 2026-10-21)
+
+Ported from Streamline **0.2.17**, the version the rig served at the start
+(`GET /api/v1/webui/skins/default`: `0.2.17`, `reaMetadata.commitHash` `v0.2.17`); the clone
+`../streamline-js` was read at that tag. Spec 3.9 item 15, roadmap U11.
+
+- **Where.** Two subcategories of 6. Skin, the skin's own category (20.6), after Shot graph:
+  **Display Size** and **Active Skin** (Streamline's names). Streamline keeps Display Size under
+  9. Miscellaneous; here it is the skin's own setting, so it sits with the others.
+- **Display Size** (`src/display.ts`, Streamline's `UI_ZOOM_MAP` and `CHART_LINE_WIDTH_MAP`):
+  display size Small 0.85, Medium 1, Large 1.15, Extra Large 1.3, a factor on the root font
+  (`--display-size` in `app.css`), so every size in rem follows; chart line width Thin 0.6,
+  Normal 1, Thick 1.5, Extra Thick 2, a factor (`--line-width`) on the curves of `ShotGraph`
+  (home, the overlay, the history, the picker's and the step editor's previews) and of the
+  A-Flow editor's graph. Both are in the settings object (`displaySize`, `lineWidth`), so the
+  KV backup carries them; a stored factor that is no choice reads as 1. Home still fits
+  1280 x 800 at Extra Large; Streamline lets its page scroll when zoomed, this skin does not
+  (spec 3.1), so a page with more content may be cut at Large and above.
+- **Left out of Streamline's display options:** Temperature (°C / °F) would have to convert
+  every temperature the skin shows and every one it is typed in (the number pads, the editor,
+  steam, the settings fields), not one display option; Screen Saver is Streamline's own (the
+  skin has its Asleep screen, W1); Keyboard Shortcuts and Home Assistant do not apply.
+- **Active Skin** (`Skins.svelte`, `skins.ts`): `GET /api/v1/webui/skins` with the default
+  (`GET .../default`) first and marked, the others by name, each with version and Bundled /
+  Installed; Streamline's 'Update available' badge asks GitHub's API for each skin's latest
+  release, an outside service, and is left out. A tap on another skin asks (Confirm) and then
+  does what Streamline's `setActiveSkin` does: `PUT /api/v1/webui/skins/default`, a read of the
+  default to check it, `POST /api/v1/webui/server/stop` and `.../start` (a new default is served
+  only after a restart, section 15), then `GET /api/v1/webui/server/status` every 500 ms
+  for up to 20 s until it serves. **The page then opens `http://<host>:<port>/` with the port
+  the status names**; Streamline opens port 3000, Decaid's redirector to the served port, which
+  this skin does not use (spec 6). Whether Decaid's WebView on the tablet lets the skin open
+  the served port directly is not seen (the rig has no WebView to drive); if it does not, the
+  page says after 6 s that the default is set but the screen did not switch. 'Check for skin
+  updates' is `POST /api/v1/webui/skins/update` and a read of the list.
+- **Rig** (`e2e-rig/settings-skin.spec.ts`): the list matches the rig's seven skins with
+  `streamline.js` first; the switch to `insight` set it as default and Decaid served it on
+  another port, which the page opened (the other skin's page is answered by the test, so it
+  never ran). The test then set `streamline.js` back, stopped and started the server and
+  checked the default, the served path (port 27906 as before), Decaid's settings, the
+  workflow's profile and the KV backup. Full rig suite 47 of 47; afterwards 73 profiles, one
+  shot, the `pureflow` and `decaid-skin` namespaces empty, steam 150 °C, Streamline the default.

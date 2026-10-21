@@ -422,6 +422,17 @@ export class MockGateway {
   private scheduleCount = 0;
   /** `GET /api/v1/machine/calibration/{target}`: the stored value of each sensor */
   calibration: Record<string, number> = { flow: 1.0, pressure: 1.0, temperature: 0.0 };
+  /** `GET /api/v1/webui/skins`, three of the rig's (2026-10-21); the port Decaid serves each on */
+  skins: { id: string; name: string; path: string; version: string; isBundled: boolean; port: number }[] = [
+    { id: 'streamline.js', name: 'Streamline.js', path: '/web-ui/streamline.js', version: '0.2.17', isBundled: true, port: 27906 },
+    { id: 'insight', name: 'Insight', path: '/web-ui/insight', version: '0.2.7', isBundled: true, port: 27911 },
+    { id: 'NSX-skin', name: 'NSX', path: '/web-ui/NSX-skin', version: 'v0.4.3', isBundled: true, port: 27912 },
+  ];
+  defaultSkin = 'streamline.js';
+  /** the skin server serves the default skin from its start on */
+  serving: string | null = 'streamline.js';
+  /** what `POST /api/v1/webui/skins/update` installs: a skin's new version */
+  skinUpdates: Record<string, string> = {};
   /** `GET /api/v1/machine/firmware`, as on the rig (2026-10-18) */
   firmware: Json = {
     artifacts: [
@@ -948,6 +959,33 @@ export class MockGateway {
         contentType: 'application/x-ndjson',
         body: this.firmwareStream.join('\n') + '\n',
       });
+    }
+    if (path.startsWith('/api/v1/webui/')) {
+      const skinOf = (id: string | null) => this.skins.find((skin) => skin.id === id);
+      const shown = (skin: (typeof this.skins)[number]) => ({ ...skin, port: undefined });
+      if (path === '/api/v1/webui/skins' && method === 'GET') return json(this.skins.map(shown));
+      if (path === '/api/v1/webui/skins/default' && method === 'GET') return json(shown(skinOf(this.defaultSkin)!));
+      if (path === '/api/v1/webui/skins/default' && method === 'PUT') {
+        if (!skinOf(body.skinId as string)) return json({ error: 'Skin not found' }, 404);
+        this.defaultSkin = body.skinId as string;
+        return json({ success: true, message: 'Default skin updated', skinId: this.defaultSkin });
+      }
+      if (path === '/api/v1/webui/skins/update' && method === 'POST') {
+        for (const skin of this.skins) skin.version = this.skinUpdates[skin.id] ?? skin.version;
+        return json({ message: 'Skin update check completed' });
+      }
+      if (path === '/api/v1/webui/server/stop' && method === 'POST') {
+        this.serving = null;
+        return json({ message: 'stopped' });
+      }
+      if (path === '/api/v1/webui/server/start' && method === 'POST') {
+        this.serving = this.defaultSkin;
+        return json({ message: 'started', path: skinOf(this.serving)!.path });
+      }
+      if (path === '/api/v1/webui/server/status' && method === 'GET') {
+        const served = skinOf(this.serving);
+        return json({ serving: !!served, path: served?.path ?? null, port: served?.port ?? null, ip: 'localhost' });
+      }
     }
     if (path === '/api/v1/update' && method === 'GET') return json(this.appUpdate);
     if (path.startsWith('/api/v1/machine/settings') && !this.machineConnected) return noMachine();

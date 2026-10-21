@@ -32,7 +32,7 @@ import type { ProcedureId } from './maintenance';
 export type Action = 'fast-start' | 'reset' | 'dashboard';
 
 /** The skin's own settings (20.6), drawn by `SkinCategory.svelte`. */
-export type SkinPart = 'steam' | 'hot-water' | 'profile' | 'graph' | 'backup';
+export type SkinPart = 'steam' | 'hot-water' | 'profile' | 'graph' | 'display' | 'skins' | 'backup';
 
 /**
  * A part of a subcategory that is not a list of fields: the device lists (`Devices.svelte`), a
@@ -177,6 +177,18 @@ export const SETTINGS_TREE: Category[] = [
       },
       { id: 'skin-profile', name: 'Profile', content: { kind: 'skin', part: 'profile' } },
       { id: 'skin-graph', name: 'Shot graph', content: { kind: 'skin', part: 'graph' } },
+      {
+        id: 'skin-display',
+        name: 'Display Size',
+        hint: 'The size of everything on the screen, and the width of the curves of every graph.',
+        content: { kind: 'skin', part: 'display' },
+      },
+      {
+        id: 'skin-active',
+        name: 'Active Skin',
+        hint: "Decaid's installed skins. The default one is what Decaid opens; a tap on another makes it the default and opens it.",
+        content: { kind: 'skin', part: 'skins' },
+      },
       { id: 'skin-backup', name: 'Backup and version', content: { kind: 'skin', part: 'backup' } },
     ],
   },

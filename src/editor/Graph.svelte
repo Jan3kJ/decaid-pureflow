@@ -265,9 +265,10 @@
     stroke-linecap: round;
   }
 
+  /* Skin > Display's line width is a factor on every curve's stroke (src/display.ts). */
   .line {
     fill: none;
-    stroke-width: 0.24rem;
+    stroke-width: calc(0.24rem * var(--line-width, 1));
     stroke-linejoin: round;
     stroke-linecap: round;
   }
@@ -284,7 +285,7 @@
 
   /* The pour's pressure limiter, where it is not the target pressure. */
   .line.limit {
-    stroke-width: 0.12rem;
+    stroke-width: calc(0.12rem * var(--line-width, 1));
     stroke-dasharray: 0.5rem 0.5rem;
     opacity: 0.7;
   }

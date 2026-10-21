@@ -51,6 +51,8 @@ describe('settings', () => {
       firstStepWorkaround: true,
       showGraphLegend: false,
       showShotValues: false,
+      displaySize: 1.15,
+      lineWidth: 2,
       startProfiles: ['A-Flow / mine', null, 'A-Flow / default-dark', null, null],
       maxFlow: 12,
       defaultDose: 17.5,
@@ -85,6 +87,12 @@ describe('settings', () => {
     expect(loadSettings(fakeStore()).showShotValues).toBe(true);
     expect(loadSettings(fakeStore('{"showShotValues":false}')).showShotValues).toBe(false);
     expect(loadSettings(fakeStore('{"showShotValues":"no"}')).showShotValues).toBe(true);
+  });
+
+  it('has the display at medium size and normal lines; a factor that is not a choice is ignored', () => {
+    expect(loadSettings(fakeStore())).toMatchObject({ displaySize: 1, lineWidth: 1 });
+    expect(loadSettings(fakeStore('{"displaySize":0.85,"lineWidth":0.6}'))).toMatchObject({ displaySize: 0.85, lineWidth: 0.6 });
+    expect(loadSettings(fakeStore('{"displaySize":3,"lineWidth":"thick"}'))).toMatchObject({ displaySize: 1, lineWidth: 1 });
   });
 
   it('has the steam defaults of the founder', () => {
