@@ -87,6 +87,16 @@ test('a shot opens the overlay on home, which stays after it with the per-phase 
   const viewport = page.viewportSize()!;
   const table = (await page.getByTestId('shot-phases').boundingBox())!;
   expect(table.y + table.height).toBeLessThanOrEqual(viewport.height);
+  // The table's frame has the graph's rounded corners (acceptance 62).
+  const corners = (testid: string) =>
+    page.getByTestId(testid).evaluate((element) => {
+      const style = getComputedStyle(element);
+      return { radius: style.borderTopLeftRadius, collapse: style.borderCollapse };
+    });
+  const frame = await corners('shot-phases');
+  expect(frame.collapse).toBe('separate');
+  expect(parseFloat(frame.radius)).toBeGreaterThan(0);
+  expect(frame.radius).toBe(await page.getByTestId('shot-plot').evaluate((element) => getComputedStyle(element).borderTopLeftRadius));
   await page.screenshot({ path: 'docs/product/shot-overlay-after.png' });
 
   // A tap anywhere, here on the menu's place, closes it and does nothing else: home shows the shot.
@@ -122,5 +132,37 @@ test('the next shot replaces the overlay, open or closed', async ({ page }) => {
   await expect(page.getByTestId('screen-home')).toBeVisible();
   await expect(page.getByTestId('shot-overlay')).toBeVisible();
   await expect(page.getByTestId('last-shot')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test('with the setting shot values off, the overlay shows no per-phase table and the graph takes its room', async ({ page }) => {
+  const gateway = await mockGateway(page);
+  await home(page);
+  await page.getByTestId('menu').click();
+  await page.getByTestId('open-settings').click();
+  await page.getByTestId('settings-category-skin').click();
+  const lever = page.getByTestId('setting-show-shot-values');
+  await expect(lever).toHaveAttribute('aria-checked', 'true');
+  await page.screenshot({ path: 'docs/product/settings-shot-values.png' });
+  await lever.click();
+  await expect(lever).toHaveAttribute('aria-checked', 'false');
+  await page.getByTestId('nav-home').click();
+  await expect(page.getByTestId('screen-home')).toBeVisible();
+
+  await gateway.replay(page, 0, 1);
+  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('shot-close-hint')).toBeVisible();
+  await page.waitForTimeout(500);
+  await expect(page.getByTestId('shot-phases')).toHaveCount(0);
+  // The live values on the right stay.
+  for (const id of ['shot-timer', 'shot-weight', 'shot-pressure', 'shot-flow', 'shot-temperature']) {
+    await expect(page.getByTestId(id)).toBeVisible();
+  }
+  expect(parseFloat((await page.getByTestId('shot-timer').textContent())!)).toBeGreaterThan(25);
+  // The graph reaches down to the overlay's bottom.
+  const overlay = (await page.getByTestId('shot-overlay').boundingBox())!;
+  const plot = (await page.getByTestId('shot-plot').boundingBox())!;
+  expect(overlay.y + overlay.height - (plot.y + plot.height)).toBeLessThan(2);
+  await page.screenshot({ path: 'docs/product/shot-overlay-no-values.png' });
   expect(errors).toEqual([]);
 });

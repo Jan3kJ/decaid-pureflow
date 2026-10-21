@@ -1038,6 +1038,15 @@ by default (the values shown) and backed up as every setting; off, the overlay d
 table after the shot and the graph takes its height. The live numbers on the right (time, weight,
 pressure, flow, temperature) are not the table and stay.
 
+*Built (W5):* one CSS variable `--radius` (0.9rem, `src/app.css`) gives the corners of the graph's
+frame on home and in the overlay, of the per-phase table and of the overlay's stop button and
+hint; the table has `border-collapse: separate` with `border-spacing: 0`
+(shot-overlay-after.png (screenshot in the team repository)). The switch 'shot values'
+(`setting-show-shot-values`) is the second of the subcategory Graph, under 'legend'
+(settings-shot-values.png (screenshot in the team repository)); off, the overlay's grid has no
+table row, so the graph reaches its bottom (shot-overlay-no-values.png (screenshot in the team repository)).
+The other frames of the skin keep their own numbers.
+
 **Profile editor: swipe back to home (item 5; W6).** A swipe from left to right in the profile
 editor returns to home, as home's swipes move between pages (founder, 2026-10-20). Today the one
 gesture is `App.svelte`'s pointer handling with `src/shell/swipe.ts` (T6): `decide` returns

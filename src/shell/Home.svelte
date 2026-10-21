@@ -367,7 +367,7 @@
     flex: 1;
     min-height: 0;
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
     background: var(--panel);
   }
 

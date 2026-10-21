@@ -24,8 +24,8 @@
   const step = $derived(brewing && snapshot ? profile?.steps[snapshot.profileFrame]?.name : undefined);
   // In espresso before water moves: the graph and the timer wait (shot.ts).
   const heating = $derived(brewing && series.t.length === 0);
-  // Streamline's table of the shot (phases.ts), once it is over.
-  const table = $derived(ended && shot ? phaseTable(shot.samples, shot.finalWeight) : null);
+  // Streamline's table of the shot (phases.ts), once it is over and the setting shows it.
+  const table = $derived(ended && shot && skin.settings.showShotValues ? phaseTable(shot.samples, shot.finalWeight) : null);
   const rows = $derived(
     table
       ? ([
@@ -41,7 +41,7 @@
   const cell = (row: Partial<PhaseRow> | null, key: keyof PhaseRow) => row?.[key] ?? '';
 </script>
 
-<div class="overlay" class:ended data-testid="shot-overlay">
+<div class="overlay" class:ended class:values={table !== null} data-testid="shot-overlay">
   <header>
     <strong data-testid="espresso-profile">{profile?.title ?? '–'}</strong>
     <span data-testid="espresso-step">
@@ -49,7 +49,7 @@
     </span>
   </header>
 
-  <div class="plot">
+  <div class="plot" data-testid="shot-plot">
     <ShotGraph {...series} fit={ended} minSeconds={skin.expectedSeconds} legend={skin.settings.showGraphLegend} label="live shot" />
   </div>
 
@@ -124,9 +124,15 @@
     min-height: 0;
     display: grid;
     grid-template-columns: minmax(0, 1fr) 17rem;
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas: 'header side' 'plot side';
+    gap: 0.6rem 1.2rem;
+  }
+
+  /* The table's row only when it is drawn: without it the graph takes its height and its gap. */
+  .overlay.values {
     grid-template-rows: auto minmax(0, 1fr) auto;
     grid-template-areas: 'header side' 'plot side' 'table side';
-    gap: 0.6rem 1.2rem;
   }
 
   header {
@@ -156,17 +162,19 @@
     grid-area: plot;
     min-height: 0;
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
     background: var(--panel);
   }
 
   table {
     grid-area: table;
-    border-collapse: collapse;
+    /* `collapse` would drop the frame's rounded corners */
+    border-collapse: separate;
+    border-spacing: 0;
     font-size: var(--text-value);
     font-variant-numeric: tabular-nums;
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
     background: var(--panel);
   }
 
@@ -297,7 +305,7 @@
     font-size: var(--text-body);
     text-align: center;
     border: 1px dashed var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
   }
 
   button {
@@ -309,7 +317,7 @@
     color: var(--bg);
     background: var(--temperature);
     border: 1px solid var(--temperature);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
     touch-action: manipulation;
     user-select: none;
   }

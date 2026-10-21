@@ -16,6 +16,8 @@ export interface Settings {
   firstStepWorkaround: boolean;
   /** the shot graph shows its legend under it: on home, on the espresso screen and for a shot of the history */
   showGraphLegend: boolean;
+  /** the shot overlay shows the per-phase values after a shot (spec 3.10); off, the graph takes their room */
+  showShotValues: boolean;
   /**
    * The editor's row of profiles to start from (founder, 2026-10-13): five slots, each the
    * title of an A-Flow 3.0 profile or null for an empty one. A title, not an id: the id is a
@@ -104,6 +106,7 @@ export const DEFAULT_SETTINGS: Settings = {
   showProfileSteps: true,
   firstStepWorkaround: false,
   showGraphLegend: true,
+  showShotValues: true,
   startProfiles: DEFAULT_START_PROFILES,
   maxFlow: 8,
   defaultDose: 18,

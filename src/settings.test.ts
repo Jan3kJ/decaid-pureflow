@@ -50,6 +50,7 @@ describe('settings', () => {
       showProfileSteps: false,
       firstStepWorkaround: true,
       showGraphLegend: false,
+      showShotValues: false,
       startProfiles: ['A-Flow / mine', null, 'A-Flow / default-dark', null, null],
       maxFlow: 12,
       defaultDose: 17.5,
@@ -77,6 +78,13 @@ describe('settings', () => {
   it('shows the graph legend by default', () => {
     expect(loadSettings(fakeStore()).showGraphLegend).toBe(true);
     expect(loadSettings(fakeStore('{"showGraphLegend":false}')).showGraphLegend).toBe(false);
+  });
+
+  it('shows the shot values in the overlay by default', () => {
+    expect(DEFAULT_SETTINGS.showShotValues).toBe(true);
+    expect(loadSettings(fakeStore()).showShotValues).toBe(true);
+    expect(loadSettings(fakeStore('{"showShotValues":false}')).showShotValues).toBe(false);
+    expect(loadSettings(fakeStore('{"showShotValues":"no"}')).showShotValues).toBe(true);
   });
 
   it('has the steam defaults of the founder', () => {

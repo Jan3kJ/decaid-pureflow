@@ -223,6 +223,7 @@ test('settings: the defaults, typed values and both switches survive a reload', 
       showProfileSteps: false,
       firstStepWorkaround: true,
       showGraphLegend: true,
+      showShotValues: true,
       startProfiles: [
         'A-Flow / default-floral',
         'A-Flow / default-light',

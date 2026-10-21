@@ -88,6 +88,13 @@ describe('the backup of the settings', () => {
     });
   });
 
+  it('carries the setting of the shot values, and an older backup without it shows them', () => {
+    const off = { ...DEFAULT_SETTINGS, showShotValues: false };
+    expect(backupOf(off, '0.4.0', NOW).settings.showShotValues).toBe(false);
+    expect(readBackup(backupOf(off, '0.4.0', NOW))?.settings.showShotValues).toBe(false);
+    expect(readBackup({ settings: { showGraphLegend: false } })?.settings.showShotValues).toBe(true);
+  });
+
   it('shows its time in local time', () => {
     const local = new Date(2026, 9, 15, 6, 8);
     expect(backupTime(local.toISOString())).toBe('2026-10-15 06:08');

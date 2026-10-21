@@ -34,7 +34,12 @@
   // the one settings object (src/settings.ts) and so in its KV backup. Moved from the settings
   // page of D8c with its test ids.
   const SUB = Object.fromEntries(SETTINGS_TREE.find((category) => category.id === 'skin')!.subcategories.map((sub) => [sub.id, sub]));
-  type Switch = { key: 'firstStepWorkaround' | 'showProfileSteps' | 'showGraphLegend'; id: string; title: string; hint: string };
+  type Switch = {
+    key: 'firstStepWorkaround' | 'showProfileSteps' | 'showGraphLegend' | 'showShotValues';
+    id: string;
+    title: string;
+    hint: string;
+  };
   const SWITCHES: Switch[] = [
     {
       key: 'firstStepWorkaround',
@@ -56,6 +61,12 @@
       id: 'show-graph-legend',
       title: 'legend',
       hint: 'The shot graph names its curves under it, and what a dashed line is.',
+    },
+    {
+      key: 'showShotValues',
+      id: 'show-shot-values',
+      title: 'shot values',
+      hint: 'After a shot its overlay shows the values of preinfusion, extraction and the whole shot under the graph.',
     },
   ];
 
