@@ -1089,6 +1089,84 @@ the finger lets go. The step editor's preview only shows, so a swipe may start o
 backdrops of the name dialog ('save as') and of the step editor's delete question are marked
 `data-no-swipe`, so a swipe there neither leaves nor answers.
 
+### 3.11 Founder's review of 2026-10-21
+
+From the founder's look at home in 0.4.0 (home_screen_v0.4.0.png (screenshot in the team repository)),
+2026-10-21; planned only, nothing of it is built. Where an item changes something earlier
+sections decided, it says so and wins; that paragraph stays as history. The founder's points:
+the header of home is too full (the scale's text is cut off in the screenshot), home and the
+shot overlay both show a big graph of an espresso shot, and with swipe as the way between
+pages the tabs for steam, hot water and the history are not needed. The founder's answers to
+the first proposal: **the state line stays as it is**; the profile picker and the bean picker
+move to the right column and **only the menu stays in the header**; and the pages' titles move
+to the right so that the state line is the same on all three pages.
+
+**Home and the shot overlay become one screen (X1).** The overlay of T2 goes: home is the shot
+screen. Home is a grid of the graph on the left and a right column of a fixed width (the
+17 rem of the overlay's `aside`), so nothing changes size when a shot starts. Today
+`Home.svelte` shows `ShotOverlay.svelte` over the graph area while `skin.shotOpen`, else a
+`section.last` with the recalled entry's graph, the last shot's graph (each with a 'dismiss'
+chip) or the empty graph, and the overlay's own grid has the same two columns. Default: one
+graph and one column, in three states.
+
+| State | Graph | Right column |
+|---|---|---|
+| Idle | the finished shot until the next one starts; else the recalled history entry's last shot; else the empty graph with the expected time axis (`skin.expectedSeconds`; the profile's curve is not drawn) | the **profile and bean buttons** at the top, then the shot's time and weight, in the places of the live ones, and its values; before any shot, the profile's target yield (the overlay's 'stops at' text) and '–' |
+| Shot running | the live curves, `fit` off as now | **no buttons**; time, weight, pressure, flow, temperature live, and **stop** at the bottom, the overlay's |
+| After the shot | the shot, `fit` | as idle: the buttons are back and the stop button's place is empty; the table of phases is under the graph as the overlay draws it (setting `showShotValues`, W5) |
+
+The finished shot **stays on home until the next one starts**: no 'dismiss' chip, no 'tap anywhere
+to close' (`shot-close-hint`, the `catch` layer of `ShotOverlay.svelte`), and `Skin.shotOpen`,
+`closeShot` and `dismissShot` go with them; `followMachine` and the espresso screen of
+`src/shell/nav.ts` are unchanged (the overlay never was a screen). A recalled history entry
+keeps its 'dismiss' chip (it is not the machine's last run) and its line 'last shot
+with profile, bean, grinder', now the caption over the graph; the caption of a running shot is
+the overlay's step line ('heating', 'Step 6'), of a finished one 'shot finished' with the time
+and weight. The profile's title is no longer a heading over the graph: it is the profile button
+below. The per-phase table appears when the shot ends and goes when the next starts, so the
+graph's height changes then, as the overlay's did; the graph's width never changes. Hot water
+and flush are unchanged: **Water** replaces the graph and the column, as 3.6 says.
+
+**Profile and bean pick in the right column (X2), idle only (founder, 2026-10-21).** The profile button (the name, opening the
+profile picker, with the pen that opens the editor) and the bean button (the bean, the grinder
+setting, opening the pick of 3.9 item 19) leave the header and sit at the top of the right
+column, one under the other, each as wide as the column, **only while the machine is not
+running a shot** (idle, heating and after a shot): while a shot runs they are not drawn, and
+the room goes to the stop button and the live values, so the column does not need to shrink
+anything. A profile or bean cannot be changed during a shot, so nothing is lost. The name and the bean are cut with an
+ellipsis, not wrapped, so the column stays the same. The test ids `open-profiles`,
+`profile-name`, `open-editor`, `open-pick`, `next-bean` and `next-setting` stay. **The header of
+home holds the state line and the menu button**, nothing else; the state line now has the width
+the profile and the bean took, so its texts are not cut. Below them the column holds the
+values and the stop button as the table says. The column's height at 1280 x 800 is checked on
+the tablet: idle it holds two buttons of 3.5 rem, two big numbers and three small rows; during
+a shot the two buttons' room goes to the overlay's 7 rem stop button, which keeps its size.
+
+**One header on home, steam and hot water (X3).** The state line starts the header on all
+three pages, in the same place with the same values (home and steam differ only in which
+temperature `heat` compares for 'Heating', T3). The page's title goes to the right end of the
+header: steam and hot water show **Steam** and **Hot water** where home has the menu button, so
+the right end is the page's own mark and the state line does not move between pages. Today
+`Steam.svelte` and `HotWater.svelte` start their header with the title in a `strong`, before
+`StateLine`. The steam page's 'steaming / last steam 12 s' stays beside the state line, left of
+the title (3.7: the steam's time, top right). The menu stays on home only. Home has no title.
+
+**Swipe only: the tabs go (X4).** The edge tabs of home (history on the left, steam and hot
+water on the right, T3 and R5) are removed, with the narrow strip each took, so home uses the
+full width. This reverses T6's 'the edge tabs stay' and 3.1's tab for the history and 3.7's
+split steam tab. The swipes are T6's, unchanged: left on home opens steam, right outside the
+left fifth opens hot water, a swipe that starts in the left fifth (`SWIPE_EDGE`) opens the
+history, and on the other two pages a swipe back goes home. Since a swipe shows nothing by
+itself, two small hints are added. Default: **three page dots** (hot water, home, steam) in the
+bottom padding of the three pages, the current one bright, each a finger-sized target that
+moves to its page with the same slide (`go`); and **a handle for the history**, a thin bar at
+the left edge of home, vertically centred, that opens the history on a tap as the tab did.
+The back arrow of the other screens stays. The home menu's `.menu` offset and the tests that
+tapped `open-steam`, `open-hot-water` and `nav-history` change; swiping becomes the way to them
+in the tests (`e2e/swipe.spec.ts` already has the gestures).
+
+**Version.** These changes go out in the next hand-over as a minor bump, 0.5.0 (H4).
+
 ## 4. Technical approach
 
 ### 4.1 What a Decaid skin is
@@ -1404,6 +1482,26 @@ Where an item here and one of 27-55 disagree, the item here wins (3.10 overrides
     home's swipes move between pages, and the edited values are on the machine afterwards.
 66. **Hand-over (founder).** The 0.4.0 ZIP carries 3.10 with 3.9; the checks of
     [install.md](install.md) for items 56-65 are asked with item 55's.
+67. **One home (test).** A shot starts on home without any overlay: the graph's frame keeps its
+    width, the right column shows time, weight, pressure, flow and temperature and **stop**; after
+    the shot the graph stays with the phase table and the column's values, the stop button gone,
+    and no 'dismiss' or 'tap to close' is shown; the next shot replaces it; a recalled history
+    entry shows its caption and 'dismiss'; hot water and flush still show the water view.
+68. **Pickers in the column (test).** Home's header holds the state line and the menu button only;
+    the profile button (with its pen) and the bean button are at the top of the right column while
+    idle and after a shot, and open the profile picker, the editor and the bean pick as before;
+    while a shot runs they are not in the DOM and the stop button keeps the overlay's size; the
+    state line's scale text is not cut at 1280 x 800 with a long profile name and bean.
+69. **One header (test).** On home, steam and hot water the state line starts at the same x
+    position with the same values; steam and hot water show their title at the right end, home
+    shows the menu button there.
+70. **No tabs (test).** Home has no edge tabs; a swipe reaches steam, hot water and the history
+    as in acceptance 32; the page dots show the current page and a tap on one moves to its page;
+    the history's handle opens the history. Acceptance 36's tabs are replaced by this.
+71. **Home on the tablet (founder).** Home reads as one screen across a shot, nothing jumps at
+    its start, the header is not full, and the dots and the handle are found without being told.
+72. **Hand-over (founder).** The 0.5.0 ZIP carries 3.11; the checks of [install.md](install.md)
+    for items 67-71 are asked with the open ones.
 
 ## 6. Constraints
 - **Budget:** one Claude Pro plan. This product may use all of it up to 90% of the weekly
@@ -1489,6 +1587,11 @@ The weeks are a capacity guess on one Pro plan.
 | 3 | W4 | review 2026-10-20: picker: swipe a row left for delete, `DELETE /api/v1/profiles/{id}`; not the skin's defaults nor the loaded profile (3.10 'Profile picker: delete a profile') | T4, T5 |
 | 3 | W5 | review 2026-10-20: shot overlay's table with rounded corners, setting 'Shot values' (3.10 'Shot overlay: rounded frame, values off') | T2 |
 | 3 | W6 | review 2026-10-20: a swipe to the right in the editor goes home through the leaving rules (3.10 'Profile editor: swipe back to home') | T6 |
+| 3 | X1 | review 2026-10-21: home and the shot overlay become one screen, the fixed right column, the finished shot stays until the next (3.11 'Home and the shot overlay become one screen') | T2, W5 |
+| 3 | X2 | review 2026-10-21: the profile and bean buttons move to the right column, the header keeps the state line and the menu (3.11 'Profile and bean pick in the right column') | X1 |
+| 3 | X3 | review 2026-10-21: the state line first and the page title at the right end on home, steam and hot water (3.11 'One header on home, steam and hot water') | T3 |
+| 3 | X4 | review 2026-10-21: the edge tabs go, page dots and a history handle show the swipes (3.11 'Swipe only: the tabs go') | X1, T6 |
+| 3 | H4 | review 2026-10-21: hand-over ZIP 0.5.0 (minor bump), carrying 3.11 and its checks in install.md | X1-X4, H3 |
 | 2 (Oct 19-25) | Q1 | code quality review 2026-10-19: Prettier and ESLint, the tree formatted in one commit (in `.git-blame-ignore-revs`), lint errors fixed, both in the check ([review-code-quality-10-19-26.md](review-code-quality-10-19-26.md), steps 1-3) | - |
 | 2 | Q2 | code quality review 2026-10-19: split `src/shell/skin.svelte.ts` along its seams; `Skin` stays the one object the screens read ([review-code-quality-10-19-26.md](review-code-quality-10-19-26.md), step 4) | Q1 |
 | 2 | Q3 | code quality review 2026-10-19: one `errorMessage` helper in place of the repeated error idiom ([review-code-quality-10-19-26.md](review-code-quality-10-19-26.md), step 5) | Q2 |
