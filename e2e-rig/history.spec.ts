@@ -207,3 +207,92 @@ test('the history: shots with another profile or bean are entries, a tap restore
   expect(workflowAfter.profile).toEqual(workflowBefore.profile);
   expect(workflowAfter.context).toEqual(workflowBefore.context);
 });
+
+// Acceptance 52's last sentence (spec 3.9 item 19, research.md 29.6) against the rig: two beans
+// of the test's own in Decaid's catalogue, a simulated shot with each; the overlay filtered by
+// one bean shows its entry only, and 'all' brings the rest back, the rig's own shot with its
+// free-text bean too. The test deletes its shots, bags and beans and puts the workflow back as it was.
+test('the history filtered by a bean of the catalogue shows only its entry', async ({ page }) => {
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+
+  const PREFIX = 'pureflow-rig-filter';
+  const workflowBefore = await api<RigWorkflow>('GET', '/api/v1/workflow');
+  const shotsBefore = await shotIds();
+  const beansBefore = await api<{ id: string }[]>('GET', '/api/v1/beans?includeArchived=true');
+  const batchesBefore = await api<{ id: string }[]>('GET', '/api/v1/bean-batches?includeArchived=true');
+  const profiles: { profile: { title: string } }[] = await api<ProfileRecord[]>('GET', '/api/v1/profiles');
+  const profileA = profiles.find((record) => record.profile.title === PROFILE_A)!.profile;
+  const made: { bean: string; batch: string }[] = [];
+
+  try {
+    for (const name of ['Bean One', 'Bean Two']) {
+      const bean = await api<{ id: string }>('POST', '/api/v1/beans', { name: `${PREFIX} ${name}`, roaster: PREFIX });
+      const batch = await api<{ id: string }>('POST', `/api/v1/beans/${bean.id}/batches`, {});
+      made.push({ bean: bean.id, batch: batch.id });
+    }
+    const one = await pull(page, profileA, {
+      coffeeName: `${PREFIX} Bean One`,
+      coffeeRoaster: PREFIX,
+      beanBatchId: made[0].batch,
+      grinderSetting: '5',
+    });
+    await pull(page, profileA, {
+      coffeeName: `${PREFIX} Bean Two`,
+      coffeeRoaster: PREFIX,
+      beanBatchId: made[1].batch,
+      grinderSetting: '6',
+    });
+    expect(one.workflow!.context!.beanBatchId).toBe(made[0].batch);
+
+    await page.goto('/');
+    await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 15_000 });
+    await page.getByTestId('nav-history').tap();
+    const entries = page.getByTestId('history-entry');
+    const mine = entries.filter({ hasText: PREFIX });
+    await expect(mine).toHaveCount(2);
+
+    // Bean One: its entry only.
+    await page.getByTestId('filter-bean').tap();
+    await page
+      .getByTestId('filter-option')
+      .filter({ hasText: `${PREFIX} Bean One` })
+      .tap();
+    await expect(entries).toHaveCount(1);
+    await expect(entries).toHaveAttribute('data-shot', one.id);
+    await expect(entries.getByTestId('entry-bean')).toHaveText(`${PREFIX} · ${PREFIX} Bean One`);
+    await page.screenshot({ path: 'e2e-rig/.results/history-filter-rig.png' });
+
+    // All: both beans' entries and the rig's own shot again.
+    await page.getByTestId('filter-all').tap();
+    await expect(mine).toHaveCount(2);
+    await expect(entries.filter({ hasText: 'Rig Bean A' })).toHaveCount(1);
+    await page.touchscreen.tap(1100, 400);
+  } finally {
+    if ((await machineState().catch(() => undefined)) === 'espresso') await api('PUT', '/api/v1/machine/state/idle');
+    await page.waitForTimeout(5000);
+    for (const id of await shotIds()) {
+      if (!shotsBefore.includes(id)) await api('DELETE', `/api/v1/shots/${encodeURIComponent(id)}`);
+    }
+    // A bean with bags cannot be deleted (research.md 29.12): the bags first.
+    for (const { bean, batch } of made) {
+      await api('DELETE', `/api/v1/bean-batches/${batch}`);
+      await api('DELETE', `/api/v1/beans/${bean}`);
+    }
+    const context = workflowBefore.context ?? {};
+    await api('PUT', '/api/v1/workflow', {
+      profile: workflowBefore.profile,
+      context: {
+        ...Object.fromEntries(WRITTEN.map((key) => [key, context[key] ?? null])),
+        targetYield: context.targetYield ?? 0,
+        targetDoseWeight: context.targetDoseWeight ?? null,
+      },
+    });
+  }
+
+  expect(await shotIds()).toEqual(shotsBefore);
+  expect(await api('GET', '/api/v1/beans?includeArchived=true')).toEqual(beansBefore);
+  expect(await api('GET', '/api/v1/bean-batches?includeArchived=true')).toEqual(batchesBefore);
+  const workflowAfter = await api<RigWorkflow>('GET', '/api/v1/workflow');
+  expect(workflowAfter.profile).toEqual(workflowBefore.profile);
+  expect(workflowAfter.context).toEqual(workflowBefore.context);
+});

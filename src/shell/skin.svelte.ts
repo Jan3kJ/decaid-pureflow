@@ -7,7 +7,7 @@
 // catalogue (src/beans/catalogue.svelte.ts).
 import { Catalogue } from '../beans/catalogue.svelte';
 import { DecaidClient, isTareBlocked, type MachineSnapshot, type RequestedMachineState, type Workflow } from '../api';
-import type { HistoryEntry } from '../history/entries';
+import type { HistoryEntry, HistoryFilter } from '../history/entries';
 import { ShotCache } from '../history/shots.svelte';
 import type { Settings } from '../settings';
 import type { ReadBackup } from '../settings-backup';
@@ -207,6 +207,13 @@ export class Skin {
   }
   set historyOpen(open: boolean) {
     this.recall.historyOpen = open;
+  }
+  /** the history's filter by bean and grinder, for the session */
+  get historyFilter(): HistoryFilter {
+    return this.recall.historyFilter;
+  }
+  set historyFilter(filter: HistoryFilter) {
+    this.recall.historyFilter = filter;
   }
   /** the history entry that was restored, until it is dismissed or a shot starts */
   get recalled(): Recalled | null {

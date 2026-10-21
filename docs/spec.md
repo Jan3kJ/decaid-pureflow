@@ -853,6 +853,16 @@ not archived, grinders, the setting with − and + by the grinder's step or on t
 whose 'Use for the next shot' writes the six context fields in one `PUT /api/v1/workflow`; the
 pick stays until it is changed.
 
+Built in U10 (research.md 29.13): the history's overlay has a filter row above the list,
+**all**, **bean** and **grinder**; bean and grinder each open the catalogue's beans or grinders,
+archived ones too, in the list's place, with 'any bean' / 'any grinder'; a bean and a grinder can
+be chosen together, and 'all' clears both. The filter runs on the shots the skin holds (T8),
+also on those that arrive later, and asks the gateway for nothing but the catalogue, read when
+the overlay opens; it lasts for the session. A shot's bean is the catalogue's bean of its batch,
+else (a shot from before the catalogue, with only the free text) the bean with its name and
+roaster; a grinder is matched by its id, else by its model. Entries show a catalogue bean by its
+current roaster and name and the grinder as 'Model 4.8' ('grinder 4.8' without a model).
+
 **Bean from a photo (item 20, low priority; U13, after 19).** A bean can be added from a photo
 of its bag taken with the tablet's camera; reading the name and the roaster from it is nice to
 have (founder, 2026-10-18). **Step 1 is a check on the real tablet that only the founder can
@@ -1667,7 +1677,9 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
     entry; an edited one stays in its entry (`entryKey` in `src/history/entries.ts`). (owner)
   - A bean is its name and roaster (`coffeeName`, `coffeeRoaster`); Decaid's batch id counts
     only for a bean without both. Shots without a bean share one entry per profile, shown as
-    'no bean'. (owner)
+    'no bean'. A bean of Decaid's catalogue (U10, 3.9 item 19) is the catalogue's bean: found
+    by the shot's batch, else by its name and roaster, one entry across a rename and its bags,
+    shown by its current name. (owner)
   - Restoring writes the stop weight and the dose of the profile, as the picker does, not
     those of the shot. An entry without a bean or a grinder setting clears the current
     ones. (owner)

@@ -4,7 +4,7 @@
 // workflow, the notice and the warning before a load stay the skin's (`RecallHost`).
 import { untrack } from 'svelte';
 import type { DecaidClient, Workflow } from '../api';
-import { restoreEntry, seriesOf, type HistoryEntry } from '../history/entries';
+import { NO_FILTER, restoreEntry, seriesOf, type HistoryEntry, type HistoryFilter } from '../history/entries';
 import type { ShotCache } from '../history/shots.svelte';
 import type { LoadAnswer } from './load-warning.svelte';
 import { expectedShotSeconds, lastShotSeconds } from './expected';
@@ -31,6 +31,8 @@ export interface RecallHost {
 export class Recall {
   /** the shot history's overlay is open (spec 3.1); only home shows it */
   historyOpen = $state(false);
+  /** the history's filter by bean and grinder; it lasts for the session */
+  historyFilter: HistoryFilter = $state.raw(NO_FILTER);
   /** the history entry that was restored, until it is dismissed or a shot starts */
   recalled: Recalled | null = $state.raw(null);
   /** s, the length of the last shot with a profile title, null when it has none; see `expectedSeconds` */

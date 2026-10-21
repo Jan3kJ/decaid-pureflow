@@ -1,7 +1,21 @@
 // The shot history's logic (spec 3.5): the gateway's shot records in, the entries of the
 // overlay out, and what one entry writes back to the workflow. Pure, except `restoreEntry`;
-// the shots themselves are held by `ShotCache` (shots.svelte.ts).
-import type { DecaidClient, Profile, ShotRecord, ShotRecordSummary, Workflow, WorkflowContext, WorkflowContextPatch } from '../api';
+// the shots themselves are held by `ShotCache` (shots.svelte.ts). With Decaid's bean and grinder
+// catalogue (research.md 29.6) a shot's bean is the catalogue's when its batch or its name and
+// roaster are known there, and the history is filtered by a bean and a grinder.
+import type {
+  BeanBatch,
+  CatalogueBean,
+  DecaidClient,
+  Grinder,
+  Profile,
+  ShotRecord,
+  ShotRecordSummary,
+  Workflow,
+  WorkflowContext,
+  WorkflowContextPatch,
+} from '../api';
+import { pickedBean } from '../beans/catalogue';
 import { loadProfile } from '../shell/profiles';
 import { TARE_SETTLE_S, emptySeries, frameTime, pushPoint, shotOver, waterMoves, type ShotSeries } from '../shell/shot';
 
@@ -20,8 +34,12 @@ export interface HistoryEntry {
   profileTitle: string;
   /** null: the shots were pulled without a bean in the workflow */
   bean: Bean | null;
+  /** the catalogue's bean of the shots, null for a bean the catalogue does not know */
+  beanId: string | null;
   /** of the latest shot; null when that shot had none */
   grinderSetting: string | null;
+  /** the latest shot's grinder: the catalogue's model, else the one the shot names; null for none */
+  grinder: string | null;
   /** the latest shot of the entry: its profile is restored and its graph is shown */
   latest: ShotRecordSummary;
   /** how many shots the entry has */
@@ -30,9 +48,60 @@ export interface HistoryEntry {
 
 const text = (value: string | null | undefined): string | null => value?.trim() || null;
 
-/** The bean of a shot, null when the workflow named none. */
-export function beanOf(shot: ShotRecordSummary): Bean | null {
-  return contextBean(shot.workflow?.context);
+/** What the history reads of Decaid's catalogue, archived ones included: their shots are in the history too. */
+export interface CatalogueView {
+  beans: readonly CatalogueBean[];
+  batches: readonly BeanBatch[];
+  grinders: readonly Grinder[];
+}
+
+/** No catalogue read (yet): every shot keeps the bean and grinder its record names. */
+export const NO_CATALOGUE: CatalogueView = { beans: [], batches: [], grinders: [] };
+
+/**
+ * The catalogue's bean of a shot: the bean of its batch, else, for a shot from before the
+ * catalogue or from an app that wrote no batch, the bean with its name and roaster; null for none.
+ */
+export function shotBean(shot: ShotRecordSummary, catalogue: CatalogueView): CatalogueBean | null {
+  return pickedBean(catalogue.beans, catalogue.batches, shot.workflow?.context);
+}
+
+/** The catalogue's grinder of a shot: by its id, else, for a shot without one, by its model; null for none. */
+export function shotGrinder(shot: ShotRecordSummary, catalogue: CatalogueView): Grinder | null {
+  const context = shot.workflow?.context;
+  const id = text(context?.grinderId);
+  if (id) return catalogue.grinders.find((grinder) => grinder.id === id) ?? null;
+  const model = text(context?.grinderModel);
+  return model ? (catalogue.grinders.find((grinder) => grinder.model.trim() === model) ?? null) : null;
+}
+
+/** The history's filter: one bean and one grinder of the catalogue, null for any. */
+export interface HistoryFilter {
+  beanId: string | null;
+  grinderId: string | null;
+}
+
+export const NO_FILTER: HistoryFilter = { beanId: null, grinderId: null };
+
+/** The shots the filter keeps, in their order. */
+export function filterShots(
+  shots: readonly ShotRecordSummary[],
+  filter: HistoryFilter,
+  catalogue: CatalogueView,
+): ShotRecordSummary[] {
+  if (!filter.beanId && !filter.grinderId) return [...shots];
+  return shots.filter(
+    (shot) =>
+      (!filter.beanId || shotBean(shot, catalogue)?.id === filter.beanId) &&
+      (!filter.grinderId || shotGrinder(shot, catalogue)?.id === filter.grinderId),
+  );
+}
+
+/** The bean of a shot, null when the workflow named none; a catalogue bean by its current name and roaster. */
+export function beanOf(shot: ShotRecordSummary, catalogue: CatalogueView = NO_CATALOGUE): Bean | null {
+  const bean = contextBean(shot.workflow?.context);
+  const known = bean && shotBean(shot, catalogue);
+  return known ? { name: text(known.name), roaster: text(known.roaster), batchId: bean.batchId } : bean;
 }
 
 /** The bean a workflow's context names, null for none: the shot's, or the one for the next shot. */
@@ -49,6 +118,11 @@ export function grinderSettingOf(shot: ShotRecordSummary): string | null {
   return text(shot.workflow?.context?.grinderSetting);
 }
 
+/** A shot's grinder model: the catalogue's current one, else the one the record names. */
+export function grinderOf(shot: ShotRecordSummary, catalogue: CatalogueView = NO_CATALOGUE): string | null {
+  return text(shotGrinder(shot, catalogue)?.model) ?? text(shot.workflow?.context?.grinderModel);
+}
+
 /**
  * What makes two shots one entry: the profile's title and the bean.
  *
@@ -57,12 +131,16 @@ export function grinderSettingOf(shot: ShotRecordSummary): string | null {
  * 11.1): every edit of a profile in the editor would start a new entry, although it is the
  * same profile to the user. The title is what the user chose and what the list shows.
  *
- * The bean is its name and roaster. The batch id counts only for a bean without both, so a
- * new bag of the same coffee stays in its entry. The grinder is not part of the key.
+ * The bean is the catalogue's bean (`shotBean`) where there is one, so its shots stay one entry
+ * across a rename and its bags. Else it is its name and roaster; the batch id counts only for a
+ * bean without both, so a new bag of the same coffee stays in its entry. The grinder is not
+ * part of the key.
  */
-export function entryKey(shot: ShotRecordSummary): string | null {
+export function entryKey(shot: ShotRecordSummary, catalogue: CatalogueView = NO_CATALOGUE): string | null {
   const title = text(shot.workflow?.profile?.title);
   if (title === null) return null;
+  const known = shotBean(shot, catalogue);
+  if (known) return JSON.stringify([title, null, known.id]);
   const bean = beanOf(shot);
   const named = bean?.name || bean?.roaster ? [bean.roaster ?? '', bean.name ?? ''] : [];
   return JSON.stringify([title, ...(bean ? (named.length ? named : [bean.batchId]) : [])]);
@@ -72,11 +150,11 @@ export function entryKey(shot: ShotRecordSummary): string | null {
  * The entries of the history, the one with the newest shot first. A shot without a profile
  * has nothing to restore and is left out. The order of `shots` does not matter.
  */
-export function groupShots(shots: readonly ShotRecordSummary[]): HistoryEntry[] {
+export function groupShots(shots: readonly ShotRecordSummary[], catalogue: CatalogueView = NO_CATALOGUE): HistoryEntry[] {
   const newestFirst = [...shots].sort((a, b) => frameTime(b.timestamp) - frameTime(a.timestamp));
   const entries = new Map<string, HistoryEntry>();
   for (const shot of newestFirst) {
-    const key = entryKey(shot);
+    const key = entryKey(shot, catalogue);
     if (key === null) continue;
     const entry = entries.get(key);
     if (entry) entry.shots += 1;
@@ -84,8 +162,10 @@ export function groupShots(shots: readonly ShotRecordSummary[]): HistoryEntry[] 
       entries.set(key, {
         key,
         profileTitle: shot.workflow!.profile!.title.trim(),
-        bean: beanOf(shot),
+        bean: beanOf(shot, catalogue),
+        beanId: shotBean(shot, catalogue)?.id ?? null,
         grinderSetting: grinderSettingOf(shot),
+        grinder: grinderOf(shot, catalogue),
         latest: shot,
         shots: 1,
       });
@@ -98,6 +178,12 @@ export function groupShots(shots: readonly ShotRecordSummary[]): HistoryEntry[] 
 export function beanLabel(bean: Bean | null): string {
   if (!bean) return 'no bean';
   return [bean.roaster, bean.name].filter(Boolean).join(' · ') || 'bean from Decaid';
+}
+
+/** How an entry names its grinder: 'Model 4.8', 'grinder 4.8' without a model; empty for neither. */
+export function grinderLabel(entry: Pick<HistoryEntry, 'grinder' | 'grinderSetting'>): string {
+  if (!entry.grinderSetting) return entry.grinder ?? '';
+  return `${entry.grinder ?? 'grinder'} ${entry.grinderSetting}`;
 }
 
 /**

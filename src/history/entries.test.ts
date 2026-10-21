@@ -1,13 +1,29 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   DecaidClient,
+  type BeanBatch,
+  type CatalogueBean,
+  type Grinder,
   type MachineSnapshot,
   type Profile,
   type ShotMeasurement,
   type ShotRecordSummary,
   type WorkflowContext,
 } from '../api';
-import { beanAndGrinder, beanLabel, entryKey, groupShots, restoreEntry, seriesOf } from './entries';
+import {
+  NO_FILTER,
+  beanAndGrinder,
+  beanLabel,
+  entryKey,
+  filterShots,
+  grinderLabel,
+  groupShots,
+  restoreEntry,
+  seriesOf,
+  shotBean,
+  shotGrinder,
+  type CatalogueView,
+} from './entries';
 
 function profile(title: string, over: Partial<Profile> = {}): Profile {
   return { title, steps: [], target_weight: 36, target_volume_count_start: 0, tank_temperature: 0, ...over };
@@ -295,5 +311,127 @@ describe('seriesOf', () => {
   it('is empty for a shot without measurements, and never steps back in time', () => {
     expect(seriesOf({ measurements: [] }).t).toEqual([]);
     expect(seriesOf({ measurements: [measurement(0, 0), measurement(2, 1), measurement(1, 2)] }).t).toEqual([0, 2, 2]);
+  });
+});
+
+const at = '2026-10-20T10:00:00.000';
+const catalogueBean = (id: string, roaster: string, name: string, archived = false): CatalogueBean => ({
+  id,
+  roaster,
+  name,
+  decaf: false,
+  archived,
+  createdAt: at,
+  updatedAt: at,
+});
+const batch = (id: string, beanId: string, archived = false): BeanBatch => ({
+  id,
+  beanId,
+  frozen: false,
+  archived,
+  createdAt: at,
+  updatedAt: at,
+});
+const grinder = (id: string, model: string): Grinder => ({
+  id,
+  model,
+  archived: false,
+  settingType: 'numeric',
+  createdAt: at,
+  updatedAt: at,
+});
+
+/** Red Brick, renamed since its first bag (now 'Red Brick Espresso'), with two bags; Yirgacheffe with one; a Niche and an EK. */
+const catalogue: CatalogueView = {
+  beans: [
+    catalogueBean('bean-red', 'Square Mile', 'Red Brick Espresso'),
+    catalogueBean('bean-yirga', 'Square Mile', 'Yirgacheffe', true),
+  ],
+  batches: [batch('bag-red-1', 'bean-red', true), batch('bag-red-2', 'bean-red'), batch('bag-yirga', 'bean-yirga')],
+  grinders: [grinder('niche', 'Niche Zero'), grinder('ek', 'EK43')],
+};
+
+describe('the catalogue in the history', () => {
+  const firstBag = shot(
+    'A-Flow / light',
+    { ...beanB, beanBatchId: 'bag-red-1', grinderId: 'niche', grinderModel: 'Niche Zero', grinderSetting: '5' },
+    1,
+  );
+  const renamed = shot(
+    'A-Flow / light',
+    {
+      coffeeName: 'Red Brick Espresso',
+      coffeeRoaster: 'Square Mile',
+      beanBatchId: 'bag-red-2',
+      grinderId: 'niche',
+      grinderSetting: '4.8',
+    },
+    2,
+  );
+  // Before the catalogue: the free text of the workflow only.
+  const old = shot('A-Flow / light', { ...beanA, grinderModel: 'EK43', grinderSetting: '9' }, 3);
+  const unknown = shot('A-Flow / light', { coffeeName: 'Kenya', coffeeRoaster: 'Rig', beanBatchId: 'gone', grinderModel: 'Lagom' }, 4);
+  const none = shot('A-Flow / light', { grinderSetting: '6' }, 5);
+  const all = [firstBag, renamed, old, unknown, none];
+
+  it("finds a shot's bean by its batch, else by name and roaster", () => {
+    expect(shotBean(firstBag, catalogue)?.id).toBe('bean-red');
+    expect(shotBean(renamed, catalogue)?.id).toBe('bean-red');
+    expect(shotBean(old, catalogue)?.id).toBe('bean-yirga');
+    // A batch the catalogue does not know and a name it does not hold: no bean.
+    expect(shotBean(unknown, catalogue)).toBeNull();
+    expect(shotBean(none, catalogue)).toBeNull();
+  });
+
+  it("finds a shot's grinder by its id, else by its model", () => {
+    expect(shotGrinder(firstBag, catalogue)?.id).toBe('niche');
+    expect(shotGrinder(old, catalogue)?.id).toBe('ek');
+    expect(shotGrinder(unknown, catalogue)).toBeNull();
+    // An id wins over the model: an id the catalogue does not know is no grinder of it.
+    expect(shotGrinder(shot('x', { grinderId: 'gone', grinderModel: 'EK43' }), catalogue)).toBeNull();
+  });
+
+  it('keeps a catalogue bean one entry across a rename and its bags, labelled with its current name', () => {
+    const entries = groupShots([firstBag, renamed], catalogue);
+    expect(entries).toHaveLength(1);
+    expect(entries[0]).toMatchObject({ shots: 2, beanId: 'bean-red', grinder: 'Niche Zero', grinderSetting: '4.8' });
+    expect(beanLabel(entries[0].bean)).toBe('Square Mile · Red Brick Espresso');
+    // Without the catalogue the two names are two entries, as before.
+    expect(groupShots([firstBag, renamed])).toHaveLength(2);
+    expect(entryKey(firstBag, catalogue)).toBe(entryKey(renamed, catalogue));
+  });
+
+  it('keeps the rule of name and roaster for a shot whose bean the catalogue does not know', () => {
+    const entries = groupShots(all, catalogue);
+    const kenya = entries.find((entry) => entry.latest === unknown)!;
+    expect(kenya.beanId).toBeNull();
+    expect(beanLabel(kenya.bean)).toBe('Rig · Kenya');
+    expect(entryKey(unknown, catalogue)).toBe(entryKey(unknown));
+    // A grinder the catalogue does not know shows the model the shot names.
+    expect(grinderLabel(kenya)).toBe('Lagom');
+    expect(grinderLabel(entries.find((entry) => entry.latest === none)!)).toBe('grinder 6');
+    expect(grinderLabel(entries.find((entry) => entry.latest === old)!)).toBe('EK43 9');
+  });
+
+  it('filters by a bean: its batches and, for older shots, its name and roaster', () => {
+    expect(filterShots(all, { beanId: 'bean-red', grinderId: null }, catalogue)).toEqual([firstBag, renamed]);
+    expect(filterShots(all, { beanId: 'bean-yirga', grinderId: null }, catalogue)).toEqual([old]);
+  });
+
+  it('filters by a grinder: its id and, for a shot without one, its model', () => {
+    expect(filterShots(all, { beanId: null, grinderId: 'niche' }, catalogue)).toEqual([firstBag, renamed]);
+    expect(filterShots(all, { beanId: null, grinderId: 'ek' }, catalogue)).toEqual([old]);
+  });
+
+  it('filters by both, and keeps every shot without a filter', () => {
+    expect(filterShots(all, { beanId: 'bean-red', grinderId: 'ek' }, catalogue)).toEqual([]);
+    expect(filterShots(all, NO_FILTER, catalogue)).toEqual(all);
+  });
+
+  it('filters first, then groups: the entry counts only the shots the filter keeps', () => {
+    const other = shot('A-Flow / light', { ...beanB, beanBatchId: 'bag-red-2', grinderId: 'ek', grinderSetting: '2' }, 6);
+    const entries = groupShots(filterShots([...all, other], { beanId: null, grinderId: 'niche' }, catalogue), catalogue);
+    expect(entries).toHaveLength(1);
+    expect(entries[0]).toMatchObject({ shots: 2, latest: renamed });
   });
 });

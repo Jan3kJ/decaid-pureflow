@@ -54,8 +54,9 @@ test('the tab opens the overlay: one entry per profile and bean, newest first, w
   await expect(entries).toHaveCount(3);
   await expect(entries.getByTestId('entry-profile')).toHaveText(['Best practice', 'A-Flow / default-light', 'A-Flow / default-light']);
   await expect(entries.getByTestId('entry-bean')).toHaveText(['no bean', 'Rig · Yirgacheffe', 'Square Mile · Red Brick']);
-  // The grinder setting is the latest shot's; the change from 5.2 to 4.8 made no new entry.
-  await expect(entries.getByTestId('entry-grinder')).toHaveText(['', 'grinder 6.0', 'grinder 4.8']);
+  // The grinder setting is the latest shot's, with its model where the shot names one; the change
+  // from 5.2 to 4.8 made no new entry.
+  await expect(entries.getByTestId('entry-grinder')).toHaveText(['', 'Niche Zero 6.0', 'grinder 4.8']);
   await expect(entries.nth(2).getByTestId('entry-when')).toContainText('2 shots');
   await expect(entries.nth(2)).toHaveAttribute('data-shot', 'shot-2');
 
@@ -350,5 +351,102 @@ test('a slow, long history: the newest 20 first, the rest after them, kept for a
   await expect(entries).toHaveCount(41);
   await expect(entries.first().getByTestId('entry-profile')).toHaveText('P-new');
   expect(gateway.historyListCalls()).toHaveLength(4);
+  expect(errors).toEqual([]);
+});
+
+// Acceptance 52's last sentence (spec 3.9 item 19, research.md 29.6): the history filtered by a
+// bean and a grinder of Decaid's catalogue, on the shots held; its entries with the catalogue's
+// beans and grinders.
+test('the filter by bean and grinder: the catalogue names the entries, a choice keeps its shots, all brings every entry back', async ({
+  page,
+}) => {
+  const gateway = await mockGateway(page);
+  const at = '2026-10-20T10:00:00.000';
+  const stamps = { decaf: false, createdAt: at, updatedAt: at };
+  gateway.beans = [
+    // Renamed since its first bag; the first bag is archived.
+    { id: 'bean-red', roaster: 'Square Mile', name: 'Red Brick Espresso', archived: false, ...stamps },
+    { id: 'bean-yirga', roaster: 'Rig', name: 'Yirgacheffe', archived: true, ...stamps },
+  ];
+  gateway.batches = [
+    { id: 'bag-red-1', beanId: 'bean-red', frozen: false, archived: true, createdAt: at, updatedAt: at },
+    { id: 'bag-red-2', beanId: 'bean-red', frozen: false, archived: false, createdAt: at, updatedAt: at },
+  ];
+  gateway.grinders = [{ id: 'niche', model: 'Niche Zero', archived: false, settingType: 'numeric', createdAt: at, updatedAt: at }];
+  // Red Brick under its old name and its new one, a bag each; Yirgacheffe from before the
+  // catalogue, its name and roaster only; one shot without a bean. The older shots arrive later.
+  gateway.addShot('shot-1', '2026-10-10T08:00:00.000000', LIGHT, { ...RED_BRICK, beanBatchId: 'bag-red-1', grinderSetting: '5.2' });
+  gateway.addShot('shot-2', '2026-10-11T08:00:00.000000', LIGHT, {
+    coffeeName: 'Red Brick Espresso',
+    coffeeRoaster: 'Square Mile',
+    beanBatchId: 'bag-red-2',
+    grinderId: 'niche',
+    grinderModel: 'Niche Zero',
+    grinderSetting: '4.8',
+  });
+  gateway.addShot('shot-3', '2026-10-12T08:00:00.000000', LIGHT, { ...YIRGACHEFFE, grinderSetting: '6.0' });
+  gateway.addShot('shot-4', '2026-10-12T09:00:00.000000', BEST, { targetDoseWeight: 18, targetYield: 40 });
+  for (let i = 0; i < 20; i++) {
+    gateway.addShot(`new-${i}`, `2026-10-13T08:${String(i).padStart(2, '0')}:00.000000`, BEST, { targetYield: 40 });
+  }
+  let release!: () => void;
+  gateway.olderShots = new Promise((resolve) => (release = resolve));
+  await home(page);
+
+  await page.getByTestId('nav-history').tap();
+  const entries = page.getByTestId('history-entry');
+  await expect(entries).toHaveCount(1);
+  await expect(page.getByTestId('filter-all')).toHaveClass(/on/);
+
+  // A bean, chosen while the older shots are still being read: the catalogue's, archived ones too.
+  await page.getByTestId('filter-bean').tap();
+  await expect(page.getByTestId('filter-option')).toHaveText(['Square Mile · Red Brick Espresso', /^Rig · Yirgacheffe\s*archived$/]);
+  await page.getByTestId('filter-option').first().tap();
+  await expect(page.getByTestId('filter-bean')).toHaveText('Square Mile · Red Brick Espresso');
+  await expect(page.getByTestId('history-empty')).toHaveText('Reading the shots …');
+  // The older shots arrive and are filtered as they come: one entry across the rename and the bags.
+  release();
+  await expect(entries).toHaveCount(1);
+  await expect(entries.getByTestId('entry-bean')).toHaveText('Square Mile · Red Brick Espresso');
+  await expect(entries.getByTestId('entry-grinder')).toHaveText('Niche Zero 4.8');
+  await expect(entries.getByTestId('entry-when')).toContainText('2 shots');
+  await page.screenshot({ path: 'e2e/.results/history-filter-bean.png' });
+
+  // The shot from before the catalogue, by its name and roaster.
+  await page.getByTestId('filter-bean').tap();
+  await page.getByTestId('filter-option').nth(1).tap();
+  await expect(entries).toHaveCount(1);
+  await expect(entries).toHaveAttribute('data-shot', 'shot-3');
+  await expect(entries.getByTestId('entry-bean')).toHaveText('Rig · Yirgacheffe');
+
+  // Bean and grinder together: Yirgacheffe's shot names the Niche by its model, not by an id.
+  // Then 'any bean' leaves the grinder: the Niche's shots by id, and Yirgacheffe's by model.
+  await page.getByTestId('filter-grinder').tap();
+  await expect(page.getByTestId('filter-option')).toHaveText(['Niche Zero']);
+  await page.getByTestId('filter-option').tap();
+  await expect(page.getByTestId('filter-grinder')).toHaveText('Niche Zero');
+  await expect(entries).toHaveCount(1);
+  await expect(entries).toHaveAttribute('data-shot', 'shot-3');
+  await page.getByTestId('filter-bean').tap();
+  await page.getByTestId('filter-any').tap();
+  await expect(page.getByTestId('filter-bean')).toHaveText('bean');
+  await expect(entries).toHaveCount(2);
+  await expect(entries.getByTestId('entry-bean')).toHaveText(['Rig · Yirgacheffe', 'Square Mile · Red Brick Espresso']);
+
+  // The filter lasts while the skin runs: closed and opened again, it is still there.
+  await page.touchscreen.tap(1100, 400);
+  await page.getByTestId('nav-history').tap();
+  await expect(page.getByTestId('filter-grinder')).toHaveClass(/on/);
+  await expect(entries).toHaveCount(2);
+
+  // All: every entry back, the catalogue's bean by its current name.
+  await page.getByTestId('filter-all').tap();
+  await expect(page.getByTestId('filter-grinder')).toHaveText('grinder');
+  await expect(entries).toHaveCount(3);
+  await expect(entries.getByTestId('entry-bean')).toHaveText(['no bean', 'Rig · Yirgacheffe', 'Square Mile · Red Brick Espresso']);
+
+  // The shots were read once: the filter asks the gateway for none, and nothing was written.
+  expect(gateway.historyListCalls()).toHaveLength(2);
+  expect(gateway.requests.filter((request) => request.method !== 'GET')).toEqual([]);
   expect(errors).toEqual([]);
 });

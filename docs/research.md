@@ -3563,3 +3563,29 @@ Decaid 0.8.8 with Streamline 0.2.17 as its default skin; the probe's output is t
 | `PUT /beans/{id}` and `/grinders/{id}` change only the fields they carry, and `{"archived": true}` takes the item out of the list without `includeArchived` | seen running |
 | **`DELETE /beans/{id}` of a bean that has batches answers 500** (`SqliteException(787) … FOREIGN KEY constraint failed`), against `rest_v1.yml`'s "with all its batches"; deleting the batches first (`DELETE /bean-batches/{id}`, 200), then the bean, works. The skin deletes nothing; the rig test cleans up in that order | seen running |
 | A shot pulled after the pick holds `beanBatchId`, `coffeeName`, `coffeeRoaster`, `grinderId`, `grinderModel` and `grinderSetting` as picked, and `GET /shots?beanId=` and `?grinderId=` find exactly that shot (`e2e-rig/beans.spec.ts`; 29.10 risk 3 settled) | seen running |
+
+### 29.13 Built (U10, 2026-10-21)
+
+The rig served Streamline 0.2.17 (unchanged since 29.1).
+
+- **The matching** is in `src/history/entries.ts`: `shotBean` (U9's `pickedBean`: the batch's
+  bean, else the bean with the shot's name and roaster), `shotGrinder` (by `grinderId`, else by
+  `grinderModel` for a shot without an id; unlike the pick, one grinder in the catalogue is not
+  taken for a shot that names none), `filterShots` (filtered first, then `groupShots` as
+  before), `entryKey` with the catalogue bean's id, `grinderLabel`.
+- **Old shots.** A shot from before the catalogue whose name and roaster equal a catalogue
+  bean's joins that bean's entry and its filter; 29.6 kept such a shot on 3.5's key. The labels
+  are the same, so two entries would look like one doubled; one entry is the simpler reading.
+  A shot whose batch the catalogue does not know (deleted) falls back to name and roaster.
+- **The overlay** (`History.svelte`): the filter row (`filter-all`, `filter-bean`,
+  `filter-grinder`), the choice list (`filter-options`, `filter-any`, `filter-option`) in the
+  list's place; the filter is `Recall.historyFilter`, for the session. The catalogue is read
+  (three requests) each time the overlay opens; the shots are not read again.
+- **Left out:** 29.6's tap on an entry's bean to filter by it. An entry is one button that
+  restores it; a second tap target inside it needs a new layout of the entry. The filter row
+  does the same in two taps.
+- **Tests:** `entries.test.ts` (8 new), `e2e/history.spec.ts` (the filter, its reset, the old
+  shot by name, bean and grinder together, the older shots filtered as they arrive, no shot
+  list read twice), `e2e-rig/history.spec.ts` (two beans of the test's own with a bag each, a
+  shot with each, the filter by one shows one entry; shots, bags, beans and the context put
+  back and checked). Full rig suite 46 of 46.
