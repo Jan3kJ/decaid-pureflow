@@ -97,7 +97,10 @@ test('home menu: steam off and on again, read back from the machine; machine sle
     // The app stays awake: no Asleep screen, the screen not dimmed.
     await page.waitForTimeout(2_000);
     await expect(page.getByTestId('asleep')).toHaveCount(0);
-    expect((await api<DisplayState>('GET', '/api/v1/display')).requestedBrightness).toBe(displayBefore.requestedBrightness);
+    // Decaid 0.8.8 itself lowers the screen to 10 while the machine sleeps (seen 2026-10-21 with the skin
+    // closed); the skin's own dimming is 5 (Asleep screen) or 0, which 'Machine sleep' must not set.
+    const dimmed = (await api<DisplayState>('GET', '/api/v1/display')).requestedBrightness;
+    expect([displayBefore.requestedBrightness, 10]).toContain(dimmed);
     await page.screenshot({ path: 'e2e-rig/.results/machine-sleep-rig.png' });
     await page.getByTestId('menu').click();
     await page.getByTestId('wake-machine').click();

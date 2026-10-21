@@ -35,7 +35,7 @@ function kv(stored: Record<string, unknown> = {}) {
   return { gateway, writes, state };
 }
 
-const backupOf = (settings: Settings, savedAt = '2026-10-19T08:00:00.000Z') => ({ version: '0.3.0', savedAt, settings });
+const backupOf = (settings: Settings, savedAt = '2026-10-19T08:00:00.000Z') => ({ version: '0.4.0', savedAt, settings });
 
 beforeEach(() => {
   vi.stubGlobal('localStorage', memoryStorage());

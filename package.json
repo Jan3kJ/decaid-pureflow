@@ -1,6 +1,6 @@
 {
   "name": "decaid-pureflow",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "A minimal landscape, dark skin for the DE1: espresso with a live graph, an editor for A-Flow 3.0 profiles, a steam timer set from the milk's weight, and a shot history.",
   "private": true,
   "type": "module",
