@@ -8,6 +8,7 @@
     isAFlow3,
     loadEntry,
     pickerEntries,
+    previewLastStepSeconds,
     profileDescription,
     sameProfile,
     type PickerEntry,
@@ -143,9 +144,9 @@
           <dd>{dose === undefined ? '–' : `${dose} g`}</dd>
         </div>
       </dl>
-      <!-- The targets of its steps, without labels: only to see the steps and their values (founder, 2026-10-17). -->
+      <!-- The targets of its steps, without labels: only to see the steps and their values (founder, 2026-10-17); an A-Flow pour as far as its editor draws it. -->
       <div class="preview" data-testid="profile-preview">
-        <StepPreview {profile} bare />
+        <StepPreview {profile} bare lastStepSeconds={previewLastStepSeconds(selected)} />
       </div>
       <!-- Notes of version 1 hold the A-Flow parameters (editor/storage.ts): only the text shows. -->
       {#if description}

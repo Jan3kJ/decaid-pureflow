@@ -124,7 +124,7 @@ const PAUSE_SHOWN = 0.1;
 /** ml/s; where the flow line ends in a phase that holds pressure */
 const SOAK_FLOW = 0.2;
 /** s; a pour ends on its weight: the flow line is drawn this far into the pour's time */
-const POUR_SHOWN_SECONDS = 30;
+export const POUR_SHOWN_SECONDS = 30;
 
 export interface TimeAxis {
   /** the width of each column in graph units; together they are GRAPH_WIDTH */

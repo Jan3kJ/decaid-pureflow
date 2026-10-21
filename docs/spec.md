@@ -979,6 +979,13 @@ a limit, not a target (in the preview the targets are solid and the step borders
 without a limit (`limiter` null or 0) draws none. `stepCurve` gives two more series
 (`pressureLimit`, `flowLimit`, null where a step has none), `ShotGraph` draws them in its
 `preview`, and the scale (`previewMax`) counts them. The step editor's preview shows them too.
+Built (W3, 2026-10-21): a limit line is 0.13rem wide, dotted (round dots 0.32rem apart) at 0.55
+opacity (`.limit` in `ShotGraph`, test ids `shot-limit-pressure` and `shot-limit-flow`); the
+picker passes `previewLastStepSeconds` (`src/shell/profiles.ts`) as `stepCurve`'s
+`lastStepSeconds`, which cuts the last step and its ramp where it then is; the start rule takes
+the step before's exit on this step's quantity whatever its condition ('over' or 'under'). On
+the rig all 75 profiles the picker lists preview as their steps say (34 with a limit, 7 A-Flow
+pours cut).
 
 **Profile picker: delete a profile (item 2; W4).** A profile can be removed in the picker: a swipe
 from right to left on its row shows a **delete** button at the row's right end (founder,

@@ -17,14 +17,19 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     profile: Profile;
     /** the picker's small preview: no labels (spec 3.8) */
     bare?: boolean;
+    /** s, the last step is drawn this far at most (`stepCurve`); without it every step whole */
+    lastStepSeconds?: number;
   }
 
-  let { profile, bare = false }: Props = $props();
+  let { profile, bare = false, lastStepSeconds }: Props = $props();
 
-  const curve = $derived(stepCurve(profile));
-  /** Pressure and flow share one scale, as on every graph of the skin; it reaches a target above 12. */
+  const curve = $derived(stepCurve(profile, { lastStepSeconds }));
+  /** Pressure and flow share one scale, as on every graph of the skin; it reaches a target or limit above 12. */
   const previewMax = $derived(
-    Math.max(12, Math.ceil(Math.max(0, ...curve.pressure.map((v) => v ?? 0), ...curve.flow.map((v) => v ?? 0)) / 4) * 4),
+    Math.max(
+      12,
+      Math.ceil(Math.max(0, ...[curve.pressure, curve.flow, curve.pressureLimit, curve.flowLimit].flat().map((v) => v ?? 0)) / 4) * 4,
+    ),
   );
 </script>
 
@@ -37,6 +42,8 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     targetPressure={curve.pressure}
     targetFlow={curve.flow}
     targetTemperature={curve.temperature}
+    pressureLimit={curve.pressureLimit}
+    flowLimit={curve.flowLimit}
     borders={curve.steps.slice(1).map((span) => span.start)}
     yMax={previewMax}
     fit

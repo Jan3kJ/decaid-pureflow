@@ -2,7 +2,8 @@
 // itself, and the one call that loads a profile.
 import { AFLOW_VERSION, DEFAULT_AUTHOR, DEFAULT_PROFILES, generateProfile, type DefaultProfile } from '../aflow';
 import type { DecaidClient, Profile, ProfileRecord, Workflow, WorkflowContextPatch } from '../api';
-import { notesText, paramsMetadata, readParams, sameSteps, workflowProfile } from '../editor/storage';
+import { POUR_SHOWN_SECONDS } from '../editor/curve';
+import { notesText, openParams, paramsMetadata, readParams, sameSteps, workflowProfile } from '../editor/storage';
 import { FORMER_NAME } from '../former-name';
 
 /** `metadata.source` of a profile this skin stores. */
@@ -62,6 +63,15 @@ export function pickerEntries(records: readonly ProfileRecord[]): PickerEntry[] 
     isDefault: false,
   }));
   return [...defaults, ...stored];
+}
+
+/**
+ * s, how far the picker's preview draws a profile's last step (`stepCurve`): an A-Flow
+ * profile's pour (one whose values `openParams` reads) as far as the A-Flow editor draws it,
+ * so both lines end alike; any other profile whole.
+ */
+export function previewLastStepSeconds(entry: Pick<PickerEntry, 'profile' | 'metadata'>): number | undefined {
+  return openParams(entry.profile, entry.metadata) ? POUR_SHOWN_SECONDS : undefined;
 }
 
 /** Whether this skin stored the profile as A-Flow 3.0. */

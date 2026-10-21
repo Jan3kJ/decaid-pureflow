@@ -5,7 +5,8 @@
   // (founder, 2026-10-14), on the scale of flow and pressure, and only while there is a scale.
   // The profile's targets are thin dashed lines in the colour and on the scale of their
   // quantity. Every scale names its unit in its colour. As the step editor's preview (`preview`)
-  // it draws a profile's targets alone, as solid lines, with its steps' borders.
+  // it draws a profile's targets alone, as solid lines, with its steps' borders, and each step's
+  // limit as a thin dotted line in its quantity's colour, muted.
   import { fixedScale, inBand, shotScale, temperatureBand, timeAxis, type TemperatureBand } from './axis';
 
   interface Props {
@@ -41,6 +42,10 @@
     label?: string;
     /** the targets are the curves: solid lines, no measured values (the step editor's preview) */
     preview?: boolean;
+    /** bar, the steps' pressure limits, drawn in the preview; null is a step without one */
+    pressureLimit?: (number | null)[];
+    /** ml/s, the steps' flow limits, drawn in the preview; null is a step without one */
+    flowLimit?: (number | null)[];
     /** s, dashed lines across the plot: where a step starts */
     borders?: number[];
     /** no ticks, units or times: the picker's small preview of a profile (spec 3.8) */
@@ -63,6 +68,8 @@
     legend = false,
     label = 'shot graph',
     preview = false,
+    pressureLimit,
+    flowLimit,
     borders = [],
     bare = false,
   }: Props = $props();
@@ -192,6 +199,12 @@
           d={path(targetTemperature, yTemperature)}
         />
       {/if}
+      {#if preview && drawn(pressureLimit).length > 0}
+        <path class="limit pressure" data-testid="shot-limit-pressure" d={path(pressureLimit, yMain)} />
+      {/if}
+      {#if preview && drawn(flowLimit).length > 0}
+        <path class="limit flow" data-testid="shot-limit-flow" d={path(flowLimit, yMain)} />
+      {/if}
       {#if pressure && targetPressure}
         <path class="target pressure" class:solid={preview} data-testid="shot-target-pressure" d={path(targetPressure, yMain)} />
       {/if}
@@ -294,6 +307,15 @@
     stroke-dasharray: none;
     stroke-linecap: round;
     opacity: 1;
+  }
+
+  /* A limit, not a target: dotted, thinner, muted. */
+  .limit {
+    fill: none;
+    stroke-width: 0.13rem;
+    stroke-dasharray: 0.01rem 0.32rem;
+    stroke-linecap: round;
+    opacity: 0.55;
   }
 
   .border {
