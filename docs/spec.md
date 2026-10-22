@@ -1319,6 +1319,133 @@ name' (`filterProfiles` in `src/shell/profiles.ts`, the field `profile-filter`, 
 founder may have looked at an older version, and the filter by name is enough. Nothing is
 planned; a search over author and description would be a new item if it is missed later.
 
+### 3.13 Publishing the skin
+
+The founder wants to publish the skin after the roadmap's current items (H4 and what it carries),
+2026-10-22: a clean public repository and **a user documentation**. Planned only. This section
+is the audit of the repository on 2026-10-22 (what must change before it is public), the plan
+for the user documentation, and the decisions that are the founder's. Spec 4.4 already says
+'public GitHub repository under GPL-3.0' and 'later releases: the same ZIP attached to a GitHub
+release, installable by URL'; this is how.
+
+**Audit: what is in the repository today.** 433 tracked files and 173 commits, all by the
+founder under a personal e-mail address; `package.json` and `public/manifest.json` carry the
+repository `github.com/Jan3kJ/decaid-pureflow` (whether it is public today was not checked: no
+`gh` on this machine). The skin itself is clean of secrets: no key, token or password outside
+test fixtures, no MAC address but invented ones (`AA:BB:CC:00:00:01`), no real IP. What is not
+ready, by how much it matters:
+
+*Must be done before the first public commit*
+
+1. **No `LICENSE` file.** Spec 4.4 decides GPL-3.0 and `package.json` says `GPL-3.0-only`, but
+   the repository has no licence text. Add the GPL-3.0 text as `LICENSE`. The ported files carry
+   Streamline's notice 'GPL v3 or later' (README, `src/shell/phases.ts`) while acceptance 12 and
+   research.md call it ISC (Streamline-js's `package.json` says ISC): read Streamline's
+   `LICENSE` at the ported tag (v0.2.14) and make README, the file headers, acceptance 12 and a
+   new `NOTICE` (the ported files and their origin, Decaid's 73 bundled profiles as test data,
+   D-Flow) say one thing. GPL-3.0-only for the whole is fine with GPL-3.0-or-later parts.
+2. **D-Flow and A-Flow.** The A-Flow generator and the five defaults (`src/aflow/`) come from
+   the A-Flow plugin, forked from Damian Brakel's D-Flow, which has no licence file; spec 4.4
+   says the founder has Damian's approval. Get it in writing (a comment on D-Flow's repository
+   or a message kept in the private records), credit D-Flow in README and `NOTICE`, and give
+   the `Jan3kJ/A_Flow` repository a licence too (research.md found none).
+3. **Personal data and local paths.** `docs/research.md` holds 19 local paths
+   (`..\decaid-rig`, `../streamline-js`), `docs/d4-rig-smoke.txt` a Windows user
+   profile path, the stint day plans 70 more; the history carries the founder's personal
+   e-mail in all 173 commits (usual for an open repository, but the founder decides: 3.13's
+   decision 2). The **screenshots** of `docs/product/` come from the mock gateway ('MockDe1',
+   invented addresses) and are safe; the founder's own tablet screenshots, the Decaid export
+   and anything with real beans, roasters or devices must not go in (the export is already
+   ignored). Add `scripts/publish-check.mjs` that fails on a Windows path, an e-mail address,
+   a MAC address that is not `AA:BB:CC:`, the messenger's name and a bot token pattern in the files that
+   are published, run in CI.
+4. **The team's records are not the skin.** `stint/` (day plans, day records, blog posts,
+   `stint/logs/gemini_usage.jsonl`, `tasks.jsonl`, prompts), `stint.toml`, `.claude/` (hooks,
+   settings, the stint-onboard skill), the founder's review notes (`docs/review-*.md`,
+   `docs/answers-2026-10-14.md`), `docs/acceptance.md` and `docs/install.md` as the founder's
+   check list are a development process with token budgets, message numbers and
+   'the founder' as a role. Default: **they stay in a private repository** and the public one
+   has the skin, its tests, `docs/spec.md` and `docs/research.md` (scrubbed of paths and
+   message numbers; links to the review notes become dates), the user documentation and
+   `docs/a-flow-3.0.md`. Decision 1 says how.
+
+*Should be done*
+
+5. **The ZIP holds `camera.html`**, the founder's camera test page for U13 (`public/`), and the
+   repository holds the rig probes `scripts/rig-*-probe.mjs`. Default: `camera.html` stays out of
+   the public ZIP until U13 is built or dropped (`npm run zip` rejects it), the probes move to
+   `scripts/rig/` with a line in the README, or go private.
+6. **No CI.** Add `.github/workflows/ci.yml`: `npm ci`, `npm run check`, `lint`,
+   `format:check`, `test`, `build`, the e2e on the mock gateway (Playwright's browsers), and
+   `scripts/publish-check.mjs`; and `release.yml`: on a tag, `npm run zip` and the ZIP with its
+   SHA-256 attached to a GitHub release. The rig suite (`e2e:rig`) needs a running Decaid and
+   stays local.
+7. **No CONTRIBUTING, CHANGELOG, issue templates or SECURITY note.** Add a short
+   `CONTRIBUTING.md` (the commands of README, the test rule, one-pull-request-one-change, the
+   GPL), `CHANGELOG.md` (from the day records and 3.8 to 3.12, one entry per version),
+   issue templates (bug: Decaid version, skin version, tablet, what happened; request) and a
+   `SECURITY.md` of three lines (the skin talks only to the local Decaid, stores nothing but
+   settings in the tablet's browser).
+8. **README is a developer's.** It becomes the front page: what pureflow is, one screenshot,
+   requirements, install in three lines with the user documentation's link, then
+   Development, Credits and Licence as now.
+9. **Naming.** 'pureflow' is the id Decaid installs under (a folder name; changing it later
+   loses the founder's tablet settings, so it stays) and the name. Before publishing: search
+   GitHub and Decent's forum for a clash, say 'unofficial skin for Decaid' under the title,
+   and keep 'Decent', 'Decaid' and 'A-Flow' as names of what it works with. The migration of
+   the former name `decaid-skin` (`src/former-name.ts`, `migrate.ts`, `former-keys.ts`) serves
+   only the founder's tablet; keep it for one public release, then drop it.
+10. **Dependencies and checks.** `npm audit` and a list of the bundled dependencies' licences
+    (the ZIP holds Svelte's runtime, MIT; dev tools do not ship) into `NOTICE`; a full run of
+    `npm test`, `check`, `lint` and `format:check` on a clean clone (`npm ci`), not only on the
+    founder's machine, with the result in `CHANGELOG.md`.
+11. **Version.** The first public release is the next minor after H4 (0.6.0, or whatever the
+    rule gives): a hand-over raises the minor version. **1.0.0 is a major bump and is the
+    founder's to decide** (decision 3), so the plan does not assume it.
+
+**User documentation: plan.** For people who own a DE1 and run Decaid on a tablet, not for
+developers. Markdown in `docs/user/`, readable on GitHub, linked from README, English first
+(decision 4: German too?). One page per question a user has, short, with a picture, in the
+order of use:
+
+| Page | Holds |
+|---|---|
+| `README.md` of `docs/user/` | what pureflow is and is not (a skin for Decaid, landscape, dark, an 11 inch tablet first), what it needs (a DE1, Decaid 0.9.0 or newer, a tablet; the scale optional), the pages below |
+| `install.md` | download the ZIP (or the release's URL), install in Decaid's skin selector, make it the default skin, update (same id), remove, the settings backup and its restore; the first start: 'Decaid is not reachable' and what to check |
+| `first-shot.md` | the home screen: the state line (Heating, Idle, the scale's weight and a tap to tare), the graph, the right column (profile, bean, values, stop), the menu, the swipes between hot water, home and steam (the dots, the history handle) |
+| `profiles.md` | the picker (filter by name, preview, load, delete), the A-Flow 3.0 editor (the steps, the graph, save, unsaved edits, importing old A-Flow profiles), the step editor and its script tab; links `docs/a-flow-3.0.md` for the model |
+| `steam-and-water.md` | the steam page (milk weight, mug, the timer, adjust buttons, set timer, the countdown), hot water (temperature, flow, time, stop at weight or volume, the ratio favourites), flush, the ring on every screen |
+| `beans-and-history.md` | beans and grinders (add, edit, archive, the pick for the next shot, the roast date), the shot history (the filter by bean and grinder, restoring a shot's profile, bean and grinder) |
+| `settings.md` | the ten categories in a sentence each, the skin's own (legend, shot values, steam adjust buttons, hot water ratios, default dose), presence and sleep (sleep after, wake schedules), wake lock |
+| `troubleshooting.md` | the state line's messages and what to do, no scale, the machine sleeps, a profile that will not load, 'Decaid closed the connection', what to put in a bug report |
+| `reference.md` | gestures on one page, every screen's controls, the glossary (A-Flow, step, frame, ratio), the limits (landscape only, no iOS, no scale page), the version history in short |
+
+How it is made and kept true: **the pictures are generated**, not taken by hand: one Playwright
+script (`scripts/screenshots.mjs`, `npm run screenshots`) drives the skin on the mock gateway at
+1280 x 800 CSS pixels, device scale factor 2, dark, and writes `docs/user/img/<page>-<n>.png`, so
+every release refreshes them and no real bean, device or address can be in them; the pages
+mention the version they were checked against; `scripts/docs-check.mjs` fails when a link or an
+image does not resolve, runs in CI. The text is written from this spec (section 3 and the
+built notes), not from memory, and every claim about a control uses the control's label as the
+skin shows it. The founder reads install, first shot and troubleshooting **cold on the tablet**
+(acceptance 84) and a person who has not seen the skin installs it with the documentation
+alone (acceptance 85).
+
+**Decisions that are the founder's (section 8).**
+
+1. *The public repository:* a **new public repository** cut from `main` without the team's
+   records (the recommendation: the history cannot leak what it never held, and this repository
+   stays private as the working one), or this repository made public after the records are
+   removed with a history rewrite (`git filter-repo`), or as it is (the process is public).
+2. *The e-mail in the commits:* kept, or a GitHub noreply address from now on (a new repository
+   starts with a clean one).
+3. *The version of the first public release:* 0.6.0 by the rule, or 1.0.0 (a major bump: asked).
+4. *Language of the user documentation:* English only, or German as well.
+5. *D-Flow:* Damian Brakel's approval in writing, and whether the founder asks him or Claude
+   drafts the message for the founder to send.
+6. *Where it is announced* (Decent's forum, Diaspora, GitHub's release): outward-facing, the
+   founder's to do or to approve, not planned here.
+
 ## 4. Technical approach
 
 ### 4.1 What a Decaid skin is
@@ -1397,7 +1524,8 @@ Windows, Linux and macOS. What differs per platform is **Decaid itself**:
   founder's checks are in
   [install.md](install.md), the result of the automated items in
   [acceptance.md](acceptance.md).
-- **Later releases:** the same ZIP attached to a GitHub release, installable by URL.
+- **Later releases:** the same ZIP attached to a GitHub release, installable by URL. The plan
+  for publishing, the repository's clean-up and the user documentation are 3.13 (roadmap track P).
 
 ## 5. Acceptance (what "v1 done" means)
 
@@ -1681,6 +1809,26 @@ Where an item here and one of 27-55 disagree, the item here wins (3.10 overrides
 79. **Hand-over (founder).** The 0.5.0 ZIP carries 3.11 and 3.12; the checks of
     [install.md](install.md) for items 67-78 are asked with the open ones.
 
+80. **Licence files (test).** `LICENSE` is the GPL-3.0 text, `package.json`, `manifest.json`,
+    README and `NOTICE` name the same licence, every ported file's header names its origin and
+    Streamline's licence as `LICENSE` of its tag states it, and `NOTICE` names D-Flow.
+81. **Publish check (test).** `scripts/publish-check.mjs` passes on the tree that is published
+    and fails on a planted Windows path, e-mail address, foreign MAC address and the messenger's name; the
+    published tree holds no `stint/`, `.claude/`, `stint.toml`, review note or founder's export.
+82. **The public ZIP (test).** `npm run zip` writes `index.html`, `manifest.json` and the
+    assets only (no `camera.html`, no source map), under 200 kB, and its `manifest.json` names the
+    public repository.
+83. **User documentation (test).** Every link and image of `docs/user/` and README resolves
+    (`scripts/docs-check.mjs`); `npm run screenshots` runs on the mock gateway and writes every
+    image the pages use; each page names the version it was checked against.
+84. **User documentation on the tablet (founder).** The founder reads `install.md`,
+    `first-shot.md` and `troubleshooting.md` with the skin in front of them and marks every
+    line that is wrong, missing or unclear.
+85. **A new user (founder).** A person who has not seen the skin installs the ZIP in Decaid and
+    pulls a first shot with the documentation alone, and says what stopped them.
+86. **Release (founder).** The GitHub release's ZIP installs in Decaid by its URL, and by
+    download, on the tablet; the CI of the tagged commit is green.
+
 ## 6. Constraints
 - **Budget:** one Claude Pro plan. This product may use all of it up to 90% of the weekly
   limit; the team plans by capacity.
@@ -1776,6 +1924,13 @@ The weeks are a capacity guess on one Pro plan.
 | 3 | Y5 | review 2026-10-22: the steam clock, graph and 'last steam' from `pouring` to the end of the flow, tested with the export's steam records (3.12 'Steam: the clock starts and ends with the steam') | R1 |
 | 3 | Y6 | review 2026-10-22: the hot water and flush ring on every screen: reproduce it on the rig for every screen and both kinds, fix the cause, one test over the matrix (3.12 'Hot water and flush ring: on every screen') | W2 |
 | 3 | H4 | review 2026-10-21 and 2026-10-22: hand-over ZIP 0.5.0 (minor bump), carrying 3.11 and 3.12 and their checks in install.md | X1-X4, Y1-Y6, H3 |
+| 4 (Nov 2-8) | P1 | publish (3.13): `LICENSE`, `NOTICE`, one licence statement everywhere, D-Flow and A-Flow licences; needs the founder's decisions 3 and 5 | H4 |
+| 4 | P2 | publish: the public tree: scrub paths and personal data, move the team's records out, `scripts/publish-check.mjs`, `camera.html` and the probes; needs decisions 1 and 2 | P1 |
+| 4 | P3 | publish: CI and release workflows, `CONTRIBUTING.md`, `CHANGELOG.md`, issue templates, `SECURITY.md`, README as a front page, the name check, `npm audit` and the dependency licences | P2 |
+| 4 | P4 | publish: `npm run screenshots`, the generated pictures of the user documentation from the mock gateway, and `scripts/docs-check.mjs` | H4 |
+| 5 (Nov 9-15) | P5 | publish: user documentation, the first half: `docs/user/` README, install, first shot, profiles and the editors | P4 |
+| 5 | P6 | publish: user documentation, the second half: steam and water, beans and history, settings, troubleshooting, reference | P5 |
+| 5 | P7 | publish: the release: version, tag, GitHub release with the ZIP and its SHA-256, the URL install checked in Decaid, the founder's cold read and a new user's install (3.13 acceptance 84-86); announcing is the founder's | P3, P6 |
 | 2 (Oct 19-25) | Q1 | code quality review 2026-10-19: Prettier and ESLint, the tree formatted in one commit (in `.git-blame-ignore-revs`), lint errors fixed, both in the check ([review-code-quality-10-19-26.md](review-code-quality-10-19-26.md), steps 1-3) | - |
 | 2 | Q2 | code quality review 2026-10-19: split `src/shell/skin.svelte.ts` along its seams; `Skin` stays the one object the screens read ([review-code-quality-10-19-26.md](review-code-quality-10-19-26.md), step 4) | Q1 |
 | 2 | Q3 | code quality review 2026-10-19: one `errorMessage` helper in place of the repeated error idiom ([review-code-quality-10-19-26.md](review-code-quality-10-19-26.md), step 5) | Q2 |
