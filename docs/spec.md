@@ -1172,8 +1172,8 @@ in the tests (`e2e/swipe.spec.ts` already has the gestures).
 From the founder's voice notes of the morning of 2026-10-22 ([review-10-22-26.md](review-10-22-26.md),
 with the steam page's screenshot (screenshot in the team repository)) and a Decaid 0.9.0
 export of 2026-10-21 (`decent_export_2026-10-21T22-00-49.zip`: 12 steam records, the settings,
-profiles, beans). Planned only, nothing of it is built. Six items, five from the transcript and
-one said after it (a seventh was dropped); the transcript's slips are read as said below. Hand-over 0.5.0 (H4) carries
+profiles, beans). Planned only, nothing of it is built. Nine items, five from the transcript and
+four said after it (a seventh was dropped); the transcript's slips are read as said below. Hand-over 0.5.0 (H4) carries
 these with 3.11.
 
 **Beans: the date picker (item 1; Y1).** On the bean add and edit page the roast date's picker
@@ -1191,9 +1191,9 @@ today is allowed (a bag is sometimes dated ahead). The same picker serves any la
 **Hot water: the state line (item 2; Y2).** On the hot water page the machine's state seems to
 show Idle always (founder, 2026-10-22). Today `HotWater.svelte` draws `<StateLine {skin} />`
 without `heat`, while home passes `heat="group"` and steam `heat="steam"` (T3), so the line
-cannot say 'Heating' there: an idle machine under its target is shown as Idle. Default: the hot
-water page waits for the group's heater as home does (`heat="group"`), which the DE1's water
-path shares; the milestone first looks on the rig at what the hot water page's line shows in
+cannot say 'Heating' there: an idle machine under its target is shown as Idle. Default (decided by item 9: the founder wants home and hot water the same, by the group
+temperature): the hot
+water page waits for the group's heater as home does (`heat="group"`); the milestone first looks on the rig at what the hot water page's line shows in
 idle, while the machine heats, while hot water pours and after it, and the value the page should
 wait for (the hot water temperature of `hotWaterData` against the mix temperature is the
 alternative). While hot water pours the line says 'Hot water' as home's does; that is an
@@ -1318,6 +1318,58 @@ profile picker, then dropped it (2026-10-22): the picker has had one since 0.3.0
 name' (`filterProfiles` in `src/shell/profiles.ts`, the field `profile-filter`, 3.8), the
 founder may have looked at an older version, and the filter by name is enough. Nothing is
 planned; a search over author and description would be a new item if it is missed later.
+
+**Steam page: the heater-off warning goes to the header (item 8; Y8).** When the steam heater is
+off, the steam page shows a warning and a button, 'The steam heater is off' and **Steam on**,
+over the right column; the founder wants them in the header row (founder, 2026-10-22,
+the screenshot (screenshot in the team repository), the warning and the steam timer
+under it circled). Today `Steam.svelte` draws them as a block (`steam-heater-on`, built in U3
+from 3.9 item 18) at the top of the right column when `skin.steamHeater` is `'off'`, and the
+block pushes the steam timer down. Default: the **Steam on** button sits at the right end of
+the header row, left of the page's title (X3), and the sentence goes: the state line says
+**Off** (item 9) in the warning colour, which is the same message in one word, so the header
+does not grow. The right column does not move when the heater is on or off: the timer keeps its
+place and the space the block took is not reserved. The button keeps its test id and its
+behaviour (`setSteamHeater(true)`, the notice if Decaid refuses); the block's `p` goes. If the
+founder wants the whole sentence in the header, it fits at 1280 px beside the button when the
+'last steam' text is not shown (the heater is off, so nothing steamed just now).
+
+**State words: idle, heating and off follow the heater (item 9; Y9).** The machine state is
+shown as Idle always on the steam page, as on the hot water page (founder, 2026-10-22; the
+screenshot shows 'Idle' with the steam at 32 °C and the heater off). Home and the hot water page
+say the same: **Heating** until the group is within 3 °C of its target, then **Idle**; the steam
+page follows the steam heater: **Heating** until the steam temperature is within 3 °C of the
+steam target, **Idle** in that range, **Off** when the steam is off (target 0). Today
+`isHeating` and `heatingStatus` in `src/shell/machine.ts` give 'Heating' only for an idle machine
+under its target (`HEATED_MARGIN`, 3 °C) and a heater that is off is explicitly 'not heating',
+which leaves Idle; the hot water page does not pass `heat` at all (Y2). Default, in
+`statusFor`/`heatingStatus`: **home and hot water: `heat="group"`**, the espresso target
+`targetGroupTemperature` (this settles Y2's choice); **steam page: `heat="steam"`** with the
+machine's `targetSteamTemp`: below target - 3 °C Heating (tone `busy`), at or above target - 3 °C
+Idle (tone `ok`), and target 0 **Off** (tone `off`, the warning colour when the heater is off
+while the page is shown, as the screenshot shows it). The 'plus 3 °C' side is the founder's
+'in that range': a boiler hotter than target + 3 °C (just after steaming, cooling down) is also
+ready, so it says Idle, not a fourth word; the founder says so if it should say something else.
+Only an idle machine takes these words: Espresso, Steam, Hot water, Flush, Asleep and the rest
+stay the machine's own state, as now. The decision uses the **filtered** temperature (item 10)
+with a hysteresis of 1 °C (Heating again only below target - 4 °C), so a value that jitters at
+the border does not flip the word.
+
+**Temperatures: filtered and rounded (item 10; Y10).** The group and steam values of the state
+line are noisy (founder, 2026-10-22): they get a filter, steam shows whole degrees and the group
+one decimal, 'if that is not the case already'. **It is the case already**: `stateLine` in
+`src/shell/machine.ts` writes the group `toFixed(1)` and the steam `toFixed(0)`; so what the
+founder sees is the raw frame jittering across a rounding border. Default: a small pure
+function (`smooth` in a new `src/shell/smooth.ts`, tested) that gives the **exponential moving
+average** of the frames, time constant 1.5 s (the frames come at 4 per second, so about six of
+them), restarting from the new frame when the last one is older than 3 s (a stale link) or the
+value jumps by more than 5 °C (a reconnect, a heater switched), and applied to `groupTemperature`
+and `steamTemperature` in the skin's streams (`src/shell/streams.svelte.ts`), once, so the state
+line and item 9's words read the same value. It filters the display only: the **graphs**, the
+**live temperature of a shot** (the overlay's value), the shot records and every write to the
+machine keep the raw frames. The constant is checked on the rig and the tablet; a steam that cools
+by 1 °C a second while it steams is shown about a second late, which is accepted. Rounding stays
+as it is, after the filter.
 
 ### 3.13 Publishing the skin
 
@@ -1838,7 +1890,7 @@ Where an item here and one of 27-55 disagree, the item here wins (3.10 overrides
     stops it by a tap, and a hot water pour shows one, large where 3.6 says and small elsewhere;
     the ring goes when the run ends.
 79. **Hand-over (founder).** The 0.5.0 ZIP carries 3.11 and 3.12; the checks of
-    [install.md](install.md) for items 67-78 are asked with the open ones.
+    [install.md](install.md) for items 67-78 and 88-90 are asked with the open ones.
 
 80. **Licence files (test).** `LICENSE` is the GPL-3.0 text, `package.json`, `manifest.json`,
     README and `NOTICE` name the same licence, every ported file's header names its origin and
@@ -1866,6 +1918,21 @@ Where an item here and one of 27-55 disagree, the item here wins (3.10 overrides
     repository's history still holds every file it held before.
 87. **Release (founder).** The GitHub release's ZIP installs in Decaid by its URL, and by
     download, on the tablet; the CI of the tagged commit is green.
+
+88. **Steam header (test).** With the steam heater off, the steam page's header holds the **Steam on**
+    button (a tap sends the request and the heater state follows) and no sentence block is in the
+    right column; the steam timer is at the same position with the heater on and off.
+89. **State words (test).** For an idle machine: home and the hot water page say 'Heating' while
+    the group temperature is more than 3 °C under its target and 'Idle' from there; the steam page
+    says 'Heating' while the steam is more than 3 °C under `targetSteamTemp`, 'Idle' from there
+    (also above target + 3 °C), and 'Off' when `targetSteamTemp` is 0 (steam at 32 °C, as in the
+    screenshot); a value at the border does not flip the word within 1 °C; while the machine runs,
+    sleeps or steams the word is its own state.
+90. **Temperature filter (test).** `smooth` of a series of frames at 4 per second with a noise of
+    0.3 °C stays within 0.1 °C of the mean after 3 s, follows a step of 10 °C within 5 s, restarts
+    on a 4 s gap and on a jump of more than 5 °C; the state line shows the group to one decimal and
+    the steam as a whole number and does not change more than once a second on a steady
+    machine; the graph's data are the raw frames.
 
 ## 6. Constraints
 - **Budget:** one Claude Pro plan. This product may use all of it up to 90% of the weekly
@@ -1961,7 +2028,10 @@ The weeks are a capacity guess on one Pro plan.
 | 3 | Y4 | review 2026-10-22: the machine does not sleep after use: find how Decaid decides presence, then send it on a touch (3.12 'Sleep: the machine sleeps after use') | S2c |
 | 3 | Y5 | review 2026-10-22: the steam clock, graph and 'last steam' from `pouring` to the end of the flow, tested with the export's steam records (3.12 'Steam: the clock starts and ends with the steam') | R1 |
 | 3 | Y6 | review 2026-10-22: the hot water and flush ring on every screen: reproduce it on the rig for every screen and both kinds, fix the cause, one test over the matrix (3.12 'Hot water and flush ring: on every screen') | W2 |
-| 3 | H4 | review 2026-10-21 and 2026-10-22: hand-over ZIP 0.5.0 (minor bump), carrying 3.11 and 3.12 and their checks in install.md | X1-X4, Y1-Y6, H3 |
+| 3 | Y8 | review 2026-10-22: the steam page's heater-off warning and **Steam on** button move to the header row (3.12 'Steam page: the heater-off warning goes to the header') | U3, X3 |
+| 3 | Y9 | review 2026-10-22: idle, heating and off follow the group temperature on home and hot water and the steam heater on the steam page (3.12 'State words') | T3, Y2 |
+| 3 | Y10 | review 2026-10-22: the state line's group and steam temperatures filtered, group to one decimal and steam to a whole degree (3.12 'Temperatures: filtered and rounded') | T3 |
+| 3 | H4 | review 2026-10-21 and 2026-10-22: hand-over ZIP 0.5.0 (minor bump), carrying 3.11 and 3.12 and their checks in install.md | X1-X4, Y1-Y6, Y8-Y10, H3 |
 | 4 (Nov 2-8) | P1 | publish (3.13): `LICENSE`, `NOTICE`, one licence statement everywhere, D-Flow's and DSx2's credit, Damian's approval in writing (A-Flow's old repository needs no licence); the founder asks Damian | H4 |
 | 4 | P2 | publish: the two repositories: try the team's tools across them first, cut the product repository (history with the noreply address, no records), turn this one into the team repository, scrub paths in `spec.md` and `research.md`, `scripts/publish-check.mjs`, `camera.html` and the probes; pushing and renaming are the founder's | P1 |
 | 4 | P3 | publish: CI and release workflows, `CONTRIBUTING.md`, `CHANGELOG.md`, issue templates, `SECURITY.md`, README as a front page, the name check, `npm audit` and the dependency licences | P2 |
