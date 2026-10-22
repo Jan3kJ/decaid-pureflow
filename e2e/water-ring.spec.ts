@@ -72,9 +72,7 @@ async function fromMenu(page: Page, entry: string) {
   await page.getByTestId(entry).click();
 }
 
-test('flush: the small ring on steam, settings, beans, the picker, the A-Flow editor, the hot water page and the history; its tap stops', async ({
-  page,
-}) => {
+test('flush: the small ring on steam, settings, beans, the hot water page and the history; its tap stops', async ({ page }) => {
   const gateway = (await mockGateway(page)).withDefaults('dark');
   await page.goto('/');
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
@@ -106,17 +104,6 @@ test('flush: the small ring on steam, settings, beans, the picker, the A-Flow ed
   await expect(page.getByTestId('screen-beans')).toBeVisible();
   await expectSmallRing(page, 'flush', '6 / 10 s');
 
-  await page.getByTestId('nav-home').click();
-  await page.getByTestId('open-profiles').click();
-  await expect(page.getByTestId('screen-profiles')).toBeVisible();
-  await expectSmallRing(page, 'flush', '6 / 10 s');
-
-  await page.getByTestId('nav-home').click();
-  await page.getByTestId('open-editor').click();
-  await expect(page.getByTestId('screen-editor')).toBeVisible();
-  await expect(page.getByTestId('graph')).toBeVisible();
-  await expectSmallRing(page, 'flush', '6 / 10 s');
-
   // The hot water page draws only hot water large: a flush is the small ring there.
   await page.getByTestId('nav-home').click();
   await page.getByTestId('open-hot-water').click();
@@ -141,14 +128,47 @@ test('flush: the small ring on steam, settings, beans, the picker, the A-Flow ed
   expect(errors).toEqual([]);
 });
 
-test('hot water: large on its page, small on steam and in the step editor, gone when it ends', async ({ page }) => {
+// The profile and bean buttons are home's right column, which the large ring replaces while
+// water runs (spec 3.11): the picker and the editor are opened before the run starts.
+test('flush: the small ring in the picker and the A-Flow editor', async ({ page }) => {
+  const gateway = (await mockGateway(page)).withDefaults('dark');
+  await page.goto('/');
+  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+
+  await page.getByTestId('open-profiles').click();
+  await expect(page.getByTestId('screen-profiles')).toBeVisible();
+  gateway.waterFor('flush', 6, 6, 90);
+  await expectSmallRing(page, 'flush', '6 / 10 s');
+  gateway.waterEnded();
+  await expect(page.getByTestId('small-ring')).toHaveCount(0);
+
+  await page.getByTestId('nav-home').click();
+  await page.getByTestId('open-editor').click();
+  await expect(page.getByTestId('screen-editor')).toBeVisible();
+  await expect(page.getByTestId('graph')).toBeVisible();
+  gateway.waterFor('flush', 6, 6, 90);
+  await expectSmallRing(page, 'flush', '6 / 10 s');
+  gateway.waterEnded();
+  await expect(page.getByTestId('small-ring')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test('hot water: large on its page, small in the step editor and on steam, gone when it ends', async ({ page }) => {
   const gateway = await mockGateway(page);
   gateway.workflow.profile = profile('Steps', 36, 3);
   gateway.connectScale(false);
   await page.goto('/');
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
 
+  // The editor is opened from home's column before the hot water starts (spec 3.11).
+  await page.getByTestId('open-editor').click();
+  await expect(page.getByTestId('step-cards')).toBeVisible();
   gateway.waterFor('hotWater', 3, 8, 40);
+  await expectSmallRing(page, 'hotWater', '3 / 30 s');
+  await expect(page.getByTestId('small-ring')).toHaveAttribute('data-share', '0.100');
+  await page.screenshot({ path: 'docs/product/small-ring-step-editor.png' });
+
+  await page.getByTestId('nav-home').click();
   await page.getByTestId('open-hot-water').click();
   await expect(page.getByTestId('water-view')).toHaveAttribute('data-kind', 'hotWater');
   await expect(page.getByTestId('small-ring')).toHaveCount(0);
@@ -156,17 +176,10 @@ test('hot water: large on its page, small on steam and in the step editor, gone 
   await page.getByTestId('nav-home').click();
   await page.getByTestId('open-steam').click();
   await expectSmallRing(page, 'hotWater', '3 / 30 s');
-  await expect(page.getByTestId('small-ring')).toHaveAttribute('data-share', '0.100');
-
-  await page.getByTestId('nav-home').click();
-  await page.getByTestId('open-editor').click();
-  await expect(page.getByTestId('step-cards')).toBeVisible();
-  await expectSmallRing(page, 'hotWater', '3 / 30 s');
-  await page.screenshot({ path: 'docs/product/small-ring-step-editor.png' });
 
   // Hot water ends by itself (at its volume): the ring goes without a tap.
   gateway.waterEnded();
   await expect(page.getByTestId('small-ring')).toHaveCount(0);
-  await expect(page.getByTestId('step-cards')).toBeVisible();
+  await expect(page.getByTestId('screen-steam')).toBeVisible();
   expect(errors).toEqual([]);
 });

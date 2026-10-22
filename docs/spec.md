@@ -1153,6 +1153,17 @@ values and the stop button as the table says. The column's height at 1280 x 800 
 the tablet: idle it holds two buttons of 3.5 rem, two big numbers and three small rows; during
 a shot the two buttons' room goes to the overlay's 7 rem stop button, which keeps its size.
 
+Built in X2 (`src/shell/NextShot.svelte`, drawn by `ShotView.svelte` at the top of the column
+while `homeShot` is not `running`; the bean pick opens from it): the column starts level with
+the caption, under the menu button, so the profile button's top is the column's; the pen and
+the grinder setting stay whole and only the name and the bean are cut. Where the spec left it
+open: while hot water or flush runs, home's large ring replaces the graph and the column (3.6),
+so the buttons are not drawn then either. At 1280 x 800 the idle column holds both buttons,
+both big numbers and the three rows with about 16 rem to spare, and the running column the
+7 rem stop at its bottom. Screenshots: home-idle.png (screenshot in the team repository),
+home-shot-running.png (screenshot in the team repository),
+home-column-long-names.png (screenshot in the team repository).
+
 **One header on home, steam and hot water (X3).** The state line starts the header on all
 three pages, in the same place with the same values (home and steam differ only in which
 temperature `heat` compares for 'Heating', T3). The page's title goes to the right end of the

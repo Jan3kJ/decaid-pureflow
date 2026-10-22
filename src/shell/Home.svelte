@@ -1,6 +1,4 @@
 <script lang="ts">
-  import Pick from '../beans/Pick.svelte';
-  import { beanLabel, contextBean } from '../history/entries';
   import { saveLocation } from '../settings-page/tree';
   import type { Skin } from './skin.svelte';
   import ShotView from './ShotView.svelte';
@@ -16,10 +14,6 @@
 
   // Hot water or flush runs: home shows it in place of the graph, with stop in its ring (spec 3.6).
   const water = $derived(shownRun(skin.waterRun, skin.canStop));
-  // The bean and grinder setting for the next shot, as the workflow holds them; a tap picks others (spec 3.9 item 19).
-  const nextBean = $derived(beanLabel(contextBean(skin.workflow?.context)));
-  const nextSetting = $derived(skin.workflow?.context?.grinderSetting?.trim() || null);
-  let picking = $state(false);
 
   /**
    * The menu of the top right corner (founder, 2026-10-13): what is rarely used. A list, so
@@ -93,24 +87,9 @@
 </script>
 
 <div class="home">
+  <!-- The state line and the menu only: the profile and bean are in the right column (spec 3.11). -->
   <header>
     <StateLine {skin} heat="group" />
-
-    <div class="profile">
-      <button class="name" data-testid="open-profiles" aria-label="choose a profile" onclick={() => skin.go('profiles')}>
-        <strong data-testid="profile-name">{skin.workflow?.profile?.title ?? '–'}</strong>
-      </button>
-      <button class="icon" data-testid="open-editor" aria-label="edit the profile" onclick={() => skin.go('editor')}>
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M4 20h4L19 9l-4-4L4 16z M13.5 6.5l4 4" />
-        </svg>
-      </button>
-    </div>
-
-    <button class="pick" data-testid="open-pick" aria-label="bean and grinder for the next shot" onclick={() => (picking = true)}>
-      <span data-testid="next-bean">{nextBean}</span>
-      {#if nextSetting}<small data-testid="next-setting">{nextSetting}</small>{/if}
-    </button>
 
     <button class="icon" data-testid="menu" aria-label="menu" aria-expanded={menuOpen} onclick={() => (menuOpen = !menuOpen)}>
       <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -131,10 +110,6 @@
     <ShotView {skin} />
   {/if}
 </div>
-
-{#if picking}
-  <Pick {skin} onclose={() => (picking = false)} />
-{/if}
 
 {#if menuOpen}
   <!-- A tap outside the menu closes it and does nothing else. -->
@@ -186,63 +161,6 @@
     user-select: none;
   }
 
-  .profile {
-    flex: none;
-    max-width: 22rem;
-    display: flex;
-    border: 1px solid var(--line);
-    border-radius: 0.9rem;
-    background: var(--panel);
-  }
-
-  .profile button {
-    border: 0;
-    background: none;
-  }
-
-  /* The bean and the grinder setting for the next shot: shortened, so the header stays one row. */
-  .pick {
-    flex: 0 1 auto;
-    min-width: 0;
-    max-width: 16rem;
-    min-height: 3.5rem;
-    padding: 0 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    font-size: var(--text-body);
-  }
-
-  .pick span {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .pick small {
-    flex: none;
-    color: var(--dim);
-    font-size: var(--text-body);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .name {
-    min-width: 0;
-    min-height: 3.5rem;
-    padding: 0 0.4rem 0 1rem;
-    text-align: left;
-  }
-
-  .name strong {
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-size: var(--text-value);
-    font-weight: 600;
-  }
-
   .icon {
     flex: none;
     width: 3.5rem;
@@ -260,10 +178,6 @@
     stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
-  }
-
-  .profile .icon {
-    color: var(--dim);
   }
 
   .notice {

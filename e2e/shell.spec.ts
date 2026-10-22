@@ -257,7 +257,8 @@ test('a shot started at the machine: home shows it by itself with a live graph a
 
   await gateway.replay(page, 0.3, 0.7);
   await expect.poll(() => points(page)).toBeGreaterThan(early);
-  await expect(page.getByTestId('profile-name')).toHaveText('A-Flow / default-medium');
+  // The profile and bean buttons are not drawn while the shot runs (spec 3.11).
+  await expect(page.getByTestId('profile-name')).toHaveCount(0);
   expect(parseFloat((await page.getByTestId('shot-timer').textContent())!)).toBeGreaterThan(15);
   expect(parseFloat((await page.getByTestId('shot-weight').textContent())!)).toBeGreaterThan(5);
   await expect(page.getByTestId('shot-pressure')).toContainText('bar');
@@ -282,6 +283,7 @@ test('a shot started at the machine: home shows it by itself with a live graph a
   await expect(page.getByTestId('shot-plot')).toHaveCount(0);
   await expect(page.getByTestId('dismiss-shot')).toHaveCount(0);
   await expect(page.getByTestId('last-shot')).toBeVisible();
+  await expect(page.getByTestId('profile-name')).toHaveText('A-Flow / default-medium');
   // Every espresso frame from the first one with water is a point; the mock repeated its latest
   // frame while the test looked.
   expect(await points(page)).toBeGreaterThanOrEqual(WATER_FRAMES);

@@ -2,6 +2,7 @@
   import ShotGraph from '../graph/ShotGraph.svelte';
   import { beanLabel } from '../history/entries';
   import { homeShot } from './home-shot';
+  import NextShot from './NextShot.svelte';
   import { phaseTable, type PhaseRow } from './phases';
   import type { Skin } from './skin.svelte';
 
@@ -115,6 +116,10 @@
   {/if}
 
   <aside data-testid="shot-column">
+    <!-- The profile and bean for the next shot; while a shot runs their room goes to stop. -->
+    {#if !running}
+      <NextShot {skin} />
+    {/if}
     <div class="big">
       <small>time</small>
       <b data-testid="shot-timer">{value(shown.seconds)}<i>s</i></b>

@@ -95,7 +95,9 @@ test('a simulated shot: the state, an A-Flow profile, a live graph, the stop at 
     await expect(page.getByRole('button', { name: /start/ })).toHaveCount(0);
     await api('PUT', '/api/v1/machine/state/espresso');
     await expect(page.getByTestId('shot-plot')).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByTestId('profile-name')).toHaveText(PROFILE);
+    // While the shot runs the profile and bean buttons are not drawn (spec 3.11, X2).
+    await expect(page.getByTestId('open-profiles')).toHaveCount(0);
+    await expect(page.getByTestId('open-pick')).toHaveCount(0);
     await expect.poll(() => points(page), { timeout: 15_000 }).toBeGreaterThan(20);
     const early = await points(page);
     await expect.poll(() => points(page), { timeout: 15_000 }).toBeGreaterThan(early + 20);
@@ -123,6 +125,8 @@ test('a simulated shot: the state, an A-Flow profile, a live graph, the stop at 
     await expect(page.getByTestId('shot-plot')).toHaveCount(0);
     await expect(page.getByTestId('last-shot')).toBeVisible();
     await expect(page.getByTestId('stop')).toHaveCount(0);
+    await expect(page.getByTestId('shot-column').getByTestId('profile-name')).toHaveText(PROFILE);
+    await expect(page.getByTestId('shot-column').getByTestId('open-pick')).toBeVisible();
     const grams = parseFloat((await page.getByTestId('last-shot-weight').textContent())!);
     expect(parseFloat((await page.getByTestId('shot-weight').textContent())!)).toBe(grams);
     expect(parseFloat((await page.getByTestId('shot-timer').textContent())!)).toBeGreaterThan(5);

@@ -174,11 +174,12 @@ test("home's chip opens the pick: bean, grinder and setting go out in one PUT an
   await expect(page.getByTestId('next-bean')).toHaveText('no bean');
   await expect(page.getByTestId('next-setting')).toHaveText('5.2');
 
-  // The header stays one row at 1280 x 800.
-  const tops = await Promise.all(
-    ['open-profiles', 'open-pick', 'menu'].map(async (id) => (await page.getByTestId(id).boundingBox())!.y),
+  // The pick is under the profile button at the top of home's right column (spec 3.11).
+  const [profiles, pick] = await Promise.all(
+    ['open-profiles', 'open-pick'].map(async (id) => (await page.getByTestId(id).boundingBox())!),
   );
-  expect(Math.max(...tops) - Math.min(...tops)).toBeLessThan(8);
+  expect(pick.y).toBeGreaterThanOrEqual(profiles.y + profiles.height);
+  await expect(page.getByTestId('shot-column').getByTestId('open-pick')).toBeVisible();
 
   await page.getByTestId('open-pick').click();
   await expect(page.getByTestId('pick')).toBeVisible();
