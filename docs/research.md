@@ -3678,3 +3678,58 @@ Spec 3.9 item 15, roadmap U12. GPL notice as 20.8 in every file that takes from 
 - **Tests.** Vitest: the NDJSON framing, the upload and the other calls, the helpers, the tree.
   Playwright (mocked gateway): `e2e/settings-help.spec.ts`. Rig: `e2e-rig/settings-help.spec.ts`
   (read only).
+
+## 32. The heartbeat and Decaid's sleep timer, on the rig (Y4, 2026-10-22)
+
+Spec 3.12 'Sleep: the machine sleeps after use'. Decaid 0.8.8 (build `aab5f938`) with device
+simulation; the rig serves Streamline.js **0.2.18** (Decaid updated it from 0.2.17 by itself on
+2026-10-22). The rig's presence settings before: `userPresenceEnabled` true,
+`sleepTimeoutMinutes` **30** (the founder's export has 15). Each probe set the timeout to 1 min
+and put both values back, read back equal. Scripts and logs: `..\decaid-rig\log\y4\`
+(`probe1.mjs`, `probe2.mjs` and their `.txt`). All **seen running**.
+
+| Question | Answer on 0.8.8 |
+|---|---|
+| Does `POST /api/v1/machine/heartbeat` exist? | Yes: 200 `{"timeout":1800}` with 30 min, `{"timeout":60}` with 1 min |
+| Does `timeout` fall between heartbeats? | Not seen: every heartbeat answered 60, also 5 s, 10 s and 2 s after the one before. The answer is the timeout after its own reset, so it cannot meter the fall; the sleep itself was timed instead |
+| Does each heartbeat reset the timer? | Yes, also one 2 s after another: the machine slept 60.3 s after the last heartbeat (the 30 s Decaid waits between forwards to the DE1 does not hold back its own timer) |
+| Presence off | `{"timeout":-1}`; on again, 60 |
+| A heartbeat to a sleeping machine | Answers 60 and does **not** wake it (still `sleeping` 5 s and 40 s later, two heartbeats) |
+| Left alone | `sleeping` 60 s after the last reset |
+
+What starts the timer again without a heartbeat (the machine woken, one thing done 30 s later,
+the sleep timed from the wake):
+
+| Done 30 s after the wake | Slept after the wake | So |
+|---|---|---|
+| nothing | 59.3 s | the wake (sleeping to idle) starts the timer |
+| reads: `GET` workflow, machine state, presence settings | 59.6 s | no reset |
+| a workflow write (`PUT /api/v1/workflow`, the same steam values) | 59.6 s | no reset |
+| `PUT /api/v1/machine/state/idle` to an idle machine | 59.5 s | no reset |
+| a flush of 4 s | 94.4 s (60.4 s after its end) | reset, counted from the end |
+| steam for 4 s | 94.3 s (60.3 s after its end) | reset, counted from the end |
+| a shot of 6 s | 96.2 s (60.2 s after its end) | reset, counted from the end |
+
+So Decaid counts the machine's runs and the wake, not a skin's requests: a skin that only shows
+pages, edits profiles or changes settings leaves the timer running from the last shot, steam or
+flush. That is what the founder saw. The probe's shot and steam records were deleted (shots 1,
+steams 2 again).
+
+**Built.** `DecaidClient.heartbeat()` (`src/api/client.ts`) returns the answer's `timeout`.
+`Heartbeat` (`src/shell/heartbeat.ts`), a part of `Skin` as `Dimmer` is, takes each touch from
+`App.svelte`'s one pointer handler through `Skin.touched()`: it sends at once, then nothing until
+30 s after the one it sent, and nothing while `machineAsleep` (the Asleep screen and 'Machine
+sleep' alike). A failure is caught and counts for the 30 s; no notice. The skin never writes the
+presence settings. The heartbeat behaves as Decaid's documentation says, so section 8 has no new
+question; with a timeout of 1 min the 30 s spacing can let the machine sleep up to 30 s before a
+minute has passed since the last touch, which a setting of 15 min makes immaterial.
+
+**Tests.** Vitest: `src/shell/heartbeat.test.ts` (the 30 s with fake timers, none while asleep, a
+failure ignored) and the request in `src/api/client.test.ts`. Playwright (mocked gateway, which
+answers the heartbeat as the rig does): `e2e/heartbeat.spec.ts`; the mock's `writes()` and the rig
+helper `isWrite` (`e2e-rig/gateway.ts`) leave the heartbeat out of the tests that check a page
+changed nothing. Rig: `e2e-rig/heartbeat.spec.ts` (acceptance 75: 60 and -1, three minutes of
+touches every 10 s without a sleep and with heartbeats at least 29 s apart, then the sleep 50-75 s
+after the last one, no heartbeat while asleep, no presence write; it skips itself when the
+gateway has no heartbeat). The full rig suite: 50 of 50 (`hot-water.spec.ts` failed once on its
+flow slider, 8 for 4, and passed on its own rerun; that spec is not changed by Y4).

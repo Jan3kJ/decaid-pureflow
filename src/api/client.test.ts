@@ -534,6 +534,18 @@ describe('errors', () => {
   });
 });
 
+describe('heartbeat (Y4)', () => {
+  it('posts to the heartbeat and reads the seconds left before the sleep', async () => {
+    const { client, calls } = clientWith({ body: { timeout: 60 } }, { body: { timeout: -1 } });
+    expect(await client.heartbeat()).toBe(60);
+    expect(await client.heartbeat()).toBe(-1);
+    expect(calls.map((call) => `${call.method} ${call.url.replace(DEFAULT_BASE_URL, '')}`)).toEqual([
+      'POST /api/v1/machine/heartbeat',
+      'POST /api/v1/machine/heartbeat',
+    ]);
+  });
+});
+
 describe('plugins, presence, calibration, firmware (S2c)', () => {
   it('sends each request to its path, with the body Decaid takes', async () => {
     const { client, calls } = clientWith();

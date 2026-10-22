@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { isWrite } from './gateway';
 import type { MachineSnapshot, ProfileRecord } from '../src/api';
 import { pickerEntries, previewLastStepSeconds } from '../src/shell/profiles';
 import { stepCurve } from '../src/steps/curve';
@@ -33,7 +34,7 @@ test('the picker previews every listed profile as its steps say', async ({ page 
   test.setTimeout(180_000);
   const sent: string[] = [];
   page.on('request', (request) => {
-    if (request.url().startsWith(GATEWAY) && request.method() !== 'GET' && request.method() !== 'OPTIONS') {
+    if (isWrite(request, GATEWAY)) {
       sent.push(`${request.method()} ${new URL(request.url()).pathname}`);
     }
   });

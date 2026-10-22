@@ -12,6 +12,7 @@ import { ShotCache } from '../history/shots.svelte';
 import type { Settings } from '../settings';
 import type { ReadBackup } from '../settings-backup';
 import { Dimmer } from './dimmer';
+import { Heartbeat } from './heartbeat';
 import { gatewayBaseUrl } from './gateway';
 import { LoadWarning, type LoadAnswer } from './load-warning.svelte';
 import { canSleep, canStop, heatingStatus, isAsleep, stateLine, statusOf, type HeatTarget, type Status } from './machine';
@@ -65,6 +66,7 @@ export class Skin {
   private readonly recall: Recall;
   private readonly warning: LoadWarning;
   private readonly dimmer: Dimmer;
+  private readonly heartbeat: Heartbeat;
   /** who asked for the machine's sleep (`followSleep`) */
   private sleepMark: SleepMark = $state.raw(AWAKE);
 
@@ -92,6 +94,7 @@ export class Skin {
     this.recall = new Recall(this);
     this.warning = new LoadWarning(this.client);
     this.dimmer = new Dimmer(this.client);
+    this.heartbeat = new Heartbeat(this.client);
     this.streams = new Streams(baseUrl, this.client, {
       onOpen: () => {
         // The workflow may have changed while the gateway was away.
@@ -351,6 +354,11 @@ export class Skin {
   /** The steam heater on or off; false when it was not switched, and the notice says why (`SteamControl.setHeater`). */
   setSteamHeater(on: boolean): Promise<boolean> {
     return this.steamer.setHeater(on);
+  }
+
+  /** A touch anywhere on the skin: Decaid's sleep timer starts again (`Heartbeat`, spec 3.12). */
+  touched(): void {
+    this.heartbeat.touch(this.machineAsleep);
   }
 
   wake(): Promise<void> {

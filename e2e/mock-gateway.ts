@@ -247,6 +247,8 @@ export class MockGateway {
   steamTemperature = 148;
   /** Decaid's setting blockTareDuringShot is on and a shot runs: a tare answers 400 */
   tareBlocked = false;
+  /** true: `POST /api/v1/machine/heartbeat` answers 500 */
+  heartbeatFails = false;
   /** true: a stream is answered with an error frame and closed (research.md 9.4) */
   refuseStreams = false;
   /** sockets refused with an error frame, every stream counted */
@@ -584,6 +586,11 @@ export class MockGateway {
   /** The reads of one shot's record, with its measurements: not of `/api/v1/shots/latest`. */
   recordCalls() {
     return this.calls('GET', /^\/api\/v1\/shots\/(?!latest$)./);
+  }
+
+  /** Every call but a read, and but the heartbeat, which a touch sends (spec 3.12): what the page changed. */
+  writes() {
+    return this.requests.filter((request) => request.method !== 'GET' && request.path !== '/api/v1/machine/heartbeat');
   }
 
   /** The calls of one kind, as `METHOD path`. */
@@ -924,6 +931,12 @@ export class MockGateway {
       plugin.version = plugin.pendingUpdate?.version ?? plugin.version;
       plugin.pendingUpdate = null;
       return json({ message: 'updated', id: plugin.id, version: plugin.version, loaded: plugin.loaded });
+    }
+    if (path === '/api/v1/machine/heartbeat' && method === 'POST') {
+      if (this.heartbeatFails) return json({ error: 'the mock fails the heartbeat' }, 500);
+      // As the rig answers (research.md 32): the whole timeout again, -1 with presence off.
+      const { userPresenceEnabled, sleepTimeoutMinutes } = this.presence;
+      return json({ timeout: userPresenceEnabled && this.machineConnected ? sleepTimeoutMinutes * 60 : -1 });
     }
     if (path === '/api/v1/presence/settings' && method === 'GET') return json(this.presence);
     if (path === '/api/v1/presence/settings' && method === 'POST') {

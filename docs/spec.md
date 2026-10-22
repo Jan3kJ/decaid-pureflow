@@ -1276,6 +1276,17 @@ keeps the app awake without waking the machine); and what resets the timer witho
 (a shot, steam, a touch only), to explain what the founder saw. If a heartbeat does something
 else than the docs say, the skin reports what it found and the founder decides (section 8).
 
+*Built (Y4, 2026-10-22):* `DecaidClient.heartbeat()` and `Heartbeat` (`src/shell/heartbeat.ts`),
+fed by `Skin.touched()` from `App.svelte`'s pointer handler: the first touch sends at once, then
+none until 30 s after the last one sent; none while the machine sleeps (`machineAsleep`, so not
+after 'Machine sleep' either); a failed one still counts for the 30 s. On the rig (Decaid 0.8.8,
+research.md 32) the heartbeat behaves as the docs say: each one starts Decaid's timer again and
+answers the whole timeout (60 with 1 min; it never answers a falling value, so the timer's fall
+is timed by the sleep itself), -1 with presence off, and it does not wake a sleeping machine.
+Without a heartbeat only the machine's own runs start the timer again (a wake, a flush, steam,
+a shot, each counted from its end); reads, workflow writes and an `idle` request to an idle
+machine do not, which is what the founder saw: the skin used without a run did not count.
+
 **Steam: the clock starts and ends with the steam (item 5; Y5).** The steam timer seems to start
 too early: the countdown is at 0 while the machine still steams for 1 or 2 seconds, and the
 'last steam' at the top right shows 32 s though the timer was 26 s, so there is time at the

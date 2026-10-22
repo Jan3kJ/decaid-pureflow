@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import type { MachineSnapshot, PaginatedShots, ShotRecord, ProfileRecord } from '../src/api';
-import type { RigWorkflow } from './gateway';
+import { isWrite, type RigWorkflow } from './gateway';
 import { IDLE } from './idle';
 import { phaseTable, recordSamples } from '../src/shell/phases';
 
@@ -53,7 +53,7 @@ test('a simulated shot: the state, an A-Flow profile, a live graph, the stop at 
   const shotsBefore = await shotIds();
   const sent: string[] = [];
   page.on('request', (request) => {
-    if (request.url().startsWith(GATEWAY) && request.method() !== 'GET' && request.method() !== 'OPTIONS') {
+    if (isWrite(request, GATEWAY)) {
       sent.push(`${request.method()} ${new URL(request.url()).pathname}`);
     }
   });

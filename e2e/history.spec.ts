@@ -107,7 +107,7 @@ test('a swipe from the left edge to the right opens the overlay, and no other sw
   await swipe(page, { x: 120, y: 500 }, { x: 330, y: 500 });
   await expect(page.getByTestId('history')).toBeVisible();
   // The swipe pressed nothing and wrote nothing.
-  expect(gateway.requests.filter((request) => request.method !== 'GET')).toEqual([]);
+  expect(gateway.writes()).toEqual([]);
   expect(errors).toEqual([]);
 });
 
@@ -126,7 +126,7 @@ test('a tap outside closes the overlay and changes nothing', async ({ page }) =>
   await expect(page.getByTestId('history')).toHaveCount(0);
   await expect(page.getByTestId('screen-home')).toBeVisible();
   await expect(page.getByTestId('history-graph')).toHaveCount(0);
-  expect(gateway.requests.filter((request) => request.method !== 'GET')).toEqual([]);
+  expect(gateway.writes()).toEqual([]);
   // A tap inside the panel that hits no entry leaves it open.
   await page.getByTestId('history-handle').tap();
   await page.getByTestId('history').getByRole('heading').tap();
@@ -453,6 +453,6 @@ test('the filter by bean and grinder: the catalogue names the entries, a choice 
 
   // The shots were read once: the filter asks the gateway for none, and nothing was written.
   expect(gateway.historyListCalls()).toHaveLength(2);
-  expect(gateway.requests.filter((request) => request.method !== 'GET')).toEqual([]);
+  expect(gateway.writes()).toEqual([]);
   expect(errors).toEqual([]);
 });

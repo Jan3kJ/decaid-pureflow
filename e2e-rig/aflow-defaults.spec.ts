@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import type { MachineSnapshot, ProfileRecord } from '../src/api';
-import type { RigWorkflow } from './gateway';
+import { isWrite, type RigWorkflow } from './gateway';
 import { DEFAULT_PROFILES } from '../src/aflow';
 import { workflowProfile } from '../src/editor/storage';
 import { defaultProfile } from '../src/shell/profiles';
@@ -45,7 +45,7 @@ test('the picker lists the skin’s defaults and loads one into the workflow wit
   const profilesBefore = await profileIds();
   const sent: string[] = [];
   page.on('request', (request) => {
-    if (request.url().startsWith(GATEWAY) && request.method() !== 'GET' && request.method() !== 'OPTIONS') {
+    if (isWrite(request, GATEWAY)) {
       sent.push(`${request.method()} ${new URL(request.url()).pathname}`);
     }
   });

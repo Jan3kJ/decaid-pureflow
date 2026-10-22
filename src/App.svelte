@@ -99,6 +99,7 @@
   }
 
   function onpointerdown(event: PointerEvent) {
+    skin.touched();
     swipe = null;
     if (settling || !swipes(skin.screen) || skin.historyOpen || held) return;
     if (onControl(event.target as Element, main)) return;

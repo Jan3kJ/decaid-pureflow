@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import type { DisplayState, MachineSnapshot, WebUiServerStatus, ShotSettings } from '../src/api';
-import type { RigWorkflow } from './gateway';
+import { isWrite, type RigWorkflow } from './gateway';
 import { IDLE } from './idle';
 import { toPage } from '../e2e/touch';
 
@@ -86,7 +86,7 @@ test('steam: the written timer is read back from the workflow and from the machi
   const wakeLockBefore = (await api<DisplayState>('GET', '/api/v1/display')).wakeLockOverride === true;
   const sent: string[] = [];
   page.on('request', (request) => {
-    if (request.url().startsWith(GATEWAY) && request.method() !== 'GET' && request.method() !== 'OPTIONS') {
+    if (isWrite(request, GATEWAY)) {
       sent.push(`${request.method()} ${new URL(request.url()).pathname} ${request.postData() ?? ''}`.trim());
     }
   });

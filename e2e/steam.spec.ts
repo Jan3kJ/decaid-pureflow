@@ -402,7 +402,7 @@ test('a swipe to the left opens the steam page, from the right edge too (spec 3.
   await swipe(page, { x: 10, y: 400 }, { x: 260, y: 420 });
   await expect(page.getByTestId('history')).toBeVisible();
   await expect(page.getByTestId('screen-home')).toBeVisible();
-  expect(gateway.requests.filter((request) => request.method !== 'GET')).toEqual([]);
+  expect(gateway.writes()).toEqual([]);
   expect(errors).toEqual([]);
 });
 

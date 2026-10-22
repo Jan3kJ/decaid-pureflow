@@ -111,7 +111,7 @@ test('a tap on a dot slides to its page, across home too; the current dot does n
   // The pages a dot reaches are those a swipe reaches: a swipe still works after them.
   await swipe(page, { x: 800, y: 500 }, { x: 300, y: 500 });
   await rests(page, 'steam');
-  expect(gateway.requests.filter((request) => request.method !== 'GET')).toEqual([]);
+  expect(gateway.writes()).toEqual([]);
   expect(errors).toEqual([]);
 });
 

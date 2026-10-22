@@ -57,7 +57,7 @@ test('a swipe moves along hot water, home and steam, and springs back at the end
   await page.waitForTimeout(400);
   await expect(shown(page, 'home')).toBeVisible();
   await expect(page.locator('.page')).toHaveCount(1);
-  expect(gateway.requests.filter((request) => request.method !== 'GET')).toEqual([]);
+  expect(gateway.writes()).toEqual([]);
   expect(errors).toEqual([]);
 });
 
@@ -130,7 +130,7 @@ test('a swipe that begins on a button slides the page and presses nothing', asyn
   const y = tare.y + tare.height / 2;
   await swipe(page, { x: tare.x + tare.width / 2 - 400, y }, { x: tare.x + tare.width / 2, y });
   await expect(shown(page, 'home')).toBeVisible();
-  expect(gateway.requests.filter((request) => request.method !== 'GET')).toEqual([]);
+  expect(gateway.writes()).toEqual([]);
   expect(errors).toEqual([]);
 });
 

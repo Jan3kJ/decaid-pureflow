@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import type { MachineSnapshot, ProfileRecord } from '../src/api';
 import { readSteps } from '../src/aflow';
-import type { RigWorkflow } from './gateway';
+import { isWrite, type RigWorkflow } from './gateway';
 
 // One of Decaid's own A-Flow profiles opens in the A-Flow 3.0 editor (spec 3.9, U2, acceptance
 // item 43), against the rig: Decaid's bundled 'A-Flow / default-very-dark', the plugin's 1.4
@@ -51,7 +51,7 @@ test("Decaid's A-Flow / default-very-dark opens in the A-Flow editor, read from 
 
   const sent: string[] = [];
   page.on('request', (request) => {
-    if (request.url().startsWith(GATEWAY) && request.method() !== 'GET' && request.method() !== 'OPTIONS') {
+    if (isWrite(request, GATEWAY)) {
       sent.push(`${request.method()} ${new URL(request.url()).pathname}`);
     }
   });

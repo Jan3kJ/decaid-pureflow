@@ -150,6 +150,15 @@ export class DecaidClient {
     return this.request('GET', '/api/v1/machine/info');
   }
 
+  /**
+   * Signals that someone uses the skin: resets Decaid's sleep timer. Answers the seconds left
+   * before the machine sleeps, or -1 when presence is off or no machine is connected.
+   */
+  async heartbeat(): Promise<number> {
+    const answer = await this.request<{ timeout: number }>('POST', '/api/v1/machine/heartbeat');
+    return answer.timeout;
+  }
+
   /** Loads a profile to the machine without changing the rest of the workflow. */
   async loadProfileToMachine(profile: Profile): Promise<void> {
     await this.request('POST', '/api/v1/machine/profile', profile);

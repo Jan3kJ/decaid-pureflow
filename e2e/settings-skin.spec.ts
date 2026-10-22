@@ -68,7 +68,7 @@ test('the display size scales the whole skin at once, is saved, backed up and st
   await expect(page.getByTestId('setting-display-size-1.15')).toHaveAttribute('aria-pressed', 'true');
   expect(await rootSize(page)).toBeCloseTo(18.4, 1);
   // Nothing of Decaid's was written for it.
-  expect(gateway.requests.filter((request) => request.method !== 'GET' && !request.path.startsWith('/api/v1/store'))).toEqual([]);
+  expect(gateway.writes().filter((request) => !request.path.startsWith('/api/v1/store'))).toEqual([]);
 });
 
 test("the chart line width widens every graph's curves: the profile picker's preview and the editor's", async ({ page }) => {
@@ -131,7 +131,7 @@ test("the skin switch lists Decaid's skins, asks, and opens the chosen one as De
   await expect(page.getByTestId('settings-confirm')).toContainText('Switch to Insight?');
   await page.getByTestId('settings-confirm-cancel').click();
   await expect(page.getByTestId('settings-confirm')).toHaveCount(0);
-  expect(gateway.requests.filter((request) => request.method !== 'GET' && !request.path.startsWith('/api/v1/store'))).toEqual([]);
+  expect(gateway.writes().filter((request) => !request.path.startsWith('/api/v1/store'))).toEqual([]);
 
   await page.getByTestId('skin-insight').click();
   await page.getByTestId('settings-confirm-ok').click();

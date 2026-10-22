@@ -279,5 +279,5 @@ test("the skin's own settings are in Skin, saved and backed up as before", async
     .poll(() => (gateway.store['pureflow/settings-backup'] as Backup | undefined)?.settings?.steam?.mugSmall, { timeout: 10_000 })
     .toBe(160);
   // Nothing of Decaid's was written for it.
-  expect(gateway.requests.filter((request) => request.method !== 'GET' && !request.path.startsWith('/api/v1/store'))).toEqual([]);
+  expect(gateway.writes().filter((request) => !request.path.startsWith('/api/v1/store'))).toEqual([]);
 });

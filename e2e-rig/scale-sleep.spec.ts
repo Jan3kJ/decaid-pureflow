@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { isWrite } from './gateway';
 import type { DisplayState, MachineSnapshot, DecaidSettings, DeviceInfo, PaginatedShots } from '../src/api';
 import { IDLE } from './idle';
 
@@ -176,7 +177,7 @@ test('sleep: machine and app sleep puts the machine into sleeping with the Aslee
   const displayBefore = await api<DisplayState>('GET', '/api/v1/display');
   const sent: string[] = [];
   page.on('request', (request) => {
-    if (request.url().startsWith(GATEWAY) && request.method() !== 'GET' && request.method() !== 'OPTIONS') {
+    if (isWrite(request, GATEWAY)) {
       sent.push(`${request.method()} ${new URL(request.url()).pathname} ${request.postData() ?? ''}`.trim());
     }
   });
