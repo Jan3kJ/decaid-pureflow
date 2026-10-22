@@ -1172,8 +1172,8 @@ in the tests (`e2e/swipe.spec.ts` already has the gestures).
 From the founder's voice notes of the morning of 2026-10-22 ([review-10-22-26.md](review-10-22-26.md),
 with the steam page's screenshot (screenshot in the team repository)) and a Decaid 0.9.0
 export of 2026-10-21 (`decent_export_2026-10-21T22-00-49.zip`: 12 steam records, the settings,
-profiles, beans). Planned only, nothing of it is built. Seven items, five from the transcript and
-two said after it; the transcript's slips are read as said below. Hand-over 0.5.0 (H4) carries
+profiles, beans). Planned only, nothing of it is built. Six items, five from the transcript and
+one said after it (a seventh was dropped); the transcript's slips are read as said below. Hand-over 0.5.0 (H4) carries
 these with 3.11.
 
 **Beans: the date picker (item 1; Y1).** On the bean add and edit page the roast date's picker
@@ -1313,16 +1313,11 @@ and adds one test over the whole matrix (acceptance 78), since the W2 tests did 
 The wording is also open: if the founder meant that the large ring should show on every screen,
 not the small one, section 8 asks.
 
-**Profile picker: search (item 7; Y7).** The founder asks to add a search filter to the profile
-picker. **The picker has one since 0.3.0**: T4's 'filter by name' (`filterProfiles` in
-`src/shell/profiles.ts`, the field `profile-filter` over the list, 3.8), which matches the
-title only. So the request is read as widening it, and the milestone confirms with the founder
-(section 8) what was missing. Default: the field becomes a **search**: it keeps its place and its
-test id, a typed text of several words matches a profile when every word is in its title, its
-author or its description (the notes without the A-Flow line, `profileDescription`), in any case;
-the match is marked in the title; an 'x' in the field clears it; the empty-list line says what
-was searched. The filter is still not kept between openings. The picker's keyboard rules (3.8,
-the field's dialog) are unchanged.
+**Profile picker: search (item 7; dropped).** The founder asked to add a search filter to the
+profile picker, then dropped it (2026-10-22): the picker has had one since 0.3.0, T4's 'filter by
+name' (`filterProfiles` in `src/shell/profiles.ts`, the field `profile-filter`, 3.8), the
+founder may have looked at an older version, and the filter by name is enough. Nothing is
+planned; a search over author and description would be a new item if it is missed later.
 
 ## 4. Technical approach
 
@@ -1683,12 +1678,8 @@ Where an item here and one of 27-55 disagree, the item here wins (3.10 overrides
     editor, the step editor, settings, beans and the history over home, a flush shows a ring that
     stops it by a tap, and a hot water pour shows one, large where 3.6 says and small elsewhere;
     the ring goes when the run ends.
-79. **Profile search (test).** Typing 'flo sun' in the picker's search keeps the profiles whose
-    title, author or description hold both words, in any case, and marks the match; the 'x'
-    clears it; an unmatched text shows the line naming it; a selected profile that the search
-    hides is not loaded until it shows again.
-80. **Hand-over (founder).** The 0.5.0 ZIP carries 3.11 and 3.12; the checks of
-    [install.md](install.md) for items 67-79 are asked with the open ones.
+79. **Hand-over (founder).** The 0.5.0 ZIP carries 3.11 and 3.12; the checks of
+    [install.md](install.md) for items 67-78 are asked with the open ones.
 
 ## 6. Constraints
 - **Budget:** one Claude Pro plan. This product may use all of it up to 90% of the weekly
@@ -1784,8 +1775,7 @@ The weeks are a capacity guess on one Pro plan.
 | 3 | Y4 | review 2026-10-22: the machine does not sleep after use: find how Decaid decides presence, then send it on a touch (3.12 'Sleep: the machine sleeps after use') | S2c |
 | 3 | Y5 | review 2026-10-22: the steam clock, graph and 'last steam' from `pouring` to the end of the flow, tested with the export's steam records (3.12 'Steam: the clock starts and ends with the steam') | R1 |
 | 3 | Y6 | review 2026-10-22: the hot water and flush ring on every screen: reproduce it on the rig for every screen and both kinds, fix the cause, one test over the matrix (3.12 'Hot water and flush ring: on every screen') | W2 |
-| 3 | Y7 | review 2026-10-22: the profile picker's filter becomes a search over title, author and description (3.12 'Profile picker: search') | T4 |
-| 3 | H4 | review 2026-10-21 and 2026-10-22: hand-over ZIP 0.5.0 (minor bump), carrying 3.11 and 3.12 and their checks in install.md | X1-X4, Y1-Y7, H3 |
+| 3 | H4 | review 2026-10-21 and 2026-10-22: hand-over ZIP 0.5.0 (minor bump), carrying 3.11 and 3.12 and their checks in install.md | X1-X4, Y1-Y6, H3 |
 | 2 (Oct 19-25) | Q1 | code quality review 2026-10-19: Prettier and ESLint, the tree formatted in one commit (in `.git-blame-ignore-revs`), lint errors fixed, both in the check ([review-code-quality-10-19-26.md](review-code-quality-10-19-26.md), steps 1-3) | - |
 | 2 | Q2 | code quality review 2026-10-19: split `src/shell/skin.svelte.ts` along its seams; `Skin` stays the one object the screens read ([review-code-quality-10-19-26.md](review-code-quality-10-19-26.md), step 4) | Q1 |
 | 2 | Q3 | code quality review 2026-10-19: one `errorMessage` helper in place of the repeated error idiom ([review-code-quality-10-19-26.md](review-code-quality-10-19-26.md), step 5) | Q2 |
