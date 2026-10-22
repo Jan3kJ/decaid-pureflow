@@ -11,3 +11,5 @@ e2e/.results/
 test-results/
 playwright-report/
 e2e-rig/.results/
+# Decaid exports (shot records, beans, settings): kept locally for reference, not committed
+docs/decent_export_*.zip

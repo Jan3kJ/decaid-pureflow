@@ -1172,9 +1172,9 @@ in the tests (`e2e/swipe.spec.ts` already has the gestures).
 From the founder's voice notes of the morning of 2026-10-22 ([review-10-22-26.md](review-10-22-26.md),
 with the steam page's screenshot (screenshot in the team repository)) and a Decaid 0.9.0
 export of 2026-10-21 (`decent_export_2026-10-21T22-00-49.zip`: 12 steam records, the settings,
-profiles, beans). Planned only, nothing of it is built. Five items; the transcript's slips are
-read as said below, and the one that is a guess is marked. Hand-over 0.5.0 (H4) carries these
-with 3.11.
+profiles, beans). Planned only, nothing of it is built. Seven items, five from the transcript and
+two said after it; the transcript's slips are read as said below. Hand-over 0.5.0 (H4) carries
+these with 3.11.
 
 **Beans: the date picker (item 1; Y1).** On the bean add and edit page the roast date's picker
 does not fit the rest of the design (founder, 2026-10-22). Today `src/beans/BeanForm.svelte` has
@@ -1212,21 +1212,36 @@ no weight. The home water view's weight line already appears only with a scale (
 
 **Sleep: the machine sleeps after use (item 4; Y4).** The machine goes to sleep sometimes
 although the app was used a minute before; the sleep must follow the sleep-after setting
-(founder, 2026-10-22; the transcript says 'the sleeper after setting for a decade', read as
-'sleep after', Presence Detection's 'sleep after', which `userPresenceEnabled` and
-`sleepTimeoutMinutes` hold: 15 min in the export). It is Decaid that sleeps the machine, not the
-skin (3.10: 'Decaid's timeout, presence'). Today the skin sends nothing that tells Decaid someone
-is there (`grep` for a presence or heartbeat request in `src` finds none; the client has only the
-settings and schedules, `src/api/client.ts`), so a touch of the app may not count as presence and
-the machine sleeps from the last time Decaid saw activity, not from the founder's last touch.
-That is the working guess, and the milestone starts by finding out: read how Decaid decides
-presence (its `rest_v1.yml` and the sources Streamline's skin calls) and test on the rig with
-`sleepTimeoutMinutes` at 1: a machine that has only been touched in the skin, a shot, steam, hot
-water and a swipe each; which of them restarts the timer. Default fix: whatever Decaid offers
-for it (a presence request) is sent on a touch of the skin, at most once a minute, and not while
-the machine sleeps by the skin's own menu ('Machine sleep', 3.10); if Decaid has no such
-request, the skin reports what it found and the founder decides (section 8). The skin does not
-sleep the machine itself and stays out of the sleep-after setting's value.
+(founder, 2026-10-22; the transcript's 'sleeper after setting for a decade' is read as Presence
+Detection's 'sleep after', `sleepTimeoutMinutes`, 15 min in the export; the founder confirmed it
+is Decaid's own timer of 15 min and that it seems unconnected from the skin's use). It is Decaid
+that sleeps the machine, not the skin (3.10).
+
+*Research (2026-10-22, Decaid's `main`, the 0.9.0 of the export: `rest_v1.yml`, `doc/Skins.md`,
+`doc/Api.md`, and Streamline-js `main`, all 118 files of its `src/`):* **there is a request the
+skin must send.** `POST /api/v1/machine/heartbeat`, 'Signal user presence': 'Call this endpoint
+periodically (e.g., on user interaction) to signal that a user is actively using the skin. This
+resets the auto-sleep timer.' It answers `{"timeout": seconds}`, the seconds left before the
+auto-sleep, or -1 when presence tracking is off or no machine is connected. Decaid forwards it
+to the DE1 at most every 30 s and answers at once; it needs `userPresenceEnabled` true and a
+connected DE1. There is no other event for presence. Streamline-js defines `signalHeartbeat` in
+`api.js` and imports it in `settings.js`, but nothing in `src/` calls it, so even the default
+skin may not send it (the Streamline 0.2.17 the rig serves was not read). The skin sends none:
+`src/api/client.ts` has no heartbeat. That is why the machine sleeps from the last time
+Decaid saw anything and not from the founder's last touch.
+
+Default: `DecaidClient.heartbeat()` (`POST /api/v1/machine/heartbeat`, the `timeout` read from
+the answer) and **a heartbeat on a touch of the skin**, at most once every 30 s (Decaid's own
+minimum), sent from the one pointer handler `App.svelte` already has, on every screen and while
+a shot, steam, hot water or flush runs. Not sent while the machine sleeps (a touch then wakes it
+through the Asleep screen, 3.10). A failed heartbeat is ignored, with no notice: it is a comfort.
+The skin never writes `sleepTimeoutMinutes`. The milestone checks on the rig, with the setting
+at 1 min and the heartbeat's own `timeout` as the meter: that `timeout` falls from 60 and
+returns to 60 after a heartbeat; that it is -1 with presence off; whether a heartbeat to a
+sleeping machine wakes it (it must not, so the skin sends none then, and 'Machine sleep' of 3.10
+keeps the app awake without waking the machine); and what resets the timer without a heartbeat
+(a shot, steam, a touch only), to explain what the founder saw. If a heartbeat does something
+else than the docs say, the skin reports what it found and the founder decides (section 8).
 
 **Steam: the clock starts and ends with the steam (item 5; Y5).** The steam timer seems to start
 too early: the countdown is at 0 while the machine still steams for 1 or 2 seconds, and the
@@ -1234,17 +1249,32 @@ too early: the countdown is at 0 while the machine still steams for 1 or 2 secon
 start and at the end that is counted (founder, 2026-10-22,
 the screenshot (screenshot in the team repository): the founder boxed the pressure
 rising before the steam and the pressure falling after it, and the timer and 'last steam'). The
-export's steam records show why, 12 records of 2026-10-13 to 2026-10-21, the last six with a full
-steam:
+founder expected Decaid to send events for it, with flow or pressure as the fallback.
 
-- The machine is in state `steam` with the substate `preparingForShot` for **2.2 s** before the
-  steam: the pump primes, flow 0 to 3 ml/s, pressure rising to 0.8 bar. Then `pouring` starts.
+*Research (2026-10-22, same sources):* **Decaid sends the start, not the end, and no steam event
+of its own.**
+
+- `ws/v1/machine/shotState` ('ShotStateEvent': idle, preheating, pouring, stopping, finished, why
+  a step advanced, why the shot stopped) is the espresso sequencer's feed; it has no steam.
+- `SteamSequencer` and `GET /api/v1/steams` keep steam records, 'opened on entry to
+  MachineState.steam and finalized when the machine leaves steam': a record holds the lead-in and
+  the tail (43 to 55 s a record in the export) and says nothing of where the steam is.
+- What the machine itself reports is the snapshot's `state.substate`: `preparingForShot`,
+  `pouring`, `pouringDone`, `pausedSteam`, `puffing`. Streamline-js uses it so for shots: its
+  shot clock starts at `preinfusion` or `pouring` and 'excludes the preparingForShot phase'
+  (`app.js`). So **the start has an event: the first `pouring` frame.** The end has none.
+
+The export's steam records show the rest, 12 records of 2026-10-13 to 2026-10-21, the last six
+with a full steam:
+
+- The machine is in `steam` with the substate `preparingForShot` for **2.2 s** before the steam:
+  the pump primes, flow 0 to 3 ml/s, pressure rising to 0.8 bar. Then `pouring` starts.
 - The flow falls under 0.5 ml/s at **the timer plus about 0.5 s after the start of `pouring`**
-  (timer 24 s: 24.5 s; timer 25 s: 25.2 s; timer 23 s: 23.5 s). The machine's timer therefore
-  counts from `pouring`, and the steam ends with it.
+  (timer 24 s: 24.5 s; timer 25 s: 25.2 s; timer 23 s: 23.5 s). The machine's timer counts from
+  `pouring` and the steam ends with it.
 - The substate stays `pouring` for **3.5 to 5 s more** (28.5 s in all for a timer of 24 s, 30.2 s
   for 25 s) with the flow at 0.3 down to 0 ml/s and the pressure falling to 0.1 bar; then
-  `puffing`.
+  `puffing`. So the substate does not mark the end; the flow does, the pressure only follows it.
 
 Today `steams` in `src/steam/run.ts` calls every frame of state `steam` that is not
 `pouringDone`, `puffing` or `pausedSteam` steaming, so a run starts with `preparingForShot` and
@@ -1252,21 +1282,47 @@ ends at `puffing`: it is the timer plus about 2.2 s before and 4 s after, 32 s f
 26 s, and the countdown (`secondsLeft`, from the run's own seconds) reaches 0 about 2 s before
 the steam does and shows 0 while it still steams. Default: the run **starts with the first frame
 of the substate `pouring`**, so the clock, the countdown and the graph's 0 s are the machine's
-timer's; while the machine is in `preparingForShot` the page shows the timer unchanged, labelled
-'steam starts' (or as the state line's 'Steam', in the milestone's choice) and no graph is
-drawn. The run **ends with the first frame after which the flow has stayed under 0.5 ml/s**:
-the last frame at 0.5 ml/s or more, with the frames after it neither drawn nor counted, so the
-graph and 'last steam' end where the steam does (timer 24 s: about 24.5 s). The substates after
-it (`pouringDone`, `puffing`, `pausedSteam`) and every other state still end the run as before,
-and a run in which the machine leaves `steam` before the flow falls ends there. Hysteresis: the
-flow must be seen at 0.5 ml/s or more in `pouring` before the end can be decided, so a start
-that is slow to move water does not end the run; the 0.5 ml/s is a constant to check against the
-rig's simulated steam, which has no `preparingForShot` (research.md 8.7) and so also tests the
-fallback: without that substate the run starts with the first steam frame as now. The tests use
-the real frames: the `state`, `substate`, `flow`, `pressure`, `steamTemperature` and timestamp of
-two or three of the export's steam records (those of 2026-10-17 16:15 and 2026-10-21 07:51 are
-trimmed and kept as `e2e/fixtures/` and `src/steam/` fixtures; the export itself stays out of the
-repository).
+timer's; while the machine is in `preparingForShot` the page shows the timer unchanged and draws
+no graph. The run **ends with the last frame at 0.5 ml/s or more** (the fallback the founder
+named: the flow, not the pressure, whose fall is slower and noisier), with the frames after it
+neither drawn nor counted, so the graph and 'last steam' end where the steam does (timer 24 s:
+about 24.5 s). The substates after `pouring` (`pouringDone`, `puffing`, `pausedSteam`) and every
+other state still end the run as before, and a run in which the machine leaves `steam` before the
+flow falls ends there. Hysteresis: the flow must have been at 0.5 ml/s or more in `pouring`
+before its fall can end the run, so a start that is slow to move water does not end it; the
+0.5 ml/s is a constant to check against the rig's simulated steam, which has no
+`preparingForShot` (research.md 8.7) and so also tests the fallback: without that substate the run
+starts with the first steam frame as now. The tests use the real frames: the `state`, `substate`,
+`flow`, `pressure`, `steamTemperature` and timestamp of two or three of the export's steam records
+(those of 2026-10-17 16:15 and 2026-10-21 07:51, trimmed, kept as test fixtures; the export
+itself stays out of the repository, see `.gitignore`).
+
+**Hot water and flush ring: on every screen (item 6; Y6).** The founder wants the hot water and
+the flush ring on any screen and sees, at the moment, only the flush ring and only on the home
+screen (founder, 2026-10-22, said after the review). W2 (3.10 'Countdown ring on every screen')
+decided exactly this and was built: `smallRingRun` in `src/shell/water.ts` gives the small ring of
+`SmallRing.svelte` on every screen but home and the hot water page during a pour. So either the
+build the founder tested does not behave as W2 says, or the hot water run is not seen. Default:
+the milestone starts by reproducing it on the rig for every screen (home, steam, hot water,
+profiles, both editors, settings, beans, the history over home) and both kinds (hot water, flush):
+whether `Skin.waterRun` is set for hot water (the machine state `hotWater` and the substate
+it passes through; the export's settings have `stopHotWaterAtWeight` on and a connected scale,
+where hot water ends by weight), whether `canStop` is true, whether the small ring is drawn and
+visible (its place above the pages' controls), and which of those fails; then it fixes the cause
+and adds one test over the whole matrix (acceptance 78), since the W2 tests did not catch it.
+The wording is also open: if the founder meant that the large ring should show on every screen,
+not the small one, section 8 asks.
+
+**Profile picker: search (item 7; Y7).** The founder asks to add a search filter to the profile
+picker. **The picker has one since 0.3.0**: T4's 'filter by name' (`filterProfiles` in
+`src/shell/profiles.ts`, the field `profile-filter` over the list, 3.8), which matches the
+title only. So the request is read as widening it, and the milestone confirms with the founder
+(section 8) what was missing. Default: the field becomes a **search**: it keeps its place and its
+test id, a typed text of several words matches a profile when every word is in its title, its
+author or its description (the notes without the A-Flow line, `profileDescription`), in any case;
+the match is marked in the title; an 'x' in the field clears it; the empty-list line says what
+was searched. The filter is still not kept between openings. The picker's keyboard rules (3.8,
+the field's dialog) are unchanged.
 
 ## 4. Technical approach
 
@@ -1612,9 +1668,10 @@ Where an item here and one of 27-55 disagree, the item here wins (3.10 overrides
     in ml; with a connected scale 'stop at weight' in g; the value written is the same field in
     both; the ratio chips are not offered when the last shot has no weight.
 75. **Sleep after use (test, rig).** With `sleepTimeoutMinutes` at 1 and presence on, a machine
-    whose skin is touched every 30 s for three minutes does not sleep; left alone it sleeps after
-    the minute; the skin's request goes at most once a minute and not while the machine sleeps
-    by 'Machine sleep'. The skin never writes the setting's value.
+    whose skin is touched every 30 s for three minutes does not sleep and `heartbeat`'s `timeout`
+    returns to 60 after each touch; left alone it sleeps after the minute; the skin sends at most
+    one `POST /api/v1/machine/heartbeat` every 30 s, none while the machine sleeps, and ignores a
+    failed one. The skin never writes the setting's value.
 76. **Steam clock (test).** Fed the frames of the export's steam record of 2026-10-21 07:51
     (timer 24 s), the run starts at the first `pouring` frame, its last point is the last frame at
     0.5 ml/s or more (about 24.5 s), 'last steam' shows that, the countdown reaches 0 within half
@@ -1622,8 +1679,16 @@ Where an item here and one of 27-55 disagree, the item here wins (3.10 overrides
     first steam frame; a run whose machine leaves `steam` before the flow falls ends there.
 77. **Steam clock on the tablet (founder).** The countdown reaches 0 as the steam stops, the
     graph shows no ramp before it and no tail after it, and 'last steam' is about the timer.
-78. **Hand-over (founder).** The 0.5.0 ZIP carries 3.11 and 3.12; the checks of
-    [install.md](install.md) for items 67-77 are asked with the open ones.
+78. **Rings everywhere (test).** For each of home, steam, hot water, profiles, the A-Flow
+    editor, the step editor, settings, beans and the history over home, a flush shows a ring that
+    stops it by a tap, and a hot water pour shows one, large where 3.6 says and small elsewhere;
+    the ring goes when the run ends.
+79. **Profile search (test).** Typing 'flo sun' in the picker's search keeps the profiles whose
+    title, author or description hold both words, in any case, and marks the match; the 'x'
+    clears it; an unmatched text shows the line naming it; a selected profile that the search
+    hides is not loaded until it shows again.
+80. **Hand-over (founder).** The 0.5.0 ZIP carries 3.11 and 3.12; the checks of
+    [install.md](install.md) for items 67-79 are asked with the open ones.
 
 ## 6. Constraints
 - **Budget:** one Claude Pro plan. This product may use all of it up to 90% of the weekly
@@ -1718,7 +1783,9 @@ The weeks are a capacity guess on one Pro plan.
 | 3 | Y3 | review 2026-10-22: hot water 'stop at volume' in ml without a scale (3.12 'Hot water: stop at volume without a scale') | U3 |
 | 3 | Y4 | review 2026-10-22: the machine does not sleep after use: find how Decaid decides presence, then send it on a touch (3.12 'Sleep: the machine sleeps after use') | S2c |
 | 3 | Y5 | review 2026-10-22: the steam clock, graph and 'last steam' from `pouring` to the end of the flow, tested with the export's steam records (3.12 'Steam: the clock starts and ends with the steam') | R1 |
-| 3 | H4 | review 2026-10-21 and 2026-10-22: hand-over ZIP 0.5.0 (minor bump), carrying 3.11 and 3.12 and their checks in install.md | X1-X4, Y1-Y5, H3 |
+| 3 | Y6 | review 2026-10-22: the hot water and flush ring on every screen: reproduce it on the rig for every screen and both kinds, fix the cause, one test over the matrix (3.12 'Hot water and flush ring: on every screen') | W2 |
+| 3 | Y7 | review 2026-10-22: the profile picker's filter becomes a search over title, author and description (3.12 'Profile picker: search') | T4 |
+| 3 | H4 | review 2026-10-21 and 2026-10-22: hand-over ZIP 0.5.0 (minor bump), carrying 3.11 and 3.12 and their checks in install.md | X1-X4, Y1-Y7, H3 |
 | 2 (Oct 19-25) | Q1 | code quality review 2026-10-19: Prettier and ESLint, the tree formatted in one commit (in `.git-blame-ignore-revs`), lint errors fixed, both in the check ([review-code-quality-10-19-26.md](review-code-quality-10-19-26.md), steps 1-3) | - |
 | 2 | Q2 | code quality review 2026-10-19: split `src/shell/skin.svelte.ts` along its seams; `Skin` stays the one object the screens read ([review-code-quality-10-19-26.md](review-code-quality-10-19-26.md), step 4) | Q1 |
 | 2 | Q3 | code quality review 2026-10-19: one `errorMessage` helper in place of the repeated error idiom ([review-code-quality-10-19-26.md](review-code-quality-10-19-26.md), step 5) | Q2 |
