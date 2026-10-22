@@ -1344,33 +1344,36 @@ ready, by how much it matters:
    `LICENSE` at the ported tag (v0.2.14) and make README, the file headers, acceptance 12 and a
    new `NOTICE` (the ported files and their origin, Decaid's 73 bundled profiles as test data,
    D-Flow) say one thing. GPL-3.0-only for the whole is fine with GPL-3.0-or-later parts.
-2. **D-Flow.** The TypeScript generator and the five defaults in `src/aflow/` are the
+2. **D-Flow, and DSx2.** The TypeScript generator and the five defaults in `src/aflow/` are the
    founder's own code in this repository, so this repository's licence covers them; **the
    `Jan3kJ/A_Flow` repository needs no licence of its own** (founder, 2026-10-22): README links
    it as the old Tcl plugin the skin replaces ('the previous version of A-Flow'). What does
    matter is the line before it: A-Flow was forked from Damian Brakel's D-Flow, which has no
-   licence file, and spec 4.4 says the founder has Damian's approval for it. Put that approval in
-   writing (a comment on D-Flow's repository, or a message kept with the private records) and
-   credit D-Flow in README and `NOTICE`, since the skin publishes code that comes from it.
+   licence file, and spec 4.4 says the founder has Damian's approval for it. **The founder asks
+   Damian** (2026-10-22) and keeps his answer in writing (a comment on D-Flow's repository, or
+   a message in the team repository); README and `NOTICE` credit D-Flow. A second credit line,
+   asked for by the founder: **[DSx2](https://github.com/Damian-AU/DSx2)**, Damian Brakel's
+   skin for the old Decent app, which the founder used and which inspired many of this skin's
+   ideas. It is credited as inspiration ('many ideas are inspired by DSx2'); no DSx2 code or
+   asset is known to be in the skin, and if P1 finds any, DSx2's licence is read and `NOTICE`
+   names the file.
 3. **Personal data and local paths.** `docs/research.md` holds 19 local paths
    (`..\decaid-rig`, `../streamline-js`), `docs/d4-rig-smoke.txt` a Windows user
-   profile path, the stint day plans 70 more; the history carries the founder's personal
-   e-mail in all 173 commits (usual for an open repository, but the founder decides: 3.13's
-   decision 2). The **screenshots** of `docs/product/` come from the mock gateway ('MockDe1',
-   invented addresses) and are safe; the founder's own tablet screenshots, the Decaid export
-   and anything with real beans, roasters or devices must not go in (the export is already
-   ignored). Add `scripts/publish-check.mjs` that fails on a Windows path, an e-mail address,
-   a MAC address that is not `AA:BB:CC:`, the messenger's name and a bot token pattern in the files that
-   are published, run in CI.
-4. **The team's records are not the skin.** `stint/` (day plans, day records, blog posts,
-   `stint/logs/gemini_usage.jsonl`, `tasks.jsonl`, prompts), `stint.toml`, `.claude/` (hooks,
-   settings, the stint-onboard skill), the founder's review notes (`docs/review-*.md`,
-   `docs/answers-2026-10-14.md`), `docs/acceptance.md` and `docs/install.md` as the founder's
-   check list are a development process with token budgets, message numbers and
-   'the founder' as a role. Default: **they stay in a private repository** and the public one
-   has the skin, its tests, `docs/spec.md` and `docs/research.md` (scrubbed of paths and
-   message numbers; links to the review notes become dates), the user documentation and
-   `docs/a-flow-3.0.md`. Decision 1 says how.
+   profile path, the stint day plans 70 more. **The founder's personal e-mail is in no file, only
+   in the author of all 173 commits**: it comes from this machine's global git configuration
+   (`~\.gitconfig`, `user.email`), and the founder does not want it in public
+   (2026-10-22). The public repository therefore starts with a history written with a GitHub
+   noreply address (item 12), and `git config --global user.email` is set to that address
+   before the next commit (the founder's one line; Claude does not change a global
+   configuration). The **screenshots** of `docs/product/` come from the mock gateway
+   ('MockDe1', invented addresses) and are safe; the founder's own tablet screenshots, the
+   Decaid export and anything with real beans, roasters or devices must not go in (the
+   export is already ignored). Add `scripts/publish-check.mjs` that fails on a Windows path, an
+   e-mail address, a MAC address that is not `AA:BB:CC:`, the messenger's name and a bot token pattern in
+   the files of the product repository, run in CI.
+4. **The team's records are not the skin, so they get a repository of their own** (founder,
+   2026-10-22: 'work in two repositories, one for the product, one for docs and tools'). The
+   split is item 12.
 
 *Should be done*
 
@@ -1429,44 +1432,53 @@ using the controls' labels as the skin shows them. The founder reads the three p
 the tablet** (acceptance 84) and a person who has not seen the skin installs it with them
 alone (acceptance 85).
 
-**Keeping the public repository current (item 12; P2, P6).** The question after a repository cut
-is how updates reach the public one. Default: **this repository stays the working one** (the
-team's tooling, `stint/`, the day plans and the founder's reviews live here and keep working)
-and the public repository is **a mirror made by a script**, `scripts/publish-mirror.mjs`:
+**Two repositories (item 12; P2).** The founder's choice (2026-10-22), simpler than a mirror
+that is made by a script: **the product repository is public and is where the skin is
+developed; a second repository, private, holds the team's records and tools.** Nothing is
+copied between them, so there is nothing to keep in step.
 
-1. It lists the files to publish: every tracked file but a deny-list (`stint/`, `.claude/`,
-   `stint.toml`, `docs/review-*.md`, `docs/answers-*.md`, `docs/acceptance.md`, `docs/install.md`
-   as the founder's check list, `docs/product/` but the curated pictures, and what
-   `publish-check` rejects), kept in the script's own file so it is reviewed like code.
-2. It copies them into a clone of the public repository, runs `scripts/publish-check.mjs` and
-   the checks (`npm ci`, `check`, `lint`, `test`, `build`) there, and stops on a failure.
-3. It makes **one commit per release** (the message is the version's `CHANGELOG.md` entry,
-   authored with the address the founder chose), tags it `v<version>`, and leaves the push and
-   the GitHub release to the founder (every push to GitHub needs the founder's approval;
-   announcing is the founder's). The release workflow of P3 builds the ZIP from the tag.
-4. A **pull request** to the public repository is merged there, then brought back to this one
-   as a patch (`git format-patch` and `git am` work, because the shared files are the same
-   paths), so the next mirror contains it; the mirror refuses to run while the public
-   repository has a commit this one lacks, and says which.
+| | Product repository (public) | Team repository (private) |
+|---|---|---|
+| Name (proposed) | `Jan3kJ/decaid-pureflow`, the name `package.json` and the manifest already carry | `Jan3kJ/pureflow-team` |
+| Holds | `src/`, `e2e/`, `e2e-rig/`, `public/`, `scripts/` (build, zip, screenshots, the checks), the configuration files, `LICENSE`, `NOTICE`, `README.md`, `CHANGELOG.md`, `CONTRIBUTING.md`, `.github/`, `docs/user/` and `docs/a-flow-3.0.md`; **`docs/spec.md` and `docs/research.md`**, scrubbed of local paths and message numbers, because the code's comments cite them ('spec 3.10', 'research.md 8.7') and a contributor needs the reasons | `stint/` (day plans, day records, blog, logs, prompts), `stint.toml`, `.claude/`, the founder's review notes (`docs/review-*.md`, `docs/answers-*.md`), `docs/acceptance.md` and `docs/install.md` (the founder's check list), the Decaid export, and the rig's logs and probes (`scripts/rig-*-probe.mjs`) |
+| Who writes to it | the team's work on the skin, and pull requests | the team's planning and the founder's reviews |
 
-The cost: the public history is one commit per release, not per change (the working history has
-the founder's review notes and the team's process in it, which is the reason for the cut). The
-alternatives are mirroring every commit with `git filter-repo` (a full history, with the
-address and the early messages), or moving the team's tooling out of this repository so that it
-becomes the public one (the tooling expects the product's repository, so it is the most work).
-The mirror needs no rewrite of this history and can be dry-run at any time.
+How the one move is done (P2): **the product repository is cut from this one** with
+`git filter-repo` on a fresh clone, keeping only the product paths above and rewriting every
+author and committer to the noreply address with a `--mailmap`, so the public history is the
+real history of the skin without the records, the personal address or the early messages
+about them (commit messages that name a chat message or a token budget are rewritten with
+`--replace-message`; the founder reads the list before it is pushed). **This repository is
+not rewritten**: it keeps all its history and becomes the team repository by one commit that
+removes the product paths, then it is renamed on GitHub and the product repository takes
+the name `decaid-pureflow`. Pushing either, and the rename, are the founder's.
 
-**Decisions that are the founder's (section 8).** Answered on 2026-10-22: the release is **0.6.0**,
-not 1.0.0; the documentation is **English only**; the **announcement is the founder's**.
-Still open:
+*From then on, no copying.* The skin is changed, tested and released in the product repository
+(pull requests there, one `CHANGELOG.md` entry a release, CI, the tag and the ZIP of P3). The
+team's tools run on the product repository from the team repository: `stint.toml` has the keys
+for it (`repo_root`, `plan_dir`, `log_dir`, `roadmap_path`, `spec_path`, `days_dir`,
+`blog_dir`), so `repo_root` points to the product checkout (`../decaid-pureflow`) and the plans,
+logs, days, blog and `roadmap.json` stay in the team repository. **P2 starts by trying this**:
+that the runner, the plan prompt (which reads `docs/spec.md` and writes to it) and the roadmap
+check work with the two checkouts side by side, and that the three prompts, which the
+configuration reads 'relative to `repo_root`', can sit in the team repository (otherwise they
+move to the product repository's `.stint/`, public but harmless, or the key is given an
+absolute path). If the runner cannot do it, the fallback is that the team repository holds the
+tools and the product repository is a checkout inside it (a nested clone, ignored by the team
+repository's `.gitignore`); either way the product's history is its own. The spec's roadmap
+table (section 7) stays in `docs/spec.md`, in the product repository, and `roadmap.json`, the
+data form, in the team repository; the founder's reviews cite the spec by section.
 
-1. *The public repository:* the **mirror of item 12** (the recommendation), a history rewrite of
-   this repository, or as it is. The founder asked how updates would work; item 12 answers it
-   and awaits a yes.
-2. *The e-mail in the public commits:* the personal address, or a GitHub noreply address (the
-   mirror's commits take whichever is chosen; the private history keeps its own).
-3. *D-Flow:* Damian Brakel's approval in writing: the founder asks him, or Claude drafts the
-   message for the founder to send.
+**Decisions that are the founder's (section 8).** Answered on 2026-10-22: the release is
+**0.6.0**, not 1.0.0; the documentation is **English only**; the **announcement is the
+founder's**; **two repositories** (item 12); **the founder asks Damian** about D-Flow, and DSx2
+is credited. Still open:
+
+1. *The noreply address* for the public history and for the founder's commits from now on
+   (the numbered one GitHub shows under Settings, Emails, or the plain one): the founder's to give, since the
+   configuration is the founder's. Until it is set, P2's history rewrite has nothing to write.
+2. *The names of the two repositories* (item 12 proposes `decaid-pureflow` and
+   `pureflow-team`).
 
 ## 4. Technical approach
 
@@ -1834,24 +1846,28 @@ Where an item here and one of 27-55 disagree, the item here wins (3.10 overrides
 80. **Licence files (test).** `LICENSE` is the GPL-3.0 text, `package.json`, `manifest.json`,
     README and `NOTICE` name the same licence, every ported file's header names its origin and
     Streamline's licence as `LICENSE` of its tag states it, and `NOTICE` names D-Flow.
-81. **Publish check (test).** `scripts/publish-check.mjs` passes on the tree that is published
-    and fails on a planted Windows path, e-mail address, foreign MAC address and the messenger's name; the
-    published tree holds no `stint/`, `.claude/`, `stint.toml`, review note or founder's export.
+81. **Publish check (test).** `scripts/publish-check.mjs` passes on the product repository and
+    fails on a planted Windows path, e-mail address, foreign MAC address and the messenger's name; the
+    product repository holds no `stint/`, `.claude/`, `stint.toml`, review note or founder's
+    export; `git log --format='%ae%n%ce'` of its whole history shows the noreply address
+    only, and no commit message names a chat message or a token budget.
 82. **The public ZIP (test).** `npm run zip` writes `index.html`, `manifest.json` and the
     assets only (no `camera.html`, no source map), under 200 kB, and its `manifest.json` names the
     public repository.
 83. **User documentation (test).** Every link and image of `docs/user/` and README resolves
     (`scripts/docs-check.mjs`); `npm run screenshots` runs on the mock gateway and writes every
     image the pages use (eight at most); each page names the version it was checked against and
-    there are three pages. **Mirror (test):** `scripts/publish-mirror.mjs` run on a clone writes one
-    commit with no file of the deny-list, stops when `publish-check` fails and when the public
-    repository has a commit this one lacks.
+    there are three pages.
 84. **User documentation on the tablet (founder).** The founder reads `install.md`,
     `guide.md` and `troubleshooting.md` with the skin in front of them and marks every line
     that is wrong, missing or unclear, and every line that says what Decent already documents.
 85. **A new user (founder).** A person who has not seen the skin installs the ZIP in Decaid and
     pulls a first shot with the documentation alone, and says what stopped them.
-86. **Release (founder).** The GitHub release's ZIP installs in Decaid by its URL, and by
+86. **Two repositories (test and founder).** From the team repository, with the product
+    checkout beside it, the runner, the plan prompt and the roadmap check run as they did in
+    one (a day plan task starts in the product tree and its commit lands there); the team
+    repository's history still holds every file it held before.
+87. **Release (founder).** The GitHub release's ZIP installs in Decaid by its URL, and by
     download, on the tablet; the CI of the tagged commit is green.
 
 ## 6. Constraints
@@ -1949,12 +1965,12 @@ The weeks are a capacity guess on one Pro plan.
 | 3 | Y5 | review 2026-10-22: the steam clock, graph and 'last steam' from `pouring` to the end of the flow, tested with the export's steam records (3.12 'Steam: the clock starts and ends with the steam') | R1 |
 | 3 | Y6 | review 2026-10-22: the hot water and flush ring on every screen: reproduce it on the rig for every screen and both kinds, fix the cause, one test over the matrix (3.12 'Hot water and flush ring: on every screen') | W2 |
 | 3 | H4 | review 2026-10-21 and 2026-10-22: hand-over ZIP 0.5.0 (minor bump), carrying 3.11 and 3.12 and their checks in install.md | X1-X4, Y1-Y6, H3 |
-| 4 (Nov 2-8) | P1 | publish (3.13): `LICENSE`, `NOTICE`, one licence statement everywhere, D-Flow's credit and Damian's approval in writing (A-Flow's old repository needs no licence); needs decision 3 | H4 |
-| 4 | P2 | publish: the public tree and the mirror: scrub paths and personal data, `scripts/publish-check.mjs`, `scripts/publish-mirror.mjs` with its deny-list, `camera.html` and the probes; needs decisions 1 and 2 | P1 |
+| 4 (Nov 2-8) | P1 | publish (3.13): `LICENSE`, `NOTICE`, one licence statement everywhere, D-Flow's and DSx2's credit, Damian's approval in writing (A-Flow's old repository needs no licence); the founder asks Damian | H4 |
+| 4 | P2 | publish: the two repositories: try the team's tools across them first, cut the product repository (history with the noreply address, no records), turn this one into the team repository, scrub paths in `spec.md` and `research.md`, `scripts/publish-check.mjs`, `camera.html` and the probes; needs decisions 1 and 2 | P1 |
 | 4 | P3 | publish: CI and release workflows, `CONTRIBUTING.md`, `CHANGELOG.md`, issue templates, `SECURITY.md`, README as a front page, the name check, `npm audit` and the dependency licences | P2 |
 | 4 | P4 | publish: `npm run screenshots`, the eight generated pictures of the user documentation from the mock gateway, and `scripts/docs-check.mjs` | H4 |
 | 5 (Nov 9-15) | P5 | publish: the user documentation, three short pages (`install.md`, `guide.md`, `troubleshooting.md`) in `docs/user/`, with the pictures | P4 |
-| 5 | P6 | publish: the release 0.6.0: tag, the mirror's release commit, GitHub release with the ZIP and its SHA-256, the URL install checked in Decaid, the founder's cold read and a new user's install (3.13 acceptance 84-86); pushing and announcing are the founder's | P3, P5 |
+| 5 | P6 | publish: the release 0.6.0: tag, GitHub release with the ZIP and its SHA-256, the URL install checked in Decaid, the founder's cold read and a new user's install (3.13 acceptance 84-87); pushing and announcing are the founder's | P3, P5 |
 
 | 2 (Oct 19-25) | Q1 | code quality review 2026-10-19: Prettier and ESLint, the tree formatted in one commit (in `.git-blame-ignore-revs`), lint errors fixed, both in the check ([review-code-quality-10-19-26.md](review-code-quality-10-19-26.md), steps 1-3) | - |
 | 2 | Q2 | code quality review 2026-10-19: split `src/shell/skin.svelte.ts` along its seams; `Skin` stays the one object the screens read ([review-code-quality-10-19-26.md](review-code-quality-10-19-26.md), step 4) | Q1 |
