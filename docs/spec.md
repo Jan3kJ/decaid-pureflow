@@ -1362,6 +1362,17 @@ visible (its place above the pages' controls), and which of those fails; then it
 and adds one test over the whole matrix (acceptance 78), since the W2 tests did not catch it.
 The wording is also open: if the founder meant that the large ring should show on every screen,
 not the small one, section 8 asks.
+Built in Y6 (2026-10-23): on the rig (Decaid 0.8.8, simulated DE1 and scale,
+`stopHotWaterAtWeight` on) every one of the 18 cases works: hot water is `hotWater`/`pouring`
+from its first frame to its last, flush `flush`/`idle`, `Skin.waterRun` and `canStop` are set,
+and the ring is drawn on top (large on home and on the hot water page for hot water, small
+elsewhere and over the history). The failure the founder saw is not reproduced; the tablet's
+Decaid 0.9.0 and real DE1 were not seen (their API documentation names the same states). What
+the matrix did show is that the small ring was a grey disc in the corner, easy to take for
+decoration, with nothing saying what it is. So the small ring now looks like the large stop:
+edged in the temperature red, with its kind ('Hot water', 'Flush') in red under it, in the same
+button; the history keeps 5.5 rem under its last entry for it. Tests: `e2e/water-ring.spec.ts`
+'rings everywhere' (both kinds times the nine screens), rig `e2e-rig/rings-everywhere.spec.ts`.
 
 **Profile picker: search (item 7; dropped).** The founder asked to add a search filter to the
 profile picker, then dropped it (2026-10-22): the picker has had one since 0.3.0, T4's 'filter by
@@ -2436,3 +2447,9 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
   - Editor swipe (item 5): from left to right only, from anywhere in the editor that is not a
     control (the A-Flow graph, the step cards' row); home is not drawn beside it while it moves;
     unsaved edits are loaded on leaving as with 'back', nothing is asked.
+- The review of 2026-10-22 (3.12), hot water and flush ring (item 6; Y6), for the founder: on
+  the rig every screen shows the ring for both kinds, so what failed on the tablet is not known.
+  The small ring is now edged in red and named. Does the founder see it now, on which screen did
+  a ring not show, and was the hot water started at the machine? And did 'show on any screen'
+  mean the large ring, in place of each page's own content, rather than the small one in the
+  left column?

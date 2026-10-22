@@ -1,7 +1,8 @@
 <script lang="ts">
-  // Hot water or flush on a screen without the large ring (spec 3.10): a small countdown ring at
-  // the bottom of the left column, the time inside, and one tap stops what runs. The numbers are
-  // the large ring's, from water.ts.
+  // Hot water or flush on a screen without the large ring (spec 3.10, 3.12): a small countdown
+  // ring at the bottom of the left column, the time inside and the kind under it, edged in the
+  // large stop's temperature red so that it is seen; one tap stops what runs. The numbers are the
+  // large ring's, from water.ts.
   import type { Skin } from './skin.svelte';
   import { ringOf, smallTime, WATER_LABEL, waterDuration, waterSeconds, type WaterRun } from './water';
 
@@ -24,11 +25,14 @@
   aria-label="stop {WATER_LABEL[run.kind].toLowerCase()}"
   onclick={() => skin.stop()}
 >
-  <svg viewBox="0 0 100 100" aria-hidden="true">
-    <circle class="track" cx="50" cy="50" r="44" />
-    <circle class="done" cx="50" cy="50" r="44" pathLength="100" stroke-dasharray="{ring.share * 100} 100" />
-  </svg>
-  <span class="time" data-testid="small-ring-time"><strong>{time[0]}</strong> <span>{time[1]}</span></span>
+  <span class="dial">
+    <svg viewBox="0 0 100 100" aria-hidden="true">
+      <circle class="track" cx="50" cy="50" r="44" />
+      <circle class="done" cx="50" cy="50" r="44" pathLength="100" stroke-dasharray="{ring.share * 100} 100" />
+    </svg>
+    <span class="time" data-testid="small-ring-time"><strong>{time[0]}</strong> <span>{time[1]}</span></span>
+  </span>
+  <span class="kind" data-testid="small-ring-kind">{WATER_LABEL[run.kind]}</span>
 </button>
 
 <style>
@@ -39,18 +43,36 @@
     bottom: 1rem;
     z-index: 12;
     width: 3.4rem;
-    aspect-ratio: 1;
     padding: 0;
-    display: grid;
-    place-items: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
     font: inherit;
     color: var(--fg);
-    background: var(--raised);
+    background: none;
     border: 0;
-    border-radius: 50%;
     touch-action: manipulation;
     user-select: none;
     font-variant-numeric: tabular-nums;
+  }
+
+  .dial {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    box-sizing: border-box;
+    display: grid;
+    place-items: center;
+    background: var(--raised);
+    border: 0.2rem solid var(--temperature);
+    border-radius: 50%;
+  }
+
+  .kind {
+    font-size: 0.65rem;
+    color: var(--temperature);
+    white-space: nowrap;
   }
 
   svg {

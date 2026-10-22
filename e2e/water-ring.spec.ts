@@ -184,3 +184,54 @@ test('hot water: large on its page, small in the step editor and on steam, gone 
   await expect(page.getByTestId('screen-steam')).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+// Every screen times both kinds (spec 3.12, acceptance 78): the run starts at the machine with the
+// screen already open, a ring shows, large where spec 3.6 puts it (home, the hot water page for
+// hot water) and small elsewhere, a tap on it sends the stop, and it goes when the run ends.
+const MATRIX = ['home', 'steam', 'hot-water', 'profiles', 'editor-aflow', 'editor-steps', 'settings', 'beans', 'history'] as const;
+
+for (const kind of ['hotWater', 'flush'] as const) {
+  for (const where of MATRIX) {
+    test(`rings everywhere: ${kind === 'flush' ? 'flush' : 'hot water'} on ${where}`, async ({ page }) => {
+      const gateway = (await mockGateway(page)).withDefaults('dark');
+      if (where === 'editor-steps') gateway.workflow.profile = profile('Steps', 36, 3);
+      const screen = where.startsWith('editor') ? 'editor' : where === 'history' ? 'home' : where;
+      await page.addInitScript((stored) => localStorage.setItem('pureflow.screen', stored), screen);
+      await page.goto('/');
+      await expect(page.getByTestId(`screen-${screen}`)).toBeVisible();
+      if (where === 'editor-aflow') await expect(page.getByTestId('graph')).toBeVisible();
+      if (where === 'editor-steps') await expect(page.getByTestId('step-cards')).toBeVisible();
+      if (where === 'history') {
+        await page.getByTestId('history-handle').click();
+        await expect(page.getByTestId('history')).toBeVisible();
+      }
+
+      gateway.waterFor(kind, 4, kind === 'flush' ? 6 : 8, 80);
+      const large = where === 'home' || (where === 'hot-water' && kind === 'hotWater');
+      if (large) {
+        await expect(page.getByTestId('water-view')).toHaveAttribute('data-kind', kind);
+        await expect(page.getByTestId('water-time')).toHaveText(kind === 'flush' ? '4 / 10 s' : '4 / 30 s');
+        await expect(page.getByTestId('small-ring')).toHaveCount(0);
+      } else {
+        await expectSmallRing(page, kind, kind === 'flush' ? '4 / 10 s' : '4 / 30 s');
+        await expect(page.getByTestId('small-ring-kind')).toHaveText(kind === 'flush' ? 'Flush' : 'Hot water');
+        // Drawn on top: a finger at its centre reaches it.
+        const onTop = await page.evaluate(() => {
+          const ring = document.querySelector('[data-testid="small-ring"]')!;
+          const box = ring.getBoundingClientRect();
+          return ring.contains(document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2));
+        });
+        expect(onTop).toBe(true);
+      }
+
+      const before = gateway.calls('PUT', '/api/v1/machine/state/idle').length;
+      await page.getByTestId(large ? 'stop' : 'small-ring').click();
+      await expect.poll(() => gateway.calls('PUT', '/api/v1/machine/state/idle').length).toBe(before + 1);
+      gateway.waterEnded();
+      await expect(page.getByTestId('small-ring')).toHaveCount(0);
+      await expect(page.getByTestId('water-view')).toHaveCount(0);
+      await expect(page.getByTestId(`screen-${screen}`)).toBeVisible();
+      expect(errors).toEqual([]);
+    });
+  }
+}
