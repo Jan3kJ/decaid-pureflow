@@ -11,19 +11,34 @@ export interface SteamSeries {
   pressure: number[];
   /** °C of the steam heater */
   temperature: number[];
+  /** ml/s */
+  flow: number[];
 }
 
 export interface SteamRun {
   /** ms, the first frame's timestamp */
   startedAt: number;
   series: SteamSeries;
-  /** the machine has left steam: the graph is finished */
+  /** the steam is over: the graph is finished */
   ended: boolean;
+  /** the run started with the substate `pouring`: leaving it, or the fall of the flow, ends it */
+  pouring: boolean;
+  /** the flow has been at `STEAM_FLOW` or more (the hysteresis of the end) */
+  flowed: boolean;
+  /** the machine is still in the state steam of this run: no new run starts before it leaves */
+  inSteam: boolean;
 }
 
 export function emptySteamSeries(): SteamSeries {
-  return { t: [], pressure: [], temperature: [] };
+  return { t: [], pressure: [], temperature: [], flow: [] };
 }
+
+/**
+ * ml/s: the steam ends with the last frame of `pouring` at this flow or more. On the real DE1
+ * the flow falls under it about 0.5 s after the machine's timer, while the substate stays
+ * `pouring` for 3.5 to 5 s more (spec 3.12).
+ */
+export const STEAM_FLOW = 0.5;
 
 /**
  * The substates in which a machine still in state steam has stopped steaming
@@ -33,32 +48,62 @@ export function emptySteamSeries(): SteamSeries {
  */
 const STEAM_OVER: readonly string[] = ['pouringDone', 'puffing', 'pausedSteam'];
 
-/** The machine steams in this frame. */
+/**
+ * The machine steams in this frame: state steam, neither before the steam (`preparingForShot`,
+ * the pump priming) nor after it. The real DE1 steams in `pouring`; the simulated machine
+ * reports none of its substates and steams in `idle` (research.md 8.7).
+ */
 export function steams(frame: Pick<MachineSnapshot, 'state'>): boolean {
-  return frame.state.state === 'steam' && !STEAM_OVER.includes(frame.state.substate);
+  const { state, substate } = frame.state;
+  return state === 'steam' && substate !== 'preparingForShot' && !STEAM_OVER.includes(substate);
+}
+
+/** The frame goes on with the running run. */
+function continues(run: SteamRun, frame: MachineSnapshot): boolean {
+  if (!run.pouring) return steams(frame);
+  return frame.state.state === 'steam' && frame.state.substate === 'pouring' && !(run.flowed && frame.flow < STEAM_FLOW);
 }
 
 /**
- * The run after one machine frame. A frame that steams starts a run (and replaces a
- * finished one) or adds a point; the first frame that does not ends it: another state, or
- * one of the substates after the steam (spec 3.7: the graph and the time stop with the
- * steam). Nothing is changed in place.
+ * The run after one machine frame (spec 3.12). It starts with the first frame that steams:
+ * the first of `pouring`, or of a machine that never reports it. A run started in `pouring`
+ * ends with the last frame at `STEAM_FLOW` or more, once the flow has been there, or when the
+ * substate leaves `pouring`; any run ends when the machine leaves steam or passes to a
+ * substate after the steam. Frames after the end are neither drawn nor counted, and the next
+ * run starts only after the machine has left steam. Nothing is changed in place.
  */
 export function recordSteamFrame(run: SteamRun | null, frame: MachineSnapshot): SteamRun | null {
-  if (!steams(frame)) {
-    return run && !run.ended ? { ...run, ended: true } : run;
+  const inSteam = frame.state.state === 'steam';
+  if (run && !run.ended) {
+    if (!continues(run, frame)) return { ...run, ended: true, inSteam };
+    return addPoint(run, frame);
   }
+  if (run?.inSteam) return inSteam ? run : { ...run, inSteam: false };
+  if (!steams(frame)) return run;
   const at = frameTime(frame.timestamp);
-  const running = run && !run.ended ? run : { startedAt: at, series: emptySteamSeries(), ended: false };
-  const s = running.series;
+  const started: SteamRun = {
+    startedAt: at,
+    series: emptySteamSeries(),
+    ended: false,
+    pouring: frame.state.substate === 'pouring',
+    flowed: false,
+    inSteam: true,
+  };
+  return addPoint(started, frame);
+}
+
+function addPoint(run: SteamRun, frame: MachineSnapshot): SteamRun {
+  const s = run.series;
   // A clock that steps back must not draw a line to the left.
-  const t = Math.max((at - running.startedAt) / 1000, s.t.at(-1) ?? 0);
+  const t = Math.max((frameTime(frame.timestamp) - run.startedAt) / 1000, s.t.at(-1) ?? 0);
   return {
-    ...running,
+    ...run,
+    flowed: run.flowed || frame.flow >= STEAM_FLOW,
     series: {
       t: [...s.t, t],
       pressure: [...s.pressure, frame.pressure],
       temperature: [...s.temperature, frame.steamTemperature],
+      flow: [...s.flow, frame.flow],
     },
   };
 }

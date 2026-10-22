@@ -1347,6 +1347,18 @@ The tests use the real frames: the `state`, `substate`,
 (those of 2026-10-17 16:15 and 2026-10-21 07:51, trimmed, kept as test fixtures; the export
 itself stays out of the repository, see `.gitignore`).
 
+*Built (Y5, 2026-10-23):* `recordSteamFrame` in `src/steam/run.ts` with `STEAM_FLOW` = 0.5 ml/s;
+the fixtures are `src/steam/fixtures/export-steams.json` (both records whole, six fields a
+frame). The two records give runs of 24.48 s and 24.52 s for their timer of 24 s; of the
+export's ten full records nine end between 0.03 s before and 0.5 s after their timer (one, timer
+22 s, ends at 19.5 s, stopped early), and in none does the flow come back to 0.5 ml/s after its
+fall. Left open by the text and decided so: the flow rule holds only
+for a run that started in `pouring` (the simulated steam has flow 0 throughout and ends when it
+leaves `steam`); after a run has ended no new one starts until the machine has left `steam`, so
+the tail and the purge start none; while the machine is in `preparingForShot` the last steam's
+graph and 'last steam' stay until the new run's first frame replaces them, as between steams
+before.
+
 **Hot water and flush ring: on every screen (item 6; Y6).** The founder wants the hot water and
 the flush ring on any screen and sees, at the moment, only the flush ring and only on the home
 screen (founder, 2026-10-22, said after the review). W2 (3.10 'Countdown ring on every screen')

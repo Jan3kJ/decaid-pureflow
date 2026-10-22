@@ -174,6 +174,7 @@ test('steam: the written timer is read back from the workflow and from the machi
     // did; the page shows the machine's state and draws its frames.
     await expect(page.getByRole('button', { name: /start/ })).toHaveCount(0);
     await expect(page.getByTestId('state-tank')).toHaveText(/^\d+ mm$/);
+    const steamStarted = Date.now();
     await api('PUT', '/api/v1/machine/state/steam');
     await expect(page.getByTestId('steam-stop')).toBeVisible({ timeout: 15_000 });
     expect(await machineState()).toBe('steam');
@@ -184,10 +185,18 @@ test('steam: the written timer is read back from the workflow and from the machi
     await page.screenshot({ path: 'e2e-rig/.results/steam-rig.png' });
 
     // The skin's stop button ends it.
+    const steamWall = (Date.now() - steamStarted) / 1000;
     await page.getByTestId('steam-stop').click();
     await expect(page.getByTestId('steam-stop')).toHaveCount(0, { timeout: 30_000 });
     expect(await machineState()).toBe('idle');
     await expect(page.getByTestId('steam-state')).toContainText('last steam');
+    // The simulated machine reports no `pouring` and no flow (research.md 8.7): its run is
+    // from the first steam frame to the last (spec 3.12, the fallback), so 'last steam' has
+    // the seconds the machine steamed, no more.
+    const lastSteam = parseInt((await page.getByTestId('steam-elapsed').textContent())!, 10);
+    expect(lastSteam).toBeGreaterThanOrEqual(1);
+    expect(lastSteam).toBeLessThanOrEqual(Math.ceil(steamWall) + 5);
+    await expect(page.getByTestId('steam-timer')).toHaveText(`${SECONDS}s`);
 
     const remember = (seconds: number) => `POST ${REMEMBERED} ${seconds}`;
     const workflow = (seconds: number) => `PUT /api/v1/workflow {"steamSettings":{"duration":${seconds}}}`;
