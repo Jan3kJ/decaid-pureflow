@@ -1,7 +1,8 @@
 <script lang="ts">
   import ShotGraph from '../graph/ShotGraph.svelte';
+  import { beanLabel } from '../history/entries';
+  import { homeShot } from './home-shot';
   import { phaseTable, type PhaseRow } from './phases';
-  import { emptySeries, shotSeconds } from './shot';
   import type { Skin } from './skin.svelte';
 
   interface Props {
@@ -10,22 +11,26 @@
 
   let { skin }: Props = $props();
 
-  // The shot's overlay on home's graph area (spec 3.8): the live graph and its values with the
-  // stop button while the shot runs; after it the per-phase table in place of the button,
-  // until a tap anywhere closes it (`Skin.closeShot`) or the next shot replaces it.
-  const shot = $derived(skin.shot);
-  const series = $derived(shot?.series ?? emptySeries());
-  const ended = $derived(shot?.ended ?? false);
+  // Home is the shot screen (spec 3.11): one graph on the left, and the right column of a fixed
+  // width with the shot's time, weight and values, so nothing changes size when a shot starts.
+  // While the shot runs the curves are live and stop is at the column's bottom; after it the
+  // shot stays with the per-phase table until the next one starts (`homeShot`).
+  const shown = $derived(homeShot(skin.shot, skin.recalled?.series ?? null, skin.weight));
+  const running = $derived(shown.kind === 'running');
+  const finished = $derived(shown.kind === 'finished');
+  const recalled = $derived(shown.kind === 'recalled' ? skin.recalled : null);
   const snapshot = $derived(skin.link === 'machine' ? skin.snapshot : null);
-  const brewing = $derived(snapshot?.state.state === 'espresso' && !ended);
+  const brewing = $derived(snapshot?.state.state === 'espresso' && running);
   const profile = $derived(skin.workflow?.profile);
   const target = $derived(skin.workflow?.context?.targetYield || null);
   // The profile step that runs: the machine's frame number, not its substate (research 8.2).
   const step = $derived(brewing && snapshot ? profile?.steps[snapshot.profileFrame]?.name : undefined);
   // In espresso before water moves: the graph and the timer wait (shot.ts).
-  const heating = $derived(brewing && series.t.length === 0);
+  const heating = $derived(brewing && shown.series.t.length === 0);
   // Streamline's table of the shot (phases.ts), once it is over and the setting shows it.
-  const table = $derived(ended && shot && skin.settings.showShotValues ? phaseTable(shot.samples, shot.finalWeight) : null);
+  const table = $derived(
+    finished && skin.shot && skin.settings.showShotValues ? phaseTable(skin.shot.samples, skin.shot.finalWeight) : null,
+  );
   const rows = $derived(
     table
       ? ([
@@ -35,22 +40,52 @@
         ] as const)
       : [],
   );
-  const weight = $derived(ended ? (shot?.finalWeight ?? skin.weight) : skin.weight);
+  const PLOT = { running: 'shot-plot', finished: 'last-shot', recalled: 'history-graph', none: 'empty-graph' } as const;
+  const LABEL = {
+    running: 'live shot',
+    finished: 'last shot',
+    recalled: 'last shot of the history entry',
+    none: 'no shot yet',
+  } as const;
   const value = (number: number | null | undefined, digits = 1) =>
     number === null || number === undefined ? '–' : number.toFixed(digits);
   const cell = (row: Partial<PhaseRow> | null, key: keyof PhaseRow) => row?.[key] ?? '';
 </script>
 
-<div class="overlay" class:ended class:values={table !== null} data-testid="shot-overlay">
-  <header>
-    <strong data-testid="espresso-profile">{profile?.title ?? '–'}</strong>
-    <span data-testid="espresso-step">
-      {ended ? 'shot finished' : heating ? 'heating' : (step ?? (brewing ? '' : skin.status.title))}
-    </span>
+<div class="shot" class:values={table !== null} data-testid="home-shot" data-shot={shown.kind}>
+  <header data-testid="shot-caption">
+    {#if recalled}
+      {@const entry = recalled.entry}
+      <span class="recalled" data-testid="recalled">
+        last shot with
+        <strong data-testid="recalled-profile">{entry.profileTitle}</strong>
+        <strong data-testid="recalled-bean">{beanLabel(entry.bean)}</strong>
+        {#if entry.grinderSetting}
+          <strong data-testid="recalled-grinder">grinder {entry.grinderSetting}</strong>
+        {/if}
+      </span>
+      <button class="chip" data-testid="dismiss-recalled" onclick={() => skin.dismissRecalled()}>dismiss</button>
+    {:else if finished}
+      <span data-testid="espresso-step">
+        shot finished
+        <strong data-testid="last-shot-time">{value(shown.seconds)} s</strong>
+        {#if shown.weight !== null}
+          <strong class="weight" data-testid="last-shot-weight">{value(shown.weight)} g</strong>
+        {/if}
+      </span>
+    {:else if running}
+      <span data-testid="espresso-step">{heating ? 'heating' : (step ?? (brewing ? '' : skin.status.title))}</span>
+    {/if}
   </header>
 
-  <div class="plot" data-testid="shot-plot">
-    <ShotGraph {...series} fit={ended} minSeconds={skin.expectedSeconds} legend={skin.settings.showGraphLegend} label="live shot" />
+  <div class="plot" data-testid={PLOT[shown.kind]}>
+    <ShotGraph
+      {...shown.series}
+      fit={finished || recalled !== null}
+      minSeconds={skin.expectedSeconds}
+      legend={skin.settings.showGraphLegend}
+      label={LABEL[shown.kind]}
+    />
   </div>
 
   {#if table}
@@ -79,14 +114,14 @@
     </table>
   {/if}
 
-  <aside>
+  <aside data-testid="shot-column">
     <div class="big">
       <small>time</small>
-      <b data-testid="shot-timer">{shotSeconds(shot).toFixed(1)}<i>s</i></b>
+      <b data-testid="shot-timer">{value(shown.seconds)}<i>s</i></b>
     </div>
     <div class="big weight">
       <small>weight{target ? `, stops at ${+target.toFixed(1)} g` : ''}</small>
-      <b data-testid="shot-weight">{value(weight)}<i>g</i></b>
+      <b data-testid="shot-weight">{value(shown.weight)}<i>g</i></b>
     </div>
     <dl>
       <div class="pressure">
@@ -104,22 +139,18 @@
     </dl>
     {#if skin.notice}
       <p class="notice" data-testid="notice">{skin.notice}</p>
+    {:else if skin.info}
+      <p class="notice info" data-testid="tare-notice">{skin.info}</p>
     {/if}
-    {#if ended}
-      <p class="close" data-testid="shot-close-hint">tap anywhere to close</p>
-    {:else}
-      <button data-testid="stop" disabled={!skin.canStop} onclick={() => skin.stop()}>stop</button>
+    <!-- Nothing is started here: the DE1 is started at the machine. What runs can be stopped. -->
+    {#if running || skin.canStop}
+      <button class="stop" data-testid="stop" disabled={!skin.canStop} onclick={() => skin.stop()}>stop</button>
     {/if}
   </aside>
 </div>
 
-{#if ended}
-  <!-- After the shot a tap anywhere closes the overlay and does nothing else (founder, 2026-10-17). -->
-  <button class="catch" data-testid="shot-close" aria-label="close the shot" onclick={() => skin.closeShot()}></button>
-{/if}
-
 <style>
-  .overlay {
+  .shot {
     flex: 1;
     min-height: 0;
     display: grid;
@@ -130,7 +161,7 @@
   }
 
   /* The table's row only when it is drawn: without it the graph takes its height and its gap. */
-  .overlay.values {
+  .shot.values {
     grid-template-rows: auto minmax(0, 1fr) auto;
     grid-template-areas: 'header side' 'plot side' 'table side';
   }
@@ -138,24 +169,49 @@
   header {
     grid-area: header;
     display: flex;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    min-height: 2rem;
+    min-height: 3.2rem;
+    color: var(--dim);
+    font-size: var(--text-body);
   }
 
-  header strong {
-    font-size: var(--text-value);
-    font-weight: 600;
+  header > span {
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  header span {
-    color: var(--dim);
+  header strong {
+    margin-left: 0.8rem;
+    color: var(--fg);
+    font-size: var(--text-value);
+    font-variant-numeric: tabular-nums;
+  }
+
+  header strong.weight {
+    color: var(--weight);
+  }
+
+  .recalled strong {
     font-size: var(--text-body);
-    white-space: nowrap;
+  }
+
+  .chip {
+    flex: none;
+    min-width: 7rem;
+    min-height: 3.2rem;
+    padding: 0 1rem;
+    font: inherit;
+    font-size: var(--text-body);
+    color: var(--fg);
+    border: 1px solid var(--line);
+    background: var(--panel);
+    border-radius: 0.9rem;
+    touch-action: manipulation;
+    user-select: none;
   }
 
   .plot {
@@ -298,17 +354,11 @@
     font-size: var(--text-label);
   }
 
-  .close {
-    margin: auto 0 0;
-    padding: 1rem;
-    color: var(--dim);
-    font-size: var(--text-body);
-    text-align: center;
-    border: 1px dashed var(--line);
-    border-radius: var(--radius);
+  .info {
+    color: var(--fg);
   }
 
-  button {
+  .stop {
     margin-top: auto;
     min-height: 7rem;
     font: inherit;
@@ -322,21 +372,9 @@
     user-select: none;
   }
 
-  button:disabled {
+  .stop:disabled {
     background: var(--panel);
     border-color: var(--line);
     color: var(--dim);
-  }
-
-  /* Over the whole app, under the dialogs: the stream's banner and the sleep screen stay on top. */
-  .catch {
-    position: fixed;
-    inset: 0;
-    z-index: 9;
-    min-height: 0;
-    margin: 0;
-    background: none;
-    border: 0;
-    border-radius: 0;
   }
 </style>

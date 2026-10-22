@@ -176,8 +176,7 @@ test('the history: shots with another profile or bean are entries, a tap restore
     // A shot pulled while the skin is open is a new entry on top; only the newest page is read.
     const listsBeforeShot = lists.length;
     const shotD = await pull(page, profileB, { coffeeName: BEAN_A, coffeeRoaster: ROASTER, grinderSetting: '3.3' });
-    await page.getByTestId('shot-close').click();
-    await expect(page.getByTestId('shot-overlay')).toHaveCount(0);
+    await expect(page.getByTestId('last-shot')).toBeVisible({ timeout: 30_000 });
     await expect.poll(() => lists.length, { timeout: 30_000 }).toBeGreaterThan(listsBeforeShot);
     await page.getByTestId('nav-history').tap();
     await expect(mine).toHaveCount(4);

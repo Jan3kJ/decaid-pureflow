@@ -1127,6 +1127,17 @@ below. The per-phase table appears when the shot ends and goes when the next sta
 graph's height changes then, as the overlay's did; the graph's width never changes. Hot water
 and flush are unchanged: **Water** replaces the graph and the column, as 3.6 says.
 
+Built in X1 (`ShotView.svelte`, the overlay's parts; which shot home shows is `homeShot` in
+`src/shell/home-shot.ts`): where the spec left it open, a history entry recalled after a shot
+lies over the finished shot until its 'dismiss', which brings the finished shot back; the
+column's pressure, flow and temperature are the machine's live values in every state, as the
+overlay's were; the column's time and weight of a recalled entry are its shot's; the caption
+row keeps its height when it is empty, so the graph does not move; the column's stop button
+also stops what else runs (steam started at the machine), as home's stop did; the pages do not
+swipe while a shot runs, as they did not over the overlay. Screenshots:
+home-idle.png (screenshot in the team repository), home-shot-running.png (screenshot in the team repository),
+home-shot-finished.png (screenshot in the team repository).
+
 **Profile and bean pick in the right column (X2), idle only (founder, 2026-10-21).** The profile button (the name, opening the
 profile picker, with the pen that opens the editor) and the bean button (the bean, the grinder
 setting, opening the pick of 3.9 item 19) leave the header and sit at the top of the right
@@ -2318,10 +2329,8 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
     'light' / 'test-light' clash is Decaid's id being a hash of the steps (research.md 11.1),
     and goes with the defaults out of Decaid. Built in T5 (research.md 25): the stored copies
     are not listed and not deleted.
-  - The shot overlay: it covers home's graph area with the live graph and the values, home's
-    state line stays visible; after the shot it stays with the per-phase table until a tap
-    anywhere or the next shot, and then home shows the shot as its 'last shot'. Built in T2
-    (research.md 24).
+  - The shot overlay: built in T2 (research.md 24), replaced in X1 by home as the shot screen
+    (3.11): the finished shot stays on home with the per-phase table until the next shot.
   - The per-phase values: per phase (preinfusion, extraction, total) with start and end
     values, as Streamline shows them (the screenshot resent on 2026-10-18, 3.9), computed as
     its `shotData.js` does (research.md 24). Built in T2.

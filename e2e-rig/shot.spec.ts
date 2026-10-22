@@ -91,11 +91,11 @@ test('a simulated shot: the state, an A-Flow profile, a live graph, the stop at 
     expect(sent.filter((call) => call === 'POST /api/v1/profiles')).toEqual([]);
 
     // The shot: started at the machine, here through the gateway as the removed start button
-    // did; the shot's overlay opens on home by itself and the graph grows while it runs.
+    // did; home shows the shot by itself and the graph grows while it runs.
     await expect(page.getByRole('button', { name: /start/ })).toHaveCount(0);
     await api('PUT', '/api/v1/machine/state/espresso');
-    await expect(page.getByTestId('shot-overlay')).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByTestId('espresso-profile')).toHaveText(PROFILE);
+    await expect(page.getByTestId('shot-plot')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId('profile-name')).toHaveText(PROFILE);
     await expect.poll(() => points(page), { timeout: 15_000 }).toBeGreaterThan(20);
     const early = await points(page);
     await expect.poll(() => points(page), { timeout: 15_000 }).toBeGreaterThan(early + 20);
@@ -103,10 +103,15 @@ test('a simulated shot: the state, an A-Flow profile, a live graph, the stop at 
     for (const line of ['pressure', 'flow', 'temperature']) {
       expect((await page.getByTestId(`shot-line-${line}`).getAttribute('d'))!.length).toBeGreaterThan(100);
     }
+    // The right column is live: the weight, pressure, flow and temperature have numbers, and stop is there.
+    for (const id of ['shot-weight', 'shot-pressure', 'shot-flow', 'shot-temperature']) {
+      expect(parseFloat((await page.getByTestId(id).textContent())!)).not.toBeNaN();
+    }
+    await expect(page.getByTestId('shot-column').getByTestId('stop')).toBeEnabled();
     await page.screenshot({ path: 'e2e-rig/.results/espresso-rig.png' });
 
-    // It ends by itself at the target weight; the overlay stays with the per-phase table
-    // (spec 3.8), and a tap closes it to home, which keeps the finished graph.
+    // It ends by itself at the target weight; home keeps the finished shot with the per-phase
+    // table, its time and weight in the column (spec 3.11).
     await expect(page.getByTestId('shot-phases')).toBeVisible({ timeout: 180_000 });
     await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 15_000 });
     await expect(page.getByTestId('shot-phases').locator('tbody th')).toHaveText(['Preinfusion', 'Extraction', 'Total']);
@@ -115,11 +120,12 @@ test('a simulated shot: the state, an A-Flow profile, a live graph, the stop at 
       total: Number(await page.getByTestId('phase-total-seconds').textContent()),
       volume: Number(await page.getByTestId('phase-total-volume').textContent()),
     };
-    await page.screenshot({ path: 'e2e-rig/.results/shot-overlay-rig.png' });
-    await page.getByTestId('shot-close').click();
-    await expect(page.getByTestId('shot-overlay')).toHaveCount(0);
+    await expect(page.getByTestId('shot-plot')).toHaveCount(0);
     await expect(page.getByTestId('last-shot')).toBeVisible();
+    await expect(page.getByTestId('stop')).toHaveCount(0);
     const grams = parseFloat((await page.getByTestId('last-shot-weight').textContent())!);
+    expect(parseFloat((await page.getByTestId('shot-weight').textContent())!)).toBe(grams);
+    expect(parseFloat((await page.getByTestId('shot-timer').textContent())!)).toBeGreaterThan(5);
     expect(grams).toBeGreaterThan(TARGET - UNDER);
     expect(grams).toBeLessThan(TARGET + OVER);
     await page.screenshot({ path: 'e2e-rig/.results/home-rig.png' });
@@ -142,7 +148,7 @@ test('a simulated shot: the state, an A-Flow profile, a live graph, the stop at 
       .toBe(false);
     expect(shot.stopReason).toBe('targetWeight');
 
-    // The overlay's table, from the live frames, is the table of Decaid's record of the shot.
+    // Home's table, from the live frames, is the table of Decaid's record of the shot.
     const record = await api<ShotRecord>('GET', `/api/v1/shots/${encodeURIComponent(shot.id)}`);
     const { samples, finalWeight } = recordSamples(record);
     const table = phaseTable(samples, finalWeight)!;

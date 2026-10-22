@@ -1,11 +1,9 @@
 <script lang="ts">
   import Pick from '../beans/Pick.svelte';
-  import ShotGraph from '../graph/ShotGraph.svelte';
   import { beanLabel, contextBean } from '../history/entries';
   import { saveLocation } from '../settings-page/tree';
-  import { emptySeries, shotSeconds, shotWeight } from './shot';
-  import ShotOverlay from './ShotOverlay.svelte';
   import type { Skin } from './skin.svelte';
+  import ShotView from './ShotView.svelte';
   import StateLine from './StateLine.svelte';
   import Water from './Water.svelte';
   import { shownRun } from './water';
@@ -16,11 +14,6 @@
 
   let { skin }: Props = $props();
 
-  // The finished shot stays here until it is dismissed or the next one starts.
-  const last = $derived(skin.shot?.ended ? skin.shot : null);
-  const lastWeight = $derived(shotWeight(last));
-  // An entry restored from the shot history, with the graph of its latest shot (spec 3.5).
-  const recalled = $derived(skin.recalled);
   // Hot water or flush runs: home shows it in place of the graph, with stop in its ring (spec 3.6).
   const water = $derived(shownRun(skin.waterRun, skin.canStop));
   // The bean and grinder setting for the next shot, as the workflow holds them; a tap picks others (spec 3.9 item 19).
@@ -128,58 +121,14 @@
 
   {#if water}
     <Water {skin} run={water} />
-  {:else if skin.shotOpen}
-    <!-- The shot lies over the graph area, under the state line, until it is closed (spec 3.8). -->
-    <ShotOverlay {skin} />
+    {#if skin.notice}
+      <p class="notice" data-testid="notice">{skin.notice}</p>
+    {:else if skin.info}
+      <p class="notice info" data-testid="tare-notice">{skin.info}</p>
+    {/if}
   {:else}
-    <section class="last">
-      {#if recalled}
-        {@const entry = recalled.entry}
-        <header>
-          <span class="recalled" data-testid="recalled">
-            last shot with
-            <strong data-testid="recalled-profile">{entry.profileTitle}</strong>
-            <strong data-testid="recalled-bean">{beanLabel(entry.bean)}</strong>
-            {#if entry.grinderSetting}
-              <strong data-testid="recalled-grinder">grinder {entry.grinderSetting}</strong>
-            {/if}
-          </span>
-          <button class="chip" data-testid="dismiss-recalled" onclick={() => skin.dismissRecalled()}>dismiss</button>
-        </header>
-        <div class="plot" data-testid="history-graph">
-          <ShotGraph {...recalled.series} fit legend={skin.settings.showGraphLegend} label="last shot of the history entry" />
-        </div>
-      {:else if last}
-        <header>
-          <span>
-            last shot
-            <strong data-testid="last-shot-time">{shotSeconds(last).toFixed(1)} s</strong>
-            {#if lastWeight !== null}
-              <strong class="weight" data-testid="last-shot-weight">{lastWeight.toFixed(1)} g</strong>
-            {/if}
-          </span>
-          <button class="chip" data-testid="dismiss-shot" onclick={() => skin.dismissShot()}>dismiss</button>
-        </header>
-        <div class="plot" data-testid="last-shot">
-          <ShotGraph {...last.series} fit legend={skin.settings.showGraphLegend} label="last shot" />
-        </div>
-      {:else}
-        <!-- No shot yet: the graph keeps its place, empty. -->
-        <div class="plot" data-testid="empty-graph">
-          <ShotGraph {...emptySeries()} legend={skin.settings.showGraphLegend} label="no shot yet" />
-        </div>
-      {/if}
-    </section>
-  {/if}
-
-  {#if skin.notice && !(skin.shotOpen && !water)}
-    <p class="notice" data-testid="notice">{skin.notice}</p>
-  {:else if skin.info}
-    <p class="notice info" data-testid="tare-notice">{skin.info}</p>
-  {/if}
-  <!-- Nothing is started here: the DE1 is started at the machine. What runs can be stopped. -->
-  {#if skin.canStop && !water && !skin.shotOpen}
-    <button class="stop" data-testid="stop" onclick={() => skin.stop()}>stop</button>
+    <!-- Home is the shot screen: the graph and the right column, live while a shot runs (spec 3.11). -->
+    <ShotView {skin} />
   {/if}
 </div>
 
@@ -317,60 +266,6 @@
     color: var(--dim);
   }
 
-  .chip {
-    flex: none;
-    min-width: 7rem;
-    min-height: 3.2rem;
-    padding: 0 1rem;
-    font-size: var(--text-body);
-  }
-
-  .last {
-    flex: 1;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-  }
-
-  .last header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    color: var(--dim);
-  }
-
-  .last header strong {
-    margin-left: 0.8rem;
-    color: var(--fg);
-    font-size: var(--text-value);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .last header strong.weight {
-    color: var(--weight);
-  }
-
-  .last header .recalled {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .last header .recalled strong {
-    font-size: var(--text-body);
-  }
-
-  .plot {
-    flex: 1;
-    min-height: 0;
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    background: var(--panel);
-  }
-
   .notice {
     margin: 0;
     color: var(--warn);
@@ -379,16 +274,6 @@
 
   .info {
     color: var(--fg);
-  }
-
-  .stop {
-    flex: none;
-    min-height: 5rem;
-    font-size: var(--text-large);
-    font-weight: 600;
-    color: var(--bg);
-    background: var(--temperature);
-    border-color: var(--temperature);
   }
 
   .backdrop {

@@ -202,7 +202,12 @@ export function shotSeconds(shot: Shot | null): number {
 
 /** The latest weight in the shot's series, null before the scale's first one. */
 export function shotWeight(shot: Shot | null): number | null {
-  const weights = shot?.series.weight ?? [];
+  return shot ? seriesWeight(shot.series) : null;
+}
+
+/** The latest weight in a series, null when it has none. */
+export function seriesWeight(series: ShotSeries): number | null {
+  const weights = series.weight;
   for (let i = weights.length - 1; i >= 0; i -= 1) {
     const weight = weights[i];
     if (weight !== null) return weight;

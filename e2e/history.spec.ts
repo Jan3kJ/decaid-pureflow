@@ -241,10 +241,9 @@ test('a shot that starts closes the overlay, and its graph takes the place of th
   await expect(page.getByTestId('history')).toBeVisible();
 
   await gateway.replay(page, 0, 0.3);
-  await expect(page.getByTestId('shot-overlay')).toBeVisible();
+  await expect(page.getByTestId('shot-plot')).toBeVisible();
   await expect(page.getByTestId('history')).toHaveCount(0);
   await gateway.replay(page, 0.3, 1);
-  await page.getByTestId('shot-close').click();
   await expect(page.getByTestId('screen-home')).toBeVisible();
   await expect(page.getByTestId('history')).toHaveCount(0);
   await expect(page.getByTestId('last-shot')).toBeVisible();
@@ -346,7 +345,6 @@ test('a slow, long history: the newest 20 first, the rest after them, kept for a
   gateway.addShot('shot-new', at(200), profile('P-new', 36, 4), null);
   await expect.poll(() => gateway.historyListCalls().length, { timeout: 10_000 }).toBe(4);
   expect(gateway.historyListCalls().at(-1)!.query).toBe('?limit=20&offset=0&order=desc');
-  await page.getByTestId('shot-close').click();
   await page.getByTestId('nav-history').tap();
   await expect(entries).toHaveCount(41);
   await expect(entries.first().getByTestId('entry-profile')).toHaveText('P-new');

@@ -14,7 +14,7 @@ import {
   stateLine,
   statusOf,
 } from './machine';
-import { SCREEN_KEY, followMachine, loadScreen, saveScreen, shotOverlay } from './nav';
+import { SCREEN_KEY, followMachine, loadScreen, saveScreen } from './nav';
 
 function frame(state: MachineState, over: Partial<MachineSnapshot> = {}): MachineSnapshot {
   return {
@@ -97,7 +97,7 @@ describe('the screen', () => {
 });
 
 describe('followMachine', () => {
-  it('opens home, where the shot overlay lies, when the machine enters espresso, from any screen', () => {
+  it('opens home, which shows the shot, when the machine enters espresso, from any screen', () => {
     expect(followMachine('home', 'idle', 'espresso')).toBe('home');
     expect(followMachine('editor', 'idle', 'espresso')).toBe('home');
     expect(followMachine('steam', 'idle', 'espresso')).toBe('home');
@@ -116,26 +116,6 @@ describe('followMachine', () => {
   it('does nothing on other changes of state', () => {
     expect(followMachine('editor', 'idle', 'steam')).toBe('editor');
     expect(followMachine('home', 'sleeping', 'idle')).toBe('home');
-  });
-});
-
-describe('shotOverlay', () => {
-  it('opens when the machine enters espresso, also in the middle of a shot at load', () => {
-    expect(shotOverlay(false, 'idle', 'espresso')).toBe(true);
-    expect(shotOverlay(false, undefined, 'espresso')).toBe(true);
-  });
-
-  it('stays open after the shot: leaving espresso does not close it', () => {
-    expect(shotOverlay(true, 'espresso', 'idle')).toBe(true);
-    expect(shotOverlay(true, 'idle', 'idle')).toBe(true);
-    expect(shotOverlay(true, 'idle', 'sleeping')).toBe(true);
-  });
-
-  it('stays closed once closed, until the next shot', () => {
-    expect(shotOverlay(false, 'espresso', 'espresso')).toBe(false);
-    expect(shotOverlay(false, 'espresso', 'idle')).toBe(false);
-    expect(shotOverlay(false, 'idle', 'steam')).toBe(false);
-    expect(shotOverlay(false, 'steam', 'espresso')).toBe(true);
   });
 });
 

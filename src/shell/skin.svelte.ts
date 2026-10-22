@@ -15,7 +15,7 @@ import { Dimmer } from './dimmer';
 import { gatewayBaseUrl } from './gateway';
 import { LoadWarning, type LoadAnswer } from './load-warning.svelte';
 import { canSleep, canStop, heatingStatus, isAsleep, stateLine, statusOf, type HeatTarget, type Status } from './machine';
-import { followMachine, loadScreen, saveScreen, shotOverlay, type Screen } from './nav';
+import { followMachine, loadScreen, saveScreen, type Screen } from './nav';
 import { doseToSet } from './profiles';
 import { Recall, type Recalled } from './recall.svelte';
 import { SettingsStore } from './settings-store.svelte';
@@ -37,13 +37,12 @@ export class Skin {
 
   screen: Screen = $state(loadScreen());
   workflow: Workflow | null = $state.raw(null);
-  /** the running shot, or the finished one until it is dismissed */
+  /** the running shot, or the finished one until the next starts: home shows it (spec 3.11) */
   shot: Shot | null = $state.raw(null);
-  /**
-   * The shot's overlay on home is open (spec 3.8): from the start of a shot until a tap after
-   * it (`closeShot`); the next shot opens it again (`shotOverlay` in nav.ts).
-   */
-  shotOpen = $state(false);
+  /** a shot runs: home shows it live, and the pages do not swipe */
+  get shotRunning(): boolean {
+    return this.shot !== null && !this.shot.ended;
+  }
   /** the running hot water or flush, or the finished one until the next (spec 3.6) */
   waterRun: WaterRun | null = $state.raw(null);
   /** what went wrong with the last action, for the user */
@@ -245,9 +244,8 @@ export class Skin {
     const before = this.streams.machineFrame(frame);
     const state = frame.state.state;
     const next = followMachine(this.screen, before, state);
-    const open = shotOverlay(this.shotOpen, before, state);
-    if (open && !this.shotOpen) this.historyOpen = false;
-    this.shotOpen = open;
+    // A shot starts: home shows it, over the history too.
+    if (state === 'espresso' && before !== 'espresso') this.historyOpen = false;
     const running = this.shot !== null && !this.shot.ended;
     this.shot = recordFrame(this.shot, frame, this.weight, this.streams.weightFlow);
     if (this.shot && !this.shot.ended) this.recall.recalled = null;
@@ -394,16 +392,6 @@ export class Skin {
   /** The settings page's 'Restore from backup': the backup's settings, or null when there is none. Throws when it cannot be read. */
   restoreBackup(): Promise<ReadBackup | null> {
     return this.store.restore();
-  }
-
-  /** A tap anywhere after the shot closes its overlay; home then shows it as the last shot. */
-  closeShot(): void {
-    if (this.shot && !this.shot.ended) return;
-    this.shotOpen = false;
-  }
-
-  dismissShot(): void {
-    if (this.shot?.ended) this.shot = null;
   }
 
   /** An entry of the shot history was tapped (spec 3.5); see `Recall.restore`. */

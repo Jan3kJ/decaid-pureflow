@@ -17,7 +17,7 @@ export interface Settings {
   firstStepWorkaround: boolean;
   /** the shot graph shows its legend under it: on home, on the espresso screen and for a shot of the history */
   showGraphLegend: boolean;
-  /** the shot overlay shows the per-phase values after a shot (spec 3.10); off, the graph takes their room */
+  /** home shows the per-phase values after a shot (spec 3.10, 3.11); off, the graph takes their room */
   showShotValues: boolean;
   /** Skin > Display: the size of everything, a factor on the type scale (`DISPLAY_SIZES`) */
   displaySize: number;

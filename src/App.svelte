@@ -40,8 +40,8 @@
   // hot water, home and steam are one row, and a swipe slides to the neighbour, which is drawn
   // beside the page only while it comes in; on home a swipe to the right from the left fifth
   // opens the history instead. In the editor a swipe to the right leaves for home as its back
-  // arrow does, with home not drawn beside it. Not over the shot's overlay: after the shot a touch
-  // there closes it. A drag that starts on a control is the control's.
+  // arrow does, with home not drawn beside it. Not while a shot runs on home. A drag that starts on
+  // a control is the control's.
   const home = $derived(skin.screen === 'home');
   // Hot water or flush on a screen without its large ring: one small ring in the left column (spec 3.10).
   const smallRing = $derived(smallRingRun(skin.waterRun, skin.canStop, skin.screen, skin.historyOpen));
@@ -66,7 +66,7 @@
 
   function onpointerdown(event: PointerEvent) {
     swipe = null;
-    if (settling || !swipes(skin.screen) || skin.historyOpen || (home && skin.shotOpen)) return;
+    if (settling || !swipes(skin.screen) || skin.historyOpen || (home && skin.shotRunning)) return;
     if (onControl(event.target as Element, main)) return;
     swipe = {
       x: event.clientX,
