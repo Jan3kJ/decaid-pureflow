@@ -1172,8 +1172,8 @@ in the tests (`e2e/swipe.spec.ts` already has the gestures).
 From the founder's voice notes of the morning of 2026-10-22 ([review-10-22-26.md](review-10-22-26.md),
 with the steam page's screenshot (screenshot in the team repository)) and a Decaid 0.9.0
 export of 2026-10-21 (`decent_export_2026-10-21T22-00-49.zip`: 12 steam records, the settings,
-profiles, beans). Planned only, nothing of it is built. Nine items, five from the transcript and
-four said after it (a seventh was dropped); the transcript's slips are read as said below. Hand-over 0.5.0 (H4) carries
+profiles, beans). Planned only, nothing of it is built. Ten items, five from the transcript and
+five said after it (a seventh was dropped); the transcript's slips are read as said below. Hand-over 0.5.0 (H4) carries
 these with 3.11.
 
 **Beans: the date picker (item 1; Y1).** On the bean add and edit page the roast date's picker
@@ -1292,7 +1292,13 @@ flow falls ends there. Hysteresis: the flow must have been at 0.5 ml/s or more i
 before its fall can end the run, so a start that is slow to move water does not end it; the
 0.5 ml/s is a constant to check against the rig's simulated steam, which has no
 `preparingForShot` (research.md 8.7) and so also tests the fallback: without that substate the run
-starts with the first steam frame as now. The tests use the real frames: the `state`, `substate`,
+starts with the first steam frame as now. **The start condition, in one line:** the first frame whose substate is `pouring` (the machine's
+own start of the steam, after `preparingForShot`); where a machine never reports `pouring`
+(the rig's simulated one skips the real DE1's substates, research.md 8.7), the first frame of
+state `steam` that steams, as today. **The end condition:** the last frame at
+0.5 ml/s or more in `pouring`; the substate leaving `pouring`, or the state leaving `steam`,
+ends it at once. `SteamSeries` gets a `flow` array (`frame.flow`, ml/s) for it, which item 11 draws.
+The tests use the real frames: the `state`, `substate`,
 `flow`, `pressure`, `steamTemperature` and timestamp of two or three of the export's steam records
 (those of 2026-10-17 16:15 and 2026-10-21 07:51, trimmed, kept as test fixtures; the export
 itself stays out of the repository, see `.gitignore`).
@@ -1370,6 +1376,20 @@ line and item 9's words read the same value. It filters the display only: the **
 machine keep the raw frames. The constant is checked on the rig and the tablet; a steam that cools
 by 1 °C a second while it steams is shown about a second late, which is accepted. Rounding stays
 as it is, after the filter.
+
+**Steam graph: the flow (item 11; Y11).** The steam graph has no flow curve and should (founder,
+2026-10-22, after the question of Y5's end condition). Today `Steam.svelte` draws `ShotGraph` with
+`t`, `pressure` and `temperature` only, and `SteamSeries` (`src/steam/run.ts`) holds those three.
+Default: Y5's `flow` series is drawn in blue, as in the espresso graph (blue is flow, green
+pressure, red temperature, 3.2), on the scale that pressure already has: `yMax={4}` fits, since the
+export's steam runs peak at 3.6 to 3.7 ml/s and 3.4 to 3.8 bar; the unit line under the axis reads
+'bar ml/s' as the shot graph's does; the temperature keeps its band of 140 to 170 °C. The graph
+begins and ends with Y5's run, so the flow starts at its first `pouring` frame at 2 to 3 ml/s and
+falls to zero where the run ends, which is also the picture that shows the end rule working. The
+legend (setting `showGraphLegend`, which the steam graph does not pass today) is passed to the
+steam graph too, so the three curves are named under it when the setting is on. No target line is
+drawn: the steam's flow setting (`steamSettings.flow`, 0.4 to 2.5) is the pump's request for the
+machine's steam valve and is not the measured flow's scale.
 
 ### 3.13 Publishing the skin
 
@@ -1890,7 +1910,7 @@ Where an item here and one of 27-55 disagree, the item here wins (3.10 overrides
     stops it by a tap, and a hot water pour shows one, large where 3.6 says and small elsewhere;
     the ring goes when the run ends.
 79. **Hand-over (founder).** The 0.5.0 ZIP carries 3.11 and 3.12; the checks of
-    [install.md](install.md) for items 67-78 and 88-90 are asked with the open ones.
+    [install.md](install.md) for items 67-78 and 88-91 are asked with the open ones.
 
 80. **Licence files (test).** `LICENSE` is the GPL-3.0 text, `package.json`, `manifest.json`,
     README and `NOTICE` name the same licence, every ported file's header names its origin and
@@ -1933,6 +1953,12 @@ Where an item here and one of 27-55 disagree, the item here wins (3.10 overrides
     on a 4 s gap and on a jump of more than 5 °C; the state line shows the group to one decimal and
     the steam as a whole number and does not change more than once a second on a steady
     machine; the graph's data are the raw frames.
+
+91. **Steam flow (test).** The steam graph draws a blue flow curve with the pressure and the
+    temperature from the first `pouring` frame to the end of the run, on the scale of 0 to 4 with the
+    unit line 'bar ml/s'; the legend names flow, pressure and temperature when `showGraphLegend` is
+    on; fed the 2026-10-21 record, the flow's last point is at about 24.5 s and the curve is not
+    drawn before the first `pouring` frame.
 
 ## 6. Constraints
 - **Budget:** one Claude Pro plan. This product may use all of it up to 90% of the weekly
@@ -2031,7 +2057,8 @@ The weeks are a capacity guess on one Pro plan.
 | 3 | Y8 | review 2026-10-22: the steam page's heater-off warning and **Steam on** button move to the header row (3.12 'Steam page: the heater-off warning goes to the header') | U3, X3 |
 | 3 | Y9 | review 2026-10-22: idle, heating and off follow the group temperature on home and hot water and the steam heater on the steam page (3.12 'State words') | T3, Y2 |
 | 3 | Y10 | review 2026-10-22: the state line's group and steam temperatures filtered, group to one decimal and steam to a whole degree (3.12 'Temperatures: filtered and rounded') | T3 |
-| 3 | H4 | review 2026-10-21 and 2026-10-22: hand-over ZIP 0.5.0 (minor bump), carrying 3.11 and 3.12 and their checks in install.md | X1-X4, Y1-Y6, Y8-Y10, H3 |
+| 3 | Y11 | review 2026-10-22: the flow in the steam graph, blue on the scale of pressure, with the legend (3.12 'Steam graph: the flow') | Y5 |
+| 3 | H4 | review 2026-10-21 and 2026-10-22: hand-over ZIP 0.5.0 (minor bump), carrying 3.11 and 3.12 and their checks in install.md | X1-X4, Y1-Y6, Y8-Y11, H3 |
 | 4 (Nov 2-8) | P1 | publish (3.13): `LICENSE`, `NOTICE`, one licence statement everywhere, D-Flow's and DSx2's credit, Damian's approval in writing (A-Flow's old repository needs no licence); the founder asks Damian | H4 |
 | 4 | P2 | publish: the two repositories: try the team's tools across them first, cut the product repository (history with the noreply address, no records), turn this one into the team repository, scrub paths in `spec.md` and `research.md`, `scripts/publish-check.mjs`, `camera.html` and the probes; pushing and renaming are the founder's | P1 |
 | 4 | P3 | publish: CI and release workflows, `CONTRIBUTING.md`, `CHANGELOG.md`, issue templates, `SECURITY.md`, README as a front page, the name check, `npm audit` and the dependency licences | P2 |
