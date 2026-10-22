@@ -1362,10 +1362,11 @@ ready, by how much it matters:
    profile path, the stint day plans 70 more. **The founder's personal e-mail is in no file, only
    in the author of all 173 commits**: it comes from this machine's global git configuration
    (`~\.gitconfig`, `user.email`), and the founder does not want it in public
-   (2026-10-22). The public repository therefore starts with a history written with a GitHub
-   noreply address (item 12), and `git config --global user.email` is set to that address
-   before the next commit (the founder's one line; Claude does not change a global
-   configuration). The **screenshots** of `docs/product/` come from the mock gateway
+   (2026-10-22). The public repository therefore starts with a history written with the founder's
+   GitHub noreply address, `52261469+Jan3kJ@users.noreply.github.com` (given 2026-10-22; item
+   12). The commits Claude makes from 2026-10-22 on use it through this repository's own
+   `user.email`; the founder's global configuration (`git config --global user.email`) is the
+   founder's to change. The **screenshots** of `docs/product/` come from the mock gateway
    ('MockDe1', invented addresses) and are safe; the founder's own tablet screenshots, the
    Decaid export and anything with real beans, roasters or devices must not go in (the
    export is already ignored). Add `scripts/publish-check.mjs` that fails on a Windows path, an
@@ -1439,13 +1440,13 @@ copied between them, so there is nothing to keep in step.
 
 | | Product repository (public) | Team repository (private) |
 |---|---|---|
-| Name (proposed) | `Jan3kJ/decaid-pureflow`, the name `package.json` and the manifest already carry | `Jan3kJ/pureflow-team` |
+| Name (founder, 2026-10-22) | `Jan3kJ/decaid-pureflow`, the name `package.json` and the manifest already carry | `Jan3kJ/pureflow-team` |
 | Holds | `src/`, `e2e/`, `e2e-rig/`, `public/`, `scripts/` (build, zip, screenshots, the checks), the configuration files, `LICENSE`, `NOTICE`, `README.md`, `CHANGELOG.md`, `CONTRIBUTING.md`, `.github/`, `docs/user/` and `docs/a-flow-3.0.md`; **`docs/spec.md` and `docs/research.md`**, scrubbed of local paths and message numbers, because the code's comments cite them ('spec 3.10', 'research.md 8.7') and a contributor needs the reasons | `stint/` (day plans, day records, blog, logs, prompts), `stint.toml`, `.claude/`, the founder's review notes (`docs/review-*.md`, `docs/answers-*.md`), `docs/acceptance.md` and `docs/install.md` (the founder's check list), the Decaid export, and the rig's logs and probes (`scripts/rig-*-probe.mjs`) |
 | Who writes to it | the team's work on the skin, and pull requests | the team's planning and the founder's reviews |
 
 How the one move is done (P2): **the product repository is cut from this one** with
 `git filter-repo` on a fresh clone, keeping only the product paths above and rewriting every
-author and committer to the noreply address with a `--mailmap`, so the public history is the
+author and committer to `52261469+Jan3kJ@users.noreply.github.com` with a `--mailmap`, so the public history is the
 real history of the skin without the records, the personal address or the early messages
 about them (commit messages that name a chat message or a token budget are rewritten with
 `--replace-message`; the founder reads the list before it is pushed). **This repository is
@@ -1471,14 +1472,10 @@ data form, in the team repository; the founder's reviews cite the spec by sectio
 
 **Decisions that are the founder's (section 8).** Answered on 2026-10-22: the release is
 **0.6.0**, not 1.0.0; the documentation is **English only**; the **announcement is the
-founder's**; **two repositories** (item 12); **the founder asks Damian** about D-Flow, and DSx2
-is credited. Still open:
-
-1. *The noreply address* for the public history and for the founder's commits from now on
-   (the numbered one GitHub shows under Settings, Emails, or the plain one): the founder's to give, since the
-   configuration is the founder's. Until it is set, P2's history rewrite has nothing to write.
-2. *The names of the two repositories* (item 12 proposes `decaid-pureflow` and
-   `pureflow-team`).
+founder's**; **two repositories** (item 12) named `decaid-pureflow` (public) and
+`pureflow-team` (private); the noreply address `52261469+Jan3kJ@users.noreply.github.com`;
+**the founder asks Damian** about D-Flow, and DSx2 is credited. Nothing of 3.13's decisions is
+open: what is left is the work, P1 to P6.
 
 ## 4. Technical approach
 
@@ -1966,7 +1963,7 @@ The weeks are a capacity guess on one Pro plan.
 | 3 | Y6 | review 2026-10-22: the hot water and flush ring on every screen: reproduce it on the rig for every screen and both kinds, fix the cause, one test over the matrix (3.12 'Hot water and flush ring: on every screen') | W2 |
 | 3 | H4 | review 2026-10-21 and 2026-10-22: hand-over ZIP 0.5.0 (minor bump), carrying 3.11 and 3.12 and their checks in install.md | X1-X4, Y1-Y6, H3 |
 | 4 (Nov 2-8) | P1 | publish (3.13): `LICENSE`, `NOTICE`, one licence statement everywhere, D-Flow's and DSx2's credit, Damian's approval in writing (A-Flow's old repository needs no licence); the founder asks Damian | H4 |
-| 4 | P2 | publish: the two repositories: try the team's tools across them first, cut the product repository (history with the noreply address, no records), turn this one into the team repository, scrub paths in `spec.md` and `research.md`, `scripts/publish-check.mjs`, `camera.html` and the probes; needs decisions 1 and 2 | P1 |
+| 4 | P2 | publish: the two repositories: try the team's tools across them first, cut the product repository (history with the noreply address, no records), turn this one into the team repository, scrub paths in `spec.md` and `research.md`, `scripts/publish-check.mjs`, `camera.html` and the probes; pushing and renaming are the founder's | P1 |
 | 4 | P3 | publish: CI and release workflows, `CONTRIBUTING.md`, `CHANGELOG.md`, issue templates, `SECURITY.md`, README as a front page, the name check, `npm audit` and the dependency licences | P2 |
 | 4 | P4 | publish: `npm run screenshots`, the eight generated pictures of the user documentation from the mock gateway, and `scripts/docs-check.mjs` | H4 |
 | 5 (Nov 9-15) | P5 | publish: the user documentation, three short pages (`install.md`, `guide.md`, `troubleshooting.md`) in `docs/user/`, with the pictures | P4 |
