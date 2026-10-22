@@ -1165,7 +1165,108 @@ The back arrow of the other screens stays. The home menu's `.menu` offset and th
 tapped `open-steam`, `open-hot-water` and `nav-history` change; swiping becomes the way to them
 in the tests (`e2e/swipe.spec.ts` already has the gestures).
 
-**Version.** These changes go out in the next hand-over as a minor bump, 0.5.0 (H4).
+**Version.** These changes go out in the next hand-over, with 3.12's, as a minor bump, 0.5.0 (H4).
+
+### 3.12 Founder's review of 2026-10-22
+
+From the founder's voice notes of the morning of 2026-10-22 ([review-10-22-26.md](review-10-22-26.md),
+with the steam page's screenshot (screenshot in the team repository)) and a Decaid 0.9.0
+export of 2026-10-21 (`decent_export_2026-10-21T22-00-49.zip`: 12 steam records, the settings,
+profiles, beans). Planned only, nothing of it is built. Five items; the transcript's slips are
+read as said below, and the one that is a guess is marked. Hand-over 0.5.0 (H4) carries these
+with 3.11.
+
+**Beans: the date picker (item 1; Y1).** On the bean add and edit page the roast date's picker
+does not fit the rest of the design (founder, 2026-10-22). Today `src/beans/BeanForm.svelte` has
+`<input type="date" data-testid="bean-roast-date">`, so the WebView draws its own picker. Default:
+the field becomes a button that shows the date as the catalogue does (`dateOf`) or 'no roast
+date', and opens **a date picker of the skin's own**, a dialog like the number pad's
+(`src/editor/NumberPad.svelte`: the same backdrop, frame, `--radius` and buttons, `data-no-swipe`):
+a month grid with the month and year between two arrows (a tap on the year steps by year), days
+as finger-sized buttons (3.5 rem), today ringed, the chosen day filled, 'today' and 'clear'
+(a roast date is optional) and 'cancel'; a tap on a day sets it and closes the dialog. The value
+stays the ISO date string `roastDate` holds now, so nothing stored changes, and a date after
+today is allowed (a bag is sometimes dated ahead). The same picker serves any later date field.
+
+**Hot water: the state line (item 2; Y2).** On the hot water page the machine's state seems to
+show Idle always (founder, 2026-10-22). Today `HotWater.svelte` draws `<StateLine {skin} />`
+without `heat`, while home passes `heat="group"` and steam `heat="steam"` (T3), so the line
+cannot say 'Heating' there: an idle machine under its target is shown as Idle. Default: the hot
+water page waits for the group's heater as home does (`heat="group"`), which the DE1's water
+path shares; the milestone first looks on the rig at what the hot water page's line shows in
+idle, while the machine heats, while hot water pours and after it, and the value the page should
+wait for (the hot water temperature of `hotWaterData` against the mix temperature is the
+alternative). While hot water pours the line says 'Hot water' as home's does; that is an
+acceptance check, since the transcript can also mean the line stays 'Idle' during the pour.
+
+**Hot water: stop at volume without a scale (item 3; Y3).** Without a connected scale the row
+reads **stop at volume** with the unit **ml**, with a scale **stop at weight** and **g**
+(founder, 2026-10-22). The field is the same, `hotWaterData.volume`: with a scale Decaid stops it
+at that many grams (research.md 21), without one the machine's own volume stop applies
+(`src/hotwater/hot-water.ts`, whose `HOT_WATER_FIELDS` has the label 'stop at weight' and the
+unit 'g' fixed). Default: the label and unit follow `skin.scaleLink` (`connected` is the scale;
+`unknown` and `disconnected` are none), the number is not converted, and the range 10 to 500
+stays. The **ratio favourites** (the last shot's grams times a ratio) stay shown, since a shot's
+yield in grams is a good estimate of the water in ml; they are not offered when the last shot has
+no weight. The home water view's weight line already appears only with a scale (3.8).
+
+**Sleep: the machine sleeps after use (item 4; Y4).** The machine goes to sleep sometimes
+although the app was used a minute before; the sleep must follow the sleep-after setting
+(founder, 2026-10-22; the transcript says 'the sleeper after setting for a decade', read as
+'sleep after', Presence Detection's 'sleep after', which `userPresenceEnabled` and
+`sleepTimeoutMinutes` hold: 15 min in the export). It is Decaid that sleeps the machine, not the
+skin (3.10: 'Decaid's timeout, presence'). Today the skin sends nothing that tells Decaid someone
+is there (`grep` for a presence or heartbeat request in `src` finds none; the client has only the
+settings and schedules, `src/api/client.ts`), so a touch of the app may not count as presence and
+the machine sleeps from the last time Decaid saw activity, not from the founder's last touch.
+That is the working guess, and the milestone starts by finding out: read how Decaid decides
+presence (its `rest_v1.yml` and the sources Streamline's skin calls) and test on the rig with
+`sleepTimeoutMinutes` at 1: a machine that has only been touched in the skin, a shot, steam, hot
+water and a swipe each; which of them restarts the timer. Default fix: whatever Decaid offers
+for it (a presence request) is sent on a touch of the skin, at most once a minute, and not while
+the machine sleeps by the skin's own menu ('Machine sleep', 3.10); if Decaid has no such
+request, the skin reports what it found and the founder decides (section 8). The skin does not
+sleep the machine itself and stays out of the sleep-after setting's value.
+
+**Steam: the clock starts and ends with the steam (item 5; Y5).** The steam timer seems to start
+too early: the countdown is at 0 while the machine still steams for 1 or 2 seconds, and the
+'last steam' at the top right shows 32 s though the timer was 26 s, so there is time at the
+start and at the end that is counted (founder, 2026-10-22,
+the screenshot (screenshot in the team repository): the founder boxed the pressure
+rising before the steam and the pressure falling after it, and the timer and 'last steam'). The
+export's steam records show why, 12 records of 2026-10-13 to 2026-10-21, the last six with a full
+steam:
+
+- The machine is in state `steam` with the substate `preparingForShot` for **2.2 s** before the
+  steam: the pump primes, flow 0 to 3 ml/s, pressure rising to 0.8 bar. Then `pouring` starts.
+- The flow falls under 0.5 ml/s at **the timer plus about 0.5 s after the start of `pouring`**
+  (timer 24 s: 24.5 s; timer 25 s: 25.2 s; timer 23 s: 23.5 s). The machine's timer therefore
+  counts from `pouring`, and the steam ends with it.
+- The substate stays `pouring` for **3.5 to 5 s more** (28.5 s in all for a timer of 24 s, 30.2 s
+  for 25 s) with the flow at 0.3 down to 0 ml/s and the pressure falling to 0.1 bar; then
+  `puffing`.
+
+Today `steams` in `src/steam/run.ts` calls every frame of state `steam` that is not
+`pouringDone`, `puffing` or `pausedSteam` steaming, so a run starts with `preparingForShot` and
+ends at `puffing`: it is the timer plus about 2.2 s before and 4 s after, 32 s for the timer of
+26 s, and the countdown (`secondsLeft`, from the run's own seconds) reaches 0 about 2 s before
+the steam does and shows 0 while it still steams. Default: the run **starts with the first frame
+of the substate `pouring`**, so the clock, the countdown and the graph's 0 s are the machine's
+timer's; while the machine is in `preparingForShot` the page shows the timer unchanged, labelled
+'steam starts' (or as the state line's 'Steam', in the milestone's choice) and no graph is
+drawn. The run **ends with the first frame after which the flow has stayed under 0.5 ml/s**:
+the last frame at 0.5 ml/s or more, with the frames after it neither drawn nor counted, so the
+graph and 'last steam' end where the steam does (timer 24 s: about 24.5 s). The substates after
+it (`pouringDone`, `puffing`, `pausedSteam`) and every other state still end the run as before,
+and a run in which the machine leaves `steam` before the flow falls ends there. Hysteresis: the
+flow must be seen at 0.5 ml/s or more in `pouring` before the end can be decided, so a start
+that is slow to move water does not end the run; the 0.5 ml/s is a constant to check against the
+rig's simulated steam, which has no `preparingForShot` (research.md 8.7) and so also tests the
+fallback: without that substate the run starts with the first steam frame as now. The tests use
+the real frames: the `state`, `substate`, `flow`, `pressure`, `steamTemperature` and timestamp of
+two or three of the export's steam records (those of 2026-10-17 16:15 and 2026-10-21 07:51 are
+trimmed and kept as `e2e/fixtures/` and `src/steam/` fixtures; the export itself stays out of the
+repository).
 
 ## 4. Technical approach
 
@@ -1500,8 +1601,29 @@ Where an item here and one of 27-55 disagree, the item here wins (3.10 overrides
     the history's handle opens the history. Acceptance 36's tabs are replaced by this.
 71. **Home on the tablet (founder).** Home reads as one screen across a shot, nothing jumps at
     its start, the header is not full, and the dots and the handle are found without being told.
-72. **Hand-over (founder).** The 0.5.0 ZIP carries 3.11; the checks of [install.md](install.md)
-    for items 67-71 are asked with the open ones.
+72. **Date picker (test).** The bean form's roast date is a button, not a native date input;
+    it opens the skin's own picker (the number pad's backdrop and radius); a tap on a day sets
+    the ISO date and closes it, 'clear' leaves no roast date, 'cancel' changes nothing, the month
+    arrows and the year step work, and the stored `roastDate` has the shape it had.
+73. **Hot water state line (test).** On the hot water page the state line says 'Heating' for an
+    idle machine under its target, 'Hot water' while it pours, and 'Idle' once it is heated and
+    idle, the same words as home's for the same frames.
+74. **Stop at volume (test).** On the hot water page with no scale the row reads 'stop at volume'
+    in ml; with a connected scale 'stop at weight' in g; the value written is the same field in
+    both; the ratio chips are not offered when the last shot has no weight.
+75. **Sleep after use (test, rig).** With `sleepTimeoutMinutes` at 1 and presence on, a machine
+    whose skin is touched every 30 s for three minutes does not sleep; left alone it sleeps after
+    the minute; the skin's request goes at most once a minute and not while the machine sleeps
+    by 'Machine sleep'. The skin never writes the setting's value.
+76. **Steam clock (test).** Fed the frames of the export's steam record of 2026-10-21 07:51
+    (timer 24 s), the run starts at the first `pouring` frame, its last point is the last frame at
+    0.5 ml/s or more (about 24.5 s), 'last steam' shows that, the countdown reaches 0 within half
+    a second of the flow ending and not before; a record without `preparingForShot` starts at its
+    first steam frame; a run whose machine leaves `steam` before the flow falls ends there.
+77. **Steam clock on the tablet (founder).** The countdown reaches 0 as the steam stops, the
+    graph shows no ramp before it and no tail after it, and 'last steam' is about the timer.
+78. **Hand-over (founder).** The 0.5.0 ZIP carries 3.11 and 3.12; the checks of
+    [install.md](install.md) for items 67-77 are asked with the open ones.
 
 ## 6. Constraints
 - **Budget:** one Claude Pro plan. This product may use all of it up to 90% of the weekly
@@ -1591,7 +1713,12 @@ The weeks are a capacity guess on one Pro plan.
 | 3 | X2 | review 2026-10-21: the profile and bean buttons move to the right column, the header keeps the state line and the menu (3.11 'Profile and bean pick in the right column') | X1 |
 | 3 | X3 | review 2026-10-21: the state line first and the page title at the right end on home, steam and hot water (3.11 'One header on home, steam and hot water') | T3 |
 | 3 | X4 | review 2026-10-21: the edge tabs go, page dots and a history handle show the swipes (3.11 'Swipe only: the tabs go') | X1, T6 |
-| 3 | H4 | review 2026-10-21: hand-over ZIP 0.5.0 (minor bump), carrying 3.11 and its checks in install.md | X1-X4, H3 |
+| 3 | Y1 | review 2026-10-22: the bean form's roast date gets a date picker of the skin's own (3.12 'Beans: the date picker') | U9 |
+| 3 | Y2 | review 2026-10-22: the hot water page's state line says Heating, Hot water and Idle as home's (3.12 'Hot water: the state line') | T3, U3 |
+| 3 | Y3 | review 2026-10-22: hot water 'stop at volume' in ml without a scale (3.12 'Hot water: stop at volume without a scale') | U3 |
+| 3 | Y4 | review 2026-10-22: the machine does not sleep after use: find how Decaid decides presence, then send it on a touch (3.12 'Sleep: the machine sleeps after use') | S2c |
+| 3 | Y5 | review 2026-10-22: the steam clock, graph and 'last steam' from `pouring` to the end of the flow, tested with the export's steam records (3.12 'Steam: the clock starts and ends with the steam') | R1 |
+| 3 | H4 | review 2026-10-21 and 2026-10-22: hand-over ZIP 0.5.0 (minor bump), carrying 3.11 and 3.12 and their checks in install.md | X1-X4, Y1-Y5, H3 |
 | 2 (Oct 19-25) | Q1 | code quality review 2026-10-19: Prettier and ESLint, the tree formatted in one commit (in `.git-blame-ignore-revs`), lint errors fixed, both in the check ([review-code-quality-10-19-26.md](review-code-quality-10-19-26.md), steps 1-3) | - |
 | 2 | Q2 | code quality review 2026-10-19: split `src/shell/skin.svelte.ts` along its seams; `Skin` stays the one object the screens read ([review-code-quality-10-19-26.md](review-code-quality-10-19-26.md), step 4) | Q1 |
 | 2 | Q3 | code quality review 2026-10-19: one `errorMessage` helper in place of the repeated error idiom ([review-code-quality-10-19-26.md](review-code-quality-10-19-26.md), step 5) | Q2 |
