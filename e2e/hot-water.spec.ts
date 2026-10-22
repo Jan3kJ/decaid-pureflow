@@ -1,9 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
 import type { Backup } from '../src/settings-backup';
 import { mockGateway, profile, type MockGateway } from './mock-gateway';
+import { toPage } from './touch';
 
-// The hot water page (R5, spec 3.7, acceptance item 20) against a mocked gateway: the split
-// steam tab opens it; temperature, flow, time and stop at weight are written to the
+// The hot water page (R5, spec 3.7, acceptance item 20) against a mocked gateway: its page dot
+// opens it (the tabs went in X4, spec 3.11); temperature, flow, time and stop at weight are written to the
 // workflow's hotWaterData; a ratio favourite with a last shot of 40 g sets 80 g for 1:2; the
 // favourites come from the settings; its tare button tares. That Decaid stops hot water at the
 // weight is the rig's to show (e2e-rig/hot-water.spec.ts): the mock has no pump. Since U3 (spec
@@ -58,28 +59,20 @@ const lastWrite = (gateway: MockGateway) =>
     .filter((call) => call.body.hotWaterData)
     .at(-1)?.body.hotWaterData;
 
-test('the split steam tab: steam keeps most of it, hot water the rest at the bottom, and opens the page', async ({ page }) => {
+test('the hot water dot opens the page; it has no start button', async ({ page }) => {
   await mockGateway(page);
   await page.goto('/');
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
-  const steam = (await page.getByTestId('open-steam').boundingBox())!;
-  const water = (await page.getByTestId('open-hot-water').boundingBox())!;
-  expect(water.y).toBeGreaterThan(steam.y + steam.height - 1);
-  expect(water.y + water.height).toBeGreaterThan(780);
-  expect(steam.height).toBeGreaterThan(2 * water.height);
-  // A finger's target, at least 56 CSS pixels each way.
-  expect(water.height).toBeGreaterThan(56);
-  await page.screenshot({ path: 'docs/product/home-tabs.png' });
 
-  await page.getByTestId('open-hot-water').click();
+  await toPage(page, 'hot-water');
   await expect(page.getByTestId('screen-hot-water')).toBeVisible();
   // Starting stays at the machine: there is no start button, and nothing runs to stop.
   await expect(page.getByRole('button', { name: /start/i })).toHaveCount(0);
   await expect(page.getByTestId('hot-water-stop')).toHaveCount(0);
   await page.getByTestId('nav-home').click();
   await expect(page.getByTestId('screen-home')).toBeVisible();
-  // The steam part still opens the steam page.
-  await page.getByTestId('open-steam').click();
+  // The steam dot opens the steam page.
+  await toPage(page, 'steam');
   await expect(page.getByTestId('screen-steam')).toBeVisible();
   expect(errors).toEqual([]);
 });
@@ -87,7 +80,7 @@ test('the split steam tab: steam keeps most of it, hot water the rest at the bot
 test('temperature, flow, time and stop at weight are written to hotWaterData (item 20)', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
-  await page.getByTestId('open-hot-water').click();
+  await toPage(page, 'hot-water');
   // The workflow's values, as the rig holds them.
   await expect(page.getByTestId('hot-water-temperature')).toContainText('75°C');
   await expect(page.getByTestId('hot-water-flow')).toContainText('10ml/s');
@@ -117,7 +110,7 @@ test('a ratio favourite with a last shot of 40 g sets 80 g for 1:2; the tare but
   shotOf(gateway, 40);
   gateway.putOnScale(212.4);
   await page.goto('/');
-  await page.getByTestId('open-hot-water').click();
+  await toPage(page, 'hot-water');
   await expect(page.getByTestId('hot-water-last-shot')).toHaveText('40.0 g');
   const ratios = page.getByTestId('hot-water-ratio');
   await expect(ratios).toHaveText(['1:2 80 g', '1:2.5 100 g', '1:3 120 g']);
@@ -145,7 +138,7 @@ test('a ratio favourite with a last shot of 40 g sets 80 g for 1:2; the tare but
 test('the favourites come from the settings; without a last shot or a scale nothing is offered', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
-  await page.getByTestId('open-hot-water').click();
+  await toPage(page, 'hot-water');
   await expect(page.getByTestId('hot-water-last-shot')).toHaveText('–');
   for (const chip of await page.getByTestId('hot-water-ratio').all()) await expect(chip).toBeDisabled();
 
@@ -163,7 +156,7 @@ test('the favourites come from the settings; without a last shot or a scale noth
   shotOf(gateway, 40);
   gateway.connectScale(false);
   await page.getByTestId('nav-home').click();
-  await page.getByTestId('open-hot-water').click();
+  await toPage(page, 'hot-water');
   await expect(page.getByTestId('hot-water-ratio')).toHaveText(['1:1.5 60 g', '1:2.5 100 g', '1:3 120 g']);
   await page.getByTestId('hot-water-ratio').first().click();
   expect(lastWrite(gateway)?.volume).toBe(60);
@@ -185,7 +178,7 @@ test('a row per value with a slider: the drag moves the shown value and writes o
 }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
-  await page.getByTestId('open-hot-water').click();
+  await toPage(page, 'hot-water');
   await expect(page.getByTestId('hot-water-time')).toContainText('30s');
 
   // Four rows, one under the other, each with its slider under the value, in the field's range.
@@ -244,7 +237,7 @@ test('while hot water pours the page shows the ring in place of the rows, and th
   const gateway = await mockGateway(page);
   gateway.putOnScale(0);
   await page.goto('/');
-  await page.getByTestId('open-hot-water').click();
+  await toPage(page, 'hot-water');
   await expect(page.getByTestId('hot-water-time')).toBeVisible();
   // No state dot on the left edge (spec 3.9 item 12): only the way back.
   await expect(page.getByTestId('nav-status')).toHaveCount(0);

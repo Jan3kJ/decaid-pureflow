@@ -55,7 +55,17 @@
   let incoming: Page | null = $state(null);
   /** The slide finishing or springing back after the finger let go. */
   let settling = $state(false);
-  const strip = $derived(incoming ? [skin.screen, incoming] : [skin.screen]);
+  // A dot's slide may cross home: the strip holds every page from here to the one coming in.
+  const strip = $derived.by((): Screen[] => {
+    const screen = skin.screen;
+    if (!incoming || !isPage(screen)) return [screen];
+    const [from, to] = [PAGES.indexOf(screen), PAGES.indexOf(incoming)];
+    return PAGES.slice(Math.min(from, to), Math.max(from, to) + 1);
+  });
+  /** The pages' names, for the dots. */
+  const PAGE_NAMES: Record<Page, string> = { 'hot-water': 'hot water', home: 'home', steam: 'steam' };
+  /** Neither the dots nor the history's handle while a shot runs on home: the pages do not swipe then either. */
+  const held = $derived(home && skin.shotRunning);
   const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   /** Where a screen of the strip lies, as a CSS transform; none for the page at rest. */
@@ -64,9 +74,33 @@
     return index === 0 && dx === 0 ? '' : `translateX(calc(${index * 100}% + ${dx}px))`;
   }
 
+  /** Rests the strip, in the same task as the move, so no frame draws the new page displaced. */
+  function settle(to: Page | null) {
+    if (to) skin.go(to);
+    settling = false;
+    incoming = null;
+    dx = 0;
+  }
+
+  /** A page's dot: the page slides in as at the end of a swipe, across home if it lies beyond. */
+  function slideTo(to: Page) {
+    const from = skin.screen;
+    if (settling || swipe?.page || !isPage(from) || to === from) return;
+    if (still()) return skin.go(to);
+    settling = true;
+    incoming = to;
+    // The pages coming in are drawn in place first, then the strip moves.
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        dx = (PAGES.indexOf(from) - PAGES.indexOf(to)) * main.clientWidth;
+        setTimeout(() => settle(to), SLIDE_MS);
+      }),
+    );
+  }
+
   function onpointerdown(event: PointerEvent) {
     swipe = null;
-    if (settling || !swipes(skin.screen) || skin.historyOpen || (home && skin.shotRunning)) return;
+    if (settling || !swipes(skin.screen) || skin.historyOpen || held) return;
     if (onControl(event.target as Element, main)) return;
     swipe = {
       x: event.clientX,
@@ -117,13 +151,6 @@
       else if (target) skin.go(target);
       return;
     }
-    // Rests the strip, in the same task as the move, so no frame draws the new page displaced.
-    const settle = (to: Page | null) => {
-      if (to) skin.go(to);
-      settling = false;
-      incoming = null;
-      dx = 0;
-    };
     // The editor is left as by its back arrow: its changed values are loaded first; if that
     // fails it stays, saying so, and springs back.
     const leave = async (to: Page) => {
@@ -138,20 +165,25 @@
 </script>
 
 {#snippet frame(screen: Screen)}
-  {@const atHome = screen === 'home'}
-  <!-- The left edge: the way back to home, and on home the tab of the shot history (spec 3.1). -->
-  <nav>
-    {#if atHome}
-      <button class="tab" data-testid="nav-history" onclick={() => (skin.historyOpen = true)}>
-        <span>history</span>
-      </button>
-    {:else}
-      <!-- Only the way back: the page's state line says the machine's state (spec 3.9). -->
+  {#if screen === 'home'}
+    <!-- Home has no edge tabs (spec 3.11): the history's handle at the left edge shows the swipe from there. -->
+    <button
+      class="handle"
+      data-testid="history-handle"
+      aria-label="shot history"
+      disabled={held}
+      onclick={() => (skin.historyOpen = true)}
+    >
+      <span></span>
+    </button>
+  {:else}
+    <!-- The left edge: only the way back; the page's state line says the machine's state (spec 3.9). -->
+    <nav>
       <button class="back" data-testid="nav-home" aria-label="back to home" onclick={() => skin.leave('home')}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4l-8 8 8 8" /></svg>
       </button>
-    {/if}
-  </nav>
+    </nav>
+  {/if}
 
   <div class="screen" data-testid="screen-{screen}">
     {#if screen === 'home'}
@@ -176,17 +208,19 @@
     {/if}
   </div>
 
-  <!-- The right edge of home: the tab of the steam page, the mirror of the history's (founder, 2026-10-13).
-       It is split (spec 3.7): steam keeps most of it, hot water takes the rest at the bottom. -->
-  {#if atHome}
-    <nav class="right">
-      <button class="tab" data-testid="open-steam" onclick={() => skin.go('steam')}>
-        <span>steam</span>
-      </button>
-      <button class="tab water" data-testid="open-hot-water" onclick={() => skin.go('hot-water')}>
-        <span>hot water</span>
-      </button>
-    </nav>
+  <!-- The row of pages, the current one bright; a tap on a dot slides to its page (spec 3.11). -->
+  {#if isPage(screen)}
+    <div class="dots" role="group" aria-label="pages">
+      {#each PAGES as page (page)}
+        <button
+          data-testid="page-dot-{page}"
+          aria-label={PAGE_NAMES[page]}
+          aria-current={page === screen ? 'page' : undefined}
+          disabled={held}
+          onclick={() => slideTo(page)}><span></span></button
+        >
+      {/each}
+    </div>
   {/if}
 {/snippet}
 
@@ -203,6 +237,7 @@
     <div
       class="page"
       class:home={screen === 'home'}
+      class:paged={isPage(screen)}
       class:settling
       style:transform={placed(screen)}
       inert={screen !== skin.screen}
@@ -283,10 +318,9 @@
     transition: transform 220ms ease-out;
   }
 
-  /* Home's edge tabs are thinner than the way back, their labels larger (founder, 2026-10-17):
-     56 CSS pixels, still a finger's target. */
+  /* Home has no edge: it uses the full width. */
   .page.home {
-    grid-template-columns: 3.5rem minmax(0, 1fr) 3.5rem;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   nav {
@@ -297,11 +331,6 @@
     padding: 0.7rem 0 1rem;
     border-right: 1px solid var(--line);
     background: var(--panel);
-  }
-
-  nav.right {
-    border-right: 0;
-    border-left: 1px solid var(--line);
   }
 
   nav button {
@@ -334,41 +363,78 @@
     stroke-linejoin: round;
   }
 
-  /* The tabs of the history and of steam run down the edges. */
-  nav .tab {
-    flex: 1;
-    font-size: var(--text-value);
-    color: var(--dim);
-    letter-spacing: 0.06em;
-  }
-
-  nav .tab span {
-    writing-mode: vertical-rl;
-    transform: rotate(180deg);
-  }
-
-  nav.right .tab span {
-    transform: none;
-  }
-
-  /* A quarter of the edge, under a line: steam's tab above it stays the larger target. */
-  nav.right {
-    padding-bottom: 0;
-  }
-
-  nav.right .tab {
-    flex: 3;
-  }
-
-  nav.right .tab.water {
-    flex: 1;
-    border-top: 1px solid var(--line);
-  }
-
   .screen {
     min-width: 0;
     min-height: 0;
     height: 100%;
+  }
+
+  /* The pages leave room at the bottom for the dots, under their own padding. */
+  .paged .screen {
+    box-sizing: border-box;
+    padding-bottom: 1.6rem;
+  }
+
+  .handle,
+  .dots button {
+    padding: 0;
+    font: inherit;
+    background: none;
+    border: 0;
+    touch-action: manipulation;
+  }
+
+  /* A thin bar at home's left edge, vertically centred, in a finger's target over home's padding. */
+  .handle {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    z-index: 1;
+    width: 2.6rem;
+    height: 8rem;
+    transform: translateY(-50%);
+  }
+
+  .handle span {
+    position: absolute;
+    left: 0.35rem;
+    top: 1.5rem;
+    bottom: 1.5rem;
+    width: 0.35rem;
+    border-radius: 0.2rem;
+    background: var(--dim);
+  }
+
+  .handle:disabled span {
+    opacity: 0.35;
+  }
+
+  /* In the bottom padding, centred: each dot a target of 56 by 42 CSS pixels. */
+  .dots {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    z-index: 1;
+    display: flex;
+    transform: translateX(-50%);
+  }
+
+  .dots button {
+    width: 3.5rem;
+    height: 2.6rem;
+    display: grid;
+    place-items: center;
+  }
+
+  .dots span {
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    background: var(--line);
+  }
+
+  .dots button[aria-current='page'] span {
+    background: var(--fg);
   }
 
   .refused {

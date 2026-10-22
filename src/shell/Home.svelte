@@ -201,9 +201,9 @@
 
   .menu {
     position: fixed;
+    /* under the menu button, at home's right padding: home has no edge tab */
     top: 4.6rem;
-    /* under the menu button: the steam tab's 3.5rem and home's padding */
-    right: 4.7rem;
+    right: 1.2rem;
     z-index: 11;
     min-width: 14rem;
     margin: 0;

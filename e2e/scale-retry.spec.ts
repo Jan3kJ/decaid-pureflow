@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { mockGateway } from './mock-gateway';
+import { toPage } from './touch';
 
 // The scale reconnects (spec 3.9 item 3, acceptance 40) against a mocked gateway: a drop, and a
 // scale missing at the start while Decaid knows a preferred scale, are scanned for
@@ -68,7 +69,7 @@ test('without a preferred scale no scan starts by itself; the hot water tare sca
   await expect(page.getByTestId('state-scale')).toHaveText('⚠ not connected, tap to retry', { timeout: 10_000 });
   expect(gateway.calls('GET', SCAN)).toHaveLength(0);
 
-  await page.getByTestId('open-hot-water').click();
+  await toPage(page, 'hot-water');
   await page.getByTestId('hot-water-tare').click();
   await expect.poll(() => gateway.calls('GET', SCAN).length, { timeout: 2_000 }).toBe(1);
   expect(gateway.calls('PUT', '/api/v1/scale/tare')).toHaveLength(0);

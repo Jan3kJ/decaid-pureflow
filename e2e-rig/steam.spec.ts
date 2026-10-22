@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import type { DisplayState, MachineSnapshot, WebUiServerStatus, ShotSettings } from '../src/api';
 import type { RigWorkflow } from './gateway';
 import { IDLE } from './idle';
+import { toPage } from '../e2e/touch';
 
 // The steam page against the rig (D8a): the duration the skin writes can be read back from
 // the running gateway, and steam starts and is stopped by the skin's stop button. Only the
@@ -111,7 +112,7 @@ test('steam: the written timer is read back from the workflow and from the machi
 
     await page.goto('/');
     await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 15_000 });
-    await page.getByTestId('open-steam').click();
+    await toPage(page, 'steam');
     await expect(page.getByTestId('steam-timer')).toHaveText(`${STREAMLINE_SECONDS}s`);
 
     // A favourite chip, one that changes the timer: the workflow and the machine have its
@@ -252,7 +253,7 @@ test("steam: the page's tare button tares the simulated scale (item 17)", async 
   });
   await page.goto('/');
   await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 15_000 });
-  await page.getByTestId('open-steam').click();
+  await toPage(page, 'steam');
   // The simulated scale, its own frames: connected, with a weight.
   await expect(page.getByTestId('steam-tare')).toBeEnabled({ timeout: 30_000 });
   await expect(page.getByTestId('steam-weight')).toHaveText(/^-?\d+\.\d g$/);
@@ -278,7 +279,7 @@ test('steam: with the heater off the page says so, and Steam on switches it on, 
 
     await page.goto('/');
     await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 30_000 });
-    await page.getByTestId('open-steam').click();
+    await toPage(page, 'steam');
     await expect(page.getByTestId('steam-heater-off')).toContainText('The steam heater is off');
     await expect(page.getByTestId('steam-favourite')).toHaveCount(0);
     await page.screenshot({ path: 'e2e-rig/.results/steam-heater-off-rig.png' });

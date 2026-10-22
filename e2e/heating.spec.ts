@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { mockGateway } from './mock-gateway';
+import { toPage } from './touch';
 
 // The DE1 says idle while it heats; the state line says Heating until the page's heater is
 // 3 °C under its target: home the group's, the steam page the steam heater's (spec 3.8).
@@ -26,7 +27,7 @@ test('the steam page says Heating against the steam target, not when the heater 
   const title = page.getByTestId('status-title');
   // Home waits for the group, which is warm.
   await expect(title).toHaveText('Idle');
-  await page.getByTestId('open-steam').click();
+  await toPage(page, 'steam');
   await expect(page.getByTestId('screen-steam')).toBeVisible();
   await expect(title).toHaveText('Heating');
   await expect(page.getByTestId('status')).toHaveClass(/busy/);

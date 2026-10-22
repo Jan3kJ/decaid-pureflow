@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mockGateway } from './mock-gateway';
+import { toPage } from './touch';
 
 // Tare by a tap on the weight (3.7, acceptance items 6 and 21), settings and sleep / wake
 // against a mocked gateway (D8c), and the stream the gateway closed with an error. The same
@@ -261,7 +262,7 @@ test('settings: the defaults, typed values and both switches survive a reload', 
 
   // The steam page calculates with them: 362.5 g is the small mug with 200 g of milk, 60 s.
   await page.getByTestId('nav-home').click();
-  await page.getByTestId('open-steam').click();
+  await toPage(page, 'steam');
   await expect(page.getByTestId('steam-favourite')).toHaveText(['25 s', '45 s', '30 s']);
   gateway.putOnScale(362.5);
   await expect(page.getByTestId('steam-mug-weight')).toHaveText('162.5 g');

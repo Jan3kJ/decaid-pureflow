@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { mockGateway, type MockGateway } from './mock-gateway';
-import { swipe } from './touch';
+import { swipe, toPage } from './touch';
 
 // The steam page against a mocked gateway (D8a, acceptance item 4): the scale's frames are
 // the mock's, because the simulated scale's weight cannot be set (research.md 8.7). The
@@ -30,7 +30,7 @@ for (const mug of MUGS) {
   test(`${mug.name} with milk on the scale: the size, the milk and the seconds, and 'set timer' writes them`, async ({ page }) => {
     const gateway = await mockGateway(page);
     await page.goto('/');
-    await page.getByTestId('open-steam').click();
+    await toPage(page, 'steam');
     await expect(page.getByTestId('screen-steam')).toBeVisible();
     // The timer the machine has.
     await expect(page.getByTestId('steam-timer')).toHaveText('50s');
@@ -60,7 +60,7 @@ for (const mug of MUGS) {
 test('the mug follows the scale, and an empty scale offers no timer', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
-  await page.getByTestId('open-steam').click();
+  await toPage(page, 'steam');
 
   await expect(page.getByTestId('steam-weight')).toHaveText('0.0 g');
   await expect(page.getByTestId('steam-mug')).toHaveText('s');
@@ -91,7 +91,7 @@ test('the mug follows the scale, and an empty scale offers no timer', async ({ p
 test('a favourite chip writes its seconds directly, without a scale weight', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
-  await page.getByTestId('open-steam').click();
+  await toPage(page, 'steam');
 
   const chips = page.getByTestId('steam-favourite');
   await expect(chips).toHaveText(['25 s', '50 s', '30 s']);
@@ -118,7 +118,7 @@ test("the timer on screen is the machine's, and a chip writes the machine when t
   gateway.workflow.steamSettings.duration = 25;
   gateway.shotSettings.targetSteamDuration = 30;
   await page.goto('/');
-  await page.getByTestId('open-steam').click();
+  await toPage(page, 'steam');
 
   const chips = page.getByTestId('steam-favourite');
   await expect(page.getByTestId('steam-timer')).toHaveText('30s');
@@ -145,7 +145,7 @@ test('with Streamline open and remembering 30 s, a chip of 25 s and the timer fr
   // Streamline has written its 30 s over the 50 s.
   expect(gateway.shotSettings.targetSteamDuration).toBe(30);
   await page.goto('/');
-  await page.getByTestId('open-steam').click();
+  await toPage(page, 'steam');
   await expect(page.getByTestId('steam-timer')).toHaveText('30s');
 
   await page.getByTestId('steam-favourite').nth(0).click();
@@ -167,7 +167,7 @@ test('with Streamline open and remembering 30 s, a chip of 25 s and the timer fr
 test('a timer another app changes afterwards is shown with a notice, until it is set again', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
-  await page.getByTestId('open-steam').click();
+  await toPage(page, 'steam');
   // No store key of Streamline: the skin does not create one.
   await page.getByTestId('steam-favourite').nth(0).click();
   await expect(page.getByTestId('steam-timer')).toHaveText('25s');
@@ -195,7 +195,7 @@ test('the steam settings come from the settings store and survive a reload', asy
   });
   // The skin reads the store once, when it loads; afterwards the settings page changes it.
   await page.reload();
-  await page.getByTestId('open-steam').click();
+  await toPage(page, 'steam');
   gateway.putOnScale(200);
 
   for (const reload of [false, true]) {
@@ -212,7 +212,7 @@ test('the steam settings come from the settings store and survive a reload', asy
 test('steam started at the machine shows its graph of pressure and temperature, and stops from the page', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
-  await page.getByTestId('open-steam').click();
+  await toPage(page, 'steam');
   gateway.putOnScale(525);
   await page.getByTestId('steam-set-timer').click();
   await expect(page.getByTestId('steam-timer')).toHaveText('43s');
@@ -269,7 +269,7 @@ test('a selected adjust button adds its amount to the calculated timer and to a 
 }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
-  await page.getByTestId('open-steam').click();
+  await toPage(page, 'steam');
   gateway.putOnScale(525);
   await expect(page.getByTestId('steam-seconds')).toHaveText('43 s');
 
@@ -314,7 +314,7 @@ test('the adjust amounts come from the settings, and the settings page changes t
     localStorage.setItem('pureflow.settings', JSON.stringify({ steam: { adjustments: [-3, 2, 10] } }));
   });
   await page.reload();
-  await page.getByTestId('open-steam').click();
+  await toPage(page, 'steam');
   await expect(page.getByTestId('steam-adjust')).toHaveText(['−3 s', '+2 s', '+10 s']);
   gateway.putOnScale(525);
   await page.getByTestId('steam-adjust').nth(2).click();
@@ -334,7 +334,7 @@ test('the adjust amounts come from the settings, and the settings page changes t
   await page.getByTestId('numpad-confirm').click();
   await expect(page.getByTestId('setting-adjust-1')).toContainText('-6');
   await page.getByTestId('nav-home').click();
-  await page.getByTestId('open-steam').click();
+  await toPage(page, 'steam');
   await expect(page.getByTestId('steam-adjust')).toHaveText(['−6 s', '+2 s', '+10 s']);
   expect(errors).toEqual([]);
 });
@@ -344,7 +344,7 @@ test("while steam runs the timer counts down; after the steam the graph adds no 
 }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
-  await page.getByTestId('open-steam').click();
+  await toPage(page, 'steam');
   gateway.putOnScale(525);
   await page.getByTestId('steam-adjust').nth(2).click();
   await page.getByTestId('steam-set-timer').click();
@@ -409,7 +409,7 @@ test('a swipe to the left opens the steam page, from the right edge too (spec 3.
 test("the steam page's tare button tares the scale, and without one looks for it (spec 3.9)", async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
-  await page.getByTestId('open-steam').click();
+  await toPage(page, 'steam');
   gateway.putOnScale(300);
   await expect(page.getByTestId('steam-weight')).toHaveText('300.0 g');
   await page.getByTestId('steam-tare').click();
@@ -430,7 +430,7 @@ test('with the steam heater off the page says so and Steam on switches it on; th
   const gateway = await mockGateway(page);
   await page.goto('/');
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
-  await page.getByTestId('open-steam').click();
+  await toPage(page, 'steam');
   await expect(page.getByTestId('steam-favourite')).toHaveCount(3);
   await expect(page.getByTestId('steam-heater-off')).toHaveCount(0);
   // No state dot on the left edge (spec 3.9 item 12): the state line says it.

@@ -14,7 +14,7 @@ export const PAGES = ['hot-water', 'home', 'steam'] as const satisfies readonly 
 
 export type Page = (typeof PAGES)[number];
 
-/** The history's swipe starts in this share of home's width from the left: home has no button there but the tab. */
+/** The history's swipe starts in this share of home's width from the left: home has no button there but the history's handle. */
 export const SWIPE_EDGE = 0.2;
 /** It opens the history after this share of the width. */
 export const SWIPE_DISTANCE = 0.06;

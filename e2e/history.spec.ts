@@ -3,7 +3,7 @@ import { WATER_FRAMES, mockGateway, profile, type MockGateway } from './mock-gat
 import { swipe } from './touch';
 
 // The shot history against a mocked gateway (D8b, acceptance item 5): an overlay on home,
-// opened by its tab or by a swipe from the left edge, closed by a selection or a tap outside.
+// opened by its handle or by a swipe from the left edge, closed by a selection or a tap outside.
 // An entry is one profile with one bean; tapping it restores profile, bean and grinder
 // setting with one PUT of the workflow and shows the graph of its latest shot.
 
@@ -39,13 +39,15 @@ async function home(page: Page) {
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
 }
 
-test('the tab opens the overlay: one entry per profile and bean, newest first, with the latest grinder setting', async ({ page }) => {
+test('the handle opens the overlay: one entry per profile and bean, newest first, with the latest grinder setting', async ({
+  page,
+}) => {
   const gateway = await mockGateway(page);
   fourShots(gateway);
   await home(page);
   await expect(page.getByTestId('history')).toHaveCount(0);
 
-  await page.getByTestId('nav-history').tap();
+  await page.getByTestId('history-handle').tap();
   await expect(page.getByTestId('history')).toBeVisible();
   // An overlay, not a page: home is still under it.
   await expect(page.getByTestId('screen-home')).toBeVisible();
@@ -76,16 +78,22 @@ test('a swipe from the left edge to the right opens the overlay, and no other sw
 
   // From the middle of the screen and to the left: a page (spec 3.8), not the history; down
   // along the edge: nothing.
+  // Each step waits on the state the swipe ends in, the strip at rest with one page, not on time;
+  // the back arrow is clicked, since Chromium may drop a tap that follows a swipe (research.md 14).
+  const atRest = () => expect(page.locator('.page')).toHaveCount(1);
   await swipe(page, { x: 600, y: 400 }, { x: 900, y: 400 });
-  await expect(page.getByTestId('screen-hot-water')).toBeVisible();
-  await page.getByTestId('nav-home').tap();
+  await expect(page.locator('.page:not([inert]) [data-testid="screen-hot-water"]')).toBeVisible();
+  await atRest();
+  await page.getByTestId('nav-home').click();
+  await expect(page.getByTestId('screen-home')).toBeVisible();
   // To the left from the left fifth: a page's swipe, too short to move on unless flicked.
   await swipe(page, { x: 200, y: 400 }, { x: 20, y: 400 });
-  await page.waitForTimeout(400);
+  await atRest();
   await expect(page.getByTestId('history')).toHaveCount(0);
-  if (await page.getByTestId('nav-home').count()) await page.getByTestId('nav-home').tap();
+  if (await page.getByTestId('nav-home').count()) await page.getByTestId('nav-home').click();
+  await expect(page.getByTestId('screen-home')).toBeVisible();
   await swipe(page, { x: 30, y: 200 }, { x: 60, y: 600 });
-  await page.waitForTimeout(400);
+  await atRest();
   await expect(page.getByTestId('history')).toHaveCount(0);
   await expect(page.getByTestId('screen-home')).toBeVisible();
 
@@ -93,7 +101,7 @@ test('a swipe from the left edge to the right opens the overlay, and no other sw
   await expect(page.getByTestId('history')).toBeVisible();
   await expect(page.getByTestId('history-entry')).toHaveCount(3);
 
-  // Beside the tab too, over the last shot's place.
+  // Beside the handle too, over the last shot's place.
   await page.touchscreen.tap(1100, 400);
   await expect(page.getByTestId('history')).toHaveCount(0);
   await swipe(page, { x: 120, y: 500 }, { x: 330, y: 500 });
@@ -108,7 +116,7 @@ test('a tap outside closes the overlay and changes nothing', async ({ page }) =>
   fourShots(gateway);
   await home(page);
 
-  await page.getByTestId('nav-history').tap();
+  await page.getByTestId('history-handle').tap();
   await expect(page.getByTestId('history')).toBeVisible();
   // Outside, on home's menu button: the tap closes the overlay and opens nothing.
   const menu = (await page.getByTestId('menu').boundingBox())!;
@@ -120,7 +128,7 @@ test('a tap outside closes the overlay and changes nothing', async ({ page }) =>
   await expect(page.getByTestId('history-graph')).toHaveCount(0);
   expect(gateway.requests.filter((request) => request.method !== 'GET')).toEqual([]);
   // A tap inside the panel that hits no entry leaves it open.
-  await page.getByTestId('nav-history').tap();
+  await page.getByTestId('history-handle').tap();
   await page.getByTestId('history').getByRole('heading').tap();
   await expect(page.getByTestId('history')).toBeVisible();
   expect(errors).toEqual([]);
@@ -132,7 +140,7 @@ test('tapping an entry closes the overlay, restores profile, bean and grinder se
   await home(page);
   await expect(page.getByTestId('profile-name')).toHaveText('A-Flow / default-medium');
 
-  await page.getByTestId('nav-history').tap();
+  await page.getByTestId('history-handle').tap();
   await page.getByTestId('history-entry').filter({ hasText: 'Red Brick' }).tap();
   await expect(page.getByTestId('history')).toHaveCount(0);
 
@@ -200,7 +208,7 @@ test('tapping an entry closes the overlay, restores profile, bean and grinder se
   expect(colours).toEqual([true, true, true, true]);
 
   // The overlay over home with the restored entry's graph: the product's picture.
-  await page.getByTestId('nav-history').tap();
+  await page.getByTestId('history-handle').tap();
   await expect(page.getByTestId('history-entry')).toHaveCount(3);
   await page.waitForTimeout(300);
   await page.screenshot({ path: 'docs/product/history.png' });
@@ -234,10 +242,10 @@ test('a shot that starts closes the overlay, and its graph takes the place of th
   const gateway = await mockGateway(page);
   fourShots(gateway);
   await home(page);
-  await page.getByTestId('nav-history').tap();
+  await page.getByTestId('history-handle').tap();
   await page.getByTestId('history-entry').first().tap();
   await expect(page.getByTestId('history-graph')).toBeVisible();
-  await page.getByTestId('nav-history').tap();
+  await page.getByTestId('history-handle').tap();
   await expect(page.getByTestId('history')).toBeVisible();
 
   await gateway.replay(page, 0, 0.3);
@@ -251,13 +259,13 @@ test('a shot that starts closes the overlay, and its graph takes the place of th
   expect(errors).toEqual([]);
 });
 
-test('the history is on home only: the editor has no tab, and its drags never open the overlay', async ({ page }) => {
+test('the history is on home only: the editor has no handle, and its drags never open the overlay', async ({ page }) => {
   const gateway = (await mockGateway(page)).withDefaults('light');
   fourShots(gateway);
   await home(page);
   await page.getByTestId('open-editor').tap();
   await expect(page.getByTestId('graph')).toBeVisible();
-  await expect(page.getByTestId('nav-history')).toHaveCount(0);
+  await expect(page.getByTestId('history-handle')).toHaveCount(0);
 
   // The gesture that opens the history on home, on the graph with a finger and with the mouse:
   // the graph's drags.
@@ -283,7 +291,7 @@ test('the history is on home only: the editor has no tab, and its drags never op
 test('a history without shots says so, and one the gateway cannot give says why', async ({ page }) => {
   const gateway = await mockGateway(page);
   await home(page);
-  await page.getByTestId('nav-history').tap();
+  await page.getByTestId('history-handle').tap();
   await expect(page.getByTestId('history-empty')).toHaveText('No shots yet.');
   await expect(page.getByTestId('history-entry')).toHaveCount(0);
   await page.touchscreen.tap(1100, 400);
@@ -291,7 +299,7 @@ test('a history without shots says so, and one the gateway cannot give says why'
   // A shot whose record is gone when the entry is tapped: the notice is on home.
   // A shot made by another client is read when the overlay opens again.
   gateway.addShot('shot-9', '2026-10-12T09:00:00.000000', BEST, null);
-  await page.getByTestId('nav-history').tap();
+  await page.getByTestId('history-handle').tap();
   await expect(page.getByTestId('history-entry')).toHaveCount(1);
   gateway.shots = [];
   await page.getByTestId('history-entry').tap();
@@ -308,7 +316,7 @@ test('a slow, long history: the newest 20 first, the rest after them, kept for a
   gateway.olderShots = new Promise((resolve) => (release = resolve));
   await home(page);
 
-  await page.getByTestId('nav-history').tap();
+  await page.getByTestId('history-handle').tap();
   const entries = page.getByTestId('history-entry');
   await expect(entries).toHaveCount(20);
   await expect(page.getByTestId('history-more')).toBeVisible();
@@ -334,7 +342,7 @@ test('a slow, long history: the newest 20 first, the rest after them, kept for a
   await page.touchscreen.tap(1100, 400);
   await expect(page.getByTestId('history')).toHaveCount(0);
   const before = gateway.requests.length;
-  await page.getByTestId('nav-history').tap();
+  await page.getByTestId('history-handle').tap();
   await expect(entries).toHaveCount(40, { timeout: 300 });
   await expect.poll(() => gateway.requests.slice(before).map((request) => request.path)).toContain('/api/v1/shots/latest');
   expect(gateway.requests.slice(before).filter((request) => request.path.startsWith('/api/v1/shots'))).toHaveLength(1);
@@ -345,7 +353,7 @@ test('a slow, long history: the newest 20 first, the rest after them, kept for a
   gateway.addShot('shot-new', at(200), profile('P-new', 36, 4), null);
   await expect.poll(() => gateway.historyListCalls().length, { timeout: 10_000 }).toBe(4);
   expect(gateway.historyListCalls().at(-1)!.query).toBe('?limit=20&offset=0&order=desc');
-  await page.getByTestId('nav-history').tap();
+  await page.getByTestId('history-handle').tap();
   await expect(entries).toHaveCount(41);
   await expect(entries.first().getByTestId('entry-profile')).toHaveText('P-new');
   expect(gateway.historyListCalls()).toHaveLength(4);
@@ -391,7 +399,7 @@ test('the filter by bean and grinder: the catalogue names the entries, a choice 
   gateway.olderShots = new Promise((resolve) => (release = resolve));
   await home(page);
 
-  await page.getByTestId('nav-history').tap();
+  await page.getByTestId('history-handle').tap();
   const entries = page.getByTestId('history-entry');
   await expect(entries).toHaveCount(1);
   await expect(page.getByTestId('filter-all')).toHaveClass(/on/);
@@ -433,7 +441,7 @@ test('the filter by bean and grinder: the catalogue names the entries, a choice 
 
   // The filter lasts while the skin runs: closed and opened again, it is still there.
   await page.touchscreen.tap(1100, 400);
-  await page.getByTestId('nav-history').tap();
+  await page.getByTestId('history-handle').tap();
   await expect(page.getByTestId('filter-grinder')).toHaveClass(/on/);
   await expect(entries).toHaveCount(2);
 

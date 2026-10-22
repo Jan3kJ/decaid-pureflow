@@ -157,14 +157,14 @@ test("another profile of the editor's start row asks too", async ({ page }) => {
 test('a restore from the shot history asks too', async ({ page }) => {
   const gateway = await withUnsaved(page, 'home');
 
-  await page.getByTestId('nav-history').click();
+  await page.getByTestId('history-handle').click();
   await page.getByTestId('history-entry').first().click();
   await expect(dialog(page)).toBeVisible();
   await page.getByTestId('unsaved-cancel').click();
   await expect(dialog(page)).toHaveCount(0);
   expect(puts(gateway)).toHaveLength(0);
 
-  await page.getByTestId('nav-history').click();
+  await page.getByTestId('history-handle').click();
   await page.getByTestId('history-entry').first().click();
   await page.getByTestId('unsaved-discard').click();
   await expect.poll(() => puts(gateway).length).toBe(1);

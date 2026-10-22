@@ -2,10 +2,11 @@ import { expect, test, type Page } from '@playwright/test';
 import type { MachineSnapshot, ShotRecord, ProfileRecord } from '../src/api';
 import type { RigWorkflow } from './gateway';
 import { IDLE } from './idle';
+import { toPage } from '../e2e/touch';
 
 // The hot water page against the rig (R5, spec 3.7, acceptance item 20). A short simulated
-// shot is pulled and its recorded yield set to 40 g, so the newest shot weighs 40 g; the split
-// tab opens the page, 1:2 sets 80 g, and the four values land in the workflow's hotWaterData.
+// shot is pulled and its recorded yield set to 40 g, so the newest shot weighs 40 g; the page
+// dot opens the page, 1:2 sets 80 g, and the four values land in the workflow's hotWaterData.
 // Hot water is then asked for through the API, as the DE1's own button would (the skin starts
 // nothing): Decaid tares the mock scale and stops it at the weight, long before its duration
 // (research.md 21); the page shows the ring while it pours (spec 3.9). Last, the page's tare
@@ -77,10 +78,10 @@ test('the hot water page writes hotWaterData, 1:2 of a 40 g shot is 80 g, Decaid
     });
     expect((await api<ShotRecord>('GET', '/api/v1/shots/latest')).annotations!.actualYield).toBe(SHOT_GRAMS);
 
-    // The split tab's hot water part opens the page.
+    // The hot water dot opens the page.
     await page.goto('/');
     await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 30_000 });
-    await page.getByTestId('open-hot-water').click();
+    await toPage(page, 'hot-water');
     await expect(page.getByTestId('screen-hot-water')).toBeVisible();
     await expect(page.getByTestId('hot-water-last-shot')).toHaveText('40.0 g');
     // The favourites are the settings' defaults.

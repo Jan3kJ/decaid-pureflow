@@ -114,7 +114,7 @@ test('the live shot ends at the pour: the tail adds no points, the timer stands,
   // The same shot from the history, its record with the tail: the same length within 1 s.
   gateway.addShot('shot-tail', '2026-10-19T08:00:00.000000', gateway.workflow.profile, gateway.workflow.context);
   gateway.measurements['shot-tail'] = measurementsFrom(shotEvents(tail));
-  await page.getByTestId('nav-history').tap();
+  await page.getByTestId('history-handle').tap();
   await page.getByTestId('history-entry').first().tap();
   const recalled = page.getByTestId('history-graph');
   await expect(recalled).toBeVisible();

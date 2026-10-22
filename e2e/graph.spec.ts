@@ -124,7 +124,7 @@ test('a shot without a scale has no weight flow: nothing yellow, no g/s', async 
   gateway.addShot('no-scale', '2026-10-12T08:00:00.000000', profile('A-Flow / default-light', 48, 9), { targetYield: 48 });
   gateway.measurements['no-scale'] = measurementsOf(60).map((measurement) => ({ ...measurement, scale: null }));
   await home(page);
-  await page.getByTestId('nav-history').tap();
+  await page.getByTestId('history-handle').tap();
   await page.getByTestId('history-entry').first().tap();
   const graph = page.getByTestId('history-graph');
   await expect(graph.getByTestId('shot-line-pressure')).toHaveCount(1);
@@ -150,7 +150,7 @@ test('a short shot from the history fills the graph, cut at the water as the liv
   });
   gateway.measurements.short = measurementsOf(HEATING_SECONDS + 15);
   await home(page);
-  await page.getByTestId('nav-history').tap();
+  await page.getByTestId('history-handle').tap();
   await page.getByTestId('history-entry').first().tap();
   const graph = page.getByTestId('history-graph');
   await expect(graph).toBeVisible();

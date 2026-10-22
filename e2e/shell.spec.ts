@@ -4,6 +4,7 @@ import { DEFAULT_PROFILES } from '../src/aflow';
 import { paramsMetadata, workflowProfile } from '../src/editor/storage';
 import { defaultProfile } from '../src/shell/profiles';
 import { WATER_FRAMES, mockGateway, record } from './mock-gateway';
+import { toPage } from './touch';
 
 // The shell against a mocked gateway: home, the profile picker and a replayed shot (D6).
 
@@ -133,7 +134,7 @@ test('the menu opens with settings, beans and grinders, clean, steam off and mac
   expect(errors).toEqual([]);
 });
 
-test('the pen opens the editor, the name the picker, the right tab the steam page', async ({ page }) => {
+test('the pen opens the editor, the name the picker, the steam dot the steam page', async ({ page }) => {
   await mockGateway(page);
   await page.goto('/');
 
@@ -144,15 +145,7 @@ test('the pen opens the editor, the name the picker, the right tab the steam pag
   await expect(page.getByTestId('screen-profiles')).toBeVisible();
   await page.getByTestId('nav-home').click();
 
-  // The steam tab is the mirror of the history's: down the right edge. Since R5 (spec 3.7) the
-  // hot water tab takes the bottom of it: together they are as long as the history's.
-  const tab = (await page.getByTestId('open-steam').boundingBox())!;
-  const water = (await page.getByTestId('open-hot-water').boundingBox())!;
-  const history = (await page.getByTestId('nav-history').boundingBox())!;
-  expect(tab.x + tab.width).toBeGreaterThan(1280 - 2);
-  expect(tab.height).toBeGreaterThan(history.height / 2);
-  expect(Math.abs(water.y + water.height - (history.y + history.height))).toBeLessThan(20);
-  await page.getByTestId('open-steam').click();
+  await toPage(page, 'steam');
   await expect(page.getByTestId('screen-steam')).toBeVisible();
   // The steam page has the same state line.
   await expect(page.getByTestId('state-tank')).toHaveText('38 mm');
@@ -162,7 +155,7 @@ test('the pen opens the editor, the name the picker, the right tab the steam pag
 test('the way back to home is a large target in the accent colour', async ({ page }) => {
   await mockGateway(page);
   await page.goto('/');
-  for (const button of ['open-profiles', 'open-editor', 'open-steam']) {
+  for (const button of ['open-profiles', 'open-editor', 'page-dot-steam']) {
     await page.getByTestId(button).click();
     const back = page.getByTestId('nav-home');
     const box = (await back.boundingBox())!;

@@ -112,8 +112,8 @@ test('the history: shots with another profile or bean are entries, a tap restore
     await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 15_000 });
     await expect(page.getByTestId('profile-name')).toHaveText(workflowBefore.profile.title);
 
-    // The tab opens the overlay. The rig's older shots have their own entries.
-    await page.getByTestId('nav-history').tap();
+    // The handle opens the overlay. The rig's older shots have their own entries.
+    await page.getByTestId('history-handle').tap();
     await expect(page.getByTestId('history')).toBeVisible();
     const mine = page.getByTestId('history-entry').filter({ hasText: ROASTER });
     await expect(mine).toHaveCount(3);
@@ -137,7 +137,7 @@ test('the history: shots with another profile or bean are entries, a tap restore
     // A tap on an entry closes it, restores the entry and shows the graph of its latest shot.
     // Opened a second time, it reads no shot list.
     const listsBefore = lists.length;
-    await page.getByTestId('nav-history').tap();
+    await page.getByTestId('history-handle').tap();
     await expect(mine).toHaveCount(3);
     expect(lists.slice(listsBefore)).toEqual([]);
     await mine.nth(1).tap();
@@ -178,7 +178,7 @@ test('the history: shots with another profile or bean are entries, a tap restore
     const shotD = await pull(page, profileB, { coffeeName: BEAN_A, coffeeRoaster: ROASTER, grinderSetting: '3.3' });
     await expect(page.getByTestId('last-shot')).toBeVisible({ timeout: 30_000 });
     await expect.poll(() => lists.length, { timeout: 30_000 }).toBeGreaterThan(listsBeforeShot);
-    await page.getByTestId('nav-history').tap();
+    await page.getByTestId('history-handle').tap();
     await expect(mine).toHaveCount(4);
     await expect(mine.first()).toHaveAttribute('data-shot', shotD.id);
     await expect(mine.first().getByTestId('entry-bean')).toHaveText(`${ROASTER} · ${BEAN_A}`);
@@ -245,7 +245,7 @@ test('the history filtered by a bean of the catalogue shows only its entry', asy
 
     await page.goto('/');
     await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 15_000 });
-    await page.getByTestId('nav-history').tap();
+    await page.getByTestId('history-handle').tap();
     const entries = page.getByTestId('history-entry');
     const mine = entries.filter({ hasText: PREFIX });
     await expect(mine).toHaveCount(2);

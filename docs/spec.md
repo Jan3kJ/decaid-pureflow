@@ -1187,6 +1187,17 @@ The back arrow of the other screens stays. The home menu's `.menu` offset and th
 tapped `open-steam`, `open-hot-water` and `nav-history` change; swiping becomes the way to them
 in the tests (`e2e/swipe.spec.ts` already has the gestures).
 
+Built in X4 (`App.svelte`; test ids `page-dot-hot-water`, `page-dot-home`, `page-dot-steam` and
+`history-handle`): where the spec left it open, the dots are drawn once by the page frame, not by
+each page, centred on the screen; each target is 56 x 42 CSS pixels, the dot 0.6 rem, the
+current one in the text colour and the others in the line colour, and the three pages give
+1.6 rem more at the bottom so that nothing lies under them. A dot to the page beyond home
+slides across home, all three pages drawn while it slides; with reduced motion it changes the
+page at once, as a swipe does. The handle is a 0.35 rem bar of 5 rem in a target of 2.6 x 8 rem
+over home's left padding. Neither the dots nor the handle work while a shot runs on home, as the
+swipes do not. The menu opens under its button at home's right padding. Screenshot:
+home-no-tabs.png (screenshot in the team repository).
+
 **Version.** These changes go out in the next hand-over, with 3.12's, as a minor bump, 0.5.0 (H4).
 
 ### 3.12 Founder's review of 2026-10-22

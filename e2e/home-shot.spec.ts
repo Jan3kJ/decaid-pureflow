@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mockGateway, profile } from './mock-gateway';
+import { toPage } from './touch';
 
 // Home is the shot screen (spec 3.11, X1; acceptance 28 and 51): one graph and a right column
 // of a fixed width in three states. Idle before a shot: the empty graph, the target yield and
@@ -164,7 +165,7 @@ test('the next shot replaces the finished one, also from another screen', async 
   await expect(page.getByTestId('shot-phases')).toBeVisible();
 
   // On the steam page, a third shot: home comes back with it.
-  await page.getByTestId('open-steam').click();
+  await toPage(page, 'steam');
   await expect(page.getByTestId('screen-steam')).toBeVisible();
   await gateway.replay(page, 0, 0.3);
   await expect(page.getByTestId('screen-home')).toBeVisible();
@@ -185,7 +186,7 @@ test('a recalled history entry lies over the finished shot with its caption and 
   await gateway.replay(page, 0, 1);
   await expect(page.getByTestId('last-shot')).toBeVisible();
 
-  await page.getByTestId('nav-history').tap();
+  await page.getByTestId('history-handle').tap();
   await page.getByTestId('history-entry').first().tap();
   await expect(page.getByTestId('history-graph')).toBeVisible();
   await expect(page.getByTestId('home-shot')).toHaveAttribute('data-shot', 'recalled');

@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 
 /**
  * A finger's swipe, as the tablet's screen sends it: touch events through the browser's input,
@@ -24,4 +24,14 @@ export async function swipe(page: Page, from: { x: number; y: number }, to: { x:
 export async function selectPhase(page: Page, phase: string) {
   const column = (await page.getByTestId(`column-${phase}`).boundingBox())!;
   await page.mouse.click(column.x + column.width / 2, column.y + column.height - 10);
+}
+
+/**
+ * A tap on a page's dot (spec 3.11), waited until the page is at rest: the dot slides to it, and
+ * while it slides both pages are drawn.
+ */
+export async function toPage(page: Page, to: 'home' | 'steam' | 'hot-water') {
+  await page.getByTestId(`page-dot-${to}`).tap();
+  await expect(page.locator(`.page:not([inert]) [data-testid="screen-${to}"]`)).toBeVisible();
+  await expect(page.locator('.page')).toHaveCount(1);
 }

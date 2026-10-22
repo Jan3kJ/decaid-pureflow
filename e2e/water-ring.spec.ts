@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mockGateway, profile } from './mock-gateway';
+import { toPage } from './touch';
 
 // The small countdown ring on every screen (W2, spec 3.10, acceptance 58): while hot water or
 // flush runs, every screen without the large ring (home's, the hot water page's while hot water
@@ -84,13 +85,13 @@ test('flush: the small ring on steam, settings, beans, the hot water page and th
   await expect(page.getByTestId('small-ring')).toHaveCount(0);
 
   // The history covers home's ring: the small one stands in.
-  await page.getByTestId('nav-history').click();
+  await page.getByTestId('history-handle').click();
   await expect(page.getByTestId('history')).toBeVisible();
   await expectSmallRing(page, 'flush', '6 / 10 s');
   await page.getByTestId('history-outside').click({ position: { x: 900, y: 100 } });
   await expect(page.getByTestId('small-ring')).toHaveCount(0);
 
-  await page.getByTestId('open-steam').click();
+  await toPage(page, 'steam');
   await expect(page.getByTestId('screen-steam')).toBeVisible();
   await expectSmallRing(page, 'flush', '6 / 10 s');
   await expect(page.getByTestId('small-ring')).toHaveAttribute('data-share', '0.600');
@@ -106,7 +107,7 @@ test('flush: the small ring on steam, settings, beans, the hot water page and th
 
   // The hot water page draws only hot water large: a flush is the small ring there.
   await page.getByTestId('nav-home').click();
-  await page.getByTestId('open-hot-water').click();
+  await toPage(page, 'hot-water');
   await expect(page.getByTestId('screen-hot-water')).toBeVisible();
   await expect(page.getByTestId('water-view')).toHaveCount(0);
   await expectSmallRing(page, 'flush', '6 / 10 s');
@@ -169,12 +170,12 @@ test('hot water: large on its page, small in the step editor and on steam, gone 
   await page.screenshot({ path: 'docs/product/small-ring-step-editor.png' });
 
   await page.getByTestId('nav-home').click();
-  await page.getByTestId('open-hot-water').click();
+  await toPage(page, 'hot-water');
   await expect(page.getByTestId('water-view')).toHaveAttribute('data-kind', 'hotWater');
   await expect(page.getByTestId('small-ring')).toHaveCount(0);
 
   await page.getByTestId('nav-home').click();
-  await page.getByTestId('open-steam').click();
+  await toPage(page, 'steam');
   await expectSmallRing(page, 'hotWater', '3 / 30 s');
 
   // Hot water ends by itself (at its volume): the ring goes without a tap.

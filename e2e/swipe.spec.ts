@@ -3,8 +3,9 @@ import { mockGateway } from './mock-gateway';
 import { swipe } from './touch';
 
 // The row of pages (spec 3.8, acceptance item 32): hot water, home and steam from left to
-// right, a swipe slides to the neighbour; the edge tabs stay, the history's swipe stays, and a
-// drag on a control moves no page.
+// right, a swipe slides to the neighbour; the history's swipe stays, and a drag on a control
+// moves no page. Since X4 (spec 3.11) there are no edge tabs: e2e/no-tabs.spec.ts has the dots
+// and the history's handle.
 
 const errors: string[] = [];
 
@@ -43,10 +44,11 @@ test('a swipe moves along hot water, home and steam, and springs back at the end
   // To the right from right of the history's fifth: hot water, and back.
   await swipe(page, { x: 400, y: 500 }, { x: 900, y: 500 });
   await expect(shown(page, 'hot-water')).toBeVisible();
-  await swipe(page, { x: 400, y: 500 }, { x: 900, y: 500 });
+  // On hot water between its sliders: a drag on one is the slider's.
+  await swipe(page, { x: 400, y: 400 }, { x: 900, y: 400 });
   await page.waitForTimeout(400);
   await expect(shown(page, 'hot-water')).toBeVisible();
-  await swipe(page, { x: 900, y: 500 }, { x: 400, y: 500 });
+  await swipe(page, { x: 900, y: 400 }, { x: 400, y: 400 });
   await expect(shown(page, 'home')).toBeVisible();
 
   // A short move springs back; a move down is not a swipe.
@@ -99,15 +101,17 @@ test('with reduced motion the page changes at once, without a slide', async ({ p
   expect(errors).toEqual([]);
 });
 
-test("the edge tabs still open steam and hot water, and the history's swipe the history", async ({ page }) => {
+test("the back arrows still lead home, and the history's swipe opens the history", async ({ page }) => {
   await mockGateway(page);
   await home(page);
-  await page.getByTestId('open-steam').tap();
+  await swipe(page, { x: 800, y: 500 }, { x: 300, y: 500 });
   await expect(shown(page, 'steam')).toBeVisible();
-  await page.getByTestId('nav-home').tap();
-  await page.getByTestId('open-hot-water').tap();
+  await page.getByTestId('nav-home').click();
+  await expect(shown(page, 'home')).toBeVisible();
+  await swipe(page, { x: 400, y: 500 }, { x: 900, y: 500 });
   await expect(shown(page, 'hot-water')).toBeVisible();
-  await page.getByTestId('nav-home').tap();
+  await page.getByTestId('nav-home').click();
+  await expect(shown(page, 'home')).toBeVisible();
 
   // The history's swipe from home's left fifth: the overlay, no page.
   await swipe(page, { x: 10, y: 400 }, { x: 260, y: 420 });
@@ -119,8 +123,9 @@ test("the edge tabs still open steam and hot water, and the history's swipe the 
 
 test('a swipe that begins on a button slides the page and presses nothing', async ({ page }) => {
   const gateway = await mockGateway(page);
-  await page.goto('/');
-  await page.getByTestId('open-steam').tap();
+  await home(page);
+  await swipe(page, { x: 800, y: 500 }, { x: 300, y: 500 });
+  await expect(shown(page, 'steam')).toBeVisible();
   const tare = (await page.getByTestId('steam-tare').boundingBox())!;
   const y = tare.y + tare.height / 2;
   await swipe(page, { x: tare.x + tare.width / 2 - 400, y }, { x: tare.x + tare.width / 2, y });
@@ -131,8 +136,8 @@ test('a swipe that begins on a button slides the page and presses nothing', asyn
 
 test('a drag on a control moves no page: a slider, the number pad', async ({ page }) => {
   await mockGateway(page);
-  await page.goto('/');
-  await page.getByTestId('open-hot-water').tap();
+  await home(page);
+  await swipe(page, { x: 400, y: 500 }, { x: 900, y: 500 });
   await expect(shown(page, 'hot-water')).toBeVisible();
 
   // The page's own slider, the time's (spec 3.9 item 11): a drag along it to the left moves

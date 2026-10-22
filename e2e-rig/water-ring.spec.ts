@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import type { MachineSnapshot } from '../src/api';
 import { IDLE } from './idle';
+import { toPage } from '../e2e/touch';
 
 // The countdown ring on every screen against the rig (W2, spec 3.10): hot water is started
 // through the API, as at the machine; home shows its large ring, the steam page the small ring
@@ -48,7 +49,7 @@ test('hot water started at the machine: the ring on home, the small ring on stea
     await expect(page.getByTestId('water-time')).toHaveText(/^\d+ \/ \d+ s$/);
     await expect(small).toHaveCount(0);
 
-    await page.getByTestId('open-steam').click();
+    await toPage(page, 'steam');
     await expect(page.getByTestId('screen-steam')).toBeVisible();
     await expect(small).toHaveAttribute('data-kind', 'hotWater');
     await expect(page.getByTestId('small-ring-time')).toHaveText(/^\d+ \/ \d+ s$/);
