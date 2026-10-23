@@ -123,7 +123,8 @@ test('a photo from the live camera is shown in the form, stored with the bean, r
   await expect(page.getByTestId('bean-photo')).toHaveCount(0);
   await page.getByTestId('bean-save').click();
   await expect(page.getByTestId('bean-save')).toBeDisabled();
-  expect(key in gateway.store).toBe(false);
+  // disabled while the save runs too: the key goes during it
+  await expect.poll(() => key in gateway.store).toBe(false);
 
   // A photo of a bean deleted in another app is deleted at the next read of the catalogue.
   gateway.store[key] = 'data:image/jpeg;base64,/9j/';

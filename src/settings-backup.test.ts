@@ -90,8 +90,8 @@ describe('the backup of the settings', () => {
 
   it('carries the setting of the shot values, and an older backup without it shows them', () => {
     const off = { ...DEFAULT_SETTINGS, showShotValues: false };
-    expect(backupOf(off, '0.4.0', NOW).settings.showShotValues).toBe(false);
-    expect(readBackup(backupOf(off, '0.4.0', NOW))?.settings.showShotValues).toBe(false);
+    expect(backupOf(off, '0.5.0', NOW).settings.showShotValues).toBe(false);
+    expect(readBackup(backupOf(off, '0.5.0', NOW))?.settings.showShotValues).toBe(false);
     expect(readBackup({ settings: { showGraphLegend: false } })?.settings.showShotValues).toBe(true);
   });
 
