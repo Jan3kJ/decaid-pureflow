@@ -1620,9 +1620,10 @@ ready, by how much it matters:
     (the ZIP holds Svelte's runtime, MIT; dev tools do not ship) into `NOTICE`; a full run of
     `npm test`, `check`, `lint` and `format:check` on a clean clone (`npm ci`), not only on the
     founder's machine, with the result in `CHANGELOG.md`.
-11. **Version.** The first public release is **0.6.0**, the next minor after H4's 0.5.0 (a
-    hand-over raises the minor version), not 1.0.0 (founder, 2026-10-22: 0.6 or later). A 1.0.0
-    would be a major bump and is asked first.
+11. **Version.** The first public release is **0.7.0**: the hand-over H5 of 3.14 takes
+    0.6.0 (a hand-over raises the minor version), the release is the next minor, and not 1.0.0
+    (founder, 2026-10-22: 0.6 or later; 2026-10-23: the release moves to 0.7.0). A 1.0.0 would be
+    a major bump and is asked first.
 
 **User documentation: plan.** **Short, and only what is the skin's** (founder, 2026-10-22):
 Decent documents Decaid, its skin selector, the DE1 and its settings, and the skin should be
@@ -1685,7 +1686,7 @@ table (section 7) stays in `docs/spec.md`, in the product repository, and `roadm
 data form, in the team repository; the founder's reviews cite the spec by section.
 
 **Decisions that are the founder's (section 8).** Answered on 2026-10-22: the release is
-**0.6.0**, not 1.0.0; the documentation is **English only**; the **announcement is the
+**0.7.0** (moved from 0.6.0 on 2026-10-23, H5 takes 0.6.0), not 1.0.0; the documentation is **English only**; the **announcement is the
 founder's**; **two repositories** (item 12) named `decaid-pureflow` (public) and
 `pureflow-team` (private); the noreply address `52261469+Jan3kJ@users.noreply.github.com`;
 **the founder asks Damian** about D-Flow, and DSx2 is credited. Nothing of 3.13's decisions is
@@ -2478,13 +2479,13 @@ The weeks are a capacity guess on one Pro plan.
 | 3 | Z7 | review 2026-10-23: the tank in ml by Streamline's mm table, interpolated, setting 'Tank unit' (3.14 item 7) | |
 | 3 | Z8 | review 2026-10-23: one large hot water and flush ring on every screen, over its main frame, the small ring removed (3.14 item 8) | Z3 |
 | 3 | Z9 | review 2026-10-23: the finished shot's weight settles for 15 s after the shot and is then fixed; it also stops on hot water, flush or steam (3.14 item 9) | |
-| 3 | H5 | review 2026-10-23: hand-over ZIP for 3.14 and its checks in install.md; the version is the next minor (see the note) | Z1-Z9 |
+| 3 | H5 | review 2026-10-23: hand-over ZIP for 3.14 and its checks in install.md; version 0.6.0 (minor bump) | Z1-Z9 |
 | 4 (Nov 2-8) | P1 | publish (3.13): `LICENSE`, `NOTICE`, one licence statement everywhere, D-Flow's and DSx2's credit, Damian's approval in writing (A-Flow's old repository needs no licence); the founder asks Damian | H4 |
 | 4 | P2 | publish: the two repositories: try the team's tools across them first, cut the product repository (history with the noreply address, no records), turn this one into the team repository, scrub paths in `spec.md` and `research.md`, `scripts/publish-check.mjs`, `camera.html` and the probes; pushing and renaming are the founder's | P1 |
 | 4 | P3 | publish: CI and release workflows, `CONTRIBUTING.md`, `CHANGELOG.md`, issue templates, `SECURITY.md`, README as a front page, the name check, `npm audit` and the dependency licences | P2 |
 | 4 | P4 | publish: `npm run screenshots`, the eight generated pictures of the user documentation from the mock gateway, and `scripts/docs-check.mjs` | H4 |
 | 5 (Nov 9-15) | P5 | publish: the user documentation, three short pages (`install.md`, `guide.md`, `troubleshooting.md`) in `docs/user/`, with the pictures | P4 |
-| 5 | P6 | publish: the release 0.6.0: tag, GitHub release with the ZIP and its SHA-256, the URL install checked in Decaid, the founder's cold read and a new user's install (3.13 acceptance 84-87); pushing and announcing are the founder's | P3, P5 |
+| 5 | P6 | publish: the release 0.7.0: tag, GitHub release with the ZIP and its SHA-256, the URL install checked in Decaid, the founder's cold read and a new user's install (3.13 acceptance 84-87); pushing and announcing are the founder's | P3, P5 |
 
 | 2 (Oct 19-25) | Q1 | code quality review 2026-10-19: Prettier and ESLint, the tree formatted in one commit (in `.git-blame-ignore-revs`), lint errors fixed, both in the check ([review-code-quality-10-19-26.md](review-code-quality-10-19-26.md), steps 1-3) | - |
 | 2 | Q2 | code quality review 2026-10-19: split `src/shell/skin.svelte.ts` along its seams; `Skin` stays the one object the screens read ([review-code-quality-10-19-26.md](review-code-quality-10-19-26.md), step 4) | Q1 |
