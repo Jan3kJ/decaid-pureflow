@@ -1810,13 +1810,14 @@ running step.
   shot are its two large values, as the founder's screenshot shows 55.5 s and 589.4 g), so the
   strip's numbers are a copy. 'Shot finished' as a word is not lost: the right column's time
   label reads **'time, finished'** while a finished shot is kept, **'time'** while it runs; the
-  state line says Idle, as the machine is. **The running step** goes to the state line: while a
-  shot runs it says the machine's state and the step, 'Espresso · Preinfusion' (the step's name
-  from the profile, by the frame number the machine reports; a profile whose step has no name
-  says 'Step 3'), replacing the state word 'Espresso' by the pair, in the same font and place, so
-  the header does not grow; hot water, flush and steam keep one word (they have no steps). The
-  state line's values (group, steam, tank, scale) keep their place to the right of it. Nothing
-  else of the strip is kept.
+  state line says Idle, as the machine is. **The running step** goes to the header, **printed to the right of the
+  state line's values** (founder, 2026-10-23: 'just print the step name next right to the status
+  header, scale and weight'): after the scale's weight, one more item, the step's name as the
+  profile has it, by the frame number the machine reports ('Preinfusion', 'Extraction'; a step
+  without a name says 'Step 3'), in the state line's value size and colour of the state word,
+  without a label. It is shown only while a shot runs and goes with it; the state word and the
+  values keep their places and their words ('Espresso', not a pair). Hot water, flush and steam
+  have no steps and show nothing. Nothing else of the strip is kept.
 - **Other ideas (founder asked).** (a) The profile's name on the right column's button is one line
   and cut with an ellipsis when it is long; the full name is in the picker. (b) With the strip
   gone and the corner button in, the graph's legend ('flow, pressure, temperature, dashed') and
@@ -1845,7 +1846,7 @@ test that holds them**.
 The change is to **replace each literal by the role's token** (the nearest one: 0.9 and 0.95
 become 0.85 or 1.1 by what the text is, 1.15 and 1.2 become 1.1 or 1.3, and so on), starting with
 home's right column, the picker, the list rows and the buttons, and then the rest; sizes inside
-the graph's SVG (ticks, units, the legend) and the small ring's own figures stay as they are
+the graph's SVG (ticks, units, the legend) and the ring's figures stay as they are
 and are named in the file. The plan's first step is a **script that lists every size per screen**
 (`getComputedStyle` of every text node on the mock gateway, grouped by role) so the drift can be
 seen and the result checked; the roles are the founder's to adjust once in this table, not per
@@ -1900,25 +1901,25 @@ when **a new shot starts** (a new `Shot`) or **a history entry is recalled** (`r
 `homeShot`, its own weight, as now). While the figure is fixed the scale's live weight stays in
 the state line, which is the scale's.
 
-**The ring's frame (item 8; Z8).** Corrected by the founder, 2026-10-23: 'there is no graph's
-frame on the hot water page; it should be in the main frame (the biggest one)'. So the rule is
-**the ring takes the page's biggest frame**, whatever it holds: the steam page's graph frame, the
-hot water page's main panel (its values and the cup), home's graph frame as now. The first
-reading follows, with that change. The screenshot shows the flush ring (small, 3.4 rem, with
-'Flush' under it) at the bottom left of the steam page, **half over the edge of the left column and
-cut off** at the window's edge, in the column that item 2 removes. 'The flush ring is shown in the
-wrong frame. It should be like on the home page.' On home the ring is **large and fills the
-frame of the graph** (spec 3.6: it replaces the graph while hot water or flush runs; the stop
-button is inside it with the kind, the time and the values). Default: **the same on the steam and
-hot water pages**: while hot water or flush runs, **the `Water` view takes the page's biggest
-frame** (the graph's on steam, the main panel's on hot water), as on home, with its stop button in the ring, and the page's right column stays
-(the steam page's stop button, tare and so on keep working: nothing steams while it runs, so its
-graph was empty anyway). The page's graph and its curves come back when the run ends. The hot
-water page already shows the large ring for hot water and takes it for a flush. **The small
-ring** (`SmallRing.svelte`, W2) stays only for the screens that have **no such frame**: the
-editors, the settings, the beans screen, the picker and the history overlay; with no left column
-any more (item 2) it sits **in the bottom left corner of the screen, on its own, with no column
-behind it**, 3.4 rem across as now, and covers no control.
+**The ring's frame (item 8; Z8).** The screenshot shows the flush ring (small, 3.4 rem, with
+'Flush' under it) at the bottom left of the steam page, half over the edge of the left column and
+cut off. 'The flush ring is shown in the wrong frame. It should be like on the home page.' Then,
+the founder, 2026-10-23: 'there is no graph's frame on the hot water page; it should be in the
+main frame (the biggest one)', and: **'drop the small ring, it should be the same ring on other
+pages too. It covers the current main frame.'** The rule, final: **one ring, the large one of
+home** (`Water.svelte`: the ring around the stop button with the kind, the time and the values,
+spec 3.6), on **every screen**: while hot water or flush runs it **covers the screen's biggest
+frame**, the content area that is its main one: home's and the steam page's graph frame, the
+hot water page's main panel, the editor's step list and preview, the settings page's category
+panel, the beans screen's list and form, the picker's dialog body, the history's list. The
+frame's own content is under it and returns when the run ends; the screen's other controls
+(the right column, the header, the dots) stay where they are, and the stop button in the ring
+stops what runs, as `Skin.stop` does today. `SmallRing.svelte`, `smallRingRun` in `water.ts`
+and the left-column ring of W2 are **removed**, with their tests and the acceptance items
+that name them (49, W2's). One covering rule serves all screens: a screen marks its main frame
+(`data-main-frame`, a wrapper component or a prop) and `App.svelte` draws `Water` over it, so no
+screen has its own ring code; where a screen has no clear main frame (a full-screen dialog)
+the ring covers the whole screen under the header.
 
 ## 4. Technical approach
 
@@ -2345,21 +2346,22 @@ Where an item here and one of 27-55 disagree, the item here wins (3.10 overrides
     hot water page a swipe from right to left goes home; a swipe that starts on a slider or a row
     swipe does not leave.
 94. **No strip, the step in the header (test).** No element of the strip is rendered on home; the
-    graph's height grows by its height; during a shot the state line reads 'Espresso · <step's
-    name>' and follows the step; a finished shot's right column reads 'time, finished' with its
+    graph's height grows by its height; during a shot the header shows the step's name to the right of the scale's weight and follows the step,
+    the state word stays 'Espresso', and nothing is shown for hot water, flush or steam; a finished shot's right column reads 'time, finished' with its
     time and weight, the state line 'Idle'; the right column starts at the page's top.
 95. **Type roles (test).** On the mock gateway the profile button and the bean button have equal
     computed `font-size` and `font-weight`, and so do the rows of the profile, bean and grinder
-    lists; no `.svelte` file outside the graph's SVG and the small ring has a literal `font-size`
+    lists; no `.svelte` file outside the graph's SVG has a literal `font-size`
     (a lint check on the files).
 96. **Unit line (test).** The graph's unit line reads 'bar · ml/s' (steam) and 'bar · ml/s · g/s'
     (shot with a scale), one dot between every two labels and none for one.
 97. **Tank (test).** `tankMl` gives 0, 537, 1104, 1808 and 2058 ml for 0, 20, 40, 60 and 69 mm,
     1130 ml for 41.8 mm after the interpolation rounded to 10, 2058 over 69 mm; the state line says
     ml by default and mm when the setting says so; the warning compares millimetres.
-98. **Ring frame (test).** While a flush runs, the steam page and the hot water page show the large
-    ring in the page's biggest frame with the stop button in it, the right column stays, and no small ring
-    is drawn; the editors, settings, beans, picker and history show the small ring in the bottom left corner of the screen.
+98. **Ring frame (test).** While a flush runs, every screen (home, steam, hot water, an editor, the
+    settings, beans, the picker, the history) shows the one large ring over its main frame with the
+    stop button in it and the header and right column visible; no small ring and no `SmallRing`
+    exist; the frame's content is back when the run ends.
 99. **The review on the tablet (founder).** The founder looks at home, steam and hot water in the
     next hand-over (H5) and at the bean photo with two or three bags, and marks what is wrong.
 100. **Fixed weight (test).** `settleWeight` fed a shot that ended at t, the readings 18.0 at
@@ -2474,7 +2476,7 @@ The weeks are a capacity guess on one Pro plan.
 | 3 | Z5 | review 2026-10-23: one size per kind of text: the roles table, literals replaced by tokens, the size listing script, the profile and bean names equal (3.14 item 5) | Z3, Z4 |
 | 3 | Z6 | review 2026-10-23: a dot between every two labels of the graph's unit line (3.14 item 6) | |
 | 3 | Z7 | review 2026-10-23: the tank in ml by Streamline's mm table, interpolated, setting 'Tank unit' (3.14 item 7) | |
-| 3 | Z8 | review 2026-10-23: the hot water and flush ring in the graph's frame on the steam and hot water pages, as on home (3.14 item 8) | Z3 |
+| 3 | Z8 | review 2026-10-23: one large hot water and flush ring on every screen, over its main frame, the small ring removed (3.14 item 8) | Z3 |
 | 3 | Z9 | review 2026-10-23: the finished shot's weight settles for 15 s after the shot and is then fixed; it also stops on hot water, flush or steam (3.14 item 9) | |
 | 3 | H5 | review 2026-10-23: hand-over ZIP for 3.14 and its checks in install.md; the version is the next minor (see the note) | Z1-Z9 |
 | 4 (Nov 2-8) | P1 | publish (3.13): `LICENSE`, `NOTICE`, one licence statement everywhere, D-Flow's and DSx2's credit, Damian's approval in writing (A-Flow's old repository needs no licence); the founder asks Damian | H4 |
