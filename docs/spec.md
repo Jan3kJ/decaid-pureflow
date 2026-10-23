@@ -1598,8 +1598,8 @@ ready, by how much it matters:
    `scripts/rig/` with a line in the README, or go private.
 6. **No CI.** Add `.github/workflows/ci.yml`: `npm ci`, `npm run check`, `lint`,
    `format:check`, `test`, `build`, the e2e on the mock gateway (Playwright's browsers), and
-   `scripts/publish-check.mjs`; and `release.yml`: on a tag, `npm run zip` and the ZIP with its
-   SHA-256 attached to a GitHub release. The rig suite (`e2e:rig`) needs a running Decaid and
+   `scripts/publish-check.mjs`; and no `release.yml`: **the release is made by one script, `scripts/release.mjs` (3.15, P7)**, so there
+   is one way to publish and not two. The rig suite (`e2e:rig`) needs a running Decaid and
    stays local.
 7. **No CONTRIBUTING, CHANGELOG, issue templates or SECURITY note.** Add a short
    `CONTRIBUTING.md` (the commands of README, the test rule, one-pull-request-one-change, the
@@ -1989,6 +1989,135 @@ photo is given), and they add three rules to Z1 and Z2:
   is not used (it is not in the bundled data and costs a second download).
 - **The chips are for what is left** (Z2): the six chips show the lines read, so a field the rules
   got wrong costs one tap.
+
+### 3.15 The cut, in steps, and a release script (2026-10-24)
+
+The founder created the two GitHub repositories and named them: **`Jan3kJ/decaid-pureflow`**
+(product) and **`Jan3kJ/pureflow-team`** (this one, renamed from `decaid-team`; the checkout is
+`..\pureflow-team`). Both are **private** and stay so until P6. `decaid-pureflow` holds one
+commit, 'init' with a README, which the cut replaces. Planned only; nothing is built ('do not
+implement it now' stands). It sharpens 3.13 item 12 and adds the roadmap task P7.
+
+**The cut (P2), step by step.** The cut changes no repository that exists: it is made in a fresh
+clone, checked there, and only then offered to the founder to push.
+
+1. **Freeze and tools.** Before the cut nothing is uncommitted here, H5 (0.6.0) is built, and
+   from the cut on **the skin is changed only in the product repository**. `git-filter-repo` is
+   installed (`pip install git-filter-repo`; free, no account; Python 3.13 is on the machine). The
+   GitHub command line `gh` is not installed; P7 needs it, and `gh auth login` is the founder's.
+2. **Try the tools across two checkouts first** (3.13): `stint.toml` with `repo_root =
+   "../decaid-pureflow"`, the plan prompt, the roadmap check and the three prompts.
+3. **A fresh clone:** `git clone --no-local ..\pureflow-team ..\pureflow-cut`; all of the
+   below runs there. Today the history is 213 commits: 176 by the personal address and 37 by
+   the noreply address.
+4. **Which paths stay.** Product: `src/`, `e2e/`, `e2e-rig/`, `public/` (without `camera.html`),
+   `scripts/` (without `rig-*-probe.mjs`, `rig-smoke.mjs` and `rig-installed.mjs`, which are the
+   rig's and stay here), the configuration files (`package.json`, `package-lock.json`,
+   `tsconfig*.json`, `vite.config.ts`, `svelte.config.js`, `eslint.config.js`,
+   `playwright*.ts`, `index.html`, `.prettierrc`, `.prettierignore`, `.gitattributes`,
+   `.gitignore`, `.git-blame-ignore-revs`), and `docs/spec.md`, `docs/research.md`,
+   `docs/a-flow-3.0.md`. **Not `docs/product/` at all**: it holds the founder's tablet
+   screenshots and the four bag photos (real roasters and beans), and P4 generates the pictures
+   the public needs into `docs/user/img/`. The spec's links to `product/...` pictures become
+   plain text ('screenshot in the team repository') in the scrub. `filter-repo --analyze` is read
+   first, for files that were renamed in history and so match a path only in some commits.
+5. **Authors:** `--mailmap` turns every author and committer into
+   `Janek <52261469+Jan3kJ@users.noreply.github.com>`. The `Co-Authored-By: Claude` lines stay.
+6. **Messages:** eight commit messages name a chat message, a token or a budget (found with
+   `git log -i -E --grep`). `--replace-message` rewrites them; **the founder reads the list of
+   the eight, old and new, before anything is pushed.**
+7. **Content in every revision, not only in the tip:** `--replace-text` with a rules file
+   removes, in each historical blob, local paths (a drive letter, the folder of the checkouts, a user profile),
+   the personal address, and the messenger and message-number remarks of `spec.md` (6 places
+   today). The scrub of the tip (3.13 item 3) is then only a check.
+8. **`scripts/publish-check.mjs --history`** runs over `git rev-list --all` of the clone and
+   must pass: no Windows path, no e-mail address but the noreply one, no MAC address but
+   `AA:BB:CC:`, not the messenger's name, no token pattern, in any revision. The same script without the
+   flag runs on the tip in CI (P3).
+9. **Tags and the blame list.** `filter-repo` writes `.git/filter-repo/commit-map` (old hash,
+   new hash). The cut uses it to rewrite `.git-blame-ignore-revs` and to put an annotated tag
+   `v0.N.0` on the new commit of every hand-over (`0.1.0` to `0.6.0`: the commit that raised the
+   version in `package.json`). **The last tag is the range start of P7's first run.**
+10. **Proof in the clone:** `npm ci`; `check`, `lint`, `format:check`, `test`, `build`, the e2e
+    on the mock gateway; and `npm run zip` gives a ZIP **whose files are the same, byte for byte,
+    as the ZIP built here at the same commit**, minus `camera.html`.
+11. **This repository becomes the team repository** by one commit that removes the product paths
+    (`src/`, `e2e/`, `public/`, `package.json` and the other configuration files, the product
+    scripts) and keeps `stint/`, `stint.toml`, `.claude/`, `docs/product/`, `docs/review-*`,
+    `docs/answers-*`, `docs/acceptance.md`, `docs/install.md`, the Decaid export and the rig
+    probes. **The spec is edited in the product repository** (it is the product's); the team
+    repository reads it through `spec_path = "../decaid-pureflow/docs/spec.md"`, and edits its
+    roadmap table's data, `roadmap.json`, here. The hashes in the day records stay true because
+    the team history is not rewritten. The commit map is kept as `stint/cut-commit-map.txt`.
+12. **Pushing is the founder's.** The product clone's history replaces the 'init' commit of
+    `decaid-pureflow`: either the founder deletes and recreates that repository empty (no
+    README), or force-pushes once (`git push --force origin main`, then `git push --tags`);
+    nothing is lost, the repository is private and holds only 'init'. Then
+    `..\decaid-pureflow` is cloned again from GitHub and `..\pureflow-cut` is deleted.
+    `..\decaid-rig` stays where it is, outside both. **Making the product repository public
+    is a separate step after P6's checks** (GitHub, Settings, Danger zone), and the founder's.
+
+**A release script (P7).** The founder's request (2026-10-24): 'a script for releases: run all
+checks, derive a change history from the completed tasks, build the package, increase the
+version if needed, then publish a new release.' It is `scripts/release.mjs`, run with `npm run
+release` **in the product repository**, and it is the only way a release is made, by the founder
+or by Claude. In order:
+
+1. **Before anything:** the working tree is clean, the branch is `main`, `git fetch` shows it is
+   not behind `origin/main`, the last tag `vX.Y.Z` exists, and `gh auth status` is good. Any
+   failure stops with the one line that fixes it. Nothing has been changed yet.
+2. **The history, from the completed tasks.** Every task ends in one commit (the day records
+   list it). From the cut on, a commit message ends with two trailers, written by the team's
+   work prompt (`stint/prompts/plan.md` gets the lines in P7) and by anyone sending a pull
+   request: `Task: Y10` (the roadmap ref; absent for a pull request) and `Changelog: added |
+   changed | fixed | internal`. The subject line is then the entry's text, written for a user of
+   the skin. The script reads `git log vLAST..HEAD`, **keeps the commits with a `Changelog:`
+   trailer other than `internal`**, and groups them as Added, Changed, Fixed. **A commit with no
+   `Changelog:` trailer stops the script** and is named with its hash; the fix is
+   `.release-notes.json`, a file of `{ "<short hash>": "internal" | { "kind", "text" } }`,
+   because a pushed commit's message is not rewritten. **A trailer `Breaking: yes`** means a
+   major bump, which stops and asks (the standing rule: a major bump is asked first).
+3. **The version, if needed.** No commit other than `internal` stops with 'nothing to release'.
+   If `package.json` is **already ahead of the last tag** (a hand-over raised it, 3.14 H5: a
+   minor bump), the script keeps it. Otherwise the bump is the largest of the commits: `Breaking`
+   major (asked), `added` or `changed` minor, only `fixed` patch; `--bump major|minor|patch` or
+   `--version X.Y.Z` override it. The script prints the version and the entries and **asks for a
+   yes** before it writes a file.
+4. **All checks**, in this order, stopping at the first failure with its output: `npm ci` (a
+   clean install, not the founder's `node_modules`), then `npm run verify`, which is **one list
+   that CI also runs** (P3): `check`, `lint`, `format:check`, `test`, `build`,
+   `scripts/publish-check.mjs`, `scripts/docs-check.mjs` and `npm audit --audit-level=high`; then
+   `npm run e2e`; then `npm run e2e:rig` in its three file groups when the rig answers (a Decaid
+   on its port). **Without a rig the script stops**; `--no-rig` goes on and writes 'rig suite:
+   not run' into the release notes, so a release never claims what was not run.
+5. **The files.** The version in `package.json`, `package-lock.json` and `public/manifest.json`
+   (the test that keeps them equal runs again), and a new section on top of `CHANGELOG.md`
+   (`## 0.7.0 - 2026-11-12`, the grouped entries with their `Task` refs, the checks' result
+   line). Then `npm run zip`, whose own checks of the ZIP run, and `release/SHA256SUMS.txt`
+   with the ZIP's SHA-256.
+6. **Local commit and tag:** one commit `Release 0.7.0` and an annotated tag `v0.7.0`. Up to here
+   `git checkout -- . && git tag -d v0.7.0` undoes everything; the script prints that line if a
+   later step fails.
+7. **Publish, behind a second yes, which is the founder's** (constraints: every push to GitHub
+   needs the founder's approval): `git push --atomic origin main v0.7.0`, then `gh release create
+   v0.7.0 release/pureflow-0.7.0.zip release/SHA256SUMS.txt --notes-file` with the CHANGELOG
+   section, as a **draft** the first time (`--publish` makes it public at once). Then it
+   downloads the asset again, compares its SHA-256, and prints the asset's URL for Decaid's
+   skin selector. **Claude never answers the second yes** and never passes `--yes`; a Claude
+   session runs `--dry-run` or `--local` and hands over.
+8. **Modes.** `--dry-run`: steps 1 to 4 and a print of 5; changes nothing. `--local`: steps 1 to
+   6, no push, no GitHub; this is what a **hand-over** (the H tasks) uses, so a hand-over's ZIP,
+   version, CHANGELOG entry and tag come from the same code as a release. `--resume` continues
+   at step 7 when the tag exists and the push or the upload failed.
+9. **Not in the script:** the Decaid install check by URL, the founder's cold read, the
+   announcement, and making the repository public (P6); the script prints them as a list at the
+   end. While the repository is private Decaid cannot fetch the ZIP's URL, so 0.7.0's URL
+   install is checked after the repository is made public.
+
+The pure parts (reading trailers, the bump, the changelog text, the version writes) are a module
+with unit tests; the git and `gh` calls go through one small function that tests replace, and a
+test runs the whole script with `--dry-run` and `--local` in a temporary repository. Spec 4 gets
+the script's place in the layout when it is built.
 
 ## 4. Technical approach
 
@@ -2457,6 +2586,29 @@ Where an item here and one of 27-55 disagree, the item here wins (3.10 overrides
      catalogue and the turned ones do, and the 90-degree pass is kept; the recorded lines come
      from `scripts/ocr-probe.mjs`, not from a hand.
 
+105. **The cut (test, founder).** In the clone: `scripts/publish-check.mjs --history` passes over
+     every revision; no commit has the personal address; the eight messages of
+     3.15 step 6 are rewritten and the founder has read them; the tags `v0.1.0` to `v0.6.0` are
+     on the commits that raised the version; `.git-blame-ignore-revs` lists only hashes that
+     exist; the ZIP built in the clone has the same files, byte for byte, as the one built in the
+     team repository at the same commit, except `camera.html`; `docs/product/` is not there.
+106. **Both repositories work together (test).** With `stint.toml` pointing at the product
+     checkout, the runner, the plan prompt and the roadmap check run; `roadmap.json` and the
+     day records are written in the team repository, the code in the product repository.
+107. **Release script, pure parts (test).** Fed commits with trailers: `added` gives a minor
+     bump, `fixed` only a patch, all `internal` 'nothing to release', `Breaking: yes` stops and
+     asks, a commit with no `Changelog:` trailer stops and is named, `.release-notes.json`
+     resolves it; a `package.json` ahead of the last tag is kept; the CHANGELOG section is
+     grouped Added, Changed, Fixed with the `Task` refs.
+108. **Release script, run (test).** In a temporary repository with a bare 'origin', `--dry-run`
+     changes nothing; `--local` writes the three versions equal, the CHANGELOG section, the ZIP
+     and `SHA256SUMS.txt`, one commit and one tag, and pushes nothing; a failing check or a
+     missing rig stops before any file is written; without the second yes nothing is pushed.
+109. **First release (founder).** `npm run release` for 0.7.0 on the product repository: the
+     founder reads the entries and the version and answers both yes, and the draft release
+     holds the ZIP and the SHA-256 that the script checked by downloading (3.15 step 7); `gh`
+     is installed and logged in by the founder first.
+
 ## 6. Constraints
 - **Budget:** one Claude Pro plan. This product may use all of it up to 90% of the weekly
   limit; the team plans by capacity.
@@ -2570,11 +2722,12 @@ The weeks are a capacity guess on one Pro plan.
 | 3 | Z12 | review 2026-10-23: the date picker scrolls through the months by a vertical finger drag, the buttons stay (3.14 item 12) | |
 | 3 | H5 | review 2026-10-23: hand-over ZIP for 3.14 and its checks in install.md; version 0.6.0 (minor bump) | Z1-Z12 |
 | 4 (Nov 2-8) | P1 | publish (3.13): `LICENSE`, `NOTICE`, one licence statement everywhere, D-Flow's and DSx2's credit, Damian's approval in writing (A-Flow's old repository needs no licence); the founder asks Damian | H4 |
-| 4 | P2 | publish: the two repositories: try the team's tools across them first, cut the product repository (history with the noreply address, no records), turn this one into the team repository, scrub paths in `spec.md` and `research.md`, `scripts/publish-check.mjs`, `camera.html` and the probes; pushing and renaming are the founder's | P1 |
+| 4 | P2 | publish: the two repositories, in the twelve steps of 3.15: try the team's tools across them first, cut the product repository in a fresh clone (history with the noreply address, no records), turn this one into the team repository, scrub paths in `spec.md` and `research.md`, `scripts/publish-check.mjs`, `camera.html` and the probes; pushing and renaming are the founder's | P1 |
 | 4 | P3 | publish: CI and release workflows, `CONTRIBUTING.md`, `CHANGELOG.md`, issue templates, `SECURITY.md`, README as a front page, the name check, `npm audit` and the dependency licences | P2 |
 | 4 | P4 | publish: `npm run screenshots`, the eight generated pictures of the user documentation from the mock gateway, and `scripts/docs-check.mjs` | H4 |
 | 5 (Nov 9-15) | P5 | publish: the user documentation, three short pages (`install.md`, `guide.md`, `troubleshooting.md`) in `docs/user/`, with the pictures | P4 |
-| 5 | P6 | publish: the release 0.7.0: tag, GitHub release with the ZIP and its SHA-256, the URL install checked in Decaid, the founder's cold read and a new user's install (3.13 acceptance 84-87); pushing and announcing are the founder's | P3, P5, H5 |
+| 5 | P7 | publish (3.15): `scripts/release.mjs` and `npm run release`: the checks, the change history from the tasks' `Task:` and `Changelog:` trailers, the version bump if needed, the ZIP and its SHA-256, the commit and tag, then the GitHub release; `--dry-run` and `--local` (the hand-overs use it); `npm run verify` shared with CI; the work prompt gets the trailers; pushing and publishing are the founder's | P3 |
+| 5 | P6 | publish: the release 0.7.0: tag, GitHub release with the ZIP and its SHA-256, the URL install checked in Decaid, the founder's cold read and a new user's install (3.13 acceptance 84-87); pushing and announcing are the founder's | P3, P5, P7, H5 |
 
 | 2 (Oct 19-25) | Q1 | code quality review 2026-10-19: Prettier and ESLint, the tree formatted in one commit (in `.git-blame-ignore-revs`), lint errors fixed, both in the check ([review-code-quality-10-19-26.md](review-code-quality-10-19-26.md), steps 1-3) | - |
 | 2 | Q2 | code quality review 2026-10-19: split `src/shell/skin.svelte.ts` along its seams; `Skin` stays the one object the screens read ([review-code-quality-10-19-26.md](review-code-quality-10-19-26.md), step 4) | Q1 |
