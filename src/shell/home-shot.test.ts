@@ -3,7 +3,7 @@ import type { MachineSnapshot } from '../api';
 // Both streams of a simulated shot recorded on the rig (Decaid 0.8.8, A-Flow / default-medium).
 import recording from '../../e2e/fixtures/shot.json';
 import { homeShot } from './home-shot';
-import { emptySeries, type Shot, type ShotSeries } from './shot';
+import { emptySeries, recordFrame, type Shot, type ShotSeries } from './shot';
 import { Skin } from './skin.svelte';
 
 // What home shows (spec 3.11, X1): `homeShot` for the running and the finished shot, a recalled
@@ -125,5 +125,26 @@ describe('the shot on home', () => {
     expect(skin.shot).not.toBe(first);
     expect(skin.shotRunning).toBe(true);
     expect(homeShot(skin.shot, null, skin.weight).kind).toBe('running');
+  });
+});
+
+describe('the filter of the state line (spec 3.12)', () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  it('leaves the shot graph the raw temperatures and filters only the shown ones', () => {
+    const skin = new Skin('http://rig:8080');
+    let expected: Shot | null = null;
+    let filtered = 0;
+    for (const frame of frames) {
+      feed(skin, [frame]);
+      expected = recordFrame(expected, frame, null);
+      expect(skin.snapshot).toBe(frame);
+      if (skin.shown?.groupTemperature !== frame.groupTemperature) filtered++;
+      vi.advanceTimersByTime(250);
+    }
+    expect(skin.shot?.series.temperature.length).toBeGreaterThan(10);
+    expect(skin.shot?.series.temperature).toEqual(expected?.series.temperature);
+    expect(filtered).toBeGreaterThan(10);
   });
 });

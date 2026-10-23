@@ -84,14 +84,14 @@ export class Skin {
   /** the last `heaterWord` of each heater; plain, since only `statusFor` reads and writes it */
   private readonly heaters: Record<HeatTarget, HeaterWord | null> = { group: null, steam: null };
 
-  readonly status = $derived.by(() => statusOf(this.link, this.snapshot, this.baseUrl));
+  readonly status = $derived.by(() => statusOf(this.link, this.shown, this.baseUrl));
   /**
    * The status of a page that waits for a heater (spec 3.8, 3.12): home and hot water the group,
-   * steam the steam heater. It reads the frame's temperatures as they come.
+   * steam the steam heater. It reads the filtered temperatures (`shown`), as the state line does.
    */
   statusFor(target: HeatTarget | null): Status {
     if (!target) return this.status;
-    const word = heaterWord(this.snapshot, target, this.shotSettings, this.heaters[target]);
+    const word = heaterWord(this.shown, target, this.shotSettings, this.heaters[target]);
     // The last word of each heater, for the hysteresis; a machine that runs or a lost link keeps it.
     if (word && this.link === 'machine') this.heaters[target] = word;
     return heatingStatus(this.status, this.link, word);
@@ -103,7 +103,7 @@ export class Skin {
   /** the Asleep screen is shown: the machine sleeps, and not by 'Machine sleep' (spec 3.10) */
   readonly asleep = $derived(this.machineAsleep && !this.sleepMark.machineOnly);
   /** the values of the state line, on home and on the steam page */
-  readonly stateValues = $derived(stateLine(this.link, this.snapshot, this.water, this.scaleLink, this.weight, this.scaleLooking));
+  readonly stateValues = $derived(stateLine(this.link, this.shown, this.water, this.scaleLink, this.weight, this.scaleLooking));
 
   constructor(baseUrl: string = gatewayBaseUrl(location)) {
     this.baseUrl = baseUrl;
@@ -134,6 +134,10 @@ export class Skin {
   /** the machine's latest frame; old while `link` is not 'machine' */
   get snapshot(): MachineSnapshot | null {
     return this.streams.snapshot;
+  }
+  /** `snapshot` with the group and steam temperatures filtered, for the state line only */
+  get shown(): MachineSnapshot | null {
+    return this.streams.shown;
   }
   /** the scale's latest weight in g, null without a connected scale */
   get weight(): number | null {

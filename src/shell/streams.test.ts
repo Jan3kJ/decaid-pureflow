@@ -54,6 +54,20 @@ describe('the streams', () => {
     expect(s.snapshot?.state.state).toBe('idle');
   });
 
+  it('keeps the raw frame and a copy with the group and steam temperatures filtered (spec 3.12)', () => {
+    const { streams: s } = streams();
+    s.machineFrame({ ...frame('idle'), groupTemperature: 90, steamTemperature: 140 });
+    vi.advanceTimersByTime(250);
+    const raw = { ...frame('idle'), groupTemperature: 91, steamTemperature: 141, pressure: 1.5 };
+    s.machineFrame(raw);
+    expect(s.snapshot).toBe(raw);
+    expect(s.shown?.groupTemperature).toBeGreaterThan(90);
+    expect(s.shown?.groupTemperature).toBeLessThan(90.5);
+    expect(s.shown?.steamTemperature).toBeGreaterThan(140);
+    expect(s.shown?.steamTemperature).toBeLessThan(140.5);
+    expect(s.shown?.pressure).toBe(1.5);
+  });
+
   it('takes the weight and its flow from a weight frame and hands the weight on', () => {
     const { streams: s, weights } = streams();
     feedScale(s, weightOf(12.5));

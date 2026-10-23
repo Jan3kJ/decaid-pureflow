@@ -1441,8 +1441,8 @@ input) and `heatingStatus` turns it into the line's word; `Skin.statusFor` keeps
 each heater, the group's shared by home and hot water. 'Off' is in the warning colour (title and
 dot, `heater-off` in `StateLine.svelte`). A steam target that is not known yet (no settings
 frame) leaves 'Idle'. Y10's filter was not committed when Y9 was built (its run timed out), so the
-words read the frame's temperatures as they come; the hysteresis keeps a jittering value from
-flipping them.
+words first read the frame's temperatures as they come; since Y10 they read the filtered value
+(`Skin.shown`), as the state line does.
 
 **Temperatures: filtered and rounded (item 10; Y10).** The group and steam values of the state
 line are noisy (founder, 2026-10-22): they get a filter, steam shows whole degrees and the group
@@ -1459,6 +1459,16 @@ line and item 9's words read the same value. It filters the display only: the **
 machine keep the raw frames. The constant is checked on the rig and the tablet; a steam that cools
 by 1 °C a second while it steams is shown about a second late, which is accepted. Rounding stays
 as it is, after the filter.
+
+*Built (Y10, 2026-10-23):* `smooth` in `src/shell/smooth.ts` as above (`SMOOTH_TAU_MS` 1500,
+`SMOOTH_STALE_MS` 3000, `SMOOTH_JUMP` 5 °C; a frame weighs by the time since the last one).
+`Streams.shown` is `snapshot` with the two temperatures filtered; `Skin.status`, `stateValues`
+and item 9's `heaterWord` (in `statusFor`) read it, while the graphs, the shot view, shot records
+and writes read `snapshot`. Since an average comes near a small step but never quite onto it, a
+word at a border changes once the filtered value has crossed it, about a second after the frame
+did. On the rig (Decaid 0.8.8) a shot's start drops the simulated group by 15.5 °C in one frame,
+which the line takes at once, and its reheating from 77.5 to 93.8 °C climbs the line in steps of
+0.3 °C at most.
 
 **Steam graph: the flow (item 11; Y11).** The steam graph has no flow curve and should (founder,
 2026-10-22, after the question of Y5's end condition). Today `Steam.svelte` draws `ShotGraph` with

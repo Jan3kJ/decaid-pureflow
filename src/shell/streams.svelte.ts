@@ -23,6 +23,7 @@ import {
 } from '../api';
 import { gatewayAfter, linkOf, type Gateway, type ScaleLink } from './machine';
 import { ScaleRetry } from './scale-retry';
+import { smooth, type Smoothed } from './smooth';
 
 const CLOCK_MS = 500;
 
@@ -39,6 +40,11 @@ export interface StreamHandlers {
 export class Streams {
   /** the machine's latest frame; old while `link` is not 'machine' */
   snapshot: MachineSnapshot | null = $state.raw(null);
+  /**
+   * `snapshot` with its group and steam temperatures filtered (`smooth`, spec 3.12): the values
+   * the state line shows. Graphs, shots, the heating decision and writes read `snapshot`.
+   */
+  shown: MachineSnapshot | null = $state.raw(null);
   /** the scale's latest weight in g, null without a connected scale */
   weight: number | null = $state(null);
   /** g/s, the scale's latest weight flow; only the shot graph draws it, next to `weight` */
@@ -80,6 +86,9 @@ export class Streams {
   private wokeAt: number | null = null;
   /** the machine's state in its last frame; undefined while the stream is not open */
   private state: MachineState | undefined;
+  /** the filters of the group and the steam temperature */
+  private group: Smoothed | null = null;
+  private steam: Smoothed | null = null;
   private readonly scaleRetry: ScaleRetry;
   private clock: ReturnType<typeof setInterval> | undefined;
   private readonly baseUrl: string;
@@ -185,6 +194,9 @@ export class Streams {
     const before = this.state;
     this.lastFrameAt = this.now = Date.now();
     this.snapshot = frame;
+    this.group = smooth(this.group, this.now, frame.groupTemperature);
+    this.steam = smooth(this.steam, this.now, frame.steamTemperature);
+    this.shown = { ...frame, groupTemperature: this.group.value, steamTemperature: this.steam.value };
     const state = frame.state.state;
     if (before === 'sleeping' && state !== 'sleeping') this.wokeAt = Date.now();
     this.state = state;
