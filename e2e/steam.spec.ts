@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
-import { mockGateway, type MockGateway } from './mock-gateway';
+import { recordSteamFrame, type SteamRun } from '../src/steam/run';
+import { EXPORT_STEAMS, mockGateway, type MockGateway } from './mock-gateway';
 import { swipe, toPage } from './touch';
 
 // The steam page against a mocked gateway (D8a, acceptance item 4): the scale's frames are
@@ -209,7 +210,7 @@ test('the steam settings come from the settings store and survive a reload', asy
   expect(errors).toEqual([]);
 });
 
-test('steam started at the machine shows its graph of pressure and temperature, and stops from the page', async ({ page }) => {
+test('steam started at the machine shows its graph of pressure, flow and temperature, and stops from the page', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
   await toPage(page, 'steam');
@@ -232,12 +233,12 @@ test('steam started at the machine shows its graph of pressure and temperature, 
   await expect(page.getByTestId('steam-stop')).toBeVisible();
   await expect(page.getByTestId('steam-state')).toContainText('steaming');
   expect(Number(await page.getByTestId('shot-graph').getAttribute('data-points'))).toBeGreaterThanOrEqual(72);
-  for (const line of ['pressure', 'temperature']) {
+  for (const line of ['pressure', 'flow', 'temperature']) {
     expect((await page.getByTestId(`shot-line-${line}`).getAttribute('d'))!.length).toBeGreaterThan(100);
   }
-  // Steam has no flow and no weight line.
-  await expect(page.getByTestId('shot-line-flow')).toHaveCount(0);
+  // Steam has no weight line and no targets.
   await expect(page.getByTestId('shot-line-weight-flow')).toHaveCount(0);
+  await expect(page.locator('[data-testid^="shot-target-"]')).toHaveCount(0);
   // The steam screen stays: only espresso opens a screen by itself.
   await expect(page.getByTestId('screen-steam')).toBeVisible();
 
@@ -259,6 +260,63 @@ test('steam started at the machine shows its graph of pressure and temperature, 
   // The finished graph stays until the next steam.
   await expect(page.getByTestId('steam-state')).toContainText('last steam');
   expect(Number(await page.getByTestId('shot-graph').getAttribute('data-points'))).toBeGreaterThanOrEqual(72);
+  expect(errors).toEqual([]);
+});
+
+/** The points of a path's `d`: x and y in pixels. */
+const points = (d: string) => [...d.matchAll(/[ML]([\d.-]+) ([\d.-]+)/g)].map((match) => ({ x: +match[1], y: +match[2] }));
+
+// Spec 3.12 'Steam graph: the flow' (Y11): a real DE1's steam from the founder's export.
+test('a finished steam draws its flow in blue on the scale of pressure, ending where the run ends, with the legend', async ({
+  page,
+}) => {
+  const gateway = await mockGateway(page);
+  await page.goto('/');
+  await toPage(page, 'steam');
+  await expect(page.getByTestId('shot-graph')).toHaveAttribute('data-points', '0');
+
+  gateway.steamReplay(0);
+  await expect(page.getByTestId('steam-state')).toContainText('last steam');
+  let run: SteamRun | null = null;
+  for (const { timestamp, state, substate, ...values } of EXPORT_STEAMS[0].frames) {
+    run = recordSteamFrame(run, { ...gateway.frame(), timestamp, state: { state, substate }, ...values });
+  }
+  const series = run!.series;
+  const graph = page.getByTestId('shot-graph');
+  await expect(graph).toHaveAttribute('data-points', String(series.t.length));
+  await expect(graph).toHaveAttribute('data-scale', '4');
+  await expect(page.getByTestId('shot-tick-temperature')).toHaveText(['140', '170']);
+  await expect(page.getByTestId('shot-unit-main')).toHaveText(/^\s*bar\s*ml\/s\s*$/);
+  const flow = page.getByTestId('shot-line-flow');
+  // Blue, the app's --flow (#4da3ff).
+  await expect(flow).toHaveCSS('stroke', 'rgb(77, 163, 255)');
+  await expect(page.locator('[data-testid^="shot-target-"]')).toHaveCount(0);
+
+  // One point a frame of the run; the flow ends with the run, as pressure and temperature do.
+  const line = async (name: string) => points((await page.getByTestId(`shot-line-${name}`).getAttribute('d'))!);
+  const flowPoints = await line('flow');
+  expect(flowPoints).toHaveLength(series.t.length);
+  for (const other of ['pressure', 'temperature']) expect((await line(other)).at(-1)!.x).toBeCloseTo(flowPoints.at(-1)!.x, 1);
+  // The scale is the pressure's: the peak of about 3.6 ml/s near the top, the last point low, falling.
+  const base = Math.max(...flowPoints.map((point) => point.y));
+  const peak = Math.min(...flowPoints.map((point) => point.y));
+  const last = series.flow.at(-1)!;
+  expect(last).toBeGreaterThanOrEqual(0.5);
+  expect(last).toBeLessThan(Math.max(...series.flow) / 2);
+  expect(flowPoints.at(-1)!.y).toBeGreaterThan(peak + (base - peak) / 2);
+
+  // The legend (on by default) names the three curves.
+  await expect(page.getByTestId('shot-legend').locator('li')).toHaveText(['flow', 'pressure', 'temperature']);
+  await page.screenshot({ path: 'docs/product/steam-flow.png' });
+
+  // With the setting off there is none; the curves stay.
+  await page.evaluate(() => localStorage.setItem('pureflow.settings', JSON.stringify({ showGraphLegend: false })));
+  await page.reload();
+  await toPage(page, 'steam');
+  gateway.steamReplay(1);
+  await expect(page.getByTestId('steam-state')).toContainText('last steam');
+  await expect(page.getByTestId('shot-line-flow')).toHaveCount(1);
+  await expect(page.getByTestId('shot-legend')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 

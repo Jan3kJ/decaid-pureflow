@@ -1458,6 +1458,12 @@ steam graph too, so the three curves are named under it when the setting is on. 
 drawn: the steam's flow setting (`steamSettings.flow`, 0.4 to 2.5) is the pump's request for the
 machine's steam valve and is not the measured flow's scale.
 
+*Built (Y11, 2026-10-23):* `Steam.svelte` passes `series.flow` and `showGraphLegend` to
+`ShotGraph`; nothing else changed in the graph. In the export's steam of 2026-10-17 the flow
+peaks at 3.6 ml/s in the first second of `pouring`, falls to about 1 ml/s within 5 s, stays at
+0.8 to 1 ml/s and ends at 0.5 ml/s with the run (picture `docs/product/steam-flow.png`, the
+mocked gateway replaying that export steam).
+
 ### 3.13 Publishing the skin
 
 The founder wants to publish the skin after the roadmap's current items (H4 and what it carries),

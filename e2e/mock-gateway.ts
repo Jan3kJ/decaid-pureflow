@@ -81,6 +81,18 @@ export const ESPRESSO_FRAMES = RECORDING.filter(isEspresso).length;
 export const WATER_FRAMES = RECORDING.slice(
   RECORDING.findIndex((event) => isEspresso(event) && event.machine!.state.substate !== 'preparingForShot'),
 ).filter(isEspresso).length;
+/** A real DE1's steams from the founder's export: from `preparingForShot` to idle (src/steam/fixtures). */
+export const EXPORT_STEAMS = JSON.parse(
+  readFileSync(new URL('../src/steam/fixtures/export-steams.json', import.meta.url), 'utf8'),
+) as {
+  record: string;
+  timer: number;
+  frames: (Pick<MachineSnapshot, 'flow' | 'pressure' | 'steamTemperature' | 'timestamp'> & {
+    state: MachineState;
+    substate: string;
+  })[];
+}[];
+
 /** s, the heating at the start of the recording: espresso frames in which no water moves */
 export const HEATING_SECONDS = 4.5;
 
@@ -705,9 +717,24 @@ export class MockGateway {
       this.sendMachine({
         ...this.frame(now - (seconds - t) * 1000),
         pressure: 1.6 * (1 - Math.exp(-t / 1.5)) + 0.08 * Math.sin(t * 2),
+        flow: 2.4 * (1 - Math.exp(-t / 1.2)) + 0.1 * Math.sin(t * 3),
         steamTemperature: 152 - 9 * (1 - Math.exp(-t / 6)) + 0.6 * Math.sin(t),
       });
     }
+  }
+
+  /**
+   * One of the export's steams of a real DE1 (`EXPORT_STEAMS`), sent at once and ending now:
+   * `preparingForShot`, `pouring` with the flow's rise and fall, the purge and idle.
+   */
+  steamReplay(index = 0): void {
+    const frames = EXPORT_STEAMS[index].frames;
+    const shift = Date.now() - Date.parse(`${frames.at(-1)!.timestamp.slice(0, 23)}Z`);
+    for (const { timestamp, state, substate, ...values } of frames) {
+      this.state = state;
+      this.sendMachine({ ...this.frame(Date.parse(`${timestamp.slice(0, 23)}Z`) + shift), state: { state, substate }, ...values });
+    }
+    this.state = 'idle';
   }
 
   /**

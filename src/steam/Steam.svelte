@@ -46,10 +46,12 @@
     <ShotGraph
       t={series.t}
       pressure={series.pressure}
+      flow={series.flow}
       temperature={series.temperature}
       yMax={4}
       temperatureScale={{ min: 140, max: 170 }}
       minSeconds={Math.max(30, timer ?? 0)}
+      legend={skin.settings.showGraphLegend}
       label="steam graph"
     />
   </div>
