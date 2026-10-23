@@ -482,30 +482,44 @@ test("the steam page's tare button tares the scale, and without one looks for it
   expect(errors).toEqual([]);
 });
 
-test('with the steam heater off the page says so and Steam on switches it on; the favourites come back (spec 3.9 item 18)', async ({
+test('with the steam heater off Steam on sits in the header left of the title and switches it on; the column does not move (spec 3.12 item 8)', async ({
   page,
 }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
   await toPage(page, 'steam');
+  const screen = page.getByTestId('screen-steam');
   await expect(page.getByTestId('steam-favourite')).toHaveCount(3);
-  await expect(page.getByTestId('steam-heater-off')).toHaveCount(0);
+  await expect(page.getByTestId('steam-heater-on')).toHaveCount(0);
   // No state dot on the left edge (spec 3.9 item 12): the state line says it.
   await expect(page.getByTestId('nav-status')).toHaveCount(0);
   await expect(page.locator('.page:not([inert]) nav span')).toHaveCount(0);
+  const timerOn = (await page.getByTestId('steam-timer').boundingBox())!;
+  const favouriteOn = (await page.getByTestId('steam-favourite').first().boundingBox())!;
+  const headerOn = (await screen.locator('.page-header').boundingBox())!;
 
   // Another client switches the heater off: the machine's own target is 0.
   gateway.setMachineSteamTarget(0);
-  await expect(page.getByTestId('steam-heater-off')).toContainText('The steam heater is off');
-  await expect(page.getByTestId('steam-favourite')).toHaveCount(0);
-  // In the favourites' place, at the top of the right column.
-  const message = (await page.getByTestId('steam-heater-off').boundingBox())!;
-  const timer = (await page.getByTestId('steam-timer').boundingBox())!;
-  expect(message.y + message.height).toBeLessThan(timer.y);
+  const button = page.getByTestId('steam-heater-on');
+  await expect(button).toBeVisible();
+  await expect(screen.getByTestId('status-title')).toHaveText('Off');
+  // The button is in the header row, left of the title, and the sentence is gone.
+  await expect(screen.locator('.page-header').getByTestId('steam-heater-on')).toHaveCount(1);
+  await expect(page.getByText('The steam heater is off')).toHaveCount(0);
+  const box = (await button.boundingBox())!;
+  const title = (await screen.getByTestId('page-title').boundingBox())!;
+  expect(box.x + box.width).toBeLessThanOrEqual(title.x);
+  expect(box.y).toBeLessThan(title.y + title.height);
+  expect(box.y + box.height).toBeGreaterThan(title.y);
+  // The header does not grow and the right column keeps its place: favourites and timer as with the heater on.
+  expect((await screen.locator('.page-header').boundingBox())!).toEqual(headerOn);
+  await expect(page.getByTestId('steam-favourite')).toHaveCount(3);
+  expect((await page.getByTestId('steam-favourite').first().boundingBox())!).toEqual(favouriteOn);
+  expect((await page.getByTestId('steam-timer').boundingBox())!).toEqual(timerOn);
   await page.screenshot({ path: 'docs/product/steam-heater-off.png' });
 
-  await page.getByTestId('steam-heater-on').click();
+  await button.click();
   await expect
     .poll(() =>
       gateway
@@ -515,7 +529,24 @@ test('with the steam heater off the page says so and Steam on switches it on; th
     )
     .toEqual([{ targetTemperature: 150 }]);
   await expect.poll(() => gateway.shotSettings.targetSteamTemp).toBe(150);
-  await expect(page.getByTestId('steam-heater-off')).toHaveCount(0);
-  await expect(page.getByTestId('steam-favourite')).toHaveCount(3);
+  await expect(page.getByTestId('steam-heater-on')).toHaveCount(0);
+  expect((await page.getByTestId('steam-timer').boundingBox())!).toEqual(timerOn);
   expect(errors).toEqual([]);
+});
+
+test('Steam on in the header says so when Decaid refuses it, and stays (spec 3.12 item 8)', async ({ page }) => {
+  const gateway = await mockGateway(page);
+  await page.goto('/');
+  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await toPage(page, 'steam');
+  gateway.setMachineSteamTarget(0);
+  await expect(page.getByTestId('steam-heater-on')).toBeVisible();
+  await page.route('http://localhost:8080/api/v1/workflow', (route) =>
+    route.request().method() === 'PUT' ? route.fulfill({ status: 500, body: '{"error":"refused"}' }) : route.fallback(),
+  );
+  await page.getByTestId('steam-heater-on').click();
+  await expect(page.getByTestId('screen-steam').getByTestId('notice')).toBeVisible();
+  await expect(page.getByTestId('steam-heater-on')).toBeVisible();
+  // the browser logs the refused request itself; nothing else
+  expect(errors.filter((error) => !error.startsWith('Failed to load resource'))).toEqual([]);
 });

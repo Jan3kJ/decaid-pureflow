@@ -1421,6 +1421,15 @@ place and the space the block took is not reserved. The button keeps its test id
 behaviour (`setSteamHeater(true)`, the notice if Decaid refuses); the block's `p` goes. If the
 founder wants the whole sentence in the header, it fits at 1280 px beside the button when the
 'last steam' text is not shown (the heater is off, so nothing steamed just now).
+*Built (Y8):* **Steam on** (`steam-heater-on`) is in `Steam.svelte`'s part of the header
+(PageHeader's `beside`), after 'steaming / last steam' and left of **Steam**, no taller than
+the header (3.5 rem), so the header keeps its height; the block `steam-heater-off` and its
+sentence are gone. The favourites no longer give way to it: they stay at the top of the right
+column with the heater on or off, so nothing in the column moves. A refusal is the page's
+notice, as before. Test: `e2e/steam.spec.ts` (the button in the header left of the title with
+the heater off, gone with it on, header, favourites and timer in the same place, and the
+notice when Decaid refuses); screenshot
+steam-heater-off.png (screenshot in the team repository).
 
 **State words: idle, heating and off follow the heater (item 9; Y9).** The machine state is
 shown as Idle always on the steam page, as on the hot water page (founder, 2026-10-22; the
