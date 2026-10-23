@@ -1691,6 +1691,219 @@ founder's**; **two repositories** (item 12) named `decaid-pureflow` (public) and
 **the founder asks Damian** about D-Flow, and DSx2 is credited. Nothing of 3.13's decisions is
 open: what is left is the work, P1 to P6.
 
+### 3.14 Founder's review of 2026-10-23
+
+After the hand-over of 0.5.0 the founder looked at the three screens and the bean photo on the
+tablet (2026-10-23; screenshots: the steam page with the flush ring (screenshot in the team repository),
+home, marked up (screenshot in the team repository), [the bean form after a
+photo](product/review-10-23-bean-photo.webp)). Planned only, nothing is built: 'do not implement
+it now' stands. Roadmap track Z (Z1-Z9) and a hand-over H5. The founder's words, in order:
+
+1. **The bean photo works, the reading does not** (item 1; Z1, Z2). The form got 'name: 2 ame,
+   roaster: COFFeg ROASTERS' from a bag whose roaster is **aniko** and whose bean is **tropical
+   candy**; 'how to improve that?'
+2. **Home: cleaning up** (items 2-4; Z3, Z4). The empty top left corner gets the menu button, on
+   home, hot water and steam alike; the line of the last shot's or the current step's information
+   goes, the current step is said in the header during a shot; the back tab of the hot water and
+   steam pages goes.
+3. **One type size per kind of text** (item 5; Z5): 'font size should be aligned again, for example
+   the profile and bean names on the home page'.
+4. **The graph's unit line** (item 6; Z6): a dot between every two labels, on every graph.
+5. **The tank in ml** (item 7; Z7): 'tank state should be shown in ml, not mm; how does Streamline
+   calculate that?'
+6. **The flush ring in the right frame** (item 8; Z8): 'it should be like on the home page'.
+7. **The finished shot's weight must stay** (item 9; Z9), said after the rest: 'the weight on
+   home page was changing. After the shot it showed the correct values. Then I was doing some
+   things on hot water page and it seems the weight was updated on home screen too. It should
+   keep the value of last shot until a new shot is started or some new values are loaded from
+   history.'
+
+**The bean photo's reading (item 1; Z1, Z2).** What `src/beans/ocr.ts` does today: Tesseract.js
+(English data, `OEM.LSTM_ONLY`, `PSM.SPARSE_TEXT`) reads the photo **as the camera gave it**, no
+cropping, no contrast, no scaling; `bagText` keeps lines with a confidence of 50 or more that are
+word-like, takes the **line with a roaster's word** ('Roasters', 'Rösterei', 'Coffee Co' ...) as
+the roaster, else the topmost, and the **tallest of the remaining lines** as the name. What went
+wrong on the founder's bag can be read from the result and the thumbnail (a stylised 'aniko' logo
+with 'COFFEE ROASTERS' in small letters under it, and 'TROPIC CANDY' printed over a palm picture):
+(a) the roaster's word matched the **descriptor under the logo**, not the logo that is the name,
+so the roaster became 'COFFeg ROASTERS', a misreading of the tagline; (b) the name is the tallest
+line left, which on a picture bag is an artefact ('2 ame'); (c) logos, coloured or light-on-dark
+lettering and curved text are what Tesseract reads worst, and it is given no help. The honest
+limit: a stylised bag will never be read right every time; the aim is that the **fields are right
+more often and that a wrong guess costs one tap**, not typing. Default, in two steps:
+
+- **Z1, the rules (pure, tested; first a probe).** First, `scripts/ocr-probe.mjs` reads a photo
+  with the skin's worker and options in Node and prints every line with its text, height,
+  confidence and box, so the rules are tuned on real output; the founder gives the photo (the
+  bean's photo is in the skin's store: Decaid's KV, key of the bean; a copy of the file is
+  enough) and the lines of this bag and of two or three more bags become test fixtures
+  (`ocr.test.ts` reads the recorded lines, not the photo). Then the rules change: **(1) a known
+  roaster wins**: every line is compared (case-insensitive, letters and digits only, an edit
+  distance of 1 for words of 5 letters, 2 for 8 or more) with the **roasters already in Decaid's
+  catalogue** (the founder's list has aniko four times, hopplo, dak, seekind, kaffeekommune,
+  maldaner, kaffeesack), and a line that matches is the roaster, whatever its words; it is the
+  strongest signal there is and it improves with every bean added. **(2) A descriptor is not the
+  roaster**: a line that has a roaster's word and **nothing else of more than two letters**
+  ('Coffee Roasters', 'Roastery') is the roaster's descriptor, dropped, and the roaster is the line
+  **just above it** (the logo) when there is one; a line with other words ('Aniko Coffee Roasters')
+  is kept as printed. **(3) The name** is the tallest line that is word-like, with the stricter
+  test that **most of its words have three letters or more** ('2 ame' fails) and a confidence of
+  60 or more; a bean already known for that roaster in the catalogue is offered as the name when
+  a line matches it. **(4) Nothing is better than rubbish**: a field with no line that passes
+  stays empty, as it does today.
+- **Z2, the help for the reader and for the user.** The photo is **prepared before it is read**:
+  grey, contrast stretched, scaled so that the lines are 30 to 50 pixels high (a 4000-pixel photo
+  is scaled down, a small crop up), and read twice, as it is and **inverted** (light on dark), the
+  lines of the better pass kept (the cost is a second read, which is about the same time again;
+  the progress line says so). And the form **shows what it read**: under the photo, up to six of
+  the lines as **chips**; a tap on a chip puts it into the field that has the focus (name or
+  roaster), so that a guess that is wrong in one field is fixed by two taps, not by typing;
+  the chips are the lines, cleaned as today, in the order of the bag from the top. A photo that
+  gives no line says so ('Nothing could be read from this photo'), and the fields stay as they
+  are. Tesseract stays the engine (spec 3.9 item 20: free, no key, on the tablet); a cloud or
+  an Android recogniser is not used.
+
+**Home: the top left corner, the strip, the back tabs (items 2-4; Z3, Z4).** The screenshot of
+home, marked up: the menu button at the right of the header circled with an arrow to the empty
+corner at the left; the strip 'shot finished 55.5 s 589.4 g' crossed out; and the right column's
+profile button pulled up to the header's height. Today the screens have a **left column of 4 rem**:
+on hot water and steam it holds the back arrow on a panel, on home it is empty and the header
+starts at its edge so that the state line does not move between pages (`App.svelte`, `--back`),
+and home's strip above the graph says 'shot finished' with the time and the weight, or the
+running step.
+
+- **The menu in the corner (Z3).** The menu button moves from the right end of home's header to
+  the **top left corner**, as high and as wide as the back arrow is today (56 CSS pixels), and
+  **the same button is at the same place on hot water and steam**, where it takes the back arrow's
+  place: the founder's 'do the same on hot water and steam page'. It opens the same menu (settings,
+  history, beans, sleep, the others). The way home from those two pages stays the swipe and the
+  dots, as the founder's earlier 'swipe is the better navigation' (3.11) says; the history's edge
+  swipe and handle stay. The editors, the settings, the beans screen, the picker and the history
+  keep their **back arrow**, in the same corner, since they are not part of the swipe row.
+- **No back tab (Z3).** On the three pages of the swipe row **the left column and its panel
+  go**: the content uses the whole width, the corner button floats over the page's background and
+  the state line begins right of it, at the width the button takes, so it **sits at the same
+  place on all three pages** (the founder's aim of 3.11 keeps). The screens with a back arrow keep
+  the column as now.
+- **The right column rises (Z3).** With the menu button gone from its right end, the header's
+  right end is free on home: the right column (profile button, bean button, then the values)
+  starts at the **top of the page**, beside the header, and the header spans only the width left of
+  it; so the column has the header's height more for what a shot shows. On hot water and steam
+  the page's title (3.11) stays at the right end of the header, where the column starts.
+- **The strip goes, the step goes into the header (Z4).** The strip above the graph is removed
+  and the graph takes its height ('there is a lot of empty space when no shot is loaded'). What it
+  said is said elsewhere: **'last shot info is already shown in the right column, right?' Yes**:
+  the right column keeps the finished shot's time and weight (the time and the weight of the
+  shot are its two large values, as the founder's screenshot shows 55.5 s and 589.4 g), so the
+  strip's numbers are a copy. 'Shot finished' as a word is not lost: the right column's time
+  label reads **'time, finished'** while a finished shot is kept, **'time'** while it runs; the
+  state line says Idle, as the machine is. **The running step** goes to the state line: while a
+  shot runs it says the machine's state and the step, 'Espresso · Preinfusion' (the step's name
+  from the profile, by the frame number the machine reports; a profile whose step has no name
+  says 'Step 3'), replacing the state word 'Espresso' by the pair, in the same font and place, so
+  the header does not grow; hot water, flush and steam keep one word (they have no steps). The
+  state line's values (group, steam, tank, scale) keep their place to the right of it. Nothing
+  else of the strip is kept.
+- **Other ideas (founder asked).** (a) The profile's name on the right column's button is one line
+  and cut with an ellipsis when it is long; the full name is in the picker. (b) With the strip
+  gone and the corner button in, the graph's legend ('flow, pressure, temperature, dashed') and
+  the page dots no longer compete with a strip for the same width: the dots stay in the middle
+  bottom. (c) A tap on the **time** in the right column of a finished shot could open the shot's
+  entry in the history; not planned, said as an idea.
+
+**One size per kind of text (item 5; Z5).** The founder: 'font size should be aligned again, for
+example the profile and bean names on the home page' (the profile is set larger and in bold, the
+bean in the body size and weight). The skin has six size tokens in `src/app.css` (`--text-label`
+0.85 rem, `--text-body` 1.1, `--text-value` 1.3, `--text-title` 1.6, `--text-large` 2.2,
+`--text-big` 3.6), and the `.svelte` files hold **about 150 more size declarations**, 83 of them as
+literals in 28 different values (0.5 to 2.4 rem: 0.85, 0.9, 0.95, 1, 1.05, 1.1, 1.15, 1.2, 1.25,
+1.3, 1.35, 1.4 ... the 'a little different' that the founder sees). Default: **roles, and a
+test that holds them**.
+
+| Role | Token | Used for |
+|---|---|---|
+| caption | `--text-label` | the small words over a value, hints, units, table heads, the graph's legend |
+| name | `--text-body`, weight 600 | the **names of things in a list or on a button**: a profile, a bean, a grinder, a step, a plugin, a setting's name; the **profile and the bean on home are the same size and weight** |
+| text | `--text-body` | running text, list details, button words |
+| value | `--text-value` | a number the user reads or sets (a chip's value, the state line's numbers, the right column's pressure, flow and temperature) |
+| title | `--text-title` | a page's or dialog's title, the state word |
+| large, big | `--text-large`, `--text-big` | the timer, the shot's time and weight |
+
+The change is to **replace each literal by the role's token** (the nearest one: 0.9 and 0.95
+become 0.85 or 1.1 by what the text is, 1.15 and 1.2 become 1.1 or 1.3, and so on), starting with
+home's right column, the picker, the list rows and the buttons, and then the rest; sizes inside
+the graph's SVG (ticks, units, the legend) and the small ring's own figures stay as they are
+and are named in the file. The plan's first step is a **script that lists every size per screen**
+(`getComputedStyle` of every text node on the mock gateway, grouped by role) so the drift can be
+seen and the result checked; the roles are the founder's to adjust once in this table, not per
+screen. A Playwright check holds the one rule that matters: **the profile button's and the bean
+button's names have the same computed size and weight**, and the same holds for the rows of
+the beans, grinders and profile lists. Z5 comes after Z3 and Z4 so that the sizes are set on the
+final layout.
+
+**The graph's unit line (item 6; Z6).** The line over the graph's axis reads 'bar ml/s · g/s': a
+dot sits before 'g/s' only (`ShotGraph.svelte` writes the dot with the weight flow), so 'bar' and
+'ml/s' touch (the screenshots of home and of the steam page). The **dot goes between every two
+labels that are shown**, in the same dim colour and spacing: 'bar · ml/s' on the steam page,
+'bar · ml/s · g/s' on a shot with a scale; with one label no dot; the temperature's own '°C' is
+at the other side of the graph and has none. Built as one list of the units that are on, joined
+by the dot, in `ShotGraph.svelte`; the step editor's preview and the history's graph use the same
+component and take it.
+
+**The tank in ml (item 7; Z7).** The state line shows the tank as '39 mm' (`stateLine` in
+`src/shell/machine.ts`, `currentLevel.toFixed(0)` of `/ws/v1/machine/waterLevels`). **How
+Streamline calculates it** (its `waterTank.js`, read in Decaid's source): the DE1's sensor gives
+the **water's height in mm**, which is all Decaid passes on (`currentLevel`, `refillLevel`), and
+Streamline turns it into millilitres with a **lookup table, `MM_TO_ML`, one entry per millimetre
+from 0 to 69**, 'ported from the TCL skin so volumes match across apps'; a level over the table
+is the tank's maximum, 2058 ml; the level is **floored** to a whole millimetre first. The table is
+**not linear**: about 27 ml per mm up to 30 mm, 28 to 35 mm above (the tank widens upward), for
+example 20 mm is 537 ml, 40 mm 1104 ml, 60 mm 1808 ml, 69 mm 2058 ml. Streamline offers both units
+(local setting `waterTankUnit`, default mm); the founder wants ml. Default: `src/shell/tank.ts`
+holds the same 70 values and `tankMl(mm)`, which **interpolates linearly between two entries**
+for a level between millimetres (a smoother figure than Streamline's floor, and the machine
+does send fractions), rounded to **10 ml** (the sensor is not better than a millimetre, about 30 ml),
+and the state line says **'1.1 l' from 1000 ml up and '540 ml' under it**? No: one unit, so it does
+not jump in kind: **'1130 ml'** always. The warning colour still compares the millimetres with
+the refill level, as now. A skin setting **'Tank unit' (ml, mm)** in Skin > Display like
+Streamline's, default **ml**, so the founder's mm is one tap away; the settings page's 'water
+alert' field (5 mm steps) shows the equivalent next to it ('15 mm, about 400 ml'). The table is a
+measure of the DE1's tank taken from the TCL skin through Streamline: `NOTICE` names it (P1).
+
+**The finished shot keeps its weight (item 9; Z9).** The cause is in `settleWeight`
+(`src/shell/shot.ts`), which `home-shot.ts` shows as the finished shot's weight
+(`shot.finalWeight`): it follows Streamline in letting a finished shot **take the highest weight
+the scale reads after the shot** (the last drops falling into the cup), with **no end**: as long
+as the shot is the kept one, every higher reading, a cup put on the scale, a hand, the water of a
+hot water run poured into the cup on the scale, raises the figure on home. Default: the weight
+**settles for a short time only and is then fixed**. `Shot` gets `endedAt` (the clock of the frame
+that ended it) and `settleWeight` takes the highest reading only up to **15 s after it**
+(the drips after a stop are over by then; the number is checked on the rig and the tablet);
+after that `finalWeight` is never changed by the scale again. The weight is also fixed at once
+when **hot water, flush or steam starts** (the machine leaves idle for something that is not
+espresso), since from then the scale is measuring something else. The right column's weight, the
+graph's weight curve and the history record of the shot keep that value. It changes again only
+when **a new shot starts** (a new `Shot`) or **a history entry is recalled** (`recalled` in
+`homeShot`, its own weight, as now). While the figure is fixed the scale's live weight stays in
+the state line, which is the scale's.
+
+**The ring's frame (item 8; Z8).** The screenshot shows the flush ring (small, 3.4 rem, with
+'Flush' under it) at the bottom left of the steam page, **half over the edge of the left column and
+cut off** at the window's edge, in the column that item 2 removes. 'The flush ring is shown in the
+wrong frame. It should be like on the home page.' On home the ring is **large and fills the
+frame of the graph** (spec 3.6: it replaces the graph while hot water or flush runs; the stop
+button is inside it with the kind, the time and the values). Default: **the same on the steam and
+hot water pages**: while hot water or flush runs, **the `Water` view takes the frame of the
+page's graph**, as on home, with its stop button in the ring, and the page's right column stays
+(the steam page's stop button, tare and so on keep working: nothing steams while it runs, so its
+graph was empty anyway). The page's graph and its curves come back when the run ends. The hot
+water page already shows the large ring for hot water and takes it for a flush. **The small
+ring** (`SmallRing.svelte`, W2) stays only for the screens that have **no such frame**: the
+editors, the settings, the beans screen, the picker and the history overlay, where it keeps its
+place at the bottom of their left column (those keep the back arrow's column, item 2). Where the
+founder meant the other reading, 'the small ring, in its own corner of the page', say so: the
+ring then sits in the left bottom corner under the corner menu button with no column behind it.
+
 ## 4. Technical approach
 
 ### 4.1 What a Decaid skin is
@@ -2053,7 +2266,7 @@ Where an item here and one of 27-55 disagree, the item here wins (3.10 overrides
     stops it by a tap, and a hot water pour shows one, large where 3.6 says and small elsewhere;
     the ring goes when the run ends.
 79. **Hand-over (founder).** The 0.5.0 ZIP carries 3.11 and 3.12; the checks of
-    [install.md](install.md) for items 67-78 and 88-91 are asked with the open ones.
+    [install.md](install.md) for items 67-78, 88-91 and 92-100 are asked with the open ones.
 
 80. **Licence files (test).** `LICENSE` is the GPL-3.0 text, `package.json`, `manifest.json`,
     README and `NOTICE` name the same licence, every ported file's header names its origin and
@@ -2102,6 +2315,41 @@ Where an item here and one of 27-55 disagree, the item here wins (3.10 overrides
     unit line 'bar ml/s'; the legend names flow, pressure and temperature when `showGraphLegend` is
     on; fed the 2026-10-21 record, the flow's last point is at about 24.5 s and the curve is not
     drawn before the first `pouring` frame.
+
+92. **Bean photo reading (test).** `bagText` fed the recorded lines of the founder's bag (the
+    probe's output, fixture) gives the roaster 'aniko' and the name 'Tropic Candy'; a line that
+    matches a roaster of the catalogue within the edit distance is the roaster; a line of
+    'Coffee Roasters' alone is dropped and the line above it is the roaster; a line such as '2 ame'
+    gives no name; the form shows up to six lines as chips and a tap puts one into the focused
+    field; the photo is read twice, normal and inverted, and the better lines are kept.
+93. **Corner menu (test).** On home, hot water and steam the menu button is at the same position
+    (top left, 56 px square) and opens the same menu; no left column or back arrow is on those three
+    pages; the state line starts at the same x on all three; the editors, settings, beans, picker
+    and history still show a back arrow in that corner.
+94. **No strip, the step in the header (test).** No element of the strip is rendered on home; the
+    graph's height grows by its height; during a shot the state line reads 'Espresso · <step's
+    name>' and follows the step; a finished shot's right column reads 'time, finished' with its
+    time and weight, the state line 'Idle'; the right column starts at the page's top.
+95. **Type roles (test).** On the mock gateway the profile button and the bean button have equal
+    computed `font-size` and `font-weight`, and so do the rows of the profile, bean and grinder
+    lists; no `.svelte` file outside the graph's SVG and the small ring has a literal `font-size`
+    (a lint check on the files).
+96. **Unit line (test).** The graph's unit line reads 'bar · ml/s' (steam) and 'bar · ml/s · g/s'
+    (shot with a scale), one dot between every two labels and none for one.
+97. **Tank (test).** `tankMl` gives 0, 537, 1104, 1808 and 2058 ml for 0, 20, 40, 60 and 69 mm,
+    1130 ml for 41.8 mm after the interpolation rounded to 10, 2058 over 69 mm; the state line says
+    ml by default and mm when the setting says so; the warning compares millimetres.
+98. **Ring frame (test).** While a flush runs, the steam page and the hot water page show the large
+    ring in the graph's frame with the stop button in it, the right column stays, and no small ring
+    is drawn; the editors, settings, beans, picker and history show the small ring at the bottom of
+    their left column.
+99. **The review on the tablet (founder).** The founder looks at home, steam and hot water in the
+    next hand-over (H5) and at the bean photo with two or three bags, and marks what is wrong.
+100. **Fixed weight (test).** `settleWeight` fed a shot that ended at t, the readings 18.0 at
+     t+3 s, 36.4 at t+9 s, then 52.0 at t+20 s and 640 at t+40 s: the finished shot's weight is
+     36.4 and stays; the weight read after hot water starts does not change it either; a new
+     shot starts from its own readings; a recalled entry shows its own weight and dismissing it
+     brings back 36.4.
 
 ## 6. Constraints
 - **Budget:** one Claude Pro plan. This product may use all of it up to 90% of the weekly
@@ -2202,6 +2450,16 @@ The weeks are a capacity guess on one Pro plan.
 | 3 | Y10 | review 2026-10-22: the state line's group and steam temperatures filtered, group to one decimal and steam to a whole degree (3.12 'Temperatures: filtered and rounded') | T3 |
 | 3 | Y11 | review 2026-10-22: the flow in the steam graph, blue on the scale of pressure, with the legend (3.12 'Steam graph: the flow') | Y5 |
 | 3 | H4 | review 2026-10-21 and 2026-10-22: hand-over ZIP 0.5.0 (minor bump), carrying 3.11 and 3.12 and their checks in install.md | X1-X4, Y1-Y6, Y8-Y11, H3 |
+| 3 | Z1 | review 2026-10-23: the bean photo's reading: `scripts/ocr-probe.mjs`, recorded lines as fixtures, a known roaster of the catalogue wins, a descriptor line is not the roaster, a stricter name (3.14 item 1) | U13 |
+| 3 | Z2 | review 2026-10-23: the photo prepared (grey, contrast, scale) and read normal and inverted, the lines as tap-to-fill chips (3.14 item 1) | Z1 |
+| 3 | Z3 | review 2026-10-23: the menu button in the top left corner of home, hot water and steam, no left column on those pages, the right column to the page's top (3.14 'Home: the top left corner') | X3 |
+| 3 | Z4 | review 2026-10-23: the strip above home's graph removed, the step name in the state line during a shot, 'time, finished' in the right column (3.14) | Z3 |
+| 3 | Z5 | review 2026-10-23: one size per kind of text: the roles table, literals replaced by tokens, the size listing script, the profile and bean names equal (3.14 item 5) | Z3, Z4 |
+| 3 | Z6 | review 2026-10-23: a dot between every two labels of the graph's unit line (3.14 item 6) | |
+| 3 | Z7 | review 2026-10-23: the tank in ml by Streamline's mm table, interpolated, setting 'Tank unit' (3.14 item 7) | |
+| 3 | Z8 | review 2026-10-23: the hot water and flush ring in the graph's frame on the steam and hot water pages, as on home (3.14 item 8) | Z3 |
+| 3 | Z9 | review 2026-10-23: the finished shot's weight settles for 15 s after the shot and is then fixed; it also stops on hot water, flush or steam (3.14 item 9) | |
+| 3 | H5 | review 2026-10-23: hand-over ZIP for 3.14 and its checks in install.md; the version is the next minor (see the note) | Z1-Z9 |
 | 4 (Nov 2-8) | P1 | publish (3.13): `LICENSE`, `NOTICE`, one licence statement everywhere, D-Flow's and DSx2's credit, Damian's approval in writing (A-Flow's old repository needs no licence); the founder asks Damian | H4 |
 | 4 | P2 | publish: the two repositories: try the team's tools across them first, cut the product repository (history with the noreply address, no records), turn this one into the team repository, scrub paths in `spec.md` and `research.md`, `scripts/publish-check.mjs`, `camera.html` and the probes; pushing and renaming are the founder's | P1 |
 | 4 | P3 | publish: CI and release workflows, `CONTRIBUTING.md`, `CHANGELOG.md`, issue templates, `SECURITY.md`, README as a front page, the name check, `npm audit` and the dependency licences | P2 |
