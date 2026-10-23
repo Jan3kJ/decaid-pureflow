@@ -1957,6 +1957,39 @@ more than a few pixels is not a tap), the mouse wheel does the same on a desktop
 dialog's own gestures (horizontal swipes, 3.14 item 2) are not started by a vertical drag.
 A decision for the test on the tablet: whether the buttons go later.
 
+**The founder's four bag photos and a turned bag (item 1; Z1, Z2).** The founder took four photos
+(2026-10-23) with the tablet's camera, kept in `docs/product/bags/`: a maldaner can
+(`maldaner-elisabeth.jpg`: roaster 'maldaner', under it the descriptor 'KAFFEEHAUS ESPRESSO',
+name 'ELISABETH' in large gold capitals on blue, 'Brasilien' and a tasting line in small type), a
+second maldaner can (`maldaner-abdul.jpg`: 'maldaner', 'OMNI ROAST', 'ABDUL' in white on orange
+and red, 'Indonesien'), an aniko bag (`aniko-feel-the-sun.jpg`: the name 'FEEL THE SUN' large
+and top right, 'natural & fully washed', the tasting line, the logo 'aniko' with 'COFFEE ROASTERS'
+under it small at the bottom left, on a picture of triangles) and an aniko bag **turned by 90
+degrees** (`aniko-honey-dream-rotated.jpg`: 'aniko' and 'COFFEE ROASTERS' and 'Honey Dream' run
+up the label, the tasting lines too). The founder: 'on one the bag is rotated by 90 degrees;
+sometimes it's easier to hold it like that, so it would be good if that works too.' The expected
+reading, which the fixtures pin: **maldaner / Elisabeth, maldaner / Abdul, aniko / Feel The Sun,
+aniko / Honey Dream**. They are the probe's first input (Z1: they replace the 'the founder gives
+the photo' step, and the aniko 'Tropic Candy' bag of the first review stays a fifth case when its
+photo is given), and they add three rules to Z1 and Z2:
+
+- **A small line directly under the roaster is its descriptor too** (Z1): 'KAFFEEHAUS ESPRESSO'
+  and 'OMNI ROAST' sit right under 'maldaner' and are read as a line of the can, not a name; the
+  name is the tallest line that is not the roaster and not directly under it in a smaller size
+  (its height under 0.6 of the roaster's), which is 'ELISABETH' and 'ABDUL'. The words of the
+  detail test grow by the German ones the cans show (Haselnuss, Kakao, Brasilien, Indonesien are
+  not names: lines under a size limit and the country names of the catalogue are skipped), and
+  a line in the tasting-line style, words joined by full stops or dots ('Haselnuss. Kakao.
+  Nougat.', 'chocolate . vanilla . blueberry'), is dropped.
+- **A turned bag is read too** (Z2): the photo is read **upright first and, when that gives no
+  roaster from the catalogue and no name, turned by 90 and by 270 degrees** (the canvas that
+  prepares the photo does the turning, no new dependency); the pass with the most word-like text
+  at 60 percent confidence or more is kept, and the progress line says 'Turning the photo'. An
+  upside-down bag (180) is not tried: nobody holds it so. Tesseract's own orientation detection
+  is not used (it is not in the bundled data and costs a second download).
+- **The chips are for what is left** (Z2): the six chips show the lines read, so a field the rules
+  got wrong costs one tap.
+
 ## 4. Technical approach
 
 ### 4.1 What a Decaid skin is
@@ -2416,6 +2449,13 @@ Where an item here and one of 27-55 disagree, the item here wins (3.10 overrides
 103. **Months by finger (test).** In the date picker, a vertical drag of one grid height up shows
      the next month, down the previous one; a drag of 10 px on a day does not pick it, a tap does;
      the buttons still work; the year rolls over in December and January.
+
+104. **The founder's bag photos (test, probe).** `bagText` fed the recorded lines of the four
+     photos in `docs/product/bags/` gives maldaner / Elisabeth, maldaner / Abdul, aniko / Feel
+     The Sun, aniko / Honey Dream; 'KAFFEEHAUS ESPRESSO', 'OMNI ROAST' and the tasting lines are
+     neither roaster nor name; for the turned bag the upright reading gives no roaster of the
+     catalogue and the turned ones do, and the 90-degree pass is kept; the recorded lines come
+     from `scripts/ocr-probe.mjs`, not from a hand.
 
 ## 6. Constraints
 - **Budget:** one Claude Pro plan. This product may use all of it up to 90% of the weekly
