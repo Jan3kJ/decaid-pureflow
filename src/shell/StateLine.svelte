@@ -1,10 +1,13 @@
 <script lang="ts">
-  import type { HeatTarget } from './machine';
+  import { HEATER_OFF, type HeatTarget } from './machine';
   import type { Skin } from './skin.svelte';
 
   interface Props {
     skin: Skin;
-    /** the heater this page waits for: an idle machine under its target says 'Heating' (spec 3.8) */
+    /**
+     * the heater this page waits for: an idle machine says 'Heating' under its target, and the
+     * steam page 'Off' while the steam heater is off (spec 3.8, 3.12)
+     */
     heat?: HeatTarget;
   }
 
@@ -17,7 +20,7 @@
 </script>
 
 <!-- The machine's state in one line, on home, the hot water and the steam page (founder, 2026-10-13). -->
-<section class="state {status.tone}" data-testid="status" data-link={skin.link}>
+<section class="state {status.tone}" class:heater-off={status.title === HEATER_OFF} data-testid="status" data-link={skin.link}>
   <span class="dot"></span>
   <strong data-testid="status-title">{status.title}</strong>
   {#if machine}
@@ -72,7 +75,8 @@
   .busy .dot {
     background: var(--flow);
   }
-  .warn .dot {
+  .warn .dot,
+  .heater-off .dot {
     background: var(--warn);
   }
 
@@ -81,7 +85,8 @@
     font-weight: 600;
   }
 
-  .state.warn strong {
+  .state.warn strong,
+  .state.heater-off strong {
     color: var(--warn);
   }
 

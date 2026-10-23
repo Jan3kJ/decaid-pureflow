@@ -6,13 +6,15 @@ import {
   canSleep,
   canStop,
   gatewayAfter,
+  HEATER_OFF,
   heatingStatus,
   isAsleep,
-  isHeating,
+  heaterWord,
   linkOf,
   stateLabel,
   stateLine,
   statusOf,
+  type HeaterWord,
 } from './machine';
 import { SCREEN_KEY, followMachine, loadScreen, saveScreen } from './nav';
 
@@ -169,45 +171,73 @@ describe('heating (spec 3.8)', () => {
     groupTemp: 93,
   });
 
-  it('on home: heating until the group is 3 °C under its target', () => {
-    expect(isHeating(frame('idle', { groupTemperature: 89.9 }), 'group', null)).toBe(true);
-    expect(isHeating(frame('idle', { groupTemperature: 90 }), 'group', null)).toBe(false);
-    expect(isHeating(frame('idle', { groupTemperature: 92.6 }), 'group', null)).toBe(false);
-  });
+  const word = (f: MachineSnapshot, target: 'group' | 'steam', steam: number | null, before: HeaterWord | null = null) =>
+    heaterWord(f, target, steam === null ? null : settings(steam), before);
+  const status = (f: MachineSnapshot, w: HeaterWord | null) => heatingStatus(statusOf('machine', f, url), 'machine', w);
 
-  it('on the steam page: heating until the steam heater is 3 °C under the steam target of the machine', () => {
-    expect(isHeating(frame('idle', { steamTemperature: 146.9 }), 'steam', settings(150))).toBe(true);
-    expect(isHeating(frame('idle', { steamTemperature: 147 }), 'steam', settings(150))).toBe(false);
-    // the group's temperature does not count on the steam page, nor the steam's on home
-    expect(isHeating(frame('idle', { groupTemperature: 60, steamTemperature: 150 }), 'steam', settings(150))).toBe(false);
-    expect(isHeating(frame('idle', { groupTemperature: 93, steamTemperature: 60 }), 'group', settings(150))).toBe(false);
-  });
-
-  it('a steam heater that is off or not known is not heating', () => {
-    expect(isHeating(frame('idle', { steamTemperature: 40 }), 'steam', settings(0))).toBe(false);
-    expect(isHeating(frame('idle', { steamTemperature: 40 }), 'steam', null)).toBe(false);
-  });
-
-  it('only an idle machine is shown as heating', () => {
-    expect(isHeating(frame('espresso', { groupTemperature: 80 }), 'group', null)).toBe(false);
-    expect(isHeating(frame('sleeping', { groupTemperature: 30 }), 'group', null)).toBe(false);
-    expect(isHeating(frame('steam', { steamTemperature: 120 }), 'steam', settings(150))).toBe(false);
-    expect(isHeating(null, 'group', null)).toBe(false);
-  });
-
-  it('says Heating with the tone busy in place of Idle', () => {
+  it('home and hot water: Heating more than 3 °C under the group target, else Idle', () => {
+    expect(word(frame('idle', { groupTemperature: 89.9 }), 'group', null)).toBe('heating');
+    expect(word(frame('idle', { groupTemperature: 90 }), 'group', null)).toBe('heated');
+    expect(word(frame('idle', { groupTemperature: 92.6 }), 'group', null)).toBe('heated');
+    expect(word(frame('idle', { groupTemperature: 97 }), 'group', null)).toBe('heated');
     const cold = frame('idle', { groupTemperature: 70 });
-    expect(heatingStatus(statusOf('machine', cold, url), 'machine', cold, 'group', null)).toMatchObject({
-      title: 'Heating',
-      tone: 'busy',
-    });
-    const warm = frame('idle', { groupTemperature: 92 });
-    expect(heatingStatus(statusOf('machine', warm, url), 'machine', warm, 'group', null)).toMatchObject({
-      title: 'Idle',
-      tone: 'ok',
-    });
+    expect(status(cold, word(cold, 'group', null))).toMatchObject({ title: 'Heating', tone: 'busy' });
+    const warm = frame('idle', { groupTemperature: 90 });
+    expect(status(warm, word(warm, 'group', null))).toMatchObject({ title: 'Idle', tone: 'ok' });
+  });
+
+  it('the group: once Idle, Heating again only more than 4 °C under its target', () => {
+    expect(word(frame('idle', { groupTemperature: 89.5 }), 'group', null, 'heated')).toBe('heated');
+    expect(word(frame('idle', { groupTemperature: 89 }), 'group', null, 'heated')).toBe('heated');
+    expect(word(frame('idle', { groupTemperature: 88.9 }), 'group', null, 'heated')).toBe('heating');
+    // heating stays heating up to the border of 3 °C
+    expect(word(frame('idle', { groupTemperature: 89.5 }), 'group', null, 'heating')).toBe('heating');
+    expect(word(frame('idle', { groupTemperature: 90 }), 'group', null, 'heating')).toBe('heated');
+  });
+
+  it('steam: Heating more than 3 °C under targetSteamTemp, Idle from there, also above target + 3 °C', () => {
+    expect(word(frame('idle', { steamTemperature: 146.9 }), 'steam', 150)).toBe('heating');
+    expect(word(frame('idle', { steamTemperature: 147 }), 'steam', 150)).toBe('heated');
+    expect(word(frame('idle', { steamTemperature: 160 }), 'steam', 150)).toBe('heated');
+    const cold = frame('idle', { steamTemperature: 120 });
+    expect(status(cold, word(cold, 'steam', 150))).toMatchObject({ title: 'Heating', tone: 'busy' });
+    const hot = frame('idle', { steamTemperature: 158 });
+    expect(status(hot, word(hot, 'steam', 150))).toMatchObject({ title: 'Idle', tone: 'ok' });
+    // the group's temperature does not count on the steam page, nor the steam's on home
+    expect(word(frame('idle', { groupTemperature: 60, steamTemperature: 150 }), 'steam', 150)).toBe('heated');
+    expect(word(frame('idle', { groupTemperature: 93, steamTemperature: 60 }), 'group', 150)).toBe('heated');
+  });
+
+  it('steam: once Idle, Heating again only more than 4 °C under its target', () => {
+    expect(word(frame('idle', { steamTemperature: 146.5 }), 'steam', 150, 'heated')).toBe('heated');
+    expect(word(frame('idle', { steamTemperature: 146 }), 'steam', 150, 'heated')).toBe('heated');
+    expect(word(frame('idle', { steamTemperature: 145.9 }), 'steam', 150, 'heated')).toBe('heating');
+    expect(word(frame('idle', { steamTemperature: 146.5 }), 'steam', 150, 'heating')).toBe('heating');
+  });
+
+  it('steam: Off with the tone off when the steam target is 0, however cold the heater', () => {
+    const cold = frame('idle', { steamTemperature: 32 });
+    expect(word(cold, 'steam', 0)).toBe('off');
+    expect(word(cold, 'steam', 0, 'heated')).toBe('off');
+    expect(status(cold, 'off')).toMatchObject({ title: HEATER_OFF, tone: 'off' });
+    expect(HEATER_OFF).toBe('Off');
+    // a steam target that is not known yet leaves Idle
+    expect(word(cold, 'steam', null)).toBeNull();
+    expect(status(cold, null)).toMatchObject({ title: 'Idle', tone: 'ok' });
+  });
+
+  it('every other state keeps its own word', () => {
+    expect(word(frame('espresso', { groupTemperature: 80 }), 'group', null)).toBeNull();
+    expect(word(frame('sleeping', { groupTemperature: 30 }), 'group', null)).toBeNull();
+    expect(word(frame('steam', { steamTemperature: 120 }), 'steam', 150)).toBeNull();
+    expect(word(frame('hotWater', { steamTemperature: 20 }), 'steam', 0)).toBeNull();
+    expect(heaterWord(null, 'group', null, null)).toBeNull();
+    const pouring = frame('hotWater', { groupTemperature: 70 });
+    expect(status(pouring, word(pouring, 'group', null)).title).toBe('Hot water');
     // without a fresh frame the link's status stands
-    expect(heatingStatus(statusOf('no-machine', cold, url), 'no-machine', cold, 'group', null).title).toBe('No machine connected');
+    const cold = frame('idle', { groupTemperature: 70 });
+    expect(heatingStatus(statusOf('no-machine', cold, url), 'no-machine', 'heating').title).toBe('No machine connected');
+    expect(heatingStatus(statusOf('no-machine', cold, url), 'no-machine', 'off').title).toBe('No machine connected');
   });
 });
 

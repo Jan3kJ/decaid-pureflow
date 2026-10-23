@@ -15,7 +15,18 @@ import { Dimmer } from './dimmer';
 import { Heartbeat } from './heartbeat';
 import { gatewayBaseUrl } from './gateway';
 import { LoadWarning, type LoadAnswer } from './load-warning.svelte';
-import { canSleep, canStop, heatingStatus, isAsleep, stateLine, statusOf, type HeatTarget, type Status } from './machine';
+import {
+  canSleep,
+  canStop,
+  heaterWord,
+  heatingStatus,
+  isAsleep,
+  stateLine,
+  statusOf,
+  type HeaterWord,
+  type HeatTarget,
+  type Status,
+} from './machine';
 import { followMachine, loadScreen, saveScreen, type Screen } from './nav';
 import { doseToSet } from './profiles';
 import { Recall, type Recalled } from './recall.svelte';
@@ -70,10 +81,20 @@ export class Skin {
   /** who asked for the machine's sleep (`followSleep`) */
   private sleepMark: SleepMark = $state.raw(AWAKE);
 
+  /** the last `heaterWord` of each heater; plain, since only `statusFor` reads and writes it */
+  private readonly heaters: Record<HeatTarget, HeaterWord | null> = { group: null, steam: null };
+
   readonly status = $derived.by(() => statusOf(this.link, this.snapshot, this.baseUrl));
-  /** The status of a page that waits for a heater (spec 3.8): home the group, steam the steam heater. */
+  /**
+   * The status of a page that waits for a heater (spec 3.8, 3.12): home and hot water the group,
+   * steam the steam heater. It reads the frame's temperatures as they come.
+   */
   statusFor(target: HeatTarget | null): Status {
-    return target ? heatingStatus(this.status, this.link, this.snapshot, target, this.shotSettings) : this.status;
+    if (!target) return this.status;
+    const word = heaterWord(this.snapshot, target, this.shotSettings, this.heaters[target]);
+    // The last word of each heater, for the hysteresis; a machine that runs or a lost link keeps it.
+    if (word && this.link === 'machine') this.heaters[target] = word;
+    return heatingStatus(this.status, this.link, word);
   }
   readonly canStop = $derived(canStop(this.link, this.snapshot));
   readonly canSleep = $derived(canSleep(this.link, this.snapshot));

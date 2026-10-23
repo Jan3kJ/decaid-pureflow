@@ -115,32 +115,51 @@ export function statusOf(link: Link, snapshot: MachineSnapshot | null, gatewayUr
 
 /** °C under its target from which a heater counts as heated (founder, 2026-10-17) */
 export const HEATED_MARGIN = 3;
+/** °C further down that a heated heater must fall before it counts as heating again */
+export const HEATED_HYSTERESIS = 1;
 
-/** The heater a page's state line waits for: home the group's, the steam page the steam heater's. */
+/** The heater a page's state line waits for: home and hot water the group's, the steam page the steam heater's. */
 export type HeatTarget = 'group' | 'steam';
 
-/**
- * The DE1 says `idle` while it heats, so the skin derives it (spec 3.8): an idle machine whose
- * heater is more than `HEATED_MARGIN` under its target. The steam target is the machine's own
- * (`targetSteamTemp` of its settings); a heater that is off (0) or not known is not heating.
- */
-export function isHeating(snapshot: MachineSnapshot | null, target: HeatTarget, settings: ShotSettings | null): boolean {
-  if (!snapshot || snapshot.state.state !== 'idle') return false;
-  if (target === 'group') return snapshot.groupTemperature < snapshot.targetGroupTemperature - HEATED_MARGIN;
-  const steamTarget = settings?.targetSteamTemp ?? 0;
-  return steamTarget > 0 && snapshot.steamTemperature < steamTarget - HEATED_MARGIN;
-}
+/** What an idle machine's heater is: switched off (a steam target of 0), heating or heated. */
+export type HeaterWord = 'off' | 'heating' | 'heated';
 
-/** The status of a page whose state line waits for `target`: 'Heating' in place of 'Idle'. */
-export function heatingStatus(
-  status: Status,
-  link: Link,
+/**
+ * The DE1 says `idle` while it heats, so the skin derives it (spec 3.8, 3.12): an idle machine
+ * whose heater is more than `HEATED_MARGIN` under its target is heating; once heated it is heating
+ * again only more than `HEATED_MARGIN + HEATED_HYSTERESIS` under it, so a value at the border does
+ * not flip the word. A heater above its target is heated too. The group's target is the frame's
+ * `targetGroupTemperature`, the steam's the machine's own `targetSteamTemp`, 0 is off. `before`
+ * is the last word for this heater; null when the machine is not idle or the steam target is not
+ * known yet.
+ */
+export function heaterWord(
   snapshot: MachineSnapshot | null,
   target: HeatTarget,
   settings: ShotSettings | null,
-): Status {
-  if (link !== 'machine' || !isHeating(snapshot, target, settings)) return status;
-  return { ...status, title: 'Heating', tone: 'busy' };
+  before: HeaterWord | null,
+): HeaterWord | null {
+  if (!snapshot || snapshot.state.state !== 'idle') return null;
+  const goal = target === 'group' ? snapshot.targetGroupTemperature : settings?.targetSteamTemp;
+  if (goal === undefined) return null;
+  if (target === 'steam' && goal <= 0) return 'off';
+  const temperature = target === 'group' ? snapshot.groupTemperature : snapshot.steamTemperature;
+  const margin = before === 'heated' ? HEATED_MARGIN + HEATED_HYSTERESIS : HEATED_MARGIN;
+  return temperature < goal - margin ? 'heating' : 'heated';
+}
+
+/** The state line's word for a steam heater that is off */
+export const HEATER_OFF = 'Off';
+
+/**
+ * The status of a page whose state line waits for a heater, with its `heaterWord`: 'Heating'
+ * (tone `busy`) or 'Off' (tone `off`) in place of 'Idle'; a heated heater leaves 'Idle'.
+ */
+export function heatingStatus(status: Status, link: Link, word: HeaterWord | null): Status {
+  if (link !== 'machine') return status;
+  if (word === 'heating') return { ...status, title: 'Heating', tone: 'busy' };
+  if (word === 'off') return { ...status, title: HEATER_OFF, tone: 'off' };
+  return status;
 }
 
 /**

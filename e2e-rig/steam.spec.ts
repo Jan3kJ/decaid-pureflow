@@ -291,6 +291,9 @@ test('steam: with the heater off the page says so, and Steam on switches it on, 
     await toPage(page, 'steam');
     await expect(page.getByTestId('steam-heater-off')).toContainText('The steam heater is off');
     await expect(page.getByTestId('steam-favourite')).toHaveCount(0);
+    // The state line says Off, not Idle, while the steam heater is off (spec 3.12).
+    const title = page.getByTestId('screen-steam').getByTestId('status-title');
+    await expect(title).toHaveText('Off');
     await page.screenshot({ path: 'e2e-rig/.results/steam-heater-off-rig.png' });
 
     await page.getByTestId('steam-heater-on').click();
@@ -298,6 +301,7 @@ test('steam: with the heater off the page says so, and Steam on switches it on, 
     await expect.poll(async () => (await machineSettings()).targetSteamTemp, { timeout: 10_000 }).toBe(temperatureBefore);
     await expect(page.getByTestId('steam-heater-off')).toHaveCount(0);
     await expect(page.getByTestId('steam-favourite')).toHaveCount(3);
+    await expect(title).toHaveText(IDLE);
   } finally {
     await api('PUT', '/api/v1/workflow', { steamSettings: { targetTemperature: temperatureBefore } });
     await page.waitForTimeout(2000);

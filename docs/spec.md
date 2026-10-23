@@ -1435,6 +1435,15 @@ stay the machine's own state, as now. The decision uses the **filtered** tempera
 with a hysteresis of 1 °C (Heating again only below target - 4 °C), so a value that jitters at
 the border does not flip the word.
 
+*Built (Y9, 2026-10-23):* `heaterWord` in `src/shell/machine.ts` gives an idle machine's heater
+as `off`, `heating` or `heated` (`HEATED_MARGIN` 3 °C, `HEATED_HYSTERESIS` 1 °C, the last word as
+input) and `heatingStatus` turns it into the line's word; `Skin.statusFor` keeps the last word of
+each heater, the group's shared by home and hot water. 'Off' is in the warning colour (title and
+dot, `heater-off` in `StateLine.svelte`). A steam target that is not known yet (no settings
+frame) leaves 'Idle'. Y10's filter was not committed when Y9 was built (its run timed out), so the
+words read the frame's temperatures as they come; the hysteresis keeps a jittering value from
+flipping them.
+
 **Temperatures: filtered and rounded (item 10; Y10).** The group and steam values of the state
 line are noisy (founder, 2026-10-22): they get a filter, steam shows whole degrees and the group
 one decimal, 'if that is not the case already'. **It is the case already**: `stateLine` in
