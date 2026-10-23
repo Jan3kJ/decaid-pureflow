@@ -57,9 +57,10 @@
     query = '';
   }
 
-  async function saveBean(form: BeanFields) {
-    if (bean) await catalogue.saveBean(bean, form);
-    else chosen = (await catalogue.addBean(form)) ?? null;
+  async function saveBean(form: BeanFields, photo: string | null | undefined): Promise<boolean> {
+    if (bean) return catalogue.saveBean(bean, form, photo);
+    chosen = (await catalogue.addBean(form, photo ?? null)) ?? null;
+    return chosen !== null;
   }
 
   async function saveGrinder(form: GrinderFields) {
@@ -191,6 +192,7 @@
           {batch}
           roasters={roasters(catalogue.beans)}
           busy={catalogue.busy}
+          loadphoto={(id: string) => catalogue.photoOf(id)}
           onsave={saveBean}
           onarchive={() => bean && archive(bean)}
           onrestore={() => bean && void catalogue.archiveBean(bean, false)}

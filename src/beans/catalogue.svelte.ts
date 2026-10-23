@@ -15,6 +15,7 @@ import {
   type GrinderForm,
   type NextShotPick,
 } from './catalogue';
+import { isPhoto, orphanPhotoKeys, photoKey } from './photo';
 
 /** What the catalogue reads and writes of the skin. */
 export interface CatalogueHost {
@@ -45,12 +46,16 @@ export class Catalogue {
     return bean ? currentBatch(this.batches, bean.id) : null;
   }
 
-  /** Reads beans, bags and grinders, archived ones included: three requests. */
+  /**
+   * Reads beans, bags and grinders, archived ones included: three requests. Then the photos of
+   * beans that are gone (deleted in another app) are deleted from the KV store.
+   */
   async load(): Promise<void> {
     this.busy = true;
     try {
       await this.read();
       this.error = null;
+      await this.deleteOrphanPhotos();
     } catch (error) {
       this.error = `The beans and grinders were not read: ${errorMessage(error)}`;
     } finally {
@@ -71,6 +76,44 @@ export class Catalogue {
     this.loaded = true;
   }
 
+  private async deleteOrphanPhotos(): Promise<void> {
+    const { client } = this.host;
+    try {
+      const keys = await client.kvKeys();
+      const orphans = orphanPhotoKeys(
+        Array.isArray(keys) ? keys : [],
+        this.beans.map((bean) => bean.id),
+      );
+      await Promise.all(orphans.map((key) => client.kvDelete(key)));
+    } catch {
+      // tried again at the next read
+    }
+  }
+
+  /** A bean's photo of its bag, null for none. */
+  async photoOf(beanId: string): Promise<string | null> {
+    try {
+      const value = await this.host.client.kvGet(photoKey(beanId));
+      return isPhoto(value) ? value : null;
+    } catch (error) {
+      this.error = `The photo was not read: ${errorMessage(error)}`;
+      return null;
+    }
+  }
+
+  /** Stores a bean's photo, or deletes it for null. */
+  private async storePhoto(beanId: string, photo: string | null): Promise<boolean> {
+    const { client } = this.host;
+    try {
+      if (photo) await client.kvSet(photoKey(beanId), photo);
+      else await client.kvDelete(photoKey(beanId));
+      return true;
+    } catch (error) {
+      this.error = `The photo was not ${photo ? 'stored' : 'deleted'}: ${errorMessage(error)}`;
+      return false;
+    }
+  }
+
   /** One write, then the catalogue read back; null and the error when it failed. */
   private async write<T>(what: string, run: () => Promise<T>): Promise<T | null> {
     this.busy = true;
@@ -87,14 +130,18 @@ export class Catalogue {
     }
   }
 
-  /** Adds a bean with its first bag; gives the bean's id. */
-  async addBean(form: BeanForm): Promise<string | null> {
+  /** Adds a bean with its first bag, and its photo; gives the bean's id. */
+  async addBean(form: BeanForm, photo: string | null = null): Promise<string | null> {
     const added = await this.write('The bean was not added', () => addBean(this.host.client, form));
+    if (added && photo) await this.storePhoto(added.bean.id, photo);
     return added?.bean.id ?? null;
   }
 
-  async saveBean(bean: CatalogueBean, form: BeanForm): Promise<boolean> {
-    return (await this.write('The bean was not saved', () => saveBean(this.host.client, bean, this.batchOf(bean), form))) !== null;
+  /** Saves an edit; `photo` is the new photo, null to delete it, undefined to keep it. */
+  async saveBean(bean: CatalogueBean, form: BeanForm, photo?: string | null): Promise<boolean> {
+    const saved =
+      (await this.write('The bean was not saved', () => saveBean(this.host.client, bean, this.batchOf(bean), form))) !== null;
+    return saved && (photo === undefined || (await this.storePhoto(bean.id, photo)));
   }
 
   /** Archives a bean, or restores it with `archived` false. */

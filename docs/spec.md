@@ -877,6 +877,22 @@ data is bundled in the ZIP and never fetched at run time; its result only pre-fi
 fields, which the user corrects. If the camera is blocked, the item stops after step 1 and says
 so. U13 waits on the founder's check (`conditional_on`) and on U9.
 
+*The check passed and U13 is built (2026-10-23).* On the tablet both ways work: the file input
+with `capture` asks for permission each time, the live camera (`getUserMedia`) does not
+(docs/install.md, 'The camera check'). So the bean form (add and edit) has a **Photo** button
+that opens the live camera in the number pad's dialog, the rear camera preferred, with
+**Capture**; where `getUserMedia` is refused or missing, **Take a picture** (the file input)
+stands in. Decaid's bean has no image field (`rest_v1.yml`): the photo is a JPEG of 1024 px on
+its long side in the skin's KV namespace, key `bean-photo-<bean id>`, shown in the form,
+replaced with **New photo**, deleted with **Remove photo**, written when the bean is saved. The
+skin only archives beans; a bean deleted in another app loses its photo at the catalogue's next
+read (research.md 29.14). After a capture, Tesseract.js 7 (LSTM only, sparse text, English)
+reads the bag with a progress line and **Cancel**; its worker, three cores and the English data
+are in the ZIP's `ocr/` and nothing is fetched elsewhere. The roaster is the line with a
+roaster's word (Roasters, Rösterei, Coffee Co …), else the topmost line; the name is the tallest
+other line; weights, dates and notes are left out. Only empty fields are filled; a failure or a
+cancel leaves them as they were. The ZIP grows from 152 517 to 7 782 573 bytes.
+
 **Settings: the rest of Streamline (item 15, low priority; U11, U12).** The settings page gets
 Streamline's skin switch, and then the rest: display options, the Bengle pages, the manual,
 feedback, and the firmware upload from a file; planned, after everything else (founder,
@@ -2491,8 +2507,8 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
     bundled de1app A-Flow profiles, since the skin's defaults stand for them (built in U7).
   - Feedback (item 15): Send Feedback goes to Decent through Decaid (`POST /api/v1/feedback`),
     an outside service spec 6 asks the founder to approve; item 15 is taken as that approval.
-  - The camera (item 20): only the founder can check it, with the hand-over's test page on the
-    tablet; until then U13 is not started.
+  - The camera (item 20): the founder's check passed (both ways work, the live camera without
+    asking); U13 is built (3.9). (answered)
 - The review of 2026-10-18 (3.9), choices the team will make unless the founder says otherwise
   (owner): the scale retry as Streamline's (every 5 s, three times, not while the machine
   sleeps); the hot water sliders write when let go, the value still opens the number pad; the

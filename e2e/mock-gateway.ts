@@ -1164,6 +1164,11 @@ export class MockGateway {
       this.streamlineResync();
       return json(null);
     }
+    const [, kvNamespace] = /^\/api\/v1\/store\/([^/]+)$/.exec(decodeURIComponent(path)) ?? [];
+    if (kvNamespace && method === 'GET') {
+      const prefix = `${kvNamespace}/`;
+      return json(Object.keys(this.store).flatMap((key) => (key.startsWith(prefix) ? [key.slice(prefix.length)] : [])));
+    }
     const [, kvKey] = /^\/api\/v1\/store\/(.+\/.+)$/.exec(decodeURIComponent(path)) ?? [];
     if (kvKey && method === 'GET') return json(this.store[kvKey] ?? null);
     if (kvKey && method === 'POST') {

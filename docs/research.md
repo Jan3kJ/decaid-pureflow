@@ -3590,6 +3590,35 @@ The rig served Streamline 0.2.17 (unchanged since 29.1).
   shot with each, the filter by one shows one entry; shots, bags, beans and the context put
   back and checked). Full rig suite 46 of 46.
 
+### 29.14 A bean's photo: where it is stored (U13, 2026-10-23)
+
+The rig served Streamline 0.2.18.
+
+| Claim | Status |
+|---|---|
+| Decaid's `Bean` has no field for an image: `roaster`, `name`, `species`, `decaf`, `decafProcess`, `country`, `region`, `producer`, `variety`, `altitude`, `processing`, `notes`, and the free `extras` (`rest_v1.yml` of 0.8.8, 29.3). No endpoint of `rest_v1.yml` takes a bean's image | read |
+| A 400 kB JSON string came back unchanged from `POST` then `GET /api/v1/store/pureflow/{key}` (24 ms), and `DELETE` removed it | seen running |
+| A photo stored by the beans screen is in the namespace's key list, and is gone after the bean is deleted in Decaid and the screen is opened again (`e2e-rig/bean-photo.spec.ts`) | seen running |
+
+**The choice:** the photo is a JPEG data URL (1024 px on its long side, quality 0.85; about
+100 to 250 kB for a photo of a bag) under `bean-photo-<bean id>` in the skin's KV namespace
+(`pureflow`), not in the bean's `extras`: the extras come with every `GET /beans`, which the
+pick, the history's filter and the beans screen read, and DYE2 writes there too. The key has
+no `/`, so it needs no encoded slash in the path. The skin does not delete beans (it archives
+them); a bean deleted elsewhere (DYE2, a test) leaves its key, so the catalogue's read on the
+beans screen lists the namespace's keys and deletes the `bean-photo-` keys whose bean is not in
+Decaid's list, archived ones included (`src/beans/photo.ts`, `catalogue.svelte.ts`). The KV
+settings backup (one key, `settings-backup`) is not touched.
+
+**The reader:** Tesseract.js 7.0.0 (Apache-2.0) with tesseract.js-core 7.0.0 (Apache-2.0) and
+`@tesseract.js-data/eng` 1.0.0 (MIT; the `4.0.0_best_int` data, 2.9 MB gzipped). Only the LSTM
+cores are bundled (the worker picks relaxed SIMD, SIMD or plain by the device), each with its
+WebAssembly inlined (`.wasm.js`); `vite.config.ts` serves them from `ocr/` in development and
+copies them there in the build with their licences. Page segmentation is 'sparse text': with
+the default one the 84 px title of the test bag was not read at all. Tesseract.js 7 reports a
+failed language load only to its `errorHandler` and its worker promise never settles, so each
+step is raced against that handler (`src/beans/ocr.ts`).
+
 ## 30. Skin switch and display options (U11, 2026-10-21)
 
 Ported from Streamline **0.2.17**, the version the rig served at the start

@@ -2,9 +2,14 @@
   // A bean's form on the beans screen (research.md 29.6): name and roaster (required), the
   // current bag's roast date and notes. A new bean gets its first bag with it; an edit sends
   // only what changed. Archive, restore and a new bag are the screen's (it asks first).
+  // A photo of the bag (spec 3.9 item 20) is taken with the live camera; reading it pre-fills
+  // an empty name and roaster, which the user corrects. It is stored when the bean is saved.
+  import { onDestroy, onMount } from 'svelte';
   import type { BeanBatch, CatalogueBean } from '../api';
   import DatePicker from '../shell/DatePicker.svelte';
+  import Camera from './Camera.svelte';
   import { beanForm, beanTitle, dateOf, validBean, type BeanForm } from './catalogue';
+  import { readBag, statusText, type OcrProgress } from './ocr';
 
   interface Props {
     /** null: a new bean */
@@ -13,29 +18,89 @@
     /** the catalogue's roasters, suggested in the roaster field */
     roasters: readonly string[];
     busy: boolean;
-    onsave: (form: BeanForm) => void;
+    /** the bean's stored photo, null for none */
+    loadphoto: (beanId: string) => Promise<string | null>;
+    /** `photo`: the new photo, null to delete it, undefined when it did not change */
+    onsave: (form: BeanForm, photo: string | null | undefined) => Promise<boolean>;
     onarchive: () => void;
     onrestore: () => void;
     onnewbag: () => void;
   }
 
-  let { bean, batch, roasters, busy, onsave, onarchive, onrestore, onnewbag }: Props = $props();
+  let { bean, batch, roasters, busy, loadphoto, onsave, onarchive, onrestore, onnewbag }: Props = $props();
 
   // The form starts from the bean it was made for: the screen makes a new one for another bean or bag.
   const initial = () => beanForm(bean, batch);
   let form: BeanForm = $state(initial());
-  const changed = $derived(JSON.stringify(form) !== JSON.stringify(beanForm(bean, batch)));
+  /** the photo as stored; the form's photo differs after a new one or a removal */
+  let storedPhoto: string | null = $state(null);
+  let photo: string | null = $state(null);
+  const photoChanged = $derived(photo !== storedPhoto);
+  const changed = $derived(photoChanged || JSON.stringify(form) !== JSON.stringify(beanForm(bean, batch)));
   const valid = $derived(validBean(form));
   let picking = $state(false);
+  let shooting = $state(false);
+  /** the reading of the photo, while it runs */
+  let reading: OcrProgress | null = $state(null);
+  let readNote: string | null = $state(null);
+  let stopReading: AbortController | null = null;
+
+  onMount(() => {
+    if (!bean) return;
+    void loadphoto(bean.id).then((stored) => {
+      // a photo taken before the stored one arrived stays the form's
+      if (photo === storedPhoto) photo = stored;
+      storedPhoto = stored;
+    });
+  });
+
+  onDestroy(() => stopReading?.abort());
+
+  function captured(next: string) {
+    shooting = false;
+    photo = next;
+    if (!form.name.trim() || !form.roaster.trim()) void read(next);
+  }
+
+  async function read(image: string) {
+    stopReading?.abort();
+    const controller = new AbortController();
+    stopReading = controller;
+    readNote = null;
+    reading = { status: 'loading tesseract core', progress: 0 };
+    try {
+      const found = await readBag(image, (progress) => !controller.signal.aborted && (reading = progress), controller.signal);
+      // only empty fields: what the user typed meanwhile stays
+      if (!form.name.trim() && found.name) form.name = found.name;
+      if (!form.roaster.trim() && found.roaster) form.roaster = found.roaster;
+      readNote = found.name || found.roaster ? null : 'No name or roaster was read from the photo.';
+    } catch (error) {
+      if (!controller.signal.aborted)
+        readNote = `The photo was not read${error instanceof Error && error.message ? `: ${error.message}` : ''}.`;
+    } finally {
+      if (stopReading === controller) {
+        stopReading = null;
+        reading = null;
+      }
+    }
+  }
+
+  function cancelReading() {
+    stopReading?.abort();
+    stopReading = null;
+    reading = null;
+  }
 
   function pickRoastDate(value: string) {
     form.roastDate = value;
     picking = false;
   }
 
-  function submit(event: SubmitEvent) {
+  async function submit(event: SubmitEvent) {
     event.preventDefault();
-    if (valid && (changed || !bean)) onsave($state.snapshot(form));
+    if (!valid || (!changed && bean)) return;
+    const saving = photo;
+    if ((await onsave($state.snapshot(form), photoChanged ? saving : undefined)) && storedPhoto !== saving) storedPhoto = saving;
   }
 </script>
 
@@ -44,6 +109,31 @@
   {#if bean?.archived}
     <p class="archived" data-testid="bean-archived">Archived: not offered for the next shot; its shots stay in the history.</p>
   {/if}
+  <div class="photo">
+    {#if photo}
+      <img src={photo} alt="the bag" data-testid="bean-photo" />
+    {/if}
+    <div class="photo-tools">
+      <div class="photo-buttons">
+        <button type="button" data-testid="bean-photo-take" disabled={busy} onclick={() => (shooting = true)}>
+          {photo ? 'New photo' : 'Photo'}
+        </button>
+        {#if photo}
+          <button type="button" data-testid="bean-photo-remove" disabled={busy} onclick={() => (photo = null)}>Remove photo</button>
+        {/if}
+      </div>
+      {#if reading}
+        <div class="reading" role="status" data-testid="bean-ocr">
+          <span data-testid="bean-ocr-status">{statusText(reading.status)} {Math.round(reading.progress * 100)}%</span>
+          <button type="button" class="small" data-testid="bean-ocr-cancel" onclick={cancelReading}>Cancel</button>
+        </div>
+      {:else if readNote}
+        <p class="hint" data-testid="bean-ocr-note">{readNote}</p>
+      {:else if !photo}
+        <p class="hint">A photo of the bag fills an empty name and roaster from its print.</p>
+      {/if}
+    </div>
+  </div>
   <label class:missing={!form.name.trim()}>
     <span>name</span>
     <input bind:value={form.name} autocomplete="off" spellcheck="false" enterkeyhint="next" data-testid="bean-name" />
@@ -96,6 +186,10 @@
     </p>
   {/if}
 </form>
+
+{#if shooting}
+  <Camera oncapture={captured} oncancel={() => (shooting = false)} />
+{/if}
 
 {#if picking}
   <DatePicker label="roast date" value={form.roastDate} onpick={pickRoastDate} oncancel={() => (picking = false)} />
@@ -188,6 +282,45 @@
     background: var(--fg);
     border-color: var(--fg);
     font-weight: 600;
+  }
+
+  .photo {
+    display: flex;
+    gap: 0.8rem;
+    align-items: center;
+  }
+
+  .photo img {
+    height: 6.5rem;
+    max-width: 9rem;
+    object-fit: cover;
+    border: 1px solid var(--line);
+    border-radius: 0.9rem;
+  }
+
+  .photo-tools {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    min-width: 0;
+  }
+
+  .photo-buttons,
+  .reading {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+  }
+
+  .reading {
+    color: var(--dim);
+    font-size: var(--text-label);
+  }
+
+  .small {
+    min-height: 2.6rem;
+    padding: 0 0.9rem;
+    font-size: var(--text-label);
   }
 
   .hint,
