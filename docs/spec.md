@@ -1698,7 +1698,7 @@ After the hand-over of 0.5.0 the founder looked at the three screens and the bea
 tablet (2026-10-23; screenshots: the steam page with the flush ring (screenshot in the team repository),
 home, marked up (screenshot in the team repository), [the bean form after a
 photo](product/review-10-23-bean-photo.webp)). Planned only, nothing is built: 'do not implement
-it now' stands. Roadmap track Z (Z1-Z9) and a hand-over H5. The founder's words, in order:
+it now' stands. Roadmap track Z (Z1-Z10) and a hand-over H5. The founder's words, in order:
 
 1. **The bean photo works, the reading does not** (item 1; Z1, Z2). The form got 'name: 2 ame,
    roaster: COFFeg ROASTERS' from a bag whose roaster is **aniko** and whose bean is **tropical
@@ -1921,6 +1921,21 @@ that name them (49, W2's). One covering rule serves all screens: a screen marks 
 (`data-main-frame`, a wrapper component or a prop) and `App.svelte` draws `Water` over it, so no
 screen has its own ring code; where a screen has no clear main frame (a full-screen dialog)
 the ring covers the whole screen under the header.
+
+**The turn-on chip of a collapsed step (item 10; Z10).** In the A-Flow editor a step dragged to
+0 s collapses (the phase is off, `curve.off`, and has no width), and a dashed '+ name' chip
+turns it on again with 5 s (`GraphChips.svelte`). The screenshot (founder, 2026-10-23): with
+pressurize collapsed, its '+ pressurize' chip sits at the border where infuse ends, exactly where
+infuse's 'move on by weight' chip (infuse to) is drawn, and the two overlap. Both are placed at
+the border's x and at `box.gapMiddle`. Default: the turn-on chips get a **lane of their own**, so
+they never share a place with a weight chip: the **phase-name row under the graph's axis**,
+where the names ('fill', 'infuse') are printed. A collapsed step has no name there (it has no
+width), so its dashed '+ name' chip takes the place at the border's x, pinned inside the plot's
+width; two steps collapsed at one place sit side by side as now, and a chip that would run over a
+neighbour's name moves to the next free spot along the row. The 'infuse to' and 'stop at' chips
+stay in the gap between the bands; the collapse itself, the 0 s rule and the 5 s turn-on are
+unchanged. The check is geometric: no two chips on the editor's graph overlap for any
+combination of collapsed steps, at the tablet's width and at 600 px.
 
 ## 4. Technical approach
 
@@ -2371,6 +2386,11 @@ Where an item here and one of 27-55 disagree, the item here wins (3.10 overrides
      shot starts from its own readings; a recalled entry shows its own weight and dismissing it
      brings back 36.4.
 
+101. **Turn-on chip lane (test).** With pressurize, with fill, and with both collapsed, and with
+     infuse's 'infuse to' chip shown, no two chips of the editor's graph overlap (their boxes are
+     disjoint) at 1280 and at 600 px; the '+ pressurize' chip is in the phase-name row and a tap
+     on it turns the step on with 5 s.
+
 ## 6. Constraints
 - **Budget:** one Claude Pro plan. This product may use all of it up to 90% of the weekly
   limit; the team plans by capacity.
@@ -2479,7 +2499,8 @@ The weeks are a capacity guess on one Pro plan.
 | 3 | Z7 | review 2026-10-23: the tank in ml by Streamline's mm table, interpolated, setting 'Tank unit' (3.14 item 7) | |
 | 3 | Z8 | review 2026-10-23: one large hot water and flush ring on every screen, over its main frame, the small ring removed (3.14 item 8) | Z3 |
 | 3 | Z9 | review 2026-10-23: the finished shot's weight settles for 15 s after the shot and is then fixed; it also stops on hot water, flush or steam (3.14 item 9) | |
-| 3 | H5 | review 2026-10-23: hand-over ZIP for 3.14 and its checks in install.md; version 0.6.0 (minor bump) | Z1-Z9 |
+| 3 | Z10 | review 2026-10-23: the editor's turn-on chip of a collapsed step in its own lane under the axis, no overlap with the weight chips (3.14 item 10) | |
+| 3 | H5 | review 2026-10-23: hand-over ZIP for 3.14 and its checks in install.md; version 0.6.0 (minor bump) | Z1-Z10 |
 | 4 (Nov 2-8) | P1 | publish (3.13): `LICENSE`, `NOTICE`, one licence statement everywhere, D-Flow's and DSx2's credit, Damian's approval in writing (A-Flow's old repository needs no licence); the founder asks Damian | H4 |
 | 4 | P2 | publish: the two repositories: try the team's tools across them first, cut the product repository (history with the noreply address, no records), turn this one into the team repository, scrub paths in `spec.md` and `research.md`, `scripts/publish-check.mjs`, `camera.html` and the probes; pushing and renaming are the founder's | P1 |
 | 4 | P3 | publish: CI and release workflows, `CONTRIBUTING.md`, `CHANGELOG.md`, issue templates, `SECURITY.md`, README as a front page, the name check, `npm audit` and the dependency licences | P2 |
