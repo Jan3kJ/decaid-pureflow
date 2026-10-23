@@ -1704,8 +1704,8 @@ it now' stands. Roadmap track Z (Z1-Z9) and a hand-over H5. The founder's words,
    candy**; 'how to improve that?'
 2. **Home: cleaning up** (items 2-4; Z3, Z4). The empty top left corner gets the menu button, on
    home, hot water and steam alike; the line of the last shot's or the current step's information
-   goes, the current step is said in the header during a shot; the back tab of the hot water and
-   steam pages goes.
+   goes, the current step is said in the header during a shot; the back tab goes
+   from **every** screen (founder, later the same day): the way back is always a swipe.
 3. **One type size per kind of text** (item 5; Z5): 'font size should be aligned again, for example
    the profile and bean names on the home page'.
 4. **The graph's unit line** (item 6; Z6): a dot between every two labels, on every graph.
@@ -1778,13 +1778,26 @@ running step.
   place: the founder's 'do the same on hot water and steam page'. It opens the same menu (settings,
   history, beans, sleep, the others). The way home from those two pages stays the swipe and the
   dots, as the founder's earlier 'swipe is the better navigation' (3.11) says; the history's edge
-  swipe and handle stay. The editors, the settings, the beans screen, the picker and the history
-  keep their **back arrow**, in the same corner, since they are not part of the swipe row.
-- **No back tab (Z3).** On the three pages of the swipe row **the left column and its panel
-  go**: the content uses the whole width, the corner button floats over the page's background and
-  the state line begins right of it, at the width the button takes, so it **sits at the same
-  place on all three pages** (the founder's aim of 3.11 keeps). The screens with a back arrow keep
-  the column as now.
+  swipe and handle stay. The editors, the settings, the beans screen and the picker have **no
+  back arrow either** (next item); their corner stays empty.
+- **No back tab, anywhere (Z3).** **The left column and its panel go from every screen**
+  (founder, 2026-10-23: 'for the other pages remove the back tab too to keep it consistent'): the
+  content uses the whole width; on the three pages the corner button floats over the page's
+  background and the state line begins right of it, at the width the button takes, so it sits at
+  the same place on all three (the aim of 3.11 keeps). **The way back is one gesture: a swipe from
+  left to right** (founder: 'navigating back is always a swipe left to right, except on hot water
+  page'): from the steam page to home and from home to hot water, as now, and **from the editors,
+  the settings (a category's page to the categories, then to home), the beans screen and the
+  picker to where they were opened from**, which the editor already does (`App.svelte`: 'a swipe to
+  the right leaves for home'). The one exception is the hot water page, the leftmost: **home lies
+  to its right, so its way back is a swipe from right to left**, and the dots show it. The
+  history overlay opens by the left-edge swipe to the right (3.8), so it **closes** by the reverse,
+  a swipe to the left, or its handle, as now. Two things to settle in the build: a swipe must not
+  start on a control that drags (sliders, the step editor's chips, the lists' row swipes of
+  `row-swipe.ts`, the graph's scrub), which keep their own gestures; and an editor with unsaved
+  edits asks as it does today before it leaves (the founder's 2026-10-14 rule). If a screen shows
+  that a swipe is not found by users, a small chevron at the page's left edge is the fallback, not
+  a column.
 - **The right column rises (Z3).** With the menu button gone from its right end, the header's
   right end is free on home: the right column (profile button, bean button, then the values)
   starts at the **top of the page**, beside the header, and the header spans only the width left of
@@ -1887,22 +1900,25 @@ when **a new shot starts** (a new `Shot`) or **a history entry is recalled** (`r
 `homeShot`, its own weight, as now). While the figure is fixed the scale's live weight stays in
 the state line, which is the scale's.
 
-**The ring's frame (item 8; Z8).** The screenshot shows the flush ring (small, 3.4 rem, with
+**The ring's frame (item 8; Z8).** Corrected by the founder, 2026-10-23: 'there is no graph's
+frame on the hot water page; it should be in the main frame (the biggest one)'. So the rule is
+**the ring takes the page's biggest frame**, whatever it holds: the steam page's graph frame, the
+hot water page's main panel (its values and the cup), home's graph frame as now. The first
+reading follows, with that change. The screenshot shows the flush ring (small, 3.4 rem, with
 'Flush' under it) at the bottom left of the steam page, **half over the edge of the left column and
 cut off** at the window's edge, in the column that item 2 removes. 'The flush ring is shown in the
 wrong frame. It should be like on the home page.' On home the ring is **large and fills the
 frame of the graph** (spec 3.6: it replaces the graph while hot water or flush runs; the stop
 button is inside it with the kind, the time and the values). Default: **the same on the steam and
-hot water pages**: while hot water or flush runs, **the `Water` view takes the frame of the
-page's graph**, as on home, with its stop button in the ring, and the page's right column stays
+hot water pages**: while hot water or flush runs, **the `Water` view takes the page's biggest
+frame** (the graph's on steam, the main panel's on hot water), as on home, with its stop button in the ring, and the page's right column stays
 (the steam page's stop button, tare and so on keep working: nothing steams while it runs, so its
 graph was empty anyway). The page's graph and its curves come back when the run ends. The hot
 water page already shows the large ring for hot water and takes it for a flush. **The small
 ring** (`SmallRing.svelte`, W2) stays only for the screens that have **no such frame**: the
-editors, the settings, the beans screen, the picker and the history overlay, where it keeps its
-place at the bottom of their left column (those keep the back arrow's column, item 2). Where the
-founder meant the other reading, 'the small ring, in its own corner of the page', say so: the
-ring then sits in the left bottom corner under the corner menu button with no column behind it.
+editors, the settings, the beans screen, the picker and the history overlay; with no left column
+any more (item 2) it sits **in the bottom left corner of the screen, on its own, with no column
+behind it**, 3.4 rem across as now, and covers no control.
 
 ## 4. Technical approach
 
@@ -2324,8 +2340,10 @@ Where an item here and one of 27-55 disagree, the item here wins (3.10 overrides
     field; the photo is read twice, normal and inverted, and the better lines are kept.
 93. **Corner menu (test).** On home, hot water and steam the menu button is at the same position
     (top left, 56 px square) and opens the same menu; no left column or back arrow is on those three
-    pages; the state line starts at the same x on all three; the editors, settings, beans, picker
-    and history still show a back arrow in that corner.
+    pages; the state line starts at the same x on all three; the editors, settings, beans and picker show no left column or back arrow
+    either; a swipe from left to right leaves each of them for where it was opened from, and on the
+    hot water page a swipe from right to left goes home; a swipe that starts on a slider or a row
+    swipe does not leave.
 94. **No strip, the step in the header (test).** No element of the strip is rendered on home; the
     graph's height grows by its height; during a shot the state line reads 'Espresso · <step's
     name>' and follows the step; a finished shot's right column reads 'time, finished' with its
@@ -2340,9 +2358,8 @@ Where an item here and one of 27-55 disagree, the item here wins (3.10 overrides
     1130 ml for 41.8 mm after the interpolation rounded to 10, 2058 over 69 mm; the state line says
     ml by default and mm when the setting says so; the warning compares millimetres.
 98. **Ring frame (test).** While a flush runs, the steam page and the hot water page show the large
-    ring in the graph's frame with the stop button in it, the right column stays, and no small ring
-    is drawn; the editors, settings, beans, picker and history show the small ring at the bottom of
-    their left column.
+    ring in the page's biggest frame with the stop button in it, the right column stays, and no small ring
+    is drawn; the editors, settings, beans, picker and history show the small ring in the bottom left corner of the screen.
 99. **The review on the tablet (founder).** The founder looks at home, steam and hot water in the
     next hand-over (H5) and at the bean photo with two or three bags, and marks what is wrong.
 100. **Fixed weight (test).** `settleWeight` fed a shot that ended at t, the readings 18.0 at
@@ -2452,7 +2469,7 @@ The weeks are a capacity guess on one Pro plan.
 | 3 | H4 | review 2026-10-21 and 2026-10-22: hand-over ZIP 0.5.0 (minor bump), carrying 3.11 and 3.12 and their checks in install.md | X1-X4, Y1-Y6, Y8-Y11, H3 |
 | 3 | Z1 | review 2026-10-23: the bean photo's reading: `scripts/ocr-probe.mjs`, recorded lines as fixtures, a known roaster of the catalogue wins, a descriptor line is not the roaster, a stricter name (3.14 item 1) | U13 |
 | 3 | Z2 | review 2026-10-23: the photo prepared (grey, contrast, scale) and read normal and inverted, the lines as tap-to-fill chips (3.14 item 1) | Z1 |
-| 3 | Z3 | review 2026-10-23: the menu button in the top left corner of home, hot water and steam, no left column on those pages, the right column to the page's top (3.14 'Home: the top left corner') | X3 |
+| 3 | Z3 | review 2026-10-23: the menu button in the top left corner of home, hot water and steam, no left column on any screen, the way back a swipe (right to left on hot water), the right column to the page's top (3.14 'Home: the top left corner') | X3 |
 | 3 | Z4 | review 2026-10-23: the strip above home's graph removed, the step name in the state line during a shot, 'time, finished' in the right column (3.14) | Z3 |
 | 3 | Z5 | review 2026-10-23: one size per kind of text: the roles table, literals replaced by tokens, the size listing script, the profile and bean names equal (3.14 item 5) | Z3, Z4 |
 | 3 | Z6 | review 2026-10-23: a dot between every two labels of the graph's unit line (3.14 item 6) | |
