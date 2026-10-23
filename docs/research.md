@@ -3733,3 +3733,29 @@ touches every 10 s without a sleep and with heartbeats at least 29 s apart, then
 after the last one, no heartbeat while asleep, no presence write; it skips itself when the
 gateway has no heartbeat). The full rig suite: 50 of 50 (`hot-water.spec.ts` failed once on its
 flow slider, 8 for 4, and passed on its own rerun; that spec is not changed by Y4).
+
+## 33. The hot water page wrote flow 8 where 4 was typed (r22-hot-water-flake, 2026-10-23)
+
+`e2e-rig/hot-water.spec.ts` failed once in four rig runs on 2026-10-22: hotWaterData read
+flow 8 where the test typed 4, and the spec passed alone every time. Rig: Decaid 0.8.8,
+Streamline 0.2.18.
+
+The cause was the skin. Every write of a hot water value sends all four values of
+`hotWaterData` (Decaid's schema requires them), built from `Skin.workflow`, the workflow Decaid
+answered last. The test types the flow and lets the time slider go right after; the number
+pad's confirm does not wait for its write. When the time write started before the flow
+write's answer had come back, it carried the flow of the workflow before, and Decaid kept the
+last write: duration 60, flow 8. The 8 is the rig's stored flow of 10, held to the DE1's 8 by
+the first write (`heldHotWater`). Rig group 1 is long and loads the machine, so the answer was
+slow there more often; alone it passed (4 of 4 with `--repeat-each 4` on 2026-10-23, and the
+whole group passed once too). A tablet that is slow to answer, or a quick finger, meets the same.
+
+A second race of the same kind: the workflow read on opening the page (`refreshWorkflow`), if
+answered after a write, put the old values back into `Skin.workflow`, and the next write sent them.
+
+The fix (`src/shell/skin.svelte.ts`): `setHotWater` queues its writes, so each one is built on
+the answer to the one before, and `refreshWorkflow` drops a read that was answered after a hot
+water write had started. `src/shell/hot-water-writes.test.ts` holds Decaid's answers back and
+fails without the fix: the second write sent flow 8, just as on the rig. The test was not
+changed; no wait or retry was added. The three rig groups then passed: 28, 12 and 12 of 52.
+Group 1 took 9.2 minutes, close to a foreground call's 10: split it next time it grows.

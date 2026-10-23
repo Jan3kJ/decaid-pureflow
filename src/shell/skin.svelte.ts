@@ -315,10 +315,13 @@ export class Skin {
    * so a shot pulled next has one. Read at every open of the stream and on home.
    */
   async refreshWorkflow(): Promise<void> {
+    const writes = this.hotWaterWritten;
     try {
       const workflow = await this.client.getWorkflow();
       const dose = doseToSet(workflow, this.settings.defaultDose);
-      this.workflow = dose === null ? workflow : await this.client.updateWorkflow({ context: { targetDoseWeight: dose } });
+      const answer = dose === null ? workflow : await this.client.updateWorkflow({ context: { targetDoseWeight: dose } });
+      // A hot water value written meanwhile is newer than this read.
+      if (writes === this.hotWaterWritten) this.workflow = answer;
     } catch {
       // The gateway is away; the stream's state says so.
     }
@@ -329,11 +332,24 @@ export class Skin {
     return this.steamer.setTimer(seconds);
   }
 
+  /** the hot water writes in flight, one after another (`setHotWater`) */
+  private hotWaterWrites: Promise<void> = Promise.resolve();
+  /** how many hot water writes were started, so a workflow read answered after one is dropped */
+  private hotWaterWritten = 0;
+
   /**
    * Writes one value of the hot water page to the workflow's `hotWaterData` (spec 3.7). Hot
-   * water itself is started at the machine.
+   * water itself is started at the machine. Each write sends all four values, so the writes
+   * queue: a value set before the previous write is answered is built on that answer, and does
+   * not send the previous field's old value again.
    */
-  async setHotWater(field: HotWaterField, value: number): Promise<void> {
+  setHotWater(field: HotWaterField, value: number): Promise<void> {
+    this.hotWaterWritten += 1;
+    this.hotWaterWrites = this.hotWaterWrites.then(() => this.sendHotWater(field, value));
+    return this.hotWaterWrites;
+  }
+
+  private async sendHotWater(field: HotWaterField, value: number): Promise<void> {
     this.notice = this.info = null;
     const current = this.workflow?.hotWaterData;
     if (!current) {
