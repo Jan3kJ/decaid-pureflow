@@ -70,7 +70,7 @@
 <div class="hot-water">
   <header>
     <strong>Hot water</strong>
-    <StateLine {skin} />
+    <StateLine {skin} heat="group" />
   </header>
 
   {#if pouring}

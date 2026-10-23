@@ -1232,6 +1232,13 @@ wait for (the hot water temperature of `hotWaterData` against the mix temperatur
 alternative). While hot water pours the line says 'Hot water' as home's does; that is an
 acceptance check, since the transcript can also mean the line stays 'Idle' during the pour.
 
+*Built (Y2, 2026-10-23):* `HotWater.svelte` passes `heat="group"` to its `StateLine`, as home
+does. On the rig (Decaid 0.8.8, simulated DE1) the page's line said 'Idle' while the idle group
+heated from 77 to 90 °C against its 93 °C target, 'Hot water' while hot water poured
+(`hotWater`/`pouring`; the frame's `targetGroupTemperature` is then the hot water's 75 °C), and
+'Idle' again after it while the group still heated. With `heat="group"` it says 'Heating' before
+and after the pour while the group is more than 3 °C under target, and 'Hot water' during it.
+
 **Hot water: stop at volume without a scale (item 3; Y3).** Without a connected scale the row
 reads **stop at volume** with the unit **ml**, with a scale **stop at weight** and **g**
 (founder, 2026-10-22). The field is the same, `hotWaterData.volume`: with a scale Decaid stops it

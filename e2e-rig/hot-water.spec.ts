@@ -107,6 +107,9 @@ test('the hot water page writes hotWaterData, 1:2 of a 40 g shot is 80 g, Decaid
     // While it pours the page shows the ring in place of the rows (spec 3.9 item 13).
     await expect(page.getByTestId('water-view')).toHaveAttribute('data-kind', 'hotWater', { timeout: 5_000 });
     await expect(page.getByTestId('hot-water-time')).toHaveCount(0);
+    // The page's state line says what home's says (spec 3.12): Hot water, then Idle or Heating.
+    const title = page.getByTestId('screen-hot-water').getByTestId('status-title');
+    await expect(title).toHaveText('Hot water');
     await expect.poll(machineState, { timeout: 70_000, intervals: [300] }).not.toBe('hotWater');
     const seconds = (Date.now() - started) / 1000;
     expect(seconds).toBeLessThan(40);
@@ -116,6 +119,7 @@ test('the hot water page writes hotWaterData, 1:2 of a 40 g shot is 80 g, Decaid
     expect(weighed).toBeLessThan(85);
     console.log(`hot water stopped after ${seconds.toFixed(1)} s at ${weighed} g`);
     await expect(page.getByTestId('water-view')).toHaveCount(0);
+    await expect(title).toHaveText(IDLE);
     await expect(page.getByTestId('hot-water-time')).toContainText('60s');
 
     // The tare button tares.

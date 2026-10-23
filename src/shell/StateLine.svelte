@@ -16,7 +16,7 @@
   const machine = $derived(skin.link === 'machine' && skin.snapshot !== null);
 </script>
 
-<!-- The machine's state in one line, on home and on the steam page (founder, 2026-10-13). -->
+<!-- The machine's state in one line, on home, the hot water and the steam page (founder, 2026-10-13). -->
 <section class="state {status.tone}" data-testid="status" data-link={skin.link}>
   <span class="dot"></span>
   <strong data-testid="status-title">{status.title}</strong>
