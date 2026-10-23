@@ -1,7 +1,7 @@
 <script lang="ts">
   import ShotGraph from '../graph/ShotGraph.svelte';
   import type { Skin } from '../shell/skin.svelte';
-  import StateLine from '../shell/StateLine.svelte';
+  import PageHeader from '../shell/PageHeader.svelte';
   import { emptySteamSeries, secondsLeft, steamSeconds } from './run';
   import { adjustedSeconds, readScale } from './timer';
 
@@ -31,16 +31,18 @@
 </script>
 
 <div class="steam">
-  <header>
-    <strong>Steam</strong>
-    <StateLine {skin} heat="steam" />
-    {#if skin.steam}
-      <span class="run" data-testid="steam-state">
-        {steaming ? 'steaming' : 'last steam'}
-        <b data-testid="steam-elapsed">{steamSeconds(skin.steam).toFixed(0)} s</b>
-      </span>
-    {/if}
-  </header>
+  <div class="header">
+    <PageHeader {skin} heat="steam" title="Steam">
+      {#snippet beside()}
+        {#if skin.steam}
+          <span class="run" data-testid="steam-state">
+            {steaming ? 'steaming' : 'last steam'}
+            <b data-testid="steam-elapsed">{steamSeconds(skin.steam).toFixed(0)} s</b>
+          </span>
+        {/if}
+      {/snippet}
+    </PageHeader>
+  </div>
 
   <div class="plot">
     <ShotGraph
@@ -157,7 +159,8 @@
   .steam {
     height: 100%;
     box-sizing: border-box;
-    padding: 1rem 1.2rem;
+    /* home's padding, so the header is in the same place (spec 3.11) */
+    padding: 0.8rem 1.2rem 1rem;
     display: grid;
     grid-template-columns: minmax(0, 1fr) 21rem;
     grid-template-rows: auto minmax(0, 1fr);
@@ -165,21 +168,9 @@
     gap: 0.8rem 1.2rem;
   }
 
-  header {
+  .header {
     grid-area: header;
-    display: flex;
-    align-items: center;
-    gap: 1.6rem;
-    min-height: 2rem;
-  }
-
-  header > strong {
-    font-size: var(--text-title);
-    font-weight: 600;
-  }
-
-  header > :global(.state) {
-    flex: 1;
+    min-width: 0;
   }
 
   .run {

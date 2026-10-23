@@ -1,8 +1,8 @@
 <script lang="ts">
   import { saveLocation } from '../settings-page/tree';
+  import PageHeader from './PageHeader.svelte';
   import type { Skin } from './skin.svelte';
   import ShotView from './ShotView.svelte';
-  import StateLine from './StateLine.svelte';
   import Water from './Water.svelte';
   import { shownRun } from './water';
 
@@ -88,15 +88,15 @@
 
 <div class="home">
   <!-- The state line and the menu only: the profile and bean are in the right column (spec 3.11). -->
-  <header>
-    <StateLine {skin} heat="group" />
-
-    <button class="icon" data-testid="menu" aria-label="menu" aria-expanded={menuOpen} onclick={() => (menuOpen = !menuOpen)}>
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M4 7h16 M4 12h16 M4 17h16" />
-      </svg>
-    </button>
-  </header>
+  <PageHeader {skin} heat="group">
+    {#snippet end()}
+      <button class="icon" data-testid="menu" aria-label="menu" aria-expanded={menuOpen} onclick={() => (menuOpen = !menuOpen)}>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 7h16 M4 12h16 M4 17h16" />
+        </svg>
+      </button>
+    {/snippet}
+  </PageHeader>
 
   {#if water}
     <Water {skin} run={water} />
@@ -141,14 +141,9 @@
     gap: 0.6rem;
   }
 
-  .home > header {
-    display: flex;
-    align-items: center;
-    gap: 0.8rem;
-  }
-
-  .home > header > :global(.state) {
-    flex: 1;
+  /* Home has no way back on its left: the header still starts where steam's and hot water's do (spec 3.11). */
+  .home > :global(.page-header) {
+    padding-left: var(--back, 0);
   }
 
   button {

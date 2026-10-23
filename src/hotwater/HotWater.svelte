@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import NumberPad from '../editor/NumberPad.svelte';
+  import PageHeader from '../shell/PageHeader.svelte';
   import type { Skin } from '../shell/skin.svelte';
-  import StateLine from '../shell/StateLine.svelte';
   import Water from '../shell/Water.svelte';
   import { shownRun } from '../shell/water';
   import {
@@ -68,10 +68,9 @@
 </script>
 
 <div class="hot-water">
-  <header>
-    <strong>Hot water</strong>
-    <StateLine {skin} heat="group" />
-  </header>
+  <div class="header">
+    <PageHeader {skin} heat="group" title="Hot water" />
+  </div>
 
   {#if pouring}
     <div class="pouring">
@@ -170,7 +169,8 @@
   .hot-water {
     height: 100%;
     box-sizing: border-box;
-    padding: 1rem 1.2rem;
+    /* home's padding, so the header is in the same place (spec 3.11) */
+    padding: 0.8rem 1.2rem 1rem;
     display: grid;
     grid-template-columns: minmax(0, 1fr) 21rem;
     grid-template-rows: auto minmax(0, 1fr);
@@ -178,21 +178,9 @@
     gap: 0.8rem 1.2rem;
   }
 
-  header {
+  .header {
     grid-area: header;
-    display: flex;
-    align-items: center;
-    gap: 1.6rem;
-    min-height: 2rem;
-  }
-
-  header > strong {
-    font-size: var(--text-title);
-    font-weight: 600;
-  }
-
-  header > :global(.state) {
-    flex: 1;
+    min-width: 0;
   }
 
   button {

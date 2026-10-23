@@ -310,8 +310,10 @@
   .page {
     position: absolute;
     inset: 0;
+    /* the way back's column; home's header starts this far in, so the state line does not move between pages */
+    --back: 4rem;
     display: grid;
-    grid-template-columns: 4rem minmax(0, 1fr);
+    grid-template-columns: var(--back) minmax(0, 1fr);
     background: var(--bg);
   }
 

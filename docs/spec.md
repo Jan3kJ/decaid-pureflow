@@ -1172,6 +1172,14 @@ the right end is the page's own mark and the state line does not move between pa
 `Steam.svelte` and `HotWater.svelte` start their header with the title in a `strong`, before
 `StateLine`. The steam page's 'steaming / last steam 12 s' stays beside the state line, left of
 the title (3.7: the steam's time, top right). The menu stays on home only. Home has no title.
+*Built (X3):* one header component, `src/shell/PageHeader.svelte`: the state line, then what the
+page adds beside it (steam's 'steaming / last steam'), then the title (`page-title`) or home's
+menu at the right end. The three pages share home's padding. Since X4 home has no left edge but
+steam and hot water keep the way back's column (4 rem, `--back` in `App.svelte`), so home's
+header starts that far in and the state line stands at the same x on all three; the space left
+of it on home is empty. Test: `e2e/one-header.spec.ts`. Screenshots:
+header-home.png (screenshot in the team repository), header-steam.png (screenshot in the team repository),
+header-hot-water.png (screenshot in the team repository).
 
 **Swipe only: the tabs go (X4).** The edge tabs of home (history on the left, steam and hot
 water on the right, T3 and R5) are removed, with the narrow strip each took, so home uses the
