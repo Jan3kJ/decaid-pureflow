@@ -7,6 +7,7 @@ import {
   fieldStep,
   heldHotWater,
   heldValue,
+  hotWaterFields,
   lastShotGrams,
   ratioLabel,
   ratioWeight,
@@ -16,6 +17,17 @@ import {
 } from './hot-water';
 
 const RIG: HotWaterData = { targetTemperature: 75, duration: 30, volume: 50, flow: 10 };
+function fakeClient() {
+  const patches: WorkflowPatch[] = [];
+  return {
+    patches,
+    updateWorkflow: (patch: WorkflowPatch) => {
+      patches.push(patch);
+      return Promise.resolve({ hotWaterData: { ...RIG, ...patch.hotWaterData } });
+    },
+  };
+}
+
 const field = (id: string) => HOT_WATER_FIELDS.find((entry) => entry.id === id)!;
 
 describe('stop at weight from the last shot by a ratio (spec 3.7)', () => {
@@ -68,17 +80,6 @@ describe('the last measured shot', () => {
 });
 
 describe('the workflow write', () => {
-  function fakeClient() {
-    const patches: WorkflowPatch[] = [];
-    return {
-      patches,
-      updateWorkflow: (patch: WorkflowPatch) => {
-        patches.push(patch);
-        return Promise.resolve({ hotWaterData: { ...RIG, ...patch.hotWaterData } });
-      },
-    };
-  }
-
   it('sends one value with the other three as they are: Decaid requires all four', async () => {
     const client = fakeClient();
     const workflow = await writeHotWater(client, { ...RIG, flow: 6 }, WEIGHT_FIELD, 80);
@@ -124,6 +125,30 @@ describe('the workflow write', () => {
     for (const entry of HOT_WATER_FIELDS) {
       expect(heldValue(entry, RIG[entry.key])).toBe(entry.key === 'flow' ? 8 : RIG[entry.key]);
     }
+  });
+});
+
+describe('stop at weight with a scale, stop at volume without one (spec 3.12, item 74)', () => {
+  const stop = (link: 'connected' | 'disconnected' | 'unknown') => hotWaterFields(link).find((entry) => entry.key === 'volume')!;
+
+  it('reads stop at weight in g with a connected scale', () => {
+    expect([stop('connected').label, stop('connected').unit]).toEqual(['stop at weight', 'g']);
+    expect(hotWaterFields('connected')).toEqual(HOT_WATER_FIELDS);
+  });
+
+  it('reads stop at volume in ml when the scale is disconnected or not known yet', () => {
+    for (const link of ['disconnected', 'unknown'] as const) {
+      expect([stop(link).label, stop(link).unit]).toEqual(['stop at volume', 'ml']);
+    }
+  });
+
+  it('keeps the field, its id and its range of 10 to 500, and writes the number as it is', async () => {
+    const volume = stop('disconnected');
+    expect([volume.id, volume.key, volume.min, volume.max, volume.decimals]).toEqual(['weight', 'volume', 10, 500, false]);
+    expect(hotWaterFields('disconnected').map((entry) => entry.id)).toEqual(HOT_WATER_FIELDS.map((entry) => entry.id));
+    const client = fakeClient();
+    await writeHotWater(client, RIG, volume, 120);
+    expect(client.patches[0].hotWaterData?.volume).toBe(120);
   });
 });
 

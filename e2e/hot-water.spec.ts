@@ -6,7 +6,8 @@ import { toPage } from './touch';
 // The hot water page (R5, spec 3.7, acceptance item 20) against a mocked gateway: its page dot
 // opens it (the tabs went in X4, spec 3.11); temperature, flow, time and stop at weight are written to the
 // workflow's hotWaterData; a ratio favourite with a last shot of 40 g sets 80 g for 1:2; the
-// favourites come from the settings; its tare button tares. That Decaid stops hot water at the
+// favourites come from the settings; its tare button tares. Without a scale the row reads stop at
+// volume in ml (Y3, spec 3.12). That Decaid stops hot water at the
 // weight is the rig's to show (e2e-rig/hot-water.spec.ts): the mock has no pump. Since U3 (spec
 // 3.9 items 11-13) a value is a row with a slider under it, the page shows the ring while hot
 // water pours, and the left edge has no state dot.
@@ -140,7 +141,7 @@ test('the favourites come from the settings; without a last shot or a scale noth
   await page.goto('/');
   await toPage(page, 'hot-water');
   await expect(page.getByTestId('hot-water-last-shot')).toHaveText('–');
-  for (const chip of await page.getByTestId('hot-water-ratio').all()) await expect(chip).toBeDisabled();
+  await expect(page.getByTestId('hot-water-ratio')).toHaveCount(0);
 
   // The settings' category Hot water.
   await page.getByTestId('nav-home').click();
@@ -157,7 +158,8 @@ test('the favourites come from the settings; without a last shot or a scale noth
   gateway.connectScale(false);
   await page.getByTestId('nav-home').click();
   await toPage(page, 'hot-water');
-  await expect(page.getByTestId('hot-water-ratio')).toHaveText(['1:1.5 60 g', '1:2.5 100 g', '1:3 120 g']);
+  // Without a scale the favourites stay, in ml: the shot's grams estimate the water.
+  await expect(page.getByTestId('hot-water-ratio')).toHaveText(['1:1.5 60 ml', '1:2.5 100 ml', '1:3 120 ml']);
   await page.getByTestId('hot-water-ratio').first().click();
   expect(lastWrite(gateway)?.volume).toBe(60);
   // Without a scale a tap tares nothing and looks for the scale (spec 3.9).
@@ -170,6 +172,40 @@ test('the favourites come from the settings; without a last shot or a scale noth
   await expect
     .poll(() => (gateway.store['pureflow/settings-backup'] as Backup | undefined)?.settings?.hotWater?.ratios ?? null)
     .toEqual([1.5, 2.5, 3]);
+  expect(errors).toEqual([]);
+});
+
+test('stop at weight in g with a scale, stop at volume in ml without one; no favourites without a weighed shot (spec 3.12, item 74)', async ({
+  page,
+}) => {
+  const gateway = await mockGateway(page);
+  gateway.connectScale(false);
+  // The last shot was pulled without a scale: it has no weight.
+  gateway.addShot('shot-unweighed', '2026-10-17T07:00:00', profile('A-Flow / default-medium', 42, 9), { targetYield: 40 });
+  gateway.shots.at(-1)!.annotations = { actualDoseWeight: 18 };
+  await page.goto('/');
+  await toPage(page, 'hot-water');
+  const label = page.locator('.row.weight .label');
+  await expect(label).toHaveText('stop at volume');
+  await expect(page.getByTestId('hot-water-weight')).toContainText('50ml');
+  await expect(page.getByRole('slider', { name: 'stop at volume' })).toHaveAttribute('max', '500');
+  await expect(page.getByTestId('hot-water-last-shot')).toHaveText('–');
+  await expect(page.getByTestId('hot-water-ratio')).toHaveCount(0);
+
+  // The number pad in ml writes the same field, the number as it is.
+  await page.getByTestId('hot-water-weight').click();
+  await expect(page.getByTestId('numpad-range')).toHaveText('10 to 500 ml');
+  await page.getByTestId('numpad-cancel').click();
+  await type(page, 'hot-water-weight', '150');
+  expect(lastWrite(gateway)).toEqual({ targetTemperature: 75, duration: 30, volume: 150, flow: 8 });
+  await expect(page.getByTestId('hot-water-weight')).toContainText('150ml');
+
+  // The scale connects: the same row reads stop at weight in g, the number unchanged.
+  gateway.connectScale(true);
+  await expect(label).toHaveText('stop at weight');
+  await expect(page.getByTestId('hot-water-weight')).toContainText('150g');
+  await expect(page.getByRole('slider', { name: 'stop at weight' })).toHaveValue('150');
+  expect(await overflow(page)).toEqual({ scrolls: false, outside: 0 });
   expect(errors).toEqual([]);
 });
 

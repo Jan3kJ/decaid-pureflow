@@ -1256,7 +1256,10 @@ unit 'g' fixed). Default: the label and unit follow `skin.scaleLink` (`connected
 `unknown` and `disconnected` are none), the number is not converted, and the range 10 to 500
 stays. The **ratio favourites** (the last shot's grams times a ratio) stay shown, since a shot's
 yield in grams is a good estimate of the water in ml; they are not offered when the last shot has
-no weight. The home water view's weight line already appears only with a scale (3.8).
+no weight. The home water view's weight line already appears only with a scale (3.8). Built in Y3:
+`hotWaterFields(scaleLink)` gives the rows, the row's test ids stay `hot-water-weight` and
+`hot-water-slider-weight`, a favourite reads its amount in the row's unit ('1:2 80 ml' without a
+scale), and without a weighed last shot the favourites are not shown at all (no disabled chips).
 
 **Sleep: the machine sleeps after use (item 4; Y4).** The machine goes to sleep sometimes
 although the app was used a minute before; the sleep must follow the sleep-after setting

@@ -6,10 +6,9 @@
   import Water from '../shell/Water.svelte';
   import { shownRun } from '../shell/water';
   import {
-    HOT_WATER_FIELDS,
-    WEIGHT_FIELD,
     fieldStep,
     heldValue,
+    hotWaterFields,
     lastShotGrams,
     ratioLabel,
     ratioWeight,
@@ -26,6 +25,9 @@
 
   // The values are the workflow's: what Decaid sends to the machine when hot water starts.
   const values = $derived(skin.workflow?.hotWaterData ?? null);
+  /** stop at weight in g with a connected scale, stop at volume in ml without one (spec 3.12) */
+  const fields = $derived(hotWaterFields(skin.scaleLink));
+  const stopField = $derived(fields.find((field) => field.key === 'volume')!);
   /** While hot water pours the page shows the ring in place of the rows (spec 3.9). */
   const pouring = $derived(shownRun(skin.waterRun, skin.canStop, 'hotWater'));
 
@@ -79,7 +81,7 @@
   {:else}
     <!-- A row per value with a slider under it (spec 3.9); a tap on the value opens the number pad. -->
     <div class="values">
-      {#each HOT_WATER_FIELDS as field (field.id)}
+      {#each fields as field (field.id)}
         <div class="row {field.id}">
           <span class="label">{field.label}</span>
           <button class="value" data-testid="hot-water-{field.id}" disabled={!values} onclick={() => (typing = field)}>
@@ -108,22 +110,25 @@
       <b data-testid="hot-water-last-shot">{lastShot === null ? '–' : `${lastShot.toFixed(1)} g`}</b>
     </div>
 
-    <!-- The ratio favourites of the settings: the last shot times the ratio is the stop at weight. -->
-    <div class="ratios">
-      {#each skin.settings.hotWater.ratios as ratio, i (i)}
-        {@const grams = lastShot === null ? null : ratioWeight(lastShot, ratio)}
-        <button
-          class="chip"
-          class:on={grams !== null && grams === values?.volume}
-          data-testid="hot-water-ratio"
-          disabled={grams === null || !values}
-          onclick={() => grams !== null && skin.setHotWater(WEIGHT_FIELD, grams)}
-        >
-          {ratioLabel(ratio)}
-          <small>{grams === null ? '–' : `${grams} g`}</small>
-        </button>
-      {/each}
-    </div>
+    <!-- The ratio favourites of the settings: the last shot times the ratio is the stop; only with a weighed last shot. -->
+    {#if lastShot !== null}
+      {@const shot = lastShot}
+      <div class="ratios">
+        {#each skin.settings.hotWater.ratios as ratio, i (i)}
+          {@const amount = ratioWeight(shot, ratio)}
+          <button
+            class="chip"
+            class:on={amount === values?.volume}
+            data-testid="hot-water-ratio"
+            disabled={!values}
+            onclick={() => skin.setHotWater(stopField, amount)}
+          >
+            {ratioLabel(ratio)}
+            <small>{amount} {stopField.unit}</small>
+          </button>
+        {/each}
+      </div>
+    {/if}
 
     <div class="scale">
       <small>scale</small>

@@ -4,8 +4,10 @@
 // Decaid stops hot water at a weight by itself (research.md 21): with a scale connected and its
 // setting `stopHotWaterAtWeight` on (the default) it tares the scale when hot water starts and
 // stops at `hotWaterData.volume`, taken as grams. So stop at weight is that field, and the skin
-// stops nothing itself; without a scale the machine's own volume and time stop remain.
+// stops nothing itself; without a scale the machine's own volume and time stop remain, so the
+// row reads stop at volume in ml then (spec 3.12).
 import type { DecaidClient, HotWaterData, ShotRecordSummary, Workflow } from '../api';
+import type { ScaleLink } from '../shell/machine';
 
 /** One value of the page: where it is in `hotWaterData`, and what the number pad allows. */
 export interface HotWaterField {
@@ -34,6 +36,20 @@ export const HOT_WATER_FIELDS: HotWaterField[] = [
 export const WEIGHT_FIELD = HOT_WATER_FIELDS.find((field) => field.key === 'volume')!;
 export const FLOW_FIELD = HOT_WATER_FIELDS.find((field) => field.key === 'flow')!;
 
+/** The stop of `hotWaterData.volume` without a connected scale: the machine's own, in ml. */
+const VOLUME_FIELD: HotWaterField = { ...WEIGHT_FIELD, label: 'stop at volume', unit: 'ml' };
+
+/**
+ * The page's rows for a scale link: stop at weight in g with a connected scale, stop at volume
+ * in ml without one (`unknown` or `disconnected`). The field, its number and its range are the
+ * same; only the label and the unit change.
+ */
+export function hotWaterFields(scaleLink: ScaleLink): HotWaterField[] {
+  return scaleLink === 'connected'
+    ? HOT_WATER_FIELDS
+    : HOT_WATER_FIELDS.map((field) => (field === WEIGHT_FIELD ? VOLUME_FIELD : field));
+}
+
 /** The step of a field's slider and number pad: 0.1 for flow, 1 for the others. */
 export const fieldStep = (field: HotWaterField): number => (field.decimals ? 0.1 : 1);
 
@@ -57,7 +73,7 @@ export function heldHotWater<T extends Partial<HotWaterData>>(data: T): T {
   return typeof data.flow === 'number' && data.flow > FLOW_FIELD.max ? { ...data, flow: FLOW_FIELD.max } : data;
 }
 
-/** g, the stop at weight for a shot of this weight and a ratio: 40 g and 1:2 give 80 g. */
+/** g (or ml without a scale), the stop at weight for a shot of this weight and a ratio: 40 g and 1:2 give 80 g. */
 export function ratioWeight(shotGrams: number, ratio: number): number {
   return heldValue(WEIGHT_FIELD, shotGrams * ratio);
 }
