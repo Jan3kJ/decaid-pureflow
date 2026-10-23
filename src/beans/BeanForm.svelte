@@ -3,6 +3,7 @@
   // current bag's roast date and notes. A new bean gets its first bag with it; an edit sends
   // only what changed. Archive, restore and a new bag are the screen's (it asks first).
   import type { BeanBatch, CatalogueBean } from '../api';
+  import DatePicker from '../shell/DatePicker.svelte';
   import { beanForm, beanTitle, dateOf, validBean, type BeanForm } from './catalogue';
 
   interface Props {
@@ -25,6 +26,12 @@
   let form: BeanForm = $state(initial());
   const changed = $derived(JSON.stringify(form) !== JSON.stringify(beanForm(bean, batch)));
   const valid = $derived(validBean(form));
+  let picking = $state(false);
+
+  function pickRoastDate(value: string) {
+    form.roastDate = value;
+    picking = false;
+  }
 
   function submit(event: SubmitEvent) {
     event.preventDefault();
@@ -55,10 +62,17 @@
       {#each roasters as roaster (roaster)}<option value={roaster}></option>{/each}
     </datalist>
   </label>
-  <label>
-    <span>roast date{bean ? ' of this bag' : ''}</span>
-    <input type="date" bind:value={form.roastDate} data-testid="bean-roast-date" />
-  </label>
+  <div class="field">
+    <span id="bean-roast-date-label">roast date{bean ? ' of this bag' : ''}</span>
+    <button
+      type="button"
+      class="date"
+      class:none={!form.roastDate}
+      aria-labelledby="bean-roast-date-label"
+      data-testid="bean-roast-date"
+      onclick={() => (picking = true)}>{dateOf(form.roastDate) || 'no roast date'}</button
+    >
+  </div>
   <label>
     <span>notes</span>
     <input bind:value={form.notes} autocomplete="off" enterkeyhint="done" data-testid="bean-notes" />
@@ -83,6 +97,10 @@
   {/if}
 </form>
 
+{#if picking}
+  <DatePicker label="roast date" value={form.roastDate} onpick={pickRoastDate} oncancel={() => (picking = false)} />
+{/if}
+
 <style>
   .form {
     display: flex;
@@ -99,7 +117,8 @@
     white-space: nowrap;
   }
 
-  label {
+  label,
+  .field {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
@@ -128,6 +147,17 @@
   /* a required field that is empty */
   .missing input {
     border-color: var(--temperature);
+  }
+
+  .date {
+    text-align: left;
+    padding: 0 0.9rem;
+    font-size: var(--text-value);
+    background: var(--bg);
+  }
+
+  .date.none {
+    color: var(--dim);
   }
 
   .actions {

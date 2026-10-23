@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mockGateway, type MockGateway } from './mock-gateway';
+import { pickDate } from './date-picker';
 
 // The bean and grinder catalogue and the pick for the next shot (spec 3.9 item 19, acceptance
 // 52's first half, research.md 29.8) against the mocked gateway: home's menu opens the screen;
@@ -41,7 +42,7 @@ test('a bean is added with name and roaster typed, edited, archived, listed with
   await page.getByTestId('bean-name').fill('Red Brick');
   await expect(page.getByTestId('bean-save')).toBeDisabled();
   await page.getByTestId('bean-roaster').fill('Square Mile');
-  await page.getByTestId('bean-roast-date').fill('2026-10-08');
+  await pickDate(page, page.getByTestId('bean-roast-date'), '2026-10-08');
   await page.getByTestId('bean-save').click();
 
   // The bean, then its first bag with the roast date.
@@ -85,6 +86,68 @@ test('a bean is added with name and roaster typed, edited, archived, listed with
   expect(await noSideScroll(page)).toBe(true);
 });
 
+test('the roast date is picked on the skin picker: a day sets it, clear empties it, cancel changes nothing', async ({ page }) => {
+  await openBeans(page);
+  await page.getByTestId('bean-name').fill('Red Brick');
+  await page.getByTestId('bean-roaster').fill('Square Mile');
+  const field = page.getByTestId('bean-roast-date');
+  await expect(field).toHaveText('no roast date');
+  expect(await page.locator('input[type="date"]').count()).toBe(0);
+
+  // It opens on today's month, today ringed; the arrows step by month, after a tap on the year by year.
+  const now = new Date();
+  const key = (year: number, month: number) => {
+    const index = year * 12 + month;
+    return `${Math.floor(index / 12)}-${String((index % 12) + 1).padStart(2, '0')}`;
+  };
+  const [year, month] = [now.getFullYear(), now.getMonth()];
+  const shown = page.getByTestId('datepicker-month');
+  await field.click();
+  await expect(page.getByTestId('datepicker-backdrop')).toHaveAttribute('data-no-swipe', '');
+  await expect(shown).toHaveAttribute('data-month', key(year, month));
+  await expect(page.locator('.day.today')).toHaveCount(1);
+  await page.getByTestId('datepicker-next').click();
+  await expect(shown).toHaveAttribute('data-month', key(year, month + 1));
+  await page.getByTestId('datepicker-prev').click();
+  await page.getByTestId('datepicker-prev').click();
+  await expect(shown).toHaveAttribute('data-month', key(year, month - 1));
+  await page.getByTestId('datepicker-year').click();
+  await page.getByTestId('datepicker-next').click();
+  await expect(shown).toHaveAttribute('data-month', key(year + 1, month - 1));
+  await page.getByTestId('datepicker-prev').click();
+  await page.getByTestId('datepicker-prev').click();
+  await expect(shown).toHaveAttribute('data-month', key(year - 1, month - 1));
+  await page.getByTestId('datepicker-cancel').click();
+  await expect(page.getByTestId('datepicker')).toHaveCount(0);
+  await expect(field).toHaveText('no roast date');
+
+  // A day sets the date and closes; it opens again on that month with the day filled.
+  await pickDate(page, field, '2026-10-08');
+  await expect(field).toHaveText('2026-10-08');
+  await field.click();
+  await expect(shown).toHaveAttribute('data-month', '2026-10');
+  await expect(page.getByTestId('datepicker-day-2026-10-08')).toHaveAttribute('aria-pressed', 'true');
+  await page.screenshot({ path: 'docs/product/date-picker.png' });
+  // A tap beside the dialog cancels it, clear empties the field.
+  await page.getByTestId('datepicker-backdrop').click({ position: { x: 10, y: 10 } });
+  await expect(field).toHaveText('2026-10-08');
+  await field.click();
+  await page.getByTestId('datepicker-clear').click();
+  await expect(field).toHaveText('no roast date');
+  await field.click();
+  await page.getByTestId('datepicker-today').click();
+  await expect(field).toHaveText(`${key(year, month)}-${String(now.getDate()).padStart(2, '0')}`);
+
+  // A date after today is allowed; the stored value is the ISO date.
+  await pickDate(page, field, `${year + 1}-03-02`);
+  await page.getByTestId('bean-save').click();
+  await expect(page.getByTestId('bean-row')).toContainText(`roasted ${year + 1}-03-02`);
+  const bean = gateway.beans[0];
+  expect(gateway.calls('POST', `/api/v1/beans/${bean.id}/batches`).map((call) => call.body)).toEqual([
+    { roastDate: `${year + 1}-03-02` },
+  ]);
+});
+
 test('a new bag archives the current one after a confirm; the search finds a bean by its words', async ({ page }) => {
   await openBeans(page);
   for (const [name, roaster] of [
@@ -111,7 +174,7 @@ test('a new bag archives the current one after a confirm; the search finds a bea
   await expect.poll(() => gateway.batches.filter((batch) => batch.beanId === red.id).length).toBe(2);
   expect(gateway.batches.find((batch) => batch.id === first.id)!.archived).toBe(true);
   // The new bag's roast date is set on the form.
-  await page.getByTestId('bean-roast-date').fill('2026-10-19');
+  await pickDate(page, page.getByTestId('bean-roast-date'), '2026-10-19');
   await page.getByTestId('bean-save').click();
   await expect(page.getByTestId('bean-row')).toContainText('roasted 2026-10-19');
   const bag = gateway.batches.find((batch) => batch.beanId === red.id && !batch.archived)!;

@@ -1229,6 +1229,13 @@ as finger-sized buttons (3.5 rem), today ringed, the chosen day filled, 'today' 
 stays the ISO date string `roastDate` holds now, so nothing stored changes, and a date after
 today is allowed (a bag is sometimes dated ahead). The same picker serves any later date field.
 
+*Built (Y1, 2026-10-23):* `src/shell/DatePicker.svelte` (props `label`, `value`, `onpick`,
+`oncancel`) with the month grid in `src/shell/calendar.ts`; weeks start on Monday (the code base
+had no rule for it). It opens on the chosen date's month, else on today's. A tap on the year
+switches the two arrows to year steps (the year framed) until the next tap on it or a tap on the
+month; a tap beside the dialog cancels it as the number pad's does. The bean form's button keeps
+`data-testid="bean-roast-date"`. Screenshot (screenshot in the team repository).
+
 **Hot water: the state line (item 2; Y2).** On the hot water page the machine's state seems to
 show Idle always (founder, 2026-10-22). Today `HotWater.svelte` draws `<StateLine {skin} />`
 without `heat`, while home passes `heat="group"` and steam `heat="steam"` (T3), so the line

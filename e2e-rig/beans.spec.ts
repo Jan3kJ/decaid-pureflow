@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import type { BeanBatch, CatalogueBean, Grinder, MachineSnapshot, PaginatedShots, ProfileRecord, ShotRecord } from '../src/api';
 import type { RigWorkflow } from './gateway';
 import { IDLE } from './idle';
+import { pickDate } from '../e2e/date-picker';
 
 // Acceptance item 52, its first half (spec 3.9 item 19, research.md 29.8), against the rig:
 // through the beans screen a bean and a grinder of the test's own are added (name and roaster
@@ -87,7 +88,7 @@ test('beans and grinders: added, edited, archived and restored on the screen; th
     // A bean, typed, with its first bag.
     await page.getByTestId('bean-name').fill(NAME);
     await page.getByTestId('bean-roaster').fill(ROASTER);
-    await page.getByTestId('bean-roast-date').fill('2026-10-08');
+    await pickDate(page, page.getByTestId('bean-roast-date'), '2026-10-08');
     await page.getByTestId('bean-save').click();
     await expect(page.getByTestId('bean-row').filter({ hasText: NAME })).toContainText('roasted 2026-10-08');
     const bean = (await beans()).find((entry) => entry.name === NAME)!;
