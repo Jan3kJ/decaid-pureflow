@@ -69,7 +69,7 @@
     </header>
   {/if}
 
-  <div class="plot" data-testid={PLOT[shown.kind]}>
+  <div class="plot" data-testid={PLOT[shown.kind]} data-main-frame>
     <ShotGraph
       {...shown.series}
       fit={finished || recalled !== null}

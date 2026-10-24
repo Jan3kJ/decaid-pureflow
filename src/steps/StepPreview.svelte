@@ -19,9 +19,11 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     bare?: boolean;
     /** s, the last step is drawn this far at most (`stepCurve`); without it every step whole */
     lastStepSeconds?: number;
+    /** part of its screen's main frame, which hot water and flush cover (src/shell/cover.ts) */
+    mainFrame?: boolean;
   }
 
-  let { profile, bare = false, lastStepSeconds }: Props = $props();
+  let { profile, bare = false, lastStepSeconds, mainFrame = false }: Props = $props();
 
   const curve = $derived(stepCurve(profile, { lastStepSeconds }));
   /** Pressure and flow share one scale, as on every graph of the skin; it reaches a target or limit above 12. */
@@ -33,7 +35,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   );
 </script>
 
-<div class="preview" class:bare data-testid="step-preview" data-seconds={curve.seconds}>
+<div class="preview" class:bare data-testid="step-preview" data-seconds={curve.seconds} data-main-frame={mainFrame ? '' : undefined}>
   <ShotGraph
     t={curve.t}
     pressure={[]}

@@ -284,9 +284,9 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     <ScriptTab {profile} disabled={busy} onedit={edit} ontype={(index: number, value: StepValue) => (typing = { index, value })} />
   {:else}
     <!-- The curve preview: the targets of the steps, redrawn with every edit. -->
-    <StepPreview {profile} />
+    <StepPreview {profile} mainFrame />
 
-    <div class="cards" bind:this={row} data-testid="step-cards">
+    <div class="cards" bind:this={row} data-testid="step-cards" data-main-frame>
       {#each profile.steps as step, index (index)}
         <StepCard
           {step}

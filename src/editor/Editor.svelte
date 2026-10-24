@@ -272,7 +272,7 @@
     {/if}
   </div>
 
-  <section class="stage">
+  <section class="stage" data-main-frame>
     <!-- No phase buttons: in detail mode a tap on a step of the graph selects it. -->
     <div class="plot">
       <Graph {params} {limits} {mode} {selected} ondrag={drag} onedit={edit} onselect={(id: PhaseId) => (selected = id)} />
@@ -294,7 +294,7 @@
   />
 
   {#if settings.showProfileSteps && stepsOpen}
-    <section class="steps">
+    <section class="steps" data-main-frame>
       <StepList {params} title={origin.title} firstStepWorkaround={settings.firstStepWorkaround} />
     </section>
   {/if}

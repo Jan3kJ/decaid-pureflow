@@ -1,18 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { MachineSnapshot, MachineState, Workflow } from '../api';
-import { SCREENS } from './nav';
-import {
-  recordWaterFrame,
-  ringOf,
-  shownRun,
-  smallRingRun,
-  smallTime,
-  waterDuration,
-  waterKindOf,
-  waterSeconds,
-  waterValues,
-  type WaterRun,
-} from './water';
+import { recordWaterFrame, ringOf, shownRun, waterDuration, waterKindOf, waterSeconds, waterValues, type WaterRun } from './water';
 
 function frame(state: MachineState, second: number, flow = 0, mixTemperature = 75): MachineSnapshot {
   return {
@@ -162,50 +150,5 @@ describe('the run a page draws as the ring', () => {
 
   it('is gone when the run has ended', () => {
     expect(shownRun({ ...hot, ended: true }, true)).toBeNull();
-  });
-
-  it('is only hot water on the hot water page', () => {
-    expect(shownRun(hot, true, 'hotWater')).toBe(hot);
-    expect(shownRun(flush, true, 'hotWater')).toBeNull();
-  });
-});
-
-describe('the small ring of the shell', () => {
-  const hot = record([frame('hotWater', 0, 6), frame('hotWater', 1, 6)])!;
-  const flush = record([frame('flush', 0, 6), frame('flush', 1, 6)])!;
-  const others = SCREENS.filter((screen) => screen !== 'home' && screen !== 'hot-water');
-
-  it('shows hot water and flush on every screen without a large ring', () => {
-    for (const screen of others) {
-      expect(smallRingRun(hot, true, screen, false)).toBe(hot);
-      expect(smallRingRun(flush, true, screen, false)).toBe(flush);
-    }
-  });
-
-  it('is not on home, whose large ring shows the run, unless the history covers it', () => {
-    expect(smallRingRun(hot, true, 'home', false)).toBeNull();
-    expect(smallRingRun(flush, true, 'home', true)).toBe(flush);
-  });
-
-  it('shows a flush on the hot water page, whose large ring is only for hot water', () => {
-    expect(smallRingRun(hot, true, 'hot-water', false)).toBeNull();
-    expect(smallRingRun(flush, true, 'hot-water', false)).toBe(flush);
-  });
-
-  it('goes when the run ends or the machine cannot be stopped', () => {
-    for (const screen of others) {
-      expect(smallRingRun({ ...flush, ended: true }, true, screen, false)).toBeNull();
-      expect(smallRingRun(flush, false, screen, false)).toBeNull();
-      expect(smallRingRun(null, true, screen, false)).toBeNull();
-    }
-  });
-
-  it('counts down as the large ring: the seconds so far over the target', () => {
-    const run = record([frame('flush', 0), frame('flush', 6.4)])!;
-    const ring = ringOf(waterSeconds(run), waterDuration('flush', { rinseData: { targetTemperature: 90, duration: 10, flow: 6 } }));
-    expect(ring.share).toBeCloseTo(0.64);
-    expect(smallTime(ring)).toEqual(['6', '/ 10 s']);
-    expect(smallTime(ringOf(12, 10))).toEqual(['12', '/ 10 s']);
-    expect(smallTime(ringOf(3, null))).toEqual(['3', 's']);
   });
 });

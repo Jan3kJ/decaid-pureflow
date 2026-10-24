@@ -1,10 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
 import type { MachineSnapshot } from '../src/api';
 
-// The hot water and flush ring on every screen against the rig (Y6, spec 3.12, acceptance 78):
-// hot water is started through the API, as at the machine, with the screen already open; the
-// settings page and the picker show the small ring with the kind under it, the hot water page
-// its large ring; a flush on the beans screen shows the small ring, whose tap stops it. Simulated
+// The hot water and flush ring on every screen against the rig (Y6, Z8, spec 3.12, 3.14,
+// acceptance 78, 98): hot water is started through the API, as at the machine, with the screen
+// already open; the settings page, the picker and the hot water page show the one large ring over
+// their main frame with the kind in it; a flush on the beans screen shows it too, and its stop
+// stops it. Simulated
 // hot water ends by itself after about 5 s (research.md 19); simulated flush does not. Nothing is
 // changed in the workflow; any shot or steam record the runs leave is deleted.
 
@@ -43,42 +44,38 @@ async function open(page: Page, screen: string) {
   // The skin has the machine's frames: the idle machine shows no ring.
   await expect.poll(machineState, { timeout: 30_000 }).toBe('idle');
   await page.waitForTimeout(1_000);
-  await expect(page.getByTestId('small-ring')).toHaveCount(0);
+  await expect(page.getByTestId('water-view')).toHaveCount(0);
 }
 
-test('hot water on settings, the picker and its page, flush on beans: a ring on each, the small one stops the flush', async ({
+test('hot water on settings, the picker and its page, flush on beans: the large ring on each, its stop stops the flush', async ({
   page,
 }) => {
   test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
 
   const before = { shots: await ids('shots'), steams: await ids('steams') };
-  const small = page.getByTestId('small-ring');
+  const ring = page.getByTestId('water-view');
   try {
-    for (const screen of ['settings', 'profiles']) {
+    for (const screen of ['settings', 'profiles', 'hot-water']) {
       await open(page, screen);
       await api('PUT', '/api/v1/machine/state/hotWater');
-      await expect(small).toHaveAttribute('data-kind', 'hotWater');
-      await expect(page.getByTestId('small-ring-kind')).toHaveText('Hot water');
-      await expect(page.getByTestId('small-ring-time')).toHaveText(/^\d+ \/ \d+ s$/);
-      await expect(small).toHaveCount(0, { timeout: 30_000 });
+      await expect(ring).toHaveAttribute('data-kind', 'hotWater');
+      await expect(page.getByTestId('water-label')).toHaveText('Hot water');
+      await expect(page.getByTestId('water-time')).toHaveText(/^\d+ \/ \d+ s$/);
+      await expect(page.getByTestId('water-cover')).toBeVisible();
+      await expect(page.getByTestId('small-ring')).toHaveCount(0);
+      await expect(ring).toHaveCount(0, { timeout: 30_000 });
       await expect.poll(machineState, { timeout: 15_000 }).toBe('idle');
     }
 
-    await open(page, 'hot-water');
-    await api('PUT', '/api/v1/machine/state/hotWater');
-    await expect(page.getByTestId('water-view')).toHaveAttribute('data-kind', 'hotWater');
-    await expect(small).toHaveCount(0);
-    await expect(page.getByTestId('water-view')).toHaveCount(0, { timeout: 30_000 });
-    await expect.poll(machineState, { timeout: 15_000 }).toBe('idle');
-
     await open(page, 'beans');
     await api('PUT', '/api/v1/machine/state/flush');
-    await expect(small).toHaveAttribute('data-kind', 'flush');
-    await expect(page.getByTestId('small-ring-kind')).toHaveText('Flush');
-    await small.click();
+    await expect(ring).toHaveAttribute('data-kind', 'flush');
+    await expect(page.getByTestId('water-label')).toHaveText('Flush');
+    await page.getByTestId('water-stop').click();
     await expect.poll(machineState, { timeout: 15_000 }).toBe('idle');
-    await expect(small).toHaveCount(0);
+    await expect(ring).toHaveCount(0);
     await expect(page.getByTestId('screen-beans')).toBeVisible();
+    await expect(page.getByTestId('beans-add')).toBeVisible();
   } finally {
     if ((await machineState()) !== 'idle') await api('PUT', '/api/v1/machine/state/idle');
     for (const kind of ['shots', 'steams'] as const) {

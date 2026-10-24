@@ -111,7 +111,7 @@
     {/each}
   </nav>
 
-  <section class="list" aria-label={kind}>
+  <section class="list" aria-label={kind} data-main-frame>
     <div class="tools">
       <label class="search">
         <span class="hidden">search</span>
@@ -184,7 +184,7 @@
     {/if}
   </section>
 
-  <section class="detail">
+  <section class="detail" data-main-frame>
     {#if kind === 'beans'}
       {#key `${bean?.id ?? 'new'}:${batch?.id ?? ''}`}
         <BeanForm

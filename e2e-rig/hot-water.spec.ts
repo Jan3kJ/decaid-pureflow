@@ -104,9 +104,18 @@ test('the hot water page writes hotWaterData, 1:2 of a 40 g shot is 80 g, Decaid
     await api('PUT', '/api/v1/machine/state/hotWater');
     await expect.poll(machineState, { timeout: 10_000, intervals: [200] }).toBe('hotWater');
     const started = Date.now();
-    // While it pours the page shows the ring in place of the rows (spec 3.9 item 13).
+    // While it pours the ring covers the rows (spec 3.9 item 13, 3.14): a finger on them reaches the ring.
     await expect(page.getByTestId('water-view')).toHaveAttribute('data-kind', 'hotWater', { timeout: 5_000 });
-    await expect(page.getByTestId('hot-water-time')).toHaveCount(0);
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const box = document.querySelector('[data-testid="hot-water-time"]')!.getBoundingClientRect();
+          return !!document
+            .elementFromPoint(box.left + box.width / 2, box.top + box.height / 2)
+            ?.closest('[data-testid="water-cover"]');
+        }),
+      )
+      .toBe(true);
     // The page's state line says what home's says (spec 3.12): Hot water, then Idle or Heating.
     const title = page.getByTestId('screen-hot-water').getByTestId('status-title');
     await expect(title).toHaveText('Hot water');

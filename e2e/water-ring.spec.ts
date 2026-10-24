@@ -1,12 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mockGateway, profile } from './mock-gateway';
-import { back, toPage } from './touch';
+import { back, swipe, toPage } from './touch';
 
-// The small countdown ring on every screen (W2, spec 3.10, acceptance 58): while hot water or
-// flush runs, every screen without the large ring (home's, the hot water page's while hot water
-// pours) shows one small ring at the bottom left corner with the time; it overlaps no
-// other button, a tap on it sends the stop, and it goes when the run ends. The workflow's
-// targets are the mock's: hot water 30 s, flush 10 s.
+// The ring's frame (Z8, spec 3.14, acceptance 98): while hot water or flush runs, every screen
+// shows the one large ring of home over its main frame (`data-main-frame`; a screen without one
+// under its header), with stop in it; the header, the right column and the dots stay; a tap on
+// stop sends the stop, a swipe on the ring leaves nothing, and the frame's content is back when the
+// run ends. There is no small ring. The workflow's targets are the mock's: hot water 30 s, flush 10 s.
 
 const errors: string[] = [];
 
@@ -18,27 +18,58 @@ test.beforeEach(({ page }) => {
   page.on('pageerror', (error) => errors.push(error.message));
 });
 
-/** The small ring is at the bottom left corner, as wide as the corner's menu button, inside the viewport. */
-async function expectInColumn(page: Page) {
-  const place = await page.evaluate(() => {
-    const ring = document.querySelector('[data-testid="small-ring"]')!.getBoundingClientRect();
+/** Where the ring lies against the screen it covers, measured in the browser. */
+async function placement(page: Page) {
+  return page.evaluate(() => {
+    const cover = document.querySelector('[data-testid="water-cover"]')!;
+    const box = cover.getBoundingClientRect();
+    const history = document.querySelector('[data-testid="history"]');
+    const scope = history ?? document.querySelector('main > .page:not([inert])')!;
+    const frames = [...scope.querySelectorAll('[data-main-frame]')]
+      .map((frame) => frame.getBoundingClientRect())
+      .filter((rect) => rect.width > 0 && rect.height > 0);
+    const header = scope.querySelector('header')?.getBoundingClientRect() ?? null;
+    let want: { left: number; top: number; right: number; bottom: number };
+    if (frames.length) {
+      want = {
+        left: Math.min(...frames.map((rect) => rect.left)),
+        top: Math.min(...frames.map((rect) => rect.top)),
+        right: Math.max(...frames.map((rect) => rect.right)),
+        bottom: Math.max(...frames.map((rect) => rect.bottom)),
+      };
+    } else {
+      const screen = scope.getBoundingClientRect();
+      want = { left: screen.left, top: header ? header.bottom : screen.top, right: screen.right, bottom: screen.bottom };
+    }
+    const near = (a: number, b: number) => Math.abs(a - b) <= 1;
+    const stop = document.querySelector('[data-testid="water-stop"]')!.getBoundingClientRect();
+    const hit = (x: number, y: number) => document.elementFromPoint(x, y);
+    const covered = (rect: DOMRect | null) => !!rect && cover.contains(hit(rect.left + rect.width / 2, rect.top + rect.height / 2));
+    const column = scope.querySelector('aside:not([data-main-frame])');
     return {
-      inColumn: ring.left >= 0 && ring.right <= 4 * parseFloat(getComputedStyle(document.documentElement).fontSize) + 0.5,
-      inside: ring.bottom <= innerHeight && ring.width > 40,
+      marked: frames.length > 0,
+      onFrame: near(box.left, want.left) && near(box.top, want.top) && near(box.right, want.right) && near(box.bottom, want.bottom),
+      // A finger at stop's centre reaches stop, so the ring is drawn on top.
+      stopOnTop: document
+        .querySelector('[data-testid="water-stop"]')!
+        .contains(hit(stop.left + stop.width / 2, stop.top + stop.height / 2)),
+      // Large: stop is a finger's target many times over.
+      large: stop.width >= 150,
+      headerFree: !covered(header),
+      columnFree: !covered(column && column !== history ? column.getBoundingClientRect() : null),
     };
   });
-  expect(place).toEqual({ inColumn: true, inside: true });
 }
 
-async function expectSmallRing(page: Page, kind: 'flush' | 'hotWater', time: string) {
-  const ring = page.getByTestId('small-ring');
-  await expect(ring).toHaveCount(1);
-  await expect(ring).toHaveAttribute('data-kind', kind);
-  await expect(ring).toHaveAccessibleName(kind === 'flush' ? 'stop flush' : 'stop hot water');
-  await expect(page.getByTestId('small-ring-time')).toHaveText(time);
-  await expectInColumn(page);
-  // With the left column gone (spec 3.14) it may cover a control at the bottom left until Z8
-  // removes it for the large ring over the main frame (spec 3.14 item 8): not checked here.
+async function expectRing(page: Page, kind: 'flush' | 'hotWater', time: string, marked = true) {
+  await expect(page.getByTestId('water-view')).toHaveCount(1);
+  await expect(page.getByTestId('water-view')).toHaveAttribute('data-kind', kind);
+  await expect(page.getByTestId('water-label')).toHaveText(kind === 'flush' ? 'Flush' : 'Hot water');
+  await expect(page.getByTestId('water-time')).toHaveText(time);
+  await expect(page.getByTestId('small-ring')).toHaveCount(0);
+  await expect
+    .poll(() => placement(page))
+    .toEqual({ marked, onFrame: true, stopOnTop: true, large: true, headerFree: true, columnFree: true });
 }
 
 async function fromMenu(page: Page, entry: string) {
@@ -47,65 +78,68 @@ async function fromMenu(page: Page, entry: string) {
   await page.getByTestId(entry).click();
 }
 
-test('flush: the small ring on steam, settings, beans, the hot water page and the history; its tap stops', async ({ page }) => {
+test('flush: the one ring over the main frame of home, the history, steam, settings, beans and hot water; its stop stops', async ({
+  page,
+}) => {
   const gateway = (await mockGateway(page)).withDefaults('dark');
   await page.goto('/');
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
-  await expect(page.getByTestId('small-ring')).toHaveCount(0);
+  await expect(page.getByTestId('water-view')).toHaveCount(0);
 
   gateway.waterFor('flush', 6, 6, 90);
-  // Home keeps its large ring and has no small one.
-  await expect(page.getByTestId('water-view')).toHaveAttribute('data-kind', 'flush');
-  await expect(page.getByTestId('small-ring')).toHaveCount(0);
+  // Home: over the graph's frame; the right column with its own stop and the dots stay.
+  await expectRing(page, 'flush', '6 / 10 s');
+  await expect(page.getByTestId('shot-column')).toBeVisible();
+  await expect(page.getByTestId('page-dot-steam')).toBeVisible();
+  await page.screenshot({ path: 'docs/product/ring-frame-home.png' });
 
-  // The history covers home's ring: the small one stands in.
+  // The history over home: its list.
   await page.getByTestId('history-handle').click();
   await expect(page.getByTestId('history')).toBeVisible();
-  await expectSmallRing(page, 'flush', '6 / 10 s');
+  await expectRing(page, 'flush', '6 / 10 s');
   await page.getByTestId('history-outside').click({ position: { x: 900, y: 100 } });
-  await expect(page.getByTestId('small-ring')).toHaveCount(0);
+  await expect(page.getByTestId('history')).toHaveCount(0);
 
   await toPage(page, 'steam');
-  await expect(page.getByTestId('screen-steam')).toBeVisible();
-  await expectSmallRing(page, 'flush', '6 / 10 s');
-  await expect(page.getByTestId('small-ring')).toHaveAttribute('data-share', '0.600');
-  await page.screenshot({ path: 'docs/product/small-ring-steam.png' });
+  await expectRing(page, 'flush', '6 / 10 s');
+  await expect(page.getByTestId('water-ring')).toHaveAttribute('data-share', '0.600');
+  await page.screenshot({ path: 'docs/product/ring-frame-steam.png' });
 
   await fromMenu(page, 'open-settings');
   await expect(page.getByTestId('screen-settings')).toBeVisible();
-  await expectSmallRing(page, 'flush', '6 / 10 s');
+  await expectRing(page, 'flush', '6 / 10 s');
 
   await fromMenu(page, 'open-beans');
   await expect(page.getByTestId('screen-beans')).toBeVisible();
-  await expectSmallRing(page, 'flush', '6 / 10 s');
+  await expectRing(page, 'flush', '6 / 10 s');
+  await page.screenshot({ path: 'docs/product/ring-frame-beans.png' });
 
-  // The hot water page draws only hot water large: a flush is the small ring there.
+  // The hot water page: its rows' panel, for a flush too.
   await back(page);
   await toPage(page, 'hot-water');
-  await expect(page.getByTestId('screen-hot-water')).toBeVisible();
-  await expect(page.getByTestId('water-view')).toHaveCount(0);
-  await expectSmallRing(page, 'flush', '6 / 10 s');
+  await expectRing(page, 'flush', '6 / 10 s');
+  await expect(page.getByTestId('hot-water-stop')).toHaveCount(0);
 
   // It counts on, and stays full past the target.
   gateway.waterFlow(0, 1);
-  await expect(page.getByTestId('small-ring-time')).toHaveText('7 / 10 s');
-  await expect(page.getByTestId('small-ring')).toHaveAttribute('data-share', '0.700');
+  await expect(page.getByTestId('water-time')).toHaveText('7 / 10 s');
+  await expect(page.getByTestId('water-ring')).toHaveAttribute('data-share', '0.700');
   gateway.waterFlow(0, 5);
-  await expect(page.getByTestId('small-ring-time')).toHaveText('12 / 10 s');
-  await expect(page.getByTestId('small-ring')).toHaveAttribute('data-share', '1.000');
+  await expect(page.getByTestId('water-time')).toHaveText('12 / 10 s');
+  await expect(page.getByTestId('water-ring')).toHaveAttribute('data-share', '1.000');
 
   const before = gateway.calls('PUT', '/api/v1/machine/state/idle').length;
-  await page.getByTestId('small-ring').click();
+  await page.getByTestId('water-stop').click();
   await expect.poll(() => gateway.calls('PUT', '/api/v1/machine/state/idle').length).toBe(before + 1);
   await expect(page.getByTestId('screen-hot-water')).toBeVisible();
   gateway.waterEnded();
-  await expect(page.getByTestId('small-ring')).toHaveCount(0);
+  await expect(page.getByTestId('water-view')).toHaveCount(0);
+  // The frame's content is back.
+  await expect(page.getByTestId('hot-water-temperature')).toBeVisible();
   expect(errors).toEqual([]);
 });
 
-// The profile and bean buttons are home's right column, which the large ring replaces while
-// water runs (spec 3.11): the picker and the editor are opened before the run starts.
-test('flush: the small ring in the picker and the A-Flow editor', async ({ page }) => {
+test('flush: the ring over the picker and the A-Flow editor', async ({ page }) => {
   const gateway = (await mockGateway(page)).withDefaults('dark');
   await page.goto('/');
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
@@ -113,55 +147,94 @@ test('flush: the small ring in the picker and the A-Flow editor', async ({ page 
   await page.getByTestId('open-profiles').click();
   await expect(page.getByTestId('screen-profiles')).toBeVisible();
   gateway.waterFor('flush', 6, 6, 90);
-  await expectSmallRing(page, 'flush', '6 / 10 s');
+  await expectRing(page, 'flush', '6 / 10 s');
   gateway.waterEnded();
-  await expect(page.getByTestId('small-ring')).toHaveCount(0);
+  await expect(page.getByTestId('water-view')).toHaveCount(0);
+  await expect(page.getByTestId('profile-list')).toBeVisible();
 
   await back(page);
   await page.getByTestId('open-editor').click();
   await expect(page.getByTestId('screen-editor')).toBeVisible();
   await expect(page.getByTestId('graph')).toBeVisible();
   gateway.waterFor('flush', 6, 6, 90);
-  await expectSmallRing(page, 'flush', '6 / 10 s');
+  await expectRing(page, 'flush', '6 / 10 s');
+  await page.screenshot({ path: 'docs/product/ring-frame-editor.png' });
   gateway.waterEnded();
-  await expect(page.getByTestId('small-ring')).toHaveCount(0);
+  await expect(page.getByTestId('water-view')).toHaveCount(0);
+  await expect(page.getByTestId('graph')).toBeVisible();
   expect(errors).toEqual([]);
 });
 
-test('hot water: large on its page, small in the step editor and on steam, gone when it ends', async ({ page }) => {
+test('hot water: the ring over the step editor, its page and steam, gone when it ends', async ({ page }) => {
   const gateway = await mockGateway(page);
   gateway.workflow.profile = profile('Steps', 36, 3);
   gateway.connectScale(false);
   await page.goto('/');
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
 
-  // The editor is opened from home's column before the hot water starts (spec 3.11).
   await page.getByTestId('open-editor').click();
   await expect(page.getByTestId('step-cards')).toBeVisible();
   gateway.waterFor('hotWater', 3, 8, 40);
-  await expectSmallRing(page, 'hotWater', '3 / 30 s');
-  await expect(page.getByTestId('small-ring')).toHaveAttribute('data-share', '0.100');
-  await page.screenshot({ path: 'docs/product/small-ring-step-editor.png' });
+  await expectRing(page, 'hotWater', '3 / 30 s');
+  await expect(page.getByTestId('water-ring')).toHaveAttribute('data-share', '0.100');
+  // A tab without a marked frame: the ring covers the editor under its header.
+  await page.getByTestId('tab-settings').click();
+  await expectRing(page, 'hotWater', '3 / 30 s', false);
+  await page.getByTestId('tab-cards').click();
 
   await back(page);
   await toPage(page, 'hot-water');
-  await expect(page.getByTestId('water-view')).toHaveAttribute('data-kind', 'hotWater');
-  await expect(page.getByTestId('small-ring')).toHaveCount(0);
+  await expectRing(page, 'hotWater', '3 / 30 s');
+  await page.screenshot({ path: 'docs/product/hot-water-pouring.png' });
 
   await back(page);
   await toPage(page, 'steam');
-  await expectSmallRing(page, 'hotWater', '3 / 30 s');
+  await expectRing(page, 'hotWater', '3 / 30 s');
 
   // Hot water ends by itself (at its volume): the ring goes without a tap.
   gateway.waterEnded();
-  await expect(page.getByTestId('small-ring')).toHaveCount(0);
+  await expect(page.getByTestId('water-view')).toHaveCount(0);
   await expect(page.getByTestId('screen-steam')).toBeVisible();
   expect(errors).toEqual([]);
 });
 
-// Every screen times both kinds (spec 3.12, acceptance 78): the run starts at the machine with the
-// screen already open, a ring shows, large where spec 3.6 puts it (home, the hot water page for
-// hot water) and small elsewhere, a tap on it sends the stop, and it goes when the run ends.
+test('a swipe on the ring leaves neither the screen nor the page, and stops nothing', async ({ page }) => {
+  const gateway = (await mockGateway(page)).withDefaults('dark');
+  await page.goto('/');
+  await toPage(page, 'steam');
+  await page.getByTestId('menu').click();
+  await page.getByTestId('open-settings').click();
+  await expect(page.getByTestId('screen-settings')).toBeVisible();
+  gateway.waterFor('flush', 4, 6, 90);
+  await expectRing(page, 'flush', '4 / 10 s');
+  const before = gateway.calls('PUT', '/api/v1/machine/state/idle').length;
+
+  const ring = (await page.getByTestId('water-ring').boundingBox())!;
+  const { width } = page.viewportSize()!;
+  const from = { x: ring.x + ring.width * 0.1, y: ring.y + ring.height / 2 };
+  await swipe(page, from, { x: Math.min(width - 2, from.x + width * 0.45), y: from.y }, 120);
+  await expect(page.locator('.page.settling')).toHaveCount(0);
+  await expect(page.getByTestId('screen-settings')).toBeVisible();
+  await expect(page.getByTestId('water-view')).toHaveCount(1);
+
+  // On a page too: steam does not slide to home.
+  await back(page);
+  await expect(page.getByTestId('screen-steam')).toBeVisible();
+  const steamRing = (await page.getByTestId('water-ring').boundingBox())!;
+  const start = { x: steamRing.x + steamRing.width * 0.1, y: steamRing.y + steamRing.height / 2 };
+  await swipe(page, start, { x: Math.min(width - 2, start.x + width * 0.45), y: start.y }, 120);
+  await expect(page.locator('.page.settling')).toHaveCount(0);
+  await expect(page.locator('.page')).toHaveCount(1);
+  await expect(page.getByTestId('screen-steam')).toBeVisible();
+  expect(gateway.calls('PUT', '/api/v1/machine/state/idle').length).toBe(before);
+  gateway.waterEnded();
+  await expect(page.getByTestId('water-view')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+// Every screen times both kinds (spec 3.12, 3.14, acceptance 78, 98): the run starts at the machine
+// with the screen already open, the one large ring shows over the screen's main frame, a tap on its
+// stop sends the stop, and it goes when the run ends.
 const MATRIX = ['home', 'steam', 'hot-water', 'profiles', 'editor-aflow', 'editor-steps', 'settings', 'beans', 'history'] as const;
 
 for (const kind of ['hotWater', 'flush'] as const) {
@@ -181,28 +254,12 @@ for (const kind of ['hotWater', 'flush'] as const) {
       }
 
       gateway.waterFor(kind, 4, kind === 'flush' ? 6 : 8, 80);
-      const large = where === 'home' || (where === 'hot-water' && kind === 'hotWater');
-      if (large) {
-        await expect(page.getByTestId('water-view')).toHaveAttribute('data-kind', kind);
-        await expect(page.getByTestId('water-time')).toHaveText(kind === 'flush' ? '4 / 10 s' : '4 / 30 s');
-        await expect(page.getByTestId('small-ring')).toHaveCount(0);
-      } else {
-        await expectSmallRing(page, kind, kind === 'flush' ? '4 / 10 s' : '4 / 30 s');
-        await expect(page.getByTestId('small-ring-kind')).toHaveText(kind === 'flush' ? 'Flush' : 'Hot water');
-        // Drawn on top: a finger at its centre reaches it.
-        const onTop = await page.evaluate(() => {
-          const ring = document.querySelector('[data-testid="small-ring"]')!;
-          const box = ring.getBoundingClientRect();
-          return ring.contains(document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2));
-        });
-        expect(onTop).toBe(true);
-      }
+      await expectRing(page, kind, kind === 'flush' ? '4 / 10 s' : '4 / 30 s');
 
       const before = gateway.calls('PUT', '/api/v1/machine/state/idle').length;
-      await page.getByTestId(large ? 'stop' : 'small-ring').click();
+      await page.getByTestId('water-stop').click();
       await expect.poll(() => gateway.calls('PUT', '/api/v1/machine/state/idle').length).toBe(before + 1);
       gateway.waterEnded();
-      await expect(page.getByTestId('small-ring')).toHaveCount(0);
       await expect(page.getByTestId('water-view')).toHaveCount(0);
       await expect(page.getByTestId(`screen-${screen}`)).toBeVisible();
       expect(errors).toEqual([]);

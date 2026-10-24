@@ -48,7 +48,7 @@
     </PageHeader>
   </div>
 
-  <div class="plot">
+  <div class="plot" data-main-frame>
     <ShotGraph
       t={series.t}
       pressure={series.pressure}

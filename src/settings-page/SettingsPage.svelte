@@ -217,7 +217,7 @@
     {/each}
   </nav>
 
-  <div class="panel" bind:this={panel} data-testid="settings-content" data-category={category.id}>
+  <div class="panel" data-main-frame bind:this={panel} data-testid="settings-content" data-category={category.id}>
     {#if category.id === 'skin'}
       <SkinCategory {skin} />
     {:else}

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import Beans from './beans/Beans.svelte';
   import Editor from './editor/Editor.svelte';
   import { editorFor } from './editor/route';
@@ -11,7 +11,6 @@
   import SettingsPage from './settings-page/SettingsPage.svelte';
   import type { LoadAnswer } from './shell/load-warning.svelte';
   import { Skin } from './shell/skin.svelte';
-  import SmallRing from './shell/SmallRing.svelte';
   import { backupTime } from './settings-backup';
   import { applyDisplay } from './display';
   import Steam from './steam/Steam.svelte';
@@ -30,7 +29,9 @@
     type Point,
   } from './shell/swipe';
   import UnsavedDialog from './shell/UnsavedDialog.svelte';
-  import { smallRingRun } from './shell/water';
+  import { coverOf, MAIN_FRAME, type Rect } from './shell/cover';
+  import Water from './shell/Water.svelte';
+  import { shownRun } from './shell/water';
 
   const skin = new Skin();
   onMount(() => skin.connect());
@@ -44,8 +45,13 @@
   // which is not drawn beside it; there is no back arrow. Not while a shot runs on home. A drag that
   // starts on a control is the control's.
   const home = $derived(skin.screen === 'home');
-  // Hot water or flush on a screen without its large ring: one small ring at the bottom left (spec 3.10).
-  const smallRing = $derived(smallRingRun(skin.waterRun, skin.canStop, skin.screen, skin.historyOpen));
+  // Hot water or flush: the one large ring over the screen's main frame (`data-main-frame`), or over
+  // the screen under its header where none is marked (src/shell/cover.ts, spec 3.14). The open
+  // history is the screen then. The frame's content stays under the ring and is back when the run ends.
+  const water = $derived(shownRun(skin.waterRun, skin.canStop));
+  const watering = $derived(water !== null);
+  const overHistory = $derived(home && skin.historyOpen);
+  let cover: Rect | null = $state.raw(null);
   /** The slide's length, in milliseconds; with reduced motion there is no slide. */
   const SLIDE_MS = 220;
   let main: HTMLElement;
@@ -101,10 +107,57 @@
     );
   }
 
+  /** The screen the ring covers: the open history, else the page at rest. */
+  function coveredScreen(): HTMLElement | null {
+    if (overHistory) return main.querySelector<HTMLElement>('[data-testid="history"]');
+    return main.querySelector<HTMLElement>(':scope > .page:not([inert])');
+  }
+
+  // Measured while water runs, again when the layout or the screen's frames change.
+  $effect(() => {
+    if (!watering) {
+      cover = null;
+      return;
+    }
+    void overHistory;
+    void skin.screen;
+    let frame = 0;
+    const measure = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const scope = coveredScreen();
+        const next = scope ? coverOf(scope, main) : null;
+        const same = next && cover && (['left', 'top', 'width', 'height'] as const).every((key) => next[key] === cover?.[key]);
+        if (!same) cover = next;
+      });
+    };
+    const resized = new ResizeObserver(measure);
+    resized.observe(main);
+    const observeFrames = () => {
+      for (const node of main.querySelectorAll(`[${MAIN_FRAME}], .page, [data-testid="history"]`)) resized.observe(node);
+    };
+    const changed = new MutationObserver(() => {
+      observeFrames();
+      measure();
+    });
+    changed.observe(main, { subtree: true, childList: true, attributeFilter: [MAIN_FRAME, 'inert', 'class'] });
+    void tick().then(() => {
+      observeFrames();
+      measure();
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+      resized.disconnect();
+      changed.disconnect();
+    };
+  });
+
   function onpointerdown(event: PointerEvent) {
     skin.touched();
     swipe = closer = null;
     if (settling || held) return;
+    // The ring is not a place a swipe starts from, so a finger on it never leaves the screen.
+    if ((event.target as Element).closest('[data-testid="water-cover"]')) return;
     // The open history's list scrolls; a swipe to the left on it still closes it.
     if (skin.historyOpen) {
       if (home) closer = { x: event.clientX, y: event.clientY, id: event.pointerId };
@@ -253,9 +306,23 @@
     <History {skin} />
   {/if}
 
-  <!-- Over the pages, the history and the dialogs, under the stream's banner and the sleep screen. -->
-  {#if smallRing}
-    <SmallRing {skin} run={smallRing} />
+  <!-- Over the main frame of the page at rest (moving with it in a slide) or of the open history;
+       under the page's dialogs and menu, over the history; under the stream's banner and the sleep screen. -->
+  {#if water && cover}
+    <div
+      class="cover"
+      class:over={overHistory}
+      class:settling={!overHistory && settling}
+      data-testid="water-cover"
+      data-no-swipe
+      style:left="{cover.left}px"
+      style:top="{cover.top}px"
+      style:width="{cover.width}px"
+      style:height="{cover.height}px"
+      style:transform={overHistory ? '' : placed(skin.screen)}
+    >
+      <Water {skin} run={water} />
+    </div>
   {/if}
 </main>
 
@@ -309,8 +376,18 @@
     background: var(--bg);
   }
 
-  .page.settling {
+  .page.settling,
+  .cover.settling {
     transition: transform 220ms ease-out;
+  }
+
+  .cover {
+    position: absolute;
+    z-index: 9;
+  }
+
+  .cover.over {
+    z-index: 12;
   }
 
   .screen {
@@ -339,7 +416,8 @@
     position: absolute;
     left: 0;
     top: 50%;
-    z-index: 1;
+    /* over the ring of hot water and flush, under the menu (spec 3.14) */
+    z-index: 10;
     width: 2.6rem;
     height: 8rem;
     transform: translateY(-50%);
@@ -364,7 +442,7 @@
     position: absolute;
     left: 50%;
     bottom: 0;
-    z-index: 1;
+    z-index: 10;
     display: flex;
     transform: translateX(-50%);
   }

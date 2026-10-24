@@ -1,8 +1,7 @@
-// Hot water and flush on home (spec 3.6, 3.7: the water view): snapshot frames in, the run's
+// Hot water and flush on every screen (spec 3.6, 3.7, 3.14: the water view): snapshot frames in, the run's
 // time out, and the countdown ring and the values the stop button shows. Pure: time comes from
 // the frames' own timestamps, as in shot.ts and steam/run.ts.
 import type { MachineSnapshot, Workflow } from '../api';
-import type { Screen } from './nav';
 import { frameTime } from './shot';
 
 /** The two machine states the water view draws (research.md 19). */
@@ -45,25 +44,9 @@ export function recordWaterFrame(run: WaterRun | null, frame: MachineSnapshot): 
   return { ...run, at: Math.max(at, run.at), flow, temperature };
 }
 
-/**
- * The run a page draws as the ring: one that has not ended while the machine can be stopped,
- * of `kind` when one is given (the hot water page shows only hot water); else null.
- */
-export function shownRun(run: WaterRun | null, canStop: boolean, kind?: WaterKind): WaterRun | null {
-  return canStop && run && !run.ended && (kind === undefined || run.kind === kind) ? run : null;
-}
-
-/**
- * The run the shell draws as its small ring at the bottom left corner (spec 3.10, 3.14): on
- * every screen but those whose large ring shows it, home (unless the history covers it) and the
- * hot water page while hot water pours; else null.
- */
-export function smallRingRun(run: WaterRun | null, canStop: boolean, screen: Screen, historyOpen: boolean): WaterRun | null {
-  const shown = shownRun(run, canStop);
-  if (!shown) return null;
-  if (screen === 'home') return historyOpen ? shown : null;
-  if (screen === 'hot-water' && shown.kind === 'hotWater') return null;
-  return shown;
+/** The run the shell draws as the ring: one that has not ended while the machine can be stopped; else null. */
+export function shownRun(run: WaterRun | null, canStop: boolean): WaterRun | null {
+  return canStop && run && !run.ended ? run : null;
 }
 
 /** s from the run's first frame to its latest */
@@ -98,11 +81,6 @@ export function ringOf(seconds: number, duration: number | null): Ring {
   const share = duration === null ? 0 : Math.min(1, Math.max(0, seconds / duration));
   const time = `${elapsed}${whole === null ? '' : ` / ${whole}`} s`;
   return { share, elapsed, duration: whole, time };
-}
-
-/** The small ring's time on two lines: the seconds so far, then '/ 10 s' (or 's' without a target). */
-export function smallTime(ring: Ring): [string, string] {
-  return [String(ring.elapsed), ring.duration === null ? 's' : `/ ${ring.duration} s`];
 }
 
 export interface WaterValues {

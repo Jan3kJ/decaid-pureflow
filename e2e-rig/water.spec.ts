@@ -45,7 +45,7 @@ test('hot water and flush started at the machine show the ring and the values in
   const hotSeconds = Math.round(workflow.hotWaterData.duration);
   const flushSeconds = Math.round(workflow.rinseData.duration);
   const before = { shots: await ids('shots'), steams: await ids('steams') };
-  const stop = page.getByTestId('stop');
+  const stop = page.getByTestId('water-stop');
   const noPicture = async () => {
     await expect(page.getByTestId('water-view').locator('svg')).toHaveCount(1);
     await expect(page.getByTestId('water-ring').locator('svg')).toHaveCount(1);
@@ -68,7 +68,7 @@ test('hot water and flush started at the machine show the ring and the values in
     await expect.poll(async () => Number(await page.getByTestId('water-ring').getAttribute('data-share'))).toBeGreaterThan(0);
     await expect.poll(async () => parseFloat((await stop.getByTestId('water-weight').textContent()) ?? '')).toBeGreaterThan(5);
     await expect(page.getByTestId('water-view')).toHaveCount(0, { timeout: 30_000 });
-    await expect(page.getByTestId('stop')).toHaveCount(0);
+    await expect(page.getByTestId('water-stop')).toHaveCount(0);
 
     // Flush: flow 0 on the simulation; the ring counts, the button has no weight.
     await api('PUT', '/api/v1/machine/state/flush');

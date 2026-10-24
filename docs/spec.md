@@ -982,9 +982,8 @@ across, above the dialogs' backdrops and under the stream's banner and the Aslee
 run it shows is `smallRingRun` in `water.ts` (none on home and on the hot water page while hot
 water pours), its time on two lines `smallTime` ('6' over '/ 10 s'). The shot history covers
 home's ring, so while it is open the small ring shows over the history's lower left, and the
-history's list keeps room under its last entry
-(small-ring-steam.png (screenshot in the team repository),
-small-ring-step-editor.png (screenshot in the team repository)).
+history's list keeps room under its last entry. Removed in Z8 (3.14 'The ring's frame'): the
+large ring over each screen's main frame replaces the small ring, its pictures and its room.
 
 **Profile picker: graphs (item 1; W3).** In the picker's preview a step of 0 s is not drawn, a
 step's limit is drawn with its target, and the graph matches the profile: default-dark's flow does
@@ -1995,6 +1994,24 @@ that name them (49, W2's). One covering rule serves all screens: a screen marks 
 (`data-main-frame`, a wrapper component or a prop) and `App.svelte` draws `Water` over it, so no
 screen has its own ring code; where a screen has no clear main frame (a full-screen dialog)
 the ring covers the whole screen under the header.
+Built in Z8 (2026-10-25): the marked frames are `data-main-frame` on home's and the steam
+page's graph (`.plot`), the hot water page's rows, the A-Flow editor's graph and its step list,
+the step editor's preview and cards (`StepPreview`'s `mainFrame`), the settings page's category
+panel, the beans screen's list and form, the picker's list and preview, and the history's list;
+several marks on one screen are covered as one box. The step editor's script and settings tabs
+have no mark and are covered under the editor's header. `App.svelte` measures the box of the page
+at rest (or of the open history) by layout offsets (`coverOf` in `src/shell/cover.ts`), again
+when the layout or the marks change, and draws `Water` there, sliding with the page; it lies
+under the page's menu and dialogs and over the history. The ring is sized by the frame's shorter
+side (85 %), and its text shrinks with a smaller ring. The ring's stop is `water-stop`; home's
+column keeps its own `stop`, and the hot water page's `hot-water-stop` hides while hot water or
+flush runs. A swipe never starts on the ring (`data-no-swipe`), so a finger on it neither leaves
+the screen nor stops the run; the history's handle and the dots stay over it
+(ring-frame-home.png (screenshot in the team repository),
+ring-frame-steam.png (screenshot in the team repository),
+ring-frame-editor.png (screenshot in the team repository),
+ring-frame-beans.png (screenshot in the team repository),
+hot-water-pouring.png (screenshot in the team repository)).
 
 **The turn-on chip of a collapsed step (item 10; Z10).** In the A-Flow editor a step dragged to
 0 s collapses (the phase is off, `curve.off`, and has no width), and a dashed '+ name' chip
@@ -3309,8 +3326,8 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
     sleeps; a sleep the skin did not ask for (Decaid's timeout, presence, the machine's button)
     shows the Asleep screen as today; neither sleep touches Decaid's wake lock, so the tablet's
     screen follows Decaid's own `keepAwake`.
-  - Ring (item 6): on every screen but home and the hot water page it is a small ring at the
-    bottom left corner (the left column went in Z3), with the time inside and a tap to stop.
+  - Ring (item 6): settled by the review of 2026-10-23 (3.14 item 8, Z8): one large ring over
+    each screen's main frame, no small ring.
   - Picker graph (item 1): limits are dotted, muted lines of their quantity; an A-Flow profile's
     pour is drawn as far as the editor draws it (30 s), so default-dark ends at 1 ml/s as in the
     editor; the steps keep their own widths (the editor's infuse by weight is not copied).
@@ -3324,7 +3341,6 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
     unsaved edits are loaded on leaving as with 'back', nothing is asked.
 - The review of 2026-10-22 (3.12), hot water and flush ring (item 6; Y6), for the founder: on
   the rig every screen shows the ring for both kinds, so what failed on the tablet is not known.
-  The small ring is now edged in red and named. Does the founder see it now, on which screen did
-  a ring not show, and was the hot water started at the machine? And did 'show on any screen'
-  mean the large ring, in place of each page's own content, rather than the small one in the
-  left column?
+  Since Z8 every screen shows the one large ring over its main frame (3.14 item 8). Does the
+  founder see it now, on which screen did a ring not show, and was the hot water started at the
+  machine?

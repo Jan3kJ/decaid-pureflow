@@ -188,7 +188,7 @@
 <svelte:window onpointerdown={outside} />
 
 <div class="profiles">
-  <section class="list">
+  <section class="list" data-main-frame>
     {#if error}
       <div class="offer error" data-testid="profiles-error">
         <span>{error}</span>
@@ -253,7 +253,7 @@
     </ul>
   </section>
 
-  <aside data-testid="profile-detail">
+  <aside data-testid="profile-detail" data-main-frame>
     {#if selected}
       {@const profile = selected.profile}
       {@const dose = doseOf(profile, selected.metadata)}

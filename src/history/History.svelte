@@ -88,7 +88,7 @@
     >
   </div>
   {#if choosing}
-    <ul data-testid="filter-options">
+    <ul data-testid="filter-options" data-main-frame>
       <li>
         <button
           class="option"
@@ -116,7 +116,7 @@
       {/each}
     </ul>
   {:else}
-    <ul data-testid="history-list">
+    <ul data-testid="history-list" data-main-frame>
       {#each entries as entry (entry.key)}
         <li>
           <button class="entry" data-testid="history-entry" data-shot={entry.latest.id} onclick={() => skin.restore(entry)}>
@@ -194,8 +194,7 @@
     flex: 1;
     min-height: 0;
     margin: 0;
-    /* room under the last entry for the small ring of hot water or flush (spec 3.10) */
-    padding: 0 0 5.5rem;
+    padding: 0 0 1rem;
     list-style: none;
     overflow-y: auto;
     overscroll-behavior: contain;

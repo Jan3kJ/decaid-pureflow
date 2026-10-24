@@ -49,7 +49,7 @@ async function ringShare(page: Page) {
     const top = outer.top + view.clientTop + parseFloat(style.paddingTop);
     const inner = view.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
     const ring = view.querySelector('[data-testid="water-ring"]')!.getBoundingClientRect();
-    const stop = view.querySelector('[data-testid="stop"]')!.getBoundingClientRect();
+    const stop = view.querySelector('[data-testid="water-stop"]')!.getBoundingClientRect();
     const round = (value: number) => Math.round(value * 100) / 100;
     const centred =
       Math.abs(ring.top + ring.height / 2 - (top + inner / 2)) < 1 &&
@@ -60,7 +60,7 @@ async function ringShare(page: Page) {
 
 /** The values sit inside the stop button. */
 async function expectInStop(page: Page, ids: string[]) {
-  for (const id of ids) await expect(page.getByTestId('stop').getByTestId(id)).toBeVisible();
+  for (const id of ids) await expect(page.getByTestId('water-stop').getByTestId(id)).toBeVisible();
 }
 
 test('flush: no picture, the ring counts against rinseData, stop shows temperature, flow and time', async ({ page }) => {
@@ -74,9 +74,8 @@ test('flush: no picture, the ring counts against rinseData, stop shows temperatu
   await expect(page.getByTestId('water-label')).toHaveText('Flush');
   await expect(page.getByTestId('water-time')).toHaveText('6 / 10 s');
   await expect(page.getByTestId('water-ring')).toHaveAttribute('data-share', '0.600');
-  // Home shows the run in place of the graph; stop is in the ring, once.
-  await expect(page.getByTestId('empty-graph')).toHaveCount(0);
-  await expect(page.getByTestId('stop')).toHaveCount(1);
+  // Home shows the run over the graph's frame (spec 3.14); stop is in the ring, once.
+  await expect(page.getByTestId('water-stop')).toHaveCount(1);
   await expectNoPicture(page);
   await expect(page.getByTestId('water-temperature')).toHaveText('90 °C');
   await expect(page.getByTestId('water-flow')).toHaveText('6.0 ml/s');
@@ -98,12 +97,12 @@ test('flush: no picture, the ring counts against rinseData, stop shows temperatu
   await expect(page.getByTestId('water-time')).toHaveText('12 / 10 s');
   await expect(page.getByTestId('water-ring')).toHaveAttribute('data-share', '1.000');
 
-  await page.getByTestId('stop').click();
+  await page.getByTestId('water-stop').click();
   await expect.poll(() => gateway.calls('PUT', '/api/v1/machine/state/idle').length).toBe(1);
   gateway.waterEnded();
   await expect(page.getByTestId('water-view')).toHaveCount(0);
   await expect(page.getByTestId('empty-graph')).toBeVisible();
-  await expect(page.getByTestId('stop')).toHaveCount(0);
+  await expect(page.getByTestId('water-stop')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 

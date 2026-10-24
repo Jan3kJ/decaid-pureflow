@@ -3,9 +3,9 @@ import type { MachineSnapshot } from '../src/api';
 import { IDLE } from './idle';
 import { toPage } from '../e2e/touch';
 
-// The countdown ring on every screen against the rig (W2, spec 3.10): hot water is started
-// through the API, as at the machine; home shows its large ring, the steam page the small ring
-// in the left column, and a tap on the small ring stops the hot water. Nothing is changed in the
+// The countdown ring on every screen against the rig (W2, Z8, spec 3.10, 3.14): hot water is
+// started through the API, as at the machine; home shows the large ring over its graph, the steam
+// page the same ring over its graph, and a tap on its stop stops the hot water. Nothing is changed in the
 // workflow; any shot or steam record the run leaves is deleted.
 
 const GATEWAY = 'http://localhost:8080';
@@ -35,11 +35,11 @@ test.beforeAll(async () => {
   }
 });
 
-test('hot water started at the machine: the ring on home, the small ring on steam, whose tap stops it', async ({ page }) => {
+test('hot water started at the machine: the ring on home and on steam, whose stop stops it', async ({ page }) => {
   test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
 
   const before = { shots: await ids('shots'), steams: await ids('steams') };
-  const small = page.getByTestId('small-ring');
+  const ring = page.getByTestId('water-view');
   try {
     await page.goto('/');
     await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 30_000 });
@@ -47,16 +47,16 @@ test('hot water started at the machine: the ring on home, the small ring on stea
     await api('PUT', '/api/v1/machine/state/hotWater');
     await expect(page.getByTestId('water-view')).toHaveAttribute('data-kind', 'hotWater');
     await expect(page.getByTestId('water-time')).toHaveText(/^\d+ \/ \d+ s$/);
-    await expect(small).toHaveCount(0);
+    await expect(page.getByTestId('shot-column')).toBeVisible();
 
     await toPage(page, 'steam');
     await expect(page.getByTestId('screen-steam')).toBeVisible();
-    await expect(small).toHaveAttribute('data-kind', 'hotWater');
-    await expect(page.getByTestId('small-ring-time')).toHaveText(/^\d+ \/ \d+ s$/);
-    await expect.poll(async () => Number(await small.getAttribute('data-share'))).toBeGreaterThan(0);
-    await small.click();
+    await expect(ring).toHaveAttribute('data-kind', 'hotWater');
+    await expect(page.getByTestId('water-time')).toHaveText(/^\d+ \/ \d+ s$/);
+    await expect.poll(async () => Number(await page.getByTestId('water-ring').getAttribute('data-share'))).toBeGreaterThan(0);
+    await page.getByTestId('water-stop').click();
     await expect.poll(machineState, { timeout: 15_000 }).toBe('idle');
-    await expect(small).toHaveCount(0);
+    await expect(ring).toHaveCount(0);
     await expect(page.getByTestId('screen-steam')).toBeVisible();
   } finally {
     if ((await machineState()) !== 'idle') await api('PUT', '/api/v1/machine/state/idle');

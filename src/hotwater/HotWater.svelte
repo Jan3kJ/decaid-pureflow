@@ -3,7 +3,6 @@
   import NumberPad from '../editor/NumberPad.svelte';
   import PageHeader from '../shell/PageHeader.svelte';
   import type { Skin } from '../shell/skin.svelte';
-  import Water from '../shell/Water.svelte';
   import { shownRun } from '../shell/water';
   import {
     fieldStep,
@@ -28,8 +27,8 @@
   /** stop at weight in g with a connected scale, stop at volume in ml without one (spec 3.12) */
   const fields = $derived(hotWaterFields(skin.scaleLink));
   const stopField = $derived(fields.find((field) => field.key === 'volume')!);
-  /** While hot water pours the page shows the ring in place of the rows (spec 3.9). */
-  const pouring = $derived(shownRun(skin.waterRun, skin.canStop, 'hotWater'));
+  /** Hot water or flush: the shell's ring covers the rows, with stop in it (spec 3.14). */
+  const water = $derived(shownRun(skin.waterRun, skin.canStop));
 
   /** The value a slider is dragged to: shown while it moves, written once when it is let go. */
   let dragged: { id: string; value: number } | null = $state.raw(null);
@@ -74,35 +73,30 @@
     <PageHeader {skin} heat="group" title="Hot water" />
   </div>
 
-  {#if pouring}
-    <div class="pouring">
-      <Water {skin} run={pouring} />
-    </div>
-  {:else}
-    <!-- A row per value with a slider under it (spec 3.9); a tap on the value opens the number pad. -->
-    <div class="values">
-      {#each fields as field (field.id)}
-        <div class="row {field.id}">
-          <span class="label">{field.label}</span>
-          <button class="value" data-testid="hot-water-{field.id}" disabled={!values} onclick={() => (typing = field)}>
-            <b>{shown(field)}<i>{field.unit}</i></b>
-          </button>
-          <input
-            type="range"
-            aria-label={field.label}
-            data-testid="hot-water-slider-{field.id}"
-            min={field.min}
-            max={field.max}
-            step={fieldStep(field)}
-            value={valueOf(field) ?? field.min}
-            disabled={!values}
-            oninput={(event) => drag(field, event)}
-            onchange={(event) => release(field, event)}
-          />
-        </div>
-      {/each}
-    </div>
-  {/if}
+  <!-- A row per value with a slider under it (spec 3.9); a tap on the value opens the number pad.
+       The page's main frame, which hot water and flush cover (App.svelte). -->
+  <div class="values" data-main-frame>
+    {#each fields as field (field.id)}
+      <div class="row {field.id}">
+        <span class="label">{field.label}</span>
+        <button class="value" data-testid="hot-water-{field.id}" disabled={!values} onclick={() => (typing = field)}>
+          <b>{shown(field)}<i>{field.unit}</i></b>
+        </button>
+        <input
+          type="range"
+          aria-label={field.label}
+          data-testid="hot-water-slider-{field.id}"
+          min={field.min}
+          max={field.max}
+          step={fieldStep(field)}
+          value={valueOf(field) ?? field.min}
+          disabled={!values}
+          oninput={(event) => drag(field, event)}
+          onchange={(event) => release(field, event)}
+        />
+      </div>
+    {/each}
+  </div>
 
   <aside>
     <div class="shot">
@@ -150,8 +144,8 @@
       <p class="notice" data-testid="hot-water-unread">{unread}</p>
     {/if}
 
-    <!-- The ring holds stop while hot water pours; this one stops anything else that runs. -->
-    {#if skin.canStop && !pouring}
+    <!-- The ring holds stop while hot water or flush runs; this one stops anything else that runs. -->
+    {#if skin.canStop && !water}
       <button class="stop" data-testid="hot-water-stop" onclick={() => skin.stop()}>stop</button>
     {/if}
   </aside>
@@ -202,15 +196,11 @@
     color: var(--dim);
   }
 
-  .values,
-  .pouring {
+  .values {
     grid-area: values;
     min-height: 0;
     display: flex;
     flex-direction: column;
-  }
-
-  .values {
     gap: 0.6rem;
   }
 
