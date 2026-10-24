@@ -21,15 +21,18 @@ export async function pickDate(page: Page, field: Locator, iso: string) {
 /**
  * A finger's slow drag over the date picker's day grid, `dy` pixels down (negative: up) from a
  * point `from` the grid's top left (its middle when not given), resting at the end before it
- * lifts: no flick, so the grid settles where the finger left it.
+ * lifts: no flick, so the grid settles where the finger left it. `dx` slants it to the right.
  */
-export async function dragGrid(page: Page, dy: number, from?: { x: number; y: number }) {
+export async function dragGrid(page: Page, dy: number, from?: { x: number; y: number }, dx = 0) {
   const box = (await page.getByTestId('datepicker-grid').boundingBox())!;
   const start = { x: box.x + (from?.x ?? box.width / 2), y: box.y + (from?.y ?? box.height / 2) };
   const cdp = await page.context().newCDPSession(page);
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [start] });
   for (let i = 1; i <= 10; i += 1) {
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: start.x, y: start.y + (dy * i) / 10 }] });
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: [{ x: start.x + (dx * i) / 10, y: start.y + (dy * i) / 10 }],
+    });
     await page.waitForTimeout(30);
   }
   await page.waitForTimeout(200);

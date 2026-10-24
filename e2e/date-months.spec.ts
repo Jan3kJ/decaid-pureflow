@@ -64,6 +64,12 @@ test('a vertical drag on the day grid moves the month by whole months, the year 
   await flick(page, { x: box.x + 30, y: box.y + box.height - 10 }, { x: box.x + 30, y: box.y + box.height - 10 - height * 1.2 });
   await expect.poll(async () => (await shown.getAttribute('data-month'))! >= '2027-01').toBe(true);
 
+  // A slanted drag, up and to the right as the swipe back goes, still moves the month and
+  // leaves the beans page where it is.
+  const before = (await shown.getAttribute('data-month'))!;
+  await dragGrid(page, -height, { x: 20, y: height - 20 }, 80);
+  await expect(shown).not.toHaveAttribute('data-month', before);
+
   // The drags started no swipe of the page behind; nothing was picked.
   await expect(page.getByTestId('screen-beans')).toBeVisible();
   await page.getByTestId('datepicker-cancel').click();
