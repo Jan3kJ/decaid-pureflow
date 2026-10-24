@@ -126,8 +126,16 @@ const fail = (reason: string): StepsRead => ({ ok: false, aflow: true, reason })
 
 /** Reads a profile's steps as A-Flow 3.0 parameters (see the top of this file). */
 export function readSteps(profile: StoredProfile): StepsRead {
-  const slots = slotsOf(profile.steps.map((step) => step.name));
-  if (!slots) return { ok: false, aflow: false, reason: 'its steps are not the A-Flow steps' };
+  const names = profile.steps.map((step) => step.name);
+  const slots = slotsOf(names);
+  if (!slots) {
+    // A step of the user's own in front of the A-Flow steps ("Prewet", "Bloom"): A-Flow's by the
+    // rest, but 3.0 has no step to put it in.
+    if (names.length > 1 && slotsOf(names.slice(1))) {
+      return fail(`its first step “${names[0]}” is not one of A-Flow's, and 3.0 has no step before Fill`);
+    }
+    return { ok: false, aflow: false, reason: 'its steps are not the A-Flow steps' };
+  }
 
   const steps: Partial<Record<Slot, ProfileStep>> = {};
   for (const [index, stored] of profile.steps.entries()) {
@@ -142,6 +150,8 @@ export function readSteps(profile: StoredProfile): StepsRead {
   const hasRampDown = on(rampDown);
   const hasSecondFill = on(pause) && (!rampDown || on(secondFill));
   const strayPause = on(pause) && !hasSecondFill;
+  // A 2nd Fill that lasts while no Pause follows it: 3.0 switches the two on together.
+  if (on(secondFill) && !hasSecondFill) return fail('“2nd Fill” lasts, but no “Pause” follows it; 3.0 has the two on together');
   if (fill.exit?.type !== 'pressure' || fill.exit.condition !== 'over') return fail('“Fill” has no move-on pressure');
   if (rampUp.exit?.type !== 'flow' || rampUp.exit.condition !== 'over') return fail('“Pressure Up” has no move-on flow');
 
@@ -198,8 +208,12 @@ export function readSteps(profile: StoredProfile): StepsRead {
   for (const slot of slots) {
     const step = steps[slot]!;
     if (slot === 'preFill' || slot === 'pouringStart') {
-      // With ramp down the generator decides Flow Start again, from the whole ramp time.
-      if (step.seconds > 0 && !(slot === 'pouringStart' && hasRampDown)) kept.push(step);
+      // With ramp down the generator decides Flow Start again, from the whole ramp time. A Pre
+      // Fill is dropped and written again by the setting, at the fill temperature: its own is
+      // not compared (a profile of the plugin has it at 95 °C with the fill at 93).
+      if (step.seconds > 0 && !(slot === 'pouringStart' && hasRampDown)) {
+        kept.push(slot === 'preFill' ? { ...step, temperature: params.fillTemperature } : step);
+      }
     } else if (slot === 'infuse') kept.push({ ...step, volume: C.STEP_VOLUME });
     else if (slot === 'secondFill') {
       if (hasSecondFill || step.seconds > 0) kept.push(step);

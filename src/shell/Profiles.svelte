@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import type { ProfileRecord } from '../api';
   import Confirm from '../settings-page/Confirm.svelte';
   import StepPreview from '../steps/StepPreview.svelte';
@@ -54,6 +54,7 @@
     $state(null);
   /** A drag of a row ends in a click on it, which must not select. */
   let dragged = false;
+  let listEl: HTMLUListElement | undefined = $state();
 
   async function read() {
     error = null;
@@ -63,6 +64,12 @@
     } catch (cause) {
       error = `The profiles could not be read: ${errorMessage(cause)}`;
     }
+  }
+
+  /** The picker opens on the loaded profile, in the middle of the list, not at its top (founder, 2026-10-24). */
+  async function showLoaded() {
+    await tick();
+    listEl?.querySelector('[data-loaded="true"]')?.scrollIntoView({ block: 'center' });
   }
 
   async function act(what: string, run: () => Promise<void>) {
@@ -90,7 +97,7 @@
       if (answer === 'save-as') skin.openSaveAs();
       if (answer !== 'load') return;
       skin.workflow = await loadEntry(skin.client, entry);
-      skin.go(skin.pickerReturn === 'editor' ? 'editor' : 'home');
+      skin.go(skin.back());
     });
 
   /**
@@ -172,7 +179,10 @@
       if (selectedId === entry.id) selectedId = null;
     });
 
-  onMount(read);
+  onMount(async () => {
+    await read();
+    await showLoaded();
+  });
 </script>
 
 <svelte:window onpointerdown={outside} />
@@ -195,7 +205,7 @@
       data-testid="profile-filter"
       bind:value={filter}
     />
-    <ul data-testid="profile-list">
+    <ul data-testid="profile-list" bind:this={listEl}>
       {#each shown as entry (entry.id)}
         {@const offset = dragOffset(entry)}
         {@const open = openId === entry.id}
@@ -222,6 +232,7 @@
             data-testid="profile-item"
             data-id={entry.id}
             data-default={entry.isDefault}
+            data-loaded={isLoaded(entry)}
             disabled={busy}
             onclick={() => tap(entry)}
           >

@@ -61,7 +61,14 @@ export async function runImport(client: DecaidClient, plan: ImportPlan, firstSte
 }
 
 const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
-const titles = (records: readonly ProfileRecord[]) => records.map((record) => `“${record.profile.title}”`).join(', ');
+/** The unreadable profiles with why, so that a title alone does not leave the user guessing. */
+const withReasons = (records: readonly ProfileRecord[]) =>
+  records
+    .map((record) => {
+      const read = readSteps(record.profile);
+      return `“${record.profile.title}”${read.ok ? '' : ` (${read.reason})`}`;
+    })
+    .join('; ');
 
 /** What the import would leave alone: the skipped and the unreadable profiles. */
 function leftAlone(plan: ImportPlan): string[] {
@@ -69,7 +76,7 @@ function leftAlone(plan: ImportPlan): string[] {
     ...(plan.skipped.length
       ? [`Skipped: ${count(plan.skipped.length, 'profile', 'profiles')} bundled with Decaid, for which the skin's defaults stand.`]
       : []),
-    ...(plan.unread.length ? [`Cannot be read: ${titles(plan.unread)}.`] : []),
+    ...(plan.unread.length ? [`Cannot be read: ${withReasons(plan.unread)}.`] : []),
   ];
 }
 
@@ -84,8 +91,9 @@ export function importQuestion(plan: ImportPlan): string {
 /** The counts after the import. */
 export function importReport(plan: ImportPlan, result: ImportResult): string {
   return [
-    `Converted ${result.converted.length}, skipped ${plan.skipped.length}, could not read ${plan.unread.length}.`,
-    ...(plan.unread.length ? [`Not read: ${titles(plan.unread)}.`] : []),
+    `Converted ${result.converted.length}, skipped ${plan.skipped.length}, could not read ${plan.unread.length}` +
+      `${result.failed.length ? `, refused by Decaid ${result.failed.length}` : ''}.`,
+    ...(plan.unread.length ? [`Not read: ${withReasons(plan.unread)}.`] : []),
     ...result.failed.map((failure) => `“${failure.title}” was not converted: ${failure.reason}`),
   ].join(' ');
 }

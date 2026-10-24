@@ -60,6 +60,29 @@ describe('planImport', () => {
   });
 });
 
+describe('profiles of the export of 2026-10-21', () => {
+  const withFirst = (profile: Profile, title: string, first: Record<string, unknown>) => ({
+    ...asProfile(profile, title),
+    steps: [{ ...profile.steps[0], ...first }, ...profile.steps],
+  });
+
+  it('reads a Pre Fill at another temperature than the Fill, as the plugin writes it', () => {
+    const base = rigProfile('default-dark');
+    const steps = base.steps.map((step) => (step.name === 'Pre Fill' ? { ...step, temperature: step.temperature + 2 } : step));
+    expect(steps.some((step) => step.name === 'Pre Fill')).toBe(true);
+    const read = readSteps({ ...base, steps });
+    expect(read.ok && read.dropped).toContain('preFill');
+  });
+
+  it('lists a step of its own in front of the A-Flow steps as unread, with its name, instead of leaving it out', () => {
+    const gateway = fakeGateway();
+    const record = gateway.make(withFirst(pluginProfile('default-dark'), 'A-Flow / coldbrew', { name: 'Prewet', sensor: 'water' }));
+    const plan = planImport([record]);
+    expect(plan.unread).toEqual([record]);
+    expect(importQuestion(plan)).toContain(`“A-Flow / coldbrew” (its first step “Prewet” is not one of A-Flow's`);
+  });
+});
+
 describe('runImport', () => {
   it("stores each as 3.0 through the editor's save, the old one its parent and hidden", async () => {
     const { gateway, mine, old } = await rig();
@@ -78,7 +101,9 @@ describe('runImport', () => {
     // A second run finds nothing more to convert.
     const again = planImport(gateway.records);
     expect(again.convert).toEqual([]);
-    expect(importReport(plan, result)).toBe('Converted 2, skipped 5, could not read 1. Not read: “A-Flow / broken”.');
+    expect(importReport(plan, result)).toBe(
+      'Converted 2, skipped 5, could not read 1. Not read: “A-Flow / broken” (a value of “Infuse” is missing).',
+    );
   });
 
   it('goes on after a profile Decaid refuses, and names it', async () => {
@@ -95,7 +120,9 @@ describe('runImport', () => {
     expect(result.failed.map((failure) => failure.title)).toEqual(['A-Flow / two']);
     expect(result.failed[0].reason).toContain('“A-Flow / one”');
     expect(gateway.records.find((r) => r.id === second.id)!.visibility).toBe('visible');
-    expect(importReport(plan, result)).toMatch(/^Converted 1, skipped 0, could not read 0\. “A-Flow \/ two” was not converted: /);
+    expect(importReport(plan, result)).toMatch(
+      /^Converted 1, skipped 0, could not read 0, refused by Decaid 1\. “A-Flow \/ two” was not converted: /,
+    );
   });
 });
 
@@ -104,7 +131,7 @@ describe('importQuestion', () => {
     const { gateway } = await rig();
     expect(importQuestion(planImport(gateway.records))).toBe(
       '2 old A-Flow profiles are stored as A-Flow 3.0; each old version stays in Decaid, hidden. ' +
-        "Skipped: 5 profiles bundled with Decaid, for which the skin's defaults stand. Cannot be read: “A-Flow / broken”.",
+        "Skipped: 5 profiles bundled with Decaid, for which the skin's defaults stand. Cannot be read: “A-Flow / broken” (a value of “Infuse” is missing).",
     );
   });
 

@@ -58,7 +58,7 @@ test('the button asks first; Cancel converts nothing', async ({ page }) => {
   await expect(dialog).toContainText('Convert old A-Flow profiles?');
   await expect(dialog).toContainText('1 old A-Flow profile is stored as A-Flow 3.0');
   await expect(dialog).toContainText("Skipped: 1 profile bundled with Decaid, for which the skin's defaults stand.");
-  await expect(dialog).toContainText('Cannot be read: “A-Flow / changed”.');
+  await expect(dialog).toContainText('Cannot be read: “A-Flow / changed” (a value of “Infuse” is missing).');
   await page.screenshot({ path: 'docs/product/aflow-import.png' });
 
   await page.getByTestId('settings-confirm-cancel').click();
@@ -72,7 +72,7 @@ test('Convert stores the old profile as 3.0, its old version hidden, and shows t
   await page.getByTestId('settings-confirm-ok').click();
 
   await expect(page.getByTestId('aflow-import-result')).toHaveText(
-    'Converted 1, skipped 1, could not read 1. Not read: “A-Flow / changed”.',
+    'Converted 1, skipped 1, could not read 1. Not read: “A-Flow / changed” (a value of “Infuse” is missing).',
   );
   const converted = gateway.profiles.find((stored) => stored.parentId === 'profile:mine')!;
   expect(converted.profile.title).toBe('A-Flow / my very dark');
@@ -87,6 +87,6 @@ test('Convert stores the old profile as 3.0, its old version hidden, and shows t
   await page.getByTestId('aflow-import').click();
   await expect(page.getByTestId('settings-confirm')).toHaveCount(0);
   await expect(page.getByTestId('aflow-import-result')).toHaveText(
-    "There is no old A-Flow profile to convert. Skipped: 1 profile bundled with Decaid, for which the skin's defaults stand. Cannot be read: “A-Flow / changed”.",
+    "There is no old A-Flow profile to convert. Skipped: 1 profile bundled with Decaid, for which the skin's defaults stand. Cannot be read: “A-Flow / changed” (a value of “Infuse” is missing).",
   );
 });

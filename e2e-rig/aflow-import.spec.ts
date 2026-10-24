@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import plugin12 from '../src/aflow/fixtures/plugin-1.2.json' with { type: 'json' };
 import type { MachineSnapshot, Profile, ProfileRecord } from '../src/api';
-import { planImport } from '../src/editor/import';
+import { importReport, planImport } from '../src/editor/import';
 import { SKIN_METADATA } from '../src/editor/save';
 import { readRecord } from '../src/editor/storage';
 
@@ -80,11 +80,9 @@ test("the settings' button converts the test's old A-Flow profile to 3.0, the ri
     await page.getByTestId('aflow-import').click();
     await expect(page.getByTestId('settings-confirm')).toContainText('1 old A-Flow profile is stored as A-Flow 3.0');
     await page.getByTestId('settings-confirm-ok').click();
-    await expect(page.getByTestId('aflow-import-result')).toHaveText(
-      `Converted 1, skipped ${plan.skipped.length}, could not read ${plan.unread.length}.` +
-        (plan.unread.length ? ` Not read: ${plan.unread.map((record) => `“${record.profile.title}”`).join(', ')}.` : ''),
-      { timeout: 15_000 },
-    );
+    await expect(page.getByTestId('aflow-import-result')).toHaveText(importReport(plan, { converted: [old], failed: [] }), {
+      timeout: 15_000,
+    });
 
     const all = await api<ProfileRecord[]>('GET', '/api/v1/profiles?includeHidden=true');
     const converted = all.find((record) => record.parentId === old.id && record.visibility === 'visible');
