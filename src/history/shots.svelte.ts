@@ -34,6 +34,8 @@ export class ShotCache {
   private readonly client: DecaidClient;
   private readonly most: number;
   private reading: Promise<void> | null = null;
+  /** resolved when the first read has its first page, or has failed */
+  private firstPage: Promise<void> = Promise.resolve();
   private readonly records = new Records(RECORDS);
 
   constructor(client: DecaidClient, most = HISTORY_SHOTS) {
@@ -53,10 +55,13 @@ export class ShotCache {
   /** The newest `FIRST_SHOTS`, then the rest in pages of the gateway's largest size. */
   private async readAll(): Promise<void> {
     this.error = null;
+    let first = () => undefined as void;
+    this.firstPage = new Promise((resolve) => (first = resolve));
     try {
       let page = await this.client.listShots({ limit: Math.min(FIRST_SHOTS, this.most), offset: 0, order: 'desc' });
       this.shots = page.items;
       this.read = 'first';
+      first();
       while (page.items.length > 0 && this.shots.length < Math.min(page.total, this.most)) {
         const offset = this.shots.length;
         page = await this.client.listShots({ limit: Math.min(PAGE, this.most - offset), offset, order: 'desc' });
@@ -66,7 +71,19 @@ export class ShotCache {
     } catch (cause) {
       this.error = errorMessage(cause);
       throw cause;
+    } finally {
+      first();
     }
+  }
+
+  /**
+   * The newest shot after a look for newer ones (`sync`), null without one or while the gateway
+   * is away. On the first read the first page is enough; the older shots go on arriving.
+   */
+  async newest(): Promise<ShotRecordSummary | null> {
+    const reading = this.sync().catch(() => undefined);
+    await (this.read === 'all' ? reading : Promise.race([reading, this.firstPage]));
+    return this.shots[0] ?? null;
   }
 
   /**

@@ -42,8 +42,9 @@ test('a shot that stays at or under 10 bar has a scale to 10, live and afterward
   gateway.addShot('shot-before', '2026-10-18T08:00:00.000000', gateway.workflow.profile, gateway.workflow.context);
   await home(page);
   await expect.poll(() => gateway.calls('GET', '/api/v1/shots/shot-before').length).toBeGreaterThan(0);
-  // Before any shot, home's empty graph has the shot's scale too.
-  expect(await attribute(page.getByTestId('empty-graph'), 'data-scale')).toBe(10);
+  // Before a shot here, home shows the newest shot in Decaid, the earlier one, with its scale.
+  await expect(page.getByTestId('last-shot')).toBeVisible();
+  expect(await attribute(page.getByTestId('last-shot'), 'data-scale')).toBe(10);
 
   await gateway.replay(page, 0, 0.7);
   await expect(page.getByTestId('shot-plot')).toBeVisible();

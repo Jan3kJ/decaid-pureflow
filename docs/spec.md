@@ -1131,6 +1131,15 @@ graph and one column, in three states.
 | Shot running | the live curves, `fit` off as now | **no buttons**; time, weight, pressure, flow, temperature live, and **stop** at the bottom, the overlay's |
 | After the shot | the shot, `fit` | as idle: the buttons are back and the stop button's place is empty; the table of phases is under the graph as the overlay draws it (setting `showShotValues`, W5) |
 
+*Built (inbox #45, 2026-10-24):* before 'else the empty graph' home shows **the newest shot
+record** from Decaid (`GET /api/v1/shots/latest`, then its record with the measurements), as a
+finished shot without the table of phases. It is read whenever home has no shot of its own (no
+running or kept shot, no recalled entry; `wantsNewest` in `home-shot.ts`): when the streams open
+(the start, a page the tablet reloaded, every reconnect), when the machine leaves `sleeping`,
+when the page becomes visible again (`visibilitychange`, `pageshow`, `resume`) and after a
+recalled entry is dismissed; a kept or recalled shot is never replaced by it. The empty graph is
+left for a Decaid without any shot.
+
 The finished shot **stays on home until the next one starts**: no 'dismiss' chip, no 'tap anywhere
 to close' (`shot-close-hint`, the `catch` layer of `ShotOverlay.svelte`), and `Skin.shotOpen`,
 `closeShot` and `dismissShot` go with them; `followMachine` and the espresso screen of

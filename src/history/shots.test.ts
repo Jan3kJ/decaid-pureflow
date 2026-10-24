@@ -224,3 +224,26 @@ describe('merge', () => {
     expect(merge([shot(2), shot(1)], [shot(1), shot(3), shot(0)], 3).map((s) => s.id)).toEqual(['shot-3', 'shot-2', 'shot-1']);
   });
 });
+
+describe('ShotCache.newest', () => {
+  it('is the newest shot once the first page is in, while the older ones still arrive', async () => {
+    const rig = gateway(many(230));
+    rig.hold();
+    const cache = new ShotCache(rig.client);
+    expect((await cache.newest())?.id).toBe('shot-229');
+    expect(cache.read).toBe('first');
+    rig.release();
+  });
+
+  it('looks for newer shots after the first read, and is null without any shot or gateway', async () => {
+    const stored = many(3);
+    const rig = gateway(stored);
+    const cache = new ShotCache(rig.client);
+    await cache.sync();
+    stored.push(shot(3));
+    expect((await cache.newest())?.id).toBe('shot-3');
+    expect(await new ShotCache(gateway([]).client).newest()).toBeNull();
+    const away = new DecaidClient({ fetch: () => Promise.reject(new Error('away')) });
+    expect(await new ShotCache(away).newest()).toBeNull();
+  });
+});

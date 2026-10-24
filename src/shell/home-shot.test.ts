@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MachineSnapshot } from '../api';
 // Both streams of a simulated shot recorded on the rig (Decaid 0.8.8, A-Flow / default-medium).
 import recording from '../../e2e/fixtures/shot.json';
-import { homeShot } from './home-shot';
+import { homeShot, wantsNewest } from './home-shot';
 import { emptySeries, recordFrame, type Shot, type ShotSeries } from './shot';
 import { Skin } from './skin.svelte';
 
@@ -86,9 +86,52 @@ describe('homeShot', () => {
     expect(shown.seconds).toBe(29.5);
     expect(shown.weight).toBe(20);
   });
+
+  it('is the newest shot record read from Decaid when home has no shot of its own, under every shot of its own', () => {
+    const newest = series([0, 15, 31], [0, 18, 35.5]);
+    expect(homeShot(null, null, 2, newest)).toMatchObject({ kind: 'finished', series: newest, seconds: 31, weight: 35.5 });
+    expect(homeShot(shot(true, { finalWeight: 36.2 }), null, 0, newest)).toMatchObject({ seconds: 2.5, weight: 36.2 });
+    expect(homeShot(null, series([0, 20], [0, 40]), 0, newest)).toMatchObject({ kind: 'recalled', seconds: 20 });
+    expect(homeShot(shot(false), null, 0, newest).kind).toBe('running');
+  });
+});
+
+describe('wantsNewest', () => {
+  it('reads the newest shot record only while home has no running, kept or recalled shot', () => {
+    expect(wantsNewest(null, null)).toBe(true);
+    expect(wantsNewest(shot(false), null)).toBe(false);
+    expect(wantsNewest(shot(true), null)).toBe(false);
+    expect(wantsNewest(null, series([0, 20], [0, 40]))).toBe(false);
+  });
 });
 
 describe('the shot on home', () => {
+  it('is the newest shot record after the machine wakes, and a kept shot stays over it', async () => {
+    const espresso = frames.slice(firstEspresso, lastEspresso + 1);
+    const measurements = espresso.map((machine) => ({ machine, scale: null }));
+    vi.stubGlobal('fetch', (input: string) => {
+      const path = new URL(input).pathname;
+      const summary = { id: 'newest', timestamp: '2026-10-24T08:00:00' };
+      if (path === '/api/v1/shots') return Promise.resolve(Response.json({ items: [summary], total: 1, limit: 20, offset: 0 }));
+      if (path === '/api/v1/shots/latest') return Promise.resolve(Response.json(summary));
+      if (path === '/api/v1/shots/newest') return Promise.resolve(Response.json({ id: 'newest', timestamp: '', measurements }));
+      return Promise.resolve(new Response('{}', { status: 200 }));
+    });
+    const asleep = { ...frames[0], state: { state: 'sleeping', substate: 'idle' } } as MachineSnapshot;
+    const awake = { ...frames[0], state: { state: 'idle', substate: 'idle' } } as MachineSnapshot;
+    const skin = new Skin('http://rig:8080');
+    feed(skin, [asleep, awake]);
+    await vi.waitFor(() => expect(skin.newestShot?.t.length).toBeGreaterThan(10));
+    expect(homeShot(skin.shot, null, null, skin.newestShot).kind).toBe('finished');
+
+    // A shot made here is kept: a wake after it reads nothing over it.
+    feed(skin, frames);
+    const kept = skin.shot;
+    vi.stubGlobal('fetch', () => Promise.reject(new Error('not asked')));
+    feed(skin, [asleep, awake]);
+    expect(homeShot(skin.shot, null, null, skin.newestShot).series).toBe(kept?.series);
+  });
+
   it('is none before a shot', () => {
     const skin = new Skin('http://rig:8080');
     feed(skin, frames.slice(0, firstEspresso));

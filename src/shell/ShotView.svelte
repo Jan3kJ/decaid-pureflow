@@ -16,7 +16,7 @@
   // width with the shot's time, weight and values, so nothing changes size when a shot starts.
   // While the shot runs the curves are live and stop is at the column's bottom; after it the
   // shot stays with the per-phase table until the next one starts (`homeShot`).
-  const shown = $derived(homeShot(skin.shot, skin.recalled?.series ?? null, skin.weight));
+  const shown = $derived(homeShot(skin.shot, skin.recalled?.series ?? null, skin.weight, skin.newestShot));
   const running = $derived(shown.kind === 'running');
   const finished = $derived(shown.kind === 'finished');
   const recalled = $derived(shown.kind === 'recalled' ? skin.recalled : null);

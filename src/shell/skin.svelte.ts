@@ -123,6 +123,7 @@ export class Skin {
         void this.store.readAtStart();
         // Once in the background after the start; after a lost connection, what is new.
         this.shots.sync().catch(() => undefined);
+        void this.recall.showNewest();
       },
       onMachineFrame: (frame) => this.onMachineFrame(frame),
       onWeight: (weight) => (this.shot = settleWeight(this.shot, weight)),
@@ -246,6 +247,10 @@ export class Skin {
   get recalled(): Recalled | null {
     return this.recall.recalled;
   }
+  /** the newest shot record's graph, home's while it has no shot of its own (`Recall.showNewest`) */
+  get newestShot(): Recall['newest'] {
+    return this.recall.newest;
+  }
   /** s, where the running shot graph's time axis starts (spec 3.8) */
   get expectedSeconds(): number {
     return this.recall.expectedSeconds;
@@ -258,11 +263,28 @@ export class Skin {
     return this.warning.unsaved;
   }
 
-  /** Opens the streams. Returns what closes them again. */
+  /**
+   * Opens the streams. Returns what closes them again. A page that becomes visible again (the
+   * tablet's screen on, a page the browser froze and resumes) reads the newest shot for home
+   * when it has none; a page the browser reloaded does so when its streams open.
+   */
   connect(): () => void {
     const closeStreams = this.streams.connect();
     const stopFollowing = this.recall.follow();
+    const visible = () => {
+      if (document.visibilityState === 'visible') void this.recall.showNewest();
+    };
+    // A page shown from the browser's back-forward cache; a first load opens its streams instead.
+    const restored = (event: PageTransitionEvent) => {
+      if (event.persisted) visible();
+    };
+    document.addEventListener('visibilitychange', visible);
+    document.addEventListener('resume', visible);
+    window.addEventListener('pageshow', restored);
     return () => {
+      document.removeEventListener('visibilitychange', visible);
+      document.removeEventListener('resume', visible);
+      window.removeEventListener('pageshow', restored);
       stopFollowing();
       closeStreams();
     };
@@ -282,6 +304,8 @@ export class Skin {
     this.waterRun = recordWaterFrame(this.waterRun, frame);
     if (next !== this.screen) this.go(next);
     this.sleepMark = followSleep(this.sleepMark, before, state);
+    // The machine woke: home shows the newest shot when it has none.
+    if (before === 'sleeping' && state !== 'sleeping') void this.recall.showNewest();
     void this.dimmer.follow(state === 'sleeping' && !this.sleepMark.machineOnly);
   }
 
@@ -464,8 +488,10 @@ export class Skin {
     this.go('editor');
   }
 
+  /** The recalled entry's dismiss chip: the kept shot is back, else the newest shot record. */
   dismissRecalled(): void {
     this.recall.recalled = null;
+    void this.recall.showNewest();
   }
 
   private async request(state: RequestedMachineState, failure: string): Promise<void> {

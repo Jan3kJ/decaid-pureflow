@@ -64,9 +64,9 @@ test('the handle opens the overlay: one entry per profile and bean, newest first
 
   // The list is read once, after the start, without measurements; nothing is written by
   // opening it. (The workflow's profile has no shot, so the look-up of its last shot, spec 3.8,
-  // reads no record.)
+  // reads no record; home, with no shot of its own, reads the newest one's, shot-4.)
   expect(gateway.historyListCalls()).toHaveLength(1);
-  expect(gateway.recordCalls()).toHaveLength(0);
+  await expect.poll(() => gateway.recordCalls().map((call) => call.path)).toEqual(['/api/v1/shots/shot-4']);
   expect(written(gateway)).toEqual([]);
   expect(errors).toEqual([]);
 });
@@ -178,10 +178,12 @@ test('tapping an entry closes the overlay, restores profile, bean and grinder se
   await expect(page.getByTestId('recalled-bean')).toHaveText('Square Mile · Red Brick');
   await expect(page.getByTestId('recalled-grinder')).toHaveText('grinder 4.8');
   // The entry's latest shot is read for its graph; the restored profile's newest shot (shot-3,
-  // another bean) may be read for the next shot's time axis (spec 3.8), nothing else.
+  // another bean) may be read for the next shot's time axis (spec 3.8), and home's newest shot
+  // (shot-4) at the start, nothing else.
   const read = gateway.recordCalls().map((call) => call.path);
   expect(read).toContain('/api/v1/shots/shot-2');
-  expect(read.filter((path) => path !== '/api/v1/shots/shot-2' && path !== '/api/v1/shots/shot-3')).toEqual([]);
+  const others = ['/api/v1/shots/shot-2', '/api/v1/shots/shot-3', '/api/v1/shots/shot-4'];
+  expect(read.filter((path) => !others.includes(path))).toEqual([]);
   // One point per measurement from the first one in which water moves.
   expect(await points(page)).toBe(WATER_FRAMES);
   const graph = page.getByTestId('history-graph');

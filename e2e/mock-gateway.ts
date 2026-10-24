@@ -806,6 +806,13 @@ export class MockGateway {
     this.replaying = false;
   }
 
+  /** The gateway drops every socket, as when the machine sleeps or the tablet's network goes; the skin opens them again. */
+  dropStreams(): void {
+    for (const sockets of [this.machineSockets, this.scaleSockets, this.settingsSockets, this.waterSockets, this.deviceSockets]) {
+      for (const ws of sockets) void ws.close();
+    }
+  }
+
   private sendMachine(frame: MachineSnapshot): void {
     for (const ws of this.machineSockets) ws.send(JSON.stringify(frame));
   }
