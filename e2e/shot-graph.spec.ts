@@ -110,7 +110,7 @@ test('the live shot ends at the pour: the tail adds no points, the timer stands,
   await expect(page.getByTestId('screen-home')).toBeVisible();
   const last = page.getByTestId('last-shot');
   expect(await attribute(last, 'data-points')).toBe(points);
-  expect(parseFloat((await page.getByTestId('last-shot-time').textContent())!)).toBeCloseTo(seconds, 1);
+  expect(parseFloat((await page.getByTestId('shot-timer').textContent())!)).toBeCloseTo(seconds, 1);
 
   // The same shot from the history, its record with the tail: the same length within 1 s.
   gateway.addShot('shot-tail', '2026-10-19T08:00:00.000000', gateway.workflow.profile, gateway.workflow.context);

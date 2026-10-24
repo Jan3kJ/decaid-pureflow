@@ -76,7 +76,7 @@ test('a simulated shot: the live graph ends with the shot, as long as its record
     await expect(page.getByTestId('last-shot')).toBeVisible({ timeout: 180_000 });
     await expect(page.getByTestId('screen-home')).toBeVisible();
     const last = page.getByTestId('last-shot');
-    const seconds = parseFloat((await page.getByTestId('last-shot-time').textContent())!);
+    const seconds = parseFloat((await page.getByTestId('shot-timer').textContent())!);
     const points = Number(await last.getByTestId('shot-graph').getAttribute('data-points'));
     expect(await last.getByTestId('shot-graph').getAttribute('data-scale')).toBe('10');
 

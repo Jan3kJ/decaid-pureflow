@@ -263,3 +263,17 @@ export function seriesWeight(series: ShotSeries): number | null {
   }
   return null;
 }
+
+/**
+ * The step that runs, for the state line (spec 3.14): the profile's name of the step at the
+ * frame number the machine reports, 'Step n' for a step without one. Null unless a shot runs
+ * and water moves; hot water, flush and steam have no steps.
+ */
+export function runningStep(
+  shot: Shot | null,
+  frame: Pick<MachineSnapshot, 'state' | 'profileFrame'> | null,
+  steps: readonly { name?: string }[] | undefined,
+): string | null {
+  if (!shot || shot.ended || shot.startedAt === null || frame?.state.state !== 'espresso') return null;
+  return steps?.[frame.profileFrame]?.name?.trim() || `Step ${frame.profileFrame + 1}`;
+}

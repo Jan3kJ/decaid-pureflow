@@ -24,13 +24,7 @@
   const finished = $derived(shown.kind === 'finished');
   const recalled = $derived(shown.kind === 'recalled' ? skin.recalled : null);
   const snapshot = $derived(skin.link === 'machine' ? skin.snapshot : null);
-  const brewing = $derived(snapshot?.state.state === 'espresso' && running);
-  const profile = $derived(skin.workflow?.profile);
   const target = $derived(skin.workflow?.context?.targetYield || null);
-  // The profile step that runs: the machine's frame number, not its substate (research 8.2).
-  const step = $derived(brewing && snapshot ? profile?.steps[snapshot.profileFrame]?.name : undefined);
-  // In espresso before water moves: the graph and the timer wait (shot.ts).
-  const heating = $derived(brewing && shown.series.t.length === 0);
   // Streamline's table of the shot (phases.ts), once it is over and the setting shows it.
   const table = $derived(
     finished && skin.shot && skin.settings.showShotValues ? phaseTable(skin.shot.samples, skin.shot.finalWeight) : null,
@@ -56,11 +50,13 @@
   const cell = (row: Partial<PhaseRow> | null, key: keyof PhaseRow) => row?.[key] ?? '';
 </script>
 
-<div class="shot" class:values={table !== null} data-testid="home-shot" data-shot={shown.kind}>
+<div class="shot" class:values={table !== null} class:caption={recalled !== null} data-testid="home-shot" data-shot={shown.kind}>
   <div class="top">{@render top?.()}</div>
-  <header data-testid="shot-caption">
-    {#if recalled}
-      {@const entry = recalled.entry}
+  <!-- No strip over the graph (spec 3.14): the step is in the state line, the finished shot's time
+       and weight in the column. A recalled history entry keeps its caption and 'dismiss'. -->
+  {#if recalled}
+    {@const entry = recalled.entry}
+    <header data-testid="shot-caption">
       <span class="recalled" data-testid="recalled">
         last shot with
         <strong data-testid="recalled-profile">{entry.profileTitle}</strong>
@@ -70,18 +66,8 @@
         {/if}
       </span>
       <button class="chip" data-testid="dismiss-recalled" onclick={() => skin.dismissRecalled()}>dismiss</button>
-    {:else if finished}
-      <span data-testid="espresso-step">
-        shot finished
-        <strong data-testid="last-shot-time">{value(shown.seconds)} s</strong>
-        {#if shown.weight !== null}
-          <strong class="weight" data-testid="last-shot-weight">{value(shown.weight)} g</strong>
-        {/if}
-      </span>
-    {:else if running}
-      <span data-testid="espresso-step">{heating ? 'heating' : (step ?? (brewing ? '' : skin.status.title))}</span>
-    {/if}
-  </header>
+    </header>
+  {/if}
 
   <div class="plot" data-testid={PLOT[shown.kind]}>
     <ShotGraph
@@ -125,7 +111,7 @@
       <NextShot {skin} />
     {/if}
     <div class="big">
-      <small>time</small>
+      <small data-testid="shot-timer-label">{finished ? 'time, finished' : 'time'}</small>
       <b data-testid="shot-timer">{value(shown.seconds)}<i>s</i></b>
     </div>
     <div class="big weight">
@@ -164,15 +150,20 @@
     min-height: 0;
     display: grid;
     grid-template-columns: minmax(0, 1fr) 17rem;
-    grid-template-rows: auto auto minmax(0, 1fr);
-    grid-template-areas: 'top side' 'header side' 'plot side';
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas: 'top side' 'plot side';
     gap: 0.6rem 1.2rem;
   }
 
-  /* The table's row only when it is drawn: without it the graph takes its height and its gap. */
+  /* The caption's and the table's rows only when they are drawn: else the graph takes their height. */
+  .shot.caption {
+    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-areas: 'top side' 'header side' 'plot side';
+  }
+
   .shot.values {
-    grid-template-rows: auto auto minmax(0, 1fr) auto;
-    grid-template-areas: 'top side' 'header side' 'plot side' 'table side';
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas: 'top side' 'plot side' 'table side';
   }
 
   .top {
@@ -201,15 +192,6 @@
   header strong {
     margin-left: 0.8rem;
     color: var(--fg);
-    font-size: var(--text-value);
-    font-variant-numeric: tabular-nums;
-  }
-
-  header strong.weight {
-    color: var(--weight);
-  }
-
-  .recalled strong {
     font-size: var(--text-body);
   }
 

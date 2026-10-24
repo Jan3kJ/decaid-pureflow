@@ -44,6 +44,10 @@
         </span>
       {/if}
     {/each}
+    {#if skin.step}
+      <!-- The step that runs, after the weight: in the values' size and the state word's colour (spec 3.14). -->
+      <span class="step" data-testid="state-step">{skin.step}</span>
+    {/if}
   {:else}
     <span class="detail" data-testid="status-detail">{status.detail}</span>
   {/if}
@@ -85,7 +89,15 @@
     font-weight: 600;
   }
 
+  .step {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 600;
+  }
+
   .state.warn strong,
+  .state.warn .step,
   .state.heater-off strong {
     color: var(--warn);
   }

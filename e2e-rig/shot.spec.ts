@@ -110,6 +110,11 @@ test('a simulated shot: the state, an A-Flow profile, a live graph, the stop at 
       expect(parseFloat((await page.getByTestId(id).textContent())!)).not.toBeNaN();
     }
     await expect(page.getByTestId('shot-column').getByTestId('stop')).toBeEnabled();
+    // The step that runs is the state line's last item, a step of the profile (spec 3.14, Z4).
+    const steps = workflow.profile.steps.map((step, i) => step.name?.trim() || `Step ${i + 1}`);
+    await expect(page.getByTestId('status-title')).toHaveText('Espresso');
+    expect(steps).toContain(await page.getByTestId('state-step').textContent());
+    await expect(page.getByTestId('shot-timer-label')).toHaveText('time');
     await page.screenshot({ path: 'e2e-rig/.results/espresso-rig.png' });
 
     // It ends by itself at the target weight; home keeps the finished shot with the per-phase
@@ -127,8 +132,8 @@ test('a simulated shot: the state, an A-Flow profile, a live graph, the stop at 
     await expect(page.getByTestId('stop')).toHaveCount(0);
     await expect(page.getByTestId('shot-column').getByTestId('profile-name')).toHaveText(PROFILE);
     await expect(page.getByTestId('shot-column').getByTestId('open-pick')).toBeVisible();
-    const grams = parseFloat((await page.getByTestId('last-shot-weight').textContent())!);
-    expect(parseFloat((await page.getByTestId('shot-weight').textContent())!)).toBe(grams);
+    await expect(page.getByTestId('shot-timer-label')).toHaveText('time, finished');
+    const grams = parseFloat((await page.getByTestId('shot-weight').textContent())!);
     expect(parseFloat((await page.getByTestId('shot-timer').textContent())!)).toBeGreaterThan(5);
     expect(grams).toBeGreaterThan(TARGET - UNDER);
     expect(grams).toBeLessThan(TARGET + OVER);

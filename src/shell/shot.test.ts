@@ -8,6 +8,7 @@ import {
   TARE_SETTLE_S,
   frameTime,
   recordFrame,
+  runningStep,
   settleWeight,
   shotOver,
   shotSeconds,
@@ -340,5 +341,48 @@ describe('a recorded shot of the rig', () => {
     expect(drawn.every((w, i) => i === 0 || w >= drawn[i - 1])).toBe(true);
     expect(shotWeight(shot)).toBeGreaterThan(32);
     expect(shotWeight(shot)).toBeLessThan(36);
+  });
+});
+
+describe('runningStep (spec 3.14)', () => {
+  const steps = [{ name: 'Preinfusion' }, { name: '' }, { name: 'Extraction' }];
+  const running = (startedAt: number | null = 1): Shot => ({
+    enteredAt: 0,
+    startedAt,
+    series: {
+      t: [],
+      pressure: [],
+      flow: [],
+      weight: [],
+      weightFlow: [],
+      temperature: [],
+      targetPressure: [],
+      targetFlow: [],
+      targetTemperature: [],
+    },
+    samples: [],
+    finalWeight: null,
+    ended: false,
+    endedAt: null,
+  });
+
+  it('names the step at the machine’s frame number, as the profile has it', () => {
+    expect(runningStep(running(), frame('espresso', '01', { profileFrame: 0 }), steps)).toBe('Preinfusion');
+    expect(runningStep(running(), frame('espresso', '01', { profileFrame: 2 }), steps)).toBe('Extraction');
+  });
+
+  it('says Step n for a step without a name or beyond the profile', () => {
+    expect(runningStep(running(), frame('espresso', '01', { profileFrame: 1 }), steps)).toBe('Step 2');
+    expect(runningStep(running(), frame('espresso', '01', { profileFrame: 5 }), steps)).toBe('Step 6');
+    expect(runningStep(running(), frame('espresso', '01', { profileFrame: 0 }), undefined)).toBe('Step 1');
+  });
+
+  it('is nothing without a running shot, while the machine heats, or outside espresso', () => {
+    expect(runningStep(null, frame('espresso', '01'), steps)).toBeNull();
+    expect(runningStep({ ...running(), ended: true }, frame('espresso', '01'), steps)).toBeNull();
+    expect(runningStep(running(null), frame('espresso', '01'), steps)).toBeNull();
+    expect(runningStep(running(), frame('steam', '01'), steps)).toBeNull();
+    expect(runningStep(running(), frame('hotWater', '01'), steps)).toBeNull();
+    expect(runningStep(running(), null, steps)).toBeNull();
   });
 });

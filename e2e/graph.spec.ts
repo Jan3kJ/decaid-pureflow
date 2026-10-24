@@ -35,7 +35,7 @@ test('a live shot starts its graph and timer when water moves, not while the mac
   // Only the heating: espresso, and nothing drawn yet.
   await gateway.replay(page, 0, HEATING_SHARE);
   await expect(page.getByTestId('shot-plot')).toBeVisible();
-  await expect(page.getByTestId('espresso-step')).toHaveText('heating');
+  await expect(page.getByTestId('state-step')).toHaveCount(0);
   await expect(page.getByTestId('shot-graph')).toHaveAttribute('data-points', '0');
   await expect(page.getByTestId('shot-timer')).toHaveText('0.0s');
 
@@ -46,7 +46,7 @@ test('a live shot starts its graph and timer when water moves, not while the mac
   const last = page.getByTestId('last-shot');
   expect(await points(last)).toBeGreaterThanOrEqual(WATER_FRAMES);
   expect(await points(last)).toBeLessThan(WATER_FRAMES + 20);
-  const seconds = parseFloat((await page.getByTestId('last-shot-time').textContent())!);
+  const seconds = parseFloat((await page.getByTestId('shot-timer').textContent())!);
   // The recording is 32 s in espresso, 4.5 s of them heating.
   expect(seconds).toBeGreaterThan(25);
   expect(seconds).toBeLessThan(32 - HEATING_SECONDS + 0.5);

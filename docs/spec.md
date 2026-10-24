@@ -1863,6 +1863,17 @@ running step.
   the page dots no longer compete with a strip for the same width: the dots stay in the middle
   bottom. (c) A tap on the **time** in the right column of a finished shot could open the shot's
   entry in the history; not planned, said as an idea.
+- **Built in Z4 (2026-10-25), the details the items leave open.** The step is `runningStep` in
+  `src/shell/shot.ts`, read by `Skin.step` and printed by `StateLine.svelte` after the values, so
+  it is the same item on home, hot water and steam and the line's x does not move. It is shown
+  from the first frame in which water moves (`Shot.startedAt`) until the shot ends; while the
+  machine heats before it nothing is printed (the strip's 'heating' is not kept). A frame number
+  beyond the profile's steps, like one without a name, says 'Step n' (n is the frame number plus
+  one). A name too long for the header's width is cut with an ellipsis. A recalled history entry
+  keeps its caption 'last shot with …' and its 'dismiss' over the graph (acceptance 67): that row
+  is drawn only while an entry is recalled, so with no entry the graph starts right under the
+  header. The time label 'time, finished' is shown for every finished shot home keeps, also the
+  newest shot record read from Decaid.
 
 **One size per kind of text (item 5; Z5).** The founder: 'font size should be aligned again, for
 example the profile and bean names on the home page' (the profile is set larger and in bold, the

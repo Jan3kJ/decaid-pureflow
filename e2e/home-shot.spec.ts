@@ -57,14 +57,14 @@ test('idle before a shot, a running shot, and the finished shot that stays: one 
   expect(graph.x + graph.width).toBeLessThan(column.x);
   await page.screenshot({ path: 'docs/product/home-idle.png' });
 
-  // The shot runs: live curves, the step line as the caption, live values and stop at the bottom.
+  // The shot runs: live curves, the step in the state line, live values and stop at the bottom.
   await gateway.replay(page, 0, 0.6);
   await expect(page.getByTestId('shot-plot')).toBeVisible();
   await expect(page.getByTestId('home-shot')).toHaveAttribute('data-shot', 'running');
   await expect(page.getByTestId('status')).toBeVisible();
   await expect(page.getByTestId('stop')).toBeEnabled();
   await expect(page.getByTestId('shot-phases')).toHaveCount(0);
-  await expect(page.getByTestId('espresso-step')).not.toContainText('finished');
+  await expect(page.getByTestId('shot-timer-label')).toHaveText('time');
   expect(await number(page, 'shot-timer')).toBeGreaterThan(5);
   expect(await number(page, 'shot-weight')).toBeGreaterThan(0);
   expect(await number(page, 'shot-pressure')).toBeGreaterThan(0);
@@ -79,21 +79,20 @@ test('idle before a shot, a running shot, and the finished shot that stays: one 
   expect(live.y).toBeGreaterThanOrEqual(line.y + line.height - 1);
   await page.screenshot({ path: 'docs/product/home-shot-running.png' });
 
-  // The machine stops and goes idle: the shot stays, with 'shot finished' and the table.
+  // The machine stops and goes idle: the shot stays, with 'time, finished' and the table.
   await gateway.replay(page, 0.6, 1);
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
   await page.waitForTimeout(500);
   await expect(page.getByTestId('last-shot')).toBeVisible();
   await expect(page.getByTestId('home-shot')).toHaveAttribute('data-shot', 'finished');
-  await expect(page.getByTestId('espresso-step')).toContainText('shot finished');
+  await expect(page.getByTestId('shot-timer-label')).toHaveText('time, finished');
+  await expect(page.getByTestId('state-step')).toHaveCount(0);
   await expect(page.getByTestId('stop')).toHaveCount(0);
   for (const gone of ['shot-close-hint', 'shot-close', 'dismiss-shot', 'shot-overlay']) {
     await expect(page.getByTestId(gone)).toHaveCount(0);
   }
-  const seconds = await number(page, 'last-shot-time');
-  expect(seconds).toBeGreaterThan(25);
-  expect(await number(page, 'shot-timer')).toBe(seconds);
-  expect(await number(page, 'shot-weight')).toBe(await number(page, 'last-shot-weight'));
+  expect(await number(page, 'shot-timer')).toBeGreaterThan(25);
+  expect(await number(page, 'shot-weight')).toBeGreaterThan(0);
   expect((await box(page, 'last-shot')).width).toBe(graph.width);
   expect(await box(page, 'shot-column')).toEqual(column);
   const rows = page.getByTestId('shot-phases').locator('tbody th');

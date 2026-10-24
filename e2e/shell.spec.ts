@@ -266,10 +266,10 @@ test('a shot started at the machine: home shows it by itself with a live graph a
   // frame while the test looked.
   expect(await points(page)).toBeGreaterThanOrEqual(WATER_FRAMES);
   expect(await points(page)).toBeLessThan(WATER_FRAMES + 20);
-  const seconds = parseFloat((await page.getByTestId('last-shot-time').textContent())!);
+  const seconds = parseFloat((await page.getByTestId('shot-timer').textContent())!);
   expect(seconds).toBeGreaterThan(25);
   expect(seconds).toBeLessThan(31);
-  const grams = parseFloat((await page.getByTestId('last-shot-weight').textContent())!);
+  const grams = parseFloat((await page.getByTestId('shot-weight').textContent())!);
   expect(grams).toBeGreaterThan(32);
   expect(grams).toBeLessThan(36);
   await expectInsideViewport(page);

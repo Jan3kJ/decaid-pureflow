@@ -33,7 +33,7 @@ import { doseToSet } from './profiles';
 import { Recall, type Recalled } from './recall.svelte';
 import { SettingsStore } from './settings-store.svelte';
 import { AWAKE, askSleep, followSleep, type SleepMark } from './sleep';
-import { recordFrame, settleWeight, type Shot } from './shot';
+import { recordFrame, runningStep, settleWeight, type Shot } from './shot';
 import { SteamControl } from './steam-control.svelte';
 import { Streams } from './streams.svelte';
 import { recordWaterFrame, type WaterRun } from './water';
@@ -110,6 +110,8 @@ export class Skin {
   readonly stateValues = $derived(
     stateLine(this.link, this.shown, this.water, this.scaleLink, this.weight, this.scaleLooking, this.settings.tankUnit),
   );
+  /** the name of the step that runs, printed after the state line's values; null outside a shot (spec 3.14) */
+  readonly step = $derived(runningStep(this.shot, this.link === 'machine' ? this.snapshot : null, this.workflow?.profile?.steps));
 
   constructor(baseUrl: string = gatewayBaseUrl(location)) {
     this.baseUrl = baseUrl;
