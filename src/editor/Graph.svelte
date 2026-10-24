@@ -206,6 +206,7 @@
     {params}
     {box}
     {projection}
+    {rem}
     onstep={step}
     onweightdrag={weightDrag}
     onweightdrop={weightDrop}

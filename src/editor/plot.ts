@@ -108,6 +108,44 @@ export function offGroups(curve: Pick<Curve, 'off' | 'phases'>): [number, PhaseI
   return groups;
 }
 
+/** A stretch of the phase-name row under the axis, in pixels. */
+export interface Span {
+  from: number;
+  to: number;
+}
+
+/**
+ * Where the turn-on chips of the phases that are off sit in the phase-name row under the axis.
+ * Each group (two phases may collapse at one place) is `width` pixels wide and wants to be
+ * centred on its border's x, inside `from` to `to`; one that would run over a neighbour's name
+ * or a group placed before it moves to the nearest free spot along the row, `gap` pixels clear.
+ * Without such a spot it keeps clear of the other groups at least. Gives each group's left edge.
+ */
+export function laneLefts(
+  groups: readonly { x: number; width: number }[],
+  names: readonly Span[],
+  from: number,
+  to: number,
+  gap: number,
+): number[] {
+  const placed: Span[] = [];
+  return groups.map(({ x, width }) => {
+    const max = Math.max(from, to - width);
+    const want = Math.min(Math.max(x - width / 2, from), max);
+    const left =
+      nearestFree(want, width, [...names, ...placed], from, max, gap) ?? nearestFree(want, width, placed, from, max, gap) ?? want;
+    placed.push({ from: left, to: left + width });
+    return left;
+  });
+}
+
+function nearestFree(want: number, width: number, taken: readonly Span[], min: number, max: number, gap: number): number | undefined {
+  const free = (left: number) => taken.every((t) => left + width + gap <= t.from + 0.01 || left >= t.to + gap - 0.01);
+  return [want, min, max, ...taken.flatMap((t) => [t.to + gap, t.from - gap - width])]
+    .filter((left) => left >= min - 0.01 && left <= max + 0.01 && free(left))
+    .sort((a, b) => Math.abs(a - want) - Math.abs(b - want))[0];
+}
+
 /** The drag's pop-up stays on the graph and above the finger at (x, y). */
 export function popupAt(x: number, y: number, width: number, rem: number): { left: number; top: number } {
   return {

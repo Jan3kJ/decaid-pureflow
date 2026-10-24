@@ -2,16 +2,18 @@
   import type { AFlowParams } from '../aflow';
   import { PHASE_LABEL, REENABLE_SECONDS, type Curve, type EditField, type PhaseId, type Projection } from './curve';
   import { formatValue } from './fields';
-  import { offGroups, type PlotBox } from './plot';
+  import { durationFields, laneLefts, offGroups, type PlotBox } from './plot';
   import ValueChip from './ValueChip.svelte';
 
-  // What sits on the editor's graph between its two bands: the infuse-to and stop-at weights,
-  // and a button for each phase that is off.
+  // What sits on the editor's graph: the infuse-to and stop-at weights between its two bands,
+  // and a button for each phase that is off in the phase-name row under the axis.
   interface Props {
     curve: Curve;
     params: AFlowParams;
     box: PlotBox;
     projection: Projection;
+    /** the root font size in pixels */
+    rem: number;
     onstep: (field: EditField, direction: 1 | -1) => void;
     /** the infuse-to chip dragged `dx` pixels left or right, and let go */
     onweightdrag: (dx: number, event: PointerEvent) => void;
@@ -19,11 +21,36 @@
     onreenable: (phase: PhaseId) => void;
   }
 
-  let { curve, params, box, projection, onstep, onweightdrag, onweightdrop, onreenable }: Props = $props();
+  let { curve, params, box, projection, rem, onstep, onweightdrag, onweightdrop, onreenable }: Props = $props();
 
   const infuseEnd = $derived(curve.phases.find((c) => c.id === 'infuse')!.x1);
   const infuseOff = $derived(curve.off.includes('infuse'));
   const offAt = $derived(offGroups(curve));
+
+  // The names and durations printed under the phases that have a width (GraphGrid), by an
+  // estimate of their text's width; a turn-on button keeps clear of them.
+  const durationOf = $derived(durationFields(curve));
+  const names = $derived(
+    curve.phases
+      .filter((phase) => phase.x1 > phase.x0)
+      .map((phase) => {
+        const duration = durationOf[phase.id];
+        const durationText = duration ? (phase.id === 'secondFill' ? 'pause ' : '') + formatValue(duration, params[duration]) : '';
+        const half = Math.max(PHASE_LABEL[phase.id].length, durationText.length) * 0.3 * rem;
+        const middle = (projection.x(phase.x0) + projection.x(phase.x1)) / 2;
+        return { from: middle - half, to: middle + half };
+      }),
+  );
+  let widths = $state<number[]>([]);
+  const lefts = $derived(
+    laneLefts(
+      offAt.map(([x], i) => ({ x: projection.x(x), width: widths[i] ?? 0 })),
+      names,
+      box.left,
+      box.right,
+      0.5 * rem,
+    ),
+  );
 </script>
 
 <!-- The infuse-to chip is dragged left or right; a tap still opens its plus and minus. -->
@@ -41,8 +68,8 @@
   </div>
 {/if}
 <!-- A phase that is off has no width; its button turns it on again with 5 s. -->
-{#each offAt as [x, ids] (x)}
-  <div class="on-graph off" style:left="{projection.x(x)}px" style:top="{box.gapMiddle}px">
+{#each offAt as [x, ids], i (x)}
+  <div class="lane" style:left="{lefts[i]}px" style:top="{box.bottom + 0.2 * rem}px" bind:offsetWidth={widths[i]}>
     {#each ids as id (id)}
       <button
         class="enable"
@@ -75,7 +102,8 @@
     transform: translate(-100%, -50%);
   }
 
-  .on-graph.off {
+  .lane {
+    position: absolute;
     display: flex;
     gap: 0.5rem;
   }

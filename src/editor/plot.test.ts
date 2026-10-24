@@ -4,6 +4,7 @@ import { buildCurve, type Curve, type PhaseId } from './curve';
 import {
   durationFields,
   flowPath,
+  laneLefts,
   mainTicks,
   offGroups,
   plotBox,
@@ -102,6 +103,67 @@ describe("the editor graph's plot", () => {
       [30, ['pressurize']],
     ]);
     expect(offGroups({ off: [], phases: curve.phases })).toEqual([]);
+  });
+
+  it('puts the turn-on buttons at their border in the name row, clear of names and of each other', () => {
+    // Free row: centred on the border.
+    expect(laneLefts([{ x: 500, width: 100 }], [], 50, 950, 8)).toEqual([450]);
+    // Pinned inside the plot's width.
+    expect(laneLefts([{ x: 60, width: 100 }], [], 50, 950, 8)).toEqual([50]);
+    expect(laneLefts([{ x: 940, width: 100 }], [], 50, 950, 8)).toEqual([850]);
+    // Over a neighbour's name: the nearest free spot along the row.
+    expect(laneLefts([{ x: 500, width: 100 }], [{ from: 520, to: 600 }], 50, 950, 8)).toEqual([412]);
+    expect(laneLefts([{ x: 500, width: 100 }], [{ from: 400, to: 480 }], 50, 950, 8)).toEqual([488]);
+    // Two groups close together: the second keeps clear of the first.
+    const [a, b] = laneLefts(
+      [
+        { x: 300, width: 120 },
+        { x: 330, width: 140 },
+      ],
+      [],
+      50,
+      950,
+      8,
+    );
+    expect(a).toBe(240);
+    expect(b).toBeGreaterThanOrEqual(a + 120 + 8);
+    // No spot clear of the names: still clear of the other group.
+    const tight = laneLefts(
+      [
+        { x: 100, width: 80 },
+        { x: 120, width: 80 },
+      ],
+      [{ from: 0, to: 300 }],
+      0,
+      300,
+      8,
+    );
+    expect(tight[1] - tight[0]).toBeGreaterThanOrEqual(88);
+  });
+
+  it('never lets two turn-on buttons overlap', () => {
+    for (let x1 = 0; x1 <= 600; x1 += 37) {
+      for (let x2 = x1; x2 <= 600; x2 += 41) {
+        const groups = [
+          { x: x1, width: 130 },
+          { x: x2, width: 110 },
+        ];
+        const names = [
+          { from: x1 - 60, to: x1 - 20 },
+          { from: (x1 + x2) / 2 - 20, to: (x1 + x2) / 2 + 20 },
+          { from: x2 + 30, to: x2 + 70 },
+        ];
+        const [a, b] = laneLefts(groups, names, 40, 590, 8);
+        expect(a + 130 <= b || b + 110 <= a).toBe(true);
+        for (const [left, width] of [
+          [a, 130],
+          [b, 110],
+        ]) {
+          expect(left).toBeGreaterThanOrEqual(40);
+          expect(left + width).toBeLessThanOrEqual(590);
+        }
+      }
+    }
   });
 
   it('keeps the pop-up on the graph and above the finger', () => {
