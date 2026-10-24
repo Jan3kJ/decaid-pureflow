@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mockGateway } from './mock-gateway';
-import { toPage } from './touch';
+import { back, toPage } from './touch';
 
 // Tare by a tap on the weight (3.7, acceptance items 6 and 21), settings and sleep / wake
 // against a mocked gateway (D8c), and the stream the gateway closed with an error. The same
@@ -261,7 +261,7 @@ test('settings: the defaults, typed values and both switches survive a reload', 
   await expect(steps).toHaveAttribute('aria-checked', 'false');
 
   // The steam page calculates with them: 362.5 g is the small mug with 200 g of milk, 60 s.
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await toPage(page, 'steam');
   await expect(page.getByTestId('steam-favourite')).toHaveText(['25 s', '45 s', '30 s']);
   gateway.putOnScale(362.5);
@@ -271,25 +271,25 @@ test('settings: the defaults, typed values and both switches survive a reload', 
 
   // The editor follows both switches: no steps button while the setting is off (founder,
   // 2026-10-13), and a Pre Fill step in the panel once it is on again.
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await page.getByTestId('open-editor').click();
   await expect(page.getByTestId('graph')).toBeVisible();
   await expect(page.getByTestId('toggle-steps')).toHaveCount(0);
   await expect(page.getByTestId('steps')).toHaveCount(0);
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await page.getByTestId('menu').click();
   await page.getByTestId('open-settings').click();
   await page.getByTestId('settings-category-skin').click();
   await steps.click();
   await expect(steps).toHaveAttribute('aria-checked', 'true');
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await page.getByTestId('open-editor').click();
   await expect(page.getByTestId('toggle-steps')).toHaveAttribute('aria-pressed', 'false');
   await page.getByTestId('toggle-steps').click();
   await expect(page.getByTestId('steps')).toContainText('Pre Fill');
   // The editor's button opens the panel; the setting stays the settings page's.
   await page.getByTestId('toggle-steps').click();
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await page.getByTestId('menu').click();
   await page.getByTestId('open-settings').click();
   await page.getByTestId('settings-category-skin').click();
@@ -393,7 +393,7 @@ test('a workflow without a dose takes the default dose; one with a dose keeps it
   await page.getByTestId('open-settings').click();
   await page.getByTestId('settings-category-skin').click();
   await type(page, 'setting-default-dose', '16');
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
   await page.waitForTimeout(500);
   expect(gateway.workflow.context.targetDoseWeight).toBe(20);
@@ -456,7 +456,7 @@ test('a stream the gateway closed with an error is tried again for 30 s, then sh
   gateway.refuseStreams = false;
   await page.getByTestId('reconnect').click();
   await expect(page.getByTestId('stream-failed')).toHaveCount(0);
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
   await expect(page.getByTestId('state-scale')).toHaveText('0.0 g');
   expect(errors).toEqual([]);

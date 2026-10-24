@@ -3,6 +3,7 @@ import plugin12 from '../src/aflow/fixtures/plugin-1.2.json' with { type: 'json'
 import type { Profile } from '../src/api';
 import { DEFAULT_SAVE_HINT } from '../src/editor/status';
 import { mockGateway, record } from './mock-gateway';
+import { back } from './touch';
 
 // The A-Flow editor's status line and spacing (spec 3.9 items 8 and 9, U5): every notice stands
 // in the one line under the start row and nowhere else, and the header with the name, the start
@@ -110,7 +111,7 @@ test('without the gateway, its failure and a failed load on leaving stand in the
   await inStatusLine(page, /^Decaid did not answer/);
 
   await page.getByTestId('toggle-flow').click();
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await inStatusLine(page, /^The changes were not loaded/);
   // The browser reports each refused request; those are the test's own doing.
   errors.splice(0, errors.length, ...errors.filter((error) => !error.includes('ERR_CONNECTION_REFUSED')));

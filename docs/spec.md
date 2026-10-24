@@ -1828,6 +1828,20 @@ running step.
   starts at the **top of the page**, beside the header, and the header spans only the width left of
   it; so the column has the header's height more for what a shot shows. On hot water and steam
   the page's title (3.11) stays at the right end of the header, where the column starts.
+- **Built in Z3 (2026-10-24), the details the items leave open.** The corner button is the
+  first item of the shared header (`Menu.svelte` in `PageHeader.svelte`), so it and the state
+  line are at the same place on the three pages; its menu opens under it at the left. The way
+  back is one place, `App.svelte` with `destination` in `src/shell/swipe.ts`: the skin keeps
+  where each screen outside the row was opened from (`Skin.back`), so the editor's picker goes
+  back to the editor and the editor, after it, home. The settings page shows its categories and
+  the chosen one side by side, so there is no category page to go back from: its swipe goes
+  home. The open history closes by a swipe to the left anywhere on it, at the distance that
+  opens it. A swipe starts anywhere but on a field, a dialog, a drag of its own
+  (`touch-action: none`: the editor's graph and chips, the sliders), a row's swipe
+  (`data-no-swipe`) or a row that scrolls sideways (the editor's start row, the step cards); a
+  list that scrolls down is no obstacle, since the browser's pan is vertical only (`app.css`).
+  Until Z8 the small ring of hot water and flush sits at the bottom left corner over the screen
+  and may cover a control there.
 - **The strip goes, the step goes into the header (Z4).** The strip above the graph is removed
   and the graph takes its height ('there is a lot of empty space when no shot is loaded'). What it
   said is said elsewhere: **'last shot info is already shown in the right column, right?' Yes**:
@@ -3075,7 +3089,7 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
   older version be? A default has no 'save': it is saved under a new name. (owner)
 - Loading from the editor (founder, 2026-10-13, built in `fb-editor-flow`): there is no 'load to
   machine'. 'Save' and 'save as' load the saved profile after saving. Leaving the editor,
-  by the back arrow or by the profile's name (the shortcut to the picker), loads the values
+  by the swipe back or by the profile's name (the shortcut to the picker), loads the values
   on screen when they differ from those it opened with, under the name of the profile they
   started from, and loads nothing when nothing changed. Such unsaved edits are on the machine
   but not stored as a profile: the editor opens on them again while they are the workflow's
@@ -3252,7 +3266,7 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
     shows the Asleep screen as today; neither sleep touches Decaid's wake lock, so the tablet's
     screen follows Decaid's own `keepAwake`.
   - Ring (item 6): on every screen but home and the hot water page it is a small ring at the
-    bottom of the left column, with the time inside and a tap to stop.
+    bottom left corner (the left column went in Z3), with the time inside and a tap to stop.
   - Picker graph (item 1): limits are dotted, muted lines of their quantity; an A-Flow profile's
     pour is drawn as far as the editor draws it (30 s), so default-dark ends at 1 ml/s as in the
     editor; the steps keep their own widths (the editor's infuse by weight is not copied).

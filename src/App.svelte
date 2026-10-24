@@ -18,6 +18,7 @@
   import StepEditor from './steps/StepEditor.svelte';
   import {
     PAGES,
+    closing,
     commits,
     decide,
     destination,
@@ -25,7 +26,6 @@
     neighbour,
     offset,
     onControl,
-    swipes,
     type Page,
     type Point,
   } from './shell/swipe';
@@ -36,19 +36,22 @@
   onMount(() => skin.connect());
   $effect(() => applyDisplay(skin.settings));
 
-  // One horizontal gesture for the pages and the shot history (src/shell/swipe.ts, spec 3.8):
-  // hot water, home and steam are one row, and a swipe slides to the neighbour, which is drawn
-  // beside the page only while it comes in; on home a swipe to the right from the left fifth
-  // opens the history instead. In the editor a swipe to the right leaves for home as its back
-  // arrow does, with home not drawn beside it. Not while a shot runs on home. A drag that starts on
-  // a control is the control's.
+  // One horizontal gesture for the pages, the way back and the shot history (src/shell/swipe.ts,
+  // spec 3.8, 3.14): hot water, home and steam are one row, and a swipe slides to the neighbour,
+  // which is drawn beside the page only while it comes in; on home a swipe to the right from the
+  // left fifth opens the history instead, and on the open history one to the left closes it. On
+  // every other screen a swipe to the right is the way back, to where the screen was opened from,
+  // which is not drawn beside it; there is no back arrow. Not while a shot runs on home. A drag that
+  // starts on a control is the control's.
   const home = $derived(skin.screen === 'home');
-  // Hot water or flush on a screen without its large ring: one small ring in the left column (spec 3.10).
+  // Hot water or flush on a screen without its large ring: one small ring at the bottom left (spec 3.10).
   const smallRing = $derived(smallRingRun(skin.waterRun, skin.canStop, skin.screen, skin.historyOpen));
   /** The slide's length, in milliseconds; with reduced motion there is no slide. */
   const SLIDE_MS = 220;
   let main: HTMLElement;
   let swipe: (Point & { id: number; page: boolean; dx: number; last: number; time: number; velocity: number }) | null = null;
+  /** A touch on the open history, which a swipe to the left closes. */
+  let closer: (Point & { id: number }) | null = null;
   /** The drawn offset of the pages, in CSS pixels. */
   let dx = $state(0);
   /** The neighbour coming in, drawn beside the page. */
@@ -75,7 +78,7 @@
   }
 
   /** Rests the strip, in the same task as the move, so no frame draws the new page displaced. */
-  function settle(to: Page | null) {
+  function settle(to: Screen | null) {
     if (to) skin.go(to);
     settling = false;
     incoming = null;
@@ -100,8 +103,13 @@
 
   function onpointerdown(event: PointerEvent) {
     skin.touched();
-    swipe = null;
-    if (settling || !swipes(skin.screen) || skin.historyOpen || held) return;
+    swipe = closer = null;
+    if (settling || held) return;
+    // The open history's list scrolls; a swipe to the left on it still closes it.
+    if (skin.historyOpen) {
+      if (home) closer = { x: event.clientX, y: event.clientY, id: event.pointerId };
+      return;
+    }
     if (onControl(event.target as Element, main)) return;
     swipe = {
       x: event.clientX,
@@ -116,8 +124,14 @@
   }
 
   function onpointermove(event: PointerEvent) {
-    if (!swipe || event.pointerId !== swipe.id || !swipes(skin.screen)) return;
     const now = { x: event.clientX, y: event.clientY };
+    if (closer && event.pointerId === closer.id) {
+      const gesture = closing(closer, now, innerWidth);
+      if (gesture !== null) closer = null;
+      if (gesture === 'close') skin.historyOpen = false;
+      return;
+    }
+    if (!swipe || event.pointerId !== swipe.id) return;
     if (!swipe.page) {
       const gesture = decide(swipe, now, innerWidth, skin.screen);
       if (gesture === null) return;
@@ -140,28 +154,30 @@
   }
 
   function endSwipe(event: PointerEvent) {
+    if (closer && event.pointerId === closer.id) closer = null;
     if (!swipe || event.pointerId !== swipe.id) return;
     const { page, dx: moved, velocity } = swipe;
     swipe = null;
     const screen = skin.screen;
-    if (!page || !swipes(screen)) return;
-    const target = event.type === 'pointerup' && commits(moved, velocity, innerWidth) ? destination(screen, moved) : null;
+    if (!page) return;
+    const target = event.type === 'pointerup' && commits(moved, velocity, innerWidth) ? destination(screen, moved, skin.back()) : null;
+    // A page is moved to; any other screen is left (`Skin.leave`): the editor loads its changed
+    // values first, and if that fails it stays, saying so, and springs back.
+    const back = target && !isPage(screen);
     if (still()) {
       incoming = null;
-      if (target && screen === 'editor') void skin.leave(target);
+      if (back) void skin.leave(target);
       else if (target) skin.go(target);
       return;
     }
-    // The editor is left as by its back arrow: its changed values are loaded first; if that
-    // fails it stays, saying so, and springs back.
-    const leave = async (to: Page) => {
+    const leave = async (to: Screen) => {
       if (await skin.mayLeave()) return settle(to);
       dx = 0;
       setTimeout(() => settle(null), SLIDE_MS);
     };
     settling = true;
     dx = target ? Math.sign(moved) * main.clientWidth : 0;
-    setTimeout(() => (target && screen === 'editor' ? void leave(target) : settle(target)), SLIDE_MS);
+    setTimeout(() => (back ? void leave(target) : settle(target)), SLIDE_MS);
   }
 </script>
 
@@ -177,13 +193,6 @@
     >
       <span></span>
     </button>
-  {:else}
-    <!-- The left edge: only the way back; the page's state line says the machine's state (spec 3.9). -->
-    <nav>
-      <button class="back" data-testid="nav-home" aria-label="back to home" onclick={() => skin.leave('home')}>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4l-8 8 8 8" /></svg>
-      </button>
-    </nav>
   {/if}
 
   <div class="screen" data-testid="screen-{screen}">
@@ -225,19 +234,11 @@
   {/if}
 {/snippet}
 
-<main
-  bind:this={main}
-  class:pages={swipes(skin.screen)}
-  {onpointerdown}
-  {onpointermove}
-  onpointerup={endSwipe}
-  onpointercancel={endSwipe}
->
+<main bind:this={main} {onpointerdown} {onpointermove} onpointerup={endSwipe} onpointercancel={endSwipe}>
   {#each strip as screen (screen)}
     <!-- The neighbour coming in is only a picture of its page until it is the page. -->
     <div
       class="page"
-      class:home={screen === 'home'}
       class:paged={isPage(screen)}
       class:settling
       style:transform={placed(screen)}
@@ -301,69 +302,15 @@
     overflow: hidden;
   }
 
-  /* A finger that moves sideways on the pages or the editor is the strip's swipe, not the browser's pan. */
-  main.pages {
-    touch-action: pan-y;
-  }
-
-  /* A page of the strip fills the screen; the neighbour coming in lies beside it. */
+  /* A page of the strip fills the screen, with no column at its edge (spec 3.14); the neighbour coming in lies beside it. */
   .page {
     position: absolute;
     inset: 0;
-    /* the way back's column; home's header starts this far in, so the state line does not move between pages */
-    --back: 4rem;
-    display: grid;
-    grid-template-columns: var(--back) minmax(0, 1fr);
     background: var(--bg);
   }
 
   .page.settling {
     transition: transform 220ms ease-out;
-  }
-
-  /* Home has no edge: it uses the full width. */
-  .page.home {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  nav {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.7rem 0 1rem;
-    border-right: 1px solid var(--line);
-    background: var(--panel);
-  }
-
-  nav button {
-    width: 100%;
-    min-height: 3.5rem;
-    font: inherit;
-    font-size: 2rem;
-    line-height: 1;
-    color: var(--fg);
-    background: none;
-    border: none;
-    touch-action: manipulation;
-  }
-
-  /* The way back: a finger's target of at least 56 CSS pixels, in the accent colour. */
-  nav .back {
-    height: 4rem;
-    display: grid;
-    place-items: center;
-    color: var(--accent);
-  }
-
-  nav .back svg {
-    width: 2.6rem;
-    height: 2.6rem;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 3;
-    stroke-linecap: round;
-    stroke-linejoin: round;
   }
 
   .screen {

@@ -3,6 +3,7 @@ import type { BeanBatch, CatalogueBean, Grinder, MachineSnapshot, PaginatedShots
 import type { RigWorkflow } from './gateway';
 import { IDLE } from './idle';
 import { pickDate } from '../e2e/date-picker';
+import { back } from '../e2e/touch';
 
 // Acceptance item 52, its first half (spec 3.9 item 19, research.md 29.8), against the rig:
 // through the beans screen a bean and a grinder of the test's own are added (name and roaster
@@ -142,7 +143,7 @@ test('beans and grinders: added, edited, archived and restored on the screen; th
     await page.screenshot({ path: 'e2e-rig/.results/beans-rig.png' });
 
     // The pick on home: the bean, the grinder, the setting 0.5 above the one set now.
-    await page.getByTestId('nav-home').click();
+    await back(page);
     await api('PUT', '/api/v1/workflow', { context: { grinderSetting: '5.0' } });
     await page.reload();
     await expect(page.getByTestId('next-setting')).toHaveText('5.0');

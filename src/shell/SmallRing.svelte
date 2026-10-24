@@ -1,6 +1,6 @@
 <script lang="ts">
   // Hot water or flush on a screen without the large ring (spec 3.10, 3.12): a small countdown
-  // ring at the bottom of the left column, the time inside and the kind under it, edged in the
+  // ring at the bottom left corner, the time inside and the kind under it, edged in the
   // large stop's temperature red so that it is seen; one tap stops what runs. The numbers are the
   // large ring's, from water.ts.
   import type { Skin } from './skin.svelte';
@@ -36,7 +36,7 @@
 </button>
 
 <style>
-  /* In the left column (4rem on every screen but home), under the back arrow: its width less its padding. */
+  /* At the bottom left corner, over the screen: there is no left column any more (spec 3.14). */
   .small-ring {
     position: absolute;
     left: 0.3rem;

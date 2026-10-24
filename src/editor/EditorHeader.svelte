@@ -104,6 +104,7 @@
     flex: 1;
     min-width: 0;
     overflow-x: auto;
+    touch-action: pan-x pan-y;
     scrollbar-width: none;
   }
 

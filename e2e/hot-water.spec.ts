@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import type { Backup } from '../src/settings-backup';
 import { mockGateway, profile, type MockGateway } from './mock-gateway';
-import { toPage } from './touch';
+import { back, toPage } from './touch';
 
 // The hot water page (R5, spec 3.7, acceptance item 20) against a mocked gateway: its page dot
 // opens it (the tabs went in X4, spec 3.11); temperature, flow, time and stop at weight are written to the
@@ -70,7 +70,7 @@ test('the hot water dot opens the page; it has no start button', async ({ page }
   // Starting stays at the machine: there is no start button, and nothing runs to stop.
   await expect(page.getByRole('button', { name: /start/i })).toHaveCount(0);
   await expect(page.getByTestId('hot-water-stop')).toHaveCount(0);
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await expect(page.getByTestId('screen-home')).toBeVisible();
   // The steam dot opens the steam page.
   await toPage(page, 'steam');
@@ -144,7 +144,7 @@ test('the favourites come from the settings; without a last shot or a scale noth
   await expect(page.getByTestId('hot-water-ratio')).toHaveCount(0);
 
   // The settings' category Hot water.
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await page.getByTestId('menu').click();
   await page.getByTestId('open-settings').click();
   await page.getByTestId('settings-category-skin').click();
@@ -156,7 +156,7 @@ test('the favourites come from the settings; without a last shot or a scale noth
 
   shotOf(gateway, 40);
   gateway.connectScale(false);
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await toPage(page, 'hot-water');
   // Without a scale the favourites stay, in ml: the shot's grams estimate the water.
   await expect(page.getByTestId('hot-water-ratio')).toHaveText(['1:1.5 60 ml', '1:2.5 100 ml', '1:3 120 ml']);
@@ -275,11 +275,9 @@ test('while hot water pours the page shows the ring in place of the rows, and th
   await page.goto('/');
   await toPage(page, 'hot-water');
   await expect(page.getByTestId('hot-water-time')).toBeVisible();
-  // No state dot on the left edge (spec 3.9 item 12): only the way back.
+  // No state dot and no column on the left edge (spec 3.9 item 12, 3.14).
   await expect(page.getByTestId('nav-status')).toHaveCount(0);
-  const nav = page.locator('.page:not([inert]) nav');
-  await expect(nav.locator('button')).toHaveCount(1);
-  await expect(nav.locator('span')).toHaveCount(0);
+  await expect(page.locator('.page > nav')).toHaveCount(0);
 
   gateway.waterFor('hotWater', 12, 4, 80);
   gateway.putOnScale(48.2);

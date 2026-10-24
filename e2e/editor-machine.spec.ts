@@ -4,7 +4,7 @@ import type { AFlowParams } from '../src/aflow/types';
 import { buildProfile } from '../src/editor/save';
 import { paramsMetadata, splitNotes, workflowProfile } from '../src/editor/storage';
 import { mockGateway, type MockGateway } from './mock-gateway';
-import { selectPhase } from './touch';
+import { back, selectPhase } from './touch';
 import light from '../src/aflow/defaults/default-light.json' with { type: 'json' };
 
 // The editor wired to the generator and the machine (D7), against a mocked gateway: it opens on
@@ -93,7 +93,7 @@ test('a profile that is not A-Flow 3.0 opens in the step editor (spec 3.6)', asy
   await expect(page.getByTestId('editor-notice')).toHaveCount(0);
   await expect(page.getByTestId('save')).toBeDisabled();
   // Back without a change loads nothing: the machine keeps its profile.
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await expect(page.getByTestId('screen-home')).toBeVisible();
   expect(gateway.calls('PUT', '/api/v1/workflow')).toHaveLength(0);
   expect(errors).toEqual([]);
@@ -134,7 +134,7 @@ test('the editor opens on the current A-Flow 3.0 profile and saves an edit with 
     workflowProfile(posts[0].body.profile, { ...morning, flowUp: false }),
   );
   // What is on the machine is what is on screen: back loads nothing more.
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await expect(page.getByTestId('screen-home')).toBeVisible();
   expect(gateway.calls('PUT', '/api/v1/workflow')).toHaveLength(1);
   expect(errors).toEqual([]);
@@ -221,7 +221,7 @@ test("simple mode: a changed value redraws the curve and back sends the generato
   await expect(chip).toContainText('47 g');
 
   // Back with changes: one PUT of the workflow with the values on screen, under the default's name.
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await expect(page.getByTestId('screen-home')).toBeVisible();
   const params = loadedProfile(gateway, 'A-Flow / default-light', 'Janek');
   expect(params).toEqual({ ...light, infusePressure: pressure, stopWeight: 47 });
@@ -233,7 +233,7 @@ test("simple mode: a changed value redraws the curve and back sends the generato
   // The editor opens on the loaded values; back without a change sends nothing more.
   await page.getByTestId('open-editor').click();
   await expect(page.getByTestId('chip-graph-stopWeight')).toContainText('47 g');
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await expect(page.getByTestId('screen-home')).toBeVisible();
   expect(gateway.calls('PUT', '/api/v1/workflow')).toHaveLength(1);
   expect(errors).toEqual([]);
@@ -253,7 +253,7 @@ test('detail mode: typed values redraw the curve, are loaded by back, and are op
   await type(page, 'infuseTemperature', '91');
   await type(page, 'dose', '18.5');
 
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await expect(page.getByTestId('screen-home')).toBeVisible();
   const params = loadedProfile(gateway, 'A-Flow / default-light', 'Janek');
   // The 2nd fill followed the infuse temperature and keeps the value it had (docs/a-flow-3.0.md, 5).
@@ -306,7 +306,7 @@ test('save as stores a new named profile, loads it, and it re-opens with the sam
   expect(gateway.calls('PUT', '/api/v1/workflow')).toHaveLength(1);
 
   // Loaded, it is the current profile, and back has nothing more to load.
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await expect(page.getByTestId('profile-name')).toHaveText('A-Flow / morning light');
   expect(gateway.calls('PUT', '/api/v1/workflow')).toHaveLength(1);
   // After a reload the editor opens on it.
@@ -319,7 +319,7 @@ test('save as stores a new named profile, loads it, and it re-opens with the sam
   await expect(page.getByTestId('toggle-second-fill')).toHaveAttribute('aria-pressed', 'true');
 
   // And the picker marks it as one of the skin's, with its dose, without showing the notes.
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await page.getByTestId('open-profiles').click();
   const item = page.getByTestId('profile-item').filter({ hasText: 'A-Flow / morning light' });
   await expect(item).toContainText('A-Flow 3.0');
@@ -337,7 +337,7 @@ test('the first-step workaround is off by default and adds the Pre Fill step whe
   await expect(page.getByTestId('steps').locator('tbody tr').first()).toContainText('Pre Fill');
 
   await page.getByTestId('toggle-flow').click();
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await expect(page.getByTestId('screen-home')).toBeVisible();
   loadedProfile(gateway, 'A-Flow / default-medium', 'Janek', true);
   expect(gateway.calls('PUT', '/api/v1/workflow')[0].body.profile.steps[0].name).toBe('Pre Fill');
@@ -358,12 +358,12 @@ test('without the gateway the editor still edits, and says that nothing can be s
   await page.getByTestId('toggle-flow').click();
   await expect(page.getByTestId('toggle-flow')).toHaveText(/flow down/);
   // A failed load on leaving is shown, and the editor stays open with the edit.
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await expect(page.getByTestId('editor-notice')).toContainText('The changes were not loaded');
   await expect(page.getByTestId('screen-editor')).toBeVisible();
   await expect(page.getByTestId('toggle-flow')).toHaveText(/flow down/);
   // Back again leaves without loading: the user was told.
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await expect(page.getByTestId('screen-home')).toBeVisible();
 });
 
@@ -378,8 +378,9 @@ test('the name in the top bar opens the picker: changes are loaded first, a choi
   await pressed(page).click();
   await expect(page.getByTestId('screen-profiles')).toBeVisible();
   expect(gateway.calls('PUT', '/api/v1/workflow')).toHaveLength(0);
-  await page.getByTestId('nav-home').click();
-  await page.getByTestId('open-editor').click();
+  // The picker opened from the editor goes back to it.
+  await back(page);
+  await expect(page.getByTestId('screen-editor')).toBeVisible();
 
   // Changed: the values on screen go to the machine before the picker opens.
   await page.getByTestId('toggle-flow').click();
@@ -407,7 +408,7 @@ test('the name in the top bar opens the picker: changes are loaded first, a choi
   await expect(page.getByTestId('step-cards')).toBeVisible();
   await expect(pressed(page)).toHaveText('Best practice');
   expect(gateway.calls('PUT', '/api/v1/workflow')).toHaveLength(3);
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await expect(page.getByTestId('profile-name')).toHaveText('Best practice');
   await expect(page.getByTestId('notice')).toHaveCount(0);
   expect(errors).toEqual([]);

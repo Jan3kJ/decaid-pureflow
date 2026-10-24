@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mockGateway, profile } from './mock-gateway';
-import { toPage } from './touch';
+import { back, toPage } from './touch';
 
 // Home is the shot screen (spec 3.11, X1; acceptance 28 and 51): one graph and a right column
 // of a fixed width in three states. Idle before a shot: the empty graph, the target yield and
@@ -216,7 +216,7 @@ test('with the setting shot values off, home shows no per-phase table after a sh
   await page.screenshot({ path: 'docs/product/settings-shot-values.png' });
   await lever.click();
   await expect(lever).toHaveAttribute('aria-checked', 'false');
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await expect(page.getByTestId('screen-home')).toBeVisible();
 
   await gateway.replay(page, 0, 1);

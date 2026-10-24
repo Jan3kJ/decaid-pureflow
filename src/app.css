@@ -67,6 +67,16 @@ body {
   overscroll-behavior: none;
 }
 
+/*
+ * A move along the screen is the skin's swipe, the way back (src/App.svelte, spec 3.14): the
+ * browser's pan is vertical only, also in the lists, which would otherwise take a move along for
+ * their own scroll and cancel the swipe. Without specificity, so a control's own touch-action wins;
+ * the rows that scroll sideways say so.
+ */
+:where(main, main *) {
+  touch-action: pan-y;
+}
+
 /* Portrait by the stored size (src/viewport.ts), not by a viewport the keyboard shrank. */
 :root[data-portrait] {
   font-size: calc(min(calc(var(--app-w) * 0.02), calc(var(--app-h) * 0.0125)) * var(--display-size, 1));

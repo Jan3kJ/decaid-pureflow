@@ -1,5 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { HEATING_SECONDS, SHOT_EVENTS, WATER_FRAMES, measurementsOf, mockGateway, profile } from './mock-gateway';
+import { back } from './touch';
 
 // The shot graph against a mocked gateway (the founder's notes of 2026-10-13): the heating
 // before the water is cut, a stored shot fills the width, the profile's targets are dashed
@@ -203,7 +204,7 @@ test('the legend is under the graph by default, and the settings page switches i
   await expect(lever).toHaveAttribute('aria-checked', 'true');
   await lever.click();
   await expect(lever).toHaveAttribute('aria-checked', 'false');
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await expect(page.getByTestId('last-shot')).toBeVisible();
   await expect(page.getByTestId('shot-legend')).toHaveCount(0);
 

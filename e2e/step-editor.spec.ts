@@ -3,6 +3,7 @@ import type { Profile } from '../src/api';
 import { insertStepAfter, moveStep, removeStepAt, setValue, stepValue } from '../src/steps/model';
 import blooming from '../src/steps/fixtures/bundled-profiles.json' with { type: 'json' };
 import { mockGateway, type MockGateway } from './mock-gateway';
+import { back } from './touch';
 
 // The step editor (spec 3.6, acceptance 10, research.md 17.11), against a mocked gateway:
 // every profile that is not A-Flow 3.0 opens in it; a value changed with ± and with the pad,
@@ -153,7 +154,7 @@ test('a profile that is not A-Flow 3.0 opens in the step editor; edits saved giv
   expect(puts).toHaveLength(1);
   expect(puts[0].body.profile).toEqual(expected);
   await expect(page.getByTestId('save')).toBeDisabled();
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await expect(page.getByTestId('screen-home')).toBeVisible();
   expect(gateway.calls('PUT', '/api/v1/workflow')).toHaveLength(1);
   expect(errors).toEqual([]);
@@ -231,7 +232,7 @@ test('leaving loads the changed steps; the warning comes before another load, an
   await page.getByTestId('open-editor').click();
   await page.getByTestId('cycle-0-pump').click();
   await expect(page.getByTestId('cycle-value-0-pump')).toHaveText('Flow slowly');
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await expect(page.getByTestId('screen-home')).toBeVisible();
   const puts = gateway.calls('PUT', '/api/v1/workflow');
   expect(puts).toHaveLength(1);

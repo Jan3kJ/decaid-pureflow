@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mockGateway } from './mock-gateway';
-import { swipe } from './touch';
+import { back, swipe } from './touch';
 
 // The row of pages (spec 3.8, acceptance item 32): hot water, home and steam from left to
 // right, a swipe slides to the neighbour; the history's swipe stays, and a drag on a control
@@ -101,16 +101,16 @@ test('with reduced motion the page changes at once, without a slide', async ({ p
   expect(errors).toEqual([]);
 });
 
-test("the back arrows still lead home, and the history's swipe opens the history", async ({ page }) => {
+test("the swipe back leads home from steam and hot water, and the history's swipe opens the history", async ({ page }) => {
   await mockGateway(page);
   await home(page);
   await swipe(page, { x: 800, y: 500 }, { x: 300, y: 500 });
   await expect(shown(page, 'steam')).toBeVisible();
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await expect(shown(page, 'home')).toBeVisible();
   await swipe(page, { x: 400, y: 500 }, { x: 900, y: 500 });
   await expect(shown(page, 'hot-water')).toBeVisible();
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await expect(shown(page, 'home')).toBeVisible();
 
   // The history's swipe from home's left fifth: the overlay, no page.

@@ -178,15 +178,13 @@ test('home menu: machine and app sleep shows the Asleep screen at 5, a touch wak
         return [display.wakeLockEnabled, display.wakeLockOverride, display.requestedBrightness];
       })
       .toEqual([displayBefore.wakeLockEnabled, displayBefore.wakeLockOverride, displayBefore.requestedBrightness]);
-    // Every request answered (the page logs none that failed), in this order.
+    // Every request answered (the page logs none that failed), in this order; Decaid may show
+    // the last one before the page's request event arrives.
     const brightness = (value: number) =>
       displayBefore.platformSupported?.brightness === true ? [`PUT /api/v1/display/brightness {"brightness":${value}}`] : [];
-    expect(sent).toEqual([
-      'PUT /api/v1/machine/state/sleeping',
-      ...brightness(5),
-      'PUT /api/v1/machine/state/idle',
-      ...brightness(100),
-    ]);
+    await expect
+      .poll(() => sent)
+      .toEqual(['PUT /api/v1/machine/state/sleeping', ...brightness(5), 'PUT /api/v1/machine/state/idle', ...brightness(100)]);
     // The rig drops the scale while the machine sleeps (research.md 13): the next test needs it.
     await expect(page.getByTestId('state-scale')).toHaveText(/ g$/, { timeout: 30_000 });
   } finally {

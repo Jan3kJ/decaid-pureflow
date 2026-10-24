@@ -5,6 +5,7 @@ import {
   SWIPE_EDGE,
   SWIPE_FLICK,
   SWIPE_SLOP,
+  closing,
   commits,
   decide,
   destination,
@@ -54,9 +55,10 @@ describe("a page's swipe", () => {
     expect(decide({ x: 100, y: 400 }, { x: 80, y: 400 }, width, 'home')).toBe('page');
   });
 
-  it('is never one on a screen outside the row but the editor', () => {
+  it('is one on every screen outside the row too: the way back', () => {
     for (const screen of ['profiles', 'settings', 'beans'] as const) {
-      expect(decide({ x: 600, y: 400 }, { x: 300, y: 400 }, width, screen)).toBe('across');
+      expect(decide({ x: 600, y: 400 }, { x: 300, y: 400 }, width, screen)).toBe('page');
+      expect(decide({ x: 20, y: 400 }, { x: 20 + SWIPE_SLOP, y: 400 }, width, screen)).toBe('page');
     }
   });
 
@@ -85,17 +87,40 @@ describe('the row of pages', () => {
   });
 });
 
-describe("the editor's swipe", () => {
-  it('goes home to the right and nowhere to the left', () => {
+describe('the way back', () => {
+  it('goes from a screen outside the row to where it was opened from, to the right, and nowhere to the left', () => {
     expect(destination('editor', 1)).toBe('home');
+    expect(destination('profiles', 1, 'editor')).toBe('editor');
+    expect(destination('settings', 1, 'home')).toBe('home');
+    expect(destination('beans', 1)).toBe('home');
     expect(destination('editor', -1)).toBeNull();
     expect(destination('editor', 0)).toBeNull();
     expect(destination('home', -1)).toBe('steam');
   });
 
+  it('from hot water, the leftmost page, is to the left: home lies to its right', () => {
+    expect(destination('hot-water', -1)).toBe('home');
+    expect(destination('hot-water', 1)).toBeNull();
+    expect(destination('steam', 1)).toBe('home');
+    expect(destination('home', 1)).toBe('hot-water');
+  });
+
   it('follows the finger to the right and gives a little to the left', () => {
     expect(offset('editor', 300)).toBe(300);
     expect(offset('editor', -300)).toBe(-60);
+  });
+});
+
+describe("the open history's swipe", () => {
+  it('closes it to the left, at the distance that opens it', () => {
+    expect(closing({ x: 300, y: 400 }, { x: 300 - far, y: 400 }, width)).toBe('close');
+    expect(closing({ x: 300, y: 400 }, { x: 300 - far + 1, y: 400 }, width)).toBeNull();
+  });
+
+  it('is not a move to the right or down', () => {
+    expect(closing({ x: 300, y: 400 }, { x: 300 + far, y: 400 }, width)).toBe('across');
+    expect(closing({ x: 300, y: 400 }, { x: 300, y: 400 + SWIPE_SLOP + 1 }, width)).toBe('across');
+    expect(closing({ x: 300, y: 400 }, { x: 300 - far, y: 400 + far }, width)).toBe('across');
   });
 });
 
@@ -117,6 +142,10 @@ describe('a drag on a control', () => {
   interface Fake extends Box {
     selector?: boolean;
     css?: Partial<Record<'overflowX' | 'overflowY' | 'touchAction', string>>;
+    scrollWidth?: number;
+    clientWidth?: number;
+    scrollHeight?: number;
+    clientHeight?: number;
   }
   const node = (fields: Partial<Fake>, parent: Fake | null): Fake => {
     const made: Fake = {
@@ -133,9 +162,11 @@ describe('a drag on a control', () => {
   const style = (box: Box) => ({ overflowX: 'visible', overflowY: 'visible', touchAction: 'auto', ...(box as Fake).css });
   const root = node({}, null);
 
-  it('is not a drag on a plain part of the page, a graph to look at or a list that fits', () => {
+  it('is not a drag on a plain part of the page, a graph to look at or a list, which scrolls down only', () => {
     expect(onControl(node({}, root), root, style)).toBe(false);
     expect(onControl(node({ css: { overflowY: 'auto' } }, root), root, style)).toBe(false);
+    const list = node({ css: { overflowY: 'auto' }, scrollHeight: 400 }, root);
+    expect(onControl(node({}, list), root, style)).toBe(false);
   });
 
   it('is one on a field, a slider or a dialog, and on anything inside them', () => {
@@ -144,13 +175,12 @@ describe('a drag on a control', () => {
     expect(onControl(node({}, slider), root, style)).toBe(true);
   });
 
-  it('is one on something that takes drags itself or a list that scrolls', () => {
+  it('is one on something that takes drags itself or a row that scrolls sideways', () => {
     const graph = node({ css: { touchAction: 'none' } }, root);
     expect(onControl(node({}, graph), root, style)).toBe(true);
-    const list = node({ css: { overflowY: 'auto' }, scrollHeight: 400 }, root);
-    expect(onControl(node({}, list), root, style)).toBe(true);
-    const row = node({ css: { overflowX: 'scroll' }, scrollWidth: 400 }, root);
-    expect(onControl(row, root, style)).toBe(true);
+    // A row that scrolls sideways, also while it fits: the browser pans it.
+    expect(onControl(node({ css: { overflowX: 'scroll' }, scrollWidth: 400 }, root), root, style)).toBe(true);
+    expect(onControl(node({ css: { overflowX: 'auto' } }, root), root, style)).toBe(true);
   });
 
   it('looks no further than the root', () => {

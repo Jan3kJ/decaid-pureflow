@@ -28,6 +28,7 @@ import {
   type Status,
 } from './machine';
 import { followMachine, loadScreen, saveScreen, type Screen } from './nav';
+import { isPage } from './swipe';
 import { doseToSet } from './profiles';
 import { Recall, type Recalled } from './recall.svelte';
 import { SettingsStore } from './settings-store.svelte';
@@ -61,8 +62,11 @@ export class Skin {
   notice: string | null = $state(null);
   /** what the last action answered that is not an error: a tare Decaid blocks during a shot */
   info: string | null = $state(null);
-  /** where the profile picker goes after a load: back to the editor when it was opened there */
-  pickerReturn: 'home' | 'editor' = $state('home');
+  /**
+   * Where each screen outside the row of pages was opened from: its way back, a swipe to the
+   * right (spec 3.14), and the picker's after a load. Home for a screen the skin opened with.
+   */
+  private readonly opener: Partial<Record<Screen, Screen>> = {};
   /**
    * What the open screen does before it is left with `leave`; false keeps it open. The editor
    * loads changed values here.
@@ -315,7 +319,8 @@ export class Skin {
   }
 
   go(screen: Screen): void {
-    if (screen === 'profiles') this.pickerReturn = this.screen === 'editor' ? 'editor' : 'home';
+    // A screen opened again from one it opened (the editor after its picker's load) keeps its own way back.
+    if (!isPage(screen) && screen !== this.screen && this.opener[this.screen] !== screen) this.opener[screen] = this.screen;
     this.screen = screen;
     this.historyOpen = false;
     this.notice = this.info = null;
@@ -324,7 +329,12 @@ export class Skin {
     if (screen === 'home' || screen === 'steam' || screen === 'hot-water') void this.refreshWorkflow();
   }
 
-  /** `go`, after the open screen's `leaving` agreed: the back arrow and the editor's shortcut. */
+  /** Where the open screen's way back goes: where it was opened from, or home. */
+  back(): Screen {
+    return this.opener[this.screen] ?? 'home';
+  }
+
+  /** `go`, after the open screen's `leaving` agreed: the swipe back and the editor's shortcut. */
   async leave(screen: Screen): Promise<void> {
     if (await this.mayLeave()) this.go(screen);
   }

@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mockGateway, type MockGateway } from './mock-gateway';
+import { back } from './touch';
 
 // The editor's row of profiles to start from, chosen in the settings (founder, 2026-10-13):
 // up to five A-Flow 3.0 profiles; 'save as' does not add to it.
@@ -28,7 +29,7 @@ const row = (page: Page) => page.getByTestId('start-row').locator('button');
 const slots = (page: Page) => page.getByTestId('settings-start').locator('.slot');
 
 async function openSettings(page: Page) {
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await page.getByTestId('menu').click();
   await page.getByTestId('open-settings').click();
   await page.getByTestId('settings-category-skin').click();
@@ -36,7 +37,7 @@ async function openSettings(page: Page) {
 }
 
 async function openEditor(page: Page) {
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await page.getByTestId('open-editor').click();
   await expect(page.getByTestId('screen-editor')).toBeVisible();
 }

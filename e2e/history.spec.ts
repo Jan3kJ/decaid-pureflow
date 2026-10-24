@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { WATER_FRAMES, mockGateway, profile, type MockGateway } from './mock-gateway';
-import { swipe } from './touch';
+import { back, swipe } from './touch';
 
 // The shot history against a mocked gateway (D8b, acceptance item 5): an overlay on home,
 // opened by its handle or by a swipe from the left edge, closed by a selection or a tap outside.
@@ -79,18 +79,18 @@ test('a swipe from the left edge to the right opens the overlay, and no other sw
   // From the middle of the screen and to the left: a page (spec 3.8), not the history; down
   // along the edge: nothing.
   // Each step waits on the state the swipe ends in, the strip at rest with one page, not on time;
-  // the back arrow is clicked, since Chromium may drop a tap that follows a swipe (research.md 14).
+  // the way back is a swipe too (`back`).
   const atRest = () => expect(page.locator('.page')).toHaveCount(1);
   await swipe(page, { x: 600, y: 400 }, { x: 900, y: 400 });
   await expect(page.locator('.page:not([inert]) [data-testid="screen-hot-water"]')).toBeVisible();
   await atRest();
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await expect(page.getByTestId('screen-home')).toBeVisible();
   // To the left from the left fifth: a page's swipe, too short to move on unless flicked.
   await swipe(page, { x: 200, y: 400 }, { x: 20, y: 400 });
   await atRest();
   await expect(page.getByTestId('history')).toHaveCount(0);
-  if (await page.getByTestId('nav-home').count()) await page.getByTestId('nav-home').click();
+  if (await page.locator('.page:not([inert]) [data-testid="screen-steam"]').count()) await back(page);
   await expect(page.getByTestId('screen-home')).toBeVisible();
   await swipe(page, { x: 30, y: 200 }, { x: 60, y: 600 });
   await atRest();
@@ -118,10 +118,10 @@ test('a tap outside closes the overlay and changes nothing', async ({ page }) =>
 
   await page.getByTestId('history-handle').tap();
   await expect(page.getByTestId('history')).toBeVisible();
-  // Outside, on home's menu button: the tap closes the overlay and opens nothing.
-  const menu = (await page.getByTestId('menu').boundingBox())!;
-  await page.touchscreen.tap(menu.x + menu.width / 2, menu.y + menu.height / 2);
-  await expect(page.getByTestId('menu-list')).toHaveCount(0);
+  // Outside, on home's profile button: the tap closes the overlay and opens nothing.
+  const profile = (await page.getByTestId('open-profiles').boundingBox())!;
+  await page.touchscreen.tap(profile.x + profile.width / 2, profile.y + profile.height / 2);
+  await expect(page.getByTestId('screen-profiles')).toHaveCount(0);
 
   await expect(page.getByTestId('history')).toHaveCount(0);
   await expect(page.getByTestId('screen-home')).toBeVisible();

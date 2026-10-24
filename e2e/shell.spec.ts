@@ -4,7 +4,7 @@ import { DEFAULT_PROFILES } from '../src/aflow';
 import { paramsMetadata, workflowProfile } from '../src/editor/storage';
 import { defaultProfile } from '../src/shell/profiles';
 import { WATER_FRAMES, mockGateway, record } from './mock-gateway';
-import { toPage } from './touch';
+import { back, toPage } from './touch';
 
 // The shell against a mocked gateway: home, the profile picker and a replayed shot (D6).
 
@@ -123,7 +123,7 @@ test('the menu opens with settings, beans and grinders, clean, steam off and mac
     await openMenu(page);
     await page.getByTestId(entry).click();
     await expect(page.getByTestId(`screen-${screen}`)).toBeVisible();
-    await page.getByTestId('nav-home').click();
+    await back(page);
     await expect(page.getByTestId('menu-list')).toHaveCount(0);
   }
 
@@ -140,31 +140,15 @@ test('the pen opens the editor, the name the picker, the steam dot the steam pag
 
   await page.getByTestId('open-editor').click();
   await expect(page.getByTestId('screen-editor')).toBeVisible();
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await page.getByTestId('open-profiles').click();
   await expect(page.getByTestId('screen-profiles')).toBeVisible();
-  await page.getByTestId('nav-home').click();
+  await back(page);
 
   await toPage(page, 'steam');
   await expect(page.getByTestId('screen-steam')).toBeVisible();
   // The steam page has the same state line.
   await expect(page.getByTestId('state-tank')).toHaveText('38 mm');
-  expect(errors).toEqual([]);
-});
-
-test('the way back to home is a large target in the accent colour', async ({ page }) => {
-  await mockGateway(page);
-  await page.goto('/');
-  for (const button of ['open-profiles', 'open-editor', 'page-dot-steam']) {
-    await page.getByTestId(button).click();
-    const back = page.getByTestId('nav-home');
-    const box = (await back.boundingBox())!;
-    expect(box.width).toBeGreaterThanOrEqual(56);
-    expect(box.height).toBeGreaterThanOrEqual(56);
-    // Light blue (founder, 2026-10-14), paler than the flow curve's #4da3ff; not green or red.
-    expect(await back.evaluate((element) => getComputedStyle(element).color)).toBe('rgb(159, 212, 240)');
-    await back.click();
-  }
   expect(errors).toEqual([]);
 });
 
@@ -468,7 +452,7 @@ test('every screen is one tap from home and back, and the screen survives a relo
     await openMenu(page);
     await page.getByTestId(button).click();
     await expect(page.getByTestId(`screen-${screen}`).locator('h1')).toHaveText(title);
-    await page.getByTestId('nav-home').click();
+    await back(page);
     await expect(page.getByTestId('screen-home')).toBeVisible();
   }
 
@@ -479,7 +463,7 @@ test('every screen is one tap from home and back, and the screen survives a relo
   await page.reload();
   await expect(page.getByTestId('screen-editor')).toBeVisible();
   await expect(page.getByTestId('graph')).toBeVisible();
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
   expect(errors).toEqual([]);
 });

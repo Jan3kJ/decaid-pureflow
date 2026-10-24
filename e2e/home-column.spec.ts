@@ -27,15 +27,17 @@ test('the profile and bean buttons are in the column while idle, gone during a s
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
 
   // The header: the state line and the menu, nothing else.
-  const header = page.getByTestId('screen-home').locator('.home > header');
+  const header = page.getByTestId('screen-home').locator('header.page-header');
   await expect(header.getByTestId('status')).toBeVisible();
   await expect(header.getByTestId('menu')).toBeVisible();
   for (const id of BUTTONS) await expect(header.getByTestId(id)).toHaveCount(0);
-  // The state line takes the header's width but the menu's.
+  // The state line takes the header's width but the menu's, and the header ends left of the column.
   const line = await box(page, 'status');
   const menu = await box(page, 'menu');
-  expect(menu.x - (line.x + line.width)).toBeLessThan(1.5 * REM);
-  expect(line.width).toBeGreaterThan(1000);
+  const own = (await header.boundingBox())!;
+  expect(line.x - (menu.x + menu.width)).toBeLessThan(1.5 * REM);
+  expect(line.x + line.width).toBeCloseTo(own.x + own.width, 0);
+  expect(own.x + own.width).toBeLessThanOrEqual((await box(page, 'shot-column')).x);
 
   // Idle: both buttons at the column's top, one under the other, each as wide as the column.
   const column = page.getByTestId('shot-column');

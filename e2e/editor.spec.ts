@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mockGateway, type MockGateway } from './mock-gateway';
-import { selectPhase } from './touch';
+import { back, selectPhase } from './touch';
 
 const errors: string[] = [];
 let gateway: MockGateway;
@@ -103,8 +103,9 @@ test('loads in simple mode with no console errors; its name leads to the picker,
   ]);
   // Nothing was changed, so leaving loaded nothing.
   expect(gateway.calls('PUT', '/api/v1/workflow')).toHaveLength(0);
-  await page.getByTestId('nav-home').click();
-  await page.getByTestId('open-editor').click();
+  // The picker opened from the editor goes back to it.
+  await back(page);
+  await expect(page.getByTestId('screen-editor')).toBeVisible();
   await pick(page, 'floral');
   // Load loaded it, once.
   expect(gateway.calls('PUT', '/api/v1/workflow')).toHaveLength(1);
@@ -662,7 +663,7 @@ test('the profile steps are closed whenever the editor opens, and the panel is n
   await expect(page.getByTestId('toggle-steps')).toHaveAttribute('aria-pressed', 'false');
   await expect(page.getByTestId('steps')).toHaveCount(0);
   await page.getByTestId('toggle-steps').click();
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await page.getByTestId('open-editor').click();
   await expect(page.getByTestId('toggle-steps')).toHaveAttribute('aria-pressed', 'false');
   await expect(page.getByTestId('steps')).toHaveCount(0);
@@ -671,23 +672,23 @@ test('the profile steps are closed whenever the editor opens, and the panel is n
 });
 
 test('with the setting off, the profile steps button is not shown', async ({ page }) => {
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await page.getByTestId('menu').click();
   await page.getByTestId('open-settings').click();
   await page.getByTestId('settings-category-skin').click();
   await page.getByTestId('setting-show-profile-steps').click();
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await page.getByTestId('open-editor').click();
   await expect(page.getByTestId('graph')).toBeVisible();
   await expect(page.getByTestId('toggle-steps')).toHaveCount(0);
   await expect(page.getByTestId('steps')).toHaveCount(0);
   // On again: the button is back, the panel closed.
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await page.getByTestId('menu').click();
   await page.getByTestId('open-settings').click();
   await page.getByTestId('settings-category-skin').click();
   await page.getByTestId('setting-show-profile-steps').click();
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await page.getByTestId('open-editor').click();
   await expect(page.getByTestId('toggle-steps')).toHaveAttribute('aria-pressed', 'false');
   await expect(page.getByTestId('steps')).toHaveCount(0);

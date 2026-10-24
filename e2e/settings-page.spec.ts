@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import type { Settings } from '../src/settings';
 import type { Backup } from '../src/settings-backup';
 import { mockGateway, type MockGateway } from './mock-gateway';
+import { back } from './touch';
 
 // The settings page ported from Streamline (spec 3.7 'Settings', acceptance 22, research.md
 // 20.10 S2a), against the mocked gateway: each category opens, a typed value is written with
@@ -189,7 +190,7 @@ test('the flush: temperature, flow and duration are the workflow rinseData, read
   await page.screenshot({ path: 'docs/product/settings-flush.png' });
   expect(gateway.machineSettings).toMatchObject({ flushFlow: 4.5, flushTimeout: 14, flushTemp: 90 });
   // The ring of a flush on home counts the new duration.
-  await page.getByTestId('nav-home').click();
+  await back(page);
   gateway.waterFor('flush', 3, 4.5);
   await expect(page.getByTestId('water-time')).toContainText('/ 14 s');
 });
@@ -243,7 +244,7 @@ test('the steam temperature 0 switches the heater off, and the menu switches it 
   await type(page, 'setting-steam-temperature', '0');
   await expect(shown(page, 'steam-temperature')).toHaveText('0°C');
   expect(writes('PUT', '/api/v1/workflow')).toEqual([{ steamSettings: { targetTemperature: 0 } }]);
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await page.getByTestId('menu').click();
   await expect(page.getByTestId('steam-heater')).toContainText('Steam on');
   await page.getByTestId('steam-heater').click();

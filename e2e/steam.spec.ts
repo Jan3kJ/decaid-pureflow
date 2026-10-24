@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { recordSteamFrame, type SteamRun } from '../src/steam/run';
 import { EXPORT_STEAMS, mockGateway, type MockGateway } from './mock-gateway';
-import { swipe, toPage } from './touch';
+import { back, swipe, toPage } from './touch';
 
 // The steam page against a mocked gateway (D8a, acceptance item 4): the scale's frames are
 // the mock's, because the simulated scale's weight cannot be set (research.md 8.7). The
@@ -379,7 +379,7 @@ test('the adjust amounts come from the settings, and the settings page changes t
   await expect(page.getByTestId('steam-seconds')).toHaveText('53 s');
 
   // The settings page, category Steam: −6 s typed on the number pad with its sign key.
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await page.getByTestId('menu').click();
   await page.getByTestId('open-settings').click();
   await page.getByTestId('settings-category-skin').click();
@@ -391,7 +391,7 @@ test('the adjust amounts come from the settings, and the settings page changes t
   await expect(page.getByTestId('numpad-display')).toHaveText('-6');
   await page.getByTestId('numpad-confirm').click();
   await expect(page.getByTestId('setting-adjust-1')).toContainText('-6');
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await toPage(page, 'steam');
   await expect(page.getByTestId('steam-adjust')).toHaveText(['−6 s', '+2 s', '+10 s']);
   expect(errors).toEqual([]);
@@ -452,11 +452,11 @@ test('a swipe to the left opens the steam page, from the right edge too (spec 3.
 
   await swipe(page, { x: 1180, y: 400 }, { x: 760, y: 420 });
   await expect(page.getByTestId('screen-steam')).toBeVisible();
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await swipe(page, { x: 700, y: 400 }, { x: 400, y: 400 });
   await expect(page.getByTestId('screen-steam')).toBeVisible();
   // The history's swipe still opens the history, not a page.
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await swipe(page, { x: 10, y: 400 }, { x: 260, y: 420 });
   await expect(page.getByTestId('history')).toBeVisible();
   await expect(page.getByTestId('screen-home')).toBeVisible();

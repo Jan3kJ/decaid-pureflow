@@ -224,7 +224,7 @@ async function openEditor(page: Page) {
   await page.addInitScript(() => localStorage.setItem('pureflow.screen', 'editor'));
   await page.goto('/');
   await expect(page.getByTestId('graph')).toBeVisible();
-  await expect(page.getByTestId('nav-home')).toBeVisible();
+  await expect(page.getByTestId('screen-editor')).toBeVisible();
 }
 
 /** What the editor shows of the values that differ from default-light. */

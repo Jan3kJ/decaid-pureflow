@@ -112,9 +112,9 @@
   }
 
   /**
-   * Leaving the editor, by the back arrow or the shortcut to the picker:
+   * Leaving the editor, by the swipe back or the shortcut to the picker:
    * changed values are loaded to the machine first. A failed load keeps the editor open and
-   * says so; 'back' again with the same values leaves without loading them.
+   * says so; a swipe back again with the same values leaves without loading them.
    */
   async function leave(): Promise<boolean> {
     if (busy) return false;

@@ -1,12 +1,13 @@
 import { expect, test, type Page } from '@playwright/test';
-import type { MachineSnapshot, PresenceSettings } from '../src/api';
+import type { DisplayState, MachineSnapshot, PresenceSettings } from '../src/api';
 import { IDLE } from './idle';
 
 // Acceptance item 75 (spec 3.12, Y4) against the rig: with the sleep after 1 min and presence on,
 // a heartbeat answers the whole minute and -1 with presence off; a skin touched every 30 s for
 // three minutes keeps the machine awake, at most one heartbeat every 30 s and never a write of
 // the presence settings; left alone the machine sleeps after the minute. The test puts the
-// presence settings and the machine's state back as it found them. The same with a mocked
+// presence settings, the machine's state and the screen's brightness (the Asleep screen dims it)
+// back as it found them. The same with a mocked
 // gateway: e2e/heartbeat.spec.ts.
 
 const GATEWAY = 'http://localhost:8080';
@@ -26,6 +27,7 @@ async function api<T = unknown>(method: string, path: string, body?: unknown): P
 
 const machineState = async (): Promise<string> => (await api<MachineSnapshot>('GET', '/api/v1/machine/state')).body.state.state;
 const presence = async () => (await api<PresenceSettings>('GET', '/api/v1/presence/settings')).body;
+const display = async () => (await api<DisplayState>('GET', '/api/v1/display')).body;
 
 let gatewayUp = false;
 
@@ -51,6 +53,7 @@ test('a touched skin keeps the machine awake; left alone it sleeps after the min
   test.setTimeout(480_000);
 
   const before = await presence();
+  const displayBefore = await display();
   const heartbeats: number[] = [];
   let presenceWrites = 0;
   page.on('request', (request) => {
@@ -96,8 +99,16 @@ test('a touched skin keeps the machine awake; left alone it sleeps after the min
       sleepTimeoutMinutes: before.sleepTimeoutMinutes,
     });
     if ((await machineState()) === 'sleeping') await api('PUT', '/api/v1/machine/state/idle');
+    // the page undims when it sees the machine awake; a page closed before that leaves it dimmed
+    if (displayBefore.platformSupported?.brightness === true) {
+      await expect
+        .poll(async () => (await display()).requestedBrightness, { timeout: 10_000 })
+        .toBe(displayBefore.requestedBrightness)
+        .catch(() => api('PUT', '/api/v1/display/brightness', { brightness: displayBefore.requestedBrightness ?? 100 }));
+    }
   }
   const after = await presence();
   expect([after.userPresenceEnabled, after.sleepTimeoutMinutes]).toEqual([before.userPresenceEnabled, before.sleepTimeoutMinutes]);
   await expect.poll(machineState, { timeout: 30_000 }).toBe('idle');
+  expect((await display()).requestedBrightness).toBe(displayBefore.requestedBrightness);
 });

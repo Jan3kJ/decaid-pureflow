@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte';
   import ShotGraph from '../graph/ShotGraph.svelte';
   import { beanLabel } from '../history/entries';
   import { homeShot } from './home-shot';
@@ -8,9 +9,11 @@
 
   interface Props {
     skin: Skin;
+    /** home's header, left of the right column, which starts at the page's top beside it */
+    top?: Snippet;
   }
 
-  let { skin }: Props = $props();
+  let { skin, top }: Props = $props();
 
   // Home is the shot screen (spec 3.11): one graph on the left, and the right column of a fixed
   // width with the shot's time, weight and values, so nothing changes size when a shot starts.
@@ -54,6 +57,7 @@
 </script>
 
 <div class="shot" class:values={table !== null} data-testid="home-shot" data-shot={shown.kind}>
+  <div class="top">{@render top?.()}</div>
   <header data-testid="shot-caption">
     {#if recalled}
       {@const entry = recalled.entry}
@@ -160,15 +164,20 @@
     min-height: 0;
     display: grid;
     grid-template-columns: minmax(0, 1fr) 17rem;
-    grid-template-rows: auto minmax(0, 1fr);
-    grid-template-areas: 'header side' 'plot side';
+    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-areas: 'top side' 'header side' 'plot side';
     gap: 0.6rem 1.2rem;
   }
 
   /* The table's row only when it is drawn: without it the graph takes its height and its gap. */
   .shot.values {
-    grid-template-rows: auto minmax(0, 1fr) auto;
-    grid-template-areas: 'header side' 'plot side' 'table side';
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    grid-template-areas: 'top side' 'header side' 'plot side' 'table side';
+  }
+
+  .top {
+    grid-area: top;
+    min-width: 0;
   }
 
   header {

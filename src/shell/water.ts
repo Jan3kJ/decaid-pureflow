@@ -54,7 +54,7 @@ export function shownRun(run: WaterRun | null, canStop: boolean, kind?: WaterKin
 }
 
 /**
- * The run the shell draws as its small ring at the bottom of the left column (spec 3.10): on
+ * The run the shell draws as its small ring at the bottom left corner (spec 3.10, 3.14): on
  * every screen but those whose large ring shows it, home (unless the history covers it) and the
  * hot water page while hot water pours; else null.
  */

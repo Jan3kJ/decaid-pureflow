@@ -122,8 +122,8 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   }
 
   /**
-   * Leaving the editor, by the back arrow or the shortcut to the picker: a changed profile is
-   * loaded to the machine first. A failed load keeps the editor open and says so; 'back' again
+   * Leaving the editor, by the swipe back or the shortcut to the picker: a changed profile is
+   * loaded to the machine first. A failed load keeps the editor open and says so; the swipe again
    * with the same profile leaves without loading it.
    */
   async function leave(): Promise<boolean> {
@@ -476,6 +476,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     align-items: stretch;
     gap: 0.7rem;
     overflow-x: auto;
+    touch-action: pan-x pan-y;
     scroll-snap-type: x proximity;
     scrollbar-width: none;
   }

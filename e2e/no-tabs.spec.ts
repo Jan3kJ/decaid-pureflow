@@ -40,13 +40,13 @@ test('home draws no edge tab and uses the full width', async ({ page }) => {
   const screen = (await page.getByTestId('screen-home').boundingBox())!;
   expect(screen.x).toBe(0);
   expect(screen.width).toBe(1280);
-  // The menu opens under its button, at home's right edge.
+  // The menu opens under its button, in the top left corner (spec 3.14).
   const button = (await page.getByTestId('menu').boundingBox())!;
   await page.getByTestId('menu').click();
   const menu = (await page.getByTestId('menu-list').boundingBox())!;
-  expect(Math.abs(menu.x + menu.width - (button.x + button.width))).toBeLessThan(2);
+  expect(Math.abs(menu.x - button.x)).toBeLessThan(2);
   expect(menu.y).toBeGreaterThan(button.y + button.height - 1);
-  await page.getByTestId('menu-backdrop').click({ position: { x: 100, y: 400 } });
+  await page.getByTestId('menu-backdrop').click({ position: { x: 1100, y: 400 } });
   await page.screenshot({ path: 'docs/product/home-no-tabs.png' });
   expect(errors).toEqual([]);
 });
@@ -139,12 +139,12 @@ test("the history's handle: a thin bar at home's left edge, vertically centred, 
   await handle.tap();
   await expect(page.getByTestId('history')).toBeVisible();
   await expect(shown(page, 'home')).toBeVisible();
-  // Only on home: the other pages have their back arrow.
+  // Only on home; no page has a back arrow (spec 3.14).
   await page.touchscreen.tap(1100, 400);
   await expect(page.getByTestId('history')).toHaveCount(0);
   await page.getByTestId('page-dot-steam').tap();
   await rests(page, 'steam');
   await expect(page.getByTestId('history-handle')).toHaveCount(0);
-  await expect(page.getByTestId('nav-home')).toBeVisible();
+  await expect(page.getByTestId('nav-home')).toHaveCount(0);
   expect(errors).toEqual([]);
 });

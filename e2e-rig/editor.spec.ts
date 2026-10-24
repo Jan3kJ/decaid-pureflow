@@ -6,10 +6,10 @@ import type { AFlowParams } from '../src/aflow/types';
 import { buildProfile } from '../src/editor/save';
 import { paramsMetadata, splitNotes, workflowProfile } from '../src/editor/storage';
 import light from '../src/aflow/defaults/default-light.json' with { type: 'json' };
-import { selectPhase } from '../e2e/touch';
+import { back, selectPhase } from '../e2e/touch';
 
 // Acceptance item 3 (spec section 5) against the rig: in simple and in detail mode, changing a
-// value redraws the curve, and the profile the gateway holds after the back arrow and after
+// value redraws the curve, and the profile the gateway holds after the swipe back and after
 // 'save as' (there is no 'load to machine' since the founder's notes of 2026-10-13) equals the
 // generator's output for those values; a saved profile re-opens in the editor with the same
 // parameters. The tests remove the profiles they create and put the workflow back as it was.
@@ -83,7 +83,7 @@ async function openEditor(page: Page) {
   await page.addInitScript(() => localStorage.setItem('pureflow.screen', 'editor'));
   await page.goto('/');
   await expect(page.getByTestId('graph')).toBeVisible();
-  await expect(page.getByTestId('nav-home')).toBeVisible();
+  await expect(page.getByTestId('screen-editor')).toBeVisible();
   await expect(pressed(page)).toHaveText('light');
 }
 
@@ -98,7 +98,7 @@ async function expectWorkflow(about: { title: string; author: string }): Promise
   return params;
 }
 
-/** After the back arrow with changes: home, and the workflow read back. */
+/** After the swipe back with changes: home, and the workflow read back. */
 async function expectLoaded(page: Page, about: { title: string; author: string }): Promise<AFlowParams> {
   await expect(page.getByTestId('screen-home')).toBeVisible();
   await expect(page.getByTestId('profile-name')).toHaveText(about.title);
@@ -174,7 +174,7 @@ test("simple mode: a changed value redraws the curve, and the gateway holds the 
   await page.getByTestId('toggle-second-fill').click();
 
   // Back with changes loads them.
-  await page.getByTestId('nav-home').click();
+  await back(page);
   const params = await expectLoaded(page, LIGHT);
   expect(params).toEqual({ ...light, infusePressure: pressure, stopWeight: 47, pauseDuration: 15 });
   // Dose and stop weight are not on home: the workflow holds them.
@@ -231,7 +231,7 @@ test('detail mode: typed values are loaded; a saved profile re-opens with them a
   expect(await expectWorkflow(about)).toEqual(wanted);
   expect((await api<RigWorkflow>('GET', '/api/v1/workflow')).context).toMatchObject({ targetYield: 48, targetDoseWeight: 18.5 });
   // Back has nothing more to load.
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await expect(page.getByTestId('profile-name')).toHaveText(about.title);
   expect(await expectWorkflow(about)).toEqual(wanted);
 
@@ -289,7 +289,7 @@ test('detail mode: typed values are loaded; a saved profile re-opens with them a
   // Back with a change in detail mode loads it, unsaved, under the profile's name.
   await selectPhase(page, 'pressurize');
   await type(page, 'pourPressure', '8');
-  await page.getByTestId('nav-home').click();
+  await back(page);
   expect(await expectLoaded(page, about)).toEqual({ ...wanted, dose: 17, flowUp: false, pourPressure: 8 });
 });
 

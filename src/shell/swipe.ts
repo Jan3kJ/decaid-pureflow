@@ -1,7 +1,8 @@
-// The skin's one horizontal gesture (spec 3.1, 3.7, 3.8, 3.10): hot water, home and steam are
-// one row of pages, and a swipe moves to the neighbour; on home a swipe to the right that starts
-// in the left fifth opens the shot history instead; in the editor a swipe to the right leaves for
-// home, as its back arrow does. A drag that starts on a control is the control's. Pure: positions in, decisions out; `onControl` only reads the DOM it is given.
+// The skin's one horizontal gesture (spec 3.1, 3.7, 3.8, 3.10, 3.14): hot water, home and steam
+// are one row of pages, and a swipe moves to the neighbour; on home a swipe to the right that
+// starts in the left fifth opens the shot history instead, and one to the left closes it; on every
+// other screen a swipe to the right is the way back, to where it was opened from: no screen has a
+// back arrow. A drag that starts on a control is the control's. Pure: positions in, decisions out; `onControl` only reads the DOM it is given.
 import type { Screen } from './nav';
 
 export interface Point {
@@ -29,13 +30,6 @@ export function isPage(screen: Screen): screen is Page {
   return (PAGES as readonly Screen[]).includes(screen);
 }
 
-/** The screens a swipe moves: the pages, and the editor (the A-Flow editor or the step editor). */
-export type Swiped = Page | 'editor';
-
-export function swipes(screen: Screen): screen is Swiped {
-  return screen === 'editor' || isPage(screen);
-}
-
 /** The page beside `page` that a finger moving by `dx` brings in: to the left brings the right one. */
 export function neighbour(page: Page, dx: number): Page | null {
   const index = PAGES.indexOf(page) + (dx < 0 ? 1 : -1);
@@ -43,12 +37,12 @@ export function neighbour(page: Page, dx: number): Page | null {
 }
 
 /**
- * Where a finger moving by `dx` on `screen` goes: the page's neighbour, or from the editor home
- * to the right and nowhere to the left.
+ * Where a finger moving by `dx` on `screen` goes: the page's neighbour, or from any other screen
+ * `back`, where it was opened from, to the right and nowhere to the left.
  */
-export function destination(screen: Swiped, dx: number): Page | null {
-  if (screen !== 'editor') return neighbour(screen, dx);
-  return dx > 0 ? 'home' : null;
+export function destination(screen: Screen, dx: number, back: Screen = 'home'): Screen | null {
+  if (isPage(screen)) return neighbour(screen, dx);
+  return dx > 0 ? back : null;
 }
 
 /**
@@ -58,7 +52,6 @@ export function destination(screen: Swiped, dx: number): Page | null {
 export type Gesture = 'history' | 'page' | 'across' | null;
 
 export function decide(start: Point, now: Point, width: number, screen: Screen): Gesture {
-  if (!swipes(screen)) return 'across';
   const dx = now.x - start.x;
   const dy = Math.abs(now.y - start.y);
   const along = Math.abs(dx);
@@ -69,6 +62,19 @@ export function decide(start: Point, now: Point, width: number, screen: Screen):
   }
   if (Math.max(along, dy) < SWIPE_SLOP) return null;
   return dy < along / 2 ? 'page' : 'across';
+}
+
+/**
+ * What a touch on the open shot history is: its closing swipe, to the left, the reverse of the
+ * one that opened it and decided at the same distance; a vertical move (the list's scroll); or not
+ * decided yet.
+ */
+export function closing(start: Point, now: Point, width: number): 'close' | 'across' | null {
+  const dx = now.x - start.x;
+  const dy = Math.abs(now.y - start.y);
+  const along = Math.abs(dx);
+  if (along < width * SWIPE_DISTANCE) return dy > SWIPE_SLOP && dy >= along ? 'across' : null;
+  return dx < 0 && dy < along / 2 ? 'close' : 'across';
 }
 
 /**
@@ -85,7 +91,7 @@ export function commits(dx: number, velocity: number, width: number): boolean {
  * The drag's offset as drawn: the finger's, but held to a fifth of it where there is no
  * place to go, so the edge gives a little and springs back.
  */
-export function offset(screen: Swiped, dx: number): number {
+export function offset(screen: Screen, dx: number): number {
   return destination(screen, dx) ? dx : dx / 5;
 }
 
@@ -100,19 +106,17 @@ const CONTROLS = 'input, textarea, select, [contenteditable=""], [contenteditabl
 export interface Box {
   closest(selectors: string): unknown;
   parentElement: Box | null;
-  scrollWidth: number;
-  clientWidth: number;
-  scrollHeight: number;
-  clientHeight: number;
 }
 
-type Style = (node: Box) => Pick<CSSStyleDeclaration, 'overflowX' | 'overflowY' | 'touchAction'>;
+type Style = (node: Box) => Pick<CSSStyleDeclaration, 'overflowX' | 'touchAction'>;
 
 const scrolls = (overflow: string) => overflow === 'auto' || overflow === 'scroll';
 
 /**
  * Whether a drag that starts on `target` is a control's: one of `CONTROLS`, or inside
- * something that takes drags or scrolls (a list longer than its place), up to `root`.
+ * something that takes drags or scrolls sideways (a row of buttons), which the browser pans along
+ * even when it fits, up to `root`. A list that scrolls down is not: the browser's pan is vertical
+ * only there (app.css), so a move along it is the swipe.
  */
 export function onControl(
   target: Box | null,
@@ -123,8 +127,7 @@ export function onControl(
   for (let node: Box | null = target; node && node !== root; node = node.parentElement) {
     const css = style(node);
     if (css.touchAction === 'none') return true;
-    if (scrolls(css.overflowY) && node.scrollHeight > node.clientHeight) return true;
-    if (scrolls(css.overflowX) && node.scrollWidth > node.clientWidth) return true;
+    if (scrolls(css.overflowX)) return true;
   }
   return false;
 }

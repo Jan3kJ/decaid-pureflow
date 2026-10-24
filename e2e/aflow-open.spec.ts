@@ -7,6 +7,7 @@ import { buildProfile } from '../src/editor/save';
 import { DEFAULT_SAVE_HINT } from '../src/editor/status';
 import { paramsMetadata, splitNotes } from '../src/editor/storage';
 import { mockGateway, record, type MockGateway } from './mock-gateway';
+import { back } from './touch';
 
 // Every A-Flow profile opens in the A-Flow 3.0 editor (spec 3.9 items 4 and 5, U2): the reader
 // takes the values from the plugin's steps, ramp down is dropped and the status line says so,
@@ -85,7 +86,7 @@ test('an old A-Flow profile opens in the A-Flow editor, says ramp down is droppe
 test('leaving an old A-Flow profile without an edit loads nothing: the machine keeps it', async ({ page }) => {
   const gateway = await withProfile(page, OLD, 'profile:old');
   await expect(page.getByTestId('graph')).toBeVisible();
-  await page.getByTestId('nav-home').click();
+  await back(page);
   await expect(page.getByTestId('screen-home')).toBeVisible();
   expect(gateway.calls('PUT', '/api/v1/workflow')).toHaveLength(0);
   expect(gateway.calls('POST', '/api/v1/profiles')).toHaveLength(0);
