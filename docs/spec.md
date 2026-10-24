@@ -1988,6 +1988,12 @@ clear and cancel stay as they are ('keep them for now'). A tap on a day still pi
 more than a few pixels is not a tap), the mouse wheel does the same on a desktop, and the
 dialog's own gestures (horizontal swipes, 3.14 item 2) are not started by a vertical drag.
 A decision for the test on the tablet: whether the buttons go later.
+*Built (Z12, 2026-10-24):* the grid always has room for six weeks, so the dialog keeps its
+height; the months before and after sit above and below it and come into view as it is dragged;
+the title moves once more than half of the next month is in view; on lifting, the finger's speed
+over its last 0.1 s carries on for 0.3 s and the grid settles on the nearest whole month, at most
+12 months away; a move of more than 6 px is a drag; one mouse wheel notch is one month, a
+touchpad's small turns make one month per 100 px (rules in `calendar.ts`).
 
 **The founder's four bag photos and a turned bag (item 1; Z1, Z2).** The founder took four photos
 (2026-10-23) with the tablet's camera, kept in `docs/product/bags/`: a maldaner can

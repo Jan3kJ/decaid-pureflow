@@ -1,7 +1,21 @@
 <script lang="ts">
   // Picks a date on screen, in the number pad's dialog: a month grid, weeks from Monday. The
-  // value is an ISO date (`YYYY-MM-DD`) or '' for none; a date after today is allowed.
-  import { addMonths, monthGrid, monthOf, MONTH_NAMES, todayIso, WEEKDAYS, type Month } from './calendar';
+  // value is an ISO date (`YYYY-MM-DD`) or '' for none; a date after today is allowed. A vertical
+  // drag on the day grid scrolls through the months, as the wheel does (spec 3.14 item 12).
+  import {
+    addMonths,
+    DRAG_SLOP,
+    followDrag,
+    monthGrid,
+    monthOf,
+    MONTH_NAMES,
+    snapDrag,
+    todayIso,
+    wheelMonths,
+    WEEKDAYS,
+    WHEEL_STEP,
+    type Month,
+  } from './calendar';
 
   interface Props {
     label: string;
@@ -21,9 +35,102 @@
   /** after a tap on the year the arrows step by year, until the next tap on it */
   let byYear = $state(false);
   const weeks = $derived(monthGrid(shown));
+  const before = $derived(monthGrid(addMonths(shown, -1)));
+  const after = $derived(monthGrid(addMonths(shown, 1)));
   const shownKey = $derived(`${shown.year}-${String(shown.month).padStart(2, '0')}`);
 
   const step = (direction: number) => (shown = addMonths(shown, direction * (byYear ? 12 : 1)));
+
+  // The drag: the months above and below sit beside the shown one in a strip that follows the
+  // finger by `offset` pixels; the shown month moves as the finger passes half of the next.
+  let viewport: HTMLDivElement | undefined = $state();
+  let strip: HTMLDivElement | undefined = $state();
+  let offset = $state(0);
+  let drag: { id: number; startY: number; base: number; moving: boolean; samples: { t: number; y: number }[] } | null = null;
+  /** a drag just ended: the click it may leave on a day is no tap */
+  let dragged = false;
+  /** the wheel's travel not yet a month */
+  let travel = 0;
+
+  /** one month's height in the strip, in pixels */
+  const monthHeight = () => (strip?.getBoundingClientRect().height ?? 0) / 3;
+
+  function pointerdown(event: PointerEvent) {
+    if (drag || (event.pointerType === 'mouse' && event.button !== 0)) return;
+    dragged = false;
+    strip?.getAnimations().forEach((animation) => animation.finish());
+    drag = {
+      id: event.pointerId,
+      startY: event.clientY,
+      base: offset,
+      moving: false,
+      samples: [{ t: event.timeStamp, y: event.clientY }],
+    };
+  }
+
+  function pointermove(event: PointerEvent) {
+    if (!drag || event.pointerId !== drag.id) return;
+    const moved = event.clientY - drag.startY;
+    if (!drag.moving) {
+      if (Math.abs(moved) <= DRAG_SLOP) return;
+      drag.moving = true;
+      viewport?.setPointerCapture(event.pointerId);
+    }
+    drag.samples = [...drag.samples.filter((sample) => sample.t >= event.timeStamp - 100), { t: event.timeStamp, y: event.clientY }];
+    const followed = followDrag(drag.base + moved, monthHeight());
+    if (followed.months) {
+      shown = addMonths(shown, followed.months);
+      drag.base = followed.offset - moved;
+    }
+    offset = followed.offset;
+  }
+
+  function pointerup(event: PointerEvent) {
+    if (!drag || event.pointerId !== drag.id) return;
+    const { moving, samples } = drag;
+    drag = null;
+    if (!moving) return;
+    dragged = true;
+    // The speed over the last tenth of a second: none after the finger rested.
+    const recent = [...samples, { t: event.timeStamp, y: event.clientY }].filter((sample) => sample.t >= event.timeStamp - 100);
+    const span = recent.length > 1 ? recent.at(-1)!.t - recent[0].t : 0;
+    const velocity = event.type === 'pointerup' && span > 0 ? (recent.at(-1)!.y - recent[0].y) / span : 0;
+    const height = monthHeight();
+    const snapped = snapDrag(offset, height, velocity);
+    shown = addMonths(shown, snapped.months);
+    settle(Math.max(-height, Math.min(height, snapped.offset)));
+  }
+
+  /** slides the strip from `from` pixels to rest */
+  function settle(from: number) {
+    offset = 0;
+    if (!from || !strip) return;
+    const at = (px: number) => `translateY(calc(-100% / 3 + ${px}px))`;
+    strip.animate([{ transform: at(from) }, { transform: at(0) }], { duration: 220, easing: 'ease-out' });
+  }
+
+  function clickcapture(event: MouseEvent) {
+    if (!dragged) return;
+    dragged = false;
+    event.stopPropagation();
+    event.preventDefault();
+  }
+
+  // The wheel is taken before the dialog scrolls with it, so it is not passive.
+  $effect(() => {
+    const target = viewport;
+    if (!target) return;
+    const wheel = (event: WheelEvent) => {
+      event.preventDefault();
+      // A line is taken as 40 pixels, a page as a month.
+      const delta = event.deltaY * [1, 40, WHEEL_STEP][event.deltaMode];
+      const turned = wheelMonths(travel, delta);
+      travel = turned.travel;
+      if (turned.months) shown = addMonths(shown, turned.months);
+    };
+    target.addEventListener('wheel', wheel, { passive: false });
+    return () => target.removeEventListener('wheel', wheel);
+  });
 
   function keydown(event: KeyboardEvent) {
     if (event.key === 'Escape') oncancel();
@@ -35,6 +142,17 @@
 </script>
 
 <svelte:window onkeydown={keydown} />
+
+<!-- a month beside the shown one, seen only while the grid is dragged -->
+{#snippet ghost(grid: (string | null)[][])}
+  <div class="grid" aria-hidden="true">
+    {#each grid as week, w (w)}
+      {#each week as day, d (d)}
+        <span class:day class:today={day === today} class:chosen={day && day === value}>{day ? Number(day.slice(8)) : ''}</span>
+      {/each}
+    {/each}
+  </div>
+{/snippet}
 
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 <div class="backdrop" data-no-swipe data-testid="datepicker-backdrop" onclick={(e) => e.target === e.currentTarget && oncancel()}>
@@ -62,24 +180,42 @@
         >›</button
       >
     </div>
-    <div class="grid" role="group" aria-label="{MONTH_NAMES[shown.month - 1]} {shown.year}">
+    <div class="weekdays">
       {#each WEEKDAYS as weekday (weekday)}<span class="weekday">{weekday}</span>{/each}
-      {#each weeks as week, w (w)}
-        {#each week as day, d (d)}
-          {#if day}
-            <button
-              class="day"
-              class:today={day === today}
-              class:chosen={day === value}
-              aria-pressed={day === value}
-              data-testid="datepicker-day-{day}"
-              onclick={() => onpick(day)}>{Number(day.slice(8))}</button
-            >
-          {:else}
-            <span></span>
-          {/if}
-        {/each}
-      {/each}
+    </div>
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div
+      class="viewport"
+      data-testid="datepicker-grid"
+      bind:this={viewport}
+      onpointerdown={pointerdown}
+      onpointermove={pointermove}
+      onpointerup={pointerup}
+      onpointercancel={pointerup}
+      onclickcapture={clickcapture}
+    >
+      <div class="strip" bind:this={strip} style:--offset="{offset}px">
+        {@render ghost(before)}
+        <div class="grid" role="group" aria-label="{MONTH_NAMES[shown.month - 1]} {shown.year}">
+          {#each weeks as week, w (w)}
+            {#each week as day, d (d)}
+              {#if day}
+                <button
+                  class="day"
+                  class:today={day === today}
+                  class:chosen={day === value}
+                  aria-pressed={day === value}
+                  data-testid="datepicker-day-{day}"
+                  onclick={() => onpick(day)}>{Number(day.slice(8))}</button
+                >
+              {:else}
+                <span></span>
+              {/if}
+            {/each}
+          {/each}
+        </div>
+        {@render ghost(after)}
+      </div>
     </div>
     <div class="actions">
       <button data-testid="datepicker-today" onclick={() => onpick(today)}>today</button>
@@ -173,10 +309,33 @@
     border-color: var(--line);
   }
 
+  .weekdays,
   .grid {
     display: grid;
     grid-template-columns: repeat(7, 3.5rem);
     gap: 0.4rem;
+  }
+
+  /* Six weeks of room for every month, so the dialog keeps its height and a drag slides by one
+     month's height; the strip holds the month before, the shown one and the one after. */
+  .viewport {
+    --month: calc(6 * 3.5rem + 6 * 0.4rem);
+    /* a pixel short of the month, so no rounding shows the edge of the next one's first row */
+    height: calc(var(--month) - 1px);
+    overflow: hidden;
+    touch-action: none;
+  }
+
+  .strip {
+    transform: translateY(calc(-100% / 3 + var(--offset)));
+  }
+
+  .grid {
+    height: var(--month);
+    box-sizing: border-box;
+    padding-bottom: 0.4rem;
+    grid-template-rows: repeat(6, 3.5rem);
+    align-content: start;
   }
 
   .weekday {
@@ -186,6 +345,14 @@
   }
 
   .day {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    font-size: var(--text-value);
+    background: var(--raised);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
     width: 3.5rem;
     height: 3.5rem;
     padding: 0;
