@@ -81,7 +81,7 @@ test('the targets are dashed lines with their quantity, every scale has its unit
   await expect(graph.getByTestId('shot-unit-temperature')).toHaveText('°C');
   // The weight flow shares the scale of flow and pressure, so that scale names g/s too
   // (founder, 2026-10-14); there is no scale in grams and no target weight on the graph.
-  await expect(graph.getByTestId('shot-unit-main')).toHaveText('bar ml/s · g/s');
+  await expect(graph.getByTestId('shot-unit-main')).toHaveText('bar · ml/s · g/s');
   await expect(graph.getByTestId('shot-unit-weight-flow')).toHaveText('g/s');
   await expect(graph.getByTestId('shot-line-weight')).toHaveCount(0);
   await expect(graph.getByTestId('shot-target-weight')).toHaveCount(0);
@@ -130,7 +130,7 @@ test('a shot without a scale has no weight flow: nothing yellow, no g/s', async 
   await expect(graph.getByTestId('shot-line-pressure')).toHaveCount(1);
   await expect(graph.getByTestId('shot-line-weight-flow')).toHaveCount(0);
   await expect(graph.getByTestId('shot-unit-weight-flow')).toHaveCount(0);
-  await expect(graph.getByTestId('shot-unit-main')).toHaveText('bar ml/s');
+  await expect(graph.getByTestId('shot-unit-main')).toHaveText('bar · ml/s');
   await expect(graph.getByTestId('shot-legend').locator('li')).toHaveText([
     'flow',
     'pressure',

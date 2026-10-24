@@ -82,3 +82,24 @@ export function temperatureBand(values: readonly number[], fixed?: TemperatureBa
 export function inBand(value: number, band: TemperatureBand): number {
   return Math.min(band.max, Math.max(band.min, value));
 }
+
+/** A unit over the main band, in its quantity's colour (`quantity` is the CSS class). */
+export interface GraphUnit {
+  label: string;
+  quantity: 'pressure' | 'flow' | 'weight';
+}
+
+/** The units of the curves that are drawn, in their order over the main band. */
+export function graphUnits(shown: { pressure: boolean; flow: boolean; weightFlow: boolean }): GraphUnit[] {
+  const units: GraphUnit[] = [];
+  if (shown.pressure) units.push({ label: 'bar', quantity: 'pressure' });
+  if (shown.flow) units.push({ label: 'ml/s', quantity: 'flow' });
+  if (shown.weightFlow) units.push({ label: 'g/s', quantity: 'weight' });
+  return units;
+}
+
+/** What stands between two units of the unit line. */
+export const UNIT_SEPARATOR = ' · ';
+
+/** The unit line as it reads: a dot between every two units, none for one. */
+export const unitLine = (units: readonly GraphUnit[]) => units.map((unit) => unit.label).join(UNIT_SEPARATOR);

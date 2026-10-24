@@ -7,7 +7,7 @@
   // quantity. Every scale names its unit in its colour. As the step editor's preview (`preview`)
   // it draws a profile's targets alone, as solid lines, with its steps' borders, and each step's
   // limit as a thin dotted line in its quantity's colour, muted.
-  import { fixedScale, inBand, shotScale, temperatureBand, timeAxis, type TemperatureBand } from './axis';
+  import { fixedScale, graphUnits, inBand, shotScale, temperatureBand, timeAxis, UNIT_SEPARATOR, type TemperatureBand } from './axis';
 
   interface Props {
     /** s, one entry per sample; every other array is as long */
@@ -104,6 +104,8 @@
   const drawn = (values: readonly (number | null)[] | undefined) => (values ?? []).filter((value): value is number => value !== null);
   // Without a scale there is no weight flow: nothing yellow is drawn.
   const hasWeightFlow = $derived(drawn(weightFlow).length > 0);
+  // The line over the main band: the units of what is drawn, a dot between every two.
+  const units = $derived(graphUnits({ pressure: !!pressure, flow: !!flow, weightFlow: hasWeightFlow }));
   const hasTargets = $derived([targetPressure, targetFlow, targetTemperature].some((values) => drawn(values).length > 0));
 
   // The temperature band covers 80 to 100 °C and opens for a colder or hotter group or target.
@@ -162,12 +164,14 @@
       {/each}
       {#if !bare}
         <text class="unit" data-testid="shot-unit-main" x={box.left} y={box.mainTop - 0.5 * rem}>
-          {#if pressure}<tspan class="pressure">bar</tspan>{/if}
-          {#if flow}<tspan class="flow" dx={pressure ? 0.3 * rem : 0}>ml/s</tspan>{/if}
-          {#if hasWeightFlow}
-            <tspan dx={0.3 * rem}>·</tspan>
-            <tspan class="weight" data-testid="shot-unit-weight-flow" dx={0.3 * rem}>g/s</tspan>
-          {/if}
+          {#each units as unit, i (unit.label)}
+            {#if i > 0}<tspan dx={0.3 * rem}>{UNIT_SEPARATOR}</tspan>{/if}
+            <tspan
+              class={unit.quantity}
+              data-testid={unit.quantity === 'weight' ? 'shot-unit-weight-flow' : undefined}
+              dx={i > 0 ? 0.3 * rem : 0}>{unit.label}</tspan
+            >
+          {/each}
         </text>
         {#if temperature}
           {#each [temperatureRange.min, temperatureRange.max] as tick (tick)}

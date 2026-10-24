@@ -286,7 +286,7 @@ test('a finished steam draws its flow in blue on the scale of pressure, ending w
   await expect(graph).toHaveAttribute('data-points', String(series.t.length));
   await expect(graph).toHaveAttribute('data-scale', '4');
   await expect(page.getByTestId('shot-tick-temperature')).toHaveText(['140', '170']);
-  await expect(page.getByTestId('shot-unit-main')).toHaveText(/^\s*bar\s*ml\/s\s*$/);
+  await expect(page.getByTestId('shot-unit-main')).toHaveText('bar · ml/s');
   const flow = page.getByTestId('shot-line-flow');
   // Blue, the app's --flow (#4da3ff).
   await expect(flow).toHaveCSS('stroke', 'rgb(77, 163, 255)');

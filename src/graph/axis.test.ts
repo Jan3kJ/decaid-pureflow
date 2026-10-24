@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fixedScale, inBand, shotScale, startSeconds, temperatureBand, timeAxis } from './axis';
+import { fixedScale, graphUnits, inBand, shotScale, startSeconds, temperatureBand, timeAxis, unitLine } from './axis';
 
 describe('timeAxis', () => {
   it('ends at the last sample of a stored shot, short or long', () => {
@@ -86,5 +86,29 @@ describe('temperatureBand', () => {
     const steam = { min: 140, max: 170 };
     expect(temperatureBand([95, 152, 181], steam)).toEqual(steam);
     expect([95, 152, 181].map((value) => inBand(value, steam))).toEqual([140, 152, 170]);
+  });
+});
+
+describe('graphUnits and unitLine', () => {
+  const line = (pressure: boolean, flow: boolean, weightFlow: boolean) => unitLine(graphUnits({ pressure, flow, weightFlow }));
+
+  it('puts a dot between every two units that are shown', () => {
+    expect(line(true, true, false)).toBe('bar · ml/s');
+    expect(line(true, true, true)).toBe('bar · ml/s · g/s');
+    expect(line(false, true, true)).toBe('ml/s · g/s');
+  });
+
+  it('has no dot for one unit and nothing for none', () => {
+    expect(line(true, false, false)).toBe('bar');
+    expect(line(false, false, true)).toBe('g/s');
+    expect(line(false, false, false)).toBe('');
+  });
+
+  it('gives each unit its quantity for the colour', () => {
+    expect(graphUnits({ pressure: true, flow: true, weightFlow: true }).map((unit) => unit.quantity)).toEqual([
+      'pressure',
+      'flow',
+      'weight',
+    ]);
   });
 });

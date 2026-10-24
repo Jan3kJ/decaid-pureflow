@@ -1874,6 +1874,11 @@ at the other side of the graph and has none. Built as one list of the units that
 by the dot, in `ShotGraph.svelte`; the step editor's preview and the history's graph use the same
 component and take it.
 
+*Built (Z6, 2026-10-24):* `graphUnits` in `src/graph/axis.ts` lists the units of the curves that are
+drawn (bar, ml/s, then g/s while there is a weight flow), `unitLine` joins them with ' · ';
+`ShotGraph.svelte` draws the list, each unit in its colour, the dot in the unit line's own colour
+with the old 0.3 rem on both sides. The bare picker preview still has no unit line.
+
 **The tank in ml (item 7; Z7).** The state line shows the tank as '39 mm' (`stateLine` in
 `src/shell/machine.ts`, `currentLevel.toFixed(0)` of `/ws/v1/machine/waterLevels`). **How
 Streamline calculates it** (its `waterTank.js`, read in Decaid's source): the DE1's sensor gives
