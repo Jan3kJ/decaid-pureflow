@@ -1527,6 +1527,22 @@ E2 adds a line to the README's credits naming Streamline and its licence. Item 1
 founder's check; `grep -L "Copyright (C) 2025-2026 Decent Espresso"` over the ported files
 must list none.
 
+P1 (2026-10-24) read `LICENSE.txt` again at v0.2.14 (`3a4bd23`) and v0.2.17 (`ec1fe2e`): the
+same 721 bytes, the GPL-3.0-or-later notice above, and no full licence text in the
+repository; `package.json` still says ISC at both. So the one statement is: **Streamline is
+GPL-3.0-or-later, this skin is GPL-3.0-only**. `LICENSE` is the GPL-3.0 text as the FSF
+publishes it (35147 bytes, SHA-256 `8ceb4b9e...b903`), copied from GCC's `COPYING3` in a local
+toolchain (`share/licenses/gcc/COPYING3`; the same bytes as xz's `COPYING.GPLv3` and
+libunistring's `LICENSE` in a local Git for Windows), kept LF by `.gitattributes`. `NOTICE`
+lists the 43 ported files (35 from v0.2.14, 8 from v0.2.17), Decaid's 73 profiles as test
+data, D-Flow and DSx2 (no DSx2 code or asset is in the skin). `src/licence.test.ts` checks
+the hash, that `package.json`, README and `NOTICE` say `GPL-3.0-only`, that every file with a
+'Ported from Streamline.js' header carries the copyright and licence lines and that `NOTICE`
+lists exactly those files. `public/manifest.json` has no licence field: the fields Decaid
+reads are `id`, `name`, `description`, `version`, `author` and `repository`, and none of the
+seven skins installed with Decaid carries one; the test accepts one only if it says
+`GPL-3.0-only`.
+
 ### 17.10 Files: what is reused, what is new
 
 Reused as they are: `NumberPad.svelte` (every number, with its unit and range),

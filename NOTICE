@@ -1,0 +1,104 @@
+pureflow, an unofficial skin for Decaid
+Copyright (C) 2026 Janek
+
+pureflow is licensed under the GNU General Public License, version 3 only
+(SPDX: GPL-3.0-only). The full text is in LICENSE. Parts of it come from other
+works, named below with their licences.
+
+
+1. Streamline.js
+
+   https://github.com/decentespresso/streamline-js
+   "Streamline.js - A browser-native skin for Decent Espresso machines"
+   Copyright (C) 2025-2026 Decent Espresso
+   Licensed under the GNU General Public License v3.0 or later
+   (GPL-3.0-or-later), as Streamline's LICENSE.txt states at the tags v0.2.14
+   and v0.2.17 (the same text at both). Streamline's package.json says "ISC";
+   that field is npm's default and not the repository's licence. The files
+   below are used here under GPL-3.0.
+
+   Each of these files takes code, constants, wording or layout from
+   Streamline and starts with a header naming the tag, the Streamline files
+   it comes from, Streamline's copyright line and its licence:
+
+   From v0.2.14:
+     src/settings-page/Confirm.svelte
+     src/settings-page/Devices.svelte
+     src/settings-page/FieldRow.svelte
+     src/settings-page/Firmware.svelte
+     src/settings-page/MachineInfo.svelte
+     src/settings-page/Maintenance.svelte
+     src/settings-page/Plugins.svelte
+     src/settings-page/Presence.svelte
+     src/settings-page/SensorCalibration.svelte
+     src/settings-page/SettingsPage.svelte
+     src/settings-page/devices.ts
+     src/settings-page/fields.ts
+     src/settings-page/firmware.ts
+     src/settings-page/gateway.ts
+     src/settings-page/maintenance.ts
+     src/settings-page/plugins.ts
+     src/settings-page/presence.ts
+     src/settings-page/sensor-calibration.ts
+     src/settings-page/tree.ts
+     src/settings-page/water-tank.ts
+     src/shell/phases.ts
+     src/shell/scale-retry.ts
+     src/steps/CycleChip.svelte
+     src/steps/ProfileSettings.svelte
+     src/steps/ScriptTab.svelte
+     src/steps/StepCard.svelte
+     src/steps/StepEditor.svelte
+     src/steps/StepPreview.svelte
+     src/steps/curve.test.ts
+     src/steps/curve.ts
+     src/steps/limits.ts
+     src/steps/model.test.ts
+     src/steps/model.ts
+     src/steps/sentences.test.ts
+     src/steps/sentences.ts
+
+   From v0.2.17:
+     src/api/ndjson.ts
+     src/beans/catalogue.ts
+     src/display.ts
+     src/settings-page/Bengle.svelte
+     src/settings-page/Help.svelte
+     src/settings-page/Skins.svelte
+     src/settings-page/bengle.ts
+     src/settings-page/skins.ts
+
+
+2. Decaid's bundled profiles (test data)
+
+   https://github.com/decentespresso/decaid
+   src/steps/fixtures/bundled-profiles.json holds the 73 profiles that Decaid
+   0.8.8 bundles, with their numbers as numbers. They are test data for the
+   step editor and are not shipped in the skin's ZIP. Decaid is licensed
+   under the GNU General Public License v3.0 or later (Streamline's
+   CONTRIBUTING.md names these as Decaid's terms).
+
+
+3. D-Flow and A-Flow
+
+   A-Flow, the profile family this skin's editor writes, was forked from
+   D-Flow, the profile by Damian Brakel (Damian-AU on GitHub). The A-Flow
+   generator and defaults in src/aflow/ are this repository's own code,
+   written anew in TypeScript; the previous
+   version of A-Flow, the Tcl plugin for Decent's old app, is at
+   https://github.com/Jan3kJ/A_Flow. D-Flow has no licence file.
+
+
+4. DSx2
+
+   https://github.com/Damian-AU/DSx2
+   Many ideas are inspired by DSx2, Damian Brakel's skin for Decent's old
+   app. No DSx2 code or asset is in this skin.
+
+
+5. Bundled runtime
+
+   The skin's ZIP holds Svelte's runtime (MIT) and, for reading bean photos,
+   Tesseract.js and tesseract.js-core (Apache-2.0) with their licence files
+   and the English data of @tesseract.js-data/eng (MIT) in ocr/. The
+   development tools in package.json do not ship.

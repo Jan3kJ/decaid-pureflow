@@ -30,8 +30,20 @@ The skin's version, 0.6.0 (a beta), is set in two places that a test keeps equal
 
 The step editor (`src/steps/`), the settings page (`src/settings-page/`) and the shot's
 per-phase table (`src/shell/phases.ts`) are ported from
-[Streamline.js](https://github.com/decentespresso/streamline-js) v0.2.14, "A browser-native
-skin for Decent Espresso machines", Copyright (C) 2025-2026 Decent Espresso, licensed under
-the GNU General Public License v3.0 or later; it is used here under GPL-3.0. Each ported file
-carries that notice. `src/steps/fixtures/bundled-profiles.json` holds the 73 profiles Decaid
-0.8.8 bundles (GPL-3.0), with their numbers as numbers, as test data.
+[Streamline.js](https://github.com/decentespresso/streamline-js) v0.2.14 (a few files from
+v0.2.17), "A browser-native skin for Decent Espresso machines", Copyright (C) 2025-2026 Decent
+Espresso, licensed under the GNU General Public License v3.0 or later as its `LICENSE.txt`
+states; it is used here under GPL-3.0. Each ported file carries that notice, and
+[NOTICE](NOTICE) lists them. `src/steps/fixtures/bundled-profiles.json` holds the 73 profiles
+Decaid 0.8.8 bundles (Decaid is GPL-3.0-or-later), with their numbers as numbers, as test data.
+
+A-Flow was forked from D-Flow by Damian Brakel; the editor here writes A-Flow 3.0 in
+TypeScript, and [Jan3kJ/A_Flow](https://github.com/Jan3kJ/A_Flow) is the previous version of
+A-Flow, the Tcl plugin for Decent's old app. Many ideas are inspired by
+[DSx2](https://github.com/Damian-AU/DSx2), Damian Brakel's skin for Decent's old app.
+
+## Licence
+
+pureflow is licensed under the GNU General Public License, version 3 only (`GPL-3.0-only`): see
+[LICENSE](LICENSE). The parts taken from other works and their licences are in
+[NOTICE](NOTICE).

@@ -1567,6 +1567,12 @@ ready, by how much it matters:
    `LICENSE` at the ported tag (v0.2.14) and make README, the file headers, acceptance 12 and a
    new `NOTICE` (the ported files and their origin, Decaid's 73 bundled profiles as test data,
    D-Flow) say one thing. GPL-3.0-only for the whole is fine with GPL-3.0-or-later parts.
+   *Built (P1, 2026-10-24):* Streamline's `LICENSE.txt` at v0.2.14 (and v0.2.17) is
+   GPL-3.0-or-later; ISC is only its `package.json` field. `LICENSE` is the FSF's GPL-3.0 text,
+   `NOTICE` lists the 43 ported files, the 73 profiles, D-Flow and DSx2, README has a Licence
+   section (`GPL-3.0-only`), and `src/licence.test.ts` keeps them equal (research.md 17.9).
+   Where this section (3.6, 3.9) and acceptance 12 say 'ISC notice', the notice is
+   Streamline's GPL one; acceptance 12's wording is the founder's to change.
 2. **D-Flow, and DSx2.** The TypeScript generator and the five defaults in `src/aflow/` are the
    founder's own code in this repository, so this repository's licence covers them; **the
    `Jan3kJ/A_Flow` repository needs no licence of its own** (founder, 2026-10-22): README links
@@ -2309,8 +2315,8 @@ Rules from `doc/Skins.md`:
     value in the markup follows its state by itself; without a framework each of those
     updates is hand-written DOM code, on every screen. This is where Svelte wins, and it
     outweighs the 10 kB.
-  - The live Streamline skin (`decentespresso/streamline-js` v0.2.12, ISC) takes the other
-    route: no framework, Tailwind + daisyUI, esbuild and ECharts. Its `api.js` stays a useful
+  - The live Streamline skin (`decentespresso/streamline-js` v0.2.12, GPL-3.0-or-later; its
+    `package.json` says ISC) takes the other route: no framework, Tailwind + daisyUI, esbuild and ECharts. Its `api.js` stays a useful
     reference for the API client (D4).
 - **Profile generator as a pure module** (A-Flow parameters -> v2 profile JSON), with no UI and
   no network. This is the product's core and gets the most tests.

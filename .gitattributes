@@ -1,3 +1,5 @@
 # Decaid inserts its proxy token before </head> at an offset counted without CRs; a CRLF
 # index.html puts it inside the stylesheet link (found by r17-handover, 2026-10-20).
 index.html text eol=lf
+# LICENSE is the GPL-3.0 text byte for byte; a test checks its hash.
+LICENSE text eol=lf
