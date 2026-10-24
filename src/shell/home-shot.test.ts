@@ -52,6 +52,7 @@ function shot(ended: boolean, over: Partial<Shot> = {}): Shot {
     samples: [],
     finalWeight: null,
     ended,
+    endedAt: ended ? 2500 : null,
     ...over,
   };
 }
@@ -85,6 +86,14 @@ describe('homeShot', () => {
     expect(shown.series).toBe(recalled);
     expect(shown.seconds).toBe(29.5);
     expect(shown.weight).toBe(20);
+  });
+
+  it('keeps the fixed weight of the finished shot, not the scale’s, under a recalled entry and after it', () => {
+    const kept = shot(true, { finalWeight: 36.4, weightFixed: true });
+    expect(homeShot(kept, null, 640)).toMatchObject({ kind: 'finished', weight: 36.4 });
+    expect(homeShot(kept, series([0, 28], [0, 40.2]), 640)).toMatchObject({ kind: 'recalled', weight: 40.2 });
+    // The entry is dismissed: the shot is back with its weight.
+    expect(homeShot(kept, null, 700)).toMatchObject({ kind: 'finished', weight: 36.4 });
   });
 
   it('is the newest shot record read from Decaid when home has no shot of its own, under every shot of its own', () => {

@@ -3,7 +3,18 @@ import { isScaleSnapshot, type MachineSnapshot, type MachineState, type ScaleFra
 // A simulated shot recorded on the rig (Decaid 0.8.8, A-Flow / default-medium, target 36 g),
 // with 34.1 g left on the scale when it started.
 import recording from '../../e2e/fixtures/shot.json';
-import { TARE_SETTLE_S, recordFrame, shotOver, shotSeconds, shotWeight, waterMoves, type Shot } from './shot';
+import {
+  SETTLE_S,
+  TARE_SETTLE_S,
+  frameTime,
+  recordFrame,
+  settleWeight,
+  shotOver,
+  shotSeconds,
+  shotWeight,
+  waterMoves,
+  type Shot,
+} from './shot';
 
 function frame(state: MachineState, time: string, over: Partial<MachineSnapshot> = {}, substate = 'pouring'): MachineSnapshot {
   return {
@@ -214,6 +225,70 @@ describe('recordFrame', () => {
     shot = recordFrame(shot, frame('espresso', '12.000'), 0);
     shot = recordFrame(shot, frame('espresso', '11.000'), 0);
     expect(shot!.series.t).toEqual([0, 2, 2]);
+  });
+});
+
+describe('the finished shot’s weight (spec 3.14 item 9)', () => {
+  const at = (seconds: number) => frameTime(`2026-10-13T06:37:${seconds.toFixed(3).padStart(6, '0')}`);
+
+  /** A shot of 10 s with the scale at 30 g at its end, ended by the idle frame at 20 s. */
+  function finished(): Shot {
+    let shot = recordFrame(null, frame('espresso', '10.000'), 0);
+    shot = recordFrame(shot, frame('espresso', '12.000'), 10);
+    shot = recordFrame(shot, frame('espresso', '19.900'), 30);
+    return recordFrame(shot, frame('idle', '20.000'), 30)!;
+  }
+
+  it('remembers the clock of the frame that ended the shot', () => {
+    expect(finished()).toMatchObject({ ended: true, endedAt: at(20) });
+    let shot = recordFrame(null, frame('espresso', '10.000'), 0);
+    shot = recordFrame(shot, frame('espresso', '12.000'), 10);
+    shot = recordFrame(shot, frame('espresso', '13.500', {}, 'pouringDone'), 10);
+    shot = recordFrame(shot, frame('idle', '18.000'), 10);
+    expect(shot).toMatchObject({ ended: true, endedAt: at(13.5) });
+    expect(recordFrame(null, frame('espresso', '10.000'), 0)!.endedAt).toBeNull();
+  });
+
+  it(`takes the highest reading up to ${SETTLE_S} s after the end and is fixed after`, () => {
+    let shot: Shot | null = finished();
+    shot = settleWeight(shot, 18.0, at(23));
+    shot = settleWeight(shot, 36.4, at(29));
+    expect(shot).toMatchObject({ finalWeight: 36.4 });
+    shot = settleWeight(shot, 52.0, at(40));
+    shot = settleWeight(shot, 640, at(60));
+    expect(shot).toMatchObject({ finalWeight: 36.4, weightFixed: true });
+    // Hot water starts and its water is weighed: the shot keeps its weight.
+    shot = recordFrame(shot, frame('hotWater', '61.000'), 640);
+    shot = settleWeight(shot, 700, at(62));
+    expect(shot).toMatchObject({ finalWeight: 36.4, weightFixed: true });
+    // A new shot starts from its own readings.
+    const next = recordFrame(recordFrame(shot, frame('idle', '62.000'), 0), frame('espresso', '63.000'), 0)!;
+    expect(next).toMatchObject({ ended: false, finalWeight: null, endedAt: null });
+    expect(next.weightFixed).toBeUndefined();
+    expect(settleWeight(next, 12, at(64))).toBe(next);
+  });
+
+  it('is fixed at once when hot water, flush or steam starts within the time', () => {
+    for (const state of ['hotWater', 'flush', 'steam'] as const) {
+      let shot: Shot | null = settleWeight(finished(), 36.4, at(23));
+      shot = recordFrame(shot, frame(state, '25.000'), 36.4);
+      expect(shot).toMatchObject({ finalWeight: 36.4, weightFixed: true });
+      expect(settleWeight(shot, 52, at(27))).toBe(shot);
+    }
+  });
+
+  it('is fixed by the machine’s clock when the scale’s frames have no time', () => {
+    let shot: Shot | null = settleWeight(finished(), 36.4);
+    expect(shot).toMatchObject({ finalWeight: 36.4 });
+    shot = recordFrame(shot, frame('idle', '34.000'), 36.4);
+    expect(shot!.weightFixed).toBeUndefined();
+    shot = recordFrame(shot, frame('idle', '36.000'), 36.4);
+    expect(settleWeight(shot, 52)).toMatchObject({ finalWeight: 36.4, weightFixed: true });
+  });
+
+  it('is the scale’s last reading in the shot when none came after it', () => {
+    const shot = recordFrame(finished(), frame('idle', '36.000'), 30);
+    expect(shot).toMatchObject({ finalWeight: 30, weightFixed: true });
   });
 });
 

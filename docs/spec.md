@@ -1910,6 +1910,15 @@ graph's weight curve and the history record of the shot keep that value. It chan
 when **a new shot starts** (a new `Shot`) or **a history entry is recalled** (`recalled` in
 `homeShot`, its own weight, as now). While the figure is fixed the scale's live weight stays in
 the state line, which is the scale's.
+Built in Z9 (2026-10-24), the details the paragraph leaves open: the 15 s (`SETTLE_S` in
+`shot.ts`) are counted from the ending frame's timestamp to the scale frame's own timestamp, both
+Decaid's clock; a machine frame more than 15 s after the end also fixes the weight, so a scale
+frame without a time cannot keep it open (`Shot.weightFixed`). The states that fix it at once
+are `hotWater`, `flush`, `steam` and `steamRinse` (steam's purge); sleep and idle do not. A weight
+fixed before any reading after the end is the series' last weight. On the rig (Decaid 0.8.8) the
+mock scale holds its weight after a simulated shot, so the 15 s show only in the unit test; the
+rig checks hot water: Decaid tares the mock scale and it weighs about 57 g of water while home
+keeps the shot's 16 g (`e2e-rig/fixed-weight.spec.ts`). The tablet shows whether 15 s fits the drips.
 
 **The ring's frame (item 8; Z8).** The screenshot shows the flush ring (small, 3.4 rem, with
 'Flush' under it) at the bottom left of the steam page, half over the edge of the left column and

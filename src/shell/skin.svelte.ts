@@ -126,7 +126,7 @@ export class Skin {
         void this.recall.showNewest();
       },
       onMachineFrame: (frame) => this.onMachineFrame(frame),
-      onWeight: (weight) => (this.shot = settleWeight(this.shot, weight)),
+      onWeight: (weight, at) => (this.shot = settleWeight(this.shot, weight, at)),
     });
   }
 

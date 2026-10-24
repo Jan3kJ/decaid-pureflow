@@ -23,6 +23,7 @@ import {
 } from '../api';
 import { gatewayAfter, linkOf, type Gateway, type ScaleLink } from './machine';
 import { ScaleRetry } from './scale-retry';
+import { frameTime } from './shot';
 import { smooth, type Smoothed } from './smooth';
 
 const CLOCK_MS = 500;
@@ -33,8 +34,8 @@ export interface StreamHandlers {
   onOpen(): void;
   /** a frame of the machine stream; the skin records it with `machineFrame` */
   onMachineFrame(frame: MachineSnapshot): void;
-  /** a weight of the scale, in g */
-  onWeight(weight: number): void;
+  /** a weight of the scale, in g, read at `at` (ms, the frame's timestamp; NaN without one) */
+  onWeight(weight: number, at: number): void;
 }
 
 export class Streams {
@@ -209,7 +210,7 @@ export class Streams {
     if (isScaleSnapshot(frame)) {
       this.weight = frame.weight;
       this.weightFlow = typeof frame.weightFlow === 'number' ? frame.weightFlow : null;
-      this.handlers.onWeight(frame.weight);
+      this.handlers.onWeight(frame.weight, frameTime(frame.timestamp));
       this.scaleLink = 'connected';
     } else if (isScaleStatus(frame)) {
       this.scaleLink = frame.status === 'connected' ? 'connected' : 'disconnected';

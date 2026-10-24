@@ -38,13 +38,20 @@ export interface Shot {
   /** the frames the per-phase table counts (`phaseTable` in phases.ts), with the scale's raw weight */
   samples: PhaseSample[];
   /**
-   * g, the weight in the cup after the shot: the highest weight the scale showed since the
-   * shot ended (`settleWeight`), so the drops after the stop count and taking the cup away
-   * does not. Null while the shot runs.
+   * g, the weight in the cup after the shot: the highest weight the scale showed in the
+   * `SETTLE_S` after the shot ended (`settleWeight`), so the drops after the stop count and
+   * taking the cup away does not. Null while the shot runs.
    */
   finalWeight: number | null;
   /** the shot is over (`shotOver`): the graph is finished and the timer stands */
   ended: boolean;
+  /** ms, the timestamp of the frame that ended the shot; null while it runs */
+  endedAt: number | null;
+  /**
+   * `finalWeight` is fixed: `SETTLE_S` passed after the end, or hot water, flush or steam
+   * started. The scale changes it no more.
+   */
+  weightFixed?: boolean;
   /**
    * the machine has left espresso since; until then the espresso frames after the shot (its
    * tail) are not a new shot. Missing counts as true.
@@ -76,6 +83,19 @@ const WAITING: readonly string[] = ['idle', 'preparingForShot'];
  * of them (research.md 23). The steam run treats its own end so (`steams` in steam/run.ts).
  */
 const SHOT_DONE: readonly string[] = ['pouringDone', 'ending'];
+
+/**
+ * s after the end of a shot in which the scale's highest reading is still the weight in the
+ * cup (spec 3.14 item 9): the drops after the stop are over by then. Later readings are a cup,
+ * a hand or the water of a hot water run.
+ */
+export const SETTLE_S = 15;
+
+/**
+ * The states in which the scale weighs something else than the shot's cup: when the machine
+ * enters one, the finished shot's weight is fixed at once.
+ */
+const OTHER_WATER: readonly string[] = ['hotWater', 'flush', 'steam', 'steamRinse'];
 
 /**
  * The shot is over in this frame: another state, or one of the substates after the shot.
@@ -149,18 +169,27 @@ export function recordFrame(
   weight: number | null,
   weightFlow: number | null = null,
 ): Shot | null {
-  if (frame.state.state !== 'espresso') {
-    return shot && !(shot.ended && shot.left !== false) ? { ...shot, ended: true, left: true } : shot;
-  }
-  if (shot?.ended && shot.left === false) return shot;
-  if (shotOver(frame)) {
-    return shot && !shot.ended ? { ...shot, ended: true, left: false } : shot;
-  }
   const at = frameTime(frame.timestamp);
+  if (frame.state.state !== 'espresso') {
+    const over = shot && !(shot.ended && shot.left !== false) ? endShot(shot, at, true) : shot;
+    return OTHER_WATER.includes(frame.state.state) || settled(over, at) ? fixWeight(over) : over;
+  }
+  if (shot?.ended && shot.left === false) return settled(shot, at) ? fixWeight(shot) : shot;
+  if (shotOver(frame)) {
+    return shot && !shot.ended ? endShot(shot, at, false) : shot;
+  }
   const running: Shot =
     shot && !shot.ended
       ? shot
-      : { enteredAt: at, startedAt: null, series: emptySeries(), samples: [], finalWeight: null, ended: false };
+      : {
+          enteredAt: at,
+          startedAt: null,
+          series: emptySeries(),
+          samples: [],
+          finalWeight: null,
+          ended: false,
+          endedAt: null,
+        };
   if (running.startedAt === null && !waterMoves(frame)) return running;
   const sample = phaseSample(frame, weight);
   const startedAt = running.startedAt ?? at;
@@ -178,19 +207,39 @@ export function recordFrame(
     targetFlow: [...s.targetFlow],
     targetTemperature: [...s.targetTemperature],
   };
-  const settled = (at - running.enteredAt) / 1000 >= TARE_SETTLE_S;
-  pushPoint(series, t, frame, settled ? weight : null, weightFlow);
+  const tared = (at - running.enteredAt) / 1000 >= TARE_SETTLE_S;
+  pushPoint(series, t, frame, tared ? weight : null, weightFlow);
   return { ...running, startedAt, series, samples: sample ? [...running.samples, sample] : running.samples };
 }
 
+/** The shot ended in the frame at `at`; `left` is false while the machine is still in espresso. */
+function endShot(shot: Shot, at: number, left: boolean): Shot {
+  return { ...shot, ended: true, endedAt: shot.endedAt ?? at, left };
+}
+
+/** `SETTLE_S` have passed at `at` since the shot ended. A time that is not a number has not. */
+function settled(shot: Shot | null, at: number): boolean {
+  return shot?.endedAt != null && at - shot.endedAt > SETTLE_S * 1000;
+}
+
+/** A finished shot whose weight the scale changes no more; nothing is changed in place. */
+function fixWeight(shot: Shot | null): Shot | null {
+  if (!shot?.ended || shot.weightFixed) return shot;
+  return { ...shot, finalWeight: shot.finalWeight ?? shotWeight(shot), weightFixed: true };
+}
+
 /**
- * The shot after a scale weight: a finished shot keeps the highest weight since it ended as
- * the weight in the cup. Streamline follows the scale after the shot (`setFinalWeight` in its
+ * The shot after a scale weight read at `at` (ms, the scale frame's timestamp): a finished
+ * shot keeps the highest weight in the `SETTLE_S` after it ended as the weight in the cup.
+ * Streamline follows the scale after the shot without an end (`setFinalWeight` in its
  * shotData.js); the highest weight keeps the drops after the stop but not a cup taken away
- * while the summary is still open (spec 3.8, T2). Nothing is changed in place.
+ * while the summary is still open (spec 3.8, T2), and the end keeps out what the scale weighs
+ * later (spec 3.14 item 9). A weight without a time counts; the machine's frames fix the
+ * weight then (`recordFrame`). Nothing is changed in place.
  */
-export function settleWeight(shot: Shot | null, weight: number | null): Shot | null {
-  if (!shot?.ended || weight === null) return shot;
+export function settleWeight(shot: Shot | null, weight: number | null, at = Number.NaN): Shot | null {
+  if (!shot?.ended || shot.weightFixed || weight === null) return shot;
+  if (settled(shot, at)) return fixWeight(shot);
   const held = shot.finalWeight ?? shotWeight(shot) ?? weight;
   return weight > held || shot.finalWeight === null ? { ...shot, finalWeight: Math.max(held, weight) } : shot;
 }
