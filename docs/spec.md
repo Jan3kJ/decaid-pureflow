@@ -1960,6 +1960,15 @@ stay in the gap between the bands; the collapse itself, the 0 s rule and the 5 s
 unchanged. The check is geometric: no two chips on the editor's graph overlap for any
 combination of collapsed steps, at the tablet's width and at 600 px.
 
+*Built (Z10, 2026-10-24):* `laneLefts` in `src/editor/plot.ts` places the turn-on chips;
+`GraphChips.svelte` measures each group of chips and puts it with its top 0.2 rem under the axis,
+so it covers the name and the duration rows. A neighbour's name is the wider of its name and its
+duration, by an estimate of 0.6 em a character (the texts are SVG, drawn by `GraphGrid.svelte`).
+The next free spot is the nearest one either way, 0.5 rem clear of names and of the chips placed
+before; with no spot clear of the names the chip keeps clear of the other chips at least. Only
+infuse and pressurize can collapse (3.1), so acceptance 101's 'with fill' is read as 'with
+infuse'; the e2e (`e2e/turn-on-chip.spec.ts`) also runs the three with the 2nd fill on.
+
 **The menu without descriptions (item 11; Z11).** 'Remove the descriptions in the menu, except
 for steam on/off' (founder, 2026-10-23, from the screenshot of the home menu). The second lines
 of 'Beans and grinders' ('add, edit and archive them; the pick for the next shot is on home') and
@@ -1973,15 +1982,6 @@ scroll with my finger through the months, up and down. That's faster than the bu
 them for now.' (screenshot: a vertical stroke over the day grid). Default: a vertical drag on the
 day grid of `DatePicker.svelte` moves the shown month, **dragging up shows the later month**
 (the grid follows the finger, as a list does) and dragging down the earlier one; the grid
-*Built (Z10, 2026-10-24):* `laneLefts` in `src/editor/plot.ts` places the turn-on chips;
-`GraphChips.svelte` measures each group of chips and puts it with its top 0.2 rem under the axis,
-so it covers the name and the duration rows. A neighbour's name is the wider of its name and its
-duration, by an estimate of 0.6 em a character (the texts are SVG, drawn by `GraphGrid.svelte`).
-The next free spot is the nearest one either way, 0.5 rem clear of names and of the chips placed
-before; with no spot clear of the names the chip keeps clear of the other chips at least. Only
-infuse and pressurize can collapse (3.1), so acceptance 101's 'with fill' is read as 'with
-infuse'; the e2e (`e2e/turn-on-chip.spec.ts`) also runs the three with the 2nd fill on.
-
 slides by whole months and settles on one (snap), a quick flick may pass several, and the title
 ('October 2026') follows. The previous and next buttons, the month and year taps and today,
 clear and cancel stay as they are ('keep them for now'). A tap on a day still picks it (a drag of
@@ -2352,7 +2352,8 @@ Windows, Linux and macOS. What differs per platform is **Decaid itself**:
   0.2.0 (H1, 2026-10-18), and the hand-over of the review of 2026-10-17 and the bugs of
   2026-10-18 is 0.3.0 (H2, 2026-10-20), and the hand-over of the reviews of 2026-10-18 and
   2026-10-20 is 0.4.0 (H3, 2026-10-21), and the hand-over of the reviews of 2026-10-21 and
-  2026-10-22 is 0.5.0 (H4, 2026-10-23): `npm run zip` writes
+  2026-10-22 is 0.5.0 (H4, 2026-10-23), and the hand-over of the review of 2026-10-23 and inbox
+  #45 is 0.6.0 (H5, 2026-10-24): `npm run zip` writes
   `release/pureflow-<version>.zip`; the steps and the
   founder's checks are in
   [install.md](install.md), the result of the automated items in
@@ -2993,11 +2994,12 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
   Settings); whether the skin's port is the same there and stays over a restart, which the
   settings in `localStorage` depend on. The founder's checks are in
   [install.md](install.md). (owner)
-- The version is `0.5.0`, a beta (founder, 2026-10-13; 0.1.x for fix rounds); it is in
+- The version is `0.6.0`, a beta (founder, 2026-10-13; 0.1.x for fix rounds); it is in
   `package.json` and `public/manifest.json`. Versions are semantic (founder, 2026-10-16): a
   hand-over raises the minor version, so H1 built `0.2.0` (2026-10-18), H2 built `0.3.0`
   (2026-10-20), H3 (the reviews of 2026-10-18 and 2026-10-20) `0.4.0` (2026-10-21), and H4 (the
-  reviews of 2026-10-21 and 2026-10-22) `0.5.0` (2026-10-23); a major version (such as the
+  reviews of 2026-10-21 and 2026-10-22) `0.5.0` (2026-10-23), and H5 (the review of 2026-10-23
+  and inbox #45) `0.6.0` (2026-10-24); a major version (such as the
   reverted 1.1.0, commit `ad378f9`) only after asking the founder. (answered)
 - Other profiles (founder's question of 2026-10-14, [answers-2026-10-14.md](answers-2026-10-14.md)):
   answered by version 1.1: they open in the skin's own step editor, ported from Streamline

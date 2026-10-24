@@ -23,8 +23,8 @@ runs those that need a running Decaid with device simulation (docs/research.md 8
 result of the last full run is in [docs/acceptance.md](docs/acceptance.md), and how the ZIP is
 installed in Decaid in [docs/install.md](docs/install.md).
 
-The skin's version, 0.5.0 (a beta), is set in two places that a test keeps equal:
-`package.json` and `public/manifest.json`. The ZIP is `release/pureflow-0.5.0.zip`.
+The skin's version, 0.6.0 (a beta), is set in two places that a test keeps equal:
+`package.json` and `public/manifest.json`. The ZIP is `release/pureflow-0.6.0.zip`.
 
 ## Credits
 
