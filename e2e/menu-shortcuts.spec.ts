@@ -7,8 +7,8 @@ import { mockGateway, type MockGateway } from './mock-gateway';
 // writes the workflow's steam temperature (0 is off) and shows the heater's state. The two sleeps
 // (spec 3.10, acceptance 56): machine sleep sends the machine to sleep and keeps the app awake,
 // with 'Wake machine' in the menu; machine and app sleep shows the Asleep screen, dimmed to 5,
-// until a touch; neither touches Decaid's wake lock or keepAwake. The same against the running
-// gateway: e2e-rig/menu-shortcuts.spec.ts.
+// until a touch; neither touches Decaid's wake lock or keepAwake. Acceptance 102: only the steam
+// switch has a second line. The same against the running gateway: e2e-rig/menu-shortcuts.spec.ts.
 
 const errors: string[] = [];
 
@@ -124,6 +124,42 @@ test('the two sleep entries have their labels alone, no line under either (spec 
   await expect(page.getByTestId('wake-machine')).toHaveCount(0);
   await expect(page.getByRole('menuitem').filter({ hasText: /Machine off|Exit|Decaid cannot|timeout/ })).toHaveCount(0);
   expect(errors).toEqual([]);
+});
+
+test('beans and grinders and clean have no second line; the steam switch has its line in all three states (acceptance 102)', async ({
+  page,
+}) => {
+  const gateway = await mockGateway(page);
+  await page.goto('/');
+  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await openMenu(page);
+  await expect(page.getByTestId('open-beans')).toHaveText('Beans and grinders');
+  await expect(page.getByTestId('open-clean')).toHaveText('Clean');
+  await expect(page.getByTestId('open-beans-detail')).toHaveCount(0);
+  await expect(page.getByTestId('open-clean-detail')).toHaveCount(0);
+  await expect(page.getByTestId('steam-heater-detail')).toHaveText('steam heater is on');
+  await page.getByTestId('steam-heater').click();
+  await expect.poll(() => gateway.shotSettings.targetSteamTemp).toBe(0);
+  await openMenu(page);
+  await expect(page.getByTestId('steam-heater-detail')).toHaveText('steam heater is off');
+  await expect(page.getByTestId('steam-heater-detail')).toHaveClass(/off/);
+  expect(errors).toEqual([]);
+});
+
+test("the steam switch says 'not known' while neither the machine's settings nor the workflow are read (acceptance 102)", async ({
+  page,
+}) => {
+  await mockGateway(page);
+  // Routes added later are matched first: no workflow, and a settings stream that sends nothing.
+  await page.route(/:8080\/api\/v1\/workflow/, (route) => route.fulfill({ status: 503, body: '' }));
+  await page.routeWebSocket(/:8080\/ws\/v1\/machine\/shotSettings/, () => {});
+  await page.goto('/');
+  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await openMenu(page);
+  await expect(page.getByTestId('steam-heater')).toBeDisabled();
+  await expect(page.getByTestId('steam-heater-detail')).toHaveText('steam heater: not known');
+  await expect(page.getByTestId('open-beans-detail')).toHaveCount(0);
+  await expect(page.getByTestId('open-clean-detail')).toHaveCount(0);
 });
 
 test("machine sleep: sleeping, the app stays awake and undimmed, 'Wake machine' asks for idle (spec 3.10, acceptance 56)", async ({

@@ -26,7 +26,7 @@
   interface Entry {
     id: string;
     label: () => string;
-    /** a second, smaller line: the state the entry is in, or what it really does */
+    /** a second, smaller line: the state the entry is in; only the steam switch has one */
     detail?: () => string;
     disabled?: () => boolean;
     /** the entry is in the menu; always when left out */
@@ -38,13 +38,11 @@
     {
       id: 'open-beans',
       label: () => 'Beans and grinders',
-      detail: () => 'add, edit and archive them; the pick for the next shot is on home',
       choose: () => skin.go('beans'),
     },
     {
       id: 'open-clean',
       label: () => 'Clean',
-      detail: () => 'the cleaning cycle of the settings page',
       choose: () => {
         saveLocation('maintenance');
         skin.go('settings');

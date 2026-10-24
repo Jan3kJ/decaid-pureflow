@@ -97,7 +97,7 @@
       if (answer === 'save-as') skin.openSaveAs();
       if (answer !== 'load') return;
       skin.workflow = await loadEntry(skin.client, entry);
-      skin.go(skin.back());
+      skin.go(skin.pickerReturn === 'editor' ? 'editor' : 'home');
     });
 
   /**
