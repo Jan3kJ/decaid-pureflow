@@ -118,6 +118,16 @@ describe('the fields of the settings page (research.md 20.3)', () => {
   });
 });
 
+describe('water alert', () => {
+  it('says the ml of its level after the mm', () => {
+    const field = numberField('water-alert');
+    expect(field.unit).toBe('mm');
+    expect(field.note?.(15)).toBe('about 400 ml');
+    expect(field.note?.(0)).toBe('about 0 ml');
+    expect(numberField('tank-temperature').note).toBeUndefined();
+  });
+});
+
 describe('heldNumber', () => {
   it('rounds to the step and holds the range', () => {
     expect(heldNumber(numberField('volume-flow-multiplier'), 0.33)).toBe(0.35);

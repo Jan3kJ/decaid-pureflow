@@ -139,6 +139,12 @@ test('a typed number is written with its key alone, and the page shows what the 
   expect(writes('POST', '/api/v1/machine/settings')).toEqual([{ tankTemp: 30 }]);
   await expect(shown(page, 'tank-temperature')).toHaveText('20°C');
 
+  // The water alert says its ml after the mm: 5 mm is 124 ml, 15 mm 398 ml, each about.
+  await expect(shown(page, 'water-alert')).toHaveText('5mm, about 120 ml');
+  await type(page, 'setting-water-alert', '15');
+  await expect(shown(page, 'water-alert')).toHaveText('15mm, about 400 ml');
+  expect(writes('POST', '/api/v1/machine/waterLevels')).toEqual([{ refillLevel: 15 }]);
+
   // A workflow value: only its key in steamSettings, and the skin's workflow follows.
   await type(page, 'setting-steam-flow', '1.4');
   await expect(shown(page, 'steam-flow')).toHaveText('1.4ml/s');

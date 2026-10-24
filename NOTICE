@@ -67,6 +67,10 @@ works, named below with their licences.
      src/settings-page/Skins.svelte
      src/settings-page/bengle.ts
      src/settings-page/skins.ts
+     src/shell/tank.ts
+
+   src/shell/tank.ts holds Streamline's table of the water in the DE1's tank
+   by its level in mm, which Streamline took from Decent's TCL skin.
 
 
 2. Decaid's bundled profiles (test data)

@@ -2237,7 +2237,7 @@ says what S2 does: **port**, **skin** (the skin category has its own), or **out*
 | | Flow multiplier, "lookahead for stop-at-weight" (s, step 0.05) | `/api/v1/settings` `hotWaterFlowMultiplier` | G | port (with R5) |
 | Water Tank | Tank temperature (10-40 °C) | `/api/v1/machine/settings` `tankTemp` | G, not kept by the simulation | port |
 | | Water level alert (0-30 mm in steps of 5; default 15) | `POST /api/v1/machine/waterLevels` `{refillLevel}`; read on `ws/v1/machine/waterLevels`; Streamline also keeps `localStorage` `waterRefillLevel` | G, not kept by the simulation | port |
-| | Measurement units mm / mL (home's tank level) | `localStorage` `waterTankUnit` | S | out (the skin shows mm) |
+| | Measurement units mm / mL (home's tank level) | `localStorage` `waterTankUnit` | S | in (Z7: Skin > Display 'tank unit', ml by default) |
 | Flush | Flush temperature (5-95 °C, step 5) | `/api/v1/machine/settings` `flushTemp` | G, not kept by the simulation | port |
 | | Flush flow (1-8 ml/s, step 1) | same, `flushFlow` | G, seen | port |
 | Machine Advanced Settings ("Before espresso starts") | Idle temperature (0-99 °C) | `GET`/`POST /api/v1/machine/settings/advanced` `heaterIdleTemp` | G, seen | port |

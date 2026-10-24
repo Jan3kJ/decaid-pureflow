@@ -25,6 +25,7 @@
   import Confirm from './Confirm.svelte';
   import Skins from './Skins.svelte';
   import { DISPLAY_SIZES, LINE_WIDTHS, type DisplayChoice } from '../display';
+  import { TANK_UNITS } from '../shell/tank';
 
   interface Props {
     skin: Skin;
@@ -72,8 +73,14 @@
     },
   ];
 
-  /** Skin > Display Size: Streamline's two choices, each a factor of the settings object */
-  const DISPLAY: { key: 'displaySize' | 'lineWidth'; id: string; title: string; hint: string; choices: DisplayChoice[] }[] = [
+  /** Skin > Display: Streamline's two sizes, each a factor of the settings object, and its tank unit */
+  const DISPLAY: {
+    key: 'displaySize' | 'lineWidth' | 'tankUnit';
+    id: string;
+    title: string;
+    hint: string;
+    choices: (DisplayChoice | (typeof TANK_UNITS)[number])[];
+  }[] = [
     {
       key: 'displaySize',
       id: 'display-size',
@@ -87,6 +94,13 @@
       title: 'chart line width',
       hint: 'The curves of the shot graph, the profile previews and the A-Flow editor.',
       choices: LINE_WIDTHS,
+    },
+    {
+      key: 'tankUnit',
+      id: 'tank-unit',
+      title: 'tank unit',
+      hint: 'The water in the tank on the state line: in ml, or in mm as the machine measures it.',
+      choices: TANK_UNITS,
     },
   ];
 

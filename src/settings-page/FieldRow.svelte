@@ -62,7 +62,9 @@
   {#if field.kind === 'number' || field.kind === 'time'}
     <button class="value" data-testid="setting-{field.id}" disabled={!known || busy} onclick={() => (typing = true)}>
       <b
-        >{text}{#if field.kind === 'number' && field.unit}<i>{field.unit}</i>{/if}</b
+        >{text}{#if field.kind === 'number' && field.unit}<i
+            >{field.unit}{#if field.note && typeof value === 'number'}, {field.note(value)}{/if}</i
+          >{/if}</b
       >
     </button>
   {:else if field.kind === 'choice'}

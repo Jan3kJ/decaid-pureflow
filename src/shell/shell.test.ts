@@ -303,9 +303,14 @@ describe('stateLine', () => {
     expect(text(stateLine('machine', frame('idle'), water, 'connected', 34))).toEqual([
       'group 91.3 °C',
       'steam 150 °C',
-      'tank 35 mm',
+      'tank 950 ml',
       'scale 34.0 g',
     ]);
+  });
+
+  it('says the tank in ml by default and in mm when the setting says so', () => {
+    expect(text(stateLine('machine', frame('idle'), { currentLevel: 40.8, refillLevel: 5 }, 'connected', 0))[2]).toBe('tank 1130 ml');
+    expect(text(stateLine('machine', frame('idle'), water, 'connected', 0, false, 'mm'))[2]).toBe('tank 35 mm');
   });
 
   it('warns in place of the weight when the scale is not connected', () => {
@@ -315,7 +320,13 @@ describe('stateLine', () => {
   });
 
   it('warns when the tank is under its refill level', () => {
-    expect(text(stateLine('machine', frame('idle'), { currentLevel: 3, refillLevel: 5 }, 'connected', 0))[2]).toBe('tank 3 mm!');
+    expect(text(stateLine('machine', frame('idle'), { currentLevel: 3, refillLevel: 5 }, 'connected', 0))[2]).toBe('tank 70 ml!');
+    expect(text(stateLine('machine', frame('idle'), { currentLevel: 3, refillLevel: 5 }, 'connected', 0, false, 'mm'))[2]).toBe(
+      'tank 3 mm!',
+    );
+    // The warning compares mm: 5 mm is 124 ml, and a level of 4.9 mm under a refill level of 5 warns.
+    expect(stateLine('machine', frame('idle'), { currentLevel: 4.9, refillLevel: 5 }, 'connected', 0)[2].warn).toBe(true);
+    expect(stateLine('machine', frame('idle'), { currentLevel: 5, refillLevel: 5 }, 'connected', 0)[2].warn).toBe(false);
   });
 
   it('assumes nothing without a fresh frame or a level', () => {

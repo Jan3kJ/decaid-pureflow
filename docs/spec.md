@@ -1927,6 +1927,17 @@ the refill level, as now. A skin setting **'Tank unit' (ml, mm)** in Skin > Disp
 Streamline's, default **ml**, so the founder's mm is one tap away; the settings page's 'water
 alert' field (5 mm steps) shows the equivalent next to it ('15 mm, about 400 ml'). The table is a
 measure of the DE1's tank taken from the TCL skin through Streamline: `NOTICE` names it (P1).
+*Built (Z7, 2026-10-24):* the details the paragraph leaves open: Streamline's table (0.2.17 in
+its repository, 0.2.18 on the rig, both the same) has **68 entries, 0 to 67 mm**, not 70; the
+entry for 67 mm is already the full tank, 2058 ml, so 68 and 69 mm are the maximum too and every point the
+paragraph names holds. `tankMl` (`src/shell/tank.ts`) is the exact interpolation, nothing under
+0 mm; `shownTankMl` rounds it to 10 ml for every figure the skin shows (the state line, 'about …
+ml' on the water alert), so a full tank shows '2060 ml'. 41.8 mm is 1138 + 0.8 × 34 = 1165 ml,
+shown '1170 ml'; the paragraph's '1130 ml' is 40.8 mm. The setting is `tankUnit` in the settings
+object ('ml' or 'mm'; anything else reads as ml), a row of two chips under 'chart line width';
+mm shows the level as before ('38 mm'). The water alert's button reads '15mm, about 400 ml' (the unit set close to the number, as on every field of the page).
+The clean's 'Water tank: … ml' (3.8, `water-tank.ts`) keeps its whole-mm figure from the same
+table, now imported from `tank.ts`.
 
 **The finished shot keeps its weight (item 9; Z9).** The cause is in `settleWeight`
 (`src/shell/shot.ts`), which `home-shot.ts` shows as the finished shot's weight

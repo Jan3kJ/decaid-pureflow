@@ -10,6 +10,7 @@
 import type { AdvancedSettings, DecaidInfo } from '../api';
 import { HOT_WATER_FIELDS, type HotWaterField } from '../hotwater/hot-water';
 import { STEAM_ON_MAX, STEAM_ON_MIN } from '../shell/steam-heater';
+import { shownTankMl } from '../shell/tank';
 
 /**
  * Where a setting lives. `decaid`: `/api/v1/settings`; `machine`: `/api/v1/machine/settings`;
@@ -52,6 +53,8 @@ export interface NumberField extends Common {
   places: number;
   /** written for a value under `min`: the steam heater's off, 0 */
   off?: number;
+  /** said after the unit: the tank's level in ml too, 'about 400 ml' */
+  note?: (value: number) => string;
 }
 
 export interface Choice {
@@ -227,6 +230,7 @@ export const WATER_TANK: Field[] = [
     max: 30,
     step: 5,
     places: 0,
+    note: (mm) => `about ${shownTankMl(mm)} ml`,
   }),
 ];
 

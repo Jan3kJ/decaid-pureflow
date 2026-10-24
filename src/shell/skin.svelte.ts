@@ -107,7 +107,9 @@ export class Skin {
   /** the Asleep screen is shown: the machine sleeps, and not by 'Machine sleep' (spec 3.10) */
   readonly asleep = $derived(this.machineAsleep && !this.sleepMark.machineOnly);
   /** the values of the state line, on home and on the steam page */
-  readonly stateValues = $derived(stateLine(this.link, this.shown, this.water, this.scaleLink, this.weight, this.scaleLooking));
+  readonly stateValues = $derived(
+    stateLine(this.link, this.shown, this.water, this.scaleLink, this.weight, this.scaleLooking, this.settings.tankUnit),
+  );
 
   constructor(baseUrl: string = gatewayBaseUrl(location)) {
     this.baseUrl = baseUrl;

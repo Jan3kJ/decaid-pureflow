@@ -57,12 +57,13 @@ test('home shows the state line the machine sent, the profile, and no start: the
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
   await expect(page.getByTestId('state-group')).toHaveText('92.6 °C');
   await expect(page.getByTestId('state-steam')).toHaveText('148 °C');
-  await expect(page.getByTestId('state-tank')).toHaveText('38 mm');
+  // 38 mm of water is 1040 ml in Streamline's table (spec 3.14 'The tank in ml').
+  await expect(page.getByTestId('state-tank')).toHaveText('1040 ml');
   await expect(page.getByTestId('state-scale')).toHaveText('0.0 g');
   const line = (await page.getByTestId('status').boundingBox())!;
   expect(line.height).toBeLessThan(40);
   gateway.setWater(31);
-  await expect(page.getByTestId('state-tank')).toHaveText('31 mm');
+  await expect(page.getByTestId('state-tank')).toHaveText('840 ml');
 
   await expect(page.getByTestId('profile-name')).toHaveText('A-Flow / default-medium');
   // Dose and stop weight are not on home; nothing starts a shot or steam here.
@@ -148,7 +149,7 @@ test('the pen opens the editor, the name the picker, the steam dot the steam pag
   await toPage(page, 'steam');
   await expect(page.getByTestId('screen-steam')).toBeVisible();
   // The steam page has the same state line.
-  await expect(page.getByTestId('state-tank')).toHaveText('38 mm');
+  await expect(page.getByTestId('state-tank')).toHaveText('1040 ml');
   expect(errors).toEqual([]);
 });
 

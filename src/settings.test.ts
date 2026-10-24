@@ -53,6 +53,7 @@ describe('settings', () => {
       showShotValues: false,
       displaySize: 1.15,
       lineWidth: 2,
+      tankUnit: 'mm' as const,
       startProfiles: ['A-Flow / mine', null, 'A-Flow / default-dark', null, null],
       maxFlow: 12,
       defaultDose: 17.5,
@@ -93,6 +94,13 @@ describe('settings', () => {
     expect(loadSettings(fakeStore())).toMatchObject({ displaySize: 1, lineWidth: 1 });
     expect(loadSettings(fakeStore('{"displaySize":0.85,"lineWidth":0.6}'))).toMatchObject({ displaySize: 0.85, lineWidth: 0.6 });
     expect(loadSettings(fakeStore('{"displaySize":3,"lineWidth":"thick"}'))).toMatchObject({ displaySize: 1, lineWidth: 1 });
+  });
+
+  it('shows the tank in ml by default; a unit that is not a choice is ignored', () => {
+    expect(loadSettings(fakeStore()).tankUnit).toBe('ml');
+    expect(loadSettings(fakeStore('{"tankUnit":"mm"}')).tankUnit).toBe('mm');
+    expect(loadSettings(fakeStore('{"tankUnit":"l"}')).tankUnit).toBe('ml');
+    expect(loadSettings(fakeStore('{"tankUnit":5}')).tankUnit).toBe('ml');
   });
 
   it('has the steam defaults of the founder', () => {

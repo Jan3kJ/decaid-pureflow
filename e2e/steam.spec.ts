@@ -225,7 +225,7 @@ test('steam started at the machine shows its graph of pressure, flow and tempera
   // The machine's state line, as on home.
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
   await expect(page.getByTestId('state-steam')).toHaveText('148 °C');
-  await expect(page.getByTestId('state-tank')).toHaveText('38 mm');
+  await expect(page.getByTestId('state-tank')).toHaveText('1040 ml');
   await expect(page.getByTestId('state-scale')).toHaveText('525.0 g');
 
   gateway.steamFor(18);

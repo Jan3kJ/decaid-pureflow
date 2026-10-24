@@ -173,7 +173,7 @@ test('steam: the written timer is read back from the workflow and from the machi
     // Steam is started at the machine, here through the gateway as the removed start button
     // did; the page shows the machine's state and draws its frames.
     await expect(page.getByRole('button', { name: /start/ })).toHaveCount(0);
-    await expect(page.getByTestId('state-tank')).toHaveText(/^\d+ mm$/);
+    await expect(page.getByTestId('state-tank')).toHaveText(/^\d*0 ml$/);
     const steamStarted = Date.now();
     await api('PUT', '/api/v1/machine/state/steam');
     await expect(page.getByTestId('steam-stop')).toBeVisible({ timeout: 15_000 });

@@ -113,6 +113,33 @@ test("the chart line width widens every graph's curves: the profile picker's pre
   }
 });
 
+test('the tank unit shows the state line in ml or mm and is saved; the warning compares mm', async ({ page }) => {
+  await home(page);
+  // ml by default: 38 mm is 1040 ml.
+  await expect(page.getByTestId('state-tank')).toHaveText('1040 ml');
+
+  await openSkin(page, 'skin-display');
+  await expect(page.getByTestId('setting-tank-unit-ml')).toHaveAttribute('aria-pressed', 'true');
+  await page.getByTestId('setting-tank-unit-mm').click();
+  await expect(page.getByTestId('setting-tank-unit-mm')).toHaveAttribute('aria-pressed', 'true');
+  expect((await stored(page)).tankUnit).toBe('mm');
+  await home(page);
+  await expect(page.getByTestId('state-tank')).toHaveText('38 mm');
+
+  await openSkin(page, 'skin-display');
+  await page.getByTestId('setting-tank-unit-ml').click();
+  expect((await stored(page)).tankUnit).toBe('ml');
+  await home(page);
+  await expect(page.getByTestId('state-tank')).toHaveText('1040 ml');
+  // Under the refill level of 5 mm (124 ml) the tank is a warning, in ml as in mm.
+  gateway.setWater(4.5);
+  await expect(page.getByTestId('state-tank')).toHaveText('110 ml');
+  await expect(page.locator('.value.tank')).toHaveClass(/warn/);
+  gateway.setWater(5);
+  await expect(page.getByTestId('state-tank')).toHaveText('120 ml');
+  await expect(page.locator('.value.tank')).not.toHaveClass(/warn/);
+});
+
 test("the skin switch lists Decaid's skins, asks, and opens the chosen one as Decaid's default", async ({ page }) => {
   let opened = '';
   await page.route('http://localhost:27911/**', (route) => {

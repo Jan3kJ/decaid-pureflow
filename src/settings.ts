@@ -6,6 +6,7 @@ import { DEFAULT_PROFILES } from './aflow/defaults';
 import { DOSE_MAX, MAX_FLOW_RANGE } from './aflow/validate';
 import { DISPLAY_SIZES, LINE_WIDTHS, type DisplayChoice } from './display';
 import { isOnTemperature } from './shell/steam-heater';
+import { TANK_UNITS, type TankUnit } from './shell/tank';
 
 export interface Settings {
   /** the editor offers the generated profile steps under the graph; its panel opens closed (founder, 2026-10-13) */
@@ -23,6 +24,8 @@ export interface Settings {
   displaySize: number;
   /** Skin > Display: a factor on the width of every graph's lines (`LINE_WIDTHS`) */
   lineWidth: number;
+  /** Skin > Display: the state line shows the tank in ml (Streamline's table) or in the machine's mm */
+  tankUnit: TankUnit;
   /**
    * The editor's row of profiles to start from (founder, 2026-10-13): five slots, each the
    * title of an A-Flow 3.0 profile or null for an empty one. A title, not an id: the id is a
@@ -114,6 +117,7 @@ export const DEFAULT_SETTINGS: Settings = {
   showShotValues: true,
   displaySize: 1,
   lineWidth: 1,
+  tankUnit: 'ml',
   startProfiles: DEFAULT_START_PROFILES,
   maxFlow: 8,
   defaultDose: 18,
@@ -132,7 +136,7 @@ const isAmount = (value: unknown): value is number => typeof value === 'number' 
 
 /**
  * The stored values of one group over its defaults. A value is taken when it has the
- * default's type: a boolean, an amount (a number from 0 up), a list of as many amounts, or a
+ * default's type: a boolean, a word, an amount (a number from 0 up), a list of as many amounts, or a
  * group of such values.
  */
 function merged<T extends object>(defaults: T, stored: unknown): T {
@@ -143,6 +147,9 @@ function merged<T extends object>(defaults: T, stored: unknown): T {
     result[key] = standard;
     if (typeof standard === 'boolean') {
       if (typeof value === 'boolean') result[key] = value;
+    } else if (typeof standard === 'string') {
+      // a choice of words: `readSettings` checks it against its choices
+      if (typeof value === 'string') result[key] = value;
     } else if (typeof standard === 'number') {
       if (isAmount(value)) result[key] = value;
     } else if (Array.isArray(standard)) {
@@ -185,6 +192,7 @@ export function readSettings(stored: unknown): Settings {
     startProfiles: readStartProfiles(values.startProfiles),
     displaySize: choiceOf(DISPLAY_SIZES, settings.displaySize),
     lineWidth: choiceOf(LINE_WIDTHS, settings.lineWidth),
+    tankUnit: TANK_UNITS.some((unit) => unit.value === settings.tankUnit) ? settings.tankUnit : DEFAULT_SETTINGS.tankUnit,
   };
 }
 

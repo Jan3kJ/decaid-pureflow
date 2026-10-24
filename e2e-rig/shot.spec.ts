@@ -67,7 +67,7 @@ test('a simulated shot: the state, an A-Flow profile, a live graph, the stop at 
     // The state line: every value read from the gateway's streams, the tank from its own.
     await expect(page.getByTestId('state-group')).toHaveText(/^\d+\.\d °C$/);
     await expect(page.getByTestId('state-steam')).toHaveText(/^\d+ °C$/);
-    await expect(page.getByTestId('state-tank')).toHaveText(/^\d+ mm$/, { timeout: 15_000 });
+    await expect(page.getByTestId('state-tank')).toHaveText(/^\d*0 ml$/, { timeout: 15_000 });
     await expect(page.getByTestId('state-scale')).toHaveText(/^-?\d+\.\d g$/, { timeout: 15_000 });
     await page.screenshot({ path: 'e2e-rig/.results/home-idle-rig.png' });
 
