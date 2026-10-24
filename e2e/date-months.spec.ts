@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mockGateway } from './mock-gateway';
 import { dragGrid, pickDate } from './date-picker';
-import { swipe } from './touch';
+import { flick } from './touch';
 
 // The date picker scrolls through the months (spec 3.14 item 12, acceptance 103) against the
 // mocked gateway: a vertical drag on the day grid moves the shown month, up to the later one, and
@@ -61,7 +61,7 @@ test('a vertical drag on the day grid moves the month by whole months, the year 
 
   // A quick flick passes several months.
   const box = (await page.getByTestId('datepicker-grid').boundingBox())!;
-  await swipe(page, { x: box.x + 30, y: box.y + box.height - 10 }, { x: box.x + 30, y: box.y + box.height - 10 - height * 1.2 });
+  await flick(page, { x: box.x + 30, y: box.y + box.height - 10 }, { x: box.x + 30, y: box.y + box.height - 10 - height * 1.2 });
   await expect.poll(async () => (await shown.getAttribute('data-month'))! >= '2027-01').toBe(true);
 
   // The drags started no swipe of the page behind; nothing was picked.

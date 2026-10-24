@@ -9,7 +9,7 @@
   import DatePicker from '../shell/DatePicker.svelte';
   import Camera from './Camera.svelte';
   import { beanForm, beanTitle, dateOf, validBean, type BeanForm } from './catalogue';
-  import { readBag, statusText, type OcrProgress } from './ocr';
+  import { readBag, statusText, type KnownBean, type OcrProgress } from './ocr';
 
   interface Props {
     /** null: a new bean */
@@ -17,6 +17,8 @@
     batch: BeanBatch | null;
     /** the catalogue's roasters, suggested in the roaster field */
     roasters: readonly string[];
+    /** the catalogue's beans, which help to read a bag's photo */
+    known: readonly KnownBean[];
     busy: boolean;
     /** the bean's stored photo, null for none */
     loadphoto: (beanId: string) => Promise<string | null>;
@@ -27,7 +29,7 @@
     onnewbag: () => void;
   }
 
-  let { bean, batch, roasters, busy, loadphoto, onsave, onarchive, onrestore, onnewbag }: Props = $props();
+  let { bean, batch, roasters, known, busy, loadphoto, onsave, onarchive, onrestore, onnewbag }: Props = $props();
 
   // The form starts from the bean it was made for: the screen makes a new one for another bean or bag.
   const initial = () => beanForm(bean, batch);
@@ -69,7 +71,7 @@
     readNote = null;
     reading = { status: 'loading tesseract core', progress: 0 };
     try {
-      const found = await readBag(image, (progress) => !controller.signal.aborted && (reading = progress), controller.signal);
+      const found = await readBag(image, known, (progress) => !controller.signal.aborted && (reading = progress), controller.signal);
       // only empty fields: what the user typed meanwhile stays
       if (!form.name.trim() && found.name) form.name = found.name;
       if (!form.roaster.trim() && found.roaster) form.roaster = found.roaster;

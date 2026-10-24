@@ -1,0 +1,83 @@
+[
+  {
+    "photo": "maldaner-elisabeth.jpg",
+    "recipe": "--scale 0.6 --prepare",
+    "lines": [
+      { "text": "-", "height": 18, "confidence": 0, "box": { "x0": 694, "y0": 3, "x1": 722, "y1": 21 } },
+      { "text": "maldaner", "height": 35, "confidence": 90, "box": { "x0": 618, "y0": 63, "x1": 795, "y1": 98 } },
+      { "text": "KAFRREHAUS ESPRESSO", "height": 18, "confidence": 21, "box": { "x0": 603, "y0": 104, "x1": 809, "y1": 122 } },
+      { "text": "ELISABETH", "height": 61, "confidence": 68, "box": { "x0": 574, "y0": 218, "x1": 833, "y1": 279 } },
+      { "text": "MABELNUSS, KAKAO NOUGAT", "height": 18, "confidence": 35, "box": { "x0": 614, "y0": 287, "x1": 777, "y1": 305 } },
+      { "text": "Brasilien", "height": 35, "confidence": 94, "box": { "x0": 625, "y0": 386, "x1": 759, "y1": 421 } }
+    ]
+  },
+  {
+    "photo": "maldaner-abdul.jpg",
+    "recipe": "--scale 0.6 --prepare",
+    "lines": [
+      { "text": "®", "height": 22, "confidence": 17, "box": { "x0": 531, "y0": 0, "x1": 565, "y1": 22 } },
+      { "text": "v-—", "height": 14, "confidence": 0, "box": { "x0": 615, "y0": 9, "x1": 640, "y1": 23 } },
+      { "text": "maldaner", "height": 36, "confidence": 90, "box": { "x0": 536, "y0": 52, "x1": 723, "y1": 88 } },
+      { "text": "OMNI ROAST", "height": 13, "confidence": 85, "box": { "x0": 578, "y0": 97, "x1": 676, "y1": 110 } },
+      { "text": "ABDUL", "height": 107, "confidence": 96, "box": { "x0": 529, "y0": 174, "x1": 728, "y1": 281 } },
+      {
+        "text": "SENFRUCHT. TROPENPOWER, ZUCKERROH:",
+        "height": 22,
+        "confidence": 29,
+        "box": { "x0": 504, "y0": 286, "x1": 753, "y1": 308 }
+      },
+      { "text": "Indonesien", "height": 39, "confidence": 91, "box": { "x0": 536, "y0": 395, "x1": 715, "y1": 434 } },
+      { "text": "13%", "height": 14, "confidence": 31, "box": { "x0": 324, "y0": 542, "x1": 367, "y1": 556 } }
+    ]
+  },
+  {
+    "photo": "aniko-feel-the-sun.jpg",
+    "recipe": "--scale 1.3",
+    "lines": [
+      { "text": "FEEL THE SUN", "height": 70, "confidence": 96, "box": { "x0": 1240, "y0": 390, "x1": 1569, "y1": 460 } },
+      { "text": "natural [2]", "height": 44, "confidence": 82, "box": { "x0": 1244, "y0": 462, "x1": 1393, "y1": 506 } },
+      { "text": "fully washed", "height": 32, "confidence": 96, "box": { "x0": 1247, "y0": 513, "x1": 1448, "y1": 545 } },
+      { "text": "choco", "height": 22, "confidence": 87, "box": { "x0": 1181, "y0": 714, "x1": 1264, "y1": 736 } },
+      { "text": "late", "height": 18, "confidence": 77, "box": { "x0": 1268, "y0": 708, "x1": 1316, "y1": 726 } },
+      { "text": "vanilla - blueberry", "height": 23, "confidence": 82, "box": { "x0": 1342, "y0": 696, "x1": 1585, "y1": 719 } },
+      { "text": "aniko", "height": 51, "confidence": 90, "box": { "x0": 948, "y0": 726, "x1": 1088, "y1": 777 } },
+      { "text": "pe ROASTERS", "height": 27, "confidence": 60, "box": { "x0": 952, "y0": 772, "x1": 1091, "y1": 799 } },
+      { "text": "\\", "height": 11, "confidence": 26, "box": { "x0": 903, "y0": 796, "x1": 909, "y1": 807 } }
+    ]
+  },
+  {
+    "photo": "aniko-honey-dream-rotated.jpg",
+    "recipe": "",
+    "lines": [
+      { "text": "298", "height": 34, "confidence": 65, "box": { "x0": 687, "y0": 357, "x1": 778, "y1": 391 } },
+      { "text": "83", "height": 27, "confidence": 53, "box": { "x0": 688, "y0": 405, "x1": 742, "y1": 432 } },
+      { "text": "=", "height": 17, "confidence": 26, "box": { "x0": 1269, "y0": 430, "x1": 1347, "y1": 447 } },
+      { "text": "om -", "height": 22, "confidence": 17, "box": { "x0": 1102, "y0": 539, "x1": 1149, "y1": 561 } }
+    ]
+  },
+  {
+    "photo": "aniko-honey-dream-rotated.jpg",
+    "recipe": "--scale 1.2 --prepare",
+    "lines": [
+      { "text": "8 §", "height": 40, "confidence": 57, "box": { "x0": 841, "y0": 429, "x1": 933, "y1": 469 } },
+      { "text": "[1]", "height": 16, "confidence": 72, "box": { "x0": 919, "y0": 493, "x1": 936, "y1": 509 } },
+      { "text": "m= ©", "height": 20, "confidence": 41, "box": { "x0": 1523, "y0": 516, "x1": 1617, "y1": 536 } },
+      { "text": "[e]", "height": 16, "confidence": 46, "box": { "x0": 876, "y0": 549, "x1": 894, "y1": 565 } },
+      { "text": "-~,", "height": 22, "confidence": 0, "box": { "x0": 1366, "y0": 651, "x1": 1401, "y1": 673 } },
+      { "text": "et", "height": 26, "confidence": 7, "box": { "x0": 1361, "y0": 676, "x1": 1409, "y1": 702 } }
+    ]
+  },
+  {
+    "photo": "aniko-honey-dream-rotated.jpg",
+    "recipe": "--rotate 270 --scale 1.2 --prepare",
+    "lines": [
+      { "text": "aniko", "height": 95, "confidence": 91, "box": { "x0": 369, "y0": 783, "x1": 668, "y1": 878 } },
+      { "text": "COFFEE ROASTERS", "height": 26, "confidence": 96, "box": { "x0": 375, "y0": 900, "x1": 672, "y1": 926 } },
+      { "text": "oh", "height": 79, "confidence": 14, "box": { "x0": 651, "y0": 998, "x1": 746, "y1": 1077 } },
+      { "text": "Honey.", "height": 55, "confidence": 86, "box": { "x0": 384, "y0": 1042, "x1": 558, "y1": 1097 } },
+      { "text": "mandel", "height": 28, "confidence": 57, "box": { "x0": 408, "y0": 1458, "x1": 515, "y1": 1486 } },
+      { "text": "honigmelone", "height": 35, "confidence": 66, "box": { "x0": 410, "y0": 1502, "x1": 603, "y1": 1537 } },
+      { "text": "pfirsich", "height": 45, "confidence": 88, "box": { "x0": 411, "y0": 1547, "x1": 516, "y1": 1592 } }
+    ]
+  }
+]

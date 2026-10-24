@@ -2057,6 +2057,28 @@ photo is given), and they add three rules to Z1 and Z2:
 - **The chips are for what is left** (Z2): the six chips show the lines read, so a field the rules
   got wrong costs one tap.
 
+*Built (Z1, 2026-10-24):* `scripts/ocr-probe.mjs` (a dev script, not in the ZIP) reads a photo with
+the skin's worker and options in Node and prints its lines (text, height, confidence, box);
+`--rotate`, `--scale`, `--prepare` (grey, contrast stretched between the 1st and 99th percentile)
+and `--invert` do on a canvas of Playwright's Chromium what Z2 is to do, in the probe only, and
+`--json` writes an entry of `src/beans/ocr-bags.json`, the fixture `ocr.test.ts` reads. Read as the
+camera gave them, the photos give little ('maldaner' is missing on Elisabeth, 'ABDUL' is not read,
+'FEEL THE SUN' is 'RRL SUN' at 30 %); the fixtures are therefore the probe's lines of the photos
+scaled so that the main lines are 30 to 50 pixels high, which is Z2's preparation: Elisabeth and
+Abdul at 0.6, prepared; Feel The Sun at 1.3, not prepared (the stretch loses the 'a' of 'aniko' on
+the orange triangle). `bagText(lines, catalogue)` in `src/beans/ocr.ts` gives maldaner / Elisabeth,
+maldaner / Abdul and aniko / Feel The Sun from them. The turned bag: read upright it gives no
+roaster and no name; turned by 270 degrees clockwise (90 the other way), scaled 1.2 and prepared, it
+gives aniko and 'Honey': 'Dream' is lost under the blue cloud of the print, so Honey Dream is left
+to Z2. The details the spec left open: a line matches a known name as a whole or by as many words in
+a row as the name has (`reads`), a name of under 5 letters only exactly; a descriptor may hold
+'Coffee' or a misreading of it ('COFFeg ROASTERS'); a line counts as directly under the roaster when
+it shares some of its width and starts within one roaster height under it; the size limit of a name
+is 0.4 of the tallest line read; a tasting line has two or more full stops, commas or dots after its
+words or spaced dashes between them; 'honey' is no longer a detail word, so that 'Honey Dream' can
+be a name; a known bean of the roaster wins at the confidence of any kept line (50), a name read
+otherwise needs 60; the beans screen passes the catalogue's beans to the form for the reading.
+
 ### 3.15 The cut, in steps, and a release script (2026-10-24)
 
 The founder created the two GitHub repositories and named them: **`Jan3kJ/decaid-pureflow`**

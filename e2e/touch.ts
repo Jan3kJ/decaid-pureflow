@@ -23,6 +23,22 @@ export async function swipe(page: Page, from: { x: number; y: number }, to: { x:
 }
 
 /**
+ * A flick: a quick swipe that lifts the finger right after its last move, so that the speed a
+ * screen reads at the lift is the swipe's even on a slow machine.
+ */
+export async function flick(page: Page, from: { x: number; y: number }, to: { x: number; y: number }) {
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [from] });
+  for (let i = 1; i <= 8; i += 1) {
+    if (i > 1) await page.waitForTimeout(16);
+    const at = { x: from.x + ((to.x - from.x) * i) / 8, y: from.y + ((to.y - from.y) * i) / 8 };
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [at] });
+  }
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await cdp.detach();
+}
+
+/**
  * Detail mode: a tap on a step of the editor's graph selects it; there are no phase buttons
  * (founder, 2026-10-16). It taps the step's name under the plot, away from every line.
  */
