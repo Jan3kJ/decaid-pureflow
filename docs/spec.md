@@ -2142,6 +2142,127 @@ with unit tests; the git and `gh` calls go through one small function that tests
 test runs the whole script with `--dry-run` and `--local` in a temporary repository. Spec 4 gets
 the script's place in the layout when it is built.
 
+### 3.16 Founder's review of 2026-10-24: the profile picker (planned, not built)
+
+The founder, with a screenshot of the picker (80's Espresso selected, its long description
+under the graph): 'in the profile picker the shot graph should have a fixed size of a similar
+ratio as in the screenshot, the buffer is the text field below. this feels better when scrolling
+through the profiles. In addition the graph should be improved: can we interpolate the flow,
+pressure and temp curve based on profile values. it is only an approximation, but the goal is
+to give the user an idea how the shot will look like. you can use the shots from the export to
+create a model for that. Another idea: can we generate a brief description for A-Flow 3.0
+profiles based on profile values? It would be better than the default sentence from my old
+plugin.' Roadmap Z13-Z16, in the hand-over H5 (0.6.0). Nothing of it is built.
+
+**The graph keeps its size (item 1; Z13).** Today the panel is a column: the graph takes what
+the description leaves (`.preview` is `flex: 1 1 0`), so a long description shrinks it and a
+profile without one lets it grow, and the graph jumps while the founder pages through the list.
+New: the graph has **one size for every profile**, a box with the aspect ratio of the
+screenshot (about 1:1, `aspect-ratio: 1 / 1`, the width of the panel's content, 24 rem less its
+padding), and **the description is the buffer**: it takes the height that is left under the
+graph and the caption, `min-height: 0`, `overflow-y: auto`, so a long text scrolls inside its own
+field and a short one leaves empty space. Title, author, the three values, the graph, the
+caption line and **load** stay where they are for every profile. On a display too low for the
+box (the panel's height less the fixed parts under 6 rem) the graph's height gives way before the
+text's, down to the existing 6 rem minimum, and still the same for every profile on that
+display. The 1280 x 800 CSS pixel tablet is the check.
+
+**A modelled shot in the graph (item 2; Z14, Z15).** The preview draws the profile's targets
+(`src/steps/curve.ts`, a schematic: 'not a simulation of a shot'). The founder wants **the
+curves a shot would show**: flow, pressure and temperature, as an approximation, to give an
+idea of the shot. What the targets leave out, and what the export shows (2,174 shots, 1,528 of
+them A-Flow with a Flow Extraction step, about 160 samples each; first look at the targets as
+the curves, 2026-10-24):
+
+- the machine controls one quantity per step and the coffee decides the other: in a Fill step
+  (flow target 8 ml/s) the flow is on average 5 ml/s from the target and the pressure sits
+  around 2.4 bar; in Infuse (pressure target) the pressure is on average 2 bar from the target
+  and the flow around 1.6 ml/s; Pressure Up's flow is around 1.8 ml/s. Taking the target as the
+  curve is therefore wrong most of the time for the quantity the step does not control;
+- a step that has an exit (Fill 'pressure over', Pressure Up 'flow over', Pause 'flow under') or
+  an infuse weight ends when the coffee says so, so the moments of the steps move;
+- the temperature does not jump to the step's target: the group sensor starts near the target
+  and follows the next step's target with a lag (in the first eight seconds the median is within
+  2.3 degrees of the target, below it around the second 2);
+- the shot ends at the stop weight, not at the end of the last step; the median shot in the
+  export is 38 s.
+
+*The model* (`src/steps/predict.ts`, pure, no DOM; `predictShot(profile, puck?)` returns
+`t`, `flow`, `pressure`, `temperature` and the moments the steps start):
+
+1. **The controlled quantity follows its target through the machine's response**, a first-order
+   lag with one time constant for flow and one for pressure, a fast transition with a short one,
+   a smooth transition ramping as `stepCurve` does. A step's limiter (`limiter`) caps the other
+   quantity: a flow step cannot exceed its pressure limit, a pressure step its flow limit.
+2. **The coffee is a resistance** that the controlled quantity meets: pressure = R x flow for a
+   flow step, flow = pressure / R for a pressure step. R is small while the puck is dry and
+   rises towards a wet value as water has gone through (R = R1 + (R0 - R1) x e^(-V / V0), V the
+   water pushed so far). R0, R1, V0 and the two time constants are **fitted to the export**; they
+   are constants of one typical puck, and the picture says so (item 3 below).
+3. **A step ends when its exit holds in the model** (pressure over, flow over or under, the
+   infuse weight, taken as the water pushed minus what the puck keeps), or at its `seconds`,
+   whichever comes first; the weight of the model ends the shot at the stop weight when the last
+   step is not over yet. Without a stop weight it ends with its last step.
+4. **The temperature** follows the targets of the steps with one lag and the starting offset the
+   export shows (the group sensor at the start of a shot), both fitted.
+5. It works for every profile that has steps, A-Flow or not; D-Flow, Adaptive and the user's
+   own are in the export too (D-Flow / dantes inferno, 61 shots, My Profile / flat temperature,
+   59) and are part of the check.
+
+*The fit and the check* (Z14): a script, `scripts/shot-model-fit.mjs`, reads a Decaid export
+(its path is an argument; the export holds the founder's shots and stays out of the repository,
+as the 2026-10-21 one does), aligns each shot's samples to the machine's frame changes, fits the
+constants by least squares on the flow, pressure and temperature of the shots, and writes
+`src/steps/puck.ts` (the few constants) and `src/steps/fixtures/shots-model.json` (about ten
+shots, thinned to one sample per 0.5 s, only the measurements and the profile: no beans, no
+notes). The fit uses **the profiles apart from a held-out third**, chosen by the profile (so the
+check is on profiles the fit did not see, as the picker meets them). The model is accepted
+when, on the held-out shots: the mean absolute error of the flow and of the pressure is at least
+**40 percent below that of the targets drawn as they are** (the first look: 1.4 to 6.3 ml/s
+or bar per step), the temperature's error is no higher than the targets', and the length of
+the shot is within 20 percent of the real one for four shots in five. The result, the numbers
+and the plots of three shots go into `docs/research.md` ('the shot model'); where the model
+fails the numbers say so and the picture says 'approximation' all the same. Fitting is offline;
+the app only runs `predictShot`, once for the selected profile (milliseconds), never for the
+whole list.
+
+*The picture* (Z15): in the picker's graph the model's curves are the lines, in the shot graph's
+colours (flow blue, pressure green, temperature red, as on home), and the profile's targets
+stay as thin dotted lines under them, so the founder sees what the profile asks for and what a
+shot would do. The step borders stay dashed. Under the graph a **caption line** says 'estimate
+from the steps, a real shot differs with the coffee' (small, `--dim`, one line; it is part of
+the fixed area of item 1). The editor's own curve keeps the targets: this item is the picker's.
+A later step may take the puck's R from the last shot of the profile in the history, so the
+estimate fits the founder's coffee; that is not planned here.
+
+**A generated description for A-Flow 3.0 (item 3; Z16).** The picker shows the profile's
+`notes`; an A-Flow profile of the old plugin carries one stock sentence ('A-Flow: an
+alternative profile for D-Flow', see the screenshot of 2026-10-24 on the converted profiles).
+New: for a profile whose A-Flow values are known (stored 3.0 by its metadata or notes, or an
+old A-Flow profile that `readSteps` reads) the picker shows **a short text made from the
+values**, `describeAFlow(params)` in `src/aflow/describe.ts`, pure and English, three to five
+short sentences, only facts, in this order, a phase that is off left out:
+
+1. dose and yield: '16 g in, 42 g out, a ratio of 1:2.6.' (no stop weight: 'No stop weight.');
+2. the fill: 'Fills at 8 ml/s until 3 bar or 15 s, at 95 °C.';
+3. the infuse, when it lasts: 'Infuses at 0 bar, 1 ml/s at most, for 15 s or until 3 g.';
+4. the 2nd fill and its pause, when on: 'A second fill at 8 ml/s, then a pause of up to 15 s.';
+5. the pour: 'Ramps to 11 bar in 10 s, then pours at 3 ml/s, rising to 6 ml/s over 60 s.' ('falling
+   to 0' for flow down; 'at most 11 bar' for the pressure limit; the temperature only where it
+   differs from the fill's: 'at 88 °C').
+
+Numbers use the skin's formatters (whole numbers without a decimal point, one decimal otherwise,
+a space before the unit). The text is **computed when the picker shows it, never written to the
+profile's notes**, so a change to the wording changes every profile and nothing in Decaid.
+What the user wrote in the notes comes first and stays: the plugin's stock sentence (and the
+A-Flow line the skin writes, which `notesText` already strips) counts as nothing written; the
+generated text follows the user's own notes after a blank line. A profile that is not A-Flow
+keeps its notes alone, as before. The wording is checked by the founder on the tablet; the
+sentences above are the plan, not the final text.
+
+Not part of this review: a modelled weight curve, the model in the step editor, a description
+for profiles that are not A-Flow, another language.
+
 ## 4. Technical approach
 
 ### 4.1 What a Decaid skin is
@@ -2632,6 +2753,34 @@ Where an item here and one of 27-55 disagree, the item here wins (3.10 overrides
      holds the ZIP and the SHA-256 that the script checked by downloading (3.15 step 7); `gh`
      is installed and logged in by the founder first.
 
+110. **The picker's graph keeps its size (test, Z13).** Mocked gateway, 1280 x 800: the graph
+     box has the same width and height for a profile with no description, with a long one (80's
+     Espresso) and with an A-Flow default, the **load** button and the title row do not move, the
+     long description scrolls inside its own field (its scroll height over its client height,
+     the panel's not), and paging through ten profiles by tap leaves the box's top at one value.
+111. **The shot model and its fit (test and script, Z14).** `scripts/shot-model-fit.mjs` run on
+     the export of 2026-10-21 writes `src/steps/puck.ts` and the fixture; on the held-out
+     profiles the flow and pressure errors are at least 40 percent below the targets' and the
+     length of the shot is within 20 percent for four shots in five (the numbers in
+     `docs/research.md`); unit tests of `predictShot`: a flow step's pressure is capped by its
+     limiter, an exit ends its step before its `seconds`, the model never gives a negative or
+     non-finite value for any of the 73 bundled profiles, the five A-Flow defaults and the
+     fixture's profiles, and its answer is the same twice.
+112. **The estimate in the picker (test, Z15).** The picker's graph draws the model's three
+     curves with the targets dotted under them and the caption line; a profile with no steps
+     draws nothing and no error; the editor's curve is unchanged (the existing editor tests
+     pass). Rig: the picker for the rig's 75 profiles draws without a console error.
+113. **The generated description (test, Z16).** `describeAFlow` is pinned for the five defaults
+     and for six hand-made parameter sets (no infuse, no 2nd fill, flow down, no stop weight,
+     a temperature of its own, an infuse weight); for every A-Flow profile of the export that
+     `readSteps` reads it is non-empty, has no `undefined`, `NaN` or `null`, and is under 450
+     characters; the picker shows the user's own notes first and the generated text after, and
+     only the generated text where the notes are the stock sentence or empty.
+114. **The picker on the tablet (founder).** The founder pages through the list and sees the
+     graph stay put, reads the estimate of three profiles he knows against his shots of them
+     and says whether it gives the idea (a 'no' goes back into the model's fit, not into the
+     picture), and reads the generated text of three A-Flow profiles.
+
 ## 6. Constraints
 - **Budget:** one Claude Pro plan. This product may use all of it up to 90% of the weekly
   limit; the team plans by capacity.
@@ -2743,7 +2892,11 @@ The weeks are a capacity guess on one Pro plan.
 | 3 | Z10 | review 2026-10-23: the editor's turn-on chip of a collapsed step in its own lane under the axis, no overlap with the weight chips (3.14 item 10) | |
 | 3 | Z11 | review 2026-10-23: the home menu without the descriptions of Beans and grinders and Clean; the steam line stays (3.14 item 11) | |
 | 3 | Z12 | review 2026-10-23: the date picker scrolls through the months by a vertical finger drag, the buttons stay (3.14 item 12) | |
-| 3 | H5 | review 2026-10-23: hand-over ZIP for 3.14 and its checks in install.md; version 0.6.0 (minor bump) | Z1-Z12 |
+| 3 | Z13 | review 2026-10-24: the picker's graph has one size for every profile (aspect ratio about 1:1), the description is the buffer under it and scrolls (3.16 item 1) |  |
+| 3 | Z14 | review 2026-10-24: the shot model: `scripts/shot-model-fit.mjs` fits flow, pressure and temperature to the export, `predictShot`, the constants and a thinned fixture, the numbers in research.md (3.16 item 2) |  |
+| 3 | Z15 | review 2026-10-24: the picker's graph draws the modelled flow, pressure and temperature, the targets dotted, a caption 'estimate' (3.16 item 2) | Z13, Z14 |
+| 3 | Z16 | review 2026-10-24: a generated description for A-Flow 3.0 profiles from their values, the user's notes first (3.16 item 3) |  |
+| 3 | H5 | review 2026-10-23: hand-over ZIP for 3.14 and 3.16 and their checks in install.md; version 0.6.0 (minor bump) | Z1-Z16 |
 | 4 (Nov 2-8) | P1 | publish (3.13): `LICENSE`, `NOTICE`, one licence statement everywhere, D-Flow's and DSx2's credit, Damian's approval in writing (A-Flow's old repository needs no licence); the founder asks Damian | H4 |
 | 4 | P2 | publish: the two repositories, in the twelve steps of 3.15: try the team's tools across them first, cut the product repository in a fresh clone (history with the noreply address, no records), turn this one into the team repository, scrub paths in `spec.md` and `research.md`, `scripts/publish-check.mjs`, `camera.html` and the probes; pushing and renaming are the founder's | P1 |
 | 4 | P3 | publish: CI and release workflows, `CONTRIBUTING.md`, `CHANGELOG.md`, issue templates, `SECURITY.md`, README as a front page, the name check, `npm audit` and the dependency licences | P2 |
