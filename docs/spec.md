@@ -1659,7 +1659,16 @@ on the mock gateway at 1280 x 800 CSS pixels, device scale factor 2, dark, into
 `docs/user/img/`, so a release refreshes them and no real bean, device or address can be in
 them. Each page names the version it was checked against, and `scripts/docs-check.mjs` fails when
 a link or an image does not resolve (in CI). The text is written from this spec's built notes,
-using the controls' labels as the skin shows them. The founder reads the three pages **cold on
+using the controls' labels as the skin shows them. *Built (P4, 2026-10-24):* `npm run screenshots`
+(`scripts/screenshots.mjs`) runs `e2e/user-docs.shots.ts` with `playwright.screenshots.config.ts`
+(the e2e configuration with locale `en-US`, time zone UTC and a fixed page date; `npm run e2e`
+does not run it) and checks that `docs/user/img/` holds exactly `home-idle.png`, `home-shot.png`,
+`swipe-row.png` (home half way to steam under a finger), `editor.png`, `steam.png`,
+`history.png`, `bean-pick.png` and `settings-skin.png`; two runs write the same bytes. Beans,
+roasters and grinder are invented ('Example Roasters · House Blend', 'Sample Coffee Co · Washed
+Single Origin', 'Hand grinder'). `npm run docs-check` checks README and every `.md` of
+`docs/user/` (relative paths, GitHub heading anchors, HTML `src`/`href`); `src/docs-check.test.ts`
+plants a broken link, a missing image and a missing anchor. The founder reads the three pages **cold on
 the tablet** (acceptance 84) and a person who has not seen the skin installs it with them
 alone (acceptance 85).
 

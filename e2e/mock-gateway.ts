@@ -708,18 +708,21 @@ export class MockGateway {
 
   /**
    * The machine has steamed for `seconds`: its frames of that time, sent at once, with the
-   * curve of a real machine (the simulated one has none, research.md 8.7). It goes on steaming.
+   * curve of a real machine (the simulated one has none, research.md 8.7). It goes on steaming;
+   * with `hold` it repeats its latest frame, so the time on screen stands still.
    */
-  steamFor(seconds: number): void {
+  steamFor(seconds: number, hold = false): void {
     this.state = 'steam';
     const now = Date.now();
     for (let t = 0; t < seconds; t += 0.25) {
-      this.sendMachine({
+      const frame = {
         ...this.frame(now - (seconds - t) * 1000),
         pressure: 1.6 * (1 - Math.exp(-t / 1.5)) + 0.08 * Math.sin(t * 2),
         flow: 2.4 * (1 - Math.exp(-t / 1.2)) + 0.1 * Math.sin(t * 3),
         steamTemperature: 152 - 9 * (1 - Math.exp(-t / 6)) + 0.6 * Math.sin(t),
-      });
+      };
+      this.sendMachine(frame);
+      if (hold) this.held = frame;
     }
   }
 

@@ -21,7 +21,9 @@
     "e2e:rig": "playwright test --config playwright.rig.config.ts",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "screenshots": "node scripts/screenshots.mjs",
+    "docs-check": "node scripts/docs-check.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
