@@ -1,7 +1,9 @@
 // Reads a bean's name and roaster from the photo of its bag (spec 3.9 item 20) with
 // Tesseract.js. Its worker, the LSTM cores and the English data are copied into the build's
-// `ocr/` (vite.config.ts) and loaded from there, never from the network. The guess only fills
-// empty fields; the user corrects it.
+// `ocr/` (vite.config.ts) and loaded from there by src/beans/read.ts. The photo is prepared
+// (src/beans/prepare.ts), read at the reader's line size, plain and inverted, and turned when it
+// reads as nothing upright (spec 3.14, Z2). The guess only fills empty fields; the lines read are
+// offered as chips, and the user corrects it.
 import type { CatalogueBean } from '../api';
 
 /** A line Tesseract read: its text, its height and box in pixels and its confidence (0 to 100). */
@@ -194,8 +196,135 @@ export function bagText(lines: readonly OcrLine[], catalogue: readonly KnownBean
   return { name: bean?.name ?? (name ? readable(name.text) : ''), roaster: roasterText };
 }
 
+/** One read of the photo: turned clockwise by `degrees`, scaled to `long` pixels on its long side, maybe inverted. */
+export interface PassPlan {
+  degrees: 0 | 90 | 270;
+  long: number;
+  invert: boolean;
+}
+
+/** A pass and the lines it read. */
+export interface Pass extends PassPlan {
+  lines: OcrLine[];
+}
+
+/** Draws the photo as the plan says, prepares it and reads its lines. */
+export type Recognize = (plan: PassPlan) => Promise<OcrLine[]>;
+
+/** The long side of the first read, which measures the print's lines. */
+export const MEASURE_LONG = 1200;
+/** The longest side a photo is read at. */
+export const LONG_MAX = 2800;
+/** The reader's line height, in pixels: a read whose lines are of this size is kept as it is. */
+const LINE_RANGE = { min: 30, max: 50 };
+/** The line height a read at another scale aims at. */
+const LINE_TARGET = 36;
+/** The long sides a read is scaled to: steps of 200 pixels from 800 to `LONG_MAX`. */
+const LONG_STEP = 200;
+const LONG_MIN = 800;
+/** At most so many lines are offered as chips. */
+const CHIPS = 6;
+
+/** A line Tesseract is sure of that reads as words: what a pass is judged and measured by. */
+function sure(line: OcrLine): boolean {
+  return line.confidence >= MIN_NAME_CONFIDENCE && wordy(cleanLine(line.text));
+}
+
+const letters = (text: string) => (text.match(/\p{L}/gu) ?? []).length;
+
+/** How much a pass read: the letters of its word-like lines at confidence 60 or more. */
+export function passScore(lines: readonly OcrLine[]): number {
+  return lines.filter(sure).reduce((sum, line) => sum + letters(cleanLine(line.text)), 0);
+}
+
+/** The median height of a read's sure lines, 0 for none. */
+export function lineHeight(lines: readonly OcrLine[]): number {
+  const heights = lines
+    .filter(sure)
+    .map((line) => line.height)
+    .sort((a, b) => a - b);
+  if (!heights.length) return 0;
+  const middle = heights.length >> 1;
+  return heights.length % 2 ? heights[middle] : (heights[middle - 1] + heights[middle]) / 2;
+}
+
+/**
+ * The long side to read at after the measuring read at `measured` pixels: the same when its lines
+ * are 30 to 50 pixels high or when it read no sure line, else the one that makes them about 36,
+ * in steps of 200 pixels from 800 to 2800.
+ */
+export function longSide(measured: number, lines: readonly OcrLine[]): number {
+  const height = lineHeight(lines);
+  if (!height || (height >= LINE_RANGE.min && height <= LINE_RANGE.max)) return measured;
+  const long = Math.round((measured * LINE_TARGET) / height / LONG_STEP) * LONG_STEP;
+  return Math.min(LONG_MAX, Math.max(LONG_MIN, long));
+}
+
+/** The words of the progress line for a pass. */
+export function passWords(plan: PassPlan): string {
+  if (plan.degrees) return 'Turning the photo';
+  return plan.invert ? 'Reading the bag inverted' : 'Reading the bag';
+}
+
+/**
+ * Reads the photo at one turn: a measuring read at 1200 pixels, again at the long side that brings
+ * the lines to the reader's size if they are not, and inverted at that size; the pass that read more
+ * is kept, the plain one when both read as much.
+ */
+async function readTurn(recognize: Recognize, degrees: PassPlan['degrees'], passes: Pass[]): Promise<Pass> {
+  const read = async (plan: PassPlan) => {
+    const pass = { ...plan, lines: await recognize(plan) };
+    passes.push(pass);
+    return pass;
+  };
+  const measuring = await read({ degrees, long: MEASURE_LONG, invert: false });
+  const long = longSide(MEASURE_LONG, measuring.lines);
+  const plain = long === MEASURE_LONG ? measuring : await read({ degrees, long, invert: false });
+  const inverted = await read({ degrees, long, invert: true });
+  return passScore(inverted.lines) > passScore(plain.lines) ? inverted : plain;
+}
+
+/** Whether a reading gives a name or a roaster of the catalogue: then the photo is not turned. */
+function found(lines: readonly OcrLine[], catalogue: readonly KnownBean[]): boolean {
+  const text = bagText(lines, catalogue);
+  return text.name !== '' || (text.roaster !== '' && catalogue.some((bean) => key(bean.roaster) === key(text.roaster)));
+}
+
+/**
+ * Reads the photo (spec 3.14, Z2): upright, and when that gives no roaster of the catalogue and no
+ * name, turned clockwise by 90 and by 270 degrees; the turn whose pass read the most is kept,
+ * upright when none read more. `passes` holds every pass in the order read.
+ */
+export async function readPasses(recognize: Recognize, catalogue: readonly KnownBean[]): Promise<{ kept: Pass; passes: Pass[] }> {
+  const passes: Pass[] = [];
+  let kept = await readTurn(recognize, 0, passes);
+  if (found(kept.lines, catalogue)) return { kept, passes };
+  for (const degrees of [90, 270] as const) {
+    const turned = await readTurn(recognize, degrees, passes);
+    if (passScore(turned.lines) > passScore(kept.lines)) kept = turned;
+  }
+  return { kept, passes };
+}
+
+/**
+ * The chips: up to six of the lines read, cleaned and as a field gets them, in the bag's order
+ * from the top; of more, the six tallest.
+ */
+export function chipLines(lines: readonly OcrLine[]): string[] {
+  const kept = lines
+    .map((line) => ({ ...line, text: cleanLine(line.text) }))
+    .filter((line) => line.confidence >= MIN_CONFIDENCE && wordy(line.text) && !/\d{2,}/.test(line.text));
+  const tallest = new Set([...kept].sort((a, b) => b.height - a.height).slice(0, CHIPS));
+  const texts = kept
+    .filter((line) => tallest.has(line))
+    .sort((a, b) => a.box.y0 - b.box.y0)
+    .map((line) => readable(line.text));
+  return [...new Set(texts)];
+}
+
 /** What the reading does now, for the progress line. */
 export interface OcrProgress {
+  /** the progress line's words */
   status: string;
   /** 0 to 1 */
   progress: number;
@@ -212,61 +341,4 @@ const STATUS_WORDS: Record<string, string> = {
 /** The progress line's words for one of Tesseract's statuses. */
 export function statusText(status: string): string {
   return STATUS_WORDS[status] ?? 'Reading the bag';
-}
-
-/** Where the reader's files are: the build's `ocr/`, beside index.html. */
-function ocrUrl(file: string): string {
-  return new URL(`./ocr/${file}`, document.baseURI).href;
-}
-
-/**
- * Reads the lines of a photo; the catalogue's beans help to read them. `signal` stops it: the
- * worker is ended and the promise rejects with an `AbortError`.
- */
-export async function readBag(
-  photo: string,
-  catalogue: readonly KnownBean[],
-  onprogress: (progress: OcrProgress) => void,
-  signal: AbortSignal,
-): Promise<BagText> {
-  const aborted = () => new DOMException('The reading was cancelled', 'AbortError');
-  if (signal.aborted) throw aborted();
-  // Tesseract.js reports a failed language load only to its error handler, and the worker's
-  // promise never settles: every step is raced against this one.
-  let fail: (error: unknown) => void = () => undefined;
-  const failed = new Promise<never>((_, reject) => (fail = reject));
-  failed.catch(() => undefined);
-  const abort = () => fail(aborted());
-  signal.addEventListener('abort', abort, { once: true });
-  const { createWorker, OEM, PSM } = await import('tesseract.js');
-  const creating = createWorker('eng', OEM.LSTM_ONLY, {
-    workerPath: ocrUrl('worker.min.js'),
-    corePath: ocrUrl(''),
-    langPath: ocrUrl(''),
-    workerBlobURL: false,
-    cacheMethod: 'none',
-    gzip: true,
-    errorHandler: (error: unknown) => fail(new Error(typeof error === 'string' ? error : 'the reader failed')),
-    logger: (message: { status: string; progress: number }) => onprogress({ status: message.status, progress: message.progress }),
-  });
-  try {
-    const worker = await Promise.race([creating, failed]);
-    await Promise.race([worker.setParameters({ tessedit_pageseg_mode: PSM.SPARSE_TEXT, debug_file: '/dev/null' }), failed]);
-    const { data } = await Promise.race([worker.recognize(photo, {}, { blocks: true }), failed]);
-    const lines: OcrLine[] = (data.blocks ?? []).flatMap((block) =>
-      block.paragraphs.flatMap((paragraph) =>
-        paragraph.lines.map((line) => ({
-          text: line.text,
-          height: line.bbox.y1 - line.bbox.y0,
-          confidence: line.confidence,
-          box: line.bbox,
-        })),
-      ),
-    );
-    return bagText(lines, catalogue);
-  } finally {
-    signal.removeEventListener('abort', abort);
-    // a worker still loading is ended when it is ready
-    void creating.then((worker) => worker.terminate()).catch(() => undefined);
-  }
 }

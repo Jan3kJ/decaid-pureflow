@@ -2118,6 +2118,28 @@ words or spaced dashes between them; 'honey' is no longer a detail word, so that
 be a name; a known bean of the roaster wins at the confidence of any kept line (50), a name read
 otherwise needs 60; the beans screen passes the catalogue's beans to the form for the reading.
 
+*Built (Z2, 2026-10-25):* the reading takes the **camera's picture** (at most 2800 px on its long
+side), not the stored 1024-px photo: on the stored one the small 'aniko' logo of Feel The Sun is not
+read at any scale. `src/beans/prepare.ts` draws it turned and scaled on a canvas and makes it grey
+with the contrast stretched (1st to 99th percentile), inverted for the second pass. **The scale**: a
+first read at 1200 px on the long side measures the median height of its sure lines (word-like,
+confidence 60+); when that is 30 to 50 px the read is kept at that size, else the photo is read again
+at the long side that makes them about 36 px, in steps of 200 px from 800 to 2800. Then the inverted
+pass at that size; the pass with more letters in sure word-like lines is kept, the plain one on a
+tie. **Turning**: when the upright reading gives no roaster of the catalogue and no name, the same is
+done turned clockwise by 90 and by 270 degrees, and the turn that read more letters is kept, upright
+when none did. The progress line says 'Reading the bag', 'Reading the bag inverted' and 'Turning the
+photo'. **The chips**: the kept pass's lines that pass the noise test (confidence 50+, word-like, no
+number of two digits), cleaned and in title case where printed in capitals, the six tallest of more,
+in order from the top, under the photo; a tap puts one into the name or the roaster, whichever had
+the focus last (the name before any), and the hint says which. No line and no guess: 'Nothing could
+be read from this photo.'. `scripts/ocr-probe.mjs` now runs the skin's `readPasses` with the canvas
+functions of `prepare.ts` in Chromium and `preparePixels` in Node, and records every pass in
+`ocr-bags.json`; `ocr.test.ts` replays them through `readPasses`. The four photos give maldaner /
+Elisabeth (1200 px), maldaner / Abdul (1200 px), aniko / Feel The Sun (2800 px) and, turned by 270
+degrees clockwise (90 the other way) at 2400 px, aniko / **Honey**: 'Dream' is read at no size
+(at most 'eam' or 'cam'), so the name is one chip tap and some typing short.
+
 ### 3.15 The cut, in steps, and a release script (2026-10-24)
 
 The founder created the two GitHub repositories and named them: **`Jan3kJ/decaid-pureflow`**

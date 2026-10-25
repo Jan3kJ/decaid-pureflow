@@ -1,115 +1,156 @@
-// Reads a bag's photo the way the skin does (src/beans/ocr.ts: Tesseract.js, the bundled English
-// data, OEM.LSTM_ONLY, PSM.SPARSE_TEXT) and prints every line with its text, height, confidence
-// and box, so that the rules of `bagText` are tuned on real output. A dev script: it is not in
-// the build or the ZIP.
+// Reads a bag's photo the way the skin does (src/beans/ocr.ts, src/beans/prepare.ts) and prints
+// every pass with the time it took and its lines (text, height, confidence, box), then the kept
+// pass, the name and roaster it gives and the chips, so that the rules are tuned on real output.
+// A dev script: it is not in the build or the ZIP.
 //
-//   node scripts/ocr-probe.mjs <photo> [--rotate 90|270] [--scale <factor>] [--prepare] [--invert] [--json]
+//   node scripts/ocr-probe.mjs <photo> [--pass <degrees>,<long>[,invert]] [--json]
 //
-// --rotate turns the photo clockwise before it is read, --scale scales it, --prepare makes it grey with its
-// contrast stretched, --invert turns light on dark into dark on light. These are done here only,
-// on a canvas of Playwright's Chromium (a dev dependency), not by the skin.
-// --json prints the photo's file name, the options and the lines as one entry of the fixture
-// `src/beans/ocr-bags.json`.
+// The skin's own code does the work: `readPasses` decides which passes are read, the source of
+// `readingCanvas` and `turnedCanvas` draws the photo on a canvas of Playwright's Chromium (a dev
+// dependency), `preparePixels` makes its pixels grey, stretched and inverted here in Node, and
+// Tesseract.js reads them with the skin's options and the bundled English data. The photo is read
+// as the camera's picture is: at most 2800 pixels on its long side. The catalogue is the founder's
+// roasters (spec 3.14).
+// --pass reads one pass only: turned clockwise by 0, 90 or 270 degrees, at a long side, inverted.
+// --json prints the photo's file name and every pass as one entry of the fixture
+// `src/beans/ocr-bags.json`, which ocr.test.ts replays.
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { basename, dirname, join } from 'node:path';
+import { deflateSync } from 'node:zlib';
 import { chromium } from '@playwright/test';
 import { createWorker, OEM, PSM } from 'tesseract.js';
+import { bagText, chipLines, LONG_MAX, passScore, readPasses } from '../src/beans/ocr.ts';
+import { preparePixels, readingCanvas, turnedCanvas } from '../src/beans/prepare.ts';
+
+const ROASTERS = ['aniko', 'hopplo', 'dak', 'seekind', 'kaffeekommune', 'maldaner', 'kaffeesack'];
+const CATALOGUE = ROASTERS.map((roaster) => ({ roaster, name: '', country: null }));
 
 const args = process.argv.slice(2);
-const flags = new Set(args.filter((arg) => arg.startsWith('--')));
-const valueOf = (flag, fallback) => (args.includes(flag) ? Number(args[args.indexOf(flag) + 1]) : fallback);
-const degrees = valueOf('--rotate', 0);
-const scale = valueOf('--scale', 1);
-const values = new Set(['--rotate', '--scale'].map((flag) => args.indexOf(flag) + 1).filter((index) => index > 0));
-const photo = args.find((arg, index) => !arg.startsWith('--') && !values.has(index));
-if (!photo || ![0, 90, 270].includes(degrees) || !(scale > 0)) {
-  console.error('usage: node scripts/ocr-probe.mjs <photo> [--rotate 90|270] [--scale <factor>] [--prepare] [--invert] [--json]');
+const json = args.includes('--json');
+const passArg = args.includes('--pass') ? args[args.indexOf('--pass') + 1] : null;
+const photo = args.find((arg, index) => !arg.startsWith('--') && args[index - 1] !== '--pass');
+const [passDegrees, passLong, passInvert] = (passArg ?? '').split(',');
+const single = passArg ? { degrees: Number(passDegrees), long: Number(passLong), invert: passInvert === 'invert' } : null;
+if (!photo || (single && (![0, 90, 270].includes(single.degrees) || !(single.long > 0)))) {
+  console.error('usage: node scripts/ocr-probe.mjs <photo> [--pass <degrees>,<long>[,invert]] [--json]');
   process.exit(2);
 }
 
-/** The photo turned, greyed, stretched or inverted on a canvas, as a PNG. */
-async function canvasPhoto(file, options) {
-  const browser = await chromium.launch();
-  try {
-    const page = await browser.newPage();
-    const dataUrl = `data:image/jpeg;base64,${readFileSync(file).toString('base64')}`;
-    const png = await page.evaluate(
-      async ({ dataUrl, degrees, scale, prepare, invert }) => {
-        const image = new Image();
-        image.src = dataUrl;
-        await image.decode();
-        const turned = degrees % 180 !== 0;
-        const canvas = document.createElement('canvas');
-        const width = Math.round(image.width * scale);
-        const height = Math.round(image.height * scale);
-        canvas.width = turned ? height : width;
-        canvas.height = turned ? width : height;
-        const context = canvas.getContext('2d');
-        context.translate(canvas.width / 2, canvas.height / 2);
-        context.rotate((degrees * Math.PI) / 180);
-        context.drawImage(image, -width / 2, -height / 2, width, height);
-        if (prepare || invert) {
-          const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
-          const data = pixels.data;
-          const grey = new Uint8Array(data.length / 4);
-          for (let i = 0; i < grey.length; i++)
-            grey[i] = Math.round(0.299 * data[i * 4] + 0.587 * data[i * 4 + 1] + 0.114 * data[i * 4 + 2]);
-          let low = 0;
-          let high = 255;
-          if (prepare) {
-            const sorted = Uint8Array.from(grey).sort();
-            low = sorted[Math.floor(sorted.length * 0.01)];
-            high = Math.max(low + 1, sorted[Math.floor(sorted.length * 0.99)]);
-          }
-          for (let i = 0; i < grey.length; i++) {
-            let value = prepare ? Math.min(255, Math.max(0, ((grey[i] - low) * 255) / (high - low))) : grey[i];
-            if (invert) value = 255 - value;
-            data[i * 4] = data[i * 4 + 1] = data[i * 4 + 2] = value;
-          }
-          context.putImageData(pixels, 0, 0);
-        }
-        return canvas.toDataURL('image/png');
-      },
-      { dataUrl, degrees, scale, ...options },
-    );
-    return Buffer.from(png.slice(png.indexOf(',') + 1), 'base64');
-  } finally {
-    await browser.close();
-  }
+/** A grey PNG of prepared RGBA pixels (R = G = B), as the skin's canvas gives Tesseract. */
+function greyPng(rgba, width, height) {
+  const table = Array.from({ length: 256 }, (_, n) => {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    return c >>> 0;
+  });
+  const crc = (bytes) => {
+    let c = ~0;
+    for (const byte of bytes) c = table[(c ^ byte) & 255] ^ (c >>> 8);
+    return ~c >>> 0;
+  };
+  const chunk = (type, data) => {
+    const body = Buffer.concat([Buffer.from(type), data]);
+    const length = Buffer.alloc(4);
+    length.writeUInt32BE(data.length);
+    const check = Buffer.alloc(4);
+    check.writeUInt32BE(crc(body));
+    return Buffer.concat([length, body, check]);
+  };
+  const raw = Buffer.alloc((width + 1) * height);
+  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) raw[y * (width + 1) + 1 + x] = rgba[(y * width + x) * 4];
+  const header = Buffer.alloc(13);
+  header.writeUInt32BE(width, 0);
+  header.writeUInt32BE(height, 4);
+  header[8] = 8; // 8 bits, grey
+  return Buffer.concat([
+    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+    chunk('IHDR', header),
+    chunk('IDAT', deflateSync(raw)),
+    chunk('IEND', Buffer.alloc(0)),
+  ]);
 }
 
-const prepare = flags.has('--prepare');
-const invert = flags.has('--invert');
-const input = degrees || scale !== 1 || prepare || invert ? await canvasPhoto(photo, { prepare, invert }) : photo;
-
+const browser = await chromium.launch();
 const require = createRequire(import.meta.url);
 const langPath = join(dirname(require.resolve('@tesseract.js-data/eng/package.json')), '4.0.0_best_int');
 const worker = await createWorker('eng', OEM.LSTM_ONLY, { langPath, gzip: true, cacheMethod: 'none' });
 try {
   await worker.setParameters({ tessedit_pageseg_mode: PSM.SPARSE_TEXT, debug_file: '/dev/null' });
-  const { data } = await worker.recognize(input, {}, { blocks: true });
-  const lines = (data.blocks ?? []).flatMap((block) =>
-    block.paragraphs.flatMap((paragraph) =>
-      paragraph.lines.map((line) => ({
-        text: line.text.trim(),
-        height: line.bbox.y1 - line.bbox.y0,
-        confidence: Math.round(line.confidence),
-        box: { x0: line.bbox.x0, y0: line.bbox.y0, x1: line.bbox.x1, y1: line.bbox.y1 },
-      })),
-    ),
+  const page = await browser.newPage();
+  const dataUrl = `data:image/jpeg;base64,${readFileSync(photo).toString('base64')}`;
+  await page.evaluate(
+    async ({ dataUrl, source, longMax }) => {
+      const image = new Image();
+      image.src = dataUrl;
+      await image.decode();
+      const draw = new Function(`return ${source}`)();
+      window.readingSource = draw(image, image.width, image.height, longMax);
+    },
+    { dataUrl, source: readingCanvas.toString(), longMax: LONG_MAX },
   );
-  if (flags.has('--json')) {
-    const recipe = args.filter((arg) => arg !== photo && arg !== '--json').join(' ');
-    console.log(JSON.stringify({ photo: basename(photo), recipe, lines }));
-  } else {
+
+  const times = [];
+  /** The skin's pass: the photo drawn in Chromium, prepared in Node, read by Tesseract. */
+  const recognize = async (plan) => {
+    const started = performance.now();
+    const drawn = await page.evaluate(
+      ({ plan, source }) => {
+        const turn = new Function(`return ${source}`)();
+        const canvas = turn(window.readingSource, plan.degrees, plan.long);
+        const data = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
+        let binary = '';
+        for (let i = 0; i < data.length; i += 0x8000) binary += String.fromCharCode(...data.subarray(i, i + 0x8000));
+        return { width: canvas.width, height: canvas.height, pixels: btoa(binary) };
+      },
+      { plan, source: turnedCanvas.toString() },
+    );
+    const rgba = new Uint8ClampedArray(Buffer.from(drawn.pixels, 'base64'));
+    preparePixels(rgba, plan.invert);
+    const { data } = await worker.recognize(greyPng(rgba, drawn.width, drawn.height), {}, { blocks: true });
+    times.push(Math.round(performance.now() - started));
+    return (data.blocks ?? []).flatMap((block) =>
+      block.paragraphs.flatMap((paragraph) =>
+        paragraph.lines.map((line) => ({
+          text: line.text,
+          height: line.bbox.y1 - line.bbox.y0,
+          confidence: line.confidence,
+          box: { x0: line.bbox.x0, y0: line.bbox.y0, x1: line.bbox.x1, y1: line.bbox.y1 },
+        })),
+      ),
+    );
+  };
+
+  const show = (lines) => {
     for (const line of lines) {
       const { x0, y0, x1, y1 } = line.box;
       console.log(
-        `${String(line.height).padStart(4)} px  ${String(line.confidence).padStart(3)}%  [${x0},${y0} ${x1},${y1}]  ${JSON.stringify(line.text)}`,
+        `  ${String(line.height).padStart(4)} px  ${String(Math.round(line.confidence)).padStart(3)}%  [${x0},${y0} ${x1},${y1}]  ${JSON.stringify(line.text.trim())}`,
       );
+    }
+  };
+  const name = (plan) => `${plan.degrees} deg, ${plan.long} px${plan.invert ? ', inverted' : ''}`;
+
+  if (single) {
+    const lines = await recognize(single);
+    console.log(`${name(single)}: ${times[0]} ms, score ${passScore(lines)}`);
+    show(lines);
+  } else {
+    const { kept, passes } = await readPasses(recognize, CATALOGUE);
+    if (json) {
+      console.log(JSON.stringify({ photo: basename(photo), passes }));
+    } else {
+      passes.forEach((pass, index) => {
+        console.log(`${name(pass)}: ${times[index]} ms, score ${passScore(pass.lines)}`);
+        show(pass.lines);
+      });
+      const total = times.reduce((sum, time) => sum + time, 0);
+      console.log(`kept: ${name(kept)}; ${passes.length} passes, ${total} ms`);
+      console.log(`guess: ${JSON.stringify(bagText(kept.lines, CATALOGUE))}`);
+      console.log(`chips: ${JSON.stringify(chipLines(kept.lines))}`);
     }
   }
 } finally {
   await worker.terminate();
+  await browser.close();
 }

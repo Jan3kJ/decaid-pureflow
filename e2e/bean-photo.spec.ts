@@ -100,6 +100,8 @@ test('a photo from the live camera is shown in the form, stored with the bean, r
 
   // The fake camera's picture holds no print: the reading ends with the fields as they were.
   await expect(page.getByTestId('bean-ocr')).toHaveCount(0, { timeout: READING });
+  await expect(page.getByTestId('bean-ocr-note')).toHaveText('Nothing could be read from this photo.');
+  await expect(page.getByTestId('bean-ocr-chips')).toHaveCount(0);
   await expect(page.getByTestId('bean-name')).toHaveValue('');
   await expect(page.getByTestId('bean-roaster')).toHaveValue('');
 
@@ -158,6 +160,19 @@ test('the photo of a printed bag pre-fills the empty name, leaves the typed roas
   await page.getByTestId('camera-capture').click();
   await expect(page.getByTestId('bean-roaster')).toHaveValue('Square Mile Coffee Roasters', { timeout: READING });
   await expect(page.getByTestId('bean-name')).toHaveValue('Red Brick');
+  // the lines read are chips under the photo; one tap puts a chip into the field that had the focus
+  const chips = page.getByTestId('bean-ocr-chip');
+  await expect(chips.first()).toHaveText('Square Mile Coffee Roasters');
+  await expect(chips.filter({ hasText: 'Red Brick' })).toHaveCount(1);
+  expect(await chips.count()).toBeLessThanOrEqual(6);
+  await page.getByTestId('bean-name').fill('typo');
+  await chips.filter({ hasText: 'Red Brick' }).click();
+  await expect(page.getByTestId('bean-name')).toHaveValue('Red Brick');
+  await expect(page.getByTestId('bean-name')).toBeFocused();
+  await page.getByTestId('bean-roaster').focus();
+  await expect(page.getByTestId('bean-ocr-hint')).toHaveText('Tap a line to put it into the roaster.');
+  await chips.first().click();
+  await expect(page.getByTestId('bean-roaster')).toHaveValue('Square Mile Coffee Roasters');
   await page.getByTestId('bean-roaster').fill('Square Mile');
   await page.getByTestId('bean-save').click();
   await expect(page.getByTestId('bean-row')).toContainText('Square Mile · Red Brick');
@@ -197,4 +212,54 @@ test('without getUserMedia the file input stands in; a cancelled or failed readi
   // the browser's own line for the refused file
   const refused = errors.filter((error) => !/404/.test(error));
   errors.splice(0, errors.length, ...refused);
+});
+
+test("the founder's turned bag is read turned: aniko and Honey, the progress line says so, the lines are chips", async ({ page }) => {
+  // the camera's picture of docs/product/bags/ as the file input gives it; a bean of aniko in the catalogue
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'mediaDevices', { value: undefined });
+  });
+  const turnedBag = readFileSync(new URL('../docs/product/bags/aniko-honey-dream-rotated.jpg', import.meta.url));
+  await openBeans(page);
+  gateway.beans.push({
+    id: 'aniko-1',
+    name: 'Tropic Candy',
+    roaster: 'aniko',
+    decaf: false,
+    archived: false,
+    createdAt: '2026-10-01T08:00:00.000Z',
+    updatedAt: '2026-10-01T08:00:00.000Z',
+  });
+  await page.reload();
+  await expect(page.getByTestId('bean-row')).toHaveCount(1);
+  await page.getByTestId('beans-add').click();
+  // every word the progress line shows
+  await page.evaluate(() => {
+    const seen: string[] = [];
+    Object.assign(window, { ocrWords: seen });
+    new MutationObserver(() => {
+      const words = document.querySelector('[data-testid="bean-ocr-status"]')?.textContent?.replace(/\s*\d+%$/, '');
+      if (words && seen.at(-1) !== words) seen.push(words);
+    }).observe(document.body, { subtree: true, childList: true, characterData: true });
+  });
+  await page.getByTestId('bean-photo-take').click();
+  await page.getByTestId('camera-file').setInputFiles({ name: 'bag.jpg', mimeType: 'image/jpeg', buffer: turnedBag });
+  await expect(page.getByTestId('bean-roaster')).toHaveValue('aniko', { timeout: 120_000 });
+  // 'Dream' is lost under the print's blue cloud at every size the reader tries
+  await expect(page.getByTestId('bean-name')).toHaveValue('Honey');
+  const words = await page.evaluate(() => (window as unknown as { ocrWords: string[] }).ocrWords);
+  expect(words).toContain('Reading the bag');
+  expect(words).toContain('Reading the bag inverted');
+  expect(words).toContain('Turning the photo');
+  // the turned pass's lines, the same as scripts/ocr-probe.mjs recorded (src/beans/ocr-bags.json)
+  const chips = page.getByTestId('bean-ocr-chip');
+  await expect(chips).toHaveText(['aniko', 'Coffee Roasters', 'Honey', 'mandel', 'honigmelone', 'pfirsich']);
+  await page.screenshot({ path: 'docs/product/bean-chips.png' });
+  await page.getByTestId('bean-name').focus();
+  await chips.filter({ hasText: 'honigmelone' }).click();
+  await expect(page.getByTestId('bean-name')).toHaveValue('honigmelone');
+  await expect(page.getByTestId('bean-roaster')).toHaveValue('aniko');
+  // a removed photo takes its chips with it
+  await page.getByTestId('bean-photo-remove').click();
+  await expect(page.getByTestId('bean-ocr-chips')).toHaveCount(0);
 });

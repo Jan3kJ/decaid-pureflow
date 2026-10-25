@@ -3,13 +3,17 @@
   // current bag's roast date and notes. A new bean gets its first bag with it; an edit sends
   // only what changed. Archive, restore and a new bag are the screen's (it asks first).
   // A photo of the bag (spec 3.9 item 20) is taken with the live camera; reading it pre-fills
-  // an empty name and roaster, which the user corrects. It is stored when the bean is saved.
+  // an empty name and roaster, which the user corrects; the lines it read are chips under the
+  // photo, and a tap on one puts it into the name or the roaster, whichever had the focus last.
+  // It is stored when the bean is saved.
   import { onDestroy, onMount } from 'svelte';
   import type { BeanBatch, CatalogueBean } from '../api';
   import DatePicker from '../shell/DatePicker.svelte';
   import Camera from './Camera.svelte';
   import { beanForm, beanTitle, dateOf, validBean, type BeanForm } from './catalogue';
-  import { readBag, statusText, type KnownBean, type OcrProgress } from './ocr';
+  import type { KnownBean, OcrProgress } from './ocr';
+  import type { Capture } from './photo';
+  import { readBag } from './read';
 
   interface Props {
     /** null: a new bean */
@@ -45,6 +49,12 @@
   /** the reading of the photo, while it runs */
   let reading: OcrProgress | null = $state(null);
   let readNote: string | null = $state(null);
+  /** the lines the reading gave, offered for the fields */
+  let chips: string[] = $state([]);
+  /** the field a chip goes into: the one that had the focus last */
+  let target: 'name' | 'roaster' = $state('name');
+  let nameInput: HTMLInputElement | undefined = $state();
+  let roasterInput: HTMLInputElement | undefined = $state();
   let stopReading: AbortController | null = null;
 
   onMount(() => {
@@ -58,24 +68,26 @@
 
   onDestroy(() => stopReading?.abort());
 
-  function captured(next: string) {
+  function captured(capture: Capture) {
     shooting = false;
-    photo = next;
-    if (!form.name.trim() || !form.roaster.trim()) void read(next);
+    photo = capture.photo;
+    chips = [];
+    if (!form.name.trim() || !form.roaster.trim()) void read(capture.source);
   }
 
-  async function read(image: string) {
+  async function read(source: HTMLCanvasElement) {
     stopReading?.abort();
     const controller = new AbortController();
     stopReading = controller;
     readNote = null;
-    reading = { status: 'loading tesseract core', progress: 0 };
+    reading = { status: 'Loading the reader', progress: 0 };
     try {
-      const found = await readBag(image, known, (progress) => !controller.signal.aborted && (reading = progress), controller.signal);
+      const found = await readBag(source, known, (progress) => !controller.signal.aborted && (reading = progress), controller.signal);
       // only empty fields: what the user typed meanwhile stays
       if (!form.name.trim() && found.name) form.name = found.name;
       if (!form.roaster.trim() && found.roaster) form.roaster = found.roaster;
-      readNote = found.name || found.roaster ? null : 'No name or roaster was read from the photo.';
+      chips = found.chips;
+      if (!found.chips.length && !found.name && !found.roaster) readNote = 'Nothing could be read from this photo.';
     } catch (error) {
       if (!controller.signal.aborted)
         readNote = `The photo was not read${error instanceof Error && error.message ? `: ${error.message}` : ''}.`;
@@ -85,6 +97,17 @@
         reading = null;
       }
     }
+  }
+
+  function useChip(text: string) {
+    form[target] = text;
+    (target === 'name' ? nameInput : roasterInput)?.focus();
+  }
+
+  function removePhoto() {
+    photo = null;
+    chips = [];
+    readNote = null;
   }
 
   function cancelReading() {
@@ -121,29 +144,56 @@
           {photo ? 'New photo' : 'Photo'}
         </button>
         {#if photo}
-          <button type="button" data-testid="bean-photo-remove" disabled={busy} onclick={() => (photo = null)}>Remove photo</button>
+          <button type="button" data-testid="bean-photo-remove" disabled={busy} onclick={removePhoto}>Remove photo</button>
         {/if}
       </div>
       {#if reading}
         <div class="reading" role="status" data-testid="bean-ocr">
-          <span data-testid="bean-ocr-status">{statusText(reading.status)} {Math.round(reading.progress * 100)}%</span>
+          <span data-testid="bean-ocr-status">{reading.status} {Math.round(reading.progress * 100)}%</span>
           <button type="button" class="small" data-testid="bean-ocr-cancel" onclick={cancelReading}>Cancel</button>
         </div>
       {:else if readNote}
         <p class="hint" data-testid="bean-ocr-note">{readNote}</p>
+      {:else if chips.length}
+        <p class="hint" data-testid="bean-ocr-hint">Tap a line to put it into the {target}.</p>
       {:else if !photo}
         <p class="hint">A photo of the bag fills an empty name and roaster from its print.</p>
       {/if}
     </div>
   </div>
+  {#if chips.length && photo}
+    <div class="chips" data-testid="bean-ocr-chips">
+      {#each chips as chip (chip)}
+        <!-- a press keeps the focus in the field the chip goes into -->
+        <button
+          type="button"
+          class="chip"
+          data-testid="bean-ocr-chip"
+          onpointerdown={(event) => event.preventDefault()}
+          onmousedown={(event) => event.preventDefault()}
+          onclick={() => useChip(chip)}>{chip}</button
+        >
+      {/each}
+    </div>
+  {/if}
   <label class:missing={!form.name.trim()}>
     <span>name</span>
-    <input bind:value={form.name} autocomplete="off" spellcheck="false" enterkeyhint="next" data-testid="bean-name" />
+    <input
+      bind:this={nameInput}
+      bind:value={form.name}
+      onfocus={() => (target = 'name')}
+      autocomplete="off"
+      spellcheck="false"
+      enterkeyhint="next"
+      data-testid="bean-name"
+    />
   </label>
   <label class:missing={!form.roaster.trim()}>
     <span>roaster</span>
     <input
+      bind:this={roasterInput}
       bind:value={form.roaster}
+      onfocus={() => (target = 'roaster')}
       list="bean-roasters"
       autocomplete="off"
       spellcheck="false"
@@ -317,6 +367,23 @@
   .reading {
     color: var(--dim);
     font-size: var(--text-label);
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .chip {
+    min-height: 2.8rem;
+    max-width: 100%;
+    padding: 0 1rem;
+    font-size: var(--text-label);
+    border-radius: 1.4rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .small {
