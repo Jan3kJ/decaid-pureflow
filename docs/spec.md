@@ -2494,7 +2494,9 @@ public release P6. Nothing is built. **The founder's answers of the same day:** 
 graph passes the swipe wherever it drags nothing (item 1); 'yes, show the target weight/volume in
 the ring during hot water pouring' (item 4, Z22); 'edit button loads too, that's okay' (item 6);
 and from his check of the Z5 line in install.md: the larger state word does not look right, it
-should have the size of the profile and the bean, or of the page's title 'Steam' (item 7, Z23).
+should have the size of the profile and the bean, or of the page's title 'Steam' (item 7, Z23). **Three more topics of the same day** (items 8 to 10, Z24, Z25): the adjust
+buttons change the running steam timer, the state word says 'Pouring' instead of 'Espresso', and
+home keeps the profile and bean buttons while a shot runs.
 
 **1. The swipe back works on the whole screen (Z17).** The skin's rule (3.14, `onControl` in
 `src/shell/swipe.ts`) lets a drag that starts on a control or on something that scrolls
@@ -2628,8 +2630,49 @@ computed sizes** of the state word, the page title and the names on home, steam 
 the state word and the page header leave 'title' and join 'name'; the type check (acceptance 95) gets
 the line 'the state word and the page header have the profile name's size and weight'.
 
+**8. The adjust buttons change the running steam timer (item 8; Z24).** Founder: 'during steaming
+the +/- buttons should change the current running timer; use case: I forgot to tick one of them
+and want to correct that on the fly'. Today (3.7) a tap on an adjust chip only selects it and
+writes nothing; the amount goes into the timer with 'set timer' or a chip's seconds, which is
+too late once steam runs. New, **while steam runs only**: a tap on a chip writes the steam timer
+at once, the machine's current timer **plus the change the tap makes to the selection**: none to
+chip i adds its amount, chip j to chip i adds the difference (amount i - amount j), the selected
+chip tapped again takes its amount off. So the selection and the timer stay in step: forgetting
+'+5 s', then tapping it at 12 s left, gives 17 s left; tapping '-4 s' instead of '+5 s' moves
+the timer by -9 s. The write is the one 'set timer' makes (`setSteamTimer`, held within 1 to
+255 s); the countdown, 'steam left', follows because it is the timer minus the run's time. A
+timer set at or under the time already run ends the steam at the machine; that is the use of a
+negative chip and is not guarded. 'Set timer' keeps its meaning (the calculated timer, with
+the selected amount), also while steam runs. When steam ends the selection is cleared, as now.
+**First step: find out what the machine does with a timer written mid-steam.** Decaid takes
+`steamSettings.duration` from the workflow and the DE1's own settings (`applySteamTimer`); if the
+running steam does not take the new value until the next one, the rig and the machine show it,
+and the founder is told before anything is built on it (then the chips would only change the
+countdown the skin draws, which is not planned: it would lie). Tests: `steam-control` unit test
+of the three selection changes against a running and a finished steam (a finished one writes
+nothing); e2e on the mock gateway: a tap while steaming changes the written duration and
+'steam left'.
+
+**9. The state says 'Pouring' (item 9; Z25).** Founder: 'the state on home shows Espresso during
+a shot; change that to Pouring; you can make filter coffee with the machine'. `STATE_LABEL` in
+`src/shell/machine.ts` says 'Espresso' for the machine state `espresso`; it says **'Pouring'**. The
+state is the same one that selects the shot screen and the phases, only the word changes; no
+other place shows the word (the history and the profile names are the user's own). The tests
+and the e2e that expect 'Espresso' expect 'Pouring'.
+
+**10. Home keeps the profile and bean buttons while a shot runs (item 10; Z25).** Today
+`ShotView.svelte` draws `NextShot` (the profile name with its pen, the bean and grinder button)
+only when no shot runs, so the column's values jump up when a shot starts. New: **they stay**,
+at the same place, for the whole shot. While a shot runs they are **shown but off** (dimmed,
+not tappable): changing the profile or the bean in the middle of a shot would change what is
+saved with it, and the load button already refuses while busy (3.16). They are live again when
+the shot ends. The stop button stays at the column's bottom; the column must hold all of it at
+the 1280 x 800 tablet size. Test: on the mock gateway the top of the time, weight and stop in
+the column is the same before, during and after a shot, and the two buttons exist and are
+disabled during it.
+
 **The order.** Z17 first (the others touch the same pages), Z18 and Z19 independent, Z20 after Z17
-(the swipe's meaning), Z21 after Z20 (the same panel and file), Z22 and Z23 independent (the ring, the header), then the local release H6 with
+(the swipe's meaning), Z21 after Z20 (the same panel and file), Z22, Z23, Z24 and Z25 independent (the ring, the header, the steam chips, the home column), then the local release H6 with
 `npm run release -- --local` (3.15), the founder's check on the tablet, and the public release
 P6 resumes that release (`--resume`), so the public skin has no OCR to credit and no half-working
 swipes.
@@ -3197,6 +3240,15 @@ Where an item here and one of 27-55 disagree, the item here wins (3.10 overrides
 122. **The state word and the page header (test, Z23).** The state word's and the page header's
      computed `font-size` and `font-weight` equal those of home's profile name; their values keep
      the value size; no new size or token is added; `npm run type-sizes` lists no text off the scale.
+123. **Steam chips mid-steam (test, Z24).** While steam runs a tap on an adjust chip writes the
+     steam timer by the change the tap makes to the selection (none to chip, chip to chip,
+     chip to none); 'steam left' follows; with no steam running a tap writes nothing, as in 3.7.
+     The answer of the rig and the machine to a timer written mid-steam is in the commit.
+124. **Pouring (test, Z25).** The state line says 'Pouring' while the machine is in the
+     state espresso, on the mock gateway and in the unit test of `stateLabel`.
+125. **The home column holds still (test, Z25).** The profile and bean buttons are in home's
+     right column before, during and after a shot, disabled during it; the time, the weight and
+     the stop button keep their place from the idle screen to the running one.
 
 ## 6. Constraints
 - **Budget:** one Claude Pro plan. This product may use all of it up to 90% of the weekly
@@ -3327,7 +3379,9 @@ The weeks are a capacity guess on one Pro plan.
 | 5 | Z21 | review 2026-10-25: `edit` and `load` side by side in the detail panel; edit loads the profile and opens its editor (3.17 item 6) | Z20 |
 | 5 | Z22 | review 2026-10-25: the hot water ring shows the target weight (scale) or volume (no scale) of the pour (3.17 item 4) | P2 |
 | 5 | Z23 | review 2026-10-25: the state word and the page header (Steam, Hot water) take the name role's size, 1.1 rem, no new size (3.17 item 7) | P2 |
-| 5 | H6 | review 2026-10-25: a local release for the tablet, `npm run release -- --local` (3.15), the founder's checks of 3.17 in install.md; the public release P6 resumes it | Z17-Z23, P7 |
+| 5 | Z24 | review 2026-10-25: while steam runs the adjust chips change the running timer (3.17 item 8) | P2 |
+| 5 | Z25 | review 2026-10-25: the state says Pouring, and home keeps the profile and bean buttons while a shot runs (3.17 items 9, 10) | P2 |
+| 5 | H6 | review 2026-10-25: a local release for the tablet, `npm run release -- --local` (3.15), the founder's checks of 3.17 in install.md; the public release P6 resumes it | Z17-Z25, P7 |
 | 5 | P6 | publish: the release 0.7.0: tag, GitHub release with the ZIP and its SHA-256, the URL install checked in Decaid, the founder's cold read and a new user's install (3.13 acceptance 84-87); pushing and announcing are the founder's | P3, P5, P7, H5, H6 |
 
 | 2 (Oct 19-25) | Q1 | code quality review 2026-10-19: Prettier and ESLint, the tree formatted in one commit (in `.git-blame-ignore-revs`), lint errors fixed, both in the check ([review-code-quality-10-19-26.md](review-code-quality-10-19-26.md), steps 1-3) | - |
