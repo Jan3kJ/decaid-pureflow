@@ -1896,7 +1896,7 @@ test that holds them**.
 | name | `--text-body`, weight 600 | the **names of things in a list or on a button**: a profile, a bean, a grinder, a step, a plugin, a setting's name; the **profile and the bean on home are the same size and weight** |
 | text | `--text-body` | running text, list details, button words |
 | value | `--text-value` | a number the user reads or sets (a chip's value, the state line's numbers, the right column's pressure, flow and temperature) |
-| title | `--text-title` | a page's or dialog's title (the state word moved to name in 3.17, Z23) |
+| title | `--text-title` | a dialog's or picker's title (the state word and the page header moved to name in 3.17, Z23) |
 | large, big | `--text-large`, `--text-big` | the timer, the shot's time and weight |
 
 The change is to **replace each literal by the role's token** (the nearest one: 0.9 and 0.95
@@ -2616,15 +2616,17 @@ size as profile and bean or title "steam" on steam page'. Today the state word i
 (`--text-title`, 1.6 rem, weight 600; `StateLine.svelte`), above the 1.1 rem of the profile and bean
 names (the **name** role); the page title on the steam and hot water pages is the title role too, so
 the two are already equal to each other and both larger than the names, which is not what the founder
-wants. The plan takes his first wish: **the state word becomes a name** (`--text-body`, weight 600),
-the size of the profile and the bean on home. Its values stay values. The page's title ('Steam',
-'Hot water') keeps the title role, unless the measurement below shows it differs from what he sees:
-the first step is to **list the computed sizes** of the state word, the page title and the names on
-home, steam and hot water with `npm run type-sizes`, and the founder is told what they are. The
-roles table (3.14) changes in two cells: the state word leaves 'title' and joins 'name'; the type
-check (acceptance 95) gets the line 'the state word has the profile name's size and weight'.
-**Open question:** should the page's title ('Steam') follow it down to the names' size, so the header
-has one size throughout? Not planned until he says.
+wants. His answer to the plan: 'less is more, don't introduce unnecessary font sizes; if the steam and
+hot water titles are 1.6 then put them to 1.1'. So **no new size**: the state word and the page title
+('Steam', 'Hot water', and every page header, `PageHeader.svelte`, one component) both take the **name**
+role (`--text-body` 1.1 rem, weight 600), the size of the profile and the bean on home. Their values
+stay values. Titles of dialogs and pickers (`--text-title` in the editor, settings, history, beans and
+date dialogs) are not pages' headers and are not touched; the title token stays for them and for the
+large values that use it (the steam page's readings, the chips). The first step is to **list the
+computed sizes** of the state word, the page title and the names on home, steam and hot water with
+`npm run type-sizes` and tell the founder what they were. The roles table (3.14) changes in two cells:
+the state word and the page header leave 'title' and join 'name'; the type check (acceptance 95) gets
+the line 'the state word and the page header have the profile name's size and weight'.
 
 **The order.** Z17 first (the others touch the same pages), Z18 and Z19 independent, Z20 after Z17
 (the swipe's meaning), Z21 after Z20 (the same panel and file), Z22 and Z23 independent (the ring, the header), then the local release H6 with
@@ -3192,9 +3194,9 @@ Where an item here and one of 27-55 disagree, the item here wins (3.10 overrides
      'target 50 ml' without one for a hot water run whose target is 50, nothing for a flush and
      nothing for a target of 0; the mock gateway's hot water ring shows the line inside its frame,
      the other values stay where they were.
-122. **The state word (test, Z23).** The state word's computed `font-size` and `font-weight` equal
-     those of home's profile name; its values keep the value size; no file but the type roles
-     table gives the state word the title token; `npm run type-sizes` lists no text off the scale.
+122. **The state word and the page header (test, Z23).** The state word's and the page header's
+     computed `font-size` and `font-weight` equal those of home's profile name; their values keep
+     the value size; no new size or token is added; `npm run type-sizes` lists no text off the scale.
 
 ## 6. Constraints
 - **Budget:** one Claude Pro plan. This product may use all of it up to 90% of the weekly
@@ -3324,7 +3326,7 @@ The weeks are a capacity guess on one Pro plan.
 | 5 | Z20 | review 2026-10-25: rename in the picker: a row moved to the right shows a rename button, a dialog, a `PUT` with the new title, the loaded profile loaded again (3.17 item 5) | Z17 |
 | 5 | Z21 | review 2026-10-25: `edit` and `load` side by side in the detail panel; edit loads the profile and opens its editor (3.17 item 6) | Z20 |
 | 5 | Z22 | review 2026-10-25: the hot water ring shows the target weight (scale) or volume (no scale) of the pour (3.17 item 4) | P2 |
-| 5 | Z23 | review 2026-10-25: the state word has the name role's size, the size of the profile and bean on home (3.17 item 7) | P2 |
+| 5 | Z23 | review 2026-10-25: the state word and the page header (Steam, Hot water) take the name role's size, 1.1 rem, no new size (3.17 item 7) | P2 |
 | 5 | H6 | review 2026-10-25: a local release for the tablet, `npm run release -- --local` (3.15), the founder's checks of 3.17 in install.md; the public release P6 resumes it | Z17-Z23, P7 |
 | 5 | P6 | publish: the release 0.7.0: tag, GitHub release with the ZIP and its SHA-256, the URL install checked in Decaid, the founder's cold read and a new user's install (3.13 acceptance 84-87); pushing and announcing are the founder's | P3, P5, P7, H5, H6 |
 
