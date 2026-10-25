@@ -2461,6 +2461,18 @@ generated text follows the user's own notes after a blank line. A profile that i
 keeps its notes alone, as before. The wording is checked by the founder on the tablet; the
 sentences above are the plan, not the final text.
 
+*Built (Z16), where the item left it open:* the numbers go through the editor's `formatValue`
+at one decimal at most. A temperature is named with the first phase that lasts and again
+wherever a later one differs from the one named last (the ramp's own temperature after
+'Ramps to … in … s', the pour's at the end), not only against the fill's. The pressure limit
+is named only when it is a value of its own: one that follows the pour pressure or is off (0)
+says nothing. Without a ramp (0 s) the pour reads 'Pours at once at …'; an end flow equal to
+the start reads 'pours at … for … s'. An old A-Flow profile read from its steps has no dose of
+its own (the picker shows '–' for it), so its first sentence is the yield alone: '36 g out.'.
+The stock sentence counts as nothing written whatever its spaces, case or final full stop; of
+a profile that is not A-Flow it still shows. `describeAFlow` is in `src/aflow/describe.ts`,
+the picker's text in `profileDescription` (`src/shell/profiles.ts`).
+
 Not part of this review: a modelled weight curve, the model in the step editor, a description
 for profiles that are not A-Flow, another language.
 

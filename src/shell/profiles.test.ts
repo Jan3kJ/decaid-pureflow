@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { DEFAULT_PROFILES, serializeParams } from '../aflow';
+import { DEFAULT_NOTES, DEFAULT_PROFILES, generateProfile, serializeParams } from '../aflow';
+import { describeAFlow } from '../aflow/describe';
 import { paramsMetadata, workflowProfile } from '../editor/storage';
 import { DecaidClient, type Profile, type ProfileRecord } from '../api';
 import {
@@ -266,20 +267,54 @@ describe('filterProfiles', () => {
 });
 
 describe('profileDescription', () => {
+  const notes = (text: string | undefined) => ({ profile: { notes: text, steps: [] } });
+  const medium = DEFAULT_PROFILES.find((entry) => entry.id === 'default-medium')!;
+  const generated = describeAFlow(medium.params);
+  const stored = (text: string) => ({ profile: { ...defaultProfile(medium), notes: text }, metadata: paramsMetadata(medium.params) });
+
   it('is the notes without the A-Flow line the skin writes', () => {
     const params = DEFAULT_PROFILES[1].params;
-    expect(profileDescription({ notes: `${serializeParams(params)}\nBright and sweet.` })).toBe('Bright and sweet.');
-    expect(profileDescription(workflowProfile({ notes: 'Bright and sweet.' }, params))).toBe('Bright and sweet.');
+    expect(profileDescription(notes(`${serializeParams(params)}\nBright and sweet.`))).toBe('Bright and sweet.');
+    expect(profileDescription({ profile: { ...workflowProfile({ notes: 'Bright and sweet.' }, params), steps: [] } })).toBe(
+      'Bright and sweet.',
+    );
   });
 
   it('is empty when nothing but the A-Flow line is left, or there are no notes', () => {
-    expect(profileDescription({ notes: serializeParams(DEFAULT_PROFILES[1].params) })).toBe('');
-    expect(profileDescription({ notes: undefined })).toBe('');
-    expect(profileDescription({ notes: '  ' })).toBe('');
+    expect(profileDescription(notes(serializeParams(DEFAULT_PROFILES[1].params)))).toBe('');
+    expect(profileDescription(notes(undefined))).toBe('');
+    expect(profileDescription(notes('  '))).toBe('');
   });
 
-  it('keeps notes of other skins as they are', () => {
-    expect(profileDescription({ notes: 'Turbo shot.\nGrind fine.' })).toBe('Turbo shot.\nGrind fine.');
+  it('keeps notes of other skins as they are, and of a profile that is not A-Flow the stock sentence too', () => {
+    expect(profileDescription(notes('Turbo shot.\nGrind fine.'))).toBe('Turbo shot.\nGrind fine.');
+    expect(profileDescription({ profile: { ...other, notes: DEFAULT_NOTES } })).toBe(DEFAULT_NOTES);
+  });
+
+  it('is the text made from the values of an A-Flow 3.0 profile, after the notes the user wrote', () => {
+    expect(profileDescription({ profile: defaultProfile(medium), metadata: paramsMetadata(medium.params) })).toBe(generated);
+    expect(profileDescription(stored('Bright and sweet.\nGrind fine.'))).toBe(`Bright and sweet.\nGrind fine.\n\n${generated}`);
+    // Version 1: the values in the notes, the user's text after them.
+    expect(profileDescription({ profile: { ...defaultProfile(medium), notes: `${serializeParams(medium.params)}\nMine.` } })).toBe(
+      `Mine.\n\n${generated}`,
+    );
+  });
+
+  it('counts the old plugin’s stock sentence as nothing written', () => {
+    expect(profileDescription(stored(DEFAULT_NOTES))).toBe(generated);
+    expect(profileDescription(stored(` ${DEFAULT_NOTES}. `))).toBe(generated);
+  });
+
+  it('describes an older A-Flow profile read from its steps, without the dose it does not have', () => {
+    const plugin = { ...generateProfile(medium.params, { title: 'A-Flow / mine', notes: DEFAULT_NOTES }) };
+    expect(profileDescription({ profile: plugin })).toBe(describeAFlow(medium.params, { dose: false }));
+    expect(profileDescription({ profile: plugin })).toMatch(/^42 g out\. /);
+  });
+
+  it('is not written to the profile', () => {
+    const entry = stored('Mine.');
+    profileDescription(entry);
+    expect(entry.profile.notes).toBe('Mine.');
   });
 });
 

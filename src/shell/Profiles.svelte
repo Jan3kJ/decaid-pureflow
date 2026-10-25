@@ -257,7 +257,7 @@
     {#if selected}
       {@const profile = selected.profile}
       {@const dose = doseOf(profile, selected.metadata)}
-      {@const description = profileDescription(profile)}
+      {@const description = profileDescription(selected)}
       <!-- Every line of the panel but the description holds its place for every profile: the title
            is one line, the author's and the A-Flow note's lines are there when empty. -->
       <h1>{profile.title}</h1>
@@ -281,7 +281,7 @@
         <StepPreview {profile} bare estimate lastStepSeconds={previewLastStepSeconds(selected)} />
       </div>
       <p class="caption" data-testid="profile-caption">estimate from the steps, a real shot differs with the coffee</p>
-      <!-- Notes of version 1 hold the A-Flow parameters (editor/storage.ts): only the text shows. -->
+      <!-- The notes without the A-Flow line the skin writes, then for an A-Flow profile the text made from its values. -->
       <p class="notes" data-testid="profile-description">{description}</p>
       <p class="aflow">{dose === undefined ? '' : 'A-Flow 3.0: once it is loaded, the editor opens on it.'}</p>
       <button class="load" data-testid="load-profile" disabled={busy} onclick={() => load(selected)}>load</button>

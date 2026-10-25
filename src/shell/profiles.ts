@@ -1,6 +1,7 @@
 // The profile picker's logic: the gateway's list with the A-Flow 3.0 defaults the skin keeps
 // itself, and the one call that loads a profile.
-import { AFLOW_VERSION, DEFAULT_AUTHOR, DEFAULT_PROFILES, generateProfile, type DefaultProfile } from '../aflow';
+import { AFLOW_VERSION, DEFAULT_AUTHOR, DEFAULT_NOTES, DEFAULT_PROFILES, generateProfile, type DefaultProfile } from '../aflow';
+import { describeAFlow } from '../aflow/describe';
 import type { DecaidClient, Profile, ProfileRecord, Workflow, WorkflowContextPatch } from '../api';
 import { POUR_SHOWN_SECONDS } from '../editor/curve';
 import { notesText, openParams, paramsMetadata, readParams, sameSteps, workflowProfile } from '../editor/storage';
@@ -91,9 +92,28 @@ export function filterProfiles<T extends { profile: Pick<Profile, 'title'> }>(re
   return records.filter((record) => record.profile.title.toLocaleLowerCase().includes(needle));
 }
 
-/** What the picker shows of a profile: its notes without the A-Flow line the skin writes there; '' for none. */
-export function profileDescription(profile: Pick<Profile, 'notes'>): string {
-  return notesText(profile.notes).trim();
+/** The old plugin's stock sentence, whatever its spaces and a full stop: it says nothing of the profile. */
+function isStockNotes(text: string): boolean {
+  const plain = (value: string) => value.replace(/\s+/g, ' ').replace(/\.$/, '').trim().toLowerCase();
+  return plain(text) === plain(DEFAULT_NOTES);
+}
+
+/**
+ * What the picker shows of a profile (spec 3.16 item 3): its notes without the A-Flow line the
+ * skin writes there, and for a profile whose A-Flow values are known (`openParams`) the text
+ * made from them after a blank line; the plugin's stock sentence counts as no notes. The text
+ * is made here, when it is shown, and never written to the profile. '' for none.
+ */
+export function profileDescription(entry: {
+  profile: Pick<Profile, 'notes' | 'steps' | 'target_weight'>;
+  metadata?: Record<string, unknown> | null;
+}): string {
+  const text = notesText(entry.profile.notes).trim();
+  const opened = openParams(entry.profile, entry.metadata);
+  if (!opened) return text;
+  // Read from an older profile's steps, the dose is the editor's default, not the profile's.
+  const generated = describeAFlow(opened.params, { dose: opened.dropped === null });
+  return text === '' || isStockNotes(text) ? generated : `${text}\n\n${generated}`;
 }
 
 /** The dose a profile brings, in g: an A-Flow 3.0 profile has one in its parameters. */
