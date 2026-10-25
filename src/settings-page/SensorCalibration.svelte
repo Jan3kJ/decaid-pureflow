@@ -264,7 +264,7 @@
   .hint {
     margin: 0 0 0.2rem;
     color: var(--dim);
-    font-size: 0.9rem;
+    font-size: var(--text-label);
   }
 
   .sensor {
@@ -282,7 +282,7 @@
 
   strong {
     min-width: 8rem;
-    font-size: 1.15rem;
+    font-size: var(--text-body);
     font-weight: 600;
   }
 
@@ -303,7 +303,7 @@
     min-height: 1.3rem;
     margin: 0;
     color: var(--dim);
-    font-size: 0.9rem;
+    font-size: var(--text-label);
   }
 
   .dim {
@@ -353,11 +353,11 @@
 
   .value small {
     color: var(--dim);
-    font-size: 0.8rem;
+    font-size: var(--text-label);
   }
 
   .value b {
-    font-size: 1.2rem;
+    font-size: var(--text-value);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
   }
@@ -365,7 +365,7 @@
   i {
     margin-left: 0.25em;
     font-style: normal;
-    font-size: 0.75em;
+    font-size: var(--text-label);
     color: var(--dim);
   }
 </style>

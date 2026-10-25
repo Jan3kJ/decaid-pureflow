@@ -125,7 +125,7 @@
   }
 
   .label {
-    font-size: 1.05rem;
+    font-size: var(--text-body);
     color: var(--dim);
   }
 
@@ -139,7 +139,7 @@
     background: var(--bg);
     border: 1px solid var(--line);
     border-radius: 0.9rem;
-    font-size: 2.4rem;
+    font-size: var(--text-large);
     font-weight: 600;
     line-height: 3.6rem;
     font-variant-numeric: tabular-nums;
@@ -154,14 +154,14 @@
   }
 
   .unit {
-    font-size: 1.1rem;
+    font-size: var(--text-body);
     font-weight: 400;
     color: var(--dim);
   }
 
   .range {
     text-align: right;
-    font-size: 0.9rem;
+    font-size: var(--text-label);
     color: var(--dim);
   }
 
@@ -179,7 +179,7 @@
     grid-column: span 2;
     min-height: 4.2rem;
     font: inherit;
-    font-size: 1.7rem;
+    font-size: var(--text-title);
     color: var(--fg);
     background: var(--raised);
     border: 1px solid var(--line);
@@ -207,7 +207,7 @@
   .clear,
   .confirm {
     grid-column: span 3;
-    font-size: 1.25rem;
+    font-size: var(--text-body);
   }
 
   .confirm {

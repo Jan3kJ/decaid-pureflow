@@ -141,13 +141,13 @@
   }
 
   strong {
-    font-size: 1.15rem;
+    font-size: var(--text-body);
     font-weight: 600;
   }
 
   small {
     color: var(--dim);
-    font-size: 0.85rem;
+    font-size: var(--text-label);
   }
 
   .warn {
@@ -176,7 +176,7 @@
   }
 
   .value b {
-    font-size: 1.4rem;
+    font-size: var(--text-value);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
   }
@@ -184,7 +184,7 @@
   i {
     margin-left: 0.25em;
     font-style: normal;
-    font-size: 0.6em;
+    font-size: var(--text-label);
     font-weight: 400;
     color: var(--dim);
   }

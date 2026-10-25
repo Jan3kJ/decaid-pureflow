@@ -362,7 +362,7 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     color: var(--fg);
-    font-size: 0.95rem;
+    font-size: var(--text-label);
   }
 
   .notice.warn {

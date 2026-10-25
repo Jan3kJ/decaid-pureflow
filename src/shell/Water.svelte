@@ -104,7 +104,11 @@
     font-variant-numeric: tabular-nums;
   }
 
-  /* The sizes of home's ring (about 550 CSS px across), smaller in a smaller frame. */
+  /*
+   * The ring's figures: the role tokens of home's ring (about 550 CSS px across), smaller in a
+   * smaller frame (scripts/font-sizes.mjs lets `.kind`, `.time`, `.values` and `.stop strong`
+   * through).
+   */
   .kind {
     font-size: min(var(--text-title), 5cqw);
   }

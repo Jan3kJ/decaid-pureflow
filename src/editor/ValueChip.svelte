@@ -184,12 +184,12 @@
   }
 
   .label {
-    font-size: 0.8rem;
+    font-size: var(--text-label);
     color: var(--dim);
   }
 
   .value {
-    font-size: 1.35rem;
+    font-size: var(--text-value);
     font-weight: 600;
     color: var(--tone);
     font-variant-numeric: tabular-nums;
@@ -202,7 +202,7 @@
     border: 0;
     color: var(--fg);
     font: inherit;
-    font-size: 1.8rem;
+    font-size: var(--text-title);
     line-height: 1;
   }
 
@@ -223,7 +223,7 @@
   }
 
   .compact .value {
-    font-size: 1.1rem;
+    font-size: var(--text-body);
   }
 
   .compact .step {

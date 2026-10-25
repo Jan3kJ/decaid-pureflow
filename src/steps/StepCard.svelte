@@ -250,7 +250,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   }
 
   .title {
-    font-size: 1.05rem;
+    font-size: var(--text-body);
     font-weight: 600;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -269,7 +269,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   }
 
   .line {
-    font-size: 0.95rem;
+    font-size: var(--text-body);
     color: var(--dim);
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
@@ -311,7 +311,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     min-height: 3rem;
     padding: 0 0.8rem;
     font: inherit;
-    font-size: 1.15rem;
+    font-size: var(--text-body);
     font-weight: 600;
     color: var(--fg);
     background: var(--raised);
@@ -341,13 +341,13 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   }
 
   .caption {
-    font-size: 0.9rem;
+    font-size: var(--text-label);
     color: var(--dim);
   }
 
   .problems {
     margin: 0;
-    font-size: 0.9rem;
+    font-size: var(--text-label);
     color: var(--warn);
   }
 

@@ -83,7 +83,7 @@
   }
 
   label {
-    font-size: 1.05rem;
+    font-size: var(--text-body);
     color: var(--dim);
   }
 
@@ -92,7 +92,7 @@
     box-sizing: border-box;
     padding: 0 0.9rem;
     font: inherit;
-    font-size: 1.4rem;
+    font-size: var(--text-value);
     color: var(--fg);
     background: var(--bg);
     border: 1px solid var(--line);
@@ -107,7 +107,7 @@
   .hint {
     margin: 0;
     min-height: 1.2rem;
-    font-size: 0.9rem;
+    font-size: var(--text-label);
     color: var(--temperature);
     white-space: pre;
   }
@@ -121,7 +121,7 @@
     flex: 1;
     min-height: 3.5rem;
     font: inherit;
-    font-size: 1.15rem;
+    font-size: var(--text-body);
     color: var(--fg);
     background: var(--raised);
     border: 1px solid var(--line);

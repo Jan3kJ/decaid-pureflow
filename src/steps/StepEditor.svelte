@@ -388,7 +388,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
 
   .count {
     color: var(--dim);
-    font-size: 0.95rem;
+    font-size: var(--text-label);
   }
 
   button {
@@ -405,7 +405,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     min-width: 6rem;
     padding: 0 1.1rem;
     border-radius: 0.9rem;
-    font-size: 1rem;
+    font-size: var(--text-body);
   }
 
   .seg[aria-pressed='true'] {
@@ -434,7 +434,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     display: flex;
     align-items: center;
     gap: 0.7rem;
-    font-size: 1.15rem;
+    font-size: var(--text-body);
     font-weight: 600;
   }
 
@@ -461,7 +461,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     border-radius: 0.9rem;
     background: var(--raised);
     color: var(--dim);
-    font-size: 0.95rem;
+    font-size: var(--text-label);
   }
 
   .notice.warn {
@@ -484,7 +484,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   .add {
     min-width: 13.5rem;
     border-radius: 1rem;
-    font-size: 1.1rem;
+    font-size: var(--text-body);
   }
 
   .backdrop {
@@ -507,11 +507,11 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
 
   .dialog p {
     margin: 0 0 0.6rem;
-    font-size: 1.3rem;
+    font-size: var(--text-title);
   }
 
   .dialog .hint {
-    font-size: 1rem;
+    font-size: var(--text-label);
     color: var(--dim);
   }
 
@@ -525,7 +525,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     flex: 1;
     min-height: 3.4rem;
     border-radius: 0.8rem;
-    font-size: 1.1rem;
+    font-size: var(--text-body);
     background: var(--panel);
   }
 

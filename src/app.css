@@ -19,20 +19,21 @@
   /* the corners of the graph's frame, and of every frame that lies beside it */
   --radius: 0.9rem;
   /*
-   * One type scale for home, steam, hot water and the shot (spec 3.8): a label is smaller than
-   * its value (founder, 2026-10-18), the state line's values are the profile name's size.
+   * One size per kind of text (spec 3.8, 3.14): every text of the skin takes its role's token;
+   * `npm run lint` refuses any other size (scripts/font-sizes.mjs). A label is smaller than its
+   * value.
    */
-  /* a value's label, a hint, a notice */
+  /* caption: the small words over a value, a hint, a unit, a table head, a notice */
   --text-label: 0.85rem;
-  /* running text, a small button */
+  /* text: running text, list details, button words; with weight 600 a name (a profile, a bean) */
   --text-body: 1.1rem;
-  /* a value, the machine's state, the profile's name, a chip */
+  /* value: a number the user reads or sets, the state line's values, a chip */
   --text-value: 1.3rem;
-  /* a page's title, a value of a panel */
+  /* title: a page's or dialog's title, the state word */
   --text-title: 1.6rem;
-  /* a stop button, a number of the running ring */
+  /* large: a stop button, a number of the running ring, the timer */
   --text-large: 2.2rem;
-  /* the big number of a page: a time, a temperature */
+  /* big: the big number of a page, the shot's time and weight */
   --text-big: 3.6rem;
   font-family: system-ui, sans-serif;
   /*
@@ -60,7 +61,9 @@ body {
   translate: 0 calc(-1 * var(--keyboard-lift, 0px));
 }
 
+/* Text no rule sizes is running text (spec 3.14's roles). */
 body {
+  font-size: var(--text-body);
   background: var(--bg);
   color: var(--fg);
   overflow: hidden;

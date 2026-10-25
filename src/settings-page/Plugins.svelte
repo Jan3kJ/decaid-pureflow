@@ -331,7 +331,7 @@
 
   h3 {
     margin: 0;
-    font-size: 1.25rem;
+    font-size: var(--text-body);
     font-weight: 600;
   }
 
@@ -341,13 +341,13 @@
     border: 1px solid var(--line);
     border-radius: 1rem;
     color: var(--dim);
-    font-size: 0.85rem;
+    font-size: var(--text-label);
   }
 
   .description {
     margin: 0 0 0.4rem;
     color: var(--dim);
-    font-size: 0.95rem;
+    font-size: var(--text-body);
   }
 
   .row {
@@ -371,13 +371,13 @@
   }
 
   strong {
-    font-size: 1.15rem;
+    font-size: var(--text-body);
     font-weight: 600;
   }
 
   small {
     color: var(--dim);
-    font-size: 0.85rem;
+    font-size: var(--text-label);
   }
 
   .dim {
@@ -425,7 +425,7 @@
   }
 
   .value b {
-    font-size: 1.4rem;
+    font-size: var(--text-value);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
   }

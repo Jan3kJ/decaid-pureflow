@@ -19,11 +19,12 @@
     "zip": "npm run build && node scripts/zip.mjs",
     "e2e": "playwright test",
     "e2e:rig": "playwright test --config playwright.rig.config.ts",
-    "lint": "eslint .",
+    "lint": "eslint . && node scripts/font-sizes.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "screenshots": "node scripts/screenshots.mjs",
-    "docs-check": "node scripts/docs-check.mjs"
+    "docs-check": "node scripts/docs-check.mjs",
+    "type-sizes": "node scripts/type-sizes.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

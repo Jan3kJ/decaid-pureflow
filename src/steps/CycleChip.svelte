@@ -57,12 +57,12 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   }
 
   .label {
-    font-size: 0.8rem;
+    font-size: var(--text-label);
     color: var(--dim);
   }
 
   .value {
-    font-size: 1.1rem;
+    font-size: var(--text-body);
     font-weight: 600;
     color: var(--tone);
   }

@@ -79,7 +79,7 @@
     display: flex;
     align-items: center;
     gap: 0.7rem;
-    font-size: 1.15rem;
+    font-size: var(--text-body);
     font-weight: 600;
   }
 
@@ -132,7 +132,7 @@
     min-width: 6rem;
     padding: 0 1.1rem;
     border-radius: 0.9rem;
-    font-size: 1rem;
+    font-size: var(--text-body);
   }
 
   .seg[aria-pressed='true'] {

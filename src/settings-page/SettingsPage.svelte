@@ -325,7 +325,7 @@
 
   h1 {
     margin: 0;
-    font-size: 2.2rem;
+    font-size: var(--text-title);
     font-weight: 600;
     line-height: 1.15;
   }
@@ -361,7 +361,7 @@
     min-height: 3.2rem;
     padding: 0 0.9rem;
     text-align: left;
-    font-size: 1.1rem;
+    font-size: var(--text-body);
     font-weight: 600;
     background: var(--panel);
     border: 1px solid var(--line);
@@ -410,14 +410,14 @@
 
   h2 {
     margin: 0.6rem 0 0.1rem;
-    font-size: 1.4rem;
+    font-size: var(--text-title);
     font-weight: 600;
   }
 
   .hint {
     margin: 0 0 0.2rem;
     color: var(--dim);
-    font-size: 0.9rem;
+    font-size: var(--text-label);
   }
 
   .warn {
@@ -441,13 +441,13 @@
   }
 
   strong {
-    font-size: 1.15rem;
+    font-size: var(--text-body);
     font-weight: 600;
   }
 
   small {
     color: var(--dim);
-    font-size: 0.85rem;
+    font-size: var(--text-label);
   }
 
   .action {

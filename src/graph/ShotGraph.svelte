@@ -265,6 +265,10 @@
     -webkit-user-select: none;
   }
 
+  /*
+   * The graph's own size, inside its SVG: ticks and units fit the drawing, not a text role
+   * (spec 3.14; scripts/font-sizes.mjs lets this rule through).
+   */
   text {
     fill: var(--dim);
     font-size: 0.75rem;
@@ -370,7 +374,7 @@
     flex-wrap: wrap;
     gap: 0.2rem 1.4rem;
     color: var(--dim);
-    font-size: 0.85rem;
+    font-size: var(--text-label);
     line-height: 1.3;
   }
 

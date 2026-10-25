@@ -56,7 +56,7 @@
     min-width: 9rem;
     padding: 0 1.2rem;
     border-radius: 1.5rem;
-    font-size: 1.05rem;
+    font-size: var(--text-body);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -83,7 +83,7 @@
   .arrow {
     display: inline-block;
     color: var(--flow);
-    font-size: 1.2rem;
+    font-size: var(--text-body);
     line-height: 1;
   }
 
@@ -111,7 +111,7 @@
     margin-left: 0.6rem;
     display: flex;
     gap: 1rem;
-    font-size: 0.85rem;
+    font-size: var(--text-label);
     color: var(--dim);
     white-space: nowrap;
   }

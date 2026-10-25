@@ -119,13 +119,13 @@
     border-radius: 1.4rem;
     color: var(--dim);
     font: inherit;
-    font-size: 0.9rem;
+    font-size: var(--text-label);
     white-space: nowrap;
   }
 
   .enable .plus {
     color: var(--fg);
-    font-size: 1.2rem;
+    font-size: var(--text-body);
     line-height: 1;
   }
 </style>

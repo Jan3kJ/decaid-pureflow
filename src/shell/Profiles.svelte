@@ -351,7 +351,7 @@
     min-height: 3rem;
     min-width: 7rem;
     padding: 0 1rem;
-    font-size: 1rem;
+    font-size: var(--text-body);
     background: var(--fg);
     border-color: var(--fg);
     color: var(--bg);
@@ -363,7 +363,7 @@
     min-height: 3rem;
     padding: 0 1rem;
     font: inherit;
-    font-size: 1.1rem;
+    font-size: var(--text-body);
     color: var(--fg);
     background: var(--raised);
     border: 1px solid var(--line);
@@ -403,7 +403,7 @@
     right: 0;
     bottom: 0;
     width: calc(var(--delete-width) - 0.4rem);
-    font-size: 1.1rem;
+    font-size: var(--text-body);
     font-weight: 600;
     background: var(--warn);
     border-color: var(--warn);
@@ -420,7 +420,7 @@
     display: flex;
     align-items: center;
     gap: 0.6rem;
-    font-size: 1.1rem;
+    font-size: var(--text-body);
     text-align: left;
   }
 
@@ -435,7 +435,7 @@
   .refusal {
     flex: none;
     color: var(--warn);
-    font-size: 0.9rem;
+    font-size: var(--text-label);
   }
 
   .item[aria-pressed='true'] .refusal {
@@ -455,6 +455,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    font-weight: 600;
   }
 
   .tag {
@@ -462,7 +463,7 @@
     padding: 0.15rem 0.6rem;
     border: 1px solid currentColor;
     border-radius: 1rem;
-    font-size: 0.8rem;
+    font-size: var(--text-label);
     font-weight: 400;
     opacity: 0.75;
   }
@@ -495,7 +496,7 @@
 
   h1 {
     margin: 0;
-    font-size: 1.5rem;
+    font-size: var(--text-title);
     font-weight: 600;
     overflow-wrap: anywhere;
   }
@@ -516,12 +517,12 @@
 
   dt {
     color: var(--dim);
-    font-size: 0.85rem;
+    font-size: var(--text-label);
   }
 
   dd {
     margin: 0;
-    font-size: 1.5rem;
+    font-size: var(--text-value);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
   }
@@ -539,19 +540,19 @@
     min-height: 0;
     overflow-y: auto;
     color: var(--dim);
-    font-size: 0.95rem;
+    font-size: var(--text-body);
     white-space: pre-line;
   }
 
   .aflow {
     color: var(--dim);
-    font-size: 0.9rem;
+    font-size: var(--text-label);
   }
 
   .load {
     flex: none;
     min-height: 3.4rem;
-    font-size: 1.2rem;
+    font-size: var(--text-body);
     font-weight: 600;
     background: var(--fg);
     border-color: var(--fg);

@@ -55,7 +55,7 @@
     min-height: 3rem;
     display: flex;
     align-items: center;
-    font-size: 1.3rem;
+    font-size: var(--text-body);
     font-weight: 600;
   }
 
@@ -63,7 +63,7 @@
     min-height: 0;
     margin-top: auto;
     padding-top: 0.5rem;
-    font-size: 0.9rem;
+    font-size: var(--text-label);
     font-weight: 400;
     color: var(--dim);
   }

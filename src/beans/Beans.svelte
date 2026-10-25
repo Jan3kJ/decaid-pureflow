@@ -251,7 +251,7 @@
 
   h1 {
     margin: 0;
-    font-size: 2.2rem;
+    font-size: var(--text-title);
     font-weight: 600;
     line-height: 1.15;
   }
@@ -279,7 +279,7 @@
     min-height: 3.2rem;
     padding: 0 0.9rem;
     text-align: left;
-    font-size: 1.1rem;
+    font-size: var(--text-body);
     font-weight: 600;
     background: var(--panel);
     border: 1px solid var(--line);

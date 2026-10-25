@@ -141,7 +141,7 @@
   }
 
   .label {
-    font-size: 1.05rem;
+    font-size: var(--text-body);
     color: var(--dim);
   }
 
@@ -206,7 +206,7 @@
     min-height: 3rem;
     width: 3rem;
     padding: 0;
-    font-size: 1.7rem;
+    font-size: var(--text-title);
     background: none;
     border: 0;
     color: var(--dim);

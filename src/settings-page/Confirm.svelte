@@ -56,7 +56,7 @@
 
   h2 {
     margin: 0.6rem 0 0.4rem;
-    font-size: 1.4rem;
+    font-size: var(--text-title);
     font-weight: 600;
   }
 

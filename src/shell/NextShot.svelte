@@ -56,7 +56,10 @@
     user-select: none;
   }
 
-  /* As wide as the column; the name and the bean are cut, not wrapped, so the column stays. */
+  /*
+   * As wide as the column; the name and the bean are cut, not wrapped, so the column stays. Both
+   * are names (spec 3.14): the same size and weight.
+   */
   .profile {
     display: flex;
     min-width: 0;
@@ -83,7 +86,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: var(--text-value);
+    font-size: var(--text-body);
     font-weight: 600;
   }
 
@@ -104,6 +107,7 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     text-align: left;
+    font-weight: 600;
   }
 
   .pick small {

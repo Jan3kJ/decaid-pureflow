@@ -57,7 +57,7 @@
 
   p {
     margin: 0;
-    font-size: 1.3rem;
+    font-size: var(--text-title);
     color: var(--fg);
   }
 
@@ -67,7 +67,7 @@
   }
 
   .hint {
-    font-size: 1rem;
+    font-size: var(--text-label);
     color: var(--dim);
   }
 
@@ -81,7 +81,7 @@
     flex: 1;
     min-height: 3.5rem;
     font: inherit;
-    font-size: 1.1rem;
+    font-size: var(--text-body);
     color: var(--fg);
     background: var(--raised);
     border: 1px solid var(--line);

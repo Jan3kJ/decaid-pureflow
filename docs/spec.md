@@ -1904,6 +1904,26 @@ button's names have the same computed size and weight**, and the same holds for 
 the beans, grinders and profile lists. Z5 comes after Z3 and Z4 so that the sizes are set on the
 final layout.
 
+*Built (Z5):* `npm run type-sizes [file] [--shots folder]` (scripts/type-sizes.mjs,
+e2e/type-sizes.sizes.ts) lists every visible text's computed size and weight on 22 screens of the
+mock gateway (home, its menu, the history, the bean pick, steam, hot water, the picker, the A-Flow
+and the step editor, beans, a bean, grinders, every settings category), grouped by the role whose
+token gives that size. Before: 916 texts outside the graphs' SVG in 20 sizes, 377 of them off the
+scale in 14 sizes (1rem alone 148 times: text no rule sized). After: 6 sizes, none off the scale.
+Every literal is a token now; `npm run lint` runs scripts/font-sizes.mjs, which refuses any size
+that is not `var(--text-…)` or `inherit`, except rules named there and in their files: the SVG
+text of `ShotGraph.svelte`, `editor/Graph.svelte` and `GraphGrid.svelte`, the ring's figures in
+`Water.svelte` (the tokens, shrunk in a small frame), and the root size in `app.css`. Text no rule
+sizes is `--text-body` (the body's size). Choices where the table leaves room: a page's title
+('Settings', 'Beans and grinders') and a dialog's question are title; the state word is title (its
+values stay value); a unit beside a big number is title, beside a large one text, beside a value
+or a title caption; a setting's, plugin's, step's and history entry's name is name; the selected
+profile's detail values are value; compact chips (a step card's, the A-Flow chips' compact form)
+keep their value at the text size; digits of the number pad and the − and + of a chip are title;
+the editor's '+ infuse' lane chip and the step list's table are caption. e2e/type-roles.spec.ts
+holds the names: home's profile and bean, the picker's rows (selected or not), the bean pick's
+bean and grinder rows and the beans and grinders lists all have the text size at weight 600.
+
 **The graph's unit line (item 6; Z6).** The line over the graph's axis reads 'bar ml/s · g/s': a
 dot sits before 'g/s' only (`ShotGraph.svelte` writes the dot with the weight flow), so 'bar' and
 'ml/s' touch (the screenshots of home and of the steam page). The **dot goes between every two

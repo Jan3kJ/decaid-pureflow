@@ -179,7 +179,7 @@
 
   h1 {
     margin: 0;
-    font-size: 1.4rem;
+    font-size: var(--text-title);
     font-weight: 600;
   }
 
@@ -226,7 +226,7 @@
   }
 
   .entry strong {
-    font-size: 1.15rem;
+    font-size: var(--text-body);
     font-weight: 600;
   }
 
@@ -239,7 +239,7 @@
     display: flex;
     justify-content: space-between;
     gap: 1rem;
-    font-size: 0.9rem;
+    font-size: var(--text-label);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }

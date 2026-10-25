@@ -504,14 +504,14 @@
 
   h2 {
     margin: 0.6rem 0 0.1rem;
-    font-size: 1.4rem;
+    font-size: var(--text-title);
     font-weight: 600;
   }
 
   .hint {
     margin: 0 0 0.2rem;
     color: var(--dim);
-    font-size: 0.9rem;
+    font-size: var(--text-label);
   }
 
   .row {
@@ -532,13 +532,13 @@
   }
 
   strong {
-    font-size: 1.15rem;
+    font-size: var(--text-body);
     font-weight: 600;
   }
 
   small {
     color: var(--dim);
-    font-size: 0.85rem;
+    font-size: var(--text-label);
   }
 
   .warn {
@@ -572,7 +572,7 @@
   }
 
   .value b {
-    font-size: 1.5rem;
+    font-size: var(--text-value);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
   }
@@ -584,7 +584,7 @@
   i {
     margin-left: 0.25em;
     font-style: normal;
-    font-size: 0.6em;
+    font-size: var(--text-label);
     font-weight: 400;
     color: var(--dim);
   }
@@ -607,7 +607,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: 1.25rem;
+    font-size: var(--text-value);
   }
 
   .slot.missing {
@@ -693,7 +693,7 @@
     min-height: 3.4rem;
     padding: 0 1rem;
     text-align: left;
-    font-size: 1.1rem;
+    font-size: var(--text-body);
     background: var(--raised);
     border: 1px solid var(--line);
     border-radius: 0.9rem;

@@ -135,7 +135,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   }
 
   .caption {
-    font-size: 0.9rem;
+    font-size: var(--text-label);
     color: var(--dim);
   }
 
@@ -145,7 +145,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     min-height: 3rem;
     padding: 0.5rem 0.8rem;
     font: inherit;
-    font-size: 1.1rem;
+    font-size: var(--text-body);
     color: var(--fg);
     background: var(--raised);
     border: 1px solid var(--line);
@@ -160,7 +160,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   }
 
   .problem {
-    font-size: 0.9rem;
+    font-size: var(--text-label);
     color: var(--warn);
   }
 
@@ -171,7 +171,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   }
 
   .hint {
-    font-size: 0.85rem;
+    font-size: var(--text-label);
     color: var(--dim);
   }
 </style>

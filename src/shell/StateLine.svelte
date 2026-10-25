@@ -84,8 +84,10 @@
     background: var(--warn);
   }
 
+  /* The state word is a title (spec 3.14's roles), its values are values. */
   strong {
     margin-left: -0.5rem;
+    font-size: var(--text-title);
     font-weight: 600;
   }
 

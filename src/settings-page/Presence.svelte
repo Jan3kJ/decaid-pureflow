@@ -232,13 +232,13 @@
   }
 
   strong {
-    font-size: 1.15rem;
+    font-size: var(--text-body);
     font-weight: 600;
   }
 
   small {
     color: var(--dim);
-    font-size: 0.85rem;
+    font-size: var(--text-label);
   }
 
   .dim {
@@ -266,7 +266,7 @@
 
   h3 {
     margin: 0.5rem 0 0.2rem;
-    font-size: 1.2rem;
+    font-size: var(--text-title);
     font-weight: 600;
   }
 
@@ -308,7 +308,7 @@
   }
 
   .value b {
-    font-size: 1.4rem;
+    font-size: var(--text-value);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
   }
@@ -316,7 +316,7 @@
   i {
     margin-left: 0.25em;
     font-style: normal;
-    font-size: 0.6em;
+    font-size: var(--text-label);
     font-weight: 400;
     color: var(--dim);
   }

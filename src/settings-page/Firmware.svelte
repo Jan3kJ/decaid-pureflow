@@ -233,7 +233,7 @@
   }
 
   span {
-    font-size: 1.15rem;
+    font-size: var(--text-body);
     font-weight: 600;
   }
 
@@ -241,7 +241,7 @@
     margin-left: 0.4rem;
     font-style: normal;
     font-weight: 400;
-    font-size: 0.85rem;
+    font-size: var(--text-label);
     color: var(--dim);
   }
 
@@ -259,7 +259,7 @@
 
   small {
     color: var(--dim);
-    font-size: 0.85rem;
+    font-size: var(--text-label);
   }
 
   .dim {

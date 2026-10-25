@@ -501,7 +501,7 @@
     min-height: 3.4rem;
     padding: 0 1.6rem;
     font: inherit;
-    font-size: 1.2rem;
+    font-size: var(--text-body);
     font-weight: 600;
     color: var(--bg);
     background: var(--fg);
@@ -529,7 +529,7 @@
   }
 
   .asleep strong {
-    font-size: 2.2rem;
+    font-size: var(--text-large);
     font-weight: 600;
   }
 

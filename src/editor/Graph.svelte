@@ -240,6 +240,10 @@
     -webkit-user-select: none;
   }
 
+  /*
+   * The graph's own sizes, inside its SVG: `text` and `text.value` fit the drawing, not a text
+   * role (spec 3.14; scripts/font-sizes.mjs lets these rules through).
+   */
   text {
     fill: var(--dim);
     font-size: 0.85rem;
@@ -330,13 +334,13 @@
     background: var(--fg);
     color: var(--bg);
     border-radius: 0.7rem;
-    font-size: 0.9rem;
+    font-size: var(--text-label);
     white-space: nowrap;
     pointer-events: none;
   }
 
   .popup strong {
-    font-size: 1.3rem;
+    font-size: var(--text-value);
     font-variant-numeric: tabular-nums;
   }
 </style>

@@ -315,7 +315,7 @@
   i {
     margin-left: 0.2em;
     font-style: normal;
-    font-size: 0.5em;
+    font-size: var(--text-body);
     font-weight: 400;
     color: var(--dim);
   }

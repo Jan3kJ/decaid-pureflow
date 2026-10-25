@@ -224,13 +224,13 @@
   }
 
   strong {
-    font-size: 1.15rem;
+    font-size: var(--text-body);
     font-weight: 600;
   }
 
   small {
     color: var(--dim);
-    font-size: 0.85rem;
+    font-size: var(--text-label);
   }
 
   a {
@@ -309,7 +309,7 @@
 
   .caption {
     margin: 0;
-    font-size: 1.05rem;
+    font-size: var(--text-body);
     color: var(--dim);
   }
 

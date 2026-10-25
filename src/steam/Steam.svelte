@@ -249,7 +249,7 @@
 
   i {
     font-style: normal;
-    font-size: 0.5em;
+    font-size: var(--text-title);
     font-weight: 400;
     color: var(--dim);
     margin-left: 0.2em;
@@ -309,7 +309,7 @@
 
   .of {
     margin-left: 0.5rem;
-    font-size: 0.6em;
+    font-size: var(--text-label);
     font-weight: 400;
     color: var(--dim);
   }
