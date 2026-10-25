@@ -258,8 +258,10 @@
       {@const profile = selected.profile}
       {@const dose = doseOf(profile, selected.metadata)}
       {@const description = profileDescription(profile)}
+      <!-- Every line of the panel but the description holds its place for every profile: the title
+           is one line, the author's and the A-Flow note's lines are there when empty. -->
       <h1>{profile.title}</h1>
-      {#if profile.author}<p class="author">by {profile.author}</p>{/if}
+      <p class="author" data-testid="profile-author">{profile.author ? `by ${profile.author}` : ''}</p>
       <dl>
         <div>
           <dt>steps</dt>
@@ -278,13 +280,10 @@
       <div class="preview" data-testid="profile-preview">
         <StepPreview {profile} bare lastStepSeconds={previewLastStepSeconds(selected)} />
       </div>
+      <p class="caption" data-testid="profile-caption"></p>
       <!-- Notes of version 1 hold the A-Flow parameters (editor/storage.ts): only the text shows. -->
-      {#if description}
-        <p class="notes" data-testid="profile-description">{description}</p>
-      {/if}
-      {#if dose !== undefined}
-        <p class="aflow">A-Flow 3.0: once it is loaded, the editor opens on it.</p>
-      {/if}
+      <p class="notes" data-testid="profile-description">{description}</p>
+      <p class="aflow">{dose === undefined ? '' : 'A-Flow 3.0: once it is loaded, the editor opens on it.'}</p>
       <button class="load" data-testid="load-profile" disabled={busy} onclick={() => load(selected)}>load</button>
     {:else}
       <p class="hint">Tap a profile to see it; load sends it to the machine.</p>
@@ -498,15 +497,27 @@
     margin: 0;
     font-size: var(--text-title);
     font-weight: 600;
-    overflow-wrap: anywhere;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   p {
     margin: 0;
   }
 
+  h1,
+  .author,
+  dl {
+    flex: none;
+  }
+
   .author {
+    min-height: 1lh;
     color: var(--dim);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   dl {
@@ -527,26 +538,39 @@
     font-variant-numeric: tabular-nums;
   }
 
-  /* The preview takes what the panel leaves; the description below it scrolls when long. */
+  /*
+   * The graph is one square box at the panel's width for every profile; the description is the
+   * buffer under it and scrolls. On a display too low for the square the graph gives way first,
+   * down to 6 rem (the description's shrink is a thousandth of the graph's), then the description.
+   */
   .preview {
-    flex: 1 1 0;
+    flex: 0 1 auto;
+    width: 100%;
+    aspect-ratio: 1 / 1;
     min-height: 6rem;
     display: flex;
   }
 
+  .caption,
+  .aflow {
+    flex: none;
+    min-height: 1lh;
+    color: var(--dim);
+    font-size: var(--text-label);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   .notes {
-    flex: 0 1 auto;
-    max-height: 30%;
+    flex: 1 0.001 3lh;
     min-height: 0;
     overflow-y: auto;
+    overscroll-behavior: contain;
     color: var(--dim);
     font-size: var(--text-body);
     white-space: pre-line;
-  }
-
-  .aflow {
-    color: var(--dim);
-    font-size: var(--text-label);
+    scrollbar-width: thin;
   }
 
   .load {

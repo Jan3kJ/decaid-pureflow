@@ -2314,6 +2314,15 @@ box (the panel's height less the fixed parts under 6 rem) the graph's height giv
 text's, down to the existing 6 rem minimum, and still the same for every profile on that
 display. The 1280 x 800 CSS pixel tablet is the check.
 
+*Built (Z13), where the item left it open:* the title is one line, cut with an ellipsis (the
+list shows the name too); the author's line and the line 'A-Flow 3.0: once it is loaded, the
+editor opens on it' keep their place when empty, the latter between the description and
+**load**; the caption line under the graph is there and empty until Z15 fills it. The
+description keeps three lines while the graph gives way (its shrink is a thousandth of the
+graph's), and only below the graph's 6 rem does it give way itself. Every size is in rem, which
+follows the viewport, so a lower tablet alone keeps the square: the panel is too low for it
+with a larger display size of Skin > Display (Extra Large at 1280 x 560 is the test's case).
+
 **A modelled shot in the graph (item 2; Z14, Z15).** The preview draws the profile's targets
 (`src/steps/curve.ts`, a schematic: 'not a simulation of a shot'). The founder wants **the
 curves a shot would show**: flow, pressure and temperature, as an approximation, to give an
