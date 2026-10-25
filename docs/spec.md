@@ -2476,6 +2476,121 @@ the picker's text in `profileDescription` (`src/shell/profiles.ts`).
 Not part of this review: a modelled weight curve, the model in the step editor, a description
 for profiles that are not A-Flow, another language.
 
+### 3.17 Founder's review of 2026-10-25 (planned for after the cut, not built)
+
+The founder, from a spoken review of the 0.6.1 build, in order: 'On the settings page the swipe
+to get back to home does not work on the left column, does it only work in the main frame? In
+the profile picker the swipes are only working in the right column. On the beans and grinders
+page it is only working in the left column. In the A-Flow editor it is only working above or
+below the graph. Next topic: move the tank water unit to the Quick Adjustments, mini water tank.
+Next topic: the OCR feature does not really work, drop this feature for now, just keep the
+possibility to take a photo. Next topic: for the hot water ring, so the target weight or
+volume' (the transcript ends there). In addition, in writing: 'add a rename feature to the
+profile picker: moving a profile to the right shows a rename button similar to the delete
+button; and add an edit button which opens the editor for the selected profile next to the load
+button; use the space of the current load button for both.' **Planned for after the cut (P2):**
+the work happens in the product repository, roadmap Z17-Z21 and the local release H6, before the
+public release P6. Nothing is built.
+
+**1. The swipe back works on the whole screen (Z17).** The skin's rule (3.14, `onControl` in
+`src/shell/swipe.ts`) lets a drag that starts on a control or on something that scrolls
+sideways be the control's. The likely cause of all four reports is one line: `onControl`
+reads the computed `overflow-x` of every ancestor up to the page, and **a box that scrolls
+only down (`overflow-y: auto`) computes `overflow-x: auto` too** (CSS makes the other axis
+`auto` when one is not `visible`), so every list and column that scrolls down counts as 'scrolls
+sideways' and takes the drag: the settings' category column, the picker's list, the beans
+page's list, the editor's step cards. The page itself the swipe still reaches (the main frame,
+the picker's right column, above and below the graph), which is exactly what the founder
+reports. Plan:
+
+- **Find it first** (a failing test before the fix): `e2e/swipe-back.spec.ts` swipes from the
+  points the founder named, on the settings page (category column and content), the picker (list
+  and detail), the beans page (list and form) and the A-Flow editor (cards, graph, header), and
+  the unit test of `onControl` gets a case for a box with `overflow-y: auto` and a `scrollWidth`
+  equal to its `clientWidth`.
+- **The rule becomes what it says:** a node takes the drag only when it really scrolls sideways,
+  `overflow-x` is `auto` or `scroll` **and its `scrollWidth` is greater than its `clientWidth`**.
+  The editor's start row and step cards, which do scroll sideways when they overflow, stay the
+  control's while they overflow; a row that fits lets the swipe through.
+- **The edge always goes back.** A swipe to the right that **starts in the left 24 CSS pixels**
+  of the screen goes back on every screen but home, whatever is under the finger: over the
+  editor's graph (whose drags are its own, `touch-action: none`), over the picker's rows (which
+  have swipes of their own, item 5), over a scrolling row of buttons. Home keeps its history
+  swipe (the left fifth, 3.14). 24 px is a finger's width at the display's edge; the edge strip
+  takes no tap (it only decides a drag that is horizontal and to the right).
+- The editor's graph is otherwise the editor's: a horizontal drag on it moves a chip, a value.
+  The founder's 'only above or below the graph' is therefore partly by design; the edge is his
+  way back from there.
+
+**2. The tank unit in Quick Adjustments (item 2; Z18).** The setting 'tank unit' (ml or mm, 3.14
+item 7) is under Skin > Display today. It moves to **Quick Adjustments > Water Tank**, the
+subcategory that holds the machine's tank settings ('mini water tank' is read as that one; the
+founder confirms on the tablet). It stays the skin's own setting (`settings.tankUnit`, local and
+in the KV backup), shown there in the skin's controls with the hint 'The water in the tank on
+the state line: in ml, or in mm as the machine measures it. This one is the skin's, not the
+machine's.' The Display group keeps the display size and the line width. The settings search and
+the page's links that name the old place follow. Nothing in `stateLine` changes.
+
+**3. The bean photo's reading is dropped (item 3; Z19).** 'The OCR feature does not really work,
+drop this feature for now, just keep the possibility to take a photo.' This **supersedes Z1 and Z2**
+(3.14 item 1) and the reading half of U13 (3.9). Kept: the **Photo** button, the
+live camera with **Capture**, **Take a picture** where the camera is refused, **New photo**,
+**Remove photo**, the JPEG of 1024 px in the KV namespace (`bean-photo-<id>`), the photos already
+stored. Removed: `src/beans/ocr.ts` and its tests and fixtures (`ocr-bags.json`), the progress line,
+**Cancel** and the six chips of the lines read, `scripts/ocr-probe.mjs`, the `ocr/` folder of the
+ZIP and its entry in `vite.config.ts`, the dependencies `tesseract.js`, `tesseract.js-core` and
+`@tesseract.js-data/eng`, the Tesseract credits in `NOTICE` (P1) and the licence files, the
+bean form's pre-fill. The ZIP falls back to about the size it had before U13 (152 517 bytes, 3.9
+item 20) plus what the skin grew since, **under 1 MB** instead of 7.8 MB. The photos of the bags in
+`docs/product/bags/` stay in the team repository as they are (3.13). Acceptance item 104 and the
+OCR items of 3.9 are marked as dropped; the history keeps what was built. A later reading (a
+cloud or a better local model) is a new item, not this one.
+
+**4. The hot water ring: a target (item 4, open).** The transcript breaks off after 'for the hot
+water ring so the target weight or volume'. It is not planned until the founder says the rest;
+the likely reading is that the ring should show the target weight or volume of the pour (3.14
+item 8 has the ring with the time and the amount poured). **Open question to the founder.**
+
+**5. Rename in the picker (item 5; Z20).** A row of a stored profile moves **to the right** and
+shows a **rename** button at its left end, as a move to the left shows **delete** at the right
+end (3.10): the same 7 rem button in the same style (a neutral colour, not the warning's red),
+the row narrows by it, one open row at a time, a tap elsewhere or a move back closes it, a
+vertical drag still scrolls the list. The skin's defaults do not move to the right (they have no
+record; the founder's 'rename' is for profiles he stored). The loaded profile **can** be
+renamed, unlike deleted: the rename keeps its steps, and the skin then loads the renamed one again
+so the workflow, the machine and the 'loaded' tag agree. The button opens a dialog (the number
+pad's dialog frame, `Confirm.svelte` with a text field, the tablet's own keyboard) with the title
+as it is, **Cancel** and **Rename**. The rule of the dialog: the new title is trimmed; empty is
+refused ('A profile needs a name.'); the title of **another stored or default profile** is
+refused ('A profile with that name exists.'), the same title as before is a cancel. How: `PUT
+/api/v1/profiles/{id}` with the profile and the new `title`, no `metadata` field, which keeps the
+id and the metadata (research.md: 'PUT with another title changed it and kept the id', seen running); the list is read again and sorted, the
+renamed row is selected and scrolled to. An A-Flow 3.0 profile keeps its prefix as the user
+typed it; the picker's tag 'A-Flow 3.0' comes from the values, not from the title. An error from
+Decaid is shown in the picker's error line and changes nothing. A hidden older version keeps its
+old title (it is hidden). The move to the right must not be mistaken for the swipe back: the edge
+strip of item 1 goes back, a drag from further in is the row's (the row's gesture decides at
+`SWIPE_SLOP` as the delete's does).
+
+**6. An edit button beside load (item 6; Z21).** The picker's detail panel has one **load**
+button, full width at the bottom (`min-height: 3.4rem`). It becomes **two buttons side by side in
+the same place, `edit` and `load`, each half of the width, the same height, 0.6rem apart**; the
+panel's other parts do not move (3.16 item 1). **Edit** opens the editor on the selected profile:
+the editor works on the machine's profile (the workflow's), so it **loads the profile first, as
+'load' does** (asking about unsaved edits through `skin.mayLoad()`), and goes to the editor, an
+A-Flow 3.0 profile in the A-Flow editor and any other in the step editor (`editorFor`). A
+default opens as it is held by the skin, without a record, as when it is loaded. The load button
+keeps its own path: it loads and goes back to where the picker was opened from. Both are off while
+nothing is selected and while busy, as the load button is. The edit button is not the editor's
+'load' of 3.6 (the editor opened the picker, a profile is picked, back in the editor): that stays
+the way it is.
+
+**The order.** Z17 first (the others touch the same pages), Z18 and Z19 independent, Z20 after Z17
+(the swipe's meaning), Z21 after Z20 (the same panel and file), then the local release H6 with
+`npm run release -- --local` (3.15), the founder's check on the tablet, and the public release
+P6 resumes that release (`--resume`), so the public skin has no OCR to credit and no half-working
+swipes.
+
 ## 4. Technical approach
 
 ### 4.1 What a Decaid skin is
@@ -2939,7 +3054,7 @@ Where an item here and one of 27-55 disagree, the item here wins (3.10 overrides
      the next month, down the previous one; a drag of 10 px on a day does not pick it, a tap does;
      the buttons still work; the year rolls over in December and January.
 
-104. **The founder's bag photos (test, probe).** `bagText` fed the recorded lines of the four
+104. **The founder's bag photos (test, probe; dropped in 3.17, Z19).** `bagText` fed the recorded lines of the four
      photos in `docs/product/bags/` gives maldaner / Elisabeth, maldaner / Abdul, aniko / Feel
      The Sun, aniko / Honey Dream; 'KAFFEEHAUS ESPRESSO', 'OMNI ROAST' and the tasting lines are
      neither roaster nor name; for the turned bag the upright reading gives no roaster of the
@@ -2996,6 +3111,41 @@ Where an item here and one of 27-55 disagree, the item here wins (3.10 overrides
      graph stay put, reads the estimate of three profiles he knows against his shots of them
      and says whether it gives the idea (a 'no' goes back into the model's fit, not into the
      picture), and reads the generated text of three A-Flow profiles.
+
+115. **The swipe back, whole screen (test, Z17).** `onControl` is false for a box with `overflow-y:
+     auto` whose `scrollWidth` equals its `clientWidth`, true for one that overflows sideways. Mocked
+     gateway, 1280 x 800, a swipe to the right goes back from: the settings page's category column
+     and its content; the picker's detail panel and a swipe from its left edge over a row; the
+     beans page's list, its form and the left column; the A-Flow editor's header, cards and
+     step row, and from its left edge over the graph; a swipe that starts on the editor's graph
+     away from the edge moves the graph's chip, not the page; home keeps its history swipe.
+116. **The tank unit in Quick Adjustments (test, Z18).** 'Tank unit' is listed under Quick
+     Adjustments > Water Tank and no longer under Skin > Display; choosing mm changes the state line
+     as before; the stored setting and the KV backup keep their key; the settings search finds it
+     in the new place.
+117. **No photo reading (test, Z19).** `package.json` has no `tesseract` entry and the ZIP no
+     `ocr/` entry; `npm run zip` writes a ZIP under 1 MB; the bean form's Photo, Capture, Take a
+     picture, New photo and Remove photo work as before (the camera specs pass) and show no
+     progress line, Cancel or chips; photos stored under `bean-photo-<id>` are still shown;
+     `publish-check` and the licence check pass; no file under `src/` or `scripts/` names
+     Tesseract or `ocr`.
+118. **Rename (test, Z20).** A move of a stored profile's row to the right shows **rename** and not
+     a default's; the dialog starts with the title; Rename sends `PUT /api/v1/profiles/{id}` with the
+     new title and no `metadata`, the id is the same, the list shows the new name in its sorted
+     place, selected; an empty title, a title of another profile and an unchanged title send
+     nothing (the first two say why); the loaded profile renamed is loaded again under the new
+     name and shows 'loaded'; Decaid's refusal shows in the error line and keeps the old name; a
+     vertical drag on the row still scrolls; the swipe from the edge still goes back. Rig: a rename of
+     a stored profile and its read-back, then purged.
+119. **Edit beside load (test, Z21).** The detail panel has `edit` and `load` side by side, equal
+     width and height, in the place of the old button; the box of the graph and the description do
+     not move between profiles; Edit loads the selected profile and opens the A-Flow editor on an
+     A-Flow 3.0 one and the step editor on another; unsaved edits are asked about first; a
+     default opens too; both are off with nothing selected.
+120. **The review on the tablet (founder, H6).** The founder swipes back on the four screens he
+     named, renames a profile and sees it loaded again, opens the editor with the new button, finds
+     the tank unit under Water Tank, takes a bean photo without the reading, and answers the hot
+     water ring's open question.
 
 ## 6. Constraints
 - **Budget:** one Claude Pro plan. This product may use all of it up to 90% of the weekly
@@ -3119,7 +3269,13 @@ The weeks are a capacity guess on one Pro plan.
 | 4 | P4 | publish: `npm run screenshots`, the eight generated pictures of the user documentation from the mock gateway, and `scripts/docs-check.mjs` | H4 |
 | 5 (Nov 9-15) | P5 | publish: the user documentation, three short pages (`install.md`, `guide.md`, `troubleshooting.md`) in `docs/user/`, with the pictures | P4 |
 | 5 | P7 | publish (3.15): `scripts/release.mjs` and `npm run release`: the checks, the change history from the tasks' `Task:` and `Changelog:` trailers, the version bump if needed, the ZIP and its SHA-256, the commit and tag, then the GitHub release; `--dry-run` and `--local` (the hand-overs use it); `npm run verify` shared with CI; the work prompt gets the trailers; pushing and publishing are the founder's | P3 |
-| 5 | P6 | publish: the release 0.7.0: tag, GitHub release with the ZIP and its SHA-256, the URL install checked in Decaid, the founder's cold read and a new user's install (3.13 acceptance 84-87); pushing and announcing are the founder's | P3, P5, P7, H5 |
+| 5 | Z17 | review 2026-10-25: the swipe back on the whole screen: `onControl` takes a drag only from a box that really scrolls sideways, the left edge (24 px) always goes back (3.17 item 1) | P2 |
+| 5 | Z18 | review 2026-10-25: the tank unit setting moves from Skin > Display to Quick Adjustments > Water Tank (3.17 item 2) | P2 |
+| 5 | Z19 | review 2026-10-25: the bean photo's reading dropped, the photo kept: `ocr.ts`, the probe, the `ocr/` folder, the three Tesseract packages, the credits and Z1/Z2's tests removed (3.17 item 3) | P2 |
+| 5 | Z20 | review 2026-10-25: rename in the picker: a row moved to the right shows a rename button, a dialog, a `PUT` with the new title, the loaded profile loaded again (3.17 item 5) | Z17 |
+| 5 | Z21 | review 2026-10-25: `edit` and `load` side by side in the detail panel; edit loads the profile and opens its editor (3.17 item 6) | Z20 |
+| 5 | H6 | review 2026-10-25: a local release for the tablet, `npm run release -- --local` (3.15), the founder's checks of 3.17 in install.md; the public release P6 resumes it | Z17-Z21, P7 |
+| 5 | P6 | publish: the release 0.7.0: tag, GitHub release with the ZIP and its SHA-256, the URL install checked in Decaid, the founder's cold read and a new user's install (3.13 acceptance 84-87); pushing and announcing are the founder's | P3, P5, P7, H5, H6 |
 
 | 2 (Oct 19-25) | Q1 | code quality review 2026-10-19: Prettier and ESLint, the tree formatted in one commit (in `.git-blame-ignore-revs`), lint errors fixed, both in the check ([review-code-quality-10-19-26.md](review-code-quality-10-19-26.md), steps 1-3) | - |
 | 2 | Q2 | code quality review 2026-10-19: split `src/shell/skin.svelte.ts` along its seams; `Skin` stays the one object the screens read ([review-code-quality-10-19-26.md](review-code-quality-10-19-26.md), step 4) | Q1 |
