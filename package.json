@@ -24,6 +24,7 @@
     "format:check": "prettier --check .",
     "screenshots": "node scripts/screenshots.mjs",
     "docs-check": "node scripts/docs-check.mjs",
+    "publish-check": "node scripts/publish-check.mjs",
     "type-sizes": "node scripts/type-sizes.mjs"
   },
   "devDependencies": {

@@ -2234,6 +2234,19 @@ clone, checked there, and only then offered to the founder to push.
     `..\decaid-rig` stays where it is, outside both. **Making the product repository public
     is a separate step after P6's checks** (GitHub, Settings, Danger zone), and the founder's.
 
+*Built (P2, 2026-10-25), stopped at step 10:* `scripts/publish-check.mjs` (`npm run
+publish-check`, `--history` over every blob, message, author and tag of `git rev-list --all`;
+binary files skipped; the allowed addresses are the noreply one and the `Co-Authored-By` line's
+`noreply@anthropic.com`), with `src/publish-check.test.ts`. Steps 3 to 9 are one script,
+`stint/cut/cut.sh`, with its inputs beside it (`paths.txt`, `mailmap.txt`, `messages.txt`,
+`text.txt`). The paths add `README.md`, `LICENSE`, `NOTICE`, `docs/user/` and
+`.release-notes.json` from the 3.13 table. The tags include `v0.1.1`. `--history` passes in
+`..\pureflow-cut`. Step 10 fails on what the path list leaves out: README's links to
+`docs/install.md` and `docs/acceptance.md` (the docs-check test), `camera.html` (the four tests
+of `e2e/camera.spec.ts`), and a bag photo of `docs/product/bags/` (one test of
+`e2e/bean-photo.spec.ts`). Steps 11 and 12 wait for the founder's choice, and
+`docs/product/cut-request.md` holds the details.
+
 **A release script (P7).** The founder's request (2026-10-24): 'a script for releases: run all
 checks, derive a change history from the completed tasks, build the package, increase the
 version if needed, then publish a new release.' It is `scripts/release.mjs`, run with `npm run
