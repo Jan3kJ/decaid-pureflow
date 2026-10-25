@@ -2382,6 +2382,21 @@ fails the numbers say so and the picture says 'approximation' all the same. Fitt
 the app only runs `predictShot`, once for the selected profile (milliseconds), never for the
 whole list.
 
+*Built (Z14), where the item left it open (research.md 34):* the check does not pass in full.
+On 242 shots of 50 held-out profiles the flow is 85.7 percent below the targets' error and the
+temperature 14.4 percent below; the pressure is 39.7 percent below (40 asked) and 59 percent of
+the lengths are within 20 percent (80 asked). The real shots of one profile lie only 79 percent
+within 20 percent of their own median length, so one puck's model cannot reach four in five.
+Added to the model: R counts V once a fitted **headspace** (29 ml) is full, as the fills in the
+export run at the dry R until then; the limiter caps the other quantity outright; the pump gives
+8 ml/s at most; a step also ends at its volume; a shot is modelled for 180 s at most, in steps
+of 0.1 s. `predictShot` also returns the model's weight (for the exits, not drawn). The
+imported shots' `profileFrame` follows only the steps' seconds, so the fit aligns the samples
+by the machine's targets (`targetFlow`, `targetPressure`). The errors are taken where the
+targets, as `stepCurve` draws them, have a value for the quantity, the same samples for the
+model and for the targets. The check is `src/steps/shot-check.ts`, shared by the fit script
+and the tests.
+
 *The picture* (Z15): in the picker's graph the model's curves are the lines, in the shot graph's
 colours (flow blue, pressure green, temperature red, as on home), and the profile's targets
 stay as thin dotted lines under them, so the founder sees what the profile asks for and what a

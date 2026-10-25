@@ -3804,3 +3804,174 @@ water write had started. `src/shell/hot-water-writes.test.ts` holds Decaid's ans
 fails without the fix: the second write sent flow 8, just as on the rig. The test was not
 changed; no wait or retry was added. The three rig groups then passed: 28, 12 and 12 of 52.
 Group 1 took 9.2 minutes, close to a foreground call's 10: split it next time it grows.
+
+## 34. The shot model (Z14, 2026-10-25)
+
+Spec 3.16 item 2: the curves a shot would show, from the steps alone, for the picker's graph
+(Z15 draws them). `src/steps/predict.ts` (`predictShot(profile, puck?)`), the constants in
+`src/steps/puck.ts`, the fit `scripts/shot-model-fit.mjs <export>`, the check
+`src/steps/shot-check.ts`, the tests `src/steps/predict.test.ts`. **The check does not pass in
+full**: flow and temperature pass, the pressure misses narrowly (39.7 percent below the targets
+where 40 is asked) and the length misses clearly (59 percent of the shots within 20 percent
+where 80 is asked). The model stays an approximation, and the picture must say so.
+
+### 34.1 The data
+
+The founder's export of 2026-10-21 (`shots.json`, 181 MB, 2,174 shots). A shot is used when its
+profile has steps and a stop weight, it is not a cleaning, it lasted 10 to 120 s, it ended
+between 0.8 and 1.2 times its stop weight (so it was stopped by the weight, with a cup on the
+scale) and its samples fit the profile's steps (below): 1,879 shots of 149 profiles. The 15
+shots Decaid recorded itself are left out: they give the target not driven as 0, not -1, and
+their first seconds still hold the frames before the shot. Every shot is thinned to one sample
+per 0.5 s (the samples come every 0.25 s).
+
+**Aligned by the targets, not by `profileFrame`.** In the 2,159 shots the de1app recorded and
+Decaid imported, `profileFrame` moves only at a step's `seconds` (a shot of 2024-11-15: frame 1
+at 15.3 s, where Fill's 15 s end, while the targets show Infuse from 3.3 s, when Fill's
+'pressure over 3' held). The machine's frame changes are in the targets it was given:
+`targetFlow` or `targetPressure`, the other -1. The fit script labels each sample with its step
+by dynamic programming over the profile's steps in order (a step may be passed at once): a
+sample fits a step when the pump matches and the target is the step's (a smooth step: within
+its range, and moving unless it has reached the goal). A shot with more than one sample in ten
+that fits no step is left out (its stored profile is not the one the machine ran). The labels
+give each step's real start, which the fit uses, and the kind of step for the table in 34.4.
+
+**The split.** The profiles (by title) are shuffled with a fixed seed (20261025) and a third of
+them held out: the fit sees 99 profiles, the check 50 it never saw. At most six shots a profile
+(seeded), so a profile shot 139 times does not outweigh the rest: 467 shots in the fit, 242 in
+the check. One run takes about 25 s and gives the same numbers every time.
+
+### 34.2 The model
+
+As spec 3.16 'The model' says, with one addition (34.5): the controlled quantity follows its
+target through a first-order lag, a smooth step ramping its target from where the quantity is;
+the other quantity comes from the puck's resistance R (pressure = R x flow, flow = pressure / R),
+capped by the step's limiter; the pump gives 8 ml/s at most. R = R1 + (R0 - R1) e^(-V / V0),
+**V counted once the headspace above the puck is full**. A step ends when its exit holds in the
+model, when its weight (the water pushed less what the puck keeps) or its volume is reached, or
+at its seconds; the shot ends at the stop weight. The temperature starts at the first step's
+target plus an offset and follows each step's target through one lag. Time step 0.1 s; a shot
+is never modelled longer than 180 s. Every bundled profile with steps runs (A-Flow, D-Flow,
+Adaptive and the rest), each in well under a millisecond on the desktop.
+
+**The fit** is least squares in two parts, each a Nelder-Mead search of the script's own (three
+rounds) over the logarithms of the constants. First R0, R1, V0, the headspace, the two lags and
+what the puck keeps, on the flow, the pressure and the scale's weight (in units of 4 g) at every
+sample, with each step's start against the real one and the shot's length (in units of 2 s,
+weighed as four samples). Then the temperature's offset and lag on the group sensor.
+
+| constant | value | |
+|---|---|---|
+| R0 | 0.349 bar per ml/s | the dry puck |
+| R1 | 2.92 bar per ml/s | the wet puck |
+| V0 | 5.36 ml | how soon it wets |
+| headspace | 29 ml | the water before any meets the coffee |
+| flow lag | 1.36 s | |
+| pressure lag | 1.34 s | |
+| kept | 42.7 ml | the water the puck and the headspace keep from the cup |
+| temperature offset | -2.51 °C | the group sensor at the start against the first step |
+| temperature lag | 26.1 s | |
+
+### 34.3 The check
+
+On the held-out shots, the mean absolute error over every sample where the targets, as
+`stepCurve` draws them, have a value for the quantity (the same samples for the model and for
+the targets; a flow step draws no pressure, so the pressure is compared where the targets draw
+it):
+
+| | model | targets | | gate |
+|---|---|---|---|---|
+| flow, ml/s | 0.54 | 3.80 | 85.7 % below | passes (40 % below) |
+| pressure, bar | 1.27 | 2.11 | 39.7 % below | **fails** (40 % below) |
+| temperature, °C | 1.44 | 1.68 | 14.4 % below | passes (not above) |
+| length within 20 % | 143 of 242 | | 59 % | **fails** (4 in 5) |
+
+On the fit set: flow 0.60 against 4.14, pressure 1.31 against 1.94 (32.6 % below), temperature
+1.44 against 1.68, length 307 of 467 (66 %). The model's length against the real one on the
+held-out shots: median 11 % longer, quartiles -4 % and +24 %; A-Flow 100 of 171 within 20 %,
+the other profiles 43 of 71.
+
+The fixture `src/steps/fixtures/shots-model.json` holds ten of the held-out shots (ten profiles,
+seeded), the measurements and the steps only: the titles are 'held-out shot n (A-Flow)' or
+'(other profile)', the steps of another profile are 'step n'; no beans, no notes, no names. On
+them flow (0.64 against 4.81) and pressure (0.94 against 1.69) pass, the temperature does not
+(1.34 against 1.18) and 6 of 10 lengths are within 20 %; the unit test pins exactly this.
+
+### 34.4 Per kind of step
+
+Held-out shots, mean absolute error model / targets, samples in brackets; the step is the one the
+real shot was in (34.1), the targets are those drawn at that moment:
+
+| step | flow, ml/s | pressure, bar | temperature, °C |
+|---|---|---|---|
+| Pre Fill | 0.00 / 8.00 (88) | – | 3.02 / 1.17 (88) |
+| Fill | 0.37 / 2.06 (1405) | – | 5.00 / 6.76 (1405) |
+| Infuse | 0.61 / 6.28 (3516) | 0.79 / 0.11 (1908) | 1.12 / 0.70 (5424) |
+| 2nd Fill | 0.31 / 6.90 (80) | 0.66 / 0.54 (125) | 0.90 / 1.23 (205) |
+| Pressure Up | 0.54 / 6.12 (159) | 1.22 / 1.60 (1984) | 0.57 / 0.95 (2143) |
+| Pressure Decline | 0.36 / 6.21 (35) | 0.72 / 1.82 (303) | 0.71 / 1.02 (338) |
+| Flow Start | 0.25 / 1.93 (79) | 2.55 / 3.84 (172) | 0.53 / 0.85 (251) |
+| Flow Extraction | 0.72 / 1.57 (407) | 1.70 / 3.62 (3257) | 0.88 / 1.33 (3664) |
+| flow step, other profiles | 0.41 / 1.03 (1971) | 2.78 / 4.16 (688) | 2.05 / 2.48 (2659) |
+| pressure step, other profiles | 1.00 / 2.67 (701) | 0.53 / 1.29 (1894) | 1.24 / 1.48 (2595) |
+
+The flow is close everywhere: the fill, the drop into Infuse and the moments of the steps come
+out right. The pressure is close where a step drives it and off where the coffee decides it: in
+the pour (Flow Extraction, the flow steps of other profiles) the pressure is R x flow, and R is
+one typical puck's. In Infuse the model's pressure stays under the 3 bar asked, as its R times
+the flow limit is lower than a real wet puck's.
+
+### 34.5 Why two gates fail, and what was tried
+
+- **One puck's R is not the founder's coffee.** The real resistance rises to 3 bar per ml/s and
+  more in Infuse and then falls during the pour (shot 2 below: 3.7 to 1.8); grind and bean move
+  it from shot to shot. A pour driven by flow then shows the pressure of a typical puck, and the
+  pressure gate misses by 0.3 points of 40. A second constant that lets R fall as water goes
+  through (R x e^(-V / Ve)) was tried on the fit set: pressure 33 % below instead of 32, the
+  lengths worse (63 % instead of 68): dropped.
+- **The length is the coffee's.** The real shots of one profile (the profiles with five or more
+  shots) lie only 79 % within 20 % of their own profile's median length: even a model that knew
+  each profile's typical length could not reach four in five. The model's shots are also 7 to
+  11 % long in the median, mostly in the pour; the app stops a shot before the scale reads the
+  stop weight (the shots looked at end at 0.93 to 0.97 of it), while the model stops at the
+  weight itself.
+- **What was added to the spec's model: the headspace.** With R = R1 + (R0 - R1) e^(-V / V0)
+  from the first ml the fit could not hold the fill (real: about 7.5 ml/s at 2.5 bar, R about
+  0.35, for some 30 ml, then the jump): it made the lags 3.7 and 5.3 s to compensate and the
+  steps missed their exits. Counting V from a fitted headspace took the lags to 1.8 and 1.2 s
+  and, on the fit set, the flow from 69 to 84 % below the targets and the pressure from 28 to
+  32 %.
+- **Fixed on the way:** the limiter caps the other quantity outright; before, a lagging flow
+  pushed the pressure over a flow step's limit when the puck wetted (fit set: flow 85.5 %,
+  pressure 32.6 % below).
+
+The model was not tuned on the held-out third: every choice above was made on the fit set's
+numbers, and the held-out numbers are those of the last run. One visible trace of the
+headspace: where Fill ends, the model's pressure spikes for one sample (the wet R arrives
+within 0.1 s); Z15 may smooth it when drawing.
+
+### 34.6 Three held-out shots
+
+Thick the model, thin the real shot, dotted the targets as drawn today, dashed the model's step
+starts; flow blue, pressure green, temperature red (the panel under them). The first three
+shots of the fixture.
+
+!held-out shot 1 (screenshot in the team repository)
+!held-out shot 2 (screenshot in the team repository)
+!held-out shot 3 (screenshot in the team repository)
+
+- Shot 1 (A-Flow, stop weight 32 g, real 28 s, model 36 s): fill, Infuse and the ramp sit on
+  the real curves; in the pour the real pressure falls to about 3.2 bar, the model's to 4.3,
+  and the model reaches the weight 8 s later.
+- Shot 2 (A-Flow, 32 g, real 25 s, model 30 s): the pressure peak at the end of the ramp is
+  there (6.9 against 7.4 bar), then the real puck gives way and the model's does not.
+- Shot 3 (A-Flow, 46 g, real 38 s, model 42 s): a long infuse at 1 ml/s matches; the pour's
+  pressure ends at 9 bar against the real 5.9.
+
+The group sensor's dip of 7 to 16 °C in the first two seconds is not modelled (the offset and
+the lag give a flat start about 2.5 °C under the target); the temperature passes all the same.
+
+To run it again: `node scripts/shot-model-fit.mjs <docs/decent_export_*.zip>` (the zip, its
+unpacked folder or its `shots.json`); `--shots` prints each held-out shot's step starts, real
+against model. It rewrites `src/steps/puck.ts`, the fixture and the three plots; a new export
+or a change to the model changes the numbers pinned in `src/steps/predict.test.ts`.
