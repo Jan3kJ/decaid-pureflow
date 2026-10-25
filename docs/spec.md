@@ -2406,6 +2406,16 @@ the fixed area of item 1). The editor's own curve keeps the targets: this item i
 A later step may take the puck's R from the last shot of the profile in the history, so the
 estimate fits the founder's coffee; that is not planned here.
 
+*Built (Z15), where the item left it open:* `shotEstimate` in `src/steps/estimate.ts` turns
+`predictShot` into the graph's series; `StepPreview` draws it with `estimate` (the picker only),
+`stepCurve` as before without it. Each step's targets and limits, as `stepCurve` draws them (an
+A-Flow pour's to its 30 s), are laid across the span the model gave that step, so a ramp runs
+from its start to its end value within the model's step and default-dark's pour still ends at
+1 ml/s; a step the model does not reach draws no target. The limits stay drawn as in 3.10 (muted
+dots), the targets are thin, denser dots. The model's flow and pressure are drawn through a
+median of three samples, which takes out its one-sample jump where a step ends on its exit. The
+scale of flow and pressure takes the model's values too (12 at least, as before).
+
 **A generated description for A-Flow 3.0 (item 3; Z16).** The picker shows the profile's
 `notes`; an A-Flow profile of the old plugin carries one stock sentence ('A-Flow: an
 alternative profile for D-Flow', see the screenshot of 2026-10-24 on the converted profiles).

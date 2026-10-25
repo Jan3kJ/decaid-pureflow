@@ -6,7 +6,9 @@
   // The profile's targets are thin dashed lines in the colour and on the scale of their
   // quantity. Every scale names its unit in its colour. As the step editor's preview (`preview`)
   // it draws a profile's targets alone, as solid lines, with its steps' borders, and each step's
-  // limit as a thin dotted line in its quantity's colour, muted.
+  // limit as a thin dotted line in its quantity's colour, muted. As the picker's estimate
+  // (`estimate`) the curves are a modelled shot, the targets thin dotted lines under them, the
+  // limits as in the preview.
   import { fixedScale, graphUnits, inBand, shotScale, temperatureBand, timeAxis, UNIT_SEPARATOR, type TemperatureBand } from './axis';
 
   interface Props {
@@ -42,6 +44,8 @@
     label?: string;
     /** the targets are the curves: solid lines, no measured values (the step editor's preview) */
     preview?: boolean;
+    /** the curves are a modelled shot (the picker): the targets dotted, the limits drawn as in the preview */
+    estimate?: boolean;
     /** bar, the steps' pressure limits, drawn in the preview; null is a step without one */
     pressureLimit?: (number | null)[];
     /** ml/s, the steps' flow limits, drawn in the preview; null is a step without one */
@@ -68,6 +72,7 @@
     legend = false,
     label = 'shot graph',
     preview = false,
+    estimate = false,
     pressureLimit,
     flowLimit,
     borders = [],
@@ -199,21 +204,34 @@
         <path
           class="target temperature"
           class:solid={preview}
+          class:dotted={estimate}
           data-testid="shot-target-temperature"
           d={path(targetTemperature, yTemperature)}
         />
       {/if}
-      {#if preview && drawn(pressureLimit).length > 0}
+      {#if (preview || estimate) && drawn(pressureLimit).length > 0}
         <path class="limit pressure" data-testid="shot-limit-pressure" d={path(pressureLimit, yMain)} />
       {/if}
-      {#if preview && drawn(flowLimit).length > 0}
+      {#if (preview || estimate) && drawn(flowLimit).length > 0}
         <path class="limit flow" data-testid="shot-limit-flow" d={path(flowLimit, yMain)} />
       {/if}
       {#if pressure && targetPressure}
-        <path class="target pressure" class:solid={preview} data-testid="shot-target-pressure" d={path(targetPressure, yMain)} />
+        <path
+          class="target pressure"
+          class:solid={preview}
+          class:dotted={estimate}
+          data-testid="shot-target-pressure"
+          d={path(targetPressure, yMain)}
+        />
       {/if}
       {#if flow && targetFlow}
-        <path class="target flow" class:solid={preview} data-testid="shot-target-flow" d={path(targetFlow, yMain)} />
+        <path
+          class="target flow"
+          class:solid={preview}
+          class:dotted={estimate}
+          data-testid="shot-target-flow"
+          d={path(targetFlow, yMain)}
+        />
       {/if}
 
       {#if temperature}
@@ -316,6 +334,13 @@
     stroke-dasharray: none;
     stroke-linecap: round;
     opacity: 1;
+  }
+
+  /* The estimate's targets: thin dots under the model's curves. */
+  .target.dotted {
+    stroke-width: calc(0.12rem * var(--line-width, 1));
+    stroke-dasharray: 0.01rem 0.22rem;
+    stroke-linecap: round;
   }
 
   /* A limit, not a target: dotted, thinner, muted. */

@@ -409,14 +409,14 @@ test('the picker filters by title, a tap selects and shows the description and p
   await expect(page.getByTestId('screen-profiles')).toBeVisible();
   await expect(detail.locator('h1')).toHaveText('Adaptive v2');
   await expect(page.getByTestId('profile-description')).toHaveText('Adaptive v2: a profile of the mocked gateway');
-  // The step editor's curve preview: five steps, without labels.
+  // The modelled shot of its five steps, without labels: the stop weight ends it in the third.
   const preview = page.getByTestId('profile-preview');
   await expect(preview.getByTestId('shot-graph')).toBeVisible();
-  await expect(preview.getByTestId('shot-border')).toHaveCount(4);
+  await expect(preview.getByTestId('shot-border')).toHaveCount(2);
   await expect(preview.getByTestId('shot-target-pressure')).toHaveCount(1);
   await expect(preview.locator('text')).toHaveCount(0);
 
-  // An A-Flow default: no line of its values in the description, the same preview of its targets.
+  // An A-Flow default: no line of its values in the description, its modelled shot as the preview.
   await items.filter({ hasText: 'A-Flow / default-medium' }).filter({ hasText: 'A-Flow 3.0' }).click();
   await expect(detail.locator('h1')).toHaveText('A-Flow / default-medium');
   await expect(detail).not.toContainText('aflow');

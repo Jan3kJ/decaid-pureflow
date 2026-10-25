@@ -276,11 +276,11 @@
           <dd>{dose === undefined ? '–' : `${dose} g`}</dd>
         </div>
       </dl>
-      <!-- The targets of its steps, without labels: only to see the steps and their values (founder, 2026-10-17); an A-Flow pour as far as its editor draws it. -->
+      <!-- The modelled shot of its steps, without labels, its targets dotted under it (spec 3.16); an A-Flow pour's targets as far as its editor draws them. -->
       <div class="preview" data-testid="profile-preview">
-        <StepPreview {profile} bare lastStepSeconds={previewLastStepSeconds(selected)} />
+        <StepPreview {profile} bare estimate lastStepSeconds={previewLastStepSeconds(selected)} />
       </div>
-      <p class="caption" data-testid="profile-caption"></p>
+      <p class="caption" data-testid="profile-caption">estimate from the steps, a real shot differs with the coffee</p>
       <!-- Notes of version 1 hold the A-Flow parameters (editor/storage.ts): only the text shows. -->
       <p class="notes" data-testid="profile-description">{description}</p>
       <p class="aflow">{dose === undefined ? '' : 'A-Flow 3.0: once it is loaded, the editor opens on it.'}</p>

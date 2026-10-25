@@ -82,13 +82,13 @@ test("the chart line width widens every graph's curves: the profile picker's pre
       .locator(selector)
       .first()
       .evaluate((element) => parseFloat(getComputedStyle(element).strokeWidth));
-  /** px: the preview's solid flow target (0.2 rem) and the editor's curve (0.24 rem) */
+  /** px: the picker's modelled flow (0.2 rem) and the editor's curve (0.24 rem) */
   const widths = async () => {
     await home(page);
     await page.getByTestId('open-profiles').click();
     await page.getByTestId('profile-item').filter({ hasText: 'A-Flow / default-dark' }).first().click();
-    await expect(page.getByTestId('profile-preview').getByTestId('shot-target-flow')).toBeAttached();
-    const preview = await strokeOf('[data-testid="profile-preview"] [data-testid="shot-target-flow"]');
+    await expect(page.getByTestId('profile-preview').getByTestId('shot-line-flow')).toBeAttached();
+    const preview = await strokeOf('[data-testid="profile-preview"] [data-testid="shot-line-flow"]');
     await home(page);
     await page.getByTestId('open-editor').click();
     await expect(page.locator('[data-testid="line-flow"]').first()).toBeAttached();
