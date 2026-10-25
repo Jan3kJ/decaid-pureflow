@@ -1667,7 +1667,14 @@ does not run it) and checks that `docs/user/img/` holds exactly `home-idle.png`,
 roasters and grinder are invented ('Example Roasters · House Blend', 'Sample Coffee Co · Washed
 Single Origin', 'Hand grinder'). `npm run docs-check` checks README and every `.md` of
 `docs/user/` (relative paths, GitHub heading anchors, HTML `src`/`href`); `src/docs-check.test.ts`
-plants a broken link, a missing image and a missing anchor. The founder reads the three pages **cold on
+plants a broken link, a missing image and a missing anchor. *Built (P5, 2026-10-25):*
+`docs/user/install.md`, `guide.md` and `troubleshooting.md`, checked against 0.6.1 and linked
+from README, follow the founder's later order (the corner menu and the swipe back, the A-Flow
+editor, the picker's estimate, beans and the bag photo, the ring, the settings; the connection
+messages, the scale, the steam timer, the bag photo's limits, the way back to Streamline). They
+use seven of the eight pictures (not `home-shot.png`); the picker and the bag photo have none.
+Decent's pages are linked: `decentespresso.com/docs` and Decaid's `doc/Skins.md` at `v0.8.8`.
+The founder reads the three pages **cold on
 the tablet** (acceptance 84) and a person who has not seen the skin installs it with them
 alone (acceptance 85).
 

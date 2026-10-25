@@ -4,6 +4,13 @@ A minimal skin for [Decaid](https://github.com/decentespresso/decaid), Decent's 
 for the DE1 espresso machine, built around an editor for A-Flow profiles. The product spec is
 in [docs/spec.md](docs/spec.md).
 
+## User documentation
+
+- [Install](docs/user/install.md): the ZIP in Decaid, updates and your settings
+- [Guide](docs/user/guide.md): what is the skin's own and not obvious
+- [Troubleshooting](docs/user/troubleshooting.md): the connection, the scale, the steam timer,
+  the bag photo, and the way back to Streamline
+
 ## Development
 
 Needs Node.js 22 or newer. The stack is TypeScript, Vite, Svelte and Vitest.
