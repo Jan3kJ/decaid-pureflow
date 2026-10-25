@@ -1896,7 +1896,7 @@ test that holds them**.
 | name | `--text-body`, weight 600 | the **names of things in a list or on a button**: a profile, a bean, a grinder, a step, a plugin, a setting's name; the **profile and the bean on home are the same size and weight** |
 | text | `--text-body` | running text, list details, button words |
 | value | `--text-value` | a number the user reads or sets (a chip's value, the state line's numbers, the right column's pressure, flow and temperature) |
-| title | `--text-title` | a page's or dialog's title, the state word |
+| title | `--text-title` | a page's or dialog's title (the state word moved to name in 3.17, Z23) |
 | large, big | `--text-large`, `--text-big` | the timer, the shot's time and weight |
 
 The change is to **replace each literal by the role's token** (the nearest one: 0.9 and 0.95
@@ -2490,7 +2490,11 @@ profile picker: moving a profile to the right shows a rename button similar to t
 button; and add an edit button which opens the editor for the selected profile next to the load
 button; use the space of the current load button for both.' **Planned for after the cut (P2):**
 the work happens in the product repository, roadmap Z17-Z21 and the local release H6, before the
-public release P6. Nothing is built.
+public release P6. Nothing is built. **The founder's answers of the same day:** the editor's
+graph passes the swipe wherever it drags nothing (item 1); 'yes, show the target weight/volume in
+the ring during hot water pouring' (item 4, Z22); 'edit button loads too, that's okay' (item 6);
+and from his check of the Z5 line in install.md: the larger state word does not look right, it
+should have the size of the profile and the bean, or of the page's title 'Steam' (item 7, Z23).
 
 **1. The swipe back works on the whole screen (Z17).** The skin's rule (3.14, `onControl` in
 `src/shell/swipe.ts`) lets a drag that starts on a control or on something that scrolls
@@ -2518,9 +2522,20 @@ reports. Plan:
   have swipes of their own, item 5), over a scrolling row of buttons. Home keeps its history
   swipe (the left fifth, 3.14). 24 px is a finger's width at the display's edge; the edge strip
   takes no tap (it only decides a drag that is horizontal and to the right).
-- The editor's graph is otherwise the editor's: a horizontal drag on it moves a chip, a value.
-  The founder's 'only above or below the graph' is therefore partly by design; the edge is his
-  way back from there.
+- **The editor's graph takes only what it drags** (founder: 'there is a lot of space in the graph
+  which drags nothing; if I start a swipe here it should go back to home'). Today the whole
+  `<svg>` is `touch-action: none` and the swipe check treats it as the graph's, though
+  `Graph.svelte` drags only what `hitTest` finds at the finger's `pointerdown`: a level line
+  within 1.8 rem, a border within 1.4 rem (the pause's border in detail mode only), and the
+  chips (`ValueChip`, their own `touch-action: none`). New: a drag that starts on the graph
+  **away from those is the page's**: the swipe goes back (to the right) or is not ours (vertical).
+  How: the graph gives the swipe check its own question, 'does the finger lie on something I
+  drag?' (a function on the graph's element that the check calls with the point, the same
+  `hitTest`, so the two cannot differ), and the svg stops being `touch-action: none` (`pan-y`: the
+  page does not scroll sideways there); a drag that starts on a line or a border stays the
+  graph's, as now. The left edge strip still goes back from anywhere. Test: from points far
+  from every line and border the swipe goes back; from a level line, a border and a chip it moves
+  the value and goes nowhere.
 
 **2. The tank unit in Quick Adjustments (item 2; Z18).** The setting 'tank unit' (ml or mm, 3.14
 item 7) is under Skin > Display today. It moves to **Quick Adjustments > Water Tank**, the
@@ -2546,10 +2561,19 @@ item 20) plus what the skin grew since, **under 1 MB** instead of 7.8 MB. The ph
 OCR items of 3.9 are marked as dropped; the history keeps what was built. A later reading (a
 cloud or a better local model) is a new item, not this one.
 
-**4. The hot water ring: a target (item 4, open).** The transcript breaks off after 'for the hot
-water ring so the target weight or volume'. It is not planned until the founder says the rest;
-the likely reading is that the ring should show the target weight or volume of the pour (3.14
-item 8 has the ring with the time and the amount poured). **Open question to the founder.**
+**4. The target in the hot water ring (item 4; Z22).** The transcript broke off after 'for the hot
+water ring so the target weight or volume'; the founder's answer: 'yes, show the target weight/volume
+in the ring during hot water pouring. add a task for it'. The ring of a **hot water** run
+(`Water.svelte`, `waterValues` in `src/shell/water.ts`) shows, under the values it has (time,
+temperature, flow, weight), **a target line**: 'target 50 g' with a connected scale and 'target 50 ml'
+without one, the number the hot water page's 'stop at' holds (`workflow.hotWaterData.volume`, which the
+page labels g or ml by the scale, 3.12), in the same style as the other values (`value` role, the
+ring's tokens as in Z5). With a scale the weight line reads '12.4 g' above it, so the two are read
+together; without one there is no volume count to show beside it, the target alone. **Not for a flush**
+(it has a time, not an amount) and not when the target is 0 (no stop). The ring still fills by
+time as it does (3.14 item 8); filling by the weight against the target would be a change of its
+own and is not planned. Unit test: `waterValues` gives 'target 50 g' with a scale, 'target 50 ml'
+without, nothing for a flush or for 0; e2e on the mock gateway for both, over the ring's frame.
 
 **5. Rename in the picker (item 5; Z20).** A row of a stored profile moves **to the right** and
 shows a **rename** button at its left end, as a move to the left shows **delete** at the right
@@ -2580,13 +2604,30 @@ the editor works on the machine's profile (the workflow's), so it **loads the pr
 'load' does** (asking about unsaved edits through `skin.mayLoad()`), and goes to the editor, an
 A-Flow 3.0 profile in the A-Flow editor and any other in the step editor (`editorFor`). A
 default opens as it is held by the skin, without a record, as when it is loaded. The load button
-keeps its own path: it loads and goes back to where the picker was opened from. Both are off while
+keeps its own path: it loads and goes back to where the picker was opened from. (The founder: 'edit
+button loads too, that's okay'.) Both are off while
 nothing is selected and while busy, as the load button is. The edit button is not the editor's
 'load' of 3.6 (the editor opened the picker, a profile is picked, back in the editor): that stays
 the way it is.
 
+**7. The state word has the size of the names (item 7; Z23).** From the founder's check of 'Names alike
+(Z5)' in install.md: 'does the larger state word ("Idle") look right? -> no, it should have the same
+size as profile and bean or title "steam" on steam page'. Today the state word is the **title** role
+(`--text-title`, 1.6 rem, weight 600; `StateLine.svelte`), above the 1.1 rem of the profile and bean
+names (the **name** role); the page title on the steam and hot water pages is the title role too, so
+the two are already equal to each other and both larger than the names, which is not what the founder
+wants. The plan takes his first wish: **the state word becomes a name** (`--text-body`, weight 600),
+the size of the profile and the bean on home. Its values stay values. The page's title ('Steam',
+'Hot water') keeps the title role, unless the measurement below shows it differs from what he sees:
+the first step is to **list the computed sizes** of the state word, the page title and the names on
+home, steam and hot water with `npm run type-sizes`, and the founder is told what they are. The
+roles table (3.14) changes in two cells: the state word leaves 'title' and joins 'name'; the type
+check (acceptance 95) gets the line 'the state word has the profile name's size and weight'.
+**Open question:** should the page's title ('Steam') follow it down to the names' size, so the header
+has one size throughout? Not planned until he says.
+
 **The order.** Z17 first (the others touch the same pages), Z18 and Z19 independent, Z20 after Z17
-(the swipe's meaning), Z21 after Z20 (the same panel and file), then the local release H6 with
+(the swipe's meaning), Z21 after Z20 (the same panel and file), Z22 and Z23 independent (the ring, the header), then the local release H6 with
 `npm run release -- --local` (3.15), the founder's check on the tablet, and the public release
 P6 resumes that release (`--resume`), so the public skin has no OCR to credit and no half-working
 swipes.
@@ -3117,8 +3158,9 @@ Where an item here and one of 27-55 disagree, the item here wins (3.10 overrides
      gateway, 1280 x 800, a swipe to the right goes back from: the settings page's category column
      and its content; the picker's detail panel and a swipe from its left edge over a row; the
      beans page's list, its form and the left column; the A-Flow editor's header, cards and
-     step row, and from its left edge over the graph; a swipe that starts on the editor's graph
-     away from the edge moves the graph's chip, not the page; home keeps its history swipe.
+     step row, from its left edge over the graph and from the graph's empty space (points more than
+     1.8 rem from every line and 1.4 rem from every border); a drag that starts on a level line, a
+     border or a chip moves the value, not the page; home keeps its history swipe.
 116. **The tank unit in Quick Adjustments (test, Z18).** 'Tank unit' is listed under Quick
      Adjustments > Water Tank and no longer under Skin > Display; choosing mm changes the state line
      as before; the stored setting and the KV backup keep their key; the settings search finds it
@@ -3144,8 +3186,15 @@ Where an item here and one of 27-55 disagree, the item here wins (3.10 overrides
      default opens too; both are off with nothing selected.
 120. **The review on the tablet (founder, H6).** The founder swipes back on the four screens he
      named, renames a profile and sees it loaded again, opens the editor with the new button, finds
-     the tank unit under Water Tank, takes a bean photo without the reading, and answers the hot
-     water ring's open question.
+     the tank unit under Water Tank, takes a bean photo without the reading, and sees the target in
+     the hot water ring and the smaller state word.
+121. **The target in the ring (test, Z22).** `waterValues` gives 'target 50 g' with a scale and
+     'target 50 ml' without one for a hot water run whose target is 50, nothing for a flush and
+     nothing for a target of 0; the mock gateway's hot water ring shows the line inside its frame,
+     the other values stay where they were.
+122. **The state word (test, Z23).** The state word's computed `font-size` and `font-weight` equal
+     those of home's profile name; its values keep the value size; no file but the type roles
+     table gives the state word the title token; `npm run type-sizes` lists no text off the scale.
 
 ## 6. Constraints
 - **Budget:** one Claude Pro plan. This product may use all of it up to 90% of the weekly
@@ -3274,7 +3323,9 @@ The weeks are a capacity guess on one Pro plan.
 | 5 | Z19 | review 2026-10-25: the bean photo's reading dropped, the photo kept: `ocr.ts`, the probe, the `ocr/` folder, the three Tesseract packages, the credits and Z1/Z2's tests removed (3.17 item 3) | P2 |
 | 5 | Z20 | review 2026-10-25: rename in the picker: a row moved to the right shows a rename button, a dialog, a `PUT` with the new title, the loaded profile loaded again (3.17 item 5) | Z17 |
 | 5 | Z21 | review 2026-10-25: `edit` and `load` side by side in the detail panel; edit loads the profile and opens its editor (3.17 item 6) | Z20 |
-| 5 | H6 | review 2026-10-25: a local release for the tablet, `npm run release -- --local` (3.15), the founder's checks of 3.17 in install.md; the public release P6 resumes it | Z17-Z21, P7 |
+| 5 | Z22 | review 2026-10-25: the hot water ring shows the target weight (scale) or volume (no scale) of the pour (3.17 item 4) | P2 |
+| 5 | Z23 | review 2026-10-25: the state word has the name role's size, the size of the profile and bean on home (3.17 item 7) | P2 |
+| 5 | H6 | review 2026-10-25: a local release for the tablet, `npm run release -- --local` (3.15), the founder's checks of 3.17 in install.md; the public release P6 resumes it | Z17-Z23, P7 |
 | 5 | P6 | publish: the release 0.7.0: tag, GitHub release with the ZIP and its SHA-256, the URL install checked in Decaid, the founder's cold read and a new user's install (3.13 acceptance 84-87); pushing and announcing are the founder's | P3, P5, P7, H5, H6 |
 
 | 2 (Oct 19-25) | Q1 | code quality review 2026-10-19: Prettier and ESLint, the tree formatted in one commit (in `.git-blame-ignore-revs`), lint errors fixed, both in the check ([review-code-quality-10-19-26.md](review-code-quality-10-19-26.md), steps 1-3) | - |
