@@ -2519,7 +2519,9 @@ Windows, Linux and macOS. What differs per platform is **Decaid itself**:
   2026-10-18 is 0.3.0 (H2, 2026-10-20), and the hand-over of the reviews of 2026-10-18 and
   2026-10-20 is 0.4.0 (H3, 2026-10-21), and the hand-over of the reviews of 2026-10-21 and
   2026-10-22 is 0.5.0 (H4, 2026-10-23), and the hand-over of the review of 2026-10-23 and inbox
-  #45 is 0.6.0 (H5, 2026-10-24): `npm run zip` writes
+  #45 is 0.6.0 (H5, 2026-10-24), and the completion of 0.6.0's hand-over and the review of
+  2026-10-24 is 0.6.1 (H5, 2026-10-25; a patch, since 0.7.0 is the public release, P6): `npm
+  run zip` writes
   `release/pureflow-<version>.zip`; the steps and the
   founder's checks are in
   [install.md](install.md), the result of the automated items in
@@ -3160,12 +3162,13 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
   Settings); whether the skin's port is the same there and stays over a restart, which the
   settings in `localStorage` depend on. The founder's checks are in
   [install.md](install.md). (owner)
-- The version is `0.6.0`, a beta (founder, 2026-10-13; 0.1.x for fix rounds); it is in
+- The version is `0.6.1`, a beta (founder, 2026-10-13; 0.1.x for fix rounds); it is in
   `package.json` and `public/manifest.json`. Versions are semantic (founder, 2026-10-16): a
   hand-over raises the minor version, so H1 built `0.2.0` (2026-10-18), H2 built `0.3.0`
   (2026-10-20), H3 (the reviews of 2026-10-18 and 2026-10-20) `0.4.0` (2026-10-21), and H4 (the
   reviews of 2026-10-21 and 2026-10-22) `0.5.0` (2026-10-23), and H5 (the review of 2026-10-23
-  and inbox #45) `0.6.0` (2026-10-24); a major version (such as the
+  and inbox #45) `0.6.0` (2026-10-24), and its completion with the review of 2026-10-24
+  `0.6.1` (2026-10-25; not 0.7.0, which is the public release); a major version (such as the
   reverted 1.1.0, commit `ad378f9`) only after asking the founder. (answered)
 - Other profiles (founder's question of 2026-10-14, [answers-2026-10-14.md](answers-2026-10-14.md)):
   answered by version 1.1: they open in the skin's own step editor, ported from Streamline
