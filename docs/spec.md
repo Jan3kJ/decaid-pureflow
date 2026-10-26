@@ -2566,6 +2566,11 @@ in the KV backup), shown there in the skin's controls with the hint 'The water i
 the state line: in ml, or in mm as the machine measures it. This one is the skin's, not the
 machine's.' The Display group keeps the display size and the line width. The settings search and
 the page's links that name the old place follow. Nothing in `stateLine` changes.
+*Built (Z18):* the Water Tank subcategory draws the skin's own row 'tank unit' (ml, mm) under the
+machine's tank temperature and water level alert (`TankUnit.svelte`, the tree's view `tank-unit`),
+with the same test ids (`setting-tank-unit-ml`, `-mm`); it is written to the settings object at
+once and needs no machine. The skin has no settings search, so there is none to follow; the user
+guide names the new place.
 
 **3. The bean photo's reading is dropped (item 3; Z19).** 'The OCR feature does not really work,
 drop this feature for now, just keep the possibility to take a photo.' This **supersedes Z1 and Z2**

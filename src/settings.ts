@@ -24,7 +24,7 @@ export interface Settings {
   displaySize: number;
   /** Skin > Display: a factor on the width of every graph's lines (`LINE_WIDTHS`) */
   lineWidth: number;
-  /** Skin > Display: the state line shows the tank in ml (Streamline's table) or in the machine's mm */
+  /** Quick Adjustments > Water Tank: the state line shows the tank in ml (Streamline's table) or in the machine's mm */
   tankUnit: TankUnit;
   /**
    * The editor's row of profiles to start from (founder, 2026-10-13): five slots, each the

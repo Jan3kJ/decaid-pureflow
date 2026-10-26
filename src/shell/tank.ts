@@ -18,7 +18,7 @@ export const MM_TO_ML: readonly number[] = [
 /** ml, the full tank: any level above the table */
 export const TANK_MAX_ML = 2058;
 
-/** The units the tank is shown in (Skin > Display 'tank unit'). */
+/** The units the tank is shown in (Quick Adjustments > Water Tank 'tank unit'). */
 export type TankUnit = 'ml' | 'mm';
 
 export const TANK_UNITS: { label: string; value: TankUnit }[] = [

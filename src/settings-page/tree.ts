@@ -39,7 +39,8 @@ export type SkinPart = 'steam' | 'hot-water' | 'profile' | 'graph' | 'display' |
  * maintenance procedure (`Maintenance.svelte`), the machine's information and the charging
  * status (`MachineInfo.svelte`) (S2b); the plugin cards (`Plugins.svelte`), the wake schedules
  * (`Presence.svelte`), the firmware and Decaid's update (`Firmware.svelte`), the sensors'
- * calibration (`SensorCalibration.svelte`) (S2c). Drawn above the subcategory's fields.
+ * calibration (`SensorCalibration.svelte`) (S2c); the skin's own tank unit beside the machine's
+ * tank settings (`TankUnit.svelte`). Drawn above the subcategory's fields, or below them.
  */
 export type View =
   | { kind: 'devices'; devices: DeviceKind }
@@ -51,6 +52,7 @@ export type View =
   | { kind: 'firmware' }
   | { kind: 'app-update' }
   | { kind: 'sensors' }
+  | { kind: 'tank-unit' }
   | { kind: 'bengle'; part: 'cup-warmer' | 'lighting' | 'load-cells' }
   | { kind: 'help'; part: 'manual' | 'feedback' };
 
@@ -97,7 +99,7 @@ export const SETTINGS_TREE: Category[] = [
         hint: "The machine's hot water. The hot water page's ratios are under Skin > Hot water.",
         content: fields(HOT_WATER),
       },
-      { id: 'watertank', name: 'Water Tank', content: fields(WATER_TANK) },
+      { id: 'watertank', name: 'Water Tank', content: view({ kind: 'tank-unit' }, WATER_TANK, true) },
       { id: 'flush', name: 'Flush', content: fields(FLUSH) },
       {
         id: 'machineadvancedsettings',

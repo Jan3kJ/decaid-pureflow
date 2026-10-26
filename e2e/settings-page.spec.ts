@@ -144,6 +144,13 @@ test('a typed number is written with its key alone, and the page shows what the 
   await type(page, 'setting-water-alert', '15');
   await expect(shown(page, 'water-alert')).toHaveText('15mm, about 400 ml');
   expect(writes('POST', '/api/v1/machine/waterLevels')).toEqual([{ refillLevel: 15 }]);
+  // Below them the skin's own tank unit (spec 3.17 item 2): saved in the skin, nothing to the machine.
+  const tank = page.getByTestId('settings-section-watertank');
+  await expect(tank.locator('[data-testid^="row-"]')).toHaveText([/tank temperature/, /water level alert/, /tank unit/]);
+  await tank.getByTestId('setting-tank-unit-mm').click();
+  await expect(tank.getByTestId('setting-tank-unit-mm')).toHaveAttribute('aria-pressed', 'true');
+  expect(writes('POST', '/api/v1/machine/settings')).toEqual([{ tankTemp: 30 }]);
+  expect(writes('POST', '/api/v1/machine/waterLevels')).toEqual([{ refillLevel: 15 }]);
 
   // A workflow value: only its key in steamSettings, and the skin's workflow follows.
   await type(page, 'setting-steam-flow', '1.4');
@@ -262,6 +269,8 @@ test('without a machine the machine values are not read and say so; a failed wri
   await openSettings(page);
   await expect(page.getByTestId('settings-section-watertank').getByTestId('settings-unread')).toContainText('Not read');
   await expect(page.getByTestId('setting-tank-temperature')).toBeDisabled();
+  // The skin's own tank unit needs no machine.
+  await expect(page.getByTestId('setting-tank-unit-mm')).toBeEnabled();
   // Decaid's own settings are read all the same.
   await expect(shown(page, 'weight-flow-multiplier')).toHaveText('1.0');
 

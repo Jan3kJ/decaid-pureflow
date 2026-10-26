@@ -87,6 +87,7 @@ describe('the settings tree (research.md 20.3, 20.10 S2a)', () => {
       machinedescaling: { kind: 'maintenance', procedure: 'descale' },
       transportmode: { kind: 'maintenance', procedure: 'transport' },
       sensors: { kind: 'sensors' },
+      watertank: { kind: 'tank-unit' },
       extention2: { kind: 'plugins' },
       presence: { kind: 'presence' },
       firmwareupdate: { kind: 'firmware' },

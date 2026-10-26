@@ -3,7 +3,8 @@ import type { Settings } from '../src/settings';
 import type { Backup } from '../src/settings-backup';
 import { mockGateway, type MockGateway } from './mock-gateway';
 
-// Skin > Display Size and Skin > Active Skin (spec 3.9 item 15, U11, acceptance 53), against the
+// Skin > Display Size and Skin > Active Skin (spec 3.9 item 15, U11, acceptance 53), and the tank
+// unit under Quick Adjustments > Water Tank (spec 3.17 item 2, acceptance 116), against the
 // mocked gateway: each display option applies at once and stays over a reload; the skin switch
 // lists Decaid's skins, asks, makes the chosen one Decaid's default, starts the skin server again
 // and opens the port it serves on. The switch against the running gateway:
@@ -38,6 +39,15 @@ async function openSkin(page: Page, sub: string) {
   await page.getByTestId('open-settings').click();
   await page.getByTestId('settings-category-skin').click();
   await page.getByTestId(`settings-sub-${sub}`).click();
+}
+
+/** Quick Adjustments > Water Tank, where the skin's tank unit sits beside the machine's tank settings. */
+async function openTank(page: Page) {
+  await home(page);
+  await page.getByTestId('menu').click();
+  await page.getByTestId('open-settings').click();
+  await page.getByTestId('settings-category-quickadjustments').click();
+  await page.getByTestId('settings-sub-watertank').click();
 }
 
 const rootSize = (page: Page) => page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).fontSize));
@@ -113,20 +123,37 @@ test("the chart line width widens every graph's curves: the profile picker's pre
   }
 });
 
-test('the tank unit shows the state line in ml or mm and is saved; the warning compares mm', async ({ page }) => {
+test('the tank unit is under Quick Adjustments > Water Tank, shows the state line in ml or mm and is saved; the warning compares mm', async ({
+  page,
+}) => {
   await home(page);
   // ml by default: 38 mm is 1040 ml.
   await expect(page.getByTestId('state-tank')).toHaveText('1040 ml');
 
+  // No longer under Skin > Display, which keeps the size and the line width.
   await openSkin(page, 'skin-display');
+  const display = page.getByTestId('settings-display');
+  await expect(display.getByTestId('setting-display-size')).toBeVisible();
+  await expect(display.getByTestId('setting-line-width')).toBeVisible();
+  await expect(page.getByTestId('setting-tank-unit')).toHaveCount(0);
+
+  await openTank(page);
+  const row = page.getByTestId('settings-section-watertank').getByTestId('row-tank-unit');
+  await expect(row).toContainText(
+    "The water in the tank on the state line: in ml, or in mm as the machine measures it. This one is the skin's, not the machine's.",
+  );
   await expect(page.getByTestId('setting-tank-unit-ml')).toHaveAttribute('aria-pressed', 'true');
   await page.getByTestId('setting-tank-unit-mm').click();
   await expect(page.getByTestId('setting-tank-unit-mm')).toHaveAttribute('aria-pressed', 'true');
   expect((await stored(page)).tankUnit).toBe('mm');
+  // The KV backup carries it under the same key.
+  await expect
+    .poll(() => (gateway.store['pureflow/settings-backup'] as Backup | undefined)?.settings?.tankUnit, { timeout: 10_000 })
+    .toBe('mm');
   await home(page);
   await expect(page.getByTestId('state-tank')).toHaveText('38 mm');
 
-  await openSkin(page, 'skin-display');
+  await openTank(page);
   await page.getByTestId('setting-tank-unit-ml').click();
   expect((await stored(page)).tankUnit).toBe('ml');
   await home(page);

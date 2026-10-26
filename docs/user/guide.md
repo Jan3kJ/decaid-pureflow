@@ -114,9 +114,12 @@ and the machine's.
 - **Hot water**: the three ratios.
 - **Profile**: the highest flow the editor offers, the dose, the start row of the editor, and
   **Convert to 3.0**.
-- **Display Size**: the size of everything on screen, the line width, and the tank in ml or mm.
+- **Display Size**: the size of everything on screen and the line width.
 - **Active Skin**: Decaid's skins; a tap on another one switches to it.
 - **Backup and version**: the backup in Decaid and the skin's version.
+
+One of the skin's settings sits with the machine's: **tank unit**, under **1. Quick
+Adjustments > Water Tank**, shows the tank on the state line in ml or in mm.
 
 The two sleep entries of the menu differ: **Machine sleep** puts only the DE1 to sleep;
 **Machine and app sleep** also turns the skin dark, with 'touch to wake'. A touch on it wakes

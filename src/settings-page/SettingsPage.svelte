@@ -25,6 +25,7 @@
   import Presence from './Presence.svelte';
   import SensorCalibration from './SensorCalibration.svelte';
   import SkinCategory from './SkinCategory.svelte';
+  import TankUnit from './TankUnit.svelte';
   import { PREFERRED_DEVICES, STEAM_TEMPERATURE, type Field } from './fields';
   import { textOf } from './text';
   import {
@@ -257,6 +258,8 @@
                 <Bengle {skin} part={view.part} />
               {:else if view?.kind === 'help'}
                 <Help {skin} part={view.part} />
+              {:else if view?.kind === 'tank-unit'}
+                <TankUnit {skin} />
               {/if}
             {/snippet}
             {#each unreadOf(sub) as error (error)}
