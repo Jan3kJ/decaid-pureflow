@@ -1,5 +1,5 @@
-// `npm run docs-check [root]`: every link and image of README.md and the Markdown of docs/user/
-// resolves (spec 3.13, acceptance 83). A relative path must name a file or folder of the tree, an
+// `npm run docs-check [root]`: every link and image of README.md, CONTRIBUTING.md, CHANGELOG.md,
+// SECURITY.md and the Markdown of docs/user/ resolves (spec 3.13, acceptance 83). A relative path must name a file or folder of the tree, an
 // anchor a heading (GitHub's slug) or an `id`/`name` of the Markdown file it points to. Links with
 // a scheme (https:, mailto:) are not fetched. Exits 1 and lists what does not resolve.
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
@@ -7,9 +7,11 @@ import { dirname, join, relative, resolve } from 'node:path';
 
 const root = resolve(process.argv[2] ?? '.');
 
-/** README.md and every .md under docs/user/. */
+/** The Markdown files of the root that exist, and every .md under docs/user/. */
 function documents() {
-  const found = existsSync(join(root, 'README.md')) ? [join(root, 'README.md')] : [];
+  const found = ['README.md', 'CONTRIBUTING.md', 'CHANGELOG.md', 'SECURITY.md']
+    .map((name) => join(root, name))
+    .filter((path) => existsSync(path));
   const walk = (dir) => {
     if (!existsSync(dir)) return;
     for (const entry of readdirSync(dir, { withFileTypes: true })) {

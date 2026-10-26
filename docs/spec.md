@@ -1625,6 +1625,18 @@ ready, by how much it matters:
    issue templates (bug: Decaid version, skin version, tablet, what happened; request) and a
    `SECURITY.md` of three lines (the skin talks only to the local Decaid, stores nothing but
    settings in the tablet's browser).
+   *Built (P3, 2026-10-26):* `npm run verify` (`scripts/verify.mjs`) is the one list CI and
+   the release script run: `check`, `lint`, `format:check`, `test`, `build`, the publish
+   check, the docs check and `npm audit --audit-level=high`. `ci.yml` runs `npm ci` and `npm run
+   verify` on Node 22, on push and pull request to `main`; the e2e on the mock gateway is not in
+   it (about 11 minutes, run locally like the rig), and there is no release workflow. In the team
+   repository, before the cut, the publish check reads the files as the cut makes them
+   (`--cut=stint/cut`: the paths of `paths.txt`, rewritten by `text.txt`). `CONTRIBUTING.md`
+   (the commands, the test rule, one pull request one change, the commit trailers of 3.15, the
+   GPL notice of ported code), `CHANGELOG.md` (a section per hand-over, 0.1.0 to 0.6.1, in the
+   format of 3.15 step 5), `.github/ISSUE_TEMPLATE/` (bug, request, and links to private
+   reporting and to Decaid's issues) and `SECURITY.md` (GitHub's private vulnerability report; in
+   scope the skin's code and its ZIP), linked from README; `docs-check` reads the three files too.
 8. **README is a developer's.** It becomes the front page: what pureflow is, one screenshot,
    requirements, install in three lines with the user documentation's link, then
    Development, Credits and Licence as now.
@@ -1634,10 +1646,18 @@ ready, by how much it matters:
    and keep 'Decent', 'Decaid' and 'A-Flow' as names of what it works with. The migration of
    the former name `decaid-skin` (`src/former-name.ts`, `migrate.ts`, `former-keys.ts`) serves
    only the founder's tablet; keep it for one public release, then drop it.
+   *Built (P3, 2026-10-26):* a web search on 2026-10-26 found no skin, plugin or repository
+   named 'pureflow' for the DE1 or Decaid; GitHub's own search needs an account and was not run.
+   README says 'An unofficial skin for Decaid' in its first line.
 10. **Dependencies and checks.** `npm audit` and a list of the bundled dependencies' licences
     (the ZIP holds Svelte's runtime, MIT; dev tools do not ship) into `NOTICE`; a full run of
     `npm test`, `check`, `lint` and `format:check` on a clean clone (`npm ci`), not only on the
     founder's machine, with the result in `CHANGELOG.md`.
+    *Built (P3, 2026-10-26):* the ZIP holds two packages of `node_modules` (read from the
+    build's source maps): Svelte 5.57.2 and clsx 2.1.1, both MIT, listed in `NOTICE`; there are
+    no production dependencies in `package.json`. `npm audit`: 0 vulnerabilities. A clean clone
+    with `npm ci` (Node 24 on the founder's machine; CI uses 22) passed `npm run verify`
+    (1191 tests); 0.7.0's CHANGELOG section carries the release's own result line.
 11. **Version.** The first public release is **0.7.0**: the hand-over H5 of 3.14 takes
     0.6.0 (a hand-over raises the minor version), the release is the next minor, and not 1.0.0
     (founder, 2026-10-22: 0.6 or later; 2026-10-23: the release moves to 0.7.0). A 1.0.0 would be

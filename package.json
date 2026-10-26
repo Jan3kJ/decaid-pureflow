@@ -25,6 +25,7 @@
     "screenshots": "node scripts/screenshots.mjs",
     "docs-check": "node scripts/docs-check.mjs",
     "publish-check": "node scripts/publish-check.mjs",
+    "verify": "node scripts/verify.mjs",
     "type-sizes": "node scripts/type-sizes.mjs"
   },
   "devDependencies": {

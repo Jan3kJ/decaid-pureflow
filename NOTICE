@@ -102,5 +102,11 @@ works, named below with their licences.
 
 5. Bundled runtime
 
-   The skin's ZIP holds Svelte's runtime (MIT). The development tools in
-   package.json do not ship.
+   The skin's ZIP holds only these packages of node_modules, both under the
+   MIT licence (their copyright lines are in the packages' LICENSE files):
+
+     svelte 5.57.2   https://github.com/sveltejs/svelte   MIT
+     clsx 2.1.1      https://github.com/lukeed/clsx       MIT
+
+   clsx comes with Svelte's runtime. Every other package of package.json is
+   a development tool (build, test, lint, format) and does not ship.

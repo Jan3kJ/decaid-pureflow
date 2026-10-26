@@ -90,4 +90,24 @@ describe('publish-check', () => {
     commit({ 'a.md': 'a\n' }, 'someone' + '@example.com');
     expect(check('--history').stderr).toMatch(/commit \w+ author:1: e-mail address/);
   });
+
+  it('with --cut reads only the paths the cut keeps, rewritten by its text rules', () => {
+    repository({
+      ...CLEAN,
+      'cut/paths.txt': '# kept\nsrc/\nREADME.md\nglob:tsconfig*.json\nregex:^scripts/(?!rig-)\n',
+      'cut/text.txt': 'regex:[A-Za-z]:\\\\Git\\\\==>..\\\\\nregex:(lo)cal==>\\1cal\n',
+      'team/plan.md': 'C:' + '\\Users\\someone\n',
+      'scripts/rig-probe.mjs': 'D:' + '/Git/rig\n',
+      'src/fixture.ts': "const log = 'D:" + "\\Git\\rig\\log.txt';\n",
+      'tsconfig.app.json': '{}\n',
+    });
+    expect(check().status).toBe(1);
+    expect(check('--cut=cut').status).toBe(0);
+    expect(check('--cut=cut').stdout).toMatch(/files as the cut makes them/);
+
+    commit({ 'tsconfig.app.json': '{ "x": "C:' + '/Users/someone" }\n' });
+    const kept = check('--cut=cut');
+    expect(kept.status).toBe(1);
+    expect(kept.stderr).toMatch(/tsconfig\.app\.json:1: Windows path/);
+  });
 });

@@ -68,4 +68,18 @@ describe('docs-check', () => {
     expect(run.status).toBe(1);
     expect(run.stderr).toContain('README.md: docs/user/guide.md#steam (no such anchor)');
   });
+
+  it('reads CONTRIBUTING, CHANGELOG and SECURITY at the root too', () => {
+    const files = {
+      ...GOOD,
+      'CONTRIBUTING.md': '# Contributing\n\n[Licence](LICENSE)\n',
+      'CHANGELOG.md': '# Changelog\n\n[Contributing](CONTRIBUTING.md#contributing)\n',
+      'SECURITY.md': '# Security\n\n[Decent](https://example.org)\n',
+      LICENSE: 'GPL',
+    };
+    expect(check(tree(files)).status).toBe(0);
+    const run = check(tree({ ...files, 'SECURITY.md': '# Security\n\n[Policy](docs/policy.md)\n' }));
+    expect(run.status).toBe(1);
+    expect(run.stderr).toContain('SECURITY.md: docs/policy.md (no such file)');
+  });
 });

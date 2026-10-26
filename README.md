@@ -58,9 +58,14 @@ the browser tests.
 | Build | `npm run build` | the static skin in `dist/`, with `index.html` and `manifest.json` at its root |
 | Zip | `npm run zip` | builds, then writes `release/pureflow-<version>.zip` with `index.html` at the ZIP's root |
 | Publish check | `npm run publish-check` | no local path, personal address or token in the files |
+| All checks | `npm run verify` | check, lint, format, test, build, the publish and docs checks and `npm audit`, as CI runs them |
 
 `npm run e2e:rig` runs the tests that need a running Decaid with its simulated machine and
 scale (docs/research.md 8.8). The product spec is [docs/spec.md](docs/spec.md).
+
+How to send a change, and the commit messages the release notes are made from, are in
+[CONTRIBUTING](CONTRIBUTING.md). What changed in each version is in the [CHANGELOG](CHANGELOG.md),
+and how to report a vulnerability privately is in [SECURITY](SECURITY.md).
 
 ## Credits
 

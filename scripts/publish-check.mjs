@@ -4,13 +4,16 @@
 // team's runner talks through, and a token pattern. Without the flag it reads the tracked files of
 // the working tree (CI, on the tip); with `--history` it reads every blob of `git rev-list --all`,
 // every commit message, author and committer, and the annotated tags. Binary files are skipped.
-// Exits 1 and lists what it found.
+// With `--cut=<dir>` (the team repository, before the cut of spec 3.15) it reads the tracked files
+// as the cut makes them: only the paths of `<dir>/paths.txt`, rewritten by the rules of
+// `<dir>/text.txt` (git filter-repo's formats). Exits 1 and lists what it found.
 import { spawn, spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 const args = process.argv.slice(2);
 const history = args.includes('--history');
+const cut = args.find((arg) => arg.startsWith('--cut='))?.slice('--cut='.length);
 const root = resolve(args.find((arg) => !arg.startsWith('--')) ?? '.');
 
 /** The addresses a commit may carry: the founder's GitHub noreply one and the co-author line's. */
@@ -103,6 +106,50 @@ async function historyBlobs(report) {
   return shas.length;
 }
 
+/** The lines of a filter-repo input file, without comments and blank lines. */
+const ruleLines = (file) =>
+  readFileSync(file, 'utf8')
+    .split(/\r?\n/)
+    .filter((line) => line.trim() && !line.startsWith('#'));
+
+/** A glob of `--paths-from-file`: `*` and `?` match any character, `/` too (Python's fnmatch). */
+const globPattern = (glob) =>
+  new RegExp(
+    `^${glob
+      .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+      .replace(/\*/g, '.*')
+      .replace(/\?/g, '.')}$`,
+  );
+
+/** Whether the cut keeps a path: a plain line keeps the file or the folder it names. */
+function cutKeeps(dir) {
+  const tests = ruleLines(join(dir, 'paths.txt')).map((line) => {
+    if (line.startsWith('regex:')) {
+      const pattern = new RegExp(line.slice('regex:'.length));
+      return (path) => pattern.test(path);
+    }
+    if (line.startsWith('glob:')) {
+      const pattern = globPattern(line.slice('glob:'.length));
+      return (path) => pattern.test(path);
+    }
+    return (path) => path === line || path.startsWith(line.endsWith('/') ? line : `${line}/`);
+  });
+  return (path) => tests.some((keeps) => keeps(path));
+}
+
+/** The text as `--replace-text` leaves it: `regex:` or literal rules, `==>` the replacement. */
+function cutText(dir) {
+  const rules = ruleLines(join(dir, 'text.txt')).map((line) => {
+    const [from, to = '***REMOVED***'] = line.split('==>');
+    if (!from.startsWith('regex:')) return (text) => text.split(from).join(to);
+    const pattern = new RegExp(from.slice('regex:'.length), 'g');
+    // Python's replacement: `\1` is a group, `\\` a backslash.
+    const replace = (_, ...groups) => to.replace(/\\(\d|\\)/g, (__, c) => (c === '\\' ? '\\' : (groups[c - 1] ?? '')));
+    return (text) => text.replace(pattern, replace);
+  });
+  return (text) => rules.reduce((result, rule) => rule(result), text);
+}
+
 const problems = [];
 const report = (where, text) => {
   for (const finding of scan(text)) problems.push(`${where}:${finding}`);
@@ -133,7 +180,11 @@ if (history) {
   const blobs = await historyBlobs(report);
   summary = `${count} commits, ${blobs} blobs`;
 } else {
-  const files = git('ls-files', '-z').split('\0').filter(Boolean);
+  const keeps = cut ? cutKeeps(resolve(root, cut)) : () => true;
+  const rewrite = cut ? cutText(resolve(root, cut)) : (text) => text;
+  const files = git('ls-files', '-z')
+    .split('\0')
+    .filter((file) => file && keeps(file));
   for (const file of files) {
     let bytes;
     try {
@@ -141,9 +192,9 @@ if (history) {
     } catch {
       continue;
     }
-    if (!binary(bytes)) report(file, bytes.toString('utf8'));
+    if (!binary(bytes)) report(file, rewrite(bytes.toString('utf8')));
   }
-  summary = `${files.length} files`;
+  summary = `${files.length} files${cut ? ' as the cut makes them' : ''}`;
 }
 
 if (problems.length) {

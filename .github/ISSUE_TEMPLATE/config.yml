@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/Jan3kJ/decaid-pureflow/security/advisories/new
+    about: Please report a vulnerability privately, as SECURITY.md says.
+  - name: Decaid, the DE1 or Streamline
+    url: https://github.com/decentespresso/decaid/issues
+    about: Problems with Decaid itself belong to Decent.
