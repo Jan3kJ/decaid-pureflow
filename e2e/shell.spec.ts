@@ -235,8 +235,8 @@ test('a shot started at the machine: home shows it by itself with a live graph a
 
   await gateway.replay(page, 0.3, 0.7);
   await expect.poll(() => points(page)).toBeGreaterThan(early);
-  // The profile and bean buttons are not drawn while the shot runs (spec 3.11).
-  await expect(page.getByTestId('profile-name')).toHaveCount(0);
+  // The profile and bean buttons stay while the shot runs, but off (spec 3.17 item 10).
+  await expect(page.getByTestId('open-profiles')).toBeDisabled();
   expect(parseFloat((await page.getByTestId('shot-timer').textContent())!)).toBeGreaterThan(15);
   expect(parseFloat((await page.getByTestId('shot-weight').textContent())!)).toBeGreaterThan(5);
   await expect(page.getByTestId('shot-pressure')).toContainText('bar');

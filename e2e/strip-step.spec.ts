@@ -59,7 +59,7 @@ test('no strip on home; while a shot runs the state line ends with the step’s 
   await expect(page.getByTestId('state-step')).toHaveText('Preinfusion');
   await gateway.replay(page, shareAt(1), shareAt(2));
   await expect(page.getByTestId('state-step')).toHaveText('Extraction');
-  await expect(page.getByTestId('status-title')).toHaveText('Espresso');
+  await expect(page.getByTestId('status-title')).toHaveText('Pouring');
   // After the scale's weight, in the state line's value size and the state word's colour.
   const step = await box(page, 'state-step');
   const weight = await box(page, 'state-scale');

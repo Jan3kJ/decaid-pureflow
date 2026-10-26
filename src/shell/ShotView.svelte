@@ -106,10 +106,9 @@
   {/if}
 
   <aside data-testid="shot-column">
-    <!-- The profile and bean for the next shot; while a shot runs their room goes to stop. -->
-    {#if !running}
-      <NextShot {skin} />
-    {/if}
+    <!-- The profile and bean for the next shot, at their place for the whole shot but off while
+         it runs, so the values under them do not move when it starts. -->
+    <NextShot {skin} off={running} />
     <div class="big">
       <small data-testid="shot-timer-label">{finished ? 'time, finished' : 'time'}</small>
       <b data-testid="shot-timer">{value(shown.seconds)}<i>s</i></b>

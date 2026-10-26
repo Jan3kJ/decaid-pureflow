@@ -270,12 +270,16 @@ describe('statusOf', () => {
       tone: 'ok',
     });
     expect(statusOf('machine', frame('sleeping'), url)).toMatchObject({ title: 'Asleep', tone: 'off' });
-    expect(statusOf('machine', frame('espresso'), url)).toMatchObject({ title: 'Espresso', tone: 'busy' });
+    expect(statusOf('machine', frame('espresso'), url)).toMatchObject({ title: 'Pouring', tone: 'busy' });
     expect(statusOf('machine', frame('needsWater'), url)).toMatchObject({ title: 'Needs water', tone: 'warn' });
   });
 
   it('shows a state it does not know as the machine names it', () => {
     expect(stateLabel('somethingNew')).toBe('somethingNew');
+  });
+
+  it('says Pouring while the machine pours, a shot or filter coffee', () => {
+    expect(stateLabel('espresso')).toBe('Pouring');
   });
 });
 

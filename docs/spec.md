@@ -2708,6 +2708,9 @@ the shot ends. The stop button stays at the column's bottom; the column must hol
 the 1280 x 800 tablet size. Test: on the mock gateway the top of the time, weight and stop in
 the column is the same before, during and after a shot, and the two buttons exist and are
 disabled during it.
+*Built (Z25):* `NextShot` takes `off` from `ShotView` while the shot runs: its three buttons
+(name, pen, bean) are disabled and the block is at 40 % opacity; a bean pick left open when a
+shot starts is closed.
 
 **The order.** Z17 first (the others touch the same pages), Z18 and Z19 independent, Z20 after Z17
 (the swipe's meaning), Z21 after Z20 (the same panel and file), Z22, Z23, Z24 and Z25 independent (the ring, the header, the steam chips, the home column), then the local release H6 with

@@ -95,9 +95,9 @@ test('a simulated shot: the state, an A-Flow profile, a live graph, the stop at 
     await expect(page.getByRole('button', { name: /start/ })).toHaveCount(0);
     await api('PUT', '/api/v1/machine/state/espresso');
     await expect(page.getByTestId('shot-plot')).toBeVisible({ timeout: 15_000 });
-    // While the shot runs the profile and bean buttons are not drawn (spec 3.11, X2).
-    await expect(page.getByTestId('open-profiles')).toHaveCount(0);
-    await expect(page.getByTestId('open-pick')).toHaveCount(0);
+    // While the shot runs the profile and bean buttons are shown but off (spec 3.17 item 10).
+    await expect(page.getByTestId('open-profiles')).toBeDisabled();
+    await expect(page.getByTestId('open-pick')).toBeDisabled();
     await expect.poll(() => points(page), { timeout: 15_000 }).toBeGreaterThan(20);
     const early = await points(page);
     await expect.poll(() => points(page), { timeout: 15_000 }).toBeGreaterThan(early + 20);
@@ -112,7 +112,7 @@ test('a simulated shot: the state, an A-Flow profile, a live graph, the stop at 
     await expect(page.getByTestId('shot-column').getByTestId('stop')).toBeEnabled();
     // The step that runs is the state line's last item, a step of the profile (spec 3.14, Z4).
     const steps = workflow.profile.steps.map((step, i) => step.name?.trim() || `Step ${i + 1}`);
-    await expect(page.getByTestId('status-title')).toHaveText('Espresso');
+    await expect(page.getByTestId('status-title')).toHaveText('Pouring');
     expect(steps).toContain(await page.getByTestId('state-step').textContent());
     await expect(page.getByTestId('shot-timer-label')).toHaveText('time');
     await page.screenshot({ path: 'e2e-rig/.results/espresso-rig.png' });

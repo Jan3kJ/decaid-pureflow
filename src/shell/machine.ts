@@ -51,7 +51,7 @@ const STATE_LABEL: Record<MachineState, string> = {
   sleeping: 'Asleep',
   heating: 'Heating',
   preheating: 'Preheating',
-  espresso: 'Espresso',
+  espresso: 'Pouring',
   hotWater: 'Hot water',
   flush: 'Flush',
   steam: 'Steam',

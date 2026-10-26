@@ -5,31 +5,42 @@
 
   interface Props {
     skin: Skin;
+    /** a shot runs: the buttons are shown but off, so what the shot saves does not change */
+    off?: boolean;
   }
 
-  let { skin }: Props = $props();
+  let { skin, off = false }: Props = $props();
 
   // The profile and the bean and grinder setting for the next shot, as the workflow holds them;
-  // a tap picks others (spec 3.9 item 19, 3.11). Drawn at the top of home's right column while
-  // no shot runs.
+  // a tap picks others (spec 3.9 item 19, 3.11). Drawn at the top of home's right column, off
+  // while a shot runs (spec 3.17 item 10).
   const nextBean = $derived(beanLabel(contextBean(skin.workflow?.context)));
   const nextSetting = $derived(skin.workflow?.context?.grinderSetting?.trim() || null);
   let picking = $state(false);
+  $effect(() => {
+    if (off) picking = false;
+  });
 </script>
 
-<div class="next" data-testid="next-shot">
+<div class="next" class:off data-testid="next-shot">
   <div class="profile">
-    <button class="name" data-testid="open-profiles" aria-label="choose a profile" onclick={() => skin.go('profiles')}>
+    <button class="name" data-testid="open-profiles" aria-label="choose a profile" disabled={off} onclick={() => skin.go('profiles')}>
       <strong data-testid="profile-name">{skin.workflow?.profile?.title ?? '–'}</strong>
     </button>
-    <button class="icon" data-testid="open-editor" aria-label="edit the profile" onclick={() => skin.go('editor')}>
+    <button class="icon" data-testid="open-editor" aria-label="edit the profile" disabled={off} onclick={() => skin.go('editor')}>
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M4 20h4L19 9l-4-4L4 16z M13.5 6.5l4 4" />
       </svg>
     </button>
   </div>
 
-  <button class="pick" data-testid="open-pick" aria-label="bean and grinder for the next shot" onclick={() => (picking = true)}>
+  <button
+    class="pick"
+    data-testid="open-pick"
+    aria-label="bean and grinder for the next shot"
+    disabled={off}
+    onclick={() => (picking = true)}
+  >
     <span data-testid="next-bean">{nextBean}</span>
     {#if nextSetting}<small data-testid="next-setting">{nextSetting}</small>{/if}
   </button>
@@ -44,6 +55,10 @@
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
+  }
+
+  .off {
+    opacity: 0.4;
   }
 
   button {
