@@ -59,6 +59,7 @@ the browser tests.
 | Zip | `npm run zip` | builds, then writes `release/pureflow-<version>.zip` with `index.html` at the ZIP's root |
 | Publish check | `npm run publish-check` | no local path, personal address or token in the files |
 | All checks | `npm run verify` | check, lint, format, test, build, the publish and docs checks and `npm audit`, as CI runs them |
+| Release | `npm run release` | the checks, the changelog from the commits, the version, the ZIP, the tag, then the GitHub release after a yes; `--dry-run` and `--local` change less |
 
 `npm run e2e:rig` runs the tests that need a running Decaid with its simulated machine and
 scale (docs/research.md 8.8). The product spec is [docs/spec.md](docs/spec.md).

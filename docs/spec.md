@@ -2339,6 +2339,18 @@ with unit tests; the git and `gh` calls go through one small function that tests
 test runs the whole script with `--dry-run` and `--local` in a temporary repository. Spec 4 gets
 the script's place in the layout when it is built.
 
+*Built (P7, 2026-10-26):* `scripts/release.mjs` (`npm run release`) with its pure parts in
+`scripts/release-lib.mjs` and the tests in `src/release.test.ts`. The trailers are read from the
+message's last two paragraphs (not with `git interpret-trailers`); merge commits are skipped; a
+subject's leading task id is dropped from its entry. A `.release-notes.json` entry also overrides
+a wrong trailer. The release commit carries `Changelog: internal`, so the next release reads it.
+`--local` makes no fetch and calls no `gh`, and compares with the `origin/main` it already has;
+`--dry-run --local` is a dry run without GitHub. The rig is looked for before the checks
+(`GET /api/v1/machine/state` on port 8080), so a missing rig stops before the 11 minutes of e2e,
+and runs in four file groups (a spec the first three do not name goes into the fourth).
+`--resume` uploads with `--clobber` when the release exists. `--publish` makes the release
+public at once; there is no `--yes`.
+
 ### 3.16 Founder's review of 2026-10-24: the profile picker (planned, not built)
 
 The founder, with a screenshot of the picker (80's Espresso selected, its long description
@@ -2831,7 +2843,11 @@ Windows, Linux and macOS. What differs per platform is **Decaid itself**:
   founder's checks are in
   [install.md](install.md), the result of the automated items in
   [acceptance.md](acceptance.md).
-- **Later releases:** the same ZIP attached to a GitHub release, installable by URL. The plan
+- **Later releases:** the same ZIP attached to a GitHub release, installable by URL, made by
+  `npm run release` (`scripts/release.mjs`, its pure parts in `scripts/release-lib.mjs`; 3.15,
+  P7): the checks, the CHANGELOG section from the commits' trailers, the version, the ZIP and
+  `release/SHA256SUMS.txt`, the commit and tag, and the publish step behind the founder's yes;
+  a hand-over runs it with `--local`. The plan
   for publishing, the repository's clean-up and the user documentation are 3.13 (roadmap track P).
 
 ## 5. Acceptance (what "v1 done" means)

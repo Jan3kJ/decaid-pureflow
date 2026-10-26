@@ -26,6 +26,7 @@
     "docs-check": "node scripts/docs-check.mjs",
     "publish-check": "node scripts/publish-check.mjs",
     "verify": "node scripts/verify.mjs",
+    "release": "node scripts/release.mjs",
     "type-sizes": "node scripts/type-sizes.mjs"
   },
   "devDependencies": {
