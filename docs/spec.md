@@ -2644,6 +2644,10 @@ button loads too, that's okay'.) Both are off while
 nothing is selected and while busy, as the load button is. The edit button is not the editor's
 'load' of 3.6 (the editor opened the picker, a profile is picked, back in the editor): that stays
 the way it is.
+*Built (Z21):* edit is the left button in the panel's plain style, load stays the right one,
+filled; both run the one load of `Profiles.svelte`, and `screenAfter` in `src/shell/profiles.ts`
+says where it goes (edit: the editor, load: back). The editor's way back after edit is the
+picker when the picker was opened from home, and stays where it was when the editor opened it.
 
 **7. The state word has the size of the names (item 7; Z23).** From the founder's check of 'Names alike
 (Z5)' in install.md: 'does the larger state word ("Idle") look right? -> no, it should have the same

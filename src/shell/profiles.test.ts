@@ -22,8 +22,10 @@ import {
   renameAnswer,
   renameEntry,
   sameProfile,
+  screenAfter,
   sortProfiles,
 } from './profiles';
+import { editorFor } from '../editor/route';
 
 function record(profile: Profile, over: Partial<ProfileRecord> = {}): ProfileRecord {
   return {
@@ -232,6 +234,34 @@ mine`,
     expect(doseOf(other)).toBeUndefined();
     // The plugin's notes: Decaid's bundled default is not an A-Flow 3.0 profile.
     expect(doseOf({ ...light, notes: 'A-Flow: an alternative profile for D-Flow' })).toBeUndefined();
+  });
+});
+
+describe('screenAfter', () => {
+  it('goes to the editor after edit and back to where the picker was opened from after load', () => {
+    expect(screenAfter('edit', 'home')).toBe('editor');
+    expect(screenAfter('edit', 'editor')).toBe('editor');
+    expect(screenAfter('load', 'home')).toBe('home');
+    expect(screenAfter('load', 'editor')).toBe('editor');
+  });
+
+  it('edit opens the A-Flow editor on an A-Flow 3.0 profile, a default too, and the step editor on another', async () => {
+    const { client: api, calls } = client(() => ({}));
+    const [floral] = pickerEntries([]);
+    const mine = { ...fromGateway(light), title: 'A-Flow / mine' };
+    const stored = record(mine, { metadata: { source: 'pureflow', ...paramsMetadata(DEFAULT_PROFILES[1].params) } });
+    const plain = record(other);
+    await loadEntry(api, floral);
+    await loadEntry(
+      api,
+      pickerEntries([stored]).find((entry) => entry.id === stored.id)!,
+    );
+    await loadEntry(
+      api,
+      pickerEntries([plain]).find((entry) => entry.id === plain.id)!,
+    );
+    const loaded = calls.map((call) => (call.body as { profile: Profile }).profile);
+    expect(loaded.map(editorFor)).toEqual(['aflow', 'aflow', 'steps']);
   });
 });
 

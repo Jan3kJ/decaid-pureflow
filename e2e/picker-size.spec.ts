@@ -37,6 +37,7 @@ async function layout(page: Page, title: string) {
     values: await box('dl'),
     graph: await box('[data-testid="profile-preview"]'),
     caption: await box('[data-testid="profile-caption"]'),
+    edit: await box('[data-testid="edit-profile"]'),
     load: await box('[data-testid="load-profile"]'),
   };
 }

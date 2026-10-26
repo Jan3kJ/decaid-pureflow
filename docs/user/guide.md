@@ -37,7 +37,7 @@ A tap on the scale's weight in the top line tares the scale.
 ## The profile picker and its estimate
 
 Tap the profile's name on home to open the picker. Tap a profile to see it; **load** sends it
-to the machine.
+to the machine. **edit** beside it sends it to the machine too and opens it in its editor.
 
 The graph shows an **estimate** of the shot: the flow, pressure and temperature a shot of this
 profile would roughly show. The profile's own targets are the dotted lines under it. The line

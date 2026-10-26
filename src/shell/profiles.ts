@@ -6,6 +6,7 @@ import type { DecaidClient, Profile, ProfileRecord, Workflow, WorkflowContextPat
 import { POUR_SHOWN_SECONDS } from '../editor/curve';
 import { notesText, openParams, paramsMetadata, readParams, sameSteps, workflowProfile } from '../editor/storage';
 import { FORMER_NAME } from '../former-name';
+import type { Screen } from './nav';
 
 /** `metadata.source` of a profile this skin stores. */
 export const SKIN_SOURCE = 'pureflow';
@@ -167,6 +168,17 @@ export function loadProfile(
  */
 export function loadEntry(client: DecaidClient, entry: PickerEntry): Promise<Workflow> {
   return loadProfile(client, entry.profile, {}, entry.metadata);
+}
+
+/** The picker's two buttons: both load the selected profile (spec 3.17 item 6). */
+export type PickerAction = 'edit' | 'load';
+
+/**
+ * Where the picker goes after a load: 'edit' to the editor, which opens the loaded profile in
+ * its own editor (`editorFor`), 'load' back to where the picker was opened from.
+ */
+export function screenAfter(action: PickerAction, back: Screen): Screen {
+  return action === 'edit' ? 'editor' : back;
 }
 
 /** Loads a stored profile (`loadProfile`), its parameters read from its metadata. */

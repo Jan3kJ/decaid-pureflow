@@ -18,6 +18,8 @@
     renameAnswer,
     renameEntry,
     sameProfile,
+    screenAfter,
+    type PickerAction,
     type PickerEntry,
   } from './profiles';
   import type { Skin } from './skin.svelte';
@@ -104,14 +106,14 @@
    * which opens the profile in its editor (spec 3.6), to home otherwise. A default loads as
    * the skin holds it, without a record (spec 3.8, T5).
    */
-  const load = (entry: PickerEntry) =>
+  const load = (entry: PickerEntry, action: PickerAction = 'load') =>
     act('The profile could not be loaded', async () => {
       // Unsaved edits on the machine are asked about first (founder, 2026-10-14).
       const answer = await skin.mayLoad();
       if (answer === 'save-as') skin.openSaveAs();
       if (answer !== 'load') return;
       skin.workflow = await loadEntry(skin.client, entry);
-      skin.go(skin.back());
+      skin.go(screenAfter(action, skin.back()));
     });
 
   /** Where a row rests: moved left, moved right or closed. */
@@ -347,7 +349,11 @@
       <!-- The notes without the A-Flow line the skin writes, then for an A-Flow profile the text made from its values. -->
       <p class="notes" data-testid="profile-description">{description}</p>
       <p class="aflow">{dose === undefined ? '' : 'A-Flow 3.0: once it is loaded, the editor opens on it.'}</p>
-      <button class="load" data-testid="load-profile" disabled={busy} onclick={() => load(selected)}>load</button>
+      <!-- Edit loads too and opens the profile's editor; load goes back to where the picker was opened from. -->
+      <div class="actions">
+        <button class="edit" data-testid="edit-profile" disabled={busy} onclick={() => load(selected, 'edit')}>edit</button>
+        <button class="load" data-testid="load-profile" disabled={busy} onclick={() => load(selected)}>load</button>
+      </div>
     {:else}
       <p class="hint">Tap a profile to see it; load sends it to the machine.</p>
     {/if}
@@ -668,16 +674,28 @@
     scrollbar-width: thin;
   }
 
-  .load {
+  .actions {
     flex: none;
+    display: flex;
+    gap: 0.6rem;
+  }
+
+  .edit,
+  .load {
+    flex: 1 1 0;
+    min-width: 0;
     min-height: 3.4rem;
     font-size: var(--text-body);
     font-weight: 600;
+  }
+
+  .load {
     background: var(--fg);
     border-color: var(--fg);
     color: var(--bg);
   }
 
+  .edit:disabled,
   .load:disabled {
     opacity: 0.5;
   }
