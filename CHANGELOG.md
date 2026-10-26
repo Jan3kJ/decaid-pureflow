@@ -4,6 +4,30 @@ What changed in each version of pureflow, newest first. From 0.7.0 on a section 
 the release script (`npm run release`) from the commits' `Changelog:` lines; the sections up to
 0.6.1 summarise the hand-over builds that came before it.
 
+## 0.7.0 - 2026-10-26
+
+### Added
+
+- The profile picker describes an A-Flow profile in a few short sentences (dose and yield, fill, infuse, 2nd fill, pour) after your own notes. (Z16)
+- The hot water ring shows the target under its values, 'target 50 g' with a scale and 'target 50 ml' without. (Z22)
+- While steam runs, a tap on an adjust button changes the running steam timer at once. (Z24)
+- Move a stored profile's row to the right in the picker to rename it. (Z20)
+- The picker has edit beside load; edit loads the profile and opens its editor. (Z21)
+
+### Changed
+
+- A bean's photo is kept as a photo; the skin no longer tries to read the bag. (Z19)
+- README is the skin's front page, and the camera test page is gone from Settings > Skin. (P2)
+- The tank unit is set under Quick Adjustments > Water Tank, beside the machine's tank settings. (Z18)
+- The state word and the page title are the size of the profile and bean names. (Z23)
+- The state says Pouring during a shot, and home keeps the profile and bean buttons in place, dimmed, while it runs. (Z25)
+
+### Fixed
+
+- The swipe back works on the whole screen, from the lists and columns, the graph's empty space and the left edge. (Z17)
+
+Checks: npm ci, npm run verify and npm run e2e passed; rig suite: not run.
+
 ## 0.6.1 - 2026-10-25
 
 ### Added
