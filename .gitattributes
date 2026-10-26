@@ -3,3 +3,5 @@
 index.html text eol=lf
 # LICENSE is the GPL-3.0 text byte for byte; a test checks its hash.
 LICENSE text eol=lf
+# The ZIP copies manifest.json as checked out; LF keeps every checkout's ZIP the same.
+public/manifest.json text eol=lf

@@ -374,13 +374,6 @@
       <small>version {PRODUCT_VERSION}</small>
     </span>
   </div>
-  <div class="row">
-    <span class="about">
-      <strong>Camera test</strong>
-      <small>A page that tries the tablet's camera, for the bean photo (nothing is stored)</small>
-    </span>
-    <a class="retry" data-testid="camera-test-link" href="./camera.html">Open</a>
-  </div>
 </section>
 
 {#snippet lever(item: Switch)}
@@ -626,13 +619,6 @@
     background: var(--raised);
     border: 1px solid var(--line);
     border-radius: 0.9rem;
-  }
-
-  a.retry {
-    display: inline-flex;
-    align-items: center;
-    color: var(--fg);
-    text-decoration: none;
   }
 
   .retry.primary {

@@ -1611,6 +1611,9 @@ ready, by how much it matters:
    repository holds the rig probes `scripts/rig-*-probe.mjs`. Default: `camera.html` stays out of
    the public ZIP until U13 is built or dropped (`npm run zip` rejects it), the probes move to
    `scripts/rig/` with a line in the README, or go private.
+   *Built (P2, 2026-10-26):* U13 is built, so the camera test page is dropped: `camera.html`,
+   its e2e spec and the 'Camera test' row of Skin > Backup and version are gone, and the
+   product takes `public/` whole.
 6. **No CI.** Add `.github/workflows/ci.yml`: `npm ci`, `npm run check`, `lint`,
    `format:check`, `test`, `build`, the e2e on the mock gateway (Playwright's browsers), and
    `scripts/publish-check.mjs`; and no `release.yml`: **the release is made by one script, `scripts/release.mjs` (3.15, P7)**, so there
@@ -2249,6 +2252,10 @@ binary files skipped; the allowed addresses are the noreply one and the `Co-Auth
 of `e2e/camera.spec.ts`), and a bag photo of `docs/product/bags/` (one test of
 `e2e/bean-photo.spec.ts`). Steps 11 and 12 wait for the founder's choice, and
 `docs/product/cut-request.md` holds the details.
+*Built (P2, 2026-10-26):* the founder's answers: README is rewritten as the product's front page
+and links only product files, the camera test page is dropped (3.13 item 5), so `public/` is
+taken whole and the two ZIPs hold the same files, and the bag-photo test went with the reading
+(Z19). `public/manifest.json` is checked out with LF everywhere (`.gitattributes`).
 
 **A release script (P7).** The founder's request (2026-10-24): 'a script for releases: run all
 checks, derive a change history from the completed tasks, build the package, increase the
