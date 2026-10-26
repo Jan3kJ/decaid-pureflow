@@ -1,10 +1,7 @@
 // A bean's photo of its bag (spec 3.9 item 20, research.md 29.14): Decaid's bean has no field
 // for an image, so the photo is a JPEG data URL in the skin's KV namespace under the bean's id.
 // A bean deleted anywhere (the skin only archives) leaves its key behind; the catalogue's read
-// deletes the keys of beans that are gone. The bag is read from the camera's picture, which is
-// larger than the stored photo.
-import { LONG_MAX } from './ocr';
-import { readingCanvas } from './prepare';
+// deletes the keys of beans that are gone.
 
 /** The photo's longest side, in pixels. */
 export const PHOTO_LONG_SIDE = 1024;
@@ -47,23 +44,11 @@ export function toPhoto(source: CanvasImageSource, width: number, height: number
   return canvas.toDataURL('image/jpeg', PHOTO_QUALITY);
 }
 
-/** A capture: the photo to store and the picture to read the bag from. */
-export interface Capture {
-  photo: string;
-  /** at most `LONG_MAX` pixels on its long side */
-  source: HTMLCanvasElement;
-}
-
-/** A video frame or a picture as a capture. */
-export function toCapture(source: CanvasImageSource, width: number, height: number): Capture {
-  return { photo: toPhoto(source, width, height), source: readingCanvas(source, width, height, LONG_MAX) };
-}
-
-/** A picture file (the file input's) as a capture. */
-export async function fileToCapture(file: Blob): Promise<Capture> {
+/** A picture file (the file input's) as a photo. */
+export async function fileToPhoto(file: Blob): Promise<string> {
   const bitmap = await createImageBitmap(file);
   try {
-    return toCapture(bitmap, bitmap.width, bitmap.height);
+    return toPhoto(bitmap, bitmap.width, bitmap.height);
   } finally {
     bitmap.close();
   }

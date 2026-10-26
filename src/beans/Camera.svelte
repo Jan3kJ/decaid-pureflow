@@ -3,11 +3,11 @@
   // camera preferred, and a capture button. Decaid's window gives the live camera without asking
   // each time; where it is refused or missing, the system's camera through a file input stands in.
   import { onMount } from 'svelte';
-  import { fileToCapture, toCapture, type Capture } from './photo';
+  import { fileToPhoto, toPhoto } from './photo';
 
   interface Props {
-    /** the photo, a JPEG data URL scaled down, and the picture to read */
-    oncapture: (capture: Capture) => void;
+    /** the photo, a JPEG data URL scaled down */
+    oncapture: (photo: string) => void;
     oncancel: () => void;
   }
 
@@ -55,7 +55,7 @@
   function capture() {
     if (!video || !video.videoWidth) return;
     try {
-      oncapture(toCapture(video, video.videoWidth, video.videoHeight));
+      oncapture(toPhoto(video, video.videoWidth, video.videoHeight));
     } catch {
       failed = 'The picture was not taken.';
     }
@@ -65,7 +65,7 @@
     const file = (event.currentTarget as HTMLInputElement).files?.[0];
     if (!file) return;
     try {
-      oncapture(await fileToCapture(file));
+      oncapture(await fileToPhoto(file));
     } catch {
       failed = 'That file is not a picture.';
     }

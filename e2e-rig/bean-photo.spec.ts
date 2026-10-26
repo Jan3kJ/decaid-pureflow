@@ -3,8 +3,8 @@ import { expect, test } from '@playwright/test';
 import type { BeanBatch, CatalogueBean, MachineSnapshot } from '../src/api';
 
 // Acceptance item 54's photo (spec 3.9 item 20) against the rig: a bean added on the beans
-// screen from a photo of a printed bag (the live camera answers with `e2e/fixtures/bag.png`)
-// gets its name pre-filled by Tesseract.js from the skin's own files; the photo is stored in
+// screen with a photo of a printed bag (the live camera answers with `e2e/fixtures/bag.png`)
+// keeps the name and roaster typed (the photo is not read, spec 3.17 item 3); the photo is stored in
 // the skin's KV namespace under the bean's id and shown when the bean is opened again. Deleted
 // in Decaid (the skin only archives), the bean's photo is deleted at the next read of the
 // catalogue: the namespace holds what it held before. The test deletes the bean and its bags.
@@ -48,9 +48,8 @@ test.beforeAll(async () => {
   }
 });
 
-test('a bean from a photo: the name read from it, the photo stored in KV and deleted with the bean', async ({ page, context }) => {
+test('a bean with a photo: the fields as typed, the photo stored in KV and deleted with the bean', async ({ page, context }) => {
   test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
-  test.setTimeout(180_000);
 
   const beansBefore = (await beans()).map((bean) => bean.id);
   const keysBefore = await keys();
@@ -82,12 +81,14 @@ test('a bean from a photo: the name read from it, the photo stored in KV and del
     await page.getByTestId('open-beans').click();
     await expect(page.getByTestId('screen-beans')).toBeVisible();
     await page.getByTestId('beans-add').click();
-    // The roaster typed first stays; the name comes from the photo.
+    // The photo fills no field: the name stays empty, the roaster as typed.
     await page.getByTestId('bean-roaster').fill(ROASTER);
     await page.getByTestId('bean-photo-take').click();
     await page.getByTestId('camera-capture').click();
-    await expect(page.getByTestId('bean-name')).toHaveValue('Red Brick', { timeout: 60_000 });
+    await expect(page.getByTestId('bean-photo')).toBeVisible();
+    await expect(page.getByTestId('bean-name')).toHaveValue('');
     await expect(page.getByTestId('bean-roaster')).toHaveValue(ROASTER);
+    await page.getByTestId('bean-name').fill('Red Brick');
     await page.getByTestId('bean-save').click();
     await expect.poll(async () => (await beans()).filter((bean) => !beansBefore.includes(bean.id)).length).toBe(1);
     added = (await beans()).find((bean) => !beansBefore.includes(bean.id))!;

@@ -77,9 +77,9 @@ shot is saved with them, and the history can filter by them.
 ![For the next shot: bean, grinder and setting](img/bean-pick.png)
 
 To add or change beans, open **Beans and grinders** from the menu, or from this dialog. In a
-bean's form, **Photo** takes a picture of the bag. The skin reads the print and fills an empty
-name and roaster. The lines it read stand as chips under the photo: tap one to put it into the
-name or roaster, whichever you were in. The reading runs on the tablet; nothing is sent away.
+bean's form, **Photo** takes a picture of the bag with **Capture**. It is kept with the bean
+when you save. **New photo** replaces it and **Remove photo** deletes it. The photo stays in
+Decaid on the tablet; nothing is sent away.
 
 ## The steam timer
 

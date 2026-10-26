@@ -39,15 +39,9 @@ from.
 
 ## The bag photo
 
-The reading of a bag is a guess. It reads plain print well, and finds a roaster that is
-already in your list of beans. It often fails on:
-
-- stylised logos, curved text, and light letters on a busy picture;
-- small print, and a bag that is upside down (held sideways works);
-- a photo that is blurred or taken from far away.
-
-Fill what it got wrong with one tap on a chip under the photo, or type it. If it reads nothing,
-the form says 'Nothing could be read from this photo.' and the fields stay as they were.
+**Photo** opens the live camera. Where Decaid's window refuses it, the dialog says so and
+shows **Take a picture**, which opens the tablet's own camera instead. The skin does not read
+the bag: type the name and the roaster.
 
 ## A profile does not load
 

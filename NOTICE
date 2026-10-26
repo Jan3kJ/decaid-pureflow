@@ -102,7 +102,5 @@ works, named below with their licences.
 
 5. Bundled runtime
 
-   The skin's ZIP holds Svelte's runtime (MIT) and, for reading bean photos,
-   Tesseract.js and tesseract.js-core (Apache-2.0) with their licence files
-   and the English data of @tesseract.js-data/eng (MIT) in ocr/. The
-   development tools in package.json do not ship.
+   The skin's ZIP holds Svelte's runtime (MIT). The development tools in
+   package.json do not ship.

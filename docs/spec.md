@@ -892,6 +892,7 @@ are in the ZIP's `ocr/` and nothing is fetched elsewhere. The roaster is the lin
 roaster's word (Roasters, Rösterei, Coffee Co …), else the topmost line; the name is the tallest
 other line; weights, dates and notes are left out. Only empty fields are filled; a failure or a
 cancel leaves them as they were. The ZIP grows from 152 517 to 7 782 573 bytes.
+*Dropped by 3.17 item 3 (Z19): the reading (Tesseract.js, the progress line, Cancel, the pre-fill) is removed; the photo stays.*
 
 **Settings: the rest of Streamline (item 15, low priority; U11, U12).** The settings page gets
 Streamline's skin switch, and then the rest: display options, the Bengle pages, the manual,
@@ -1793,6 +1794,8 @@ more often and that a wrong guess costs one tap**, not typing. Default, in two s
   gives no line says so ('Nothing could be read from this photo'), and the fields stay as they
   are. Tesseract stays the engine (spec 3.9 item 20: free, no key, on the tablet); a cloud or
   an Android recogniser is not used.
+
+*Z1 and Z2 dropped by 3.17 item 3 (Z19): the reading, its probe, rules, chips and tests are removed; the photo stays.*
 
 **Home: the top left corner, the strip, the back tabs (items 2-4; Z3, Z4).** The screenshot of
 home, marked up: the menu button at the right of the header circled with an arrow to the empty

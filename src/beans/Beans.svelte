@@ -191,7 +191,6 @@
           {bean}
           {batch}
           roasters={roasters(catalogue.beans)}
-          known={catalogue.beans}
           busy={catalogue.busy}
           loadphoto={(id: string) => catalogue.photoOf(id)}
           onsave={saveBean}

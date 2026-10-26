@@ -5,16 +5,13 @@ import { mockGateway, type MockGateway } from './mock-gateway';
 // A bean from a photo of its bag (spec 3.9 item 20, acceptance 54) against the mocked gateway:
 // the bean form's photo button opens the live camera, a capture is shown in the form and stored
 // with the bean as a JPEG in the skin's KV namespace, and is deleted when the bean is gone. The
-// photo of a printed bag (`fixtures/bag.png`) pre-fills the empty name and roaster with
-// Tesseract.js, whose files come from the skin's own server: every other host is blocked. Where
-// `getUserMedia` is missing the file input stands in. The same on the rig: e2e-rig/bean-photo.spec.ts.
+// photo is not read (spec 3.17 item 3): the photo of a printed bag (`fixtures/bag.png`) leaves the
+// fields as they were, and no request goes to another host. Where `getUserMedia` is missing the
+// file input stands in. The same on the rig: e2e-rig/bean-photo.spec.ts.
 
 const BAG = readFileSync(new URL('./fixtures/bag.png', import.meta.url));
 const BAG_URL = `data:image/png;base64,${BAG.toString('base64')}`;
 const SKIN = 'http://localhost:24800';
-const READING = 60_000;
-
-test.setTimeout(180_000);
 
 const errors: string[] = [];
 /** requests to hosts other than the skin's server and the mocked gateway */
@@ -98,10 +95,6 @@ test('a photo from the live camera is shown in the form, stored with the bean, r
   // Chromium's fake camera gives 1920 x 1080: stored at 1024 px on the long side.
   expect(await photoSize(page)).toEqual({ width: 1024, height: 576, src: 'data:image/jpeg;base64,' });
 
-  // The fake camera's picture holds no print: the reading ends with the fields as they were.
-  await expect(page.getByTestId('bean-ocr')).toHaveCount(0, { timeout: READING });
-  await expect(page.getByTestId('bean-ocr-note')).toHaveText('Nothing could be read from this photo.');
-  await expect(page.getByTestId('bean-ocr-chips')).toHaveCount(0);
   await expect(page.getByTestId('bean-name')).toHaveValue('');
   await expect(page.getByTestId('bean-roaster')).toHaveValue('');
 
@@ -139,7 +132,15 @@ test('a photo from the live camera is shown in the form, stored with the bean, r
   expect(gateway.store['pureflow/settings-backup']).toEqual({ kept: true });
 });
 
-test('the photo of a printed bag pre-fills the empty name, leaves the typed roaster, with no request to another host', async ({
+/** The bean form shows no reading of the photo: no progress line, no Cancel, no lines as chips. */
+async function noReading(page: Page) {
+  const form = page.getByTestId('bean-form');
+  await expect(form.getByRole('status')).toHaveCount(0);
+  await expect(form.getByRole('button', { name: 'Cancel' })).toHaveCount(0);
+  await expect(form.getByRole('button')).toHaveText(['New photo', 'Remove photo', 'no roast date', 'Add']);
+}
+
+test('the photo of a printed bag is kept, not read: the fields stay as they were, with no request to another host', async ({
   page,
 }) => {
   await cameraShowsBag(page);
@@ -147,42 +148,21 @@ test('the photo of a printed bag pre-fills the empty name, leaves the typed roas
   await page.getByTestId('bean-roaster').fill('My roaster');
   await page.getByTestId('bean-photo-take').click();
   await page.getByTestId('camera-capture').click();
-  await expect(page.getByTestId('bean-ocr')).toBeVisible();
-  await expect(page.getByTestId('bean-ocr-status')).toContainText('%');
-  await expect(page.getByTestId('bean-name')).toHaveValue('Red Brick', { timeout: READING });
+  await expect(page.getByTestId('camera')).toHaveCount(0);
+  expect(await photoSize(page)).toEqual({ width: 640, height: 400, src: 'data:image/jpeg;base64,' });
+  await page.waitForTimeout(1000);
+  await expect(page.getByTestId('bean-name')).toHaveValue('');
   await expect(page.getByTestId('bean-roaster')).toHaveValue('My roaster');
-  await expect(page.getByTestId('bean-ocr')).toHaveCount(0);
+  await noReading(page);
 
-  // Read again into empty fields, both are filled; the user corrects them before saving.
-  await page.getByTestId('bean-name').fill('');
-  await page.getByTestId('bean-roaster').fill('');
-  await page.getByTestId('bean-photo-take').click();
-  await page.getByTestId('camera-capture').click();
-  await expect(page.getByTestId('bean-roaster')).toHaveValue('Square Mile Coffee Roasters', { timeout: READING });
-  await expect(page.getByTestId('bean-name')).toHaveValue('Red Brick');
-  // the lines read are chips under the photo; one tap puts a chip into the field that had the focus
-  const chips = page.getByTestId('bean-ocr-chip');
-  await expect(chips.first()).toHaveText('Square Mile Coffee Roasters');
-  await expect(chips.filter({ hasText: 'Red Brick' })).toHaveCount(1);
-  expect(await chips.count()).toBeLessThanOrEqual(6);
-  await page.getByTestId('bean-name').fill('typo');
-  await chips.filter({ hasText: 'Red Brick' }).click();
-  await expect(page.getByTestId('bean-name')).toHaveValue('Red Brick');
-  await expect(page.getByTestId('bean-name')).toBeFocused();
-  await page.getByTestId('bean-roaster').focus();
-  await expect(page.getByTestId('bean-ocr-hint')).toHaveText('Tap a line to put it into the roaster.');
-  await chips.first().click();
-  await expect(page.getByTestId('bean-roaster')).toHaveValue('Square Mile Coffee Roasters');
-  await page.getByTestId('bean-roaster').fill('Square Mile');
+  await page.getByTestId('bean-name').fill('Red Brick');
   await page.getByTestId('bean-save').click();
-  await expect(page.getByTestId('bean-row')).toContainText('Square Mile · Red Brick');
-  expect(gateway.calls('POST', '/api/v1/beans').map((call) => call.body)).toEqual([{ name: 'Red Brick', roaster: 'Square Mile' }]);
+  await expect(page.getByTestId('bean-row')).toContainText('My roaster · Red Brick');
+  expect(gateway.calls('POST', '/api/v1/beans').map((call) => call.body)).toEqual([{ name: 'Red Brick', roaster: 'My roaster' }]);
   expect(String(gateway.store[`pureflow/bean-photo-${gateway.beans[0].id}`])).toMatch(/^data:image\/jpeg;base64,/);
 });
 
-test('without getUserMedia the file input stands in; a cancelled or failed reading leaves the fields as they were', async ({
-  page,
-}) => {
+test('without getUserMedia the file input stands in, for the first photo and a new one', async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(navigator, 'mediaDevices', { value: undefined });
   });
@@ -192,74 +172,16 @@ test('without getUserMedia the file input stands in; a cancelled or failed readi
   await page.getByTestId('camera-file').setInputFiles({ name: 'bag.png', mimeType: 'image/png', buffer: BAG });
   await expect(page.getByTestId('camera')).toHaveCount(0);
   expect(await photoSize(page)).toEqual({ width: 640, height: 400, src: 'data:image/jpeg;base64,' });
-
-  // Cancel stops the reading.
-  await expect(page.getByTestId('bean-ocr')).toBeVisible();
-  await page.getByTestId('bean-ocr-cancel').click();
-  await expect(page.getByTestId('bean-ocr')).toHaveCount(0);
-  await page.waitForTimeout(3000);
   await expect(page.getByTestId('bean-name')).toHaveValue('');
   await expect(page.getByTestId('bean-roaster')).toHaveValue('');
+  await noReading(page);
 
-  // Without the English data the reading fails and says so; the fields stay as they were.
-  await page.route('**/ocr/eng.traineddata.gz', (route) => route.fulfill({ status: 404, body: '' }));
+  // New photo opens the camera dialog again; a file that is not a picture keeps the photo.
+  const first = await page.getByTestId('bean-photo').getAttribute('src');
   await page.getByTestId('bean-photo-take').click();
-  await page.getByTestId('camera-file').setInputFiles({ name: 'bag.png', mimeType: 'image/png', buffer: BAG });
-  await expect(page.getByTestId('bean-ocr-note')).toContainText('not read', { timeout: READING });
-  await expect(page.getByTestId('bean-name')).toHaveValue('');
-  await expect(page.getByTestId('bean-roaster')).toHaveValue('');
-  await expect(page.getByTestId('bean-photo')).toBeVisible();
-  // the browser's own line for the refused file
-  const refused = errors.filter((error) => !/404/.test(error));
-  errors.splice(0, errors.length, ...refused);
-});
-
-test("the founder's turned bag is read turned: aniko and Honey, the progress line says so, the lines are chips", async ({ page }) => {
-  // the camera's picture of docs/product/bags/ as the file input gives it; a bean of aniko in the catalogue
-  await page.addInitScript(() => {
-    Object.defineProperty(navigator, 'mediaDevices', { value: undefined });
-  });
-  const turnedBag = readFileSync(new URL('../docs/product/bags/aniko-honey-dream-rotated.jpg', import.meta.url));
-  await openBeans(page);
-  gateway.beans.push({
-    id: 'aniko-1',
-    name: 'Tropic Candy',
-    roaster: 'aniko',
-    decaf: false,
-    archived: false,
-    createdAt: '2026-10-01T08:00:00.000Z',
-    updatedAt: '2026-10-01T08:00:00.000Z',
-  });
-  await page.reload();
-  await expect(page.getByTestId('bean-row')).toHaveCount(1);
-  await page.getByTestId('beans-add').click();
-  // every word the progress line shows
-  await page.evaluate(() => {
-    const seen: string[] = [];
-    Object.assign(window, { ocrWords: seen });
-    new MutationObserver(() => {
-      const words = document.querySelector('[data-testid="bean-ocr-status"]')?.textContent?.replace(/\s*\d+%$/, '');
-      if (words && seen.at(-1) !== words) seen.push(words);
-    }).observe(document.body, { subtree: true, childList: true, characterData: true });
-  });
-  await page.getByTestId('bean-photo-take').click();
-  await page.getByTestId('camera-file').setInputFiles({ name: 'bag.jpg', mimeType: 'image/jpeg', buffer: turnedBag });
-  await expect(page.getByTestId('bean-roaster')).toHaveValue('aniko', { timeout: 120_000 });
-  // 'Dream' is lost under the print's blue cloud at every size the reader tries
-  await expect(page.getByTestId('bean-name')).toHaveValue('Honey');
-  const words = await page.evaluate(() => (window as unknown as { ocrWords: string[] }).ocrWords);
-  expect(words).toContain('Reading the bag');
-  expect(words).toContain('Reading the bag inverted');
-  expect(words).toContain('Turning the photo');
-  // the turned pass's lines, the same as scripts/ocr-probe.mjs recorded (src/beans/ocr-bags.json)
-  const chips = page.getByTestId('bean-ocr-chip');
-  await expect(chips).toHaveText(['aniko', 'Coffee Roasters', 'Honey', 'mandel', 'honigmelone', 'pfirsich']);
-  await page.screenshot({ path: 'docs/product/bean-chips.png' });
-  await page.getByTestId('bean-name').focus();
-  await chips.filter({ hasText: 'honigmelone' }).click();
-  await expect(page.getByTestId('bean-name')).toHaveValue('honigmelone');
-  await expect(page.getByTestId('bean-roaster')).toHaveValue('aniko');
-  // a removed photo takes its chips with it
-  await page.getByTestId('bean-photo-remove').click();
-  await expect(page.getByTestId('bean-ocr-chips')).toHaveCount(0);
+  await page.getByTestId('camera-file').setInputFiles({ name: 'bag.png', mimeType: 'image/png', buffer: Buffer.from('no picture') });
+  await expect(page.getByTestId('camera')).toContainText('not a picture');
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId('camera')).toHaveCount(0);
+  await expect(page.getByTestId('bean-photo')).toHaveAttribute('src', first ?? '');
 });
