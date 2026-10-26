@@ -2599,7 +2599,9 @@ together; without one there is no volume count to show beside it, the target alo
 (it has a time, not an amount) and not when the target is 0 (no stop). The ring still fills by
 time as it does (3.14 item 8); filling by the weight against the target would be a change of its
 own and is not planned. Unit test: `waterValues` gives 'target 50 g' with a scale, 'target 50 ml'
-without, nothing for a flush or for 0; e2e on the mock gateway for both, over the ring's frame.
+without, nothing for a flush or for 0; e2e on the mock gateway for both, over the ring's frame. *Built (Z22):*
+the line sits between the values and **stop**, its unit follows the scale link as the page's row
+does (`connected`: g), and it is yellow with a scale (read with the weight) and white without one.
 
 **5. Rename in the picker (item 5; Z20).** A row of a stored profile moves **to the right** and
 shows a **rename** button at its left end, as a move to the left shows **delete** at the right

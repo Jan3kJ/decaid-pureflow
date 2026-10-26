@@ -108,32 +108,53 @@ describe('the values in the stop button', () => {
 
   it('are temperature, flow and time for flush, and no weight even with a scale', () => {
     const flush = run('flush', 6, 89.6);
-    expect(waterValues(flush, ringOf(waterSeconds(flush), 10), 31.4)).toEqual({
+    expect(waterValues(flush, ringOf(waterSeconds(flush), 10), 31.4, 50, true)).toEqual({
       temperature: '90 °C',
       flow: '6.0 ml/s',
       time: '6 / 10 s',
       weight: null,
+      target: null,
     });
   });
 
   it("are the scale's weight in g too for hot water with a scale", () => {
     const hot = run('hotWater', 9.51, 75);
-    expect(waterValues(hot, ringOf(waterSeconds(hot), 30), 31.44)).toEqual({
+    expect(waterValues(hot, ringOf(waterSeconds(hot), 30), 31.44, 50, true)).toEqual({
       temperature: '75 °C',
       flow: '9.5 ml/s',
       time: '6 / 30 s',
       weight: '31.4 g',
+      target: 'target 50 g',
     });
   });
 
   it('have no weight for hot water without a scale, and show a weight below 0 as 0', () => {
     const hot = run('hotWater', 0, 40);
-    expect(waterValues(hot, ringOf(1, null), null)).toEqual({ temperature: '40 °C', flow: '0.0 ml/s', time: '1 s', weight: null });
-    expect(waterValues(hot, ringOf(1, null), -0.3).weight).toBe('0.0 g');
+    expect(waterValues(hot, ringOf(1, null), null, 0, false)).toEqual({
+      temperature: '40 °C',
+      flow: '0.0 ml/s',
+      time: '1 s',
+      weight: null,
+      target: null,
+    });
+    expect(waterValues(hot, ringOf(1, null), -0.3, 0, true).weight).toBe('0.0 g');
   });
 
   it("show '–' for a temperature the machine did not send", () => {
-    expect(waterValues(run('flush', 0, Number.NaN), ringOf(0, null), null).temperature).toBe('– °C');
+    expect(waterValues(run('flush', 0, Number.NaN), ringOf(0, null), null, null, false).temperature).toBe('– °C');
+  });
+
+  it("show hot water's target in g with a scale and in ml without one, and none for a flush or a target of 0", () => {
+    const hot = run('hotWater', 8, 75);
+    const ring = ringOf(waterSeconds(hot), 30);
+    expect(waterValues(hot, ring, 12.4, 50, true).target).toBe('target 50 g');
+    expect(waterValues(hot, ring, null, 50, false).target).toBe('target 50 ml');
+    expect(waterValues(hot, ring, null, 0, false).target).toBeNull();
+    expect(waterValues(hot, ring, 12.4, 0, true).target).toBeNull();
+    expect(waterValues(hot, ring, null, undefined, false).target).toBeNull();
+    const flush = run('flush', 6, 90);
+    expect(waterValues(flush, ringOf(waterSeconds(flush), 10), 12.4, 50, true).target).toBeNull();
+    expect(waterValues(flush, ringOf(waterSeconds(flush), 10), null, 50, false).target).toBeNull();
   });
 });
 

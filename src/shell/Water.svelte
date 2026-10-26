@@ -1,7 +1,8 @@
 <script lang="ts">
   // Hot water and flush, over the main frame of every screen (spec 3.6, 3.7, 3.14; drawn by
   // App.svelte): the countdown ring around the stop button, and inside the button what runs:
-  // temperature, flow, time and, for hot water with a scale, the weight. The numbers come from water.ts.
+  // temperature, flow, time and, for hot water with a scale, the weight; for hot water with a stop, its
+  // target under them. The numbers come from water.ts.
   import type { Skin } from './skin.svelte';
   import { ringOf, WATER_LABEL, waterDuration, waterSeconds, waterValues, type WaterRun } from './water';
 
@@ -13,7 +14,7 @@
   let { skin, run }: Props = $props();
 
   const ring = $derived(ringOf(waterSeconds(run), waterDuration(run.kind, skin.workflow)));
-  const values = $derived(waterValues(run, ring, skin.weight));
+  const values = $derived(waterValues(run, ring, skin.weight, skin.workflow?.hotWaterData?.volume, skin.scaleLink === 'connected'));
 </script>
 
 <section class="water" data-testid="water-view" data-kind={run.kind}>
@@ -33,6 +34,9 @@
           <span class="weight" data-testid="water-weight">{values.weight}</span>
         {/if}
       </span>
+      {#if values.target !== null}
+        <span class="target" class:weighed={skin.scaleLink === 'connected'} data-testid="water-target">{values.target}</span>
+      {/if}
       <strong>stop</strong>
     </button>
   </div>
@@ -106,8 +110,8 @@
 
   /*
    * The ring's figures: the role tokens of home's ring (about 550 CSS px across), smaller in a
-   * smaller frame (scripts/font-sizes.mjs lets `.kind`, `.time`, `.values` and `.stop strong`
-   * through).
+   * smaller frame (scripts/font-sizes.mjs lets `.kind`, `.time`, `.values`, `.target` and
+   * `.stop strong` through).
    */
   .kind {
     font-size: min(var(--text-title), 5cqw);
@@ -122,6 +126,15 @@
     display: flex;
     gap: min(1.6rem, 3cqw);
     font-size: min(var(--text-large), 6.2cqw);
+  }
+
+  /* The value role, scaled as the others; yellow with a scale, as the weight it is read with. */
+  .target {
+    font-size: min(var(--text-value), 3.7cqw);
+  }
+
+  .target.weighed {
+    color: var(--weight);
   }
 
   .flow {

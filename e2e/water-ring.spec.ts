@@ -198,6 +198,95 @@ test('hot water: the ring over the step editor, its page and steam, gone when it
   expect(errors).toEqual([]);
 });
 
+/**
+ * Where the stop button's lines lie, top to bottom, and whether each fits inside its round face
+ * (the corners of a line's box lie within the circle), measured in the browser.
+ */
+async function stopLines(page: Page) {
+  return page.evaluate(() => {
+    const stop = document.querySelector('[data-testid="water-stop"]')!.getBoundingClientRect();
+    const r = stop.width / 2;
+    const cx = stop.left + r;
+    const cy = stop.top + stop.height / 2;
+    const inside = (x: number, y: number) => Math.hypot(x - cx, y - cy) <= r;
+    const ids = ['water-label', 'water-time', 'water-temperature', 'water-weight', 'water-target'];
+    const lines = ids
+      .map((id) => [id, document.querySelector(`[data-testid="${id}"]`)?.getBoundingClientRect()] as const)
+      .filter((entry): entry is readonly [string, DOMRect] => !!entry[1]);
+    const word = document.querySelector('[data-testid="water-stop"] strong')!.getBoundingClientRect();
+    const all = [...lines, ['stop', word] as const];
+    return {
+      order: all.map(([id]) => id),
+      downwards: all.every(([, box], i) => i === 0 || box.top >= all[i - 1][1].top),
+      fits: all.every(
+        ([, box]) =>
+          inside(box.left, box.top) && inside(box.right, box.top) && inside(box.left, box.bottom) && inside(box.right, box.bottom),
+      ),
+    };
+  });
+}
+
+// The target in the ring (Z22, spec 3.17 item 4, acceptance 121): hot water shows the stop of
+// `hotWaterData.volume` under its values, in g with a connected scale and in ml without one, inside
+// the button over the frame; a flush and a target of 0 show none, and the ring still fills by time.
+test('hot water: the target under the values, in g with a scale and in ml without, none for a flush or 0', async ({ page }) => {
+  const gateway = (await mockGateway(page)).withDefaults('dark');
+  await page.goto('/');
+  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  gateway.putOnScale(12.4);
+
+  gateway.waterFor('hotWater', 4, 8, 80);
+  await expectRing(page, 'hotWater', '4 / 30 s');
+  await expect(page.getByTestId('water-weight')).toHaveText('12.4 g');
+  await expect(page.getByTestId('water-target')).toHaveText('target 50 g');
+  await expect(page.getByTestId('water-ring')).toHaveAttribute('data-share', '0.133');
+  expect(await stopLines(page)).toEqual({
+    order: ['water-label', 'water-time', 'water-temperature', 'water-weight', 'water-target', 'stop'],
+    downwards: true,
+    fits: true,
+  });
+
+  // Without a scale: the target in ml alone, no weight beside it.
+  gateway.connectScale(false);
+  await expect(page.getByTestId('water-target')).toHaveText('target 50 ml');
+  await expect(page.getByTestId('water-weight')).toHaveCount(0);
+  await expectRing(page, 'hotWater', '4 / 30 s');
+  expect(await stopLines(page)).toEqual({
+    order: ['water-label', 'water-time', 'water-temperature', 'water-target', 'stop'],
+    downwards: true,
+    fits: true,
+  });
+
+  // Over another screen's frame too: the hot water page.
+  await toPage(page, 'hot-water');
+  await expectRing(page, 'hotWater', '4 / 30 s');
+  await expect(page.getByTestId('water-target')).toHaveText('target 50 ml');
+  expect((await stopLines(page)).fits).toBe(true);
+  gateway.waterEnded();
+  await expect(page.getByTestId('water-view')).toHaveCount(0);
+
+  // A flush has a time, not an amount.
+  gateway.connectScale(true);
+  gateway.waterFor('flush', 4, 6, 90);
+  await expectRing(page, 'flush', '4 / 10 s');
+  await expect(page.getByTestId('water-target')).toHaveCount(0);
+  gateway.waterEnded();
+  await expect(page.getByTestId('water-view')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test('hot water without a stop (a target of 0): no target line', async ({ page }) => {
+  const gateway = (await mockGateway(page)).withDefaults('dark');
+  gateway.workflow.hotWaterData = { ...gateway.workflow.hotWaterData, volume: 0 };
+  await page.goto('/');
+  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  gateway.waterFor('hotWater', 4, 8, 80);
+  await expectRing(page, 'hotWater', '4 / 30 s');
+  await expect(page.getByTestId('water-temperature')).toBeVisible();
+  await expect(page.getByTestId('water-target')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
 test('a swipe on the ring leaves neither the screen nor the page, and stops nothing', async ({ page }) => {
   const gateway = (await mockGateway(page)).withDefaults('dark');
   await page.goto('/');

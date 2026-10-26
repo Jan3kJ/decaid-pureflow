@@ -92,6 +92,8 @@ export interface WaterValues {
   time: string;
   /** e.g. '31.4 g', the scale's weight; hot water with a connected scale only */
   weight: string | null;
+  /** e.g. 'target 50 g' with a connected scale, 'target 50 ml' without; hot water with a target only */
+  target: string | null;
 }
 
 const shown = (value: number, digits: number): string => (Number.isFinite(value) ? value.toFixed(digits) : '–');
@@ -100,13 +102,23 @@ const shown = (value: number, digits: number): string => (Number.isFinite(value)
  * What the stop button shows inside the ring (spec 3.7): temperature, flow and time, and for
  * hot water the scale's weight in g when a scale sends one (`weight` is null without a scale).
  * Flow and weight below 0 (sensor noise at rest, a weight after a tare) show as 0; a value the
- * machine did not send as '–'.
+ * machine did not send as '–'. Hot water with a target (`hotWaterData.volume`, the hot water
+ * page's 'stop at') shows it too, in g with a connected scale and in ml without one, as the page
+ * labels it; a flush and a target of 0 (no stop) show none.
  */
-export function waterValues(run: WaterRun, ring: Ring, weight: number | null): WaterValues {
+export function waterValues(
+  run: WaterRun,
+  ring: Ring,
+  weight: number | null,
+  target: number | null | undefined,
+  scale: boolean,
+): WaterValues {
+  const stops = run.kind === 'hotWater' && typeof target === 'number' && Number.isFinite(target) && target > 0;
   return {
     temperature: `${shown(run.temperature, 0)} °C`,
     flow: `${shown(Math.max(0, run.flow), 1)} ml/s`,
     time: ring.time,
     weight: run.kind === 'hotWater' && weight !== null ? `${shown(Math.max(0, weight), 1)} g` : null,
+    target: stops ? `target ${Math.round(target)} ${scale ? 'g' : 'ml'}` : null,
   };
 }

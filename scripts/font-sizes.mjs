@@ -11,7 +11,7 @@ const ALLOWED = {
   'src/graph/ShotGraph.svelte': ['text'],
   'src/editor/Graph.svelte': ['text', 'text.value'],
   'src/editor/GraphGrid.svelte': ['text', '.phase', '.tick'],
-  'src/shell/Water.svelte': ['.kind', '.time', '.values', '.stop strong'],
+  'src/shell/Water.svelte': ['.kind', '.time', '.values', '.target', '.stop strong'],
 };
 
 const TOKEN = /^var\(--text-(label|body|value|title|large|big)\)$/;
