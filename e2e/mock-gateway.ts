@@ -761,7 +761,7 @@ export class MockGateway {
     this.sendMachine(this.held);
   }
 
-  /** The machine has left hot water or flush. */
+  /** The machine has left hot water, flush or a held steam. */
   waterEnded(): void {
     this.held = undefined;
     this.state = 'idle';

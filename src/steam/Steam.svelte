@@ -26,8 +26,6 @@
   /** While steam runs the timer counts down from the set seconds (spec 3.7). */
   const shown = $derived(timer === null ? null : steaming && skin.steam ? secondsLeft(timer, steamSeconds(skin.steam)) : timer);
   const signed = (amount: number) => `${amount > 0 ? '+' : amount < 0 ? '−' : '±'}${Math.abs(amount)} s`;
-  /** One adjust button at a time; a tap on the selected one clears it. */
-  const select = (index: number) => (skin.steamAdjust = skin.steamAdjust === index ? null : index);
 </script>
 
 <div class="steam">
@@ -109,7 +107,8 @@
       </div>
     </dl>
 
-    <!-- The adjust buttons (spec 3.7): for milk colder or warmer than the calibration's. -->
+    <!-- The adjust buttons (spec 3.7): for milk colder or warmer than the calibration's. One at a
+         time, a tap on the selected one clears it; while steam runs a tap moves the timer too. -->
     <div class="adjust">
       {#each settings.adjustments as amount, i (i)}
         <button
@@ -117,7 +116,7 @@
           class:on={skin.steamAdjust === i}
           aria-pressed={skin.steamAdjust === i}
           data-testid="steam-adjust"
-          onclick={() => select(i)}
+          onclick={() => skin.tapSteamAdjust(i)}
         >
           {signed(amount)}
         </button>

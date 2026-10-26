@@ -5,6 +5,7 @@ import type { DecaidClient, MachineSnapshot, ShotSettings, Workflow } from '../a
 import type { Settings } from '../settings';
 import { applySteamTimer, timerMismatch } from '../steam/apply';
 import { recordSteamFrame, type SteamRun } from '../steam/run';
+import { TIMER_MAX } from '../steam/timer';
 import { heaterState, isOnTemperature, switchHeater } from './steam-heater';
 import { errorMessage } from '../error-message';
 
@@ -29,6 +30,8 @@ export class SteamControl {
   adjust: number | null = $state(null);
   /** the steam timer this skin set last, in s */
   private asked: number | null = $state(null);
+  /** the adjust buttons' timer writes, one after another, so each starts from the timer before it */
+  private adjustWrites: Promise<void> = Promise.resolve();
   private readonly host: SteamHost;
 
   /**
@@ -54,6 +57,25 @@ export class SteamControl {
     const steaming = this.run !== null && !this.run.ended;
     this.run = recordSteamFrame(this.run, frame);
     if (steaming && this.run?.ended) this.adjust = null;
+  }
+
+  /**
+   * A tap on an adjust button (spec 3.7, 3.17 item 8): it selects the button, or clears it
+   * when it was selected. While steam runs the tap also writes the machine's timer plus the
+   * change it made to the selected amount, held within 1 to 255 s; a timer at or under the
+   * time run ends the steam at the machine. With no steam running it writes nothing.
+   */
+  tapAdjust(index: number): Promise<void> {
+    const before = this.adjustment ?? 0;
+    this.adjust = this.adjust === index ? null : index;
+    const change = (this.adjustment ?? 0) - before;
+    if (this.run === null || this.run.ended || change === 0) return this.adjustWrites;
+    this.adjustWrites = this.adjustWrites.then(() => {
+      const timer = this.timer;
+      if (timer === null) return;
+      return this.setTimer(Math.min(TIMER_MAX, Math.max(1, Math.round(timer + change))));
+    });
+    return this.adjustWrites;
   }
 
   /**

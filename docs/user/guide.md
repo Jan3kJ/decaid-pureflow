@@ -90,7 +90,9 @@ Steam is started at the machine. The steam page sets its timer from the milk's w
 Put the mug with milk on the scale. The skin tells which mug it is (**s**, **m** or **l**, by
 its weight) and how much milk is in it. **set timer** sends the time to the machine. Use the
 three chips at the top for a time without a scale. The adjust buttons add or take seconds, for
-colder or warmer milk. While steaming, **steam left** counts down.
+colder or warmer milk. While steaming, **steam left** counts down, and a tap on an adjust button
+changes the running timer at once: forgot **+5 s**? Tap it and 5 s are added; tap it again to
+take them off. A timer shorter than the time already steamed ends the steam.
 
 ## The ring
 

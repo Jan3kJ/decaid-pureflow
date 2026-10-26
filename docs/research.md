@@ -3975,3 +3975,27 @@ To run it again: `node scripts/shot-model-fit.mjs <docs/decent_export_*.zip>` (t
 unpacked folder or its `shots.json`); `--shots` prints each held-out shot's step starts, real
 against model. It rewrites `src/steps/puck.ts`, the fixture and the three plots; a new export
 or a change to the model changes the numbers pinned in `src/steps/predict.test.ts`.
+
+## 35. A steam timer written while steam runs (Z24, 2026-10-26)
+
+Spec 3.17 item 8 asks first whether a running steam takes a timer written during it. Done
+against Decaid 0.8.8 (serving Streamline 0.2.19) started as in 8.8, with the write the skin
+makes (`PUT /api/v1/workflow {"steamSettings":{"duration":N}}`); a scratch probe watched
+`/ws/v1/machine/snapshot` and `/ws/v1/machine/shotSettings` (output in the rig's
+`log\z24-steam-midrun-probe.txt`).
+
+| Claim | Status |
+|---|---|
+| Written 3.6 s into a steam of 20 s, 40 s reaches the machine in the same 0.1 s (`targetSteamDuration` 40); written at 9.6 s, 6 s (under the time run) does too | seen running |
+| The simulated machine ends the steam neither at 20, 40 nor 6 s: it was still `steam/idle` after 24 s and ended on `PUT /api/v1/machine/state/idle` (as 8.7) | seen running |
+| The steam record keeps the workflow the steam started with (`duration` 20) | seen running |
+| Decaid's own steam screen has a +10 s button, shown only while steam runs, that reads the machine's settings and writes them back with `targetSteamDuration` + 10 (`_extendSteam` in `realtime_steam_feature.dart`, `extendSteamDuration` in `de1_controller.dart`, tag `v0.8.8`); its countdown does not stop the steam itself | read |
+| de1app's plugin DPx_Steam_Stop (`de1plus/plugins/DPx_Steam_Stop/plugin.tcl`) stops a running steam by writing a timer of 1 s to the DE1 (`de1_send_steam_hotwater_settings`), so the machine ends it with its gentle puffs, and writes the old timer back on the second tap | read |
+| The real DE1 ending a running steam at a timer written during it | not seen: the simulated machine ends no steam; two clients written for the real DE1 rely on it |
+
+So the skin builds item 8: Decaid passes the write on mid-steam, and the DE1's own clients
+use exactly that write to lengthen or end a running steam. The founder's check on the tablet
+is the first time it is seen on a machine.
+
+What the probe left in the rig: nothing. Its steam record was deleted (two as before), and
+the workflow and the machine have 50 s again.

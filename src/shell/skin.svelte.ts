@@ -365,6 +365,11 @@ export class Skin {
     }
   }
 
+  /** A tap on the steam page's adjust button `index`; see `SteamControl.tapAdjust`. */
+  tapSteamAdjust(index: number): Promise<void> {
+    return this.steamer.tapAdjust(index);
+  }
+
   /** Writes the steam timer, whole seconds (spec 3.4); see `SteamControl.setTimer`. */
   setSteamTimer(seconds: number): Promise<void> {
     return this.steamer.setTimer(seconds);

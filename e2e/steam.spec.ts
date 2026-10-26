@@ -440,6 +440,45 @@ test("while steam runs the timer counts down; after the steam the graph adds no 
   expect(errors).toEqual([]);
 });
 
+test("while steam runs a tap on an adjust button moves the machine's timer and 'steam left' by the change it makes (spec 3.17 item 8)", async ({
+  page,
+}) => {
+  const gateway = await mockGateway(page);
+  await page.goto('/');
+  await toPage(page, 'steam');
+  const adjust = page.getByTestId('steam-adjust');
+  await expect(adjust).toHaveText(['−8 s', '−4 s', '+5 s']);
+  await page.getByTestId('steam-favourite').nth(2).click();
+  await expect(page.getByTestId('steam-timer')).toHaveText('30s');
+
+  // No steam: a tap selects and writes nothing (spec 3.7).
+  await adjust.nth(2).click();
+  await adjust.nth(2).click();
+  await expect(page.locator('[data-testid="steam-adjust"][aria-pressed="true"]')).toHaveCount(0);
+
+  // 10 s of steam (its last frame at 10 s), held: 20 s are left.
+  gateway.steamFor(10.25, true);
+  await expect(page.getByTestId('steam-timer')).toHaveText('20s');
+  // none to +5 s adds 5, +5 s to −4 s adds −9, −4 s tapped again takes −4 off
+  await adjust.nth(2).click();
+  await expect(page.getByTestId('steam-timer')).toHaveText('25s');
+  await adjust.nth(1).click();
+  await expect(page.getByTestId('steam-timer')).toHaveText('16s');
+  await expect(adjust.nth(1)).toHaveAttribute('aria-pressed', 'true');
+  await adjust.nth(1).click();
+  await expect(page.getByTestId('steam-timer')).toHaveText('20s');
+  expect(written(gateway)).toEqual([30, 35, 26, 30].map((duration) => ({ steamSettings: { duration } })));
+  expect(gateway.shotSettings.targetSteamDuration).toBe(30);
+
+  // When the steam ends the selection is cleared and the page shows the timer.
+  await adjust.nth(0).click();
+  await expect(page.getByTestId('steam-timer')).toHaveText('12s');
+  gateway.waterEnded();
+  await expect(page.locator('[data-testid="steam-adjust"][aria-pressed="true"]')).toHaveCount(0);
+  await expect(page.getByTestId('steam-timer')).toHaveText('22s');
+  expect(errors).toEqual([]);
+});
+
 test('a swipe to the left opens the steam page, from the right edge too (spec 3.7, 3.8)', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');

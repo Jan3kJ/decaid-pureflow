@@ -2684,6 +2684,12 @@ countdown the skin draws, which is not planned: it would lie). Tests: `steam-con
 of the three selection changes against a running and a finished steam (a finished one writes
 nothing); e2e on the mock gateway: a tap while steaming changes the written duration and
 'steam left'.
+*Built (Z24):* the first step's answer is in research.md 35: Decaid passes a timer written
+mid-steam to the machine at once, the simulated machine ends no steam at all, and Decaid's own
++10 s button and de1app's DPx_Steam_Stop plugin both rely on the DE1 reading it mid-steam.
+`SteamControl.tapAdjust` (`src/shell/steam-control.svelte.ts`) takes the tap; while steam
+runs it writes through `setTimer`, one write after another, each from the machine's timer the
+one before left. The rig's steam spec is not extended (the simulated steam never ends).
 
 **9. The state says 'Pouring' (item 9; Z25).** Founder: 'the state on home shows Espresso during
 a shot; change that to Pouring; you can make filter coffee with the machine'. `STATE_LABEL` in

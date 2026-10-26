@@ -85,6 +85,80 @@ describe('the steam control', () => {
     expect(new SteamControl({ ...skin, shotSettings: SHOT_SETTINGS }).timer).toBe(40);
   });
 
+  describe('a tap on an adjust button', () => {
+    /** A steam control on a machine with a 20 s timer and the adjust amounts -4, +5 and +10 s, steaming or after the steam. */
+    function tapping(steaming: boolean, adjustments = [-4, 5, 10], timer = 20) {
+      const written: number[] = [];
+      const settings: Settings = { ...DEFAULT_SETTINGS, steam: { ...DEFAULT_SETTINGS.steam, adjustments } };
+      const skin: SteamHost = {
+        ...host({
+          kvGet: () => Promise.resolve(null),
+          setSteamDuration: (seconds: number) => {
+            written.push(seconds);
+            machine = { ...machine, targetSteamDuration: seconds };
+            return Promise.resolve({ steamSettings: { duration: seconds } } as Workflow);
+          },
+        }),
+        get shotSettings() {
+          return machine;
+        },
+        settings,
+      };
+      let machine: ShotSettings = { ...SHOT_SETTINGS, targetSteamDuration: timer };
+      const steam = new SteamControl(skin);
+      steam.frame(frame('steam', 0));
+      if (!steaming) steam.frame(frame('idle', 1));
+      return { steam, written };
+    }
+
+    it('from none to a button adds its amount to the running timer', async () => {
+      const { steam, written } = tapping(true);
+      await steam.tapAdjust(1);
+      expect(steam.adjust).toBe(1);
+      expect(written).toEqual([25]);
+      expect(steam.timer).toBe(25);
+    });
+
+    it('from one button to another adds the difference', async () => {
+      const { steam, written } = tapping(true);
+      await steam.tapAdjust(1);
+      await steam.tapAdjust(0);
+      expect(steam.adjust).toBe(0);
+      expect(written).toEqual([25, 16]);
+    });
+
+    it('on the selected button takes its amount off and clears it', async () => {
+      const { steam, written } = tapping(true);
+      await steam.tapAdjust(2);
+      await steam.tapAdjust(2);
+      expect(steam.adjust).toBeNull();
+      expect(written).toEqual([30, 20]);
+    });
+
+    it('holds the timer within 1 to 255 s, and two quick taps each start from the one before', async () => {
+      const { steam, written } = tapping(true);
+      void steam.tapAdjust(2);
+      await steam.tapAdjust(0);
+      expect(written).toEqual([30, 16]);
+      const low = tapping(true, [-30]);
+      await low.steam.tapAdjust(0);
+      const high = tapping(true, [30], 250);
+      await high.steam.tapAdjust(0);
+      expect([...low.written, ...high.written]).toEqual([1, 255]);
+    });
+
+    it('with the steam finished selects the buttons and writes nothing', async () => {
+      const { steam, written } = tapping(false);
+      await steam.tapAdjust(1);
+      expect(steam.adjust).toBe(1);
+      await steam.tapAdjust(0);
+      expect(steam.adjust).toBe(0);
+      await steam.tapAdjust(0);
+      expect(steam.adjust).toBeNull();
+      expect(written).toEqual([]);
+    });
+  });
+
   it('says in the notice why the timer was not set', async () => {
     const away = () => Promise.reject(new Error('away'));
     const skin = host({ kvGet: away, setSteamDuration: away });
