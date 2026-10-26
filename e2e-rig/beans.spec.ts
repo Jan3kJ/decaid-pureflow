@@ -4,6 +4,7 @@ import type { RigWorkflow } from './gateway';
 import { IDLE } from './idle';
 import { pickDate } from '../e2e/date-picker';
 import { back } from '../e2e/touch';
+import { saveAnswered } from '../e2e/catalogue-save';
 
 // Acceptance item 52, its first half (spec 3.9 item 19, research.md 29.8), against the rig:
 // through the beans screen a bean and a grinder of the test's own are added (name and roaster
@@ -97,9 +98,12 @@ test('beans and grinders: added, edited, archived and restored on the screen; th
     const bag = (await api<BeanBatch[]>('GET', `/api/v1/beans/${bean.id}/batches`))[0];
     expect(bag.roastDate).toBe('2026-10-08T00:00:00.000');
 
-    // Edited: only the notes go out, and are read back.
+    // Edited: only the notes go out, and are read back once Decaid answered the save (the save
+    // button is disabled already while the write is on its way).
     await page.getByTestId('bean-notes').fill('rig notes');
+    const beanSaved = saveAnswered(page, `/api/v1/beans/${bean.id}`);
     await page.getByTestId('bean-save').click();
+    await beanSaved;
     await expect(page.getByTestId('bean-save')).toBeDisabled();
     expect((await api<CatalogueBean>('GET', `/api/v1/beans/${bean.id}`)).notes).toBe('rig notes');
 
@@ -127,7 +131,9 @@ test('beans and grinders: added, edited, archived and restored on the screen; th
     const grinder = (await grinders()).find((entry) => entry.model === MODEL)!;
     expect(grinder).toMatchObject({ settingType: 'numeric', settingSmallStep: 0.5, archived: false });
     await page.getByTestId('grinder-burrs').fill('rig burrs');
+    const grinderSaved = saveAnswered(page, `/api/v1/grinders/${grinder.id}`);
     await page.getByTestId('grinder-save').click();
+    await grinderSaved;
     await expect(page.getByTestId('grinder-save')).toBeDisabled();
     expect((await api<Grinder>('GET', `/api/v1/grinders/${grinder.id}`)).burrs).toBe('rig burrs');
     await page.getByTestId('grinder-archive').click();

@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mockGateway, type MockGateway } from './mock-gateway';
 import { pickDate } from './date-picker';
+import { saveAnswered, slowSave } from './catalogue-save';
 
 // The bean and grinder catalogue and the pick for the next shot (spec 3.9 item 19, acceptance
 // 52's first half, research.md 29.8) against the mocked gateway: home's menu opens the screen;
@@ -56,8 +57,12 @@ test('a bean is added with name and roaster typed, edited, archived, listed with
 
   // An edit sends only what changed; a field another app wrote stays.
   gateway.beans[0] = { ...bean, country: 'Brazil' };
+  // The gateway answers slowly: the check waits for the save's answer, not for a disabled save.
+  await slowSave(page, `/api/v1/beans/${bean.id}`);
   await page.getByTestId('bean-notes').fill('chocolate');
+  const beanSaved = saveAnswered(page, `/api/v1/beans/${bean.id}`);
   await page.getByTestId('bean-save').click();
+  await beanSaved;
   await expect(page.getByTestId('bean-save')).toBeDisabled();
   expect(gateway.calls('PUT', `/api/v1/beans/${bean.id}`).map((call) => call.body)).toEqual([{ notes: 'chocolate' }]);
   expect(gateway.beans[0]).toMatchObject({ notes: 'chocolate', country: 'Brazil' });
@@ -201,8 +206,11 @@ test('a grinder is added, edited, archived after a confirm, listed with show arc
   ]);
 
   const grinder = gateway.grinders[0];
+  await slowSave(page, `/api/v1/grinders/${grinder.id}`);
   await page.getByTestId('grinder-notes').fill('zeroed at burr touch');
+  const grinderSaved = saveAnswered(page, `/api/v1/grinders/${grinder.id}`);
   await page.getByTestId('grinder-save').click();
+  await grinderSaved;
   await expect(page.getByTestId('grinder-save')).toBeDisabled();
   expect(gateway.calls('PUT', `/api/v1/grinders/${grinder.id}`).map((call) => call.body)).toEqual([{ notes: 'zeroed at burr touch' }]);
 
