@@ -17,6 +17,7 @@
     valuePerPixel,
   } from './plot';
   import { graphUnits, phaseAt } from './selection';
+  import { dragsOnly } from '../shell/swipe';
 
   interface Props {
     params: AFlowParams;
@@ -67,11 +68,24 @@
     return { x: event.clientX - rect.left, y: event.clientY - rect.top, pointer: event.pointerId };
   }
 
+  /** What a finger at `x`, `y` in the graph drags. A finger covers about 9 mm: reach that far around a line, a little less around a border. */
+  const hitAt = (x: number, y: number) => hitTest(draggable, x, y, projection, 1.8 * rem, 1.4 * rem);
+
+  // The graph's drags are only those on a line or a border; elsewhere a drag on it is the page's
+  // (the swipe back), with the same hit test, so the two cannot differ.
+  $effect(() => {
+    if (!svg) return;
+    const element = svg;
+    return dragsOnly(element, ({ x, y }) => {
+      const rect = element.getBoundingClientRect();
+      return Boolean(hitAt(x - rect.left, y - rect.top));
+    });
+  });
+
   function down(event: PointerEvent) {
     if (!svg) return;
     const finger = local(event);
-    // A finger covers about 9 mm: reach that far around a line, a little less around a border.
-    const hit = hitTest(draggable, finger.x, finger.y, projection, 1.8 * rem, 1.4 * rem);
+    const hit = hitAt(finger.x, finger.y);
     if (mode === 'detail') {
       const phase = phaseAt(hit, curve, graphUnits(finger.x, box.left, box.plotW));
       if (phase) onselect(phase);
@@ -138,6 +152,7 @@
     onpointermove={move}
     onpointerup={up}
     onpointercancel={up}
+    onlostpointercapture={(event) => event.target === event.currentTarget && up(event)}
   >
     <GraphGrid
       {curve}
@@ -234,8 +249,11 @@
     position: absolute;
     inset: 0;
     display: block;
-    /* The graph takes the touch itself: no scrolling, no zoom, no text selection. */
-    touch-action: none;
+    /*
+     * The graph takes the touches on its lines and borders itself (the swipe check asks it,
+     * `dragsOnly`); a move along elsewhere is the swipe back, and the page does not scroll sideways.
+     */
+    touch-action: pan-y;
     user-select: none;
     -webkit-user-select: none;
   }

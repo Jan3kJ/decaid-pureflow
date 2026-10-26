@@ -1,14 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import {
+  BACK_EDGE,
   SWIPE_COMMIT,
   SWIPE_DISTANCE,
   SWIPE_EDGE,
   SWIPE_FLICK,
   SWIPE_SLOP,
+  atBackEdge,
   closing,
   commits,
   decide,
   destination,
+  edgeWay,
+  inDialog,
   neighbour,
   offset,
   onControl,
@@ -142,8 +146,8 @@ describe('a drag on a control', () => {
   interface Fake extends Box {
     selector?: boolean;
     css?: Partial<Record<'overflowX' | 'overflowY' | 'touchAction', string>>;
-    scrollWidth?: number;
-    clientWidth?: number;
+    scrollWidth: number;
+    clientWidth: number;
     scrollHeight?: number;
     clientHeight?: number;
   }
@@ -180,12 +184,57 @@ describe('a drag on a control', () => {
     expect(onControl(node({}, graph), root, style)).toBe(true);
     // A row that scrolls sideways, also while it fits: the browser pans it.
     expect(onControl(node({ css: { overflowX: 'scroll' }, scrollWidth: 400 }, root), root, style)).toBe(true);
-    expect(onControl(node({ css: { overflowX: 'auto' } }, root), root, style)).toBe(true);
+    expect(onControl(node({ css: { overflowX: 'auto' }, scrollWidth: 140 }, root), root, style)).toBe(true);
+  });
+
+  it('is not one on a box that scrolls only down, whose overflow-x computes to auto too, nor on a row that fits', () => {
+    const column = node({ css: { overflowX: 'auto', overflowY: 'auto' }, scrollHeight: 900 }, root);
+    expect(onControl(node({}, column), root, style)).toBe(false);
+    expect(onControl(node({ css: { overflowX: 'auto' } }, root), root, style)).toBe(false);
+    expect(onControl(node({ css: { overflowX: 'scroll' } }, root), root, style)).toBe(false);
+  });
+
+  it('is one on the graph only where it drags: it answers for the point, in place of its touch-action', () => {
+    const graph = node({ css: { touchAction: 'none' }, drags: ({ x }) => x < 50 }, root);
+    expect(onControl(node({}, graph), root, style, { x: 20, y: 0 })).toBe(true);
+    expect(onControl(node({}, graph), root, style, { x: 80, y: 0 })).toBe(false);
+    // A chip on it keeps its own touch-action.
+    expect(onControl(node({ css: { touchAction: 'none' } }, graph), root, style, { x: 80, y: 0 })).toBe(true);
   });
 
   it('looks no further than the root', () => {
     const outside = node({ css: { touchAction: 'none' } }, null);
     const inner = node({}, outside);
     expect(onControl(node({}, inner), inner, style)).toBe(false);
+  });
+});
+
+describe('the left edge', () => {
+  it('is the left 24 px of every screen with a way back to the right but home', () => {
+    expect(atBackEdge(BACK_EDGE, 'settings')).toBe(true);
+    expect(atBackEdge(0, 'editor')).toBe(true);
+    expect(atBackEdge(0, 'steam')).toBe(true);
+    expect(atBackEdge(BACK_EDGE + 1, 'profiles')).toBe(false);
+    expect(atBackEdge(0, 'home')).toBe(false);
+    expect(atBackEdge(0, 'hot-water')).toBe(false);
+  });
+
+  it('decides a move to the right and along only; a tap or a move left or down is not its', () => {
+    expect(edgeWay('page', 30)).toBe('page');
+    expect(edgeWay('page', -30)).toBe('across');
+    expect(edgeWay('across', 5)).toBe('across');
+    expect(edgeWay(null, 2)).toBeNull();
+  });
+
+  it('does not go back over a dialog or its backdrop', () => {
+    const at = (selector: string) => ({
+      closest: (s: string) => (s.includes(selector) ? {} : null),
+      parentElement: null,
+      scrollWidth: 0,
+      clientWidth: 0,
+    });
+    expect(inDialog(at('[data-no-swipe]'))).toBe(true);
+    expect(inDialog(at('[role="dialog"]'))).toBe(true);
+    expect(inDialog(at('[data-own-swipe]'))).toBe(false);
   });
 });

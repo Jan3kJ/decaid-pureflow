@@ -4,6 +4,7 @@
 // other screen a swipe to the right is the way back, to where it was opened from: no screen has a
 // back arrow. A drag that starts on a control is the control's. Pure: positions in, decisions out; `onControl` only reads the DOM it is given.
 import type { Screen } from './nav';
+import { overflowsAlong } from './sideways';
 
 export interface Point {
   x: number;
@@ -95,39 +96,93 @@ export function offset(screen: Screen, dx: number): number {
   return destination(screen, dx) ? dx : dx / 5;
 }
 
+/** A swipe to the right that starts this far, in CSS pixels, from the screen's left edge goes back on every screen but home, whatever is under the finger: a finger's width at the display's edge. */
+export const BACK_EDGE = 24;
+
+/**
+ * Whether a touch that went down at `x` (from the left of the screen) on `screen` is the edge's:
+ * there it is decided as the way back only, to the right, before any control (`edgeWay`). Home
+ * keeps its history swipe; hot water has nothing to its left.
+ */
+export function atBackEdge(x: number, screen: Screen): boolean {
+  return x <= BACK_EDGE && screen !== 'home' && destination(screen, 1) !== null;
+}
+
+/** What the edge's touch is once decided: the way back, to the right and along; anything else is not ours. */
+export function edgeWay(gesture: Gesture, dx: number): Gesture {
+  return gesture === 'page' && dx > 0 ? 'page' : gesture === null ? null : 'across';
+}
+
 /**
  * What a drag on it belongs to rather than to the pages: the fields, a dialog (the number
- * pad), a backdrop marked `data-no-swipe` (home's menu), and anything that takes drags itself
- * (`touch-action: none`, the editor's graph and chips).
+ * pad), a backdrop marked `data-no-swipe` (home's menu), a row with a swipe of its own
+ * (`data-own-swipe`, the picker's rows), and anything that takes drags itself
+ * (`touch-action: none`, the chips).
  */
-const CONTROLS = 'input, textarea, select, [contenteditable=""], [contenteditable="true"], [role="dialog"], [data-no-swipe]';
+const CONTROLS =
+  'input, textarea, select, [contenteditable=""], [contenteditable="true"], [role="dialog"], [data-no-swipe], [data-own-swipe]';
+
+/** What even the edge does not go back over: a dialog and its backdrop. */
+const DIALOGS = '[role="dialog"], [data-no-swipe]';
+
+/**
+ * An element that drags only some of its area (the editor's graph) answers, for a point on the
+ * screen, whether the finger lies on something it drags; elsewhere a drag on it is the page's.
+ */
+export type Drags = (point: Point) => boolean;
 
 /** The DOM `onControl` reads; an `Element` has it. */
 export interface Box {
   closest(selectors: string): unknown;
   parentElement: Box | null;
+  scrollWidth: number;
+  clientWidth: number;
+  drags?: Drags;
+}
+
+/** Gives `element` its answer to `onControl`: the drags are its own only where `drags` says so. */
+export function dragsOnly(element: Element, drags: Drags): () => void {
+  const box = element as unknown as Box;
+  box.drags = drags;
+  return () => delete box.drags;
 }
 
 type Style = (node: Box) => Pick<CSSStyleDeclaration, 'overflowX' | 'touchAction'>;
 
-const scrolls = (overflow: string) => overflow === 'auto' || overflow === 'scroll';
+/**
+ * Whether the box scrolls sideways: `overflow-x` is `auto` or `scroll` and its content is wider.
+ * A box that scrolls only down computes `overflow-x: auto` too (CSS makes the other axis `auto`
+ * when one is not `visible`), and is no row that scrolls sideways.
+ */
+const scrollsAlong = (node: Box, overflow: string) => (overflow === 'auto' || overflow === 'scroll') && overflowsAlong(node);
 
 /**
- * Whether a drag that starts on `target` is a control's: one of `CONTROLS`, or inside
- * something that takes drags or scrolls sideways (a row of buttons), which the browser pans along
- * even when it fits, up to `root`. A list that scrolls down is not: the browser's pan is vertical
- * only there (app.css), so a move along it is the swipe.
+ * Whether a drag that starts on `target` at `point` is a control's: one of `CONTROLS`, or inside
+ * something that takes drags (`touch-action: none`, or where an element's `drags` says so) or
+ * that really scrolls sideways (a row of buttons wider than its box), up to `root`. A list that
+ * scrolls down is not: the browser's pan is vertical only there (app.css), so a move along it is
+ * the swipe.
  */
 export function onControl(
   target: Box | null,
   root: Box,
   style: Style = (node) => getComputedStyle(node as unknown as Element),
+  point: Point = { x: 0, y: 0 },
 ): boolean {
   if (!target || target.closest(CONTROLS)) return true;
   for (let node: Box | null = target; node && node !== root; node = node.parentElement) {
+    if (node.drags) {
+      if (node.drags(point)) return true;
+      continue;
+    }
     const css = style(node);
     if (css.touchAction === 'none') return true;
-    if (scrolls(css.overflowX)) return true;
+    if (scrollsAlong(node, css.overflowX)) return true;
   }
   return false;
+}
+
+/** Whether the edge may go back from `target`: anywhere but in a dialog or over its backdrop. */
+export function inDialog(target: Box | null): boolean {
+  return Boolean(target?.closest(DIALOGS));
 }

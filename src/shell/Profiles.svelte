@@ -209,17 +209,19 @@
       {#each shown as entry (entry.id)}
         {@const offset = dragOffset(entry)}
         {@const open = openId === entry.id}
-        <!-- The row's drags are its own, never the shell's page swipe (data-no-swipe). -->
+        <!-- The row's drags are its own, not the shell's page swipe (data-own-swipe), but for one
+             from the screen's left edge, which goes back (spec 3.17). -->
         <li
           class="row"
           class:open
           style:--delete-width={`${DELETE_REM}rem`}
           data-open={open}
-          data-no-swipe
+          data-own-swipe
           onpointerdown={(event) => down(event, entry)}
           onpointermove={(event) => move(event, entry)}
           onpointerup={up}
           onpointercancel={() => (drag = null)}
+          onlostpointercapture={(event) => event.target === event.currentTarget && (drag = null)}
         >
           {#if open || offset !== null}
             <button class="delete" data-testid="profile-delete" disabled={busy} onclick={() => (asking = entry)}>delete</button>

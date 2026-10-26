@@ -42,6 +42,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   import StepCard from './StepCard.svelte';
   import StepPreview from './StepPreview.svelte';
   import { errorMessage } from '../error-message';
+  import { sideways } from '../shell/sideways';
 
   interface Props {
     skin: Skin;
@@ -286,7 +287,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     <!-- The curve preview: the targets of the steps, redrawn with every edit. -->
     <StepPreview {profile} mainFrame />
 
-    <div class="cards" bind:this={row} data-testid="step-cards" data-main-frame>
+    <div class="cards" bind:this={row} data-testid="step-cards" data-main-frame use:sideways>
       {#each profile.steps as step, index (index)}
         <StepCard
           {step}
@@ -476,9 +477,13 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     align-items: stretch;
     gap: 0.7rem;
     overflow-x: auto;
-    touch-action: pan-x pan-y;
     scroll-snap-type: x proximity;
     scrollbar-width: none;
+  }
+
+  /* Its own pan along only while it overflows (src/shell/sideways.ts). */
+  .cards:global([data-sideways]) {
+    touch-action: pan-x pan-y;
   }
 
   .add {

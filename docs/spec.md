@@ -2549,6 +2549,15 @@ reports. Plan:
   from every line and border the swipe goes back; from a level line, a border and a chip it moves
   the value and goes nowhere.
 
+  *Built (Z17):* the edge (`BACK_EDGE`, `atBackEdge` in `src/shell/swipe.ts`) goes back over
+  anything but a dialog or its backdrop (`role="dialog"`, `data-no-swipe`: the number pad, the date
+  picker, home's menu); a row with a gesture of its own is marked `data-own-swipe` (the picker's
+  rows; Z20's rename to the right is that row's, from further in than the edge). The graph's
+  question is `dragsOnly` on its svg. A row that scrolls sideways (the editor's start row, the
+  step cards) has the browser's pan along only while it overflows (`src/shell/sideways.ts` sets
+  `data-sideways`): a pan along that is allowed cancels the swipe even when there is nothing to
+  scroll.
+
 **2. The tank unit in Quick Adjustments (item 2; Z18).** The setting 'tank unit' (ml or mm, 3.14
 item 7) is under Skin > Display today. It moves to **Quick Adjustments > Water Tank**, the
 subcategory that holds the machine's tank settings ('mini water tank' is read as that one; the
@@ -3721,7 +3730,8 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
   - Shot values (item 3): the setting 'Shot values', on by default, hides only the per-phase
     table; the live numbers beside the graph stay.
   - Editor swipe (item 5): from left to right only, from anywhere in the editor that is not a
-    control (the A-Flow graph, the step cards' row); home is not drawn beside it while it moves;
+    control (a line, a border or a chip of the A-Flow graph, the step cards' row while it
+    overflows; the left edge goes back over anything, 3.17 item 1); home is not drawn beside it while it moves;
     unsaved edits are loaded on leaving as with 'back', nothing is asked.
 - The review of 2026-10-22 (3.12), hot water and flush ring (item 6; Y6), for the founder: on
   the rig every screen shows the ring for both kinds, so what failed on the tablet is not known.

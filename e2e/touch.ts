@@ -61,7 +61,8 @@ export async function toPage(page: Page, to: 'home' | 'steam' | 'hot-water') {
  * The way back (spec 3.14): no screen has a back arrow; a swipe from left to right leaves a
  * screen for where it was opened from, and on the hot water page, the leftmost, a swipe from right
  * to left goes home. It starts on the first place, from the top, that is not on or near (Chromium
- * moves a touch to a control close by) a field, a drag of its own or a row that scrolls sideways.
+ * moves a touch to a control close by) a field, a drag of its own or a row that scrolls sideways
+ * (the rule of `onControl`).
  * Waited until the slide has settled.
  */
 export async function back(page: Page) {
@@ -75,9 +76,16 @@ export async function back(page: Page) {
     ({ xs, height }) => {
       const free = (x: number, y: number) => {
         for (let node = document.elementFromPoint(x, y); node && node.tagName !== 'MAIN'; node = node.parentElement) {
+          if (node.matches('input, textarea, select, [role="dialog"], [data-no-swipe], [data-own-swipe]')) return false;
+          // The editor's graph says where it drags (src/shell/swipe.ts, `dragsOnly`).
+          const drags = (node as Element & { drags?: (point: { x: number; y: number }) => boolean }).drags;
+          if (drags) {
+            if (drags({ x, y })) return false;
+            continue;
+          }
           const css = getComputedStyle(node);
-          if (node.matches('input, textarea, select, [role="dialog"], [data-no-swipe]') || css.touchAction === 'none') return false;
-          if (/auto|scroll/.test(css.overflowX)) return false;
+          if (css.touchAction === 'none') return false;
+          if (/auto|scroll/.test(css.overflowX) && node.scrollWidth > node.clientWidth) return false;
         }
         return true;
       };

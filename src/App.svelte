@@ -18,9 +18,12 @@
   import {
     PAGES,
     closing,
+    atBackEdge,
     commits,
     decide,
     destination,
+    edgeWay,
+    inDialog,
     isPage,
     neighbour,
     offset,
@@ -55,7 +58,8 @@
   /** The slide's length, in milliseconds; with reduced motion there is no slide. */
   const SLIDE_MS = 220;
   let main: HTMLElement;
-  let swipe: (Point & { id: number; page: boolean; dx: number; last: number; time: number; velocity: number }) | null = null;
+  let swipe: (Point & { id: number; page: boolean; edge: boolean; dx: number; last: number; time: number; velocity: number }) | null =
+    null;
   /** A touch on the open history, which a swipe to the left closes. */
   let closer: (Point & { id: number }) | null = null;
   /** The drawn offset of the pages, in CSS pixels. */
@@ -163,12 +167,16 @@
       if (home) closer = { x: event.clientX, y: event.clientY, id: event.pointerId };
       return;
     }
-    if (onControl(event.target as Element, main)) return;
+    const target = event.target as Element;
+    const point = { x: event.clientX, y: event.clientY };
+    // The left edge goes back over anything but a dialog; it decides a move to the right only.
+    const edge = atBackEdge(event.clientX - main.getBoundingClientRect().left, skin.screen) && !inDialog(target);
+    if (!edge && onControl(target, main, undefined, point)) return;
     swipe = {
-      x: event.clientX,
-      y: event.clientY,
+      ...point,
       id: event.pointerId,
       page: false,
+      edge,
       dx: 0,
       last: event.clientX,
       time: event.timeStamp,
@@ -186,7 +194,8 @@
     }
     if (!swipe || event.pointerId !== swipe.id) return;
     if (!swipe.page) {
-      const gesture = decide(swipe, now, innerWidth, skin.screen);
+      const decided = decide(swipe, now, innerWidth, skin.screen);
+      const gesture = swipe.edge ? edgeWay(decided, now.x - swipe.x) : decided;
       if (gesture === null) return;
       if (gesture !== 'page') {
         swipe = null;

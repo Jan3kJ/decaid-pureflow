@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { sideways } from '../shell/sideways';
   import type { Entry } from './entries';
 
   // The A-Flow editor's header, on one row at 1280 px: the profile's name, the start row,
@@ -28,7 +29,7 @@
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h9" /></svg>
   </button>
   <!-- The profiles to start from, chosen in the settings; 'save as' does not add to them. -->
-  <div class="group start" role="group" aria-label="start from" data-testid="start-row">
+  <div class="group start" role="group" aria-label="start from" data-testid="start-row" use:sideways>
     {#each row as entry (entry.key)}
       <button
         class="seg"
@@ -104,8 +105,12 @@
     flex: 1;
     min-width: 0;
     overflow-x: auto;
-    touch-action: pan-x pan-y;
     scrollbar-width: none;
+  }
+
+  /* Its own pan along only while it overflows (src/shell/sideways.ts). */
+  .start:global([data-sideways]) {
+    touch-action: pan-x pan-y;
   }
 
   .start .seg {

@@ -270,13 +270,16 @@ test('the history is on home only: the editor has no handle, and its drags never
   await expect(page.getByTestId('graph')).toBeVisible();
   await expect(page.getByTestId('history-handle')).toHaveCount(0);
 
-  // The gesture that opens the history on home, on the graph with a finger and with the mouse:
-  // the graph's drags.
-  const graph = (await page.getByTestId('graph').boundingBox())!;
-  await swipe(page, { x: graph.x + 20, y: graph.y + graph.height / 2 }, { x: graph.x + 320, y: graph.y + graph.height / 2 });
-  await page.mouse.move(graph.x + 20, graph.y + graph.height / 2);
+  // The gesture that opens the history on home, started on a line of the graph with a finger and
+  // with the mouse: the graph's drags (away from its lines a drag on it is the way back, 3.17).
+  const line = await page.locator('line.level[data-field="infusePressure"]').evaluate((level) => {
+    const rect = level.getBoundingClientRect();
+    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+  });
+  await swipe(page, line, { x: line.x + 300, y: line.y });
+  await page.mouse.move(line.x, line.y);
   await page.mouse.down();
-  await page.mouse.move(graph.x + 320, graph.y + graph.height / 2, { steps: 8 });
+  await page.mouse.move(line.x + 300, line.y, { steps: 8 });
   await page.mouse.up();
   await page.waitForTimeout(200);
   await expect(page.getByTestId('history')).toHaveCount(0);
