@@ -1,12 +1,10 @@
 {
-  "0887a65": {
+  "abc8ce7": {
     "kind": "changed",
     "text": "Convert to 3.0 now reads an A-Flow profile whose Pre Fill has its own temperature and names why a profile cannot be read; the profile picker opens scrolled to the loaded profile"
   },
-  "554acc7": "internal",
-  "d03fe8b": "internal",
-  "9cc26a8": "internal",
-  "695b8d0": "internal",
-  "b411c90": "internal",
-  "f81bc55": "internal"
+  "f48b0c5": "internal",
+  "1c818bc": "internal",
+  "32f6aef": "internal",
+  "cd82a2f": "internal"
 }
