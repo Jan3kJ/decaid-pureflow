@@ -5,3 +5,5 @@ index.html text eol=lf
 LICENSE text eol=lf
 # The ZIP copies manifest.json as checked out; LF keeps every checkout's ZIP the same.
 public/manifest.json text eol=lf
+# repo-hygiene.test.ts matches the CI workflow with explicit \n; a CRLF checkout (core.autocrlf=true) fails it.
+.github/** text eol=lf
