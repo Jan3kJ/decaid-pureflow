@@ -11,15 +11,18 @@
     filterProfiles,
     isAFlow3,
     loadEntry,
+    loadRecord,
     pickerEntries,
     previewLastStepSeconds,
     profileDescription,
+    renameAnswer,
+    renameEntry,
     sameProfile,
     type PickerEntry,
   } from './profiles';
   import type { Skin } from './skin.svelte';
   import { errorMessage } from '../error-message';
-  import { rowGesture, rowOffset, settlesOpen, type RowGesture } from './row-swipe';
+  import { mayMove, rowGesture, rowOffset, settlesAt, type RowGesture, type RowRest, type RowSides } from './row-swipe';
 
   interface Props {
     skin: Skin;
@@ -43,15 +46,26 @@
   const current = $derived(skin.workflow?.profile);
   const isLoaded = (entry: PickerEntry) => !!current && sameProfile(entry.profile, current);
 
-  /** rem, the width of a row's delete button, and so how far an open row is moved */
+  /** rem, the width of a row's delete and rename buttons, and so how far an open row is moved */
   const DELETE_REM = 7;
-  /** the row whose delete button shows, one at a time */
+  /** the open row, one at a time: its delete button shows when it rests moved left, its rename button when moved right */
   let openId: string | null = $state(null);
-  /** the loaded row, swiped: it says why it does not open */
+  let openAt: RowRest = $state(0);
+  /** the loaded row, swiped to the left: it says why it does not open */
   let refusedId: string | null = $state(null);
   let asking: PickerEntry | null = $state(null);
-  let drag: { id: string; pointer: number; x: number; y: number; dx: number; width: number; gesture: RowGesture } | null =
-    $state(null);
+  /** the rename dialog: the row, the title as typed, the reason it was refused */
+  let renaming: { entry: PickerEntry; title: string; refusal: string | null } | null = $state(null);
+  let drag: {
+    id: string;
+    pointer: number;
+    x: number;
+    y: number;
+    dx: number;
+    width: number;
+    gesture: RowGesture;
+    sides: RowSides;
+  } | null = $state(null);
   /** A drag of a row ends in a click on it, which must not select. */
   let dragged = false;
   let listEl: HTMLUListElement | undefined = $state();
@@ -100,10 +114,14 @@
       skin.go(skin.back());
     });
 
+  /** Where a row rests: moved left, moved right or closed. */
+  const restOf = (entry: PickerEntry): RowRest => (openId === entry.id ? openAt : 0);
+
   /**
-   * A row's swipe (spec 3.10): to the left opens its delete button, back to the right closes
-   * it; a vertical drag is the list's (`touch-action: pan-y`). The skin's defaults do not move;
-   * the loaded profile does not either, and says why.
+   * A row's swipe (spec 3.10, 3.17 item 5): to the left opens its delete button, to the right
+   * its rename button, a move back closes it; a vertical drag is the list's (`touch-action:
+   * pan-y`). The skin's defaults do not move; the loaded profile renames but does not delete,
+   * and says why when moved to the left.
    */
   function down(event: PointerEvent, entry: PickerEntry) {
     if (busy || !event.isPrimary) return;
@@ -116,6 +134,7 @@
       dx: 0,
       width: DELETE_REM * rem,
       gesture: null,
+      sides: { left: deleteRefusal(entry, current) === null, right: !entry.isDefault },
     };
     dragged = false;
   }
@@ -130,9 +149,8 @@
         return;
       }
       dragged = true;
-      const refusal = deleteRefusal(entry, current);
-      if (refusal) {
-        if (refusal === 'loaded' && dx < 0) refusedId = entry.id;
+      if (!mayMove(restOf(entry), dx, drag.sides)) {
+        if (dx < 0 && deleteRefusal(entry, current) === 'loaded') refusedId = entry.id;
         drag = null;
         return;
       }
@@ -144,14 +162,19 @@
 
   function up(event: PointerEvent) {
     if (!drag || drag.pointer !== event.pointerId) return;
-    if (drag.gesture === 'row') openId = settlesOpen(openId === drag.id, drag.dx, drag.width) ? drag.id : null;
+    if (drag.gesture === 'row') {
+      const id = drag.id;
+      const rest = settlesAt(openId === id ? openAt : 0, drag.dx, drag.width, drag.sides);
+      openId = rest === 0 ? null : id;
+      openAt = rest;
+    }
     drag = null;
   }
 
-  /** How far a row's right end is moved, in px, while it is dragged; null while it rests. */
+  /** How far a row is moved, in px, while it is dragged (negative: to the left); null while it rests. */
   function dragOffset(entry: PickerEntry): number | null {
     if (drag?.id !== entry.id || drag.gesture !== 'row') return null;
-    return rowOffset(openId === entry.id, drag.dx, drag.width);
+    return rowOffset(restOf(entry), drag.dx, drag.width, drag.sides);
   }
 
   /** A tap anywhere but the open row closes it; the loaded row's reason goes with the next tap. */
@@ -178,6 +201,40 @@
       records = await deleteEntry(skin.client, entry);
       if (selectedId === entry.id) selectedId = null;
     });
+
+  /** 'rename' opens the dialog on the title as it is. */
+  function askRename(entry: PickerEntry) {
+    renaming = { entry, title: entry.profile.title, refusal: null };
+  }
+
+  /**
+   * The dialog's Rename (spec 3.17 item 5): a refused title says why and keeps the dialog, the
+   * title as it was closes it; otherwise Decaid renames the record, the list is read again and the
+   * renamed row is selected and shown. The loaded profile is loaded again under its new title, so
+   * the workflow, the machine and the 'loaded' tag agree.
+   */
+  function confirmRename() {
+    if (!renaming) return;
+    const { entry } = renaming;
+    const answer = renameAnswer(renaming.title, entry, entries);
+    if (answer !== 'same' && 'refusal' in answer) {
+      renaming.refusal = answer.refusal;
+      return;
+    }
+    renaming = null;
+    openId = null;
+    if (answer === 'same') return;
+    const wasLoaded = isLoaded(entry);
+    void act('The profile could not be renamed', async () => {
+      const done = await renameEntry(skin.client, entry, answer.title);
+      records = done.records;
+      selectedId = done.record.id;
+      if (filterProfiles([done.record], filter).length === 0) filter = '';
+      if (wasLoaded) skin.workflow = await loadRecord(skin.client, done.record);
+      await tick();
+      listEl?.querySelector(`[data-id="${CSS.escape(done.record.id)}"]`)?.scrollIntoView({ block: 'nearest' });
+    });
+  }
 
   onMount(async () => {
     await read();
@@ -214,6 +271,7 @@
         <li
           class="row"
           class:open
+          class:renaming={open && openAt === 1}
           style:--delete-width={`${DELETE_REM}rem`}
           data-open={open}
           data-own-swipe
@@ -223,13 +281,16 @@
           onpointercancel={() => (drag = null)}
           onlostpointercapture={(event) => event.target === event.currentTarget && (drag = null)}
         >
-          {#if open || offset !== null}
+          {#if (open && openAt === -1) || (offset !== null && offset < 0)}
             <button class="delete" data-testid="profile-delete" disabled={busy} onclick={() => (asking = entry)}>delete</button>
+          {:else if (open && openAt === 1) || (offset !== null && offset > 0)}
+            <button class="rename" data-testid="profile-rename" disabled={busy} onclick={() => askRename(entry)}>rename</button>
           {/if}
           <button
             class="item"
             class:dragging={offset !== null}
-            style:width={offset === null ? undefined : `calc(100% + ${offset}px)`}
+            style:width={offset === null ? undefined : `calc(100% - ${Math.abs(offset)}px)`}
+            style:margin-left={offset === null || offset <= 0 ? undefined : `${offset}px`}
             aria-pressed={entry.id === selectedId}
             data-testid="profile-item"
             data-id={entry.id}
@@ -301,6 +362,18 @@
     ok="Delete"
     onok={() => remove(entry)}
     oncancel={() => (asking = null)}
+  />
+{/if}
+
+{#if renaming}
+  <Confirm
+    title={`Rename ${renaming.entry.profile.title}`}
+    label="the profile's name"
+    ok="Rename"
+    bind:value={renaming.title}
+    error={renaming.refusal}
+    onok={confirmRename}
+    oncancel={() => (renaming = null)}
   />
 {/if}
 
@@ -391,7 +464,8 @@
     scrollbar-width: thin;
   }
 
-  /* The delete button rests under the row's right end; the row narrows to show it, its title kept. */
+  /* The delete button rests under the row's right end, the rename button under its left end; the
+     row narrows to show one, its title kept. */
   .row {
     position: relative;
     flex: none;
@@ -411,10 +485,25 @@
     color: var(--bg);
   }
 
+  .rename {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: calc(var(--delete-width) - 0.4rem);
+    font-size: var(--text-body);
+    font-weight: 600;
+    background: var(--dim);
+    border-color: var(--dim);
+    color: var(--bg);
+  }
+
   .item {
     position: relative;
     touch-action: pan-y;
-    transition: width 0.2s ease;
+    transition:
+      width 0.2s ease,
+      margin-left 0.2s ease;
     width: 100%;
     min-height: 3.4rem;
     padding: 0 1rem;
@@ -431,6 +520,10 @@
 
   .open .item {
     width: calc(100% - var(--delete-width));
+  }
+
+  .open.renaming .item {
+    margin-left: var(--delete-width);
   }
 
   .refusal {

@@ -201,3 +201,45 @@ export async function deleteEntry(client: DecaidClient, entry: Pick<PickerEntry,
   await client.deleteProfile(entry.id);
   return client.listProfiles();
 }
+
+/** What the rename dialog says to an empty title. */
+export const NAME_NEEDED = 'A profile needs a name.';
+/** What the rename dialog says to the title of another profile. */
+export const NAME_TAKEN = 'A profile with that name exists.';
+
+/** The rename dialog's answer: the title to send, a reason it is refused, or 'same' (nothing to do). */
+export type RenameAnswer = { title: string } | { refusal: string } | 'same';
+
+/**
+ * The rename dialog's rule (spec 3.17 item 5): the typed title is trimmed; empty is refused, so
+ * is the title of another listed profile or of one of the skin's defaults; the title as it was
+ * is a cancel. An A-Flow 3.0 profile's title is taken as typed: its tag comes from its values.
+ */
+export function renameAnswer(
+  typed: string,
+  entry: Pick<PickerEntry, 'id' | 'profile'>,
+  entries: readonly Pick<PickerEntry, 'id' | 'profile'>[],
+): RenameAnswer {
+  const title = typed.trim();
+  if (title === '') return { refusal: NAME_NEEDED };
+  if (title === entry.profile.title) return 'same';
+  if (isDefaultTitle(title) || entries.some((other) => other.id !== entry.id && other.profile.title === title)) {
+    return { refusal: NAME_TAKEN };
+  }
+  return { title };
+}
+
+/**
+ * Renames a stored profile: `PUT /api/v1/profiles/{id}` with the profile under the new title and
+ * no `metadata` field, so Decaid keeps the id and the metadata (research.md 11.1). Answers the
+ * record as Decaid then holds it and the list read again.
+ */
+export async function renameEntry(
+  client: DecaidClient,
+  entry: Pick<PickerEntry, 'id' | 'profile' | 'isDefault'>,
+  title: string,
+): Promise<{ record: ProfileRecord; records: ProfileRecord[] }> {
+  if (entry.isDefault) throw new Error('A default of the skin is not stored, so it cannot be renamed.');
+  const record = await client.updateProfile(entry.id, { profile: { ...entry.profile, title } });
+  return { record, records: await client.listProfiles() };
+}

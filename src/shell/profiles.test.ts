@@ -15,8 +15,12 @@ import {
   loadEntry,
   loadProfile,
   loadRecord,
+  NAME_NEEDED,
+  NAME_TAKEN,
   pickerEntries,
   profileDescription,
+  renameAnswer,
+  renameEntry,
   sameProfile,
   sortProfiles,
 } from './profiles';
@@ -348,6 +352,64 @@ describe('deleteEntry', () => {
   it("sends nothing for one of the skin's defaults", async () => {
     const { client: stub, calls } = client(() => []);
     await expect(deleteEntry(stub, { id: 'default-light', isDefault: true })).rejects.toThrow('cannot be deleted');
+    expect(calls).toEqual([]);
+  });
+});
+
+describe('renameAnswer', () => {
+  const mine: Profile = { ...other, title: 'My morning' };
+  const entries = pickerEntries([record(other), record(mine)]);
+  const entry = entries.find((candidate) => candidate.profile.title === 'My morning')!;
+
+  it('takes the typed title, trimmed', () => {
+    expect(renameAnswer('  Weekend  ', entry, entries)).toEqual({ title: 'Weekend' });
+  });
+
+  it('keeps an A-Flow prefix as typed', () => {
+    expect(renameAnswer('A-Flow / my light', entry, entries)).toEqual({ title: 'A-Flow / my light' });
+  });
+
+  it('refuses an empty title', () => {
+    expect(renameAnswer('', entry, entries)).toEqual({ refusal: NAME_NEEDED });
+    expect(renameAnswer('   ', entry, entries)).toEqual({ refusal: NAME_NEEDED });
+    expect(NAME_NEEDED).toBe('A profile needs a name.');
+  });
+
+  it("refuses the title of another stored profile or of one of the skin's defaults", () => {
+    expect(renameAnswer('Best practice', entry, entries)).toEqual({ refusal: NAME_TAKEN });
+    expect(renameAnswer(` ${DEFAULT_PROFILES[1].title}`, entry, entries)).toEqual({ refusal: NAME_TAKEN });
+    expect(NAME_TAKEN).toBe('A profile with that name exists.');
+  });
+
+  it('answers the title as it was, trimmed or not, as nothing to do', () => {
+    expect(renameAnswer('My morning', entry, entries)).toBe('same');
+    expect(renameAnswer(' My morning ', entry, entries)).toBe('same');
+  });
+
+  it('lets another case of a title through: titles differ by their letters', () => {
+    expect(renameAnswer('best practice', entry, entries)).toEqual({ title: 'best practice' });
+  });
+});
+
+describe('renameEntry', () => {
+  it('sends the profile under the new title and no metadata, then reads the list again', async () => {
+    const stored = record(other, { id: 'profile:best', metadata: { source: 'pureflow', aflow: '3.0' } });
+    const renamed = { ...stored, profile: { ...other, title: 'Morning' } };
+    const { client: stub, calls } = client((method) => (method === 'PUT' ? renamed : [renamed]));
+    const [entry] = pickerEntries([stored]).filter((candidate) => !candidate.isDefault);
+    expect(await renameEntry(stub, entry, 'Morning')).toEqual({ record: renamed, records: [renamed] });
+    expect(calls.map((call) => `${call.method} ${call.path}`)).toEqual([
+      'PUT /api/v1/profiles/profile%3Abest',
+      'GET /api/v1/profiles',
+    ]);
+    expect(calls[0].body).toEqual({ profile: { ...other, title: 'Morning' } });
+    expect(calls[0].body).not.toHaveProperty('metadata');
+  });
+
+  it("sends nothing for one of the skin's defaults", async () => {
+    const { client: stub, calls } = client(() => []);
+    const [lightEntry] = pickerEntries([]).filter((candidate) => candidate.id === 'default-light');
+    await expect(renameEntry(stub, lightEntry, 'Mine')).rejects.toThrow('cannot be renamed');
     expect(calls).toEqual([]);
   });
 });

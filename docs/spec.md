@@ -2623,6 +2623,13 @@ Decaid is shown in the picker's error line and changes nothing. A hidden older v
 old title (it is hidden). The move to the right must not be mistaken for the swipe back: the edge
 strip of item 1 goes back, a drag from further in is the row's (the row's gesture decides at
 `SWIPE_SLOP` as the delete's does).
+*Built (Z20):* a row rests at one of three places (`RowRest` in `src/shell/row-swipe.ts`: moved
+left, closed, moved right); a move goes one step from where the row rests, so a move back from
+delete or rename only closes. The rename button is the delete's size in `--dim` with dark text.
+The dialog is `Confirm.svelte` with a `value` (its text field, focused, Enter is Rename) and a
+reason line under it; its title reads 'Rename <title>'. The rule is `renameAnswer` in
+`src/shell/profiles.ts`; titles are compared as typed, so another case is another title. A
+filter that would hide the renamed row is cleared.
 
 **6. An edit button beside load (item 6; Z21).** The picker's detail panel has one **load**
 button, full width at the bottom (`min-height: 3.4rem`). It becomes **two buttons side by side in
