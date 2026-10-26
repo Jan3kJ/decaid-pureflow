@@ -1,10 +1,11 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { mockGateway } from './mock-gateway';
+import { toPage } from './touch';
 
 // One size per kind of text (spec 3.14, acceptance 95), on the mock gateway: the names of things
 // are one role, the text size at weight 600. The profile and the bean on home have the same
 // computed size and weight, and so do the rows of the profile, bean and grinder lists and of the
-// bean pick. The lint check (scripts/font-sizes.mjs) holds the rest: no literal size in the files.
+// bean pick. The state word and the page header are names too (Z23). The lint check (scripts/font-sizes.mjs) holds the rest: no literal size in the files.
 
 const errors: string[] = [];
 
@@ -77,4 +78,33 @@ test("home's profile and bean, and the rows of every list, are names: one size a
   expect(await face(page.getByTestId('bean-row').first().locator('strong'))).toEqual(profile);
   await page.getByTestId('beans-kind-grinders').click();
   expect(await face(page.getByTestId('grinder-row').first().locator('strong'))).toEqual(profile);
+});
+
+test("the state word and the page header have the profile name's size and weight", async ({ page }) => {
+  await gateway(page);
+  await page.goto('/');
+  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  const profile = await face(page.getByTestId('profile-name'));
+
+  for (const [screen, title] of [
+    ['home', null],
+    ['steam', 'Steam'],
+    ['hot-water', 'Hot water'],
+  ] as const) {
+    if (screen !== 'home') {
+      await toPage(page, 'home');
+      await toPage(page, screen);
+    }
+    const header = page.getByTestId(`screen-${screen}`).locator('header.page-header');
+    expect(await face(header.getByTestId('status-title'))).toEqual(profile);
+    if (title) {
+      await expect(header.getByTestId('page-title')).toHaveText(title);
+      expect(await face(header.getByTestId('page-title'))).toEqual(profile);
+    }
+    // The header row stays one line, as tall as the menu button.
+    const row = (await header.boundingBox())!;
+    expect(row.height).toBeCloseTo(56, 0);
+    const word = (await header.getByTestId('status-title').boundingBox())!;
+    expect(word.height).toBeLessThan(row.height);
+  }
 });

@@ -1899,7 +1899,7 @@ test that holds them**.
 | Role | Token | Used for |
 |---|---|---|
 | caption | `--text-label` | the small words over a value, hints, units, table heads, the graph's legend |
-| name | `--text-body`, weight 600 | the **names of things in a list or on a button**: a profile, a bean, a grinder, a step, a plugin, a setting's name; the **profile and the bean on home are the same size and weight** |
+| name | `--text-body`, weight 600 | the **names of things in a list or on a button**: a profile, a bean, a grinder, a step, a plugin, a setting's name; the **profile and the bean on home are the same size and weight**; the state word and the page header (3.17, Z23) |
 | text | `--text-body` | running text, list details, button words |
 | value | `--text-value` | a number the user reads or sets (a chip's value, the state line's numbers, the right column's pressure, flow and temperature) |
 | title | `--text-title` | a dialog's or picker's title (the state word and the page header moved to name in 3.17, Z23) |
@@ -2655,6 +2655,12 @@ computed sizes** of the state word, the page title and the names on home, steam 
 `npm run type-sizes` and tell the founder what they were. The roles table (3.14) changes in two cells:
 the state word and the page header leave 'title' and join 'name'; the type check (acceptance 95) gets
 the line 'the state word and the page header have the profile name's size and weight'.
+
+*Built (Z23):* `npm run type-sizes` before: the state word ('Idle') and the page titles ('Steam',
+'Hot water') 1.6 rem (25.6 px) weight 600, the profile and bean names on home 1.1 rem (17.6 px)
+weight 600 (steam and hot water show no names). After: all of them 1.1 rem weight 600; the
+header row keeps its 56 px height on home, steam and hot water. The check is in
+`e2e/type-roles.spec.ts`.
 
 **8. The adjust buttons change the running steam timer (item 8; Z24).** Founder: 'during steaming
 the +/- buttons should change the current running timer; use case: I forgot to tick one of them

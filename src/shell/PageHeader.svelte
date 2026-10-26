@@ -42,9 +42,10 @@
     flex: 1;
   }
 
+  /* a name, like the state word: the profile name's size and weight (spec 3.14's roles) */
   .title {
     flex: none;
-    font-size: var(--text-title);
+    font-size: var(--text-body);
     font-weight: 600;
     white-space: nowrap;
   }
