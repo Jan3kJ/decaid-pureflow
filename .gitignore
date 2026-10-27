@@ -2,14 +2,11 @@ node_modules/
 dist/
 release/
 data/
-# stint: the runner's local files
-stint/logs/DayRun.log
-stint/logs/day-state-*.json
-stint/logs/tasks/
-stint/logs/blog-brief.md
 e2e/.results/
 test-results/
 playwright-report/
 e2e-rig/.results/
+# The pictures the e2e run and the picture scripts write, the team's evidence; the user documentation's are docs/user/img/
+docs/product/
 # Decaid exports (shot records, beans, settings): kept locally for reference, not committed
 docs/decent_export_*.zip

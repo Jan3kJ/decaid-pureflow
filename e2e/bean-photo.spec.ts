@@ -76,6 +76,16 @@ async function cameraShowsBag(page: Page) {
   }, BAG_URL);
 }
 
+/**
+ * The answer to the photo's write. A new bean's photo is stored after the bean is added and the
+ * list read back, so its row shows before the photo is in the store. Start it before the tap.
+ */
+const photoStored = (page: Page) =>
+  page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' && new URL(response.url()).pathname.startsWith('/api/v1/store/pureflow/bean-photo-'),
+  );
+
 const photoSize = (page: Page) =>
   page.getByTestId('bean-photo').evaluate(async (image: HTMLImageElement) => {
     await image.decode();
@@ -100,8 +110,10 @@ test('a photo from the live camera is shown in the form, stored with the bean, r
 
   await page.getByTestId('bean-name').fill('Red Brick');
   await page.getByTestId('bean-roaster').fill('Square Mile');
+  const stored = photoStored(page);
   await page.getByTestId('bean-save').click();
   await expect(page.getByTestId('bean-row')).toHaveCount(1);
+  await stored;
   const bean = gateway.beans[0];
   const key = `pureflow/bean-photo-${bean.id}`;
   expect(String(gateway.store[key])).toMatch(/^data:image\/jpeg;base64,/);
@@ -156,8 +168,10 @@ test('the photo of a printed bag is kept, not read: the fields stay as they were
   await noReading(page);
 
   await page.getByTestId('bean-name').fill('Red Brick');
+  const stored = photoStored(page);
   await page.getByTestId('bean-save').click();
   await expect(page.getByTestId('bean-row')).toContainText('My roaster · Red Brick');
+  await stored;
   expect(gateway.calls('POST', '/api/v1/beans').map((call) => call.body)).toEqual([{ name: 'Red Brick', roaster: 'My roaster' }]);
   expect(String(gateway.store[`pureflow/bean-photo-${gateway.beans[0].id}`])).toMatch(/^data:image\/jpeg;base64,/);
 });

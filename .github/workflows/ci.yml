@@ -1,5 +1,6 @@
-# The checks of `npm run verify` (scripts/verify.mjs) on every push and pull request to main.
-# The browser tests and the rig suite run locally; a release is made by scripts/release.mjs.
+# The checks of `npm run verify` (scripts/verify.mjs) on every push and pull request to main, and
+# the browser tests on the mocked gateway (`npm run e2e`, about 11 minutes). The rig suite needs a
+# running Decaid and runs locally; a release is made by scripts/release.mjs.
 name: CI
 
 on:
@@ -22,3 +23,22 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run verify
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: e2e-results
+          path: e2e/.results/
+          retention-days: 14

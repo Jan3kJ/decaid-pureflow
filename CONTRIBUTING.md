@@ -19,8 +19,9 @@ npm run e2e         # the browser tests on a mocked gateway (Playwright)
 `npm run verify` runs `check` (TypeScript and Svelte), `lint` (ESLint and the font sizes),
 `format:check` (Prettier), `test` (Vitest), `build`, the publish check (no local path, personal
 address or token in a file), the documentation's links and pictures, and `npm audit
---audit-level=high`. CI runs the same list on every push and pull request to `main`. The browser
-tests are not in CI: run `npm run e2e` before you send a change to the screens.
+--audit-level=high`. CI runs the same list on every push and pull request to `main`, and beside it
+the browser tests on the mocked gateway, `npm run e2e` (about 11 minutes); run them before you send
+a change to the screens.
 `npm run e2e:rig` runs the tests that need a running Decaid with its simulated machine and scale
 (docs/research.md 8.8); they stay local. `npm run format` writes Prettier's formatting.
 

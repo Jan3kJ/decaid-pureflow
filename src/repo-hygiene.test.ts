@@ -35,12 +35,24 @@ describe('repository hygiene', () => {
     ]);
   });
 
-  it('CI runs npm ci and npm run verify on Node 22, on push and pull request to main', () => {
+  it('CI runs npm run verify and the browser tests on the mocked gateway on Node 22, on push and pull request to main', () => {
     const ci = read('.github/workflows/ci.yml');
     expect(ci).toMatch(/^on:\n {2}push:\n {4}branches: \[main\]\n {2}pull_request:\n {4}branches: \[main\]$/m);
-    expect(ci).toMatch(/node-version: 22$/m);
-    const runs = [...ci.matchAll(/^ +- run: (.+)$/gm)].map((match) => match[1]);
-    expect(runs).toEqual(['npm ci', 'npm run verify']);
+    // Each job: its name at two spaces under `jobs:`, and its lines up to the next job.
+    const jobs = Object.fromEntries(
+      ci
+        .split(/^jobs:$/m)[1]
+        .split(/^ {2}(?=[\w-]+:$)/m)
+        .slice(1)
+        .map((job) => [job.slice(0, job.indexOf(':')), job]),
+    );
+    expect(Object.keys(jobs)).toEqual(['verify', 'e2e']);
+    const runs = (job: string) => [...job.matchAll(/^ +- run: (.+)$/gm)].map((match) => match[1]);
+    for (const job of Object.values(jobs)) expect(job).toMatch(/node-version: 22$/m);
+    expect(runs(jobs.verify)).toEqual(['npm ci', 'npm run verify']);
+    expect(runs(jobs.e2e)).toEqual(['npm ci', 'npx playwright install --with-deps chromium', 'npm run e2e']);
+    // What failed is kept: the results folder of playwright.config.ts.
+    expect(jobs.e2e).toMatch(/- uses: actions\/upload-artifact@v4\n {8}if: failure\(\)\n[^]*path: e2e\/\.results\/$/m);
   });
 
   it('CHANGELOG.md has a section for the current version and the ones before it, newest first', () => {

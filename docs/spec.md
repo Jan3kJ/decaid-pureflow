@@ -1619,6 +1619,9 @@ ready, by how much it matters:
    `scripts/publish-check.mjs`; and no `release.yml`: **the release is made by one script, `scripts/release.mjs` (3.15, P7)**, so there
    is one way to publish and not two. The rig suite (`e2e:rig`) needs a running Decaid and
    stays local.
+   *Built (Z26):* `ci.yml` has a second job, `e2e`, beside `verify`: `npm ci`, Playwright's
+   Chromium (`npx playwright install --with-deps chromium`) and `npm run e2e`, with
+   `e2e/.results/` kept as an artifact when it fails; unproven until the next push runs it.
 7. **No CONTRIBUTING, CHANGELOG, issue templates or SECURITY note.** Add a short
    `CONTRIBUTING.md` (the commands of README, the test rule, one-pull-request-one-change, the
    GPL), `CHANGELOG.md` (from the day records and 3.8 to 3.12, one entry per version),
@@ -3038,7 +3041,7 @@ Where an item here and one of 27-37 disagree, the item here wins (3.9 overrides 
     a confirm; the display options apply; the Bengle pages are not shown on a DE1; the manual
     opens; feedback is sent with `POST /api/v1/feedback`; a firmware file uploads behind a
     confirm with its progress (the mocked gateway).
-54. **Camera (founder).** The hand-over's camera test page, opened on the tablet, says whether
+54. **Camera (founder; dropped in P2 and 3.17, Z19: the camera test page is gone, 3.13 item 5, and the bag is no longer read; the photo is item 117).** The hand-over's camera test page, opened on the tablet, says whether
     the skin can take a photo; if it can, a bean added from a photo of its bag has the photo and
     pre-filled name and roaster that can be corrected.
 55. **Hand-over (founder).** The 0.4.0 ZIP installs on the tablet; the checks of
@@ -3180,7 +3183,7 @@ Where an item here and one of 27-55 disagree, the item here wins (3.10 overrides
     on; fed the 2026-10-21 record, the flow's last point is at about 24.5 s and the curve is not
     drawn before the first `pouring` frame.
 
-92. **Bean photo reading (test).** `bagText` fed the recorded lines of the founder's bag (the
+92. **Bean photo reading (test; dropped in 3.17, Z19: the bag is no longer read).** `bagText` fed the recorded lines of the founder's bag (the
     probe's output, fixture) gives the roaster 'aniko' and the name 'Tropic Candy'; a line that
     matches a roaster of the catalogue within the edit distance is the roaster; a line of
     'Coffee Roasters' alone is dropped and the line above it is the roaster; a line such as '2 ame'

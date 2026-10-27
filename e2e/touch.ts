@@ -23,18 +23,23 @@ export async function swipe(page: Page, from: { x: number; y: number }, to: { x:
 }
 
 /**
- * A flick: a quick swipe that lifts the finger right after its last move, so that the speed a
- * screen reads at the lift is the swipe's even on a slow machine.
+ * A flick: a quick swipe that lifts the finger right after its last move. Each event carries its
+ * own time, 16 ms after the one before, so the speed a screen reads is the swipe's even when a
+ * loaded machine sends the events slower: a slow round trip would otherwise make every step slow
+ * and the flick a drag that springs back.
  */
 export async function flick(page: Page, from: { x: number; y: number }, to: { x: number; y: number }) {
   const cdp = await page.context().newCDPSession(page);
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [from] });
+  // Seconds, as the protocol takes them.
+  const start = Date.now() / 1000;
+  const at = (i: number) => start + (i * 16) / 1000;
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [from], timestamp: at(0) });
   for (let i = 1; i <= 8; i += 1) {
     if (i > 1) await page.waitForTimeout(16);
-    const at = { x: from.x + ((to.x - from.x) * i) / 8, y: from.y + ((to.y - from.y) * i) / 8 };
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [at] });
+    const point = { x: from.x + ((to.x - from.x) * i) / 8, y: from.y + ((to.y - from.y) * i) / 8 };
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [point], timestamp: at(i) });
   }
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [], timestamp: at(8) });
   await cdp.detach();
 }
 
