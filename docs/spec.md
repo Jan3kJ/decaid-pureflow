@@ -3810,3 +3810,13 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
   Since Z8 every screen shows the one large ring over its main frame (3.14 item 8). Does the
   founder see it now, on which screen did a ring not show, and was the hot water started at the
   machine?
+- Reading the bean bag's photo again (3.17 item 3 dropped it; research.md 36), which way:
+  - **(a) PP-OCRv6 tiny on the tablet** (PaddleOCR.js, Apache-2.0), bundled: the lines as chips
+    plus a roaster and a name rule, offline, free, no key; the ZIP grows to about 13 MB
+    (acceptance 82 asks for under 200 kB). **Recommended.**
+  - (b) The same, fetched once and cached: the ZIP stays small; a new outside service and a
+    network for the first use.
+  - (c) Gemini 3.5 Flash-Lite with the user's own key: the fields directly, about $0.0005 a photo
+    or the free tier; the photo goes to Google, no reading offline. The recommended fallback, or an
+    option beside (a).
+  - (d) Leave the reading dropped; the photo stays as it is. (founder)

@@ -3999,3 +3999,199 @@ is the first time it is seen on a machine.
 
 What the probe left in the rig: nothing. Its steam record was deleted (two as before), and
 the workflow and the machine have 50 s again.
+
+## 36. Reading the bean bag's photo again (Z28, 2026-10-27)
+
+The founder's request 3 of 2026-10-26: can the skin read the bag's photo again? Z19 dropped the
+reading (spec 3.17 item 3); the photo stays. Before that, Z1 and Z2 (spec 3.14 item 1, 29.14) read
+the bags with Tesseract.js 7: only from the camera's picture (up to 2800 px), scaled, prepared and
+turned, up to seven passes and 7.1 s a photo on the PC, and 'Dream' of Honey Dream at no size. This
+section tries what is newer, on the tablet and in the cloud, on the same four photos. **Research
+only**: nothing in the skin changed; the trial ran in a temporary folder, deleted afterwards.
+
+What the skin wants from a photo: the bean's name and the roaster, and, where printed, the origin,
+the process and the roast date, to pre-fill the bean form that the user then checks.
+
+### 36.1 What was tried
+
+- **The photos**: the founder's four (`docs/product/bags/` of the team repository), each scaled in
+  the browser to **1024 px on its long side**, the photo the skin stores. The truth is the old
+  fixtures' (`ocr.test.ts` before `6775180`, spec 3.14): maldaner / Elisabeth, maldaner / Abdul,
+  aniko / Feel The Sun, aniko / Honey Dream (turned by 90 degrees). Origin and process read from
+  the photos by eye: Brasilien, Indonesien, 'natural & fully washed'; no bag shows a roast date.
+- **On the device, measured in Chromium** (Playwright 1.64.1's, headless) on this PC (an Intel
+  Core i7-4702HQ of 2013), ONNX Runtime Web's WASM backend with SIMD and **one thread** (the skin is
+  not cross-origin isolated, 36.4). Each time is the second read of the photo (the first warms up):
+  - **PaddleOCR.js** (`@paddleocr/paddleocr-js` 0.4.2, PaddlePaddle's own browser SDK on ONNX
+    Runtime Web and OpenCV.js) with three detector and recogniser pairs: **PP-OCRv6 tiny**,
+    PP-OCRv5 mobile and PP-OCRv6 small.
+  - **Florence-2-base-ft** (`onnx-community`, 8-bit) in transformers.js 4.3.1, task
+    `<OCR_WITH_REGION>` (lines).
+  - **SmolVLM-256M-Instruct** (8-bit, decoder 4-bit) in transformers.js 4.3.1, asked for
+    `{"roaster", "name"}` as JSON.
+  - Not tried: docTR and other ONNX detectors and recognisers (PaddleOCR.js is the same kind of
+    pipeline with an official, maintained browser SDK, and it read every bag).
+- **Gemini**: `generateContent` (REST, `v1beta`) from Node with the 1024-px JPEG (quality 0.85,
+  49 to 61 kB), a prompt of 70 tokens and a response schema of five nullable strings (`name`,
+  `roaster`, `origin`, `process`, `roastDate`), temperature 0. **8 requests** in all: 4 to
+  `gemini-2.5-flash-lite`, the cheapest image model on the price page, which answered **404 'no
+  longer available to new users'** (no tokens), and 4 to **`gemini-3.5-flash-lite`**, the
+  replacement Google names. It read every bag, so no stronger model was tried.
+
+### 36.2 Per bag: the lines read on the device
+
+The lines with a score of 0.5 or more, in the detector's order; the time is one photo.
+
+| Bag (truth) | PP-OCRv6 tiny | PP-OCRv5 mobile | PP-OCRv6 small | Florence-2-base |
+|---|---|---|---|---|
+| Elisabeth (maldaner / Elisabeth) | maldaner, KAFFEEHAUS ESPRESSO, **ELISABETH**, HASELNUSS. KAKAO.NOUGAT, Brasilien; **0.78 s** | the same ('NOUGAI'); 1.91 s | the same; 2.40 s | maldaner, NAFFEENAUUS ESPRESSO, ELISABETH, HISEL KUBS KANO NOVOAY, Brasilien; 20.7 s |
+| Abdul (maldaner / Abdul) | maldaner, OMNIROAST, **ABDUL**, Indonesien; **0.69 s** | maldaner, OMNI ROAST, ABDUL, Indonesien; 1.42 s | the same and STEINFRUCHT.TROPENPOWER.ZUCKERROHR; 2.27 s | maldaner, OMINI ROAST, ABDUL, FENUILT, TROPENPOWER ZUCKERORR, Indonesien; 20.0 s |
+| Feel The Sun (aniko / Feel The Sun) | **FEEL THE SUN**, naturalG, fully washed, aniko; **0.67 s** | FEEL THE SUN, natural G, fully washed, chocolate ·vanil · blueberry, aniko, COPFEE ROASTERS; 1.80 s | FEEL THE SUN, natural &, fully washed, chocolate·vanilla·blueberry, aniko, COFFEE ROASTERS; 2.59 s | FEEL THE SUN, natural, fully Wasted, aniko, chocolate-vanilla-blueberry; 19.3 s |
+| Honey Dream, turned (aniko / Honey Dream) | **Honey Dream**, COFFEE ROASTERS, aniko, pfirsich, honigmelone, mandel; **0.76 s** | COFFEE ROASTERS, aniko, Honey, pfirsich, honigmelone, mandel, Dream; 1.74 s | COFFEE ROASTERS, aniko, honigmelone, Honey Dream, pfirsich, mandel; 2.19 s | aniko, Coffee de laores, Honey Dream, NAROCHES, NAROOCHES; 19.4 s |
+
+The turned bag is read **as taken**: the detector finds the upright boxes of the sideways lines and
+the pipeline turns each before it is read. Turned by 270 degrees first, all three PP-OCR pairs read
+aniko, COFFEE ROASTERS, Honey Dream, mandel, honigmelone, pfirsich (tiny 0.81 s). Tesseract needed
+the camera's 2800-px picture and up to seven passes for less (29.14, spec 3.14).
+
+### 36.3 Per bag: the fields read
+
+| Bag (truth) | Gemini 3.5 Flash-Lite | SmolVLM-256M |
+|---|---|---|
+| Elisabeth (maldaner / Elisabeth; Brasilien) | Maldaner / Elisabeth; origin Brasilien; 1.67 s | Maldaner / Elisabeth, and an invented price '€10.00'; 28.6 s |
+| Abdul (maldaner / Abdul; Indonesien) | maldaner / ABDUL; origin Indonesien; 1.46 s | 'The coffee bag has a white foamy top.'; 15.2 s |
+| Feel The Sun (aniko / Feel The Sun; natural & fully washed) | aniko COFFEE ROASTERS / FEEL THE SUN; process natural & fully washed; 2.13 s | 'The coffee bag has a black interior.'; 14.3 s |
+| Honey Dream, turned (aniko / Honey Dream) | aniko coffee roasters / Honey Dream; 1.46 s | 'The coffee bag has a "aniko" logo printed on it.'; 17.4 s |
+
+Gemini filled no field that the bag does not show (origin, process and roast date null where
+missing). Each request: **1,134 input tokens** (1,064 for the 1024 x 768 image, 70 for the prompt)
+and 48 to 55 output tokens. Its times include the network from Germany. What it leaves to the
+skin: title case for a name printed in capitals and dropping a trailing 'Coffee Roasters' (or
+asking for both in the prompt).
+
+**Fields from lines.** PP-OCR gives lines, not fields; telling the name from the roaster stays the
+skin's job (Z1's rules). On these four, with the catalogue's roasters known, two rules give all
+four from PP-OCRv6 tiny: the roaster is a line that is a roaster of the catalogue, or the line right
+above 'Coffee Roasters'; the name is the tallest other line (the short side of its box, so that a
+turned line counts by its letters' height), leaving out a small line right under the roaster
+(OMNI ROAST), tasting lines and the catalogue's countries: ELISABETH 71 px, ABDUL 66 px, FEEL THE
+SUN 32 px (aniko, 33 px, is the roaster), Honey Dream. A roaster not yet in the catalogue is the
+weak case: 'maldaner' (38 px) is shorter than 'Indonesien' (52 px) and has no 'Coffee Roasters'
+under it, so the first can of a new roaster needs a tap on a chip. The chips (Z2's six lines under
+the photo; a tap fills the field that had the focus) stay for that.
+
+### 36.4 Size, speed on the tablet, the WebView, licences
+
+| Candidate | Added to the ZIP (today 147 kB) | Fetched once instead | Here, one photo | Tablet, estimated | Licence |
+|---|---|---|---|---|---|
+| PaddleOCR.js + PP-OCRv6 tiny | about **13 MB**: the SDK with OpenCV.js 3.4 MB, ONNX Runtime Web 0.1 MB and its WASM 3.8 MB, the models 1.6 + 4.1 MB (gzip -9 per file; 34 MB unpacked) | yes: the same files, about 13 MB once | 0.67-0.81 s; 1.5 s to load | 1.5-2.5 s; 3-5 s to load | Apache-2.0 (SDK, weights, OpenCV.js), MIT (ONNX Runtime Web, js-yaml), Boost (clipper-lib) |
+| PaddleOCR.js + PP-OCRv5 mobile | about 26 MB (models 4.5 + 14.1 MB) | yes | 1.4-1.9 s | 3-6 s | as above |
+| PaddleOCR.js + PP-OCRv6 small | about 33 MB (models 7.6 + 18.5 MB) | yes | 2.2-2.6 s | 4.5-8 s | as above |
+| Florence-2-base-ft, 8-bit | not sensible: **275 MB** of weights | 275 MB, then cached | 19-21 s | 40-60 s | MIT (weights), Apache-2.0 (transformers.js) |
+| SmolVLM-256M-Instruct | not sensible: **209 MB** | 209 MB, then cached | 14-29 s | 30-90 s | Apache-2.0 |
+| Gemini 3.5 Flash-Lite | nothing | (a request per photo) | 1.5-2.1 s | the same plus the tablet's network | Google's terms; the user's own key |
+
+- **Sizes**: the PaddleOCR.js page built with Vite; each file gzipped at level 9, which is what the
+  ZIP's deflate gives. The models are PaddlePaddle's ONNX archives
+  (`paddle-model-ecology.bj.bcebos.com`, the SDK's default; the same models are on Hugging Face as
+  `PaddlePaddle/PP-OCRv6_tiny_det` and `_rec`). The Florence-2 and SmolVLM sizes are the files
+  transformers.js loads, from Hugging Face's file list. The WebGPU build of ONNX Runtime (29.5 MB)
+  is not needed and would be left out.
+- **Fetched once and cached**: the skin's page is `http://localhost`, a secure context, so the Cache
+  API or IndexedDB can keep the files after the first use; the reading then works offline. The
+  first use needs a network and a host to fetch from (Hugging Face, jsDelivr or the release page),
+  which is a new outside service under spec 6. Bundled, the reading works offline from the install
+  and no service is added, but the ZIP grows to about 13 MB (0.6.0 with Tesseract was 7.8 MB) and
+  acceptance 82 (under 200 kB) changes.
+- **Speed on the tablet** is not measured (nothing of the trial ran on it). The estimate scales the
+  one-thread times here by 2 to 3: the PC's 2013 core is in the range of a current mid-range Android
+  tablet's big core in native code, and WebAssembly on ARM is usually slower than on x86; Z2 assumed
+  'several times slower' too. The first read also loads the models (1.5 s here).
+- **The WebView**: WASM SIMD is in Chromium since 91, and Android's WebView follows Chrome's
+  version through its updates; all times above are with SIMD. **Threads** need `SharedArrayBuffer`,
+  which needs the page to be cross-origin isolated (COOP and COEP headers); Decaid serves the skin
+  and the skin cannot set them, so one thread is assumed. **WebGPU** is not needed: in Android's
+  WebView it is not certain (a Chromium intent to ship of January 2026 names WebView for WebGPU's
+  compatibility mode), and the tiny models are fast enough on the CPU.
+- **Licences**: every local candidate is free open-source without registration (Hugging Face's
+  cards: PP-OCR `apache-2.0`, Florence-2 `mit`, SmolVLM `apache-2.0`, none gated). The PP-OCRv6
+  recogniser knows ä, ö, ü, ß and é (its character list has 6,928 signs).
+
+### 36.5 The Gemini API
+
+Read on Google's pages on 2026-10-27: [pricing](https://ai.google.dev/gemini-api/docs/pricing),
+[deprecations](https://ai.google.dev/gemini-api/docs/deprecations),
+[rate limits](https://ai.google.dev/gemini-api/docs/rate-limits),
+[image understanding](https://ai.google.dev/gemini-api/docs/image-understanding),
+[terms](https://ai.google.dev/gemini-api/terms).
+
+- **The model**: `gemini-3.5-flash-lite`, **$0.30 per million input tokens** (text, image, video)
+  and **$2.50 per million output tokens**, with a free tier. Cheaper on the page but not usable:
+  `gemini-2.5-flash-lite` ($0.10 / $0.40) is 'no longer available to new users' (the API's answer);
+  `gemini-3.1-flash-lite` ($0.25 / $1.50) shuts down on 2027-05-07, with 3.5 Flash-Lite as its
+  replacement. No price change of 3.5 Flash-Lite is announced (some models double on 2027-01-01).
+- **Price per photo**: 1,134 x $0.30 / 1M + about 50 x $2.50 / 1M = **about $0.0005**; a thousand
+  bags about $0.47. Images over 384 px are tiled (258 tokens a tile); the 1024-px photo is 1,064.
+- **The free tier**: free of charge; its limits per project are shown only in AI Studio, and the
+  daily count starts again at midnight Pacific time. On the free tier Google may use what is sent
+  to improve its products and human reviewers may read it; for users in the EEA, Switzerland and
+  the UK the paid terms apply to all services (not used to improve products, kept for a limited
+  time to detect abuse). The terms also say that API clients made available to users in the EEA
+  may use only paid services, which is a point to check before the public skin offers it.
+- **The key** is the user's own (AI Studio). The skin would keep it in the settings object
+  (`src/settings.ts`), so in the tablet's localStorage and in the KV backup
+  (`pureflow/settings-backup`), in plain text on the tablet's Decaid. It is sent only in the
+  `x-goog-api-key` header to `generativelanguage.googleapis.com`, never in a URL or a log; it never
+  enters the repository or the ZIP (tests use a made-up key; `publish-check` looks for tokens). A
+  key restricted to the Generative Language API limits the harm of a leak.
+- **Privacy**: the photo (the bag, and whatever else is in the picture: a hand, the kitchen) goes to
+  Google. The skin would send it only on a tap ('Read with Gemini'), say so beside the key field, and
+  send nothing without a key.
+- **Offline**: no reading. The request fails at once (or after a 20-s timeout), the form says so,
+  the photo is kept and the fields stay as they are.
+- **What the skin sends**: `POST .../v1beta/models/gemini-3.5-flash-lite:generateContent` with the
+  stored JPEG as `inlineData` (base64, 50 to 250 kB; requests up to 20 MB), the prompt of 36.1 and
+  `generationConfig: { responseMimeType: 'application/json', responseSchema, temperature: 0 }`.
+  **What it receives**: `candidates[0].content.parts[0].text`, the JSON of the five fields, and
+  `usageMetadata` with the tokens. The Interactions API that the image page now shows is an
+  alternative. The trial called it from Node; from the WebView it is a cross-origin `fetch`, not
+  tried here.
+- **Errors**: 400 (key not valid, request malformed), 403 (API not enabled or key restricted), 404
+  (model withdrawn, as 2.5 Flash-Lite was: the model name ships with the skin and a release
+  changes it), 429 (free-tier quota), 500 and 503 (overloaded), an answer with no candidate (safety)
+  or text that is not the schema's JSON, a timeout, no network. Each gives one line in the form and
+  leaves the fields alone.
+
+### 36.6 Recommendation
+
+**Read the bag on the tablet with PaddleOCR.js and PP-OCRv6 tiny**, bundled in the ZIP, with the
+lines as chips and the two rules of 36.3 for the fields; **Gemini 3.5 Flash-Lite with the user's
+own key is the fallback**. The founder prefers local, and the reading itself, where Tesseract
+failed, is right on all four photos: from the stored 1024-px photo, upright or turned, in one pass,
+under a second here and about two seconds estimated on the tablet, free, Apache-2.0, no key, no
+network. What it does not do by itself is tell the name from the roaster for a roaster the
+catalogue does not know yet; a chip tap does that. Gemini gives the fields directly (origin and
+process too) and was right on all four, but sends the photo to Google, needs a key and a network,
+and is an outside service that spec 6 asks the founder to approve. Florence-2 and SmolVLM are too
+large and too slow for the tablet, and SmolVLM read one bag of four. PP-OCRv5 mobile and PP-OCRv6
+small read no better than tiny here and are two to three times slower and larger.
+
+**Cost to build** (one task of about Z2's size, roughly 450 lines with tests):
+
+- `package.json`: `@paddleocr/paddleocr-js` (with `onnxruntime-web`, `@techstark/opencv-js`,
+  `clipper-lib`, `js-yaml`); `NOTICE` names their licences.
+- `vite.config.ts`: the WASM build of ONNX Runtime (no WebGPU build) and the two model archives
+  into the ZIP's `ocr/`, as Tesseract's were (about 20 lines).
+- `src/beans/read.ts` (about 80 lines): the reader made on the first photo and kept, the stored
+  photo's canvas in, lines with text, score and box out.
+- `src/beans/fields.ts` (pure, about 120 lines) and its tests (about 150 lines, the four bags'
+  lines as fixtures): the roaster and name rules, tasting lines and countries out, title case.
+- `src/beans/BeanForm.svelte`: 'Reading the bag' while it reads, then the chips under the photo
+  (about 60 lines, Z2's design); an e2e test reading one bag in Chromium.
+- Spec 3.17 item 3 and acceptance 82 (the ZIP's size) change, which the founder decides.
+
+**Fallback** (or later beside it): Gemini as an option. A 'Gemini API key' field in the settings
+(`src/settings.ts` and its page, about 40 lines), `src/beans/gemini.ts` (about 100 lines: the
+request, the schema, the timeout, the errors) and its tests with a mocked `fetch` (about 120
+lines), a 'Read with Gemini' button by the photo when a key is set, and the privacy line. No new
+package and no change to the ZIP's size.
