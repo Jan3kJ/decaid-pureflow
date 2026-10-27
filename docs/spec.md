@@ -2937,6 +2937,54 @@ the base flavour.
 (semver), H7 is its local release with both ZIPs for the tablet; the founder checks the reading on his
 bags and decides whether the next public release carries both ZIPs (a public release is his, 3.13).
 
+### 3.20 The CI's browser tests fail on GitHub and say nothing (planned, first task, not built)
+
+Since the product repository went to GitHub, the `e2e` job of `.github/workflows/ci.yml` fails (runs
+40559220438 and 40564238939 of 2026-10-27: 295 of 300 and 294 of 300 tests pass, 11 to 14 minutes) and
+the page shows only 'Process completed with exit code 1'. The logs, read with `gh run view --log-failed`,
+say what failed; the job's own page does not. Work in the product repository, roadmap **Z44**, the
+first task of the next working day, before Z17 to Z43; the `verify` job passes.
+
+**1. Make the failure readable.**
+- `actions/upload-artifact@v4` leaves out hidden files and folders by default, and `e2e/.results/` is
+  hidden: 'No files were found with the provided path', so no trace, picture or error context was ever
+  kept. The step gets `include-hidden-files: true` (or `outputDir` moves to a folder without a dot).
+- The Playwright reporter in CI is `[['list'], ['github']]` (annotations on the run's page) and the
+  tests keep a trace on the first retry (`trace: 'retain-on-failure'` is enough with no retry); the
+  job ends with `if: failure()` uploading `e2e/.results/` and a one-line summary of the failed tests.
+- A retry is not added to hide the failures (`retries` stays 0): a test that fails now and then is
+  found and fixed, as cda0fcd did for two others.
+
+**2. Find the cause of each failing test.** The same five fail in both runs, a sixth in the first:
+- `editor.spec.ts:177` 'the start flow is written at the left edge of the flow phase': the label's x is
+  630 and the test expects at least 830 (the flow line's x);
+- `editor.spec.ts:220` 'the pause is dragged in detail mode only' (first run only): 60 where less than
+  60 is expected;
+- `history.spec.ts:74` 'a swipe from the left edge ...': after a tap at (1100, 400) the history is
+  still there;
+- `picker-delete.spec.ts:99` 'a vertical drag scrolls the list ...': after the drag the delete button
+  of the row is not there;
+- `picker-estimate.spec.ts:55`: the estimate caption is wider than its box (`scrollWidth > clientWidth`);
+- `settings-connections.spec.ts:128`: 'Reconnect' is 'detached from the DOM, retrying' until the
+  30 s run out.
+
+Two causes are likely and neither is checked: **the font** (the runner is Linux without the fonts the
+founder's machine and tablet have, so widths, wraps and the editor's label positions differ: the
+estimate caption and the label x) and **time** (the runner is slower: a swipe, a tap or a re-render
+lands before or after the state the test expects: the history, the delete row, the Reconnect button).
+The first step is to run them on the runner with the trace on and read what each test saw, or on a
+Linux container of the same image (`mcr.microsoft.com/playwright`).
+
+**3. Fix each where it belongs.** A skin that depends on a font being there is a defect (the
+tablet has its own fonts, so the caption must not overflow with any fallback; the skin names its
+font stack, 3.14); a test that depends on a font or a timing is a test defect and is changed to
+state what the design requires (a width limit, a wait for the state, not a sleep). No test is skipped
+or loosened to pass without a reason written in its comment. A defect in the skin gets a test first.
+
+**4. Done** when the `e2e` job is green on `main`, twice in a row, and a deliberate failing test on a
+branch leaves its trace in the artifact (then removed). `docs/` and CONTRIBUTING name `gh run view
+--log-failed` as the way to read a failure. The Windows machine's `npm run e2e` stays green.
+
 ## 4. Technical approach
 
 ### 4.1 What a Decaid skin is
@@ -3563,6 +3611,9 @@ Where an item here and one of 27-55 disagree, the item here wins (3.10 overrides
      makes no network request (the e2e fails on any request outside the skin's origin and Decaid).
 142. **The reading on the tablet (founder, H7).** The founder reads his own bags with the ocr ZIP on
      the tablet, says how long it takes and what it got wrong, and which ZIP the public release carries.
+143. **The CI's browser tests (test, Z44).** The `e2e` job is green on `main` in two runs in a row; a
+     failing test uploads its trace and error context (the artifact has files); no test has a retry,
+     a skip or a loosened check without a reason in its comment; the local `npm run e2e` is green.
 
 ## 6. Constraints
 - **Budget:** one Claude Pro plan. This product may use all of it up to 90% of the weekly
@@ -3686,6 +3737,7 @@ The weeks are a capacity guess on one Pro plan.
 | 4 | P4 | publish: `npm run screenshots`, the eight generated pictures of the user documentation from the mock gateway, and `scripts/docs-check.mjs` | H4 |
 | 5 (Nov 9-15) | P5 | publish: the user documentation, three short pages (`install.md`, `guide.md`, `troubleshooting.md`) in `docs/user/`, with the pictures | P4 |
 | 5 | P7 | publish (3.15): `scripts/release.mjs` and `npm run release`: the checks, the change history from the tasks' `Task:` and `Changelog:` trailers, the version bump if needed, the ZIP and its SHA-256, the commit and tag, then the GitHub release; `--dry-run` and `--local` (the hand-overs use it); `npm run verify` shared with CI; the work prompt gets the trailers; pushing and publishing are the founder's | P3 |
+| 5 | Z44 | the CI's `e2e` job fails on GitHub and says nothing: make the failure readable (artifact with hidden files, reporter), find each failing test's cause (font or time), fix the skin or the test, a green run twice (3.20); the first task of the next working day | P2 |
 | 5 | Z17 | review 2026-10-25: the swipe back on the whole screen: `onControl` takes a drag only from a box that really scrolls sideways, the left edge (24 px) always goes back (3.17 item 1) | P2 |
 | 5 | Z18 | review 2026-10-25: the tank unit setting moves from Skin > Display to Quick Adjustments > Water Tank (3.17 item 2) | P2 |
 | 5 | Z19 | review 2026-10-25: the bean photo's reading dropped, the photo kept: `ocr.ts`, the probe, the `ocr/` folder, the three Tesseract packages, the credits and Z1/Z2's tests removed (3.17 item 3) | P2 |
@@ -3708,7 +3760,7 @@ The weeks are a capacity guess on one Pro plan.
 | 5 | Z39 | DR18: fill and flow show their time in the editor's detail view (3.18 item 11) | P2 |
 | 5 | Z40 | DR22: equal filter chips, time and weight on the history entries if the list has them (3.18 item 12) | Z33 |
 | 5 | Z41 | DR13: four spacing tokens and a lint rule, after the local release (3.18 item 13) | H6 |
-| 5 | H6 | review 2026-10-25: a local release for the tablet, `npm run release -- --local` (3.15), the founder's checks of 3.17 in install.md; the public release P6 resumes it | Z17-Z25, Z29-Z40, P7 |
+| 5 | H6 | review 2026-10-25: a local release for the tablet, `npm run release -- --local` (3.15), the founder's checks of 3.17 in install.md; the public release P6 resumes it | Z17-Z25, Z29-Z40, Z44, P7 |
 | 5 | P6 | publish: the release 0.7.0: tag, GitHub release with the ZIP and its SHA-256, the URL install checked in Decaid, the founder's cold read and a new user's install (3.13 acceptance 84-87); pushing and announcing are the founder's | P3, P5, P7, H5, H6 |
 | 5 | Z42 | the build feature: base and ocr flavours of one source, `npm run zip` writes two ZIPs, the models fetched by hash, the release script, CI and the licence check handle both (3.19 items 1, 2) | P2 |
 | 5 | Z43 | the bag's reading in the ocr flavour: PP-OCRv6 tiny through PaddleOCR.js, the field rules, the chips in the bean form (3.19 item 3) | Z42 |
