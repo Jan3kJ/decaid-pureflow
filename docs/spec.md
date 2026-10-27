@@ -2764,6 +2764,113 @@ shot starts is closed.
 P6 resumes that release (`--resume`), so the public skin has no OCR to credit and no half-working
 swipes.
 
+### 3.18 The founder's picks from the design review of 2026-10-27 (planned, not built)
+
+Z27 reviewed every screen and wrote 23 proposals (`design-review-2026-10-27.md`, with the
+screenshots). The founder: 'all good findings, plan all of them except DR17'. **DR17 is dropped:**
+the editor's graph needs no unit line, 'each line or chip has a value with unit'; it stays as it is.
+His corrections to four of the others are part of the items below. Each item has the review's
+problem and change, which are not repeated here; this says what is decided and what the founder
+changed. Nothing is built; the work is in the product repository, roadmap Z29 to Z41.
+
+**The order.** Z29 first (the words, so that the later tasks and their tests write the final
+ones), then Z30 (colours, danger, disabled) and Z31 (the weight formatter, DR2); Z32 before Z33 (the
+same file), Z30 before Z33 (DR9 needs the warning and the delete style); Z34 (the steam and hot
+water pages) after Z30 and Z31; the others are independent. **Z41 (DR13, spacing) is last and after
+the local release H6:** it touches every file and every screen, so the 3.17 and 3.18 tasks reach the
+tablet without waiting for it, and it follows in the next release. H6 waits for Z29 to Z40.
+
+**1. The words of the buttons (DR11; Z29).** One case: lower case for buttons ('delete', 'discard
+and load', 'save', 'new bag', 'archive', 'photo', 'use for the next shot', 'steam on', 'cancel');
+titles and the corner menu's entries stay in sentence case. The review's list of the places is the
+start; a grep of the e2e texts finds the tests.
+
+**2. Warning, danger, disabled (DR7, DR8, DR10, DR15; Z30).**
+- DR7: `--warn` becomes the clearly orange #ff8a3d; text that warns ('Off', 'looking for it',
+  'delete step', the scale's warning) gets the '⚠' the scale's warning has.
+- DR8: an action that deletes or discards is an outline in the warning colour, never filled:
+  `Confirm.svelte` gets a `danger` option (the picker's delete), 'discard and load' and 'delete
+  step' follow; 'archive' stays plain (it can be undone).
+- DR10: every disabled main button looks as the steam page's 'set timer' does (panel background,
+  grey text): the number pad's 'set' and the bean and grinder forms' 'save'.
+- DR15: `.tag.loaded` in the accent colour (the light blue), not pressure green.
+
+**3. The scale's weight shows no jitter around zero (DR2; Z31).** One function writes every weight
+of the scale, `gramsOf()` in `src/display.ts`, in place of the `toFixed(1)` in `machine.ts` (the
+header), `Steam.svelte`, `HotWater.svelte`, the hot water ring and home's shot weight (a grep over
+the weights finds them all). **Founder's correction:** negative values are real, they depend on the
+scale, and stay (-0.6 g reads '-0.6 g'); what goes is the jitter around zero: **a weight from -0.1
+to 0.1 g, both ends included, is shown as '0.0 g'**, never '-0.0'. The band is applied to the
+reading before it is rounded, so 0.1 shows '0.0' and 0.11 shows '0.1'. Only what is shown changes:
+the milk, the tare and every calculation keep the raw reading.
+
+**4. The scale row of the steam and hot water pages (DR1, DR3, DR4, DR25; Z34).**
+- DR1, variant B, **without the 'tap to tare' hint** (founder): the three rows (scale, mug, milk)
+  are a grid of label, number and unit, the numbers right-aligned on one edge, the units in their
+  own column, as on home. The scale's row is the tare, **one button over the whole row** (3.5 rem
+  high, a frame like the other buttons, the test id `steam-tare` stays) and **off while steam
+  runs**. The review's 'tared' note after a tare is not planned (the weight reading 0.0 says it;
+  less is more). The mug's size 'S' moves into its label as a badge; its weight has the size of the
+  others, in grey.
+- DR3: the hot water page gets the same row, live while idle (an empty cup before pouring), off
+  while water runs; 'last shot' and 'scale' share the number column.
+- DR4: without a scale one line 'no scale: the chips set the timer' replaces the three rows; its
+  tap looks for the scale again (3.9); 'set timer' is off and says 'needs the scale'.
+- DR25: the header's elapsed time shows only after steam has ended ('last steam 28 s'); while it
+  runs the countdown 'steam left' is the one clock.
+
+**5. Home: the names first (DR5; Z35).** The profile and bean buttons have two lines: the name
+(name role, one line, cut at its end) and a caption under it (the profile's family or the part
+before ' / '; the roaster for the bean); the grinder setting stays at the right. The buttons stay
+in the column during a shot (3.17 item 10), dimmed. The column grows by about 2.4 rem and must still
+hold the values and stop at 1280 x 800 and at the largest display size of the settings.
+
+**6. The picker (DR14, DR16; Z32).**
+- DR14: opening the picker selects the loaded profile and scrolls to it, its detail is shown,
+  'edit' works at once.
+- DR16 (**founder: a little hint, no 'more' button**): the description's box has a **lower border
+  in the accent colour while more text lies below** the visible part; at the end of the text, and
+  when the text fits, the border is as the others. It follows the scrolling (`scroll` event,
+  `scrollHeight`). The fade stays as it is.
+
+**7. One selected look (DR9; Z33).** A choice of one among a few (chips, modes, tabs, Beans |
+Grinders) is the white fill; the row whose detail is shown beside a list (the picker, the bean and
+grinder lists, the bean pick) is the white outline; history's 'all' follows. After Z30 and Z32.
+
+**8. Touch targets (DR12; Z36).** At least 3 rem on the short side by padding, not by larger text:
+the page dots, the step card's - and + (the three 'maximum' chips stay in one row), the editor's
+'infuse to' and 'stop at' chips, the settings' sub-entries. The tare button goes with item 4.
+
+**9. Settings, titles, menu (DR20, DR21, DR26; Z37).**
+- DR20: the three adjust fields in the settings show '−8 s', '−4 s', '+5 s' with the steam page's
+  `signed()`.
+- DR21: 'Settings' and 'Beans and grinders' take the name role like the other page headers; only
+  dialogs and the picker keep the title token (roles table of 3.14, acceptance 95).
+- DR26: the menu entry reads 'Steam heater' with the state as its value ('on', 'off'); a tap
+  switches.
+
+**10. The grinder's step (DR24; Z38).** 'step' on its own row as a value chip with - and +, like
+the other values, not beside the 'numbers | named positions' choice.
+
+**11. The A-Flow editor's phases (DR18; Z39).** **Founder: the simple view stays as it is** (its
+shown durations are the values one changes), **and in the detail view the phases that have no time
+yet, fill and flow, show their time as a caption like the other steps, not the way they end**: a
+phase may leave by pressure, by weight or by time, and the caption would claim one. The caption is
+the step's own time (`fillTime`, `pourTime`), in the style of the other durations, under the phase
+name, read only (the detail panel changes it); it is left out where the column is too narrow and for
+a phase that is off. **DR17 is not done** (above).
+
+**12. History (DR22; Z40).** The three filter chips equal, in the selected style of item 7. A third
+line '27.4 s · 33.8 g' (the weight in yellow) **only if the list's summary has the time and the
+weight** (its `annotations`): the first step is to check that. If it has not, reading every record
+would undo the list's speed-up (3.8), the line is not built and the founder is told; the chips are
+built either way.
+
+**13. Spacing (DR13; Z41, after H6).** Four spacing tokens in `src/app.css` (0.3, 0.6, 1.2 and 2.4
+rem) and a lint rule like `scripts/font-sizes.mjs` that refuses any other `gap`. The first step
+counts every gap and padding and maps each to the nearest token; the screenshots before and after of
+every screen are compared by the founder, and the full e2e, rig and mock, runs.
+
 ## 4. Technical approach
 
 ### 4.1 What a Decaid skin is
@@ -3340,6 +3447,42 @@ Where an item here and one of 27-55 disagree, the item here wins (3.10 overrides
 125. **The home column holds still (test, Z25).** The profile and bean buttons are in home's
      right column before, during and after a shot, disabled during it; the time, the weight and
      the stop button keep their place from the idle screen to the running one.
+126. **Words (test, Z29).** No `<button>` text in a `.svelte` file outside the corner menu starts
+     with a capital letter; the e2e texts use the lower case words.
+127. **Warning, danger, disabled (test, Z30).** `--warn` is #ff8a3d; the picker's delete dialog
+     marks 'delete' as danger (outline, not filled), as 'discard and load' and 'delete step'; a
+     disabled 'set', 'save' (bean, grinder) and 'set timer' have one look; `.tag.loaded` is the accent
+     colour.
+128. **Weight display (test, Z31).** `gramsOf` gives '0.0 g' for -0.1, -0.05, 0 and 0.1, '0.1 g' for
+     0.11, '-0.2 g' for -0.2 and '-0.6 g' for -0.6; the header, the steam and hot water pages, the
+     ring and home use it (no `toFixed` on a scale weight outside it).
+129. **Picker (test, Z32).** On opening, the loaded profile is selected and in view and its detail is
+     shown; a description longer than its box has the accent lower border until scrolled to its end,
+     a short one never has it.
+130. **Selected look (test, Z33).** The selected chip, mode and tab have the white fill; the
+     selected row of the picker, the lists and the bean pick has the white outline; history's 'all'
+     has the chip look.
+131. **Steam and hot water rows (test, Z34).** The three steam rows end on one right edge with
+     their units in one column; the scale row is a button of at least 3.5 rem, off while steam runs,
+     on while idle, with no 'tap to tare' text; the hot water page has the same row, off while water
+     runs; without a scale the steam page shows the one 'no scale' line and 'set timer' says it
+     needs the scale; the header's elapsed time is not shown while steam runs and is after.
+132. **Home names (test, Z35).** Each of the profile and bean buttons has a name line and a caption
+     line; with the long names of the review neither overflows the column, at 1280 x 800 and at the
+     largest display size; the stop button stays in view during a shot.
+133. **Touch (test, Z36).** Every `button` on the mock gateway's screens is at least 3 rem on its
+     short side, the history handle excepted.
+134. **Settings, titles, menu (test, Z37).** The adjust fields read '−8 s', '−4 s', '+5 s'; the page
+     titles 'Settings' and 'Beans and grinders' have the name role's size and weight; the menu says
+     'Steam heater' with 'on' or 'off' and a tap switches.
+135. **Grinder step (test, Z38).** The grinder form's 'step' is a row with a value chip, its - and +
+     change it, and it is not beside the choice of the two modes.
+136. **Editor captions (test, Z39).** In the detail view the fill and flow columns have a caption
+     with `fillTime` and `pourTime`; the simple view has none; a narrow or off phase has none.
+137. **History (test, Z40).** The three filter chips have one size; the time and weight line is
+     there if and only if the summary has them (the check's answer is in the commit).
+138. **Spacing (test, Z41).** `scripts/spacing.mjs` finds no `gap` outside the four tokens; the
+     founder has the before and after pictures of every screen.
 
 ## 6. Constraints
 - **Budget:** one Claude Pro plan. This product may use all of it up to 90% of the weekly
@@ -3472,7 +3615,20 @@ The weeks are a capacity guess on one Pro plan.
 | 5 | Z23 | review 2026-10-25: the state word and the page header (Steam, Hot water) take the name role's size, 1.1 rem, no new size (3.17 item 7) | P2 |
 | 5 | Z24 | review 2026-10-25: while steam runs the adjust chips change the running timer (3.17 item 8) | P2 |
 | 5 | Z25 | review 2026-10-25: the state says Pouring, and home keeps the profile and bean buttons while a shot runs (3.17 items 9, 10) | P2 |
-| 5 | H6 | review 2026-10-25: a local release for the tablet, `npm run release -- --local` (3.15), the founder's checks of 3.17 in install.md; the public release P6 resumes it | Z17-Z25, P7 |
+| 5 | Z29 | design review 2026-10-27 DR11: one case for button words (3.18 item 1) | P2 |
+| 5 | Z30 | DR7, DR8, DR10, DR15: warning colour, danger buttons, disabled main button, loaded tag (3.18 item 2) | Z29 |
+| 5 | Z31 | DR2: one weight formatter, 0.0 for -0.1 to 0.1 g (3.18 item 3) | P2 |
+| 5 | Z32 | DR14, DR16: the picker opens on the loaded profile, the description's lower border hints at more text (3.18 item 6) | Z30 |
+| 5 | Z33 | DR9: one selected look (3.18 item 7) | Z30, Z32 |
+| 5 | Z34 | DR1, DR3, DR4, DR25: the scale row of the steam and hot water pages (3.18 item 4) | Z30, Z31 |
+| 5 | Z35 | DR5: home's profile and bean buttons, name first (3.18 item 5) | P2 |
+| 5 | Z36 | DR12: touch targets of 3 rem (3.18 item 8) | Z34 |
+| 5 | Z37 | DR20, DR21, DR26: settings fields, page titles, the menu's steam heater (3.18 item 9) | Z29 |
+| 5 | Z38 | DR24: the grinder's step as a value row (3.18 item 10) | Z30 |
+| 5 | Z39 | DR18: fill and flow show their time in the editor's detail view (3.18 item 11) | P2 |
+| 5 | Z40 | DR22: equal filter chips, time and weight on the history entries if the list has them (3.18 item 12) | Z33 |
+| 5 | Z41 | DR13: four spacing tokens and a lint rule, after the local release (3.18 item 13) | H6 |
+| 5 | H6 | review 2026-10-25: a local release for the tablet, `npm run release -- --local` (3.15), the founder's checks of 3.17 in install.md; the public release P6 resumes it | Z17-Z25, Z29-Z40, P7 |
 | 5 | P6 | publish: the release 0.7.0: tag, GitHub release with the ZIP and its SHA-256, the URL install checked in Decaid, the founder's cold read and a new user's install (3.13 acceptance 84-87); pushing and announcing are the founder's | P3, P5, P7, H5, H6 |
 
 | 2 (Oct 19-25) | Q1 | code quality review 2026-10-19: Prettier and ESLint, the tree formatted in one commit (in `.git-blame-ignore-revs`), lint errors fixed, both in the check ([review-code-quality-10-19-26.md](review-code-quality-10-19-26.md), steps 1-3) | - |
