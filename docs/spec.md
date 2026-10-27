@@ -2871,6 +2871,72 @@ rem) and a lint rule like `scripts/font-sizes.mjs` that refuses any other `gap`.
 counts every gap and padding and maps each to the nearest token; the screenshots before and after of
 every screen are compared by the founder, and the full e2e, rig and mock, runs.
 
+### 3.19 The bean bag's reading returns, in a second build (planned, not built)
+
+Z28 (research.md 36) recommended reading the bag on the tablet with PaddleOCR.js and PP-OCRv6 tiny.
+The founder, 2026-10-27: 'plan PP-OCRv6 tiny, but create a build feature for it: a build should
+produce two ZIPs, one with and one without OCR.' This answers open question (a) to (d) of section 8:
+(a), as a second ZIP, so the public skin keeps its small ZIP of 3.18 and the reading is an extra one
+downloads choose. **Gemini (c) is not planned**, and neither is the fetch-once variant (b). Work in the
+product repository, roadmap Z42, Z43 and the local release H7, after the design-review tasks and after
+the public release P6; nothing is built.
+
+**1. Two flavours of one source (Z42).** One source tree, two builds, chosen at build time:
+- **base** (what 0.7.0 is): no reading. The bean form is as 3.17 item 3 left it: Photo, Capture,
+  New photo, Remove photo.
+- **ocr**: the same and the reading of the bag (item 3). The flag is a build constant, `__OCR__`
+  (Vite `define`, true only in the ocr build), so the reader, `@paddleocr/paddleocr-js` and its
+  dependencies, OpenCV.js, the ONNX Runtime WASM and the models are **not in the base build at all**:
+  the code that uses them is behind `if (__OCR__) { await import('./read') }`, which the bundler
+  removes with its imports when the constant is false. No runtime setting, no download.
+- `npm run build` builds both (`dist/` for base, `dist-ocr/` for ocr; `build:base` and `build:ocr`
+  build one); `npm run dev:ocr` serves the ocr flavour, `npm run dev` the base one.
+- **`npm run zip` writes two ZIPs** from them: `release/<id>-<version>.zip` (base) and
+  `release/<id>-<version>-ocr.zip` (ocr). Both have the same `id` and `version` in their
+  `manifest.json` (Decaid keeps one skin of an id, so installing the other replaces it); the ocr
+  ZIP's manifest `description` ends with ' With bag reading.'. The checks of `zip.mjs` run on both,
+  and two more: the base ZIP has no `ocr/` folder, no `.onnx`, no `.wasm`, no `paddleocr` or
+  `onnxruntime` string in its scripts and **is under 1 MB**; the ocr ZIP has the `ocr/` folder with the
+  two model files and the WASM and is **under 16 MB**.
+- **The models** (the detector and the recogniser, 1.6 and 4.1 MB gzipped, 34 MB unpacked
+  with the runtime) are **not committed**: `scripts/fetch-ocr-models.mjs` downloads the two ONNX
+  archives of research.md 36.4 once into a git-ignored `.cache/ocr/`, checks their **SHA-256
+  against the pins in the script**, and the ocr build copies them into `dist-ocr/ocr/`. A wrong hash
+  or no network (and no cache) stops the ocr build with a message; the base build never needs them.
+  So the public repository holds no binary model and a build is reproducible.
+- **The release** (3.15): `npm run release` builds, checks and uploads **both ZIPs**;
+  `release/SHA256SUMS.txt` has two lines; the check after the upload downloads both and compares them
+  with the local files; the release notes name which is which ('pureflow-0.8.0.zip: the skin;
+  pureflow-0.8.0-ocr.zip: the skin that also reads the bean bag, about 13 MB'); `--resume` and
+  `--local` handle both. `docs/user/` and `install.md` say which to take: the small one unless the
+  reading is wanted. `publish-check` and the licence check cover both flavours; `NOTICE` names the
+  Apache-2.0, MIT and Boost licences of the reading's parts, in the ocr ZIP's copy only.
+
+**2. CI and tests.** The mocked e2e runs against the base build; one extra spec, in the ocr flavour
+(`playwright.ocr.config.ts`, a job of its own), loads a stored photo of a bag and reads it in
+Chromium. A unit test of `zip.mjs`'s checks on two fixture trees (a base one that contains an
+`.onnx` fails; an ocr one without the models fails). The picture tests (`npm run screenshots`) use
+the base flavour.
+
+**3. The reading (Z43; research.md 36.6).** In the ocr flavour only:
+- `src/beans/read.ts` (about 80 lines): the reader (PaddleOCR.js with PP-OCRv6 tiny, the detector
+  and recogniser pair) is made on the first photo and kept; the stored 1024-px photo's canvas goes in,
+  the lines with their text, score and box come out; the photo is read upright and, when nothing is
+  read, turned by 270 degrees first (the four bags of `docs/product/bags/` need that).
+- `src/beans/fields.ts` (pure, about 120 lines) with its tests (the four bags' recorded lines as
+  fixtures, as Z1's were): the roaster is a line that is a roaster of the catalogue, or the line right
+  above or below the name; tasting lines and countries are not offered as the name; title case.
+- `src/beans/BeanForm.svelte`: 'Reading the bag' while it reads (**Cancel** ends it), then the lines as
+  **chips under the photo**; a tap on a chip puts it in the name or the roaster field, which is how
+  a roaster the catalogue does not know yet is told from the name. Nothing is filled in by itself.
+  No reading starts without a photo; the photo and its storage are as in the base flavour.
+- The reading runs on the device; **nothing is sent anywhere** and nothing is fetched at run time
+  (the models are in the ZIP). Offline it works.
+
+**4. Versions.** The reading is a feature: the next release after P6 raises the minor version
+(semver), H7 is its local release with both ZIPs for the tablet; the founder checks the reading on his
+bags and decides whether the next public release carries both ZIPs (a public release is his, 3.13).
+
 ## 4. Technical approach
 
 ### 4.1 What a Decaid skin is
@@ -3483,6 +3549,20 @@ Where an item here and one of 27-55 disagree, the item here wins (3.10 overrides
      there if and only if the summary has them (the check's answer is in the commit).
 138. **Spacing (test, Z41).** `scripts/spacing.mjs` finds no `gap` outside the four tokens; the
      founder has the before and after pictures of every screen.
+139. **Two ZIPs (test, Z42).** `npm run zip` writes `<id>-<version>.zip` and
+     `<id>-<version>-ocr.zip`; the base ZIP has no `ocr/` folder, no `.onnx` or `.wasm` file and no
+     `paddleocr` or `onnxruntime` string in its scripts and is under 1 MB; the ocr ZIP has the models
+     and the WASM and is under 16 MB; both manifests have the same id and version; a fixture tree
+     with a wrong content fails the check; the models' SHA-256 are checked before the ocr build.
+140. **Release with two ZIPs (test, Z42).** The release script's dry run lists both files and both
+     SHA-256 lines in `SHA256SUMS.txt`; `publish-check` and the licence check pass on both flavours;
+     `NOTICE` names the reading's licences in the ocr ZIP only.
+141. **The reading (test, Z43).** In the ocr flavour the four bags' photos give the roaster and the
+     name of the research (chips and the two rules, three of four by themselves, the fourth by a
+     tap); the base flavour's bean form has no chips, no progress line and no Cancel; the reading
+     makes no network request (the e2e fails on any request outside the skin's origin and Decaid).
+142. **The reading on the tablet (founder, H7).** The founder reads his own bags with the ocr ZIP on
+     the tablet, says how long it takes and what it got wrong, and which ZIP the public release carries.
 
 ## 6. Constraints
 - **Budget:** one Claude Pro plan. This product may use all of it up to 90% of the weekly
@@ -3630,6 +3710,9 @@ The weeks are a capacity guess on one Pro plan.
 | 5 | Z41 | DR13: four spacing tokens and a lint rule, after the local release (3.18 item 13) | H6 |
 | 5 | H6 | review 2026-10-25: a local release for the tablet, `npm run release -- --local` (3.15), the founder's checks of 3.17 in install.md; the public release P6 resumes it | Z17-Z25, Z29-Z40, P7 |
 | 5 | P6 | publish: the release 0.7.0: tag, GitHub release with the ZIP and its SHA-256, the URL install checked in Decaid, the founder's cold read and a new user's install (3.13 acceptance 84-87); pushing and announcing are the founder's | P3, P5, P7, H5, H6 |
+| 5 | Z42 | the build feature: base and ocr flavours of one source, `npm run zip` writes two ZIPs, the models fetched by hash, the release script, CI and the licence check handle both (3.19 items 1, 2) | P2 |
+| 5 | Z43 | the bag's reading in the ocr flavour: PP-OCRv6 tiny through PaddleOCR.js, the field rules, the chips in the bean form (3.19 item 3) | Z42 |
+| 5 | H7 | a local release for the tablet with both ZIPs, `npm run release -- --local`, the founder reads his bags (3.19 item 4) | P6, Z42, Z43 |
 
 | 2 (Oct 19-25) | Q1 | code quality review 2026-10-19: Prettier and ESLint, the tree formatted in one commit (in `.git-blame-ignore-revs`), lint errors fixed, both in the check ([review-code-quality-10-19-26.md](review-code-quality-10-19-26.md), steps 1-3) | - |
 | 2 | Q2 | code quality review 2026-10-19: split `src/shell/skin.svelte.ts` along its seams; `Skin` stays the one object the screens read ([review-code-quality-10-19-26.md](review-code-quality-10-19-26.md), step 4) | Q1 |
@@ -3976,6 +4059,7 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
     or the free tier; the photo goes to Google, no reading offline. The recommended fallback, or an
     option beside (a).
   - (d) Leave the reading dropped; the photo stays as it is. (founder)
+  - **Decided, 2026-10-27:** (a) as a second build: the base ZIP stays small and without the reading, an ocr ZIP carries it (3.19, Z42, Z43). (c) and (b) are not planned.
 - The team's design review of 2026-10-27 (Z27): 23 proposals (DR1 to DR26, three dropped) wait
   for the founder's picks; none is built until picked. The review takes 48 CSS px as the
   minimum touch target, while 3.8 names 3.5rem (56 px) only for home's edge tabs: which minimum
