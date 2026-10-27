@@ -3820,3 +3820,7 @@ open. With Streamline remembering 30 s the rig shows the founder's result exactl
     or the free tier; the photo goes to Google, no reading offline. The recommended fallback, or an
     option beside (a).
   - (d) Leave the reading dropped; the photo stays as it is. (founder)
+- The team's design review of 2026-10-27 (Z27): 23 proposals (DR1 to DR26, three dropped) wait
+  for the founder's picks; none is built until picked. The review takes 48 CSS px as the
+  minimum touch target, while 3.8 names 3.5rem (56 px) only for home's edge tabs: which minimum
+  does the skin hold for every control? (founder)
