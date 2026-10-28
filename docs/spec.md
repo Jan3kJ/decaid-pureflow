@@ -3828,7 +3828,9 @@ The weeks are a capacity guess on one Pro plan.
 | 5 | Z40 | DR22: equal filter chips, time and weight on the history entries if the list has them (3.18 item 12) | Z33 |
 | 5 | Z41 | DR13: four spacing tokens and a lint rule, after the local release (3.18 item 13) | H6 |
 | 5 | H6 | review 2026-10-25: a local release for the tablet, `npm run release -- --local` (3.15), the founder's checks of 3.17 in install.md; the public release P6 resumes it | Z17-Z25, Z29-Z40, Z44, P7 |
-| 5 | P6 | publish: the release 0.7.0: tag, GitHub release with the ZIP and its SHA-256, the URL install checked in Decaid, the founder's cold read and a new user's install (3.13 acceptance 84-87); pushing and announcing are the founder's | P3, P5, P7, H5, H6 |
+| 5 | P8 | docs cleanup: `docs/spec.md` and `docs/research.md` move to the team repository; a new `docs/architecture.md` holds the current state for contributors; README, CONTRIBUTING and docs-check link it (Stint plan O17-O24) | H6 |
+| 5 | P9 | comment cleanup: comments in `src`, `e2e` and `scripts` state the rule, not who asked or when (about 536 lines in 205 files) | P8 |
+| 5 | P6 | publish: the release 0.7.0: tag, GitHub release with the ZIP and its SHA-256, the URL install checked in Decaid, the founder's cold read and a new user's install (3.13 acceptance 84-87); pushing and announcing are the founder's | P3, P5, P7, H5, H6, P8, P9 |
 | 5 | Z42 | the build feature: base and ocr flavours of one source, `npm run zip` writes two ZIPs, the models fetched by hash, the release script, CI and the licence check handle both (3.19 items 1, 2) | P2 |
 | 5 | Z43 | the bag's reading in the ocr flavour: PP-OCRv6 tiny through PaddleOCR.js, the field rules, the chips in the bean form (3.19 item 3) | Z42 |
 | 5 | H7 | a local release for the tablet with both ZIPs, `npm run release -- --local`, the founder reads his bags (3.19 item 4) | P6, Z42, Z43 |
