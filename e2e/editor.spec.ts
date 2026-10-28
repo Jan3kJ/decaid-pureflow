@@ -177,12 +177,20 @@ test('no flow line in the infuse phase', async ({ page }) => {
 test('the start flow is written at the left edge of the flow phase, in both modes', async ({ page }) => {
   for (const mode of ['simple', 'detail']) {
     await page.getByTestId(`mode-${mode}`).click();
-    const flow = await column(page, 'flow');
-    const label = (await page.getByTestId('value-pourFlow').boundingBox())!;
     await expect(page.getByTestId('value-pourFlow')).toHaveText('3 ml/s');
-    expect(label.x).toBeGreaterThanOrEqual(flow.x);
-    expect(label.x).toBeLessThan(flow.x + 20);
+    // The label and the column are read in one layout, and waited for: detail mode's panel
+    // narrows the graph after the click, and a column read before it with a label read after
+    // it are 200 px apart on a slow runner (spec 3.20).
+    const offset = () =>
+      page.evaluate(() => {
+        const label = document.querySelector('[data-testid="value-pourFlow"]')!.getBoundingClientRect();
+        const flow = document.querySelector('[data-testid="column-flow"]')!.getBoundingClientRect();
+        return label.x - flow.x;
+      });
+    await expect.poll(offset).toBeGreaterThanOrEqual(0);
+    expect(await offset()).toBeLessThan(20);
     // Under the left end of the label is the start of the line.
+    const label = (await page.getByTestId('value-pourFlow').boundingBox())!;
     const line = await page.locator('line.level[data-field="pourFlow"]').evaluate((el) => (el as SVGLineElement).y1.baseVal.value);
     const graph = (await page.getByTestId('graph').boundingBox())!;
     expect(label.y + label.height).toBeLessThanOrEqual(graph.y + line);
@@ -229,6 +237,8 @@ test('the pause is dragged in detail mode only', async ({ page }) => {
   // The other borders still move in simple mode.
   await dragBy(page, await borderOf(page, 'infuse'), -40, 0);
   await expect(page.getByTestId('popup')).toContainText('infuse time');
+  // The time follows the finger while it is held: waited for, not read once (spec 3.20).
+  await expect.poll(() => number(page, 'value-infuseTime')).toBeLessThan(60);
   await page.mouse.up();
   expect(await number(page, 'value-infuseTime')).toBeLessThan(60);
 

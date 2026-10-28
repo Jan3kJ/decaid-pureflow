@@ -35,10 +35,22 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npm run e2e
+      # The reporter also writes each failure as an annotation on the run's page; the whole log
+      # is `gh run view <run id> --log-failed`. The output is kept for the summary below.
+      - name: npm run e2e
+        shell: bash
+        run: npm run e2e 2>&1 | tee "$RUNNER_TEMP/e2e.log"
+      - name: Summary of the failed tests
+        if: failure()
+        shell: bash
+        run: |
+          failed=$(grep -oE '✘ +[0-9]+ \[[a-z]+\] › [^ ]+' "$RUNNER_TEMP/e2e.log" | sed -E 's/.* › //' | sort -u | paste -sd ' ' - || true)
+          echo "e2e failed: ${failed:-no test failed, see the log}" | tee -a "$GITHUB_STEP_SUMMARY"
+      # e2e/.results/ is a hidden folder: the trace, picture and error context of each failed test.
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: e2e-results
           path: e2e/.results/
+          include-hidden-files: true
           retention-days: 14

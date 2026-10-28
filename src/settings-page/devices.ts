@@ -6,7 +6,7 @@
 //
 // The device lists of Connections (research.md 20.3, 20.10 S2b): which devices a list shows,
 // in which order, and what a row says and offers. No UI.
-import type { DeviceInfo, DeviceType } from '../api';
+import type { DeviceInfo, DevicesState, DeviceType } from '../api';
 
 /** The two lists of Connections and the setting that names each one's preferred device. */
 export type DeviceKind = 'machine' | 'scale';
@@ -93,4 +93,14 @@ export function connectMessage(result: {
     default:
       return `Not connected: ${result.error ?? result.connectionError?.message ?? result.outcome}`;
   }
+}
+
+/**
+ * The list after a forget was answered: Decaid sends the list again, and until then the device is
+ * gone here (Streamline). `sent` is the list as it was when the forget went out, `now` the list
+ * now: one that came while the forget was out is Decaid's newer word, and is kept as it is.
+ */
+export function afterForget(sent: DevicesState | null, now: DevicesState | null, id: string): DevicesState | null {
+  if (!now || now !== sent) return now;
+  return { ...now, devices: now.devices.filter((entry) => entry.id !== id) };
 }

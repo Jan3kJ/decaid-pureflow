@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { DeviceInfo } from '../api';
-import { connectMessage, deviceRows, rowState } from './devices';
+import type { DeviceInfo, DevicesState } from '../api';
+import { afterForget, connectMessage, deviceRows, rowState } from './devices';
 
 const device = (id: string, type: DeviceInfo['type'], state: DeviceInfo['state'], available?: boolean): DeviceInfo => ({
   name: id,
@@ -90,5 +90,17 @@ describe('the device lists of Connections (research.md 20.10 S2b)', () => {
     expect(connectMessage({ outcome: 'timedOut' })).toBe('The connection timed out.');
     expect(connectMessage({ outcome: 'failed', error: 'adapter off' })).toBe('Not connected: adapter off');
     expect(connectMessage({ outcome: 'failed', connectionError: { message: 'no permission' } })).toBe('Not connected: no permission');
+  });
+
+  it("a forgotten device leaves the list at once, unless Decaid's list came while it was forgotten", () => {
+    const frame = (...devices: DeviceInfo[]): DevicesState => ({ timestamp: 't', devices, scanning: false });
+    const old = device('AA:BB:CC:00:00:01', 'scale', 'disconnected', false);
+    const sent = frame(device('MockScale', 'scale', 'connected', true), old);
+    expect(afterForget(sent, sent, old.id)?.devices.map((entry) => entry.id)).toEqual(['MockScale']);
+    // Decaid's own list is newer than the one the forget was sent with: it stays as it is, even
+    // with the device found again.
+    const newer = frame(device('MockScale', 'scale', 'connected', true), old);
+    expect(afterForget(sent, newer, old.id)).toBe(newer);
+    expect(afterForget(null, null, old.id)).toBeNull();
   });
 });

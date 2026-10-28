@@ -2985,6 +2985,18 @@ or loosened to pass without a reason written in its comment. A defect in the ski
 branch leaves its trace in the artifact (then removed). `docs/` and CONTRIBUTING name `gh run view
 --log-failed` as the way to read a failure. The Windows machine's `npm run e2e` stays green.
 
+*Built (Z44), where the item left it open:* `outputDir` stays `e2e/.results` and the upload has
+`include-hidden-files: true`; the reporter and the trace are CI's only (`CI` set), so a local run
+is as fast as before; the summary line is grepped from the list reporter's output. Causes, found
+on this machine (no Linux container ran): the caption is a skin defect, cut with any font wider
+than the design font (it filled its box to the pixel there): it wraps to a second line now,
+never cut; Forget's late answer threw away a newer list from Decaid, so the row Reconnect was
+clicked on vanished: a skin defect, fixed; the start-flow label is not font-dependent: the test
+read the flow column before detail mode's panel narrowed the graph and the label after it; the
+history and the delete row followed a swipe that ended in a fling, which takes the next tap or
+keeps the list moving; the pause test's cause was not found (failed once of more than 20 runs
+here): it now waits for the time to follow the drag.
+
 ## 4. Technical approach
 
 ### 4.1 What a Decaid skin is

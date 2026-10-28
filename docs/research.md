@@ -882,6 +882,13 @@ skin from the dev server; installing the build in Decaid was not needed.
 - `npm run e2e:rig` (`e2e-rig/`, `playwright.rig.config.ts`): acceptance item 2 against the
   running rig. It skips itself when `GET /api/v1/machine/state` does not answer. It passed on
   2026-10-13 (one test, 1.9 min).
+- On GitHub, the `e2e` job of `.github/workflows/ci.yml` runs `npm run e2e` (spec 3.20). A
+  failure is read with `gh run view <run id> --log-failed`: each failed test's own error. The
+  run's page has an annotation per failed test and a line naming them, and its artifact
+  `e2e-results` holds `e2e/.results/`: a failed test's trace (`npx playwright show-trace
+  trace.zip`), picture and error context. The runner is Linux with other fonts than the tablet,
+  and its touch fling runs longer than Windows': a test reads a layout after it has settled and
+  rests the finger before the tap that follows a swipe.
 
 What the run left in the rig: nothing. The profiles and shots made by the probes and by the
 test were deleted (73 profiles and the one shot of 8.2 as before), the workflow's profile and

@@ -151,6 +151,31 @@ test('Forget asks first and sends the id; the absent device leaves the list', as
   await expect.poll(() => gateway.requests.filter((request) => request.path === '/api/v1/devices/scan').length).toBe(1);
 });
 
+test("a list from Decaid that comes before Forget's answer is kept: the device found again stays", async ({ page }) => {
+  gateway.devices = [
+    ...gateway.devices,
+    { name: 'Old Scale', id: 'AA:BB:CC:00:00:01', state: 'disconnected', type: 'scale', available: false },
+  ];
+  await openCategory(page, 'bluetooth');
+  // Decaid finds the scale again and sends its list while the forget is out; the answer comes after it.
+  await page.route('**/api/v1/devices/forget', async (route) => {
+    gateway.devices = gateway.devices.map((entry) =>
+      entry.id === 'AA:BB:CC:00:00:01' ? { ...entry, state: 'discovered', available: true } : entry,
+    );
+    gateway.sendDevices();
+    await expect(page.getByTestId('device-connect-AA:BB:CC:00:00:01')).toBeVisible();
+    await route.fulfill({ status: 200, contentType: 'application/json', body: 'null' });
+  });
+  const answered = page.waitForResponse('**/api/v1/devices/forget');
+  await page.getByTestId('device-forget-AA:BB:CC:00:00:01').click();
+  await page.getByTestId('settings-confirm-ok').click();
+  await answered;
+  // The answer's continuation runs before the next frame is drawn.
+  await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
+  await page.getByTestId('device-connect-AA:BB:CC:00:00:01').click();
+  await expect.poll(() => writes('PUT', '/api/v1/devices/connect')).toEqual([{ deviceId: 'AA:BB:CC:00:00:01' }]);
+});
+
 test("the scale's power mode and 'scale required' are Decaid's settings, written alone and read back", async ({ page }) => {
   await openCategory(page, 'bluetooth');
   await expect(page.getByTestId('setting-scale-power-mode-disconnect')).toHaveAttribute('aria-pressed', 'true');

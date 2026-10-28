@@ -97,7 +97,10 @@ test('a swipe from the left edge to the right opens the overlay, and no other sw
   await expect(page.getByTestId('history')).toHaveCount(0);
   await expect(page.getByTestId('screen-home')).toBeVisible();
 
-  await swipe(page, { x: 10, y: 400 }, { x: 260, y: 420 });
+  // The finger rests before it lifts: a swipe that ends in a fling makes Chromium take the
+  // next tap as the one that stops the fling, and Linux's fling runs long enough on the CI's
+  // runner to eat the tap that closes (spec 3.20; touch.ts).
+  await swipe(page, { x: 10, y: 400 }, { x: 260, y: 420 }, 120);
   await expect(page.getByTestId('history')).toBeVisible();
   await expect(page.getByTestId('history-entry')).toHaveCount(3);
 

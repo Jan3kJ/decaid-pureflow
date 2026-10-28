@@ -29,6 +29,19 @@ const d = async (path: Locator) => (await path.getAttribute('d')) ?? '';
 /** The points of a path. */
 const count = async (path: Locator) => (await d(path)).match(/[ML]/g)?.length ?? 0;
 
+/** Whether the caption shows its whole text: nothing cut at its side or under it. */
+const whole = (caption: Locator) =>
+  caption.evaluate((element) => element.scrollWidth <= element.clientWidth && element.scrollHeight <= element.clientHeight);
+
+/** Whether the caption's text, set on one line in its own font, is no wider than its box. */
+const fitsOneLine = (caption: Locator) =>
+  caption.evaluate((element) => {
+    const context = document.createElement('canvas').getContext('2d')!;
+    const css = getComputedStyle(element);
+    context.font = `${css.fontWeight} ${css.fontSize} ${css.fontFamily}`;
+    return context.measureText(element.textContent ?? '').width <= element.clientWidth;
+  });
+
 async function select(page: Page, title: string) {
   await page.getByTestId('profile-item').filter({ hasText: title }).first().click();
   await expect(page.getByTestId('profile-detail').locator('h1')).toHaveText(title);
@@ -75,9 +88,12 @@ test('the picker draws the modelled shot with the targets dotted under it and sa
     return color;
   }, style.dim);
   expect(style.color).toBe(dim);
+  // One line where the sentence fits on one with the font at hand, two where a wider font needs
+  // them (the runner's fonts are not the tablet's, spec 3.20): never cut.
   const fontSize = await caption.evaluate((element) => parseFloat(getComputedStyle(element).fontSize));
-  expect((await caption.boundingBox())!.height).toBeLessThan(fontSize * 2);
-  expect(await caption.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+  const lines = (await fitsOneLine(caption)) ? 1 : 2;
+  expect((await caption.boundingBox())!.height).toBeLessThan(fontSize * (lines + 1));
+  expect(await whole(caption)).toBe(true);
   await page.screenshot({ path: 'docs/product/profile-picker-estimate.png' });
 
   // An A-Flow 3.0 default: its pour as the model ends it.
@@ -85,6 +101,33 @@ test('the picker draws the modelled shot with the targets dotted under it and sa
   await select(page, 'A-Flow / default-medium');
   await expectEstimate(page, medium.profile, previewLastStepSeconds(medium));
   await page.screenshot({ path: 'docs/product/profile-picker-estimate-aflow.png' });
+  expect(errors).toEqual([]);
+});
+
+test('the caption is never cut: with a wider font than the tablet has it takes a second line', async ({ page }) => {
+  const gateway = await mockGateway(page);
+  gateway.profiles.push(record('profile:80s', structuredClone(ESPRESSO_80S), null));
+  // The skin's font stack (app.css) falls back to another font where system-ui is not there: here
+  // the widest everywhere, monospace.
+  await page.addInitScript(() =>
+    document.addEventListener('DOMContentLoaded', () => {
+      const style = document.createElement('style');
+      style.textContent = ':root { font-family: monospace; }';
+      document.head.append(style);
+    }),
+  );
+  await page.goto('/');
+  await page.getByTestId('open-profiles').click();
+  await select(page, "80's Espresso");
+
+  const caption = page.getByTestId('profile-caption');
+  await expect(caption).toHaveText(CAPTION);
+  expect(await fitsOneLine(caption)).toBe(false);
+  expect(await whole(caption)).toBe(true);
+  // The fixed area under the graph keeps its place for every profile: the caption's height is the same.
+  const height = (await caption.boundingBox())!.height;
+  await select(page, 'A-Flow / default-medium');
+  expect((await caption.boundingBox())!.height).toBe(height);
   expect(errors).toEqual([]);
 });
 

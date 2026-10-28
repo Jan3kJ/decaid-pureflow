@@ -103,7 +103,9 @@ test('a vertical drag scrolls the list, a tap selects, and a tap elsewhere close
 
   const list = page.getByTestId('profile-list');
   const box = (await item(page, 'Extra 20').boundingBox())!;
-  await swipe(page, { x: box.x + box.width / 2, y: 700 }, { x: box.x + box.width / 2 + 6, y: 300 });
+  // A drag, not a fling: the finger rests before it lifts, so the list is at rest when the next
+  // row is measured and dragged (a fling still scrolls it on the CI's runner, spec 3.20).
+  await swipe(page, { x: box.x + box.width / 2, y: 700 }, { x: box.x + box.width / 2 + 6, y: 300 }, 120);
   await expect.poll(() => list.evaluate((node) => node.scrollTop)).toBeGreaterThan(100);
   await expect(page.getByTestId('profile-delete')).toHaveCount(0);
 

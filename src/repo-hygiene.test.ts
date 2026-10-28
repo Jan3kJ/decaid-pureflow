@@ -50,9 +50,14 @@ describe('repository hygiene', () => {
     const runs = (job: string) => [...job.matchAll(/^ +- run: (.+)$/gm)].map((match) => match[1]);
     for (const job of Object.values(jobs)) expect(job).toMatch(/node-version: 22$/m);
     expect(runs(jobs.verify)).toEqual(['npm ci', 'npm run verify']);
-    expect(runs(jobs.e2e)).toEqual(['npm ci', 'npx playwright install --with-deps chromium', 'npm run e2e']);
-    // What failed is kept: the results folder of playwright.config.ts.
-    expect(jobs.e2e).toMatch(/- uses: actions\/upload-artifact@v4\n {8}if: failure\(\)\n[^]*path: e2e\/\.results\/$/m);
+    expect(runs(jobs.e2e)).toEqual(['npm ci', 'npx playwright install --with-deps chromium']);
+    // The browser tests, their output kept for a line on the job's page that names the failed ones (spec 3.20).
+    expect(jobs.e2e).toMatch(/^ {8}run: npm run e2e 2>&1 \| tee "\$RUNNER_TEMP\/e2e\.log"$/m);
+    expect(jobs.e2e).toMatch(/- name: Summary of the failed tests\n {8}if: failure\(\)\n[^]*e2e\.log[^]*GITHUB_STEP_SUMMARY/);
+    // What failed is kept: the results folder of playwright.config.ts, a hidden one.
+    expect(jobs.e2e).toMatch(
+      /- uses: actions\/upload-artifact@v4\n {8}if: failure\(\)\n[^]*path: e2e\/\.results\/\n {10}include-hidden-files: true$/m,
+    );
   });
 
   it('CHANGELOG.md has a section for the current version and the ones before it, newest first', () => {

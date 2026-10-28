@@ -21,7 +21,9 @@ npm run e2e         # the browser tests on a mocked gateway (Playwright)
 address or token in a file), the documentation's links and pictures, and `npm audit
 --audit-level=high`. CI runs the same list on every push and pull request to `main`, and beside it
 the browser tests on the mocked gateway, `npm run e2e` (about 11 minutes); run them before you send
-a change to the screens.
+a change to the screens. When CI's browser tests fail, `gh run view <run id> --log-failed` shows
+each failed test's error; the run's artifact `e2e-results` has its trace (`npx playwright
+show-trace trace.zip`) and picture.
 `npm run e2e:rig` runs the tests that need a running Decaid with its simulated machine and scale
 (docs/research.md 8.8); they stay local. `npm run format` writes Prettier's formatting.
 

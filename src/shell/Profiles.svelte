@@ -658,6 +658,11 @@
     min-height: 1lh;
     color: var(--dim);
     font-size: var(--text-label);
+  }
+
+  /* The A-Flow line is cut at its end; the caption is one sentence and never cut: a font wider
+     than the tablet's gives it a second line, the same for every profile. */
+  .aflow {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

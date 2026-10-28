@@ -16,7 +16,7 @@
   import { DecaidApiError, devicesStream, type DevicesState, type DeviceInfo, type SnapshotStream } from '../api';
   import type { Skin } from '../shell/skin.svelte';
   import Confirm from './Confirm.svelte';
-  import { PREFERRED_KEY, connectMessage, deviceRows, type DeviceKind, type DeviceRow } from './devices';
+  import { PREFERRED_KEY, afterForget, connectMessage, deviceRows, type DeviceKind, type DeviceRow } from './devices';
   import { errorMessage } from '../error-message';
 
   interface Props {
@@ -82,10 +82,10 @@
 
   async function forget(device: DeviceInfo) {
     forgetting = null;
+    const sent = frame;
     try {
       await skin.client.forgetDevice(device.id);
-      // Decaid sends the list again; until then it is gone here (Streamline).
-      if (frame) frame = { ...frame, devices: frame.devices.filter((entry) => entry.id !== device.id) };
+      frame = afterForget(sent, frame, device.id);
     } catch (cause) {
       messages[device.id] = `Not forgotten: ${errorMessage(cause)}`;
     }
