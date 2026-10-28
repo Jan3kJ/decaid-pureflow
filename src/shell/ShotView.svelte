@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
+  import { gramsOf } from '../display';
   import ShotGraph from '../graph/ShotGraph.svelte';
   import { beanLabel } from '../history/entries';
   import { homeShot } from './home-shot';
@@ -115,7 +116,7 @@
     </div>
     <div class="big weight">
       <small>weight{target ? `, stops at ${+target.toFixed(1)} g` : ''}</small>
-      <b data-testid="shot-weight">{value(shown.weight)}<i>g</i></b>
+      <b data-testid="shot-weight">{gramsOf(shown.weight, '')}<i>g</i></b>
     </div>
     <dl>
       <div class="pressure">

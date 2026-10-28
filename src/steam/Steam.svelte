@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { gramsOf } from '../display';
   import ShotGraph from '../graph/ShotGraph.svelte';
   import type { Skin } from '../shell/skin.svelte';
   import PageHeader from '../shell/PageHeader.svelte';
@@ -85,7 +86,7 @@
       <div class="weight">
         <dt>scale</dt>
         <dd>
-          <span data-testid="steam-weight">{skin.weight === null ? '–' : `${skin.weight.toFixed(1)} g`}</span>
+          <span data-testid="steam-weight">{gramsOf(skin.weight)}</span>
           <!-- The one tare of the skin (Skin.tare, spec 3.7); without a scale it looks for the scale (spec 3.9). -->
           <button class="tare" data-testid="steam-tare" onclick={() => skin.tare()}>tare</button>
         </dd>

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { gramsOf } from '../display';
   import NumberPad from '../editor/NumberPad.svelte';
   import PageHeader from '../shell/PageHeader.svelte';
   import type { Skin } from '../shell/skin.svelte';
@@ -101,7 +102,7 @@
   <aside>
     <div class="shot">
       <small>last shot</small>
-      <b data-testid="hot-water-last-shot">{lastShot === null ? '–' : `${lastShot.toFixed(1)} g`}</b>
+      <b data-testid="hot-water-last-shot">{gramsOf(lastShot)}</b>
     </div>
 
     <!-- The ratio favourites of the settings: the last shot times the ratio is the stop; only with a weighed last shot. -->
@@ -126,7 +127,7 @@
 
     <div class="scale">
       <small>scale</small>
-      <span data-testid="hot-water-scale">{skin.weight === null ? '–' : `${skin.weight.toFixed(1)} g`}</span>
+      <span data-testid="hot-water-scale">{gramsOf(skin.weight)}</span>
       <!-- The one tare of the skin (Skin.tare, spec 3.7); without a scale it looks for the scale (spec 3.9). -->
       <button class="tare" data-testid="hot-water-tare" onclick={() => skin.tare()}>tare</button>
     </div>

@@ -128,7 +128,7 @@ describe('the values in the stop button', () => {
     });
   });
 
-  it('have no weight for hot water without a scale, and show a weight below 0 as 0', () => {
+  it('have no weight for hot water without a scale, and show a weight below the band as it is', () => {
     const hot = run('hotWater', 0, 40);
     expect(waterValues(hot, ringOf(1, null), null, 0, false)).toEqual({
       temperature: '40 °C',
@@ -137,7 +137,8 @@ describe('the values in the stop button', () => {
       weight: null,
       target: null,
     });
-    expect(waterValues(hot, ringOf(1, null), -0.3, 0, true).weight).toBe('0.0 g');
+    expect(waterValues(hot, ringOf(1, null), -0.3, 0, true).weight).toBe('-0.3 g');
+    expect(waterValues(hot, ringOf(1, null), -0.1, 0, true).weight).toBe('0.0 g');
   });
 
   it("show '–' for a temperature the machine did not send", () => {

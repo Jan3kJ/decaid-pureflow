@@ -2810,6 +2810,11 @@ scale, and stay (-0.6 g reads '-0.6 g'); what goes is the jitter around zero: **
 to 0.1 g, both ends included, is shown as '0.0 g'**, never '-0.0'. The band is applied to the
 reading before it is rounded, so 0.1 shows '0.0' and 0.11 shows '0.1'. Only what is shown changes:
 the milk, the tare and every calculation keep the raw reading.
+*Built (Z31):* `gramsOf` writes the header's scale, the steam page's scale, the hot water page's
+scale and last shot, the hot water ring's weight (which showed a weight below 0 as 0 and now
+shows it as it is, '-0.3 g') and home's shot weight and phase table; no reading is '–'. The steam
+page's mug and milk keep their own text (no '.0', '36 g'): they are calculated, and Z34 reworks
+those rows.
 
 **4. The scale row of the steam and hot water pages (DR1, DR3, DR4, DR25; Z34).**
 - DR1, variant B, **without the 'tap to tare' hint** (founder): the three rows (scale, mug, milk)

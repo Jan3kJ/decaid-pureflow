@@ -2,6 +2,7 @@
 // time out, and the countdown ring and the values the stop button shows. Pure: time comes from
 // the frames' own timestamps, as in shot.ts and steam/run.ts.
 import type { MachineSnapshot, Workflow } from '../api';
+import { gramsOf } from '../display';
 import { frameTime } from './shot';
 
 /** The two machine states the water view draws (research.md 19). */
@@ -101,7 +102,7 @@ const shown = (value: number, digits: number): string => (Number.isFinite(value)
 /**
  * What the stop button shows inside the ring (spec 3.7): temperature, flow and time, and for
  * hot water the scale's weight in g when a scale sends one (`weight` is null without a scale).
- * Flow and weight below 0 (sensor noise at rest, a weight after a tare) show as 0; a value the
+ * Flow below 0 (sensor noise at rest) shows as 0, the weight as `gramsOf` writes it; a value the
  * machine did not send as '–'. Hot water with a target (`hotWaterData.volume`, the hot water
  * page's 'stop at') shows it too, in g with a connected scale and in ml without one, as the page
  * labels it; a flush and a target of 0 (no stop) show none.
@@ -118,7 +119,7 @@ export function waterValues(
     temperature: `${shown(run.temperature, 0)} °C`,
     flow: `${shown(Math.max(0, run.flow), 1)} ml/s`,
     time: ring.time,
-    weight: run.kind === 'hotWater' && weight !== null ? `${shown(Math.max(0, weight), 1)} g` : null,
+    weight: run.kind === 'hotWater' && weight !== null ? gramsOf(weight) : null,
     target: stops ? `target ${Math.round(target)} ${scale ? 'g' : 'ml'}` : null,
   };
 }

@@ -1,6 +1,7 @@
 // What the skin says about the gateway and the machine, from what the snapshot stream
 // delivered. Nothing here is assumed: without a fresh frame there is no machine state.
 import type { MachineSnapshot, MachineState, ShotSettings, StreamState, WaterLevels } from '../api';
+import { gramsOf } from '../display';
 import { tankText, type TankUnit } from './tank';
 
 /**
@@ -226,7 +227,7 @@ export function stateLine(
       warn: tank !== null && tank.currentLevel < tank.refillLevel,
     },
     scaleLink === 'connected'
-      ? { key: 'scale', label: 'scale', value: weight === null ? '–' : `${weight.toFixed(1)} g`, warn: false }
+      ? { key: 'scale', label: 'scale', value: gramsOf(weight), warn: false }
       : { key: 'scale', label: 'scale', value: scaleLooking ? 'looking for it' : 'not connected, tap to retry', warn: true },
   ];
 }

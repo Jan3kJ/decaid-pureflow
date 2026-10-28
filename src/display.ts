@@ -35,3 +35,18 @@ export function applyDisplay(
   root.style.setProperty('--display-size', `${display.displaySize}`);
   root.style.setProperty('--line-width', `${display.lineWidth}`);
 }
+
+/**
+ * Every shown weight of the scale (spec 3.18 item 3): one place after the point and the unit, e.g.
+ * '36.0 g'. A reading from -0.1 to 0.1 g, both ends included, is the scale's jitter around zero and
+ * shows as '0.0 g', never '-0.0'; the band is applied to the raw reading before it is rounded, and
+ * a weight below it stays negative ('-0.6 g'). Only the text changes: callers keep the raw reading
+ * for the milk, the tare and every calculation. No reading shows as '–'. `unit` is what follows the
+ * number: ' g' by default, '' where the unit stands in its own element.
+ */
+export function gramsOf(weight: number | null | undefined, unit = ' g'): string {
+  if (typeof weight !== 'number' || !Number.isFinite(weight)) return '–';
+  const shown = Math.abs(weight) <= 0.1 ? 0 : weight;
+  const text = shown.toFixed(1);
+  return `${text === '-0.0' ? '0.0' : text}${unit}`;
+}

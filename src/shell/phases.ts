@@ -9,6 +9,7 @@
 // seconds, the weight, the volume, the temperature (lowest → highest), the flow and the
 // pressure (start → peak → end). Pure: frames in, the table's cells out (research.md 24).
 import type { MachineSnapshot, ShotRecord } from '../api';
+import { gramsOf } from '../display';
 
 /** One machine frame of the shot as the table counts it. */
 export interface PhaseSample {
@@ -111,7 +112,7 @@ export function formatStartPeakEnd(values: number[], digits: number): string {
   return `${start}${ARROW}${peak}${ARROW}${end}`;
 }
 
-const grams = (weight: number | null | undefined) => (typeof weight === 'number' ? `${weight.toFixed(1)}g` : '–');
+const grams = (weight: number | null | undefined) => gramsOf(weight, 'g');
 
 /**
  * The table of a shot (`calculateAndRender`). The preinfusion ends with the sample before the
