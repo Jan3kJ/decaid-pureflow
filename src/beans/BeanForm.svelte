@@ -79,10 +79,10 @@
     <div class="photo-tools">
       <div class="photo-buttons">
         <button type="button" data-testid="bean-photo-take" disabled={busy} onclick={() => (shooting = true)}>
-          {photo ? 'New photo' : 'Photo'}
+          {photo ? 'new photo' : 'photo'}
         </button>
         {#if photo}
-          <button type="button" data-testid="bean-photo-remove" disabled={busy} onclick={() => (photo = null)}>Remove photo</button>
+          <button type="button" data-testid="bean-photo-remove" disabled={busy} onclick={() => (photo = null)}>remove photo</button>
         {/if}
       </div>
     </div>
@@ -123,13 +123,13 @@
 
   <div class="actions">
     <button type="submit" class="primary" data-testid="bean-save" disabled={busy || !valid || (bean !== null && !changed)}>
-      {bean ? 'Save' : 'Add'}
+      {bean ? 'save' : 'add'}
     </button>
     {#if bean && !bean.archived}
-      <button type="button" data-testid="bean-new-bag" disabled={busy} onclick={onnewbag}>New bag</button>
-      <button type="button" data-testid="bean-archive" disabled={busy} onclick={onarchive}>Archive</button>
+      <button type="button" data-testid="bean-new-bag" disabled={busy} onclick={onnewbag}>new bag</button>
+      <button type="button" data-testid="bean-archive" disabled={busy} onclick={onarchive}>archive</button>
     {:else if bean}
-      <button type="button" data-testid="bean-restore" disabled={busy} onclick={onrestore}>Restore</button>
+      <button type="button" data-testid="bean-restore" disabled={busy} onclick={onrestore}>restore</button>
     {/if}
   </div>
   {#if bean && batch}

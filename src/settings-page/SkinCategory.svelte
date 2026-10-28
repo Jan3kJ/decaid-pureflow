@@ -274,7 +274,7 @@
       <small>Converts every older A-Flow profile to A-Flow 3.0, as the editor's save does; Decaid's bundled ones are skipped.</small>
       {#if imported}<small data-testid="aflow-import-result">{imported}</small>{/if}
     </span>
-    <button class="retry" data-testid="aflow-import" disabled={importBusy} onclick={findOld}>Convert to 3.0</button>
+    <button class="retry" data-testid="aflow-import" disabled={importBusy} onclick={findOld}>convert to 3.0</button>
   </div>
 
   <div class="start" data-testid="settings-start">
@@ -284,7 +284,7 @@
         <small>The editor's profiles to start from, up to five. A tap on a slot chooses its profile.</small>
       </div>
       {#if unread}
-        <button class="retry" data-testid="start-retry" onclick={readProfiles}>{unread} Try again</button>
+        <button class="retry" data-testid="start-retry" onclick={readProfiles}>{unread} try again</button>
       {/if}
     </div>
     <div class="slots">
@@ -357,7 +357,7 @@
       {#if restored}<small data-testid="backup-restored">{restored}</small>{/if}
     </span>
     <button class="retry" data-testid="backup-restore" onclick={() => ((restored = null), (confirming = true))}
-      >Restore from backup</button
+      >restore from backup</button
     >
   </div>
   <div class="row">
@@ -391,8 +391,8 @@
       <h2>Restore from backup?</h2>
       <p>Every setting on this page becomes the backup's{skin.backupAt ? ` of ${backupTime(skin.backupAt)}` : ''}.</p>
       <div class="actions">
-        <button class="retry" data-testid="backup-cancel" onclick={() => (confirming = false)}>Cancel</button>
-        <button class="retry primary" data-testid="backup-confirm-restore" onclick={restore}>Restore</button>
+        <button class="retry" data-testid="backup-cancel" onclick={() => (confirming = false)}>cancel</button>
+        <button class="retry primary" data-testid="backup-confirm-restore" onclick={restore}>restore</button>
       </div>
     </div>
   </div>
@@ -402,7 +402,7 @@
   <Confirm
     title="Convert old A-Flow profiles?"
     text={importQuestion(importing)}
-    ok="Convert"
+    ok="convert"
     onok={convertOld}
     oncancel={() => (importing = null)}
   />

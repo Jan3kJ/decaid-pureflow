@@ -365,7 +365,7 @@
   <Confirm
     title={`Delete ${entry.profile.title}?`}
     text="The picker no longer lists it. Decaid keeps the record, marked deleted, with its versions."
-    ok="Delete"
+    ok="delete"
     onok={() => remove(entry)}
     oncancel={() => (asking = null)}
   />
@@ -375,7 +375,7 @@
   <Confirm
     title={`Rename ${renaming.entry.profile.title}`}
     label="the profile's name"
-    ok="Rename"
+    ok="rename"
     bind:value={renaming.title}
     error={renaming.refusal}
     onok={confirmRename}

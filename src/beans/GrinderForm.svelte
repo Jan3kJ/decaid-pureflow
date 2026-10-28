@@ -78,12 +78,12 @@
 
   <div class="actions">
     <button type="submit" class="primary" data-testid="grinder-save" disabled={busy || !valid || (grinder !== null && !changed)}>
-      {grinder ? 'Save' : 'Add'}
+      {grinder ? 'save' : 'add'}
     </button>
     {#if grinder && !grinder.archived}
-      <button type="button" data-testid="grinder-archive" disabled={busy} onclick={onarchive}>Archive</button>
+      <button type="button" data-testid="grinder-archive" disabled={busy} onclick={onarchive}>archive</button>
     {:else if grinder}
-      <button type="button" data-testid="grinder-restore" disabled={busy} onclick={onrestore}>Restore</button>
+      <button type="button" data-testid="grinder-restore" disabled={busy} onclick={onrestore}>restore</button>
     {/if}
   </div>
 </form>

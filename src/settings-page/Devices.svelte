@@ -141,7 +141,7 @@
     }
   }
 
-  const ACTION_LABEL = { connect: 'Connect', disconnect: 'Disconnect', rescan: 'Reconnect', forget: 'Forget' } as const;
+  const ACTION_LABEL = { connect: 'connect', disconnect: 'disconnect', rescan: 'reconnect', forget: 'forget' } as const;
 </script>
 
 <div class="devices" data-testid="devices-{kind}">
@@ -150,7 +150,7 @@
       {#if !frame}Waiting for Decaid's device list…{:else if frame.scanning}Searching…{:else}Search finds nearby machines and scales
         and connects a missing one.{/if}
     </small>
-    <button class="action" data-testid="devices-scan-{kind}" disabled={!frame || frame.scanning} onclick={() => scan()}>Search</button>
+    <button class="action" data-testid="devices-scan-{kind}" disabled={!frame || frame.scanning} onclick={() => scan()}>search</button>
   </div>
   {#if message}<p class="warn">{message}</p>{/if}
 
@@ -173,7 +173,7 @@
         aria-checked={row.preferred}
         disabled={preferred === undefined || !!busy[`preferred-${row.device.id}`]}
         data-testid="device-preferred-{row.device.id}"
-        onclick={() => prefer(row)}><small>Preferred</small><span class="lever"><span></span></span></button
+        onclick={() => prefer(row)}><small>preferred</small><span class="lever"><span></span></span></button
       >
       <span class="badge" data-testid="device-state-{row.device.id}">{row.label}</span>
       {#each row.actions as action (action)}
@@ -205,13 +205,13 @@
           bind:value={host}
           onkeydown={(e) => e.key === 'Enter' && addWifi()}
         />
-        <button class="action" data-testid="wifi-add" onclick={addWifi}>Add</button>
+        <button class="action" data-testid="wifi-add" onclick={addWifi}>add</button>
       </div>
     </div>
     {#each hosts ?? [] as entry (entry)}
       <div class="device">
         <div class="about"><strong>{entry}</strong></div>
-        <button class="action" data-testid="wifi-remove-{entry}" onclick={() => removeWifi(entry)}>Remove</button>
+        <button class="action" data-testid="wifi-remove-{entry}" onclick={() => removeWifi(entry)}>remove</button>
       </div>
     {/each}
     {#if wifiMessage}<p class="warn" data-testid="wifi-message">{wifiMessage}</p>{/if}
@@ -223,7 +223,7 @@
   <Confirm
     title="Forget {device.name}?"
     text="Decaid no longer remembers it; it is listed again when a search finds it."
-    ok="Forget"
+    ok="forget"
     onok={() => forget(device)}
     oncancel={() => (forgetting = null)}
   />

@@ -24,9 +24,9 @@
     </p>
     <p class="hint">Loading another profile replaces them.</p>
     <div class="actions">
-      <button data-testid="unsaved-save-as" onclick={() => onanswer('save-as')}>Save as…</button>
-      <button class="discard" data-testid="unsaved-discard" onclick={() => onanswer('load')}>Discard and load</button>
-      <button data-testid="unsaved-cancel" onclick={() => onanswer('cancel')}>Cancel</button>
+      <button data-testid="unsaved-save-as" onclick={() => onanswer('save-as')}>save as…</button>
+      <button class="discard" data-testid="unsaved-discard" onclick={() => onanswer('load')}>discard and load</button>
+      <button data-testid="unsaved-cancel" onclick={() => onanswer('cancel')}>cancel</button>
     </div>
   </div>
 </div>

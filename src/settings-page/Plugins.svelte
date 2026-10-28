@@ -109,7 +109,7 @@
     confirming = {
       title: `Update ${plugin.name || plugin.id} to ${plugin.pendingUpdate?.version ?? 'the new version'}?`,
       text: `The update asks for permissions the installed version does not have${added.length ? `: ${added.join(', ')}` : ''}.`,
-      ok: 'Update',
+      ok: 'update',
       run: () => void runApprove(plugin),
     };
   }
@@ -155,14 +155,14 @@
       {#if checked}<small data-testid="plugins-checked">{checked}</small>{/if}
     </div>
     <button class="action" data-testid="plugins-check" disabled={checking || !plugins} onclick={checkUpdates}
-      >{checking ? 'Checking…' : 'Check'}</button
+      >{checking ? 'checking…' : 'check'}</button
     >
   </div>
 
   {#if readError}
     <p class="warn" data-testid="plugins-error">
       Not read: {readError}
-      <button class="action" onclick={readPlugins}>Read again</button>
+      <button class="action" onclick={readPlugins}>read again</button>
     </p>
   {:else if !plugins}
     <p class="dim">Reading the plugins…</p>
@@ -205,7 +205,7 @@
             <small>Asks for: {(plugin.pendingUpdate.addedPermissions ?? []).join(', ') || 'more permissions'}</small>
           </div>
           <button class="action" data-testid="plugin-approve-{plugin.id}" disabled={!!busy[plugin.id]} onclick={() => approve(plugin)}
-            >Approve</button
+            >approve</button
           >
         </div>
       {/if}

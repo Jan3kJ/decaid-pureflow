@@ -93,7 +93,7 @@
       class="action"
       data-testid="schedule-add"
       disabled={busy || schedules === null || editing !== null}
-      onclick={() => edit(null)}>Add schedule</button
+      onclick={() => edit(null)}>add schedule</button
     >
   </div>
 
@@ -118,10 +118,10 @@
           class="action"
           data-testid="schedule-edit-{schedule.id}"
           disabled={busy || editing !== null}
-          onclick={() => edit(schedule)}>Edit</button
+          onclick={() => edit(schedule)}>edit</button
         >
         <button class="action" data-testid="schedule-delete-{schedule.id}" disabled={busy} onclick={() => (deleting = schedule)}
-          >Delete</button
+          >delete</button
         >
       </div>
     </div>
@@ -156,8 +156,8 @@
         >
       </div>
       <div class="row end">
-        <button class="action" data-testid="schedule-cancel" disabled={busy} onclick={() => (editing = null)}>Cancel</button>
-        <button class="action primary" data-testid="schedule-save" disabled={busy} onclick={save}>Save</button>
+        <button class="action" data-testid="schedule-cancel" disabled={busy} onclick={() => (editing = null)}>cancel</button>
+        <button class="action primary" data-testid="schedule-save" disabled={busy} onclick={save}>save</button>
       </div>
     </div>
   {/if}
@@ -199,7 +199,7 @@
   <Confirm
     title="Delete the schedule {schedule.time}?"
     text={scheduleText(schedule)}
-    ok="Delete"
+    ok="delete"
     onok={() => void remove(schedule)}
     oncancel={() => (deleting = null)}
   />

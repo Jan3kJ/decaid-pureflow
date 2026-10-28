@@ -126,7 +126,7 @@
 {#if error}
   <p class="warn" data-testid="bengle-error">
     Not read: {error}
-    <button class="action" onclick={read}>Read again</button>
+    <button class="action" onclick={read}>read again</button>
   </p>
 {:else if part === 'cup-warmer'}
   {#if warmer}
@@ -202,8 +202,8 @@
       <div class="row">
         <small>The strips take the colours at once and the machine keeps them.</small>
         <span class="buttons">
-          <button class="action" data-testid="led-reload" disabled={busy || !changed} onclick={read}>Discard</button>
-          <button class="action primary" data-testid="led-save" disabled={busy || !changed} onclick={saveStrip}>Save</button>
+          <button class="action" data-testid="led-reload" disabled={busy || !changed} onclick={read}>discard</button>
+          <button class="action primary" data-testid="led-save" disabled={busy || !changed} onclick={saveStrip}>save</button>
         </span>
       </div>
     </div>
@@ -228,7 +228,7 @@
         <small>The platform stays empty.</small>
       </div>
       <button class="action" data-testid="calibration-zero" disabled={busy || running} onclick={() => sendCalibration('zero')}
-        >Find zero</button
+        >find zero</button
       >
     </div>
     <div class="row">
@@ -243,13 +243,13 @@
         class="action"
         data-testid="calibration-latch"
         disabled={busy || running || !validGrams(grams)}
-        onclick={() => sendCalibration({ latch: grams })}>Latch</button
+        onclick={() => sendCalibration({ latch: grams })}>latch</button
       >
     </div>
     <div class="row">
       <span>Stop the procedure</span>
       <button class="action" data-testid="calibration-abort" disabled={busy || !running} onclick={() => sendCalibration('abort')}
-        >Abort</button
+        >abort</button
       >
     </div>
   </div>

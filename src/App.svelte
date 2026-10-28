@@ -356,7 +356,7 @@
     <span>
       Settings restored from the backup in Decaid{skin.restoredFrom ? ` of ${backupTime(skin.restoredFrom)}` : ''}.
     </span>
-    <button data-testid="settings-restored-ok" onclick={() => (skin.restoredFrom = null)}>OK</button>
+    <button data-testid="settings-restored-ok" onclick={() => (skin.restoredFrom = null)}>ok</button>
   </div>
 {/if}
 

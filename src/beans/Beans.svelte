@@ -23,8 +23,8 @@
 
   type Kind = 'beans' | 'grinders';
   const KINDS: { id: Kind; label: string }[] = [
-    { id: 'beans', label: 'Beans' },
-    { id: 'grinders', label: 'Grinders' },
+    { id: 'beans', label: 'beans' },
+    { id: 'grinders', label: 'grinders' },
   ];
   let kind = $state<Kind>('beans');
   /** the chosen bean's or grinder's id; null: the form that adds one */
@@ -74,7 +74,7 @@
     confirming = {
       title: `Archive ${name}?`,
       text: 'It is no longer offered for the next shot; its shots stay in the history. Show archived lists it again, to restore it.',
-      ok: 'Archive',
+      ok: 'archive',
       run: () => {
         confirming = null;
         void (isBean ? catalogue.archiveBean(target, true) : catalogue.archiveGrinder(target, true)).then((done) => {
@@ -88,7 +88,7 @@
     confirming = {
       title: `A new bag of ${beanTitle(target)}?`,
       text: 'The current bag is archived and the next one starts, without a roast date until one is set here.',
-      ok: 'New bag',
+      ok: 'new bag',
       run: () => {
         confirming = null;
         void catalogue.newBag(target);
@@ -213,7 +213,7 @@
     {#if catalogue.error}
       <p class="warn" role="alert" data-testid="beans-error">
         {catalogue.error}
-        <button class="toggle" onclick={() => catalogue.load()}>Read again</button>
+        <button class="toggle" onclick={() => catalogue.load()}>read again</button>
       </p>
     {/if}
   </section>

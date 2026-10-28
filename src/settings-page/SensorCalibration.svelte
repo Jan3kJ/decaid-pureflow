@@ -172,7 +172,7 @@
   {:else if loadError}
     <p class="warn" data-testid="sensor-error">
       Not read: {loadError}
-      <button class="action" onclick={load}>Read again</button>
+      <button class="action" onclick={load}>read again</button>
     </p>
   {:else}
     {#each SENSORS as sensor (sensor.id)}
@@ -191,7 +191,7 @@
             class="action"
             data-testid="sensor-restore-{sensor.id}"
             disabled={entry.busy || !canRestore(sensor, entry)}
-            onclick={() => restore(sensor)}>Restore</button
+            onclick={() => restore(sensor)}>restore</button
           >
         </div>
         <div class="row">
@@ -201,7 +201,7 @@
             data-testid="sensor-capture-{sensor.id}"
             disabled={entry.busy || live === null}
             onclick={() => capture(sensor)}
-            >{entry.captured === null ? 'Capture' : `Captured ${readingText(sensor, entry.captured)}`}</button
+            >{entry.captured === null ? 'capture' : `captured ${readingText(sensor, entry.captured)}`}</button
           >
           <button class="value" data-testid="sensor-measured-{sensor.id}" disabled={entry.busy} onclick={() => (typing = sensor)}
             ><small>measured</small> <b>{entry.measured === null ? '–' : entry.measured}</b><i>{sensor.unit}</i></button
@@ -210,7 +210,7 @@
             class="action primary"
             data-testid="sensor-apply-{sensor.id}"
             disabled={entry.busy || !planned || 'why' in planned}
-            onclick={() => planned && 'to' in planned && (confirming = { sensor, ...planned })}>Apply</button
+            onclick={() => planned && 'to' in planned && (confirming = { sensor, ...planned })}>apply</button
           >
         </div>
         <p class="status" data-testid="sensor-status-{sensor.id}">
@@ -253,8 +253,8 @@
     text="{calibrationText(sensor.kind, from)} becomes {calibrationText(
       sensor.kind,
       to,
-    )}. A wrong calibration can make the machine unusable; Restore puts the one before back."
-    ok="Apply"
+    )}. A wrong calibration can make the machine unusable; restore puts the one before back."
+    ok="apply"
     onok={() => void apply(sensor)}
     oncancel={() => (confirming = null)}
   />

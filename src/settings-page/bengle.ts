@@ -78,9 +78,9 @@ export function calibrationBusy(state: ScaleCalibrationState | null): boolean {
 }
 
 export const FEEDBACK_TYPES: Array<{ value: FeedbackRequest['type']; label: string; hint: string }> = [
-  { value: 'bug', label: 'Bug Report', hint: 'Something does not work' },
-  { value: 'feature', label: 'Feature Request', hint: 'Something that should be added' },
-  { value: 'question', label: 'General Feedback', hint: 'Thoughts or ideas' },
+  { value: 'bug', label: 'bug report', hint: 'Something does not work' },
+  { value: 'feature', label: 'feature request', hint: 'Something that should be added' },
+  { value: 'question', label: 'general feedback', hint: 'Thoughts or ideas' },
 ];
 
 /** Streamline's text of the issue: the title in bold above the description. */

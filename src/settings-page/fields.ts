@@ -173,8 +173,8 @@ export const STEAM: Field[] = [
     source: 'machine',
     key: 'steamPurgeMode',
     options: [
-      { value: 0, label: 'Normal' },
-      { value: 1, label: 'Two Tap Stop' },
+      { value: 0, label: 'normal' },
+      { value: 1, label: 'two tap stop' },
     ],
   },
 ];
@@ -344,9 +344,9 @@ export const REFILL_KIT: Field[] = [
     source: 'advanced',
     key: 'refillKitSetting',
     options: [
-      { value: 2, label: 'Auto-Detect' },
-      { value: 1, label: 'Force On' },
-      { value: 0, label: 'Force Off' },
+      { value: 2, label: 'auto-detect' },
+      { value: 1, label: 'force on' },
+      { value: 0, label: 'force off' },
     ],
   },
 ];
@@ -402,10 +402,10 @@ export const USB: Field[] = [
     source: 'decaid',
     key: 'chargingMode',
     options: [
-      { value: 'disabled', label: 'Charge to 100%' },
-      { value: 'highAvailability', label: 'Charge to 95%' },
-      { value: 'balanced', label: 'Up to 80%' },
-      { value: 'longevity', label: 'Up to 55%' },
+      { value: 'disabled', label: 'charge to 100%' },
+      { value: 'highAvailability', label: 'charge to 95%' },
+      { value: 'balanced', label: 'up to 80%' },
+      { value: 'longevity', label: 'up to 55%' },
     ],
   },
   {
@@ -440,9 +440,9 @@ export const SCALE: Field[] = [
     source: 'decaid',
     key: 'scalePowerMode',
     options: [
-      { value: 'disabled', label: 'Nothing' },
-      { value: 'displayOff', label: 'Display off' },
-      { value: 'disconnect', label: 'Disconnect' },
+      { value: 'disabled', label: 'nothing' },
+      { value: 'displayOff', label: 'display off' },
+      { value: 'disconnect', label: 'disconnect' },
     ],
   },
   {
@@ -472,9 +472,9 @@ export const DECAID_SETTINGS: Field[] = [
     source: 'decaid',
     key: 'gatewayMode',
     options: [
-      { value: 'disabled', label: 'Disabled' },
-      { value: 'tracking', label: 'Tracking' },
-      { value: 'full', label: 'Full' },
+      { value: 'disabled', label: 'disabled' },
+      { value: 'tracking', label: 'tracking' },
+      { value: 'full', label: 'full' },
     ],
     confirm:
       "Disabled stops Decaid's stop at weight for shots and hot water; Full hands the shot to a skin, and this skin does not run one.",

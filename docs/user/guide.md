@@ -66,7 +66,7 @@ fill and a pause after infuse. **detail** shows every value of the selected phas
 The row at the top holds five profiles to start from. **save** and **save as** store the profile
 in Decaid and load it on the machine. Leaving the editor with changes asks first.
 
-Older A-Flow profiles open in the editor too and are saved as A-Flow 3.0. **Convert to 3.0**
+Older A-Flow profiles open in the editor too and are saved as A-Flow 3.0. **convert to 3.0**
 under Settings > 6. Skin > Profile converts all of them at once.
 
 ## Beans, grinders and the bag photo
@@ -77,8 +77,8 @@ shot is saved with them, and the history can filter by them.
 ![For the next shot: bean, grinder and setting](img/bean-pick.png)
 
 To add or change beans, open **Beans and grinders** from the menu, or from this dialog. In a
-bean's form, **Photo** takes a picture of the bag with **Capture**. It is kept with the bean
-when you save. **New photo** replaces it and **Remove photo** deletes it. The photo stays in
+bean's form, **photo** takes a picture of the bag with **capture**. It is kept with the bean
+when you save. **new photo** replaces it and **remove photo** deletes it. The photo stays in
 Decaid on the tablet; nothing is sent away.
 
 ## The steam timer
@@ -115,7 +115,7 @@ and the machine's.
   milk), the three favourite timers and the adjust buttons.
 - **Hot water**: the three ratios.
 - **Profile**: the highest flow the editor offers, the dose, the start row of the editor, and
-  **Convert to 3.0**.
+  **convert to 3.0**.
 - **Display Size**: the size of everything on screen and the line width.
 - **Active Skin**: Decaid's skins; a tap on another one switches to it.
 - **Backup and version**: the backup in Decaid and the skin's version.

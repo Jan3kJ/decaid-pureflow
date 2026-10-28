@@ -89,7 +89,7 @@
 {#if unread}
   <p class="warn" data-testid="skins-error">
     Not read: {unread}
-    <button class="action" onclick={read}>Read again</button>
+    <button class="action" onclick={read}>read again</button>
   </p>
 {:else if !skins}
   <p class="dim">Reading Decaid's skins …</p>
@@ -123,7 +123,7 @@
     <strong>Check for skin updates</strong>
     <small>Decaid looks for a newer version of every skin where it was installed from, and installs it.</small>
   </span>
-  <button class="action" data-testid="skins-update" disabled={busy || !skins} onclick={checkUpdates}>Check</button>
+  <button class="action" data-testid="skins-update" disabled={busy || !skins} onclick={checkUpdates}>check</button>
 </div>
 
 {#if asking}
@@ -131,7 +131,7 @@
   <Confirm
     title="Switch to {target.name}?"
     text="Decaid makes {target.name} its default skin and this screen opens it. {PRODUCT_NAME} stays installed and can be chosen again among the skins of {target.name} or of Decaid."
-    ok="Switch"
+    ok="switch"
     onok={() => void choose(target)}
     oncancel={() => (asking = null)}
   />

@@ -15,17 +15,17 @@ export interface DisplayChoice {
 }
 
 export const DISPLAY_SIZES: DisplayChoice[] = [
-  { label: 'Small', value: 0.85 },
-  { label: 'Medium', value: 1 },
-  { label: 'Large', value: 1.15 },
-  { label: 'Extra Large', value: 1.3 },
+  { label: 'small', value: 0.85 },
+  { label: 'medium', value: 1 },
+  { label: 'large', value: 1.15 },
+  { label: 'extra large', value: 1.3 },
 ];
 
 export const LINE_WIDTHS: DisplayChoice[] = [
-  { label: 'Thin', value: 0.6 },
-  { label: 'Normal', value: 1 },
-  { label: 'Thick', value: 1.5 },
-  { label: 'Extra Thick', value: 2 },
+  { label: 'thin', value: 0.6 },
+  { label: 'normal', value: 1 },
+  { label: 'thick', value: 1.5 },
+  { label: 'extra thick', value: 2 },
 ];
 
 export function applyDisplay(

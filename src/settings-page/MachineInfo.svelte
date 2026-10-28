@@ -84,7 +84,7 @@
         <span>Serial number</span>
         <span class="serial">
           {#if info.serialNumber}
-            <button class="action" data-testid="machine-info-copy" onclick={() => copy(info!.serialNumber!)}>{copied ?? 'Copy'}</button
+            <button class="action" data-testid="machine-info-copy" onclick={() => copy(info!.serialNumber!)}>{copied ?? 'copy'}</button
             >
           {/if}
           <b data-testid="machine-info-serial">{info.serialNumber ?? '–'}</b>
@@ -97,7 +97,7 @@
     {:else if error}
       <p class="warn" data-testid="machine-info-error">
         Not read: {error}
-        <button class="action" onclick={read} disabled={reading}>Read again</button>
+        <button class="action" onclick={read} disabled={reading}>read again</button>
       </p>
     {:else}
       <p class="dim">Reading the machine's information…</p>

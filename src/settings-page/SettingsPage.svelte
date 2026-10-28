@@ -265,7 +265,7 @@
             {#each unreadOf(sub) as error (error)}
               <p class="warn" data-testid="settings-unread">
                 Not read: {error}
-                <button class="action" onclick={readValues} disabled={reading}>Read again</button>
+                <button class="action" onclick={readValues} disabled={reading}>read again</button>
               </p>
             {/each}
             {#if !sub.content.below}{@render shown()}{/if}
@@ -292,7 +292,7 @@
                   class="action"
                   data-testid="settings-action-{action}"
                   disabled={!!busy[action]}
-                  onclick={() => act(sub, action)}>{ACTIONS[action].label}</button
+                  onclick={() => act(sub, action)}>{ACTIONS[action].label.toLowerCase()}</button
                 >
               </div>
             {/each}

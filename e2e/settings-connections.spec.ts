@@ -276,6 +276,6 @@ test('without a machine, Machine Information says it was not read and reads agai
   await openCategory(page, 'machine');
   await expect(page.getByTestId('machine-info-error')).toContainText('not connected');
   gateway.machineConnected = true;
-  await page.getByTestId('machine-info-error').getByRole('button', { name: 'Read again' }).click();
+  await page.getByTestId('machine-info-error').getByRole('button', { name: 'read again' }).click();
   await expect(page.getByTestId('machine-info-model')).toHaveText('DE1Pro');
 });

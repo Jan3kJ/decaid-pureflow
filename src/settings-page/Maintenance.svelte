@@ -180,9 +180,9 @@
       {/if}
     </div>
     {#if active}
-      <button class="action" data-testid="maintenance-cancel-{procedure.id}" onclick={cancel}>Cancel</button>
+      <button class="action" data-testid="maintenance-cancel-{procedure.id}" onclick={cancel}>cancel</button>
     {:else}
-      <button class="action primary" data-testid="maintenance-start-{procedure.id}" onclick={ask}>Start</button>
+      <button class="action primary" data-testid="maintenance-start-{procedure.id}" onclick={ask}>start</button>
     {/if}
   </div>
 
@@ -203,7 +203,7 @@
 </div>
 
 {#if asking}
-  <Confirm title="{procedure.title}?" text={procedure.confirm} ok="Start" onok={start} oncancel={() => (asking = false)} />
+  <Confirm title="{procedure.title}?" text={procedure.confirm} ok="start" onok={start} oncancel={() => (asking = false)} />
 {/if}
 
 <style>

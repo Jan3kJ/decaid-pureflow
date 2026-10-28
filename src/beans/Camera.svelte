@@ -97,13 +97,13 @@
     <div class="actions">
       {#if refused}
         <label class="button primary">
-          Take a picture
+          take a picture
           <input type="file" accept="image/*" capture="environment" data-testid="camera-file" onchange={picked} />
         </label>
       {:else}
-        <button class="primary" data-testid="camera-capture" disabled={!live} onclick={capture}>Capture</button>
+        <button class="primary" data-testid="camera-capture" disabled={!live} onclick={capture}>capture</button>
       {/if}
-      <button data-testid="camera-cancel" onclick={oncancel}>Cancel</button>
+      <button data-testid="camera-cancel" onclick={oncancel}>cancel</button>
     </div>
   </div>
 </div>

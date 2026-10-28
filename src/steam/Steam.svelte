@@ -40,7 +40,7 @@
         {/if}
         <!-- With the heater off the state line says Off; the switch that turns it on sits left of the title (spec 3.12). -->
         {#if skin.steamHeater === 'off'}
-          <button class="heater-on" data-testid="steam-heater-on" onclick={() => skin.setSteamHeater(true)}>Steam on</button>
+          <button class="heater-on" data-testid="steam-heater-on" onclick={() => skin.setSteamHeater(true)}>steam on</button>
         {/if}
       {/snippet}
     </PageHeader>

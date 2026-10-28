@@ -148,8 +148,8 @@ test('a photo from the live camera is shown in the form, stored with the bean, r
 async function noReading(page: Page) {
   const form = page.getByTestId('bean-form');
   await expect(form.getByRole('status')).toHaveCount(0);
-  await expect(form.getByRole('button', { name: 'Cancel' })).toHaveCount(0);
-  await expect(form.getByRole('button')).toHaveText(['New photo', 'Remove photo', 'no roast date', 'Add']);
+  await expect(form.getByRole('button', { name: 'cancel' })).toHaveCount(0);
+  await expect(form.getByRole('button')).toHaveText(['new photo', 'remove photo', 'no roast date', 'add']);
 }
 
 test('the photo of a printed bag is kept, not read: the fields stay as they were, with no request to another host', async ({

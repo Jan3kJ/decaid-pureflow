@@ -25,7 +25,7 @@
     oncancel: () => void;
   }
 
-  let { title, text = '', ok = 'Set', value = $bindable(), label = title, error = null, onok, oncancel }: Props = $props();
+  let { title, text = '', ok = 'set', value = $bindable(), label = title, error = null, onok, oncancel }: Props = $props();
 
   /** The field takes the focus at once, so the tablet's keyboard opens on it, the cursor at its end. */
   function focus(node: HTMLInputElement) {
@@ -55,7 +55,7 @@
       <p class="error" data-testid="settings-confirm-error">{error ?? ''}</p>
     {/if}
     <div class="actions">
-      <button class="action" data-testid="settings-confirm-cancel" onclick={oncancel}>Cancel</button>
+      <button class="action" data-testid="settings-confirm-cancel" onclick={oncancel}>cancel</button>
       <button class="action primary" data-testid="settings-confirm-ok" onclick={onok}>{ok}</button>
     </div>
   </div>

@@ -34,13 +34,13 @@ from.
   buttons on the steam page.
 - 'The machine's timer is … s, not the … s set here': another app changed the timer. Tap
   **set timer** again.
-- The steam page says **Off** and shows **Steam on**: the steam heater is off. Tap **Steam on**,
+- The steam page says **Off** and shows **steam on**: the steam heater is off. Tap **steam on**,
   or use the menu.
 
 ## The bag photo
 
-**Photo** opens the live camera. Where Decaid's window refuses it, the dialog says so and
-shows **Take a picture**, which opens the tablet's own camera instead. The skin does not read
+**photo** opens the live camera. Where Decaid's window refuses it, the dialog says so and
+shows **take a picture**, which opens the tablet's own camera instead. The skin does not read
 the bag: type the name and the roaster.
 
 ## A profile does not load

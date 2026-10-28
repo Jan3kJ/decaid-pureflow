@@ -355,8 +355,8 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
       <p id="delete-text">Delete step {index + 1}?</p>
       <p class="hint">“{profile.steps[index].name}” and its values go; saving makes it final.</p>
       <div class="actions">
-        <button class="discard" data-testid="delete-confirm" onclick={() => remove(index)}>Delete</button>
-        <button data-testid="delete-cancel" onclick={() => (deleting = null)}>Cancel</button>
+        <button class="discard" data-testid="delete-confirm" onclick={() => remove(index)}>delete</button>
+        <button data-testid="delete-cancel" onclick={() => (deleting = null)}>cancel</button>
       </div>
     </div>
   </div>

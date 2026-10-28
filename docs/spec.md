@@ -2784,6 +2784,13 @@ tablet without waiting for it, and it follows in the next release. H6 waits for 
 and load', 'save', 'new bag', 'archive', 'photo', 'use for the next shot', 'steam on', 'cancel');
 titles and the corner menu's entries stay in sentence case. The review's list of the places is the
 start; a grep of the e2e texts finds the tests.
+*Built (Z29):* every button's own word is lower case, also the settings pages' buttons, the
+confirm dialog's default 'set', the choices among fixed values ('medium', 'two tap stop', 'bug
+report') and the camera's 'take a picture'; the settings action's row title keeps its case and
+its button shows it lower case. Left as they are: names and values in a button (a profile, a bean,
+a skin, a plugin's 'WARNING', the weekdays 'Mon' to 'Sun', the months), titles (the sleep screen's
+'Asleep', the hot water ring's 'Hot water', the settings' category and sub-entry list) and the
+corner menu. `e2e/button-words.spec.ts` walks the mock's main screens and every settings category.
 
 **2. Warning, danger, disabled (DR7, DR8, DR10, DR15; Z30).**
 - DR7: `--warn` becomes the clearly orange #ff8a3d; text that warns ('Off', 'looking for it',

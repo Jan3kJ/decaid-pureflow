@@ -140,9 +140,9 @@
 
     {#if catalogue.error}<p class="warn" role="alert" data-testid="pick-error">{catalogue.error}</p>{/if}
     <div class="actions">
-      <button class="link" data-testid="pick-catalogue" onclick={openCatalogue}>Beans and grinders…</button>
-      <button data-testid="pick-cancel" onclick={onclose}>Cancel</button>
-      <button class="primary" data-testid="pick-use" disabled={!ready || catalogue.busy} onclick={use}>Use for the next shot</button>
+      <button class="link" data-testid="pick-catalogue" onclick={openCatalogue}>beans and grinders…</button>
+      <button data-testid="pick-cancel" onclick={onclose}>cancel</button>
+      <button class="primary" data-testid="pick-use" disabled={!ready || catalogue.busy} onclick={use}>use for the next shot</button>
     </div>
   </div>
 </div>

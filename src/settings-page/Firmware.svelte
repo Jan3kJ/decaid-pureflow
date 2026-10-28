@@ -107,7 +107,7 @@
 {#if error}
   <p class="warn" data-testid="{part}-error">
     Not read: {error}
-    <button class="action" onclick={read} disabled={reading}>Read again</button>
+    <button class="action" onclick={read} disabled={reading}>read again</button>
   </p>
 {:else if part === 'app'}
   {#if app}
@@ -161,7 +161,7 @@
           <div class="bar"><div style="width: {Math.max(0, Math.min(1, progress.progress)) * 100}%"></div></div>
         {/if}
         <button class="action" data-testid="firmware-cancel" disabled={cancelling} onclick={cancel}
-          >{cancelling ? 'Cancelling…' : 'Cancel'}</button
+          >{cancelling ? 'cancelling…' : 'cancel'}</button
         >
       </div>
     {:else if summary.status === 'update-available' && latest}
@@ -170,7 +170,7 @@
           <span>Install build {latest.versionLabel ?? latest.build}</span>
           <small>{DURATION_NOTE}</small>
         </div>
-        <button class="action" data-testid="firmware-install" onclick={() => (confirming = true)}>Install</button>
+        <button class="action" data-testid="firmware-install" onclick={() => (confirming = true)}>install</button>
       </div>
     {/if}
     {#if !busy}
@@ -179,7 +179,7 @@
           <span>Install from a file</span>
           <small>A firmware image from this device. Only for a file you trust; the machine must stay on until it is done.</small>
         </div>
-        <button class="action" data-testid="firmware-file" onclick={() => chooser?.click()}>Choose file</button>
+        <button class="action" data-testid="firmware-file" onclick={() => chooser?.click()}>choose file</button>
         <input type="file" hidden bind:this={chooser} data-testid="firmware-file-input" onchange={choose} />
       </div>
     {/if}
@@ -195,7 +195,7 @@
   <Confirm
     title="Install firmware build {latest.versionLabel ?? latest.build}?"
     text="{DURATION_NOTE} The machine's firmware {summary.installedBuild ?? ''} is replaced."
-    ok="Install"
+    ok="install"
     onok={() => void install(latest.id)}
     oncancel={() => (confirming = false)}
   />
@@ -208,7 +208,7 @@
     text="{DURATION_NOTE} The file ({sizeText(
       file.size,
     )}) is sent to the machine as it is and replaces its firmware. Keep the machine switched on."
-    ok="Install"
+    ok="install"
     onok={() => void install(file)}
     oncancel={() => (picked = null)}
   />

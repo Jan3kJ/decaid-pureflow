@@ -48,9 +48,9 @@ test('load in the picker asks first; Cancel loads nothing', async ({ page }) => 
 
   await expect(dialog(page)).toBeVisible();
   await expect(dialog(page)).toContainText('light has unsaved changes on the machine');
-  await expect(page.getByTestId('unsaved-save-as')).toHaveText('Save as…');
-  await expect(page.getByTestId('unsaved-discard')).toHaveText('Discard and load');
-  await expect(page.getByTestId('unsaved-cancel')).toHaveText('Cancel');
+  await expect(page.getByTestId('unsaved-save-as')).toHaveText('save as…');
+  await expect(page.getByTestId('unsaved-discard')).toHaveText('discard and load');
+  await expect(page.getByTestId('unsaved-cancel')).toHaveText('cancel');
   await page.screenshot({ path: 'docs/product/unsaved-warning.png' });
   // Nothing is loaded before the answer.
   expect(puts(gateway)).toHaveLength(1);

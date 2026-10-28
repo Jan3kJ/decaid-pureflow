@@ -112,7 +112,7 @@
         {/if}
       </div>
       <button class="action primary" data-testid="feedback-send" disabled={!ready || sending} onclick={() => (asking = true)}
-        >{sending ? 'Submitting…' : 'Send'}</button
+        >{sending ? 'submitting…' : 'send'}</button
       >
     </div>
   </div>
@@ -122,7 +122,7 @@
   <Confirm
     title="Send the feedback?"
     text="It becomes a public GitHub issue of Decent's, sent through Decaid. Nothing in it should be personal or private."
-    ok="Send"
+    ok="send"
     onok={send}
     oncancel={() => (asking = false)}
   />
