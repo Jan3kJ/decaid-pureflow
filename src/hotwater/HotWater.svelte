@@ -116,8 +116,8 @@
         {#each skin.settings.hotWater.ratios as ratio, i (i)}
           {@const amount = ratioWeight(shot, ratio)}
           <button
-            class="chip"
-            class:on={amount === values?.volume}
+            class="chip select-fill"
+            aria-pressed={amount === values?.volume}
             data-testid="hot-water-ratio"
             disabled={!values}
             onclick={() => skin.setHotWater(stopField, amount)}
@@ -408,11 +408,6 @@
 
   .chip:disabled small {
     color: var(--dim);
-  }
-
-  .chip.on {
-    border-color: var(--fg);
-    background: var(--raised);
   }
 
   .hint {

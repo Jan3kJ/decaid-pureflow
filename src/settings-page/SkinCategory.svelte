@@ -327,7 +327,7 @@
       <div class="chips" data-testid="setting-{item.id}">
         {#each item.choices as choice (choice.value)}
           <button
-            class="chip"
+            class="chip select-fill"
             aria-pressed={settings[item.key] === choice.value}
             data-testid="setting-{item.id}-{choice.value}"
             onclick={() => skin.setSettings({ [item.key]: choice.value })}>{choice.label}</button
@@ -416,7 +416,7 @@
       <ul>
         <li>
           <button
-            class="choice"
+            class="choice select-fill"
             aria-pressed={settings.startProfiles[choosing] === null}
             data-testid="start-choice-empty"
             onclick={() => choose(null)}><span class="none">empty</span></button
@@ -425,7 +425,7 @@
         {#each offered as choice (choice.title)}
           <li>
             <button
-              class="choice"
+              class="choice select-fill"
               aria-pressed={settings.startProfiles[choosing] === choice.title}
               data-testid="start-choice"
               data-title={choice.title}
@@ -677,13 +677,6 @@
     border-radius: 0.9rem;
   }
 
-  .choice[aria-pressed='true'] {
-    background: var(--fg);
-    border-color: var(--fg);
-    color: var(--bg);
-    font-weight: 600;
-  }
-
   .chips {
     flex: none;
     display: flex;
@@ -696,13 +689,6 @@
     background: var(--raised);
     border: 1px solid var(--line);
     border-radius: 1.5rem;
-  }
-
-  .chip[aria-pressed='true'] {
-    background: var(--fg);
-    border-color: var(--fg);
-    color: var(--bg);
-    font-weight: 600;
   }
 
   .switch {

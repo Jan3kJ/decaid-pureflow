@@ -72,7 +72,7 @@
     <div class="choices">
       {#each FEEDBACK_TYPES as option (option.value)}
         <button
-          class="chip"
+          class="chip select-fill"
           aria-pressed={type === option.value}
           data-testid="feedback-type-{option.value}"
           onclick={() => (type = option.value)}>{option.label}<small>{option.hint}</small></button
@@ -190,10 +190,6 @@
     background: var(--raised);
     border: 1px solid var(--line);
     border-radius: 0.9rem;
-  }
-
-  .chip[aria-pressed='true'] {
-    border-color: var(--fg);
   }
 
   label {

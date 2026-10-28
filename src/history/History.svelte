@@ -71,17 +71,22 @@
     <button class="retry" data-testid="history-retry" onclick={read}>try again</button>
   {/if}
   <div class="filter" data-testid="history-filter">
-    <button class:on={!filtered} data-testid="filter-all" onclick={() => ((skin.historyFilter = NO_FILTER), (choosing = null))}
-      >all</button
+    <button
+      class="select-fill"
+      aria-pressed={!filtered}
+      data-testid="filter-all"
+      onclick={() => ((skin.historyFilter = NO_FILTER), (choosing = null))}>all</button
     >
     <button
-      class:on={filter.beanId !== null}
+      class="select-fill"
+      aria-pressed={filter.beanId !== null}
       class:open={choosing === 'bean'}
       data-testid="filter-bean"
       onclick={() => (choosing = choosing === 'bean' ? null : 'bean')}>{beanChosen}</button
     >
     <button
-      class:on={filter.grinderId !== null}
+      class="select-fill"
+      aria-pressed={filter.grinderId !== null}
       class:open={choosing === 'grinder'}
       data-testid="filter-grinder"
       onclick={() => (choosing = choosing === 'grinder' ? null : 'grinder')}>{grinderChosen}</button
@@ -91,8 +96,8 @@
     <ul data-testid="filter-options" data-main-frame>
       <li>
         <button
-          class="option"
-          class:on={(choosing === 'bean' ? filter.beanId : filter.grinderId) === null}
+          class="option select-fill"
+          aria-pressed={(choosing === 'bean' ? filter.beanId : filter.grinderId) === null}
           data-testid="filter-any"
           onclick={() => choose(null)}>{choosing === 'bean' ? 'any bean' : 'any grinder'}</button
         >
@@ -100,8 +105,8 @@
       {#each options as option (option.id)}
         <li>
           <button
-            class="option"
-            class:on={option.id === (choosing === 'bean' ? filter.beanId : filter.grinderId)}
+            class="option select-fill"
+            aria-pressed={option.id === (choosing === 'bean' ? filter.beanId : filter.grinderId)}
             data-testid="filter-option"
             onclick={() => choose(option.id)}
           >
@@ -273,12 +278,6 @@
 
   .filter .open {
     border-color: var(--fg);
-  }
-
-  .filter .on,
-  .option.on {
-    border-color: var(--accent);
-    color: var(--accent);
   }
 
   .option {

@@ -243,7 +243,7 @@
             <div class="choices" data-testid="plugin-setting-{plugin.id}-{control.key}">
               {#each control.values as option (option)}
                 <button
-                  class="chip"
+                  class="chip select-fill"
                   aria-pressed={value === option}
                   disabled={!read || !!busy[at]}
                   data-testid="plugin-setting-{plugin.id}-{control.key}-{option}"
@@ -456,13 +456,6 @@
     background: var(--raised);
     border: 1px solid var(--line);
     border-radius: 1.5rem;
-  }
-
-  .chip[aria-pressed='true'] {
-    background: var(--fg);
-    border-color: var(--fg);
-    color: var(--bg);
-    font-weight: 600;
   }
 
   .lever-button {

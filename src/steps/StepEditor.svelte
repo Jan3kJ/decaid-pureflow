@@ -260,9 +260,13 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h9" /></svg>
     </button>
     <div class="group tabs" role="group" aria-label="view">
-      <button class="seg" aria-pressed={tab === 'cards'} data-testid="tab-cards" onclick={() => open('cards')}>cards</button>
-      <button class="seg" aria-pressed={tab === 'script'} data-testid="tab-script" onclick={() => open('script')}>script</button>
-      <button class="seg" aria-pressed={tab === 'settings'} data-testid="tab-settings" onclick={() => open('settings')}
+      <button class="seg select-fill" aria-pressed={tab === 'cards'} data-testid="tab-cards" onclick={() => open('cards')}
+        >cards</button
+      >
+      <button class="seg select-fill" aria-pressed={tab === 'script'} data-testid="tab-script" onclick={() => open('script')}
+        >script</button
+      >
+      <button class="seg select-fill" aria-pressed={tab === 'settings'} data-testid="tab-settings" onclick={() => open('settings')}
         >settings</button
       >
     </div>
@@ -407,13 +411,6 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     padding: 0 1.1rem;
     border-radius: 0.9rem;
     font-size: var(--text-body);
-  }
-
-  .seg[aria-pressed='true'] {
-    background: var(--fg);
-    border-color: var(--fg);
-    color: var(--bg);
-    font-weight: 600;
   }
 
   .seg.action {

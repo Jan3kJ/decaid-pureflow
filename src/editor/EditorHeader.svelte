@@ -32,7 +32,7 @@
   <div class="group start" role="group" aria-label="start from" data-testid="start-row" use:sideways>
     {#each row as entry (entry.key)}
       <button
-        class="seg"
+        class="seg select-fill"
         aria-pressed={entry.key === origin.key}
         data-testid="start-{entry.name}"
         disabled={busy}
@@ -48,8 +48,12 @@
       <button class="seg action" data-testid="save-as" disabled={busy} onclick={onsaveas}> save as </button>
     </div>
     <div class="group" role="group" aria-label="editor mode">
-      <button class="seg" aria-pressed={mode === 'simple'} data-testid="mode-simple" onclick={() => onmode('simple')}>simple</button>
-      <button class="seg" aria-pressed={mode === 'detail'} data-testid="mode-detail" onclick={() => onmode('detail')}>detail</button>
+      <button class="seg select-fill" aria-pressed={mode === 'simple'} data-testid="mode-simple" onclick={() => onmode('simple')}
+        >simple</button
+      >
+      <button class="seg select-fill" aria-pressed={mode === 'detail'} data-testid="mode-detail" onclick={() => onmode('detail')}
+        >detail</button
+      >
     </div>
   </div>
 </header>
@@ -138,13 +142,6 @@
     padding: 0 1.1rem;
     border-radius: 0.9rem;
     font-size: var(--text-body);
-  }
-
-  .seg[aria-pressed='true'] {
-    background: var(--fg);
-    border-color: var(--fg);
-    color: var(--bg);
-    font-weight: 600;
   }
 
   .seg.action {

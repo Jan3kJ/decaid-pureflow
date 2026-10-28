@@ -411,7 +411,7 @@ test('the filter by bean and grinder: the catalogue names the entries, a choice 
   await page.getByTestId('history-handle').tap();
   const entries = page.getByTestId('history-entry');
   await expect(entries).toHaveCount(1);
-  await expect(page.getByTestId('filter-all')).toHaveClass(/on/);
+  await expect(page.getByTestId('filter-all')).toHaveAttribute('aria-pressed', 'true');
 
   // A bean, chosen while the older shots are still being read: the catalogue's, archived ones too.
   await page.getByTestId('filter-bean').tap();
@@ -451,7 +451,7 @@ test('the filter by bean and grinder: the catalogue names the entries, a choice 
   // The filter lasts while the skin runs: closed and opened again, it is still there.
   await page.touchscreen.tap(1100, 400);
   await page.getByTestId('history-handle').tap();
-  await expect(page.getByTestId('filter-grinder')).toHaveClass(/on/);
+  await expect(page.getByTestId('filter-grinder')).toHaveAttribute('aria-pressed', 'true');
   await expect(entries).toHaveCount(2);
 
   // All: every entry back, the catalogue's bean by its current name.

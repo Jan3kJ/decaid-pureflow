@@ -79,14 +79,24 @@
         {/if}
         <ul>
           <li>
-            <button class="row" aria-pressed={ready && bean === null} data-testid="pick-no-bean" onclick={() => (bean = null)}>
+            <button
+              class="row select-outline"
+              aria-pressed={ready && bean === null}
+              data-testid="pick-no-bean"
+              onclick={() => (bean = null)}
+            >
               <strong>no bean</strong>
             </button>
           </li>
           {#each beans as entry (entry.id)}
             {@const bag = catalogue.batchOf(entry)}
             <li>
-              <button class="row" aria-pressed={bean?.id === entry.id} data-testid="pick-bean" onclick={() => (bean = entry)}>
+              <button
+                class="row select-outline"
+                aria-pressed={bean?.id === entry.id}
+                data-testid="pick-bean"
+                onclick={() => (bean = entry)}
+              >
                 <strong>{beanTitle(entry)}</strong>
                 {#if bag?.roastDate}<small>roasted {dateOf(bag.roastDate)}</small>{/if}
               </button>
@@ -103,7 +113,7 @@
         <ul>
           <li>
             <button
-              class="row"
+              class="row select-outline"
               aria-pressed={ready && grinder === null}
               data-testid="pick-no-grinder"
               onclick={() => (grinder = null)}
@@ -113,7 +123,12 @@
           </li>
           {#each grinders as entry (entry.id)}
             <li>
-              <button class="row" aria-pressed={grinder?.id === entry.id} data-testid="pick-grinder" onclick={() => (grinder = entry)}>
+              <button
+                class="row select-outline"
+                aria-pressed={grinder?.id === entry.id}
+                data-testid="pick-grinder"
+                onclick={() => (grinder = entry)}
+              >
                 <strong>{entry.model}</strong>
               </button>
             </li>
@@ -250,11 +265,6 @@
     justify-content: center;
     text-align: left;
     background: var(--bg);
-  }
-
-  .row[aria-pressed='true'] {
-    border-color: var(--fg);
-    background: var(--raised);
   }
 
   .row strong {

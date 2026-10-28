@@ -48,12 +48,14 @@
     <div class="choice" role="group" aria-label="setting type">
       <button
         type="button"
+        class="select-fill"
         aria-pressed={form.settingType === 'numeric'}
         data-testid="grinder-numeric"
         onclick={() => (form.settingType = 'numeric')}>numbers</button
       >
       <button
         type="button"
+        class="select-fill"
         aria-pressed={form.settingType === 'preset'}
         data-testid="grinder-preset"
         onclick={() => (form.settingType = 'preset')}>named positions</button
@@ -206,12 +208,6 @@
   .choice {
     display: flex;
     gap: 0.3rem;
-  }
-
-  .choice button[aria-pressed='true'] {
-    color: var(--bg);
-    background: var(--fg);
-    border-color: var(--fg);
   }
 
   .value strong {

@@ -71,7 +71,7 @@
     <div class="choices" data-testid="setting-{field.id}">
       {#each field.options as option (option.value)}
         <button
-          class="chip"
+          class="chip select-fill"
           aria-pressed={value === option.value}
           disabled={!read || busy}
           data-testid="setting-{field.id}-{option.value}"
@@ -204,13 +204,6 @@
     background: var(--raised);
     border: 1px solid var(--line);
     border-radius: 1.5rem;
-  }
-
-  .chip[aria-pressed='true'] {
-    background: var(--fg);
-    border-color: var(--fg);
-    color: var(--bg);
-    font-weight: 600;
   }
 
   .info {

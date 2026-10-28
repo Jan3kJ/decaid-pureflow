@@ -98,7 +98,7 @@
     {#each ordered as entry (entry.id)}
       {@const chosen = entry.id === defaultId}
       <button
-        class="skin"
+        class="skin select-fill"
         aria-pressed={chosen}
         disabled={chosen || busy}
         data-testid="skin-{entry.id}"
@@ -164,12 +164,6 @@
     background: var(--raised);
     border: 1px solid var(--line);
     border-radius: 0.9rem;
-  }
-
-  .skin[aria-pressed='true'] {
-    background: var(--fg);
-    border-color: var(--fg);
-    color: var(--bg);
   }
 
   .skin[aria-pressed='true'] small {

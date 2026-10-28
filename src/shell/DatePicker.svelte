@@ -201,9 +201,8 @@
             {#each week as day, d (d)}
               {#if day}
                 <button
-                  class="day"
+                  class="day select-fill"
                   class:today={day === today}
-                  class:chosen={day === value}
                   aria-pressed={day === value}
                   data-testid="datepicker-day-{day}"
                   onclick={() => onpick(day)}>{Number(day.slice(8))}</button
@@ -361,13 +360,6 @@
 
   .day.today {
     border: 2px solid var(--fg);
-  }
-
-  .day.chosen {
-    background: var(--fg);
-    border-color: var(--fg);
-    color: var(--bg);
-    font-weight: 600;
   }
 
   .actions {

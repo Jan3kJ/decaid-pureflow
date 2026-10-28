@@ -2872,6 +2872,17 @@ in its styles; none was added.
 **7. One selected look (DR9; Z33).** A choice of one among a few (chips, modes, tabs, Beans |
 Grinders) is the white fill; the row whose detail is shown beside a list (the picker, the bean and
 grinder lists, the bean pick) is the white outline; history's 'all' follows. After Z30 and Z32.
+*Built (Z33):* two shared classes in `src/app.css`: `.select-fill` (white fill, dark words, weight
+600) and `.select-outline` (white outline on the raised background, the row keeps its words'
+colour); a control takes its kind's class and is selected by `aria-pressed` or `aria-current`.
+Fill: the steam page's favourites and adjust chips and the hot water ratios (an outline before),
+history's 'all', bean and grinder chips and its option rows (light blue before), Beans | Grinders,
+'show archived', the grinder form's setting type, the editor's start row and modes, the step
+editor's tabs, every settings chip and choice, the skins and the date picker's chosen day.
+Outline: the picker's row (a fill before, so its 'loaded' tag keeps the accent), the bean and
+grinder rows, the bean pick and the settings' categories (a fill before: their page is shown
+beside them). Left as they are: the editor footer's lamp toggles, the date picker's month or year
+part, the graph's selected phase column and the page dots. `e2e/selected-look.spec.ts`.
 
 **8. Touch targets (DR12; Z36).** At least 3 rem on the short side by padding, not by larger text:
 the page dots, the step card's - and + (the three 'maximum' chips stay in one row), the editor's

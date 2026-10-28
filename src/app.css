@@ -90,6 +90,25 @@ body {
   border-color: var(--line);
 }
 
+/*
+ * Selected, two looks for every page (spec 3.18 item 7); a control takes the class of its kind
+ * and says it is selected with `aria-pressed` or `aria-current`. `:root` puts them above a
+ * component's own rule for the control.
+ */
+/* A choice of one among a few (a chip, a mode, a tab): the white fill. */
+:root .select-fill:is([aria-pressed='true'], [aria-current='true']) {
+  color: var(--bg);
+  background: var(--fg);
+  border-color: var(--fg);
+  font-weight: 600;
+}
+
+/* The row whose detail is shown beside its list: the white outline. */
+:root .select-outline:is([aria-pressed='true'], [aria-current='true']) {
+  background: var(--raised);
+  border-color: var(--fg);
+}
+
 /* Text no rule sizes is running text (spec 3.14's roles). */
 body {
   font-size: var(--text-body);

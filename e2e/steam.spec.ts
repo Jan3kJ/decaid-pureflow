@@ -97,11 +97,11 @@ test('a favourite chip writes its seconds directly, without a scale weight', asy
   const chips = page.getByTestId('steam-favourite');
   await expect(chips).toHaveText(['25 s', '50 s', '30 s']);
   // The chip of the machine's timer is marked.
-  await expect(chips.nth(1)).toContainClass('on');
+  await expect(chips.nth(1)).toHaveAttribute('aria-pressed', 'true');
 
   await chips.nth(0).click();
   await expect(page.getByTestId('steam-timer')).toHaveText('25s');
-  await expect(chips.nth(0)).toContainClass('on');
+  await expect(chips.nth(0)).toHaveAttribute('aria-pressed', 'true');
   await chips.nth(2).click();
   await expect(page.getByTestId('steam-timer')).toHaveText('30s');
   expect(written(gateway)).toEqual([{ steamSettings: { duration: 25 } }, { steamSettings: { duration: 30 } }]);
@@ -123,11 +123,11 @@ test("the timer on screen is the machine's, and a chip writes the machine when t
 
   const chips = page.getByTestId('steam-favourite');
   await expect(page.getByTestId('steam-timer')).toHaveText('30s');
-  await expect(chips.nth(2)).toContainClass('on');
+  await expect(chips.nth(2)).toHaveAttribute('aria-pressed', 'true');
 
   await chips.nth(0).click();
   await expect(page.getByTestId('steam-timer')).toHaveText('25s');
-  await expect(chips.nth(0)).toContainClass('on');
+  await expect(chips.nth(0)).toHaveAttribute('aria-pressed', 'true');
   expect(written(gateway)).toEqual([{ steamSettings: { duration: 25 } }]);
   // The whole frame of the machine's settings, with the new timer.
   expect(gateway.calls('POST', '/api/v1/machine/shotSettings').map((call) => call.body)).toEqual([
@@ -356,7 +356,7 @@ test('a selected adjust button adds its amount to the calculated timer and to a 
   await expect(page.getByTestId('steam-seconds')).toHaveText('35 s');
   await page.getByTestId('steam-favourite').nth(0).click();
   await expect(page.getByTestId('steam-timer')).toHaveText('17s');
-  await expect(page.getByTestId('steam-favourite').nth(0)).toHaveClass(/on/);
+  await expect(page.getByTestId('steam-favourite').nth(0)).toHaveAttribute('aria-pressed', 'true');
 
   // A tap on the selected one clears it.
   await adjust.nth(0).click();

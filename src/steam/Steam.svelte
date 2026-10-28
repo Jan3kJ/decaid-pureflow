@@ -69,8 +69,8 @@
       <!-- A chip shows the seconds it sends: its own with the selected adjust button's amount. -->
       {#each settings.favourites as seconds, i (i)}
         <button
-          class="chip"
-          class:on={adjusted(seconds) === timer}
+          class="chip select-fill"
+          aria-pressed={adjusted(seconds) === timer}
           data-testid="steam-favourite"
           onclick={() => skin.setSteamTimer(adjusted(seconds))}
         >
@@ -123,8 +123,7 @@
     <div class="adjust">
       {#each settings.adjustments as amount, i (i)}
         <button
-          class="chip"
-          class:on={skin.steamAdjust === i}
+          class="chip select-fill"
           aria-pressed={skin.steamAdjust === i}
           data-testid="steam-adjust"
           onclick={() => skin.tapSteamAdjust(i)}
@@ -246,11 +245,6 @@
     font-size: var(--text-value);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
-  }
-
-  .chip.on {
-    border-color: var(--fg);
-    background: var(--raised);
   }
 
   small {

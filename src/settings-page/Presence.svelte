@@ -139,7 +139,7 @@
         <div class="choices">
           {#each DAYS as day, i (day)}
             <button
-              class="chip"
+              class="chip select-fill"
               aria-pressed={form.days.includes(i + 1)}
               data-testid="schedule-day-{i + 1}"
               onclick={() => toggleDay(i + 1)}>{day}</button
@@ -335,13 +335,6 @@
     background: var(--raised);
     border: 1px solid var(--line);
     border-radius: 1.5rem;
-  }
-
-  .chip[aria-pressed='true'] {
-    background: var(--fg);
-    border-color: var(--fg);
-    color: var(--bg);
-    font-weight: 600;
   }
 
   .lever-button {

@@ -22,7 +22,7 @@
   <div class="choices" data-testid="setting-tank-unit">
     {#each TANK_UNITS as choice (choice.value)}
       <button
-        class="chip"
+        class="chip select-fill"
         aria-pressed={skin.settings.tankUnit === choice.value}
         data-testid="setting-tank-unit-{choice.value}"
         onclick={() => skin.setSettings({ tankUnit: choice.value })}>{choice.label}</button
@@ -74,12 +74,5 @@
     background: var(--raised);
     border: 1px solid var(--line);
     border-radius: 1.5rem;
-  }
-
-  .chip[aria-pressed='true'] {
-    background: var(--fg);
-    border-color: var(--fg);
-    color: var(--bg);
-    font-weight: 600;
   }
 </style>

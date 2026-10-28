@@ -105,7 +105,12 @@
 
   <nav class="kinds" aria-label="beans or grinders">
     {#each KINDS as entry (entry.id)}
-      <button class="kind" aria-current={entry.id === kind} data-testid="beans-kind-{entry.id}" onclick={() => choose(entry.id)}>
+      <button
+        class="kind select-fill"
+        aria-current={entry.id === kind}
+        data-testid="beans-kind-{entry.id}"
+        onclick={() => choose(entry.id)}
+      >
         {entry.label}
       </button>
     {/each}
@@ -126,7 +131,7 @@
         />
       </label>
       <button
-        class="toggle"
+        class="toggle select-fill"
         aria-pressed={showArchived}
         data-testid="beans-show-archived"
         onclick={() => (showArchived = !showArchived)}
@@ -134,7 +139,7 @@
         show archived
       </button>
     </div>
-    <button class="row add" aria-current={chosen === null} data-testid="beans-add" onclick={() => (chosen = null)}>
+    <button class="row add select-outline" aria-current={chosen === null} data-testid="beans-add" onclick={() => (chosen = null)}>
       + {kind === 'beans' ? 'add a bean' : 'add a grinder'}
     </button>
     <ul data-testid="beans-list">
@@ -143,7 +148,7 @@
           {@const bag = catalogue.batchOf(entry)}
           <li>
             <button
-              class="row"
+              class="row select-outline"
               class:archived={entry.archived}
               aria-current={entry.id === chosen}
               data-testid="bean-row"
@@ -160,7 +165,7 @@
         {#each grinders as entry (entry.id)}
           <li>
             <button
-              class="row"
+              class="row select-outline"
               class:archived={entry.archived}
               aria-current={entry.id === chosen}
               data-testid="grinder-row"
@@ -285,12 +290,6 @@
     border-radius: 0.9rem;
   }
 
-  .kind[aria-current='true'] {
-    background: var(--fg);
-    border-color: var(--fg);
-    color: var(--bg);
-  }
-
   .list {
     min-height: 0;
     display: flex;
@@ -346,12 +345,6 @@
     border-radius: 0.9rem;
   }
 
-  .toggle[aria-pressed='true'] {
-    color: var(--bg);
-    background: var(--fg);
-    border-color: var(--fg);
-  }
-
   ul {
     min-height: 0;
     margin: 0;
@@ -374,10 +367,6 @@
     background: var(--panel);
     border: 1px solid var(--line);
     border-radius: 0.9rem;
-  }
-
-  .row[aria-current='true'] {
-    border-color: var(--fg);
   }
 
   .row strong {

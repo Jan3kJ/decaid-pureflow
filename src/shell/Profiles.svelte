@@ -318,7 +318,7 @@
             <button class="rename" data-testid="profile-rename" disabled={busy} onclick={() => askRename(entry)}>rename</button>
           {/if}
           <button
-            class="item"
+            class="item select-outline"
             class:dragging={offset !== null}
             style:width={offset === null ? undefined : `calc(100% - ${Math.abs(offset)}px)`}
             style:margin-left={offset === null || offset <= 0 ? undefined : `${offset}px`}
@@ -562,17 +562,6 @@
     font-size: var(--text-label);
   }
 
-  .item[aria-pressed='true'] .refusal {
-    color: inherit;
-  }
-
-  .item[aria-pressed='true'] {
-    background: var(--fg);
-    border-color: var(--fg);
-    color: var(--bg);
-    font-weight: 600;
-  }
-
   .title {
     flex: 1;
     min-width: 0;
@@ -595,10 +584,6 @@
   .tag.loaded {
     color: var(--accent);
     opacity: 1;
-  }
-
-  .item[aria-pressed='true'] .tag.loaded {
-    color: inherit;
   }
 
   .empty,

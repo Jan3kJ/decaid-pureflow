@@ -119,10 +119,10 @@ test('a ratio favourite with a last shot of 40 g sets 80 g for 1:2; the tare but
   await ratios.nth(0).click();
   expect(lastWrite(gateway)).toEqual({ targetTemperature: 75, duration: 30, volume: 80, flow: 8 });
   await expect(page.getByTestId('hot-water-weight')).toContainText('80g');
-  await expect(ratios.nth(0)).toHaveClass(/on/);
+  await expect(ratios.nth(0)).toHaveAttribute('aria-pressed', 'true');
   await ratios.nth(1).click();
   await expect(page.getByTestId('hot-water-weight')).toContainText('100g');
-  await expect(ratios.nth(0)).not.toHaveClass(/on/);
+  await expect(ratios.nth(0)).not.toHaveAttribute('aria-pressed', 'true');
 
   // The scale's row is the tare, the one tare of the skin (R2): one button of 3.5 rem over the row,
   // live while idle; 'last shot' and 'scale' end on one right edge, their units in one column.

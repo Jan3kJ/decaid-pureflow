@@ -205,7 +205,7 @@
   <nav class="tree" aria-label="settings categories">
     {#each SETTINGS_TREE as entry (entry.id)}
       <button
-        class="category"
+        class="category select-outline"
         aria-current={entry.id === category.id}
         data-testid="settings-category-{entry.id}"
         onclick={() => open(entry.id)}><span class="number">{entry.number}.</span> {entry.name}</button
@@ -369,12 +369,6 @@
     background: var(--panel);
     border: 1px solid var(--line);
     border-radius: 0.9rem;
-  }
-
-  .category[aria-current='true'] {
-    background: var(--fg);
-    border-color: var(--fg);
-    color: var(--bg);
   }
 
   .number {
