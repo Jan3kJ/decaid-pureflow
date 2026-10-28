@@ -76,17 +76,49 @@
     error = null;
     try {
       records = await skin.client.listProfiles();
-      selectedId ??= pickerEntries(records).find(isLoaded)?.id ?? null;
     } catch (cause) {
       error = `The profiles could not be read: ${errorMessage(cause)}`;
     }
   }
 
-  /** The picker opens on the loaded profile, in the middle of the list, not at its top (founder, 2026-10-24). */
-  async function showLoaded() {
-    await tick();
-    listEl?.querySelector('[data-loaded="true"]')?.scrollIntoView({ block: 'center' });
+  /**
+   * The picker opens on the loaded profile: selected, its detail shown, in the middle of the list,
+   * not at its top (spec 3.18 item 6). Once, when the list and the workflow are both known; the
+   * defaults are listed alone while the gateway's list is not read.
+   */
+  let opened = false;
+  $effect(() => {
+    if (opened || !current) return;
+    const loaded = entries.find(isLoaded);
+    if (!loaded) return;
+    opened = true;
+    selectedId ??= loaded.id;
+    void tick().then(() => listEl?.querySelector('[data-loaded="true"]')?.scrollIntoView({ block: 'center' }));
+  });
+
+  /**
+   * The description's lower border is the accent while more of its text lies below the visible
+   * part (spec 3.18 item 6); checked on its scrolling, on a new text and on a new size.
+   */
+  let notesEl: HTMLParagraphElement | undefined = $state();
+  let more = $state(false);
+  function checkMore() {
+    more = !!notesEl && notesEl.scrollHeight - notesEl.scrollTop - notesEl.clientHeight > 1;
   }
+  $effect(() => {
+    const el = notesEl;
+    void selected?.id;
+    void (selected && profileDescription(selected));
+    if (!el) {
+      more = false;
+      return;
+    }
+    el.scrollTop = 0;
+    checkMore();
+    const observer = new ResizeObserver(checkMore);
+    observer.observe(el);
+    return () => observer.disconnect();
+  });
 
   async function act(what: string, run: () => Promise<void>) {
     busy = true;
@@ -238,10 +270,7 @@
     });
   }
 
-  onMount(async () => {
-    await read();
-    await showLoaded();
-  });
+  onMount(read);
 </script>
 
 <svelte:window onpointerdown={outside} />
@@ -347,7 +376,9 @@
       </div>
       <p class="caption" data-testid="profile-caption">estimate from the steps, a real shot differs with the coffee</p>
       <!-- The notes without the A-Flow line the skin writes, then for an A-Flow profile the text made from its values. -->
-      <p class="notes" data-testid="profile-description">{description}</p>
+      <p class="notes" class:more data-more={more} data-testid="profile-description" bind:this={notesEl} onscroll={checkMore}>
+        {description}
+      </p>
       <p class="aflow">{dose === undefined ? '' : 'A-Flow 3.0: once it is loaded, the editor opens on it.'}</p>
       <!-- Edit loads too and opens the profile's editor; load goes back to where the picker was opened from. -->
       <div class="actions">
@@ -670,6 +701,13 @@
     font-size: var(--text-body);
     white-space: pre-line;
     scrollbar-width: thin;
+    padding: 0.4rem 0.7rem;
+    border: 1px solid var(--line);
+    border-radius: 0.6rem;
+  }
+
+  .notes.more {
+    border-bottom-color: var(--accent);
   }
 
   .actions {

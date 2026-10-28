@@ -2862,6 +2862,12 @@ hold the values and stop at 1280 x 800 and at the largest display size of the se
   in the accent colour while more text lies below** the visible part; at the end of the text, and
   when the text fits, the border is as the others. It follows the scrolling (`scroll` event,
   `scrollHeight`). The fade stays as it is.
+*Built (Z32):* DR14 was in (0887a65 opened on the loaded profile and selected it); the selection is
+now made once the list and the workflow are both known, whichever comes last, also while only the
+defaults are listed. DR16: the description is a box with a 1 px border in `--line` and a small
+padding; while more text lies below, its lower border is `--accent`, checked on its scrolling, on
+a new text (which starts at its top) and on a new size (`ResizeObserver`). The panel had no fade
+in its styles; none was added.
 
 **7. One selected look (DR9; Z33).** A choice of one among a few (chips, modes, tabs, Beans |
 Grinders) is the white fill; the row whose detail is shown beside a list (the picker, the bean and

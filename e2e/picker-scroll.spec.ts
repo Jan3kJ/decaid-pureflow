@@ -1,9 +1,10 @@
 import { expect, test } from '@playwright/test';
 import { mockGateway, profile, record } from './mock-gateway';
 
-// The picker opens on the loaded profile, not at the top of the list (founder, 2026-10-24).
+// The picker opens on the loaded profile, not at the top of the list: selected, in view and its
+// detail shown, so 'edit' works at once (spec 3.18 item 6, acceptance 129).
 
-test('the picker scrolls to the loaded profile', async ({ page }) => {
+test('the picker selects the loaded profile and scrolls to it', async ({ page }) => {
   const gateway = await mockGateway(page);
   for (let i = 0; i < 40; i++)
     gateway.profiles.push(record(`profile:s${i}`, profile(`Stored / ${String(i).padStart(2, '0')}`, 40, 4)));
@@ -23,5 +24,9 @@ test('the picker scrolls to the loaded profile', async ({ page }) => {
     return box.y >= list.y - 1 && box.y + box.height <= list.y + list.height + 1;
   };
   await expect.poll(inside).toBe(true);
+  await expect(row).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('[data-testid="profile-item"][aria-pressed="true"]')).toHaveCount(1);
+  await expect(page.getByTestId('profile-detail').locator('h1')).toHaveText('Stored / deep');
+  await expect(page.getByTestId('edit-profile')).toBeEnabled();
   await page.screenshot({ path: 'docs/product/picker-scrolled.png' });
 });
