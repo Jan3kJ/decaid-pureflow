@@ -354,9 +354,14 @@
     color: var(--fg);
   }
 
+  /*
+   * 7 rem high where the column has room; at a larger display size it gives up height, never
+   * less than 3.5 rem, so it stays whole in view under the values (spec 3.18 item 5).
+   */
   .stop {
     margin-top: auto;
-    min-height: 7rem;
+    flex: 0 1 7rem;
+    min-height: 3.5rem;
     font: inherit;
     font-size: var(--text-large);
     font-weight: 600;

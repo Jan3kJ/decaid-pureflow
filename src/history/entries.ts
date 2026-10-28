@@ -180,6 +180,15 @@ export function beanLabel(bean: Bean | null): string {
   return [bean.roaster, bean.name].filter(Boolean).join(' · ') || 'bean from Decaid';
 }
 
+/**
+ * A bean in two lines, as home's bean button shows it (spec 3.18 item 5): its name, and its roaster
+ * as the caption. A bean without a name is `beanLabel` alone, without a caption (null).
+ */
+export function beanLines(bean: Bean | null): { name: string; caption: string | null } {
+  if (!bean?.name) return { name: beanLabel(bean), caption: null };
+  return { name: bean.name, caption: bean.roaster };
+}
+
 /** How an entry names its grinder: 'Model 4.8', 'grinder 4.8' without a model; empty for neither. */
 export function grinderLabel(entry: Pick<HistoryEntry, 'grinder' | 'grinderSetting'>): string {
   if (!entry.grinderSetting) return entry.grinder ?? '';

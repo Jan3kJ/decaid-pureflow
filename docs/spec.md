@@ -2854,6 +2854,14 @@ shows nothing beside the state line.
 before ' / '; the roaster for the bean); the grinder setting stays at the right. The buttons stay
 in the column during a shot (3.17 item 10), dimmed. The column grows by about 2.4 rem and must still
 hold the values and stop at 1280 x 800 and at the largest display size of the settings.
+*Built (Z35):* no profile in the skin or in Decaid's workflow carries a family (the workflow holds the
+profile alone, without the record's metadata), so the caption is the part of the title before the
+first ' / ' and the name the rest ('A-Flow / default-medium' is 'default-medium' under 'A-Flow');
+a title without ' / ' is the name alone, as is a bean without a name (its roaster, or 'no bean'),
+and the button keeps its height of 4.7 rem either way. The caption is the caption role in grey;
+both lines are cut at their end. At the display size 'extra large' the column has no 2.4 rem to
+spare, so the stop button gives up height there (7 rem where there is room, never under 3.5 rem)
+and stays whole in view. `e2e/home-column.spec.ts` checks both sizes during a shot.
 
 **6. The picker (DR14, DR16; Z32).**
 - DR14: opening the picker selects the loaded profile and scrolls to it, its detail is shown,

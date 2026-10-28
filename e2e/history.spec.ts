@@ -141,7 +141,7 @@ test('tapping an entry closes the overlay, restores profile, bean and grinder se
   const gateway = await mockGateway(page);
   fourShots(gateway);
   await home(page);
-  await expect(page.getByTestId('profile-name')).toHaveText('A-Flow / default-medium');
+  await expect(page.getByTestId('profile-name')).toHaveText('default-medium');
 
   await page.getByTestId('history-handle').tap();
   await page.getByTestId('history-entry').filter({ hasText: 'Red Brick' }).tap();
@@ -173,7 +173,7 @@ test('tapping an entry closes the overlay, restores profile, bean and grinder se
   });
 
   // Home shows what is current now, and the graph of the last shot made with the entry.
-  await expect(page.getByTestId('profile-name')).toHaveText('A-Flow / default-light');
+  await expect(page.getByTestId('profile-name')).toHaveText('default-light');
   // The stop weight is not on home: the workflow holds it.
   expect(gateway.workflow.context.targetYield).toBe(48);
   await expect(page.getByTestId('history-graph')).toBeVisible();

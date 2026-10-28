@@ -65,7 +65,7 @@ test('home shows the state line the machine sent, the profile, and no start: the
   gateway.setWater(31);
   await expect(page.getByTestId('state-tank')).toHaveText('840 ml');
 
-  await expect(page.getByTestId('profile-name')).toHaveText('A-Flow / default-medium');
+  await expect(page.getByTestId('profile-name')).toHaveText('default-medium');
   // Dose and stop weight are not on home; nothing starts a shot or steam here.
   await expect(page.getByTestId('dose')).toHaveCount(0);
   await expect(page.getByTestId('target-weight')).toHaveCount(0);
@@ -210,7 +210,7 @@ test('home says when no machine is connected, and shows the machine when it come
   await expect(page.getByTestId('status-title')).toHaveText('No machine connected', { timeout: 8000 });
   await expect(page.getByTestId('state-group')).toHaveCount(0);
   // The workflow is the gateway's, with or without a machine.
-  await expect(page.getByTestId('profile-name')).toHaveText('A-Flow / default-medium');
+  await expect(page.getByTestId('profile-name')).toHaveText('default-medium');
 
   gateway.machineConnected = true;
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
@@ -261,7 +261,7 @@ test('a shot started at the machine: home shows it by itself with a live graph a
   await expect(page.getByTestId('shot-plot')).toHaveCount(0);
   await expect(page.getByTestId('dismiss-shot')).toHaveCount(0);
   await expect(page.getByTestId('last-shot')).toBeVisible();
-  await expect(page.getByTestId('profile-name')).toHaveText('A-Flow / default-medium');
+  await expect(page.getByTestId('profile-name')).toHaveText('default-medium');
   // Every espresso frame from the first one with water is a point; the mock repeated its latest
   // frame while the test looked.
   expect(await points(page)).toBeGreaterThanOrEqual(WATER_FRAMES);
@@ -337,7 +337,7 @@ test('the picker lists the A-Flow 3.0 defaults of the skin first, offers no add 
   expect(puts[0].body.context).toEqual({ targetYield: 36, targetDoseWeight: 16 });
   expect(gateway.calls('POST', '/api/v1/profiles')).toHaveLength(0);
   expect(gateway.calls('POST', '/api/v1/machine/profile')).toHaveLength(0);
-  await expect(page.getByTestId('profile-name')).toHaveText('A-Flow / default-dark');
+  await expect(page.getByTestId('profile-name')).toHaveText('default-dark');
   // Dose and stop weight are not on home: the gateway's workflow holds them.
   expect(gateway.workflow.context).toMatchObject({ targetYield: 36, targetDoseWeight: 16 });
 

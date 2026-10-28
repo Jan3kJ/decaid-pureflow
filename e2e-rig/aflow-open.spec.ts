@@ -3,6 +3,7 @@ import type { MachineSnapshot, ProfileRecord } from '../src/api';
 import { readSteps } from '../src/aflow';
 import { isWrite, type RigWorkflow } from './gateway';
 import { back } from '../e2e/touch';
+import { titleLines } from '../src/shell/profiles';
 
 // One of Decaid's own A-Flow profiles opens in the A-Flow 3.0 editor (spec 3.9, U2, acceptance
 // item 43), against the rig: Decaid's bundled 'A-Flow / default-very-dark', the plugin's 1.4
@@ -64,7 +65,7 @@ test("Decaid's A-Flow / default-very-dark opens in the A-Flow editor, read from 
     await items.filter({ hasText: TITLE }).click({ timeout: 15_000 });
     await page.getByTestId('load-profile').click();
     await expect(page.getByTestId('screen-home')).toBeVisible();
-    await expect(page.getByTestId('profile-name')).toHaveText(TITLE);
+    await expect(page.getByTestId('profile-name')).toHaveText(titleLines(TITLE).name);
 
     await page.getByTestId('open-editor').click();
     await expect(page.getByTestId('graph')).toBeVisible();

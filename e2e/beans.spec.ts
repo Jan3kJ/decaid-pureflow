@@ -280,7 +280,7 @@ test("home's chip opens the pick: bean, grinder and setting go out in one PUT an
     },
   ]);
   expect(gateway.workflow.context.extras).toEqual({ basketId: null, rpm: null });
-  await expect(page.getByTestId('next-bean')).toHaveText('Square Mile · Red Brick');
+  await expect(page.getByTestId('next-bean')).toHaveText('Red Brick');
   await expect(page.getByTestId('next-setting')).toHaveText('6.2');
 
   // Opened again it starts from the pick; 'no bean' clears the three bean fields.

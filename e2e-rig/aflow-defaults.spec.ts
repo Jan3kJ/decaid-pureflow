@@ -3,7 +3,7 @@ import type { MachineSnapshot, ProfileRecord } from '../src/api';
 import { isWrite, type RigWorkflow } from './gateway';
 import { DEFAULT_PROFILES } from '../src/aflow';
 import { workflowProfile } from '../src/editor/storage';
-import { defaultProfile } from '../src/shell/profiles';
+import { defaultProfile, titleLines } from '../src/shell/profiles';
 
 // The A-Flow 3.0 defaults kept in the skin against the rig (T5, spec 3.8, acceptance item 31):
 // the picker lists the skin's five first and Decaid's bundled plugin profiles under the same
@@ -70,7 +70,7 @@ test('the picker lists the skin’s defaults and loads one into the workflow wit
     await items.filter({ hasText: LIGHT.title }).click();
     await page.getByTestId('load-profile').click();
     await expect(page.getByTestId('screen-home')).toBeVisible();
-    await expect(page.getByTestId('profile-name')).toHaveText(LIGHT.title);
+    await expect(page.getByTestId('profile-name')).toHaveText(titleLines(LIGHT.title).name);
 
     // What Decaid's workflow holds after a default is loaded without a record (research.md 25).
     const workflow = await api<RigWorkflow>('GET', '/api/v1/workflow');

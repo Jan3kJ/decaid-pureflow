@@ -14,6 +14,7 @@ import {
   NO_FILTER,
   beanAndGrinder,
   beanLabel,
+  beanLines,
   entryKey,
   filterShots,
   grinderLabel,
@@ -433,5 +434,21 @@ describe('the catalogue in the history', () => {
     const entries = groupShots(filterShots([...all, other], { beanId: null, grinderId: 'niche' }, catalogue), catalogue);
     expect(entries).toHaveLength(1);
     expect(entries[0]).toMatchObject({ shots: 2, latest: renamed });
+  });
+});
+
+describe('beanLines', () => {
+  it('shows the bean first and its roaster as the caption', () => {
+    expect(beanLines({ name: 'Red Brick', roaster: 'Square Mile', batchId: null })).toEqual({
+      name: 'Red Brick',
+      caption: 'Square Mile',
+    });
+    expect(beanLines({ name: 'Red Brick', roaster: null, batchId: null })).toEqual({ name: 'Red Brick', caption: null });
+  });
+
+  it('is one line without a name', () => {
+    expect(beanLines({ name: null, roaster: 'Square Mile', batchId: null })).toEqual({ name: 'Square Mile', caption: null });
+    expect(beanLines({ name: null, roaster: null, batchId: 'b1' })).toEqual({ name: 'bean from Decaid', caption: null });
+    expect(beanLines(null)).toEqual({ name: 'no bean', caption: null });
   });
 });

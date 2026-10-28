@@ -24,6 +24,7 @@ import {
   sameProfile,
   screenAfter,
   sortProfiles,
+  titleLines,
 } from './profiles';
 import { editorFor } from '../editor/route';
 
@@ -441,5 +442,18 @@ describe('renameEntry', () => {
     const [lightEntry] = pickerEntries([]).filter((candidate) => candidate.id === 'default-light');
     await expect(renameEntry(stub, lightEntry, 'Mine')).rejects.toThrow('cannot be renamed');
     expect(calls).toEqual([]);
+  });
+});
+
+describe('titleLines', () => {
+  it('shows the name first and the part before the first ‘ / ’ as its caption', () => {
+    expect(titleLines('A-Flow / default-medium')).toEqual({ name: 'default-medium', caption: 'A-Flow' });
+    expect(titleLines('A-Flow / mine / two')).toEqual({ name: 'mine / two', caption: 'A-Flow' });
+  });
+
+  it('has no caption for a title without ‘ / ’, or with nothing after it', () => {
+    expect(titleLines('Best practice')).toEqual({ name: 'Best practice', caption: null });
+    expect(titleLines('A-Flow / ')).toEqual({ name: 'A-Flow /', caption: null });
+    expect(titleLines('A/B')).toEqual({ name: 'A/B', caption: null });
   });
 });

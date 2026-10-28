@@ -59,7 +59,7 @@ test('A-Flow editor: a drag on the graph moves its line, a swipe to the left sta
   await expect(page.getByTestId('screen-home')).toBeVisible();
   await expect(page.getByTestId('screen-editor')).toHaveCount(0);
   expect(gateway.calls('PUT', '/api/v1/workflow')).toHaveLength(1);
-  await expect(page.getByTestId('profile-name')).toHaveText('A-Flow / default-light');
+  await expect(page.getByTestId('profile-name')).toHaveText('default-light');
 
   // Open again on the loaded value; a swipe without a change loads nothing more.
   await page.getByTestId('open-editor').click();

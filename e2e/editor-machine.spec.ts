@@ -226,7 +226,7 @@ test("simple mode: a changed value redraws the curve and back sends the generato
   const params = loadedProfile(gateway, 'A-Flow / default-light', 'Janek');
   expect(params).toEqual({ ...light, infusePressure: pressure, stopWeight: 47 });
   // Home shows what the workflow got; dose and stop weight are the workflow's, not on home.
-  await expect(page.getByTestId('profile-name')).toHaveText('A-Flow / default-light');
+  await expect(page.getByTestId('profile-name')).toHaveText('default-light');
   expect(gateway.workflow.context).toMatchObject({ targetYield: 47, targetDoseWeight: 16 });
   // Nothing was saved by loading.
   expect(gateway.calls('POST', '/api/v1/profiles')).toHaveLength(0);
@@ -307,7 +307,7 @@ test('save as stores a new named profile, loads it, and it re-opens with the sam
 
   // Loaded, it is the current profile, and back has nothing more to load.
   await back(page);
-  await expect(page.getByTestId('profile-name')).toHaveText('A-Flow / morning light');
+  await expect(page.getByTestId('profile-name')).toHaveText('morning light');
   expect(gateway.calls('PUT', '/api/v1/workflow')).toHaveLength(1);
   // After a reload the editor opens on it.
   await page.getByTestId('open-editor').click();

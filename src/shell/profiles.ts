@@ -76,6 +76,19 @@ export function previewLastStepSeconds(entry: Pick<PickerEntry, 'profile' | 'met
   return openParams(entry.profile, entry.metadata) ? POUR_SHOWN_SECONDS : undefined;
 }
 
+/**
+ * A profile's title in two lines, as home's profile button shows it (spec 3.18 item 5): the name,
+ * and as its caption the part before the first ' / ' ('A-Flow / default-medium' is
+ * 'default-medium' under 'A-Flow'). A title without ' / ', or with nothing after it, is the name
+ * alone, without a caption (null).
+ */
+export function titleLines(title: string): { name: string; caption: string | null } {
+  const at = title.indexOf(' / ');
+  const name = at < 0 ? '' : title.slice(at + 3).trim();
+  if (name === '') return { name: title.trim(), caption: null };
+  return { name, caption: title.slice(0, at).trim() || null };
+}
+
 /** Whether this skin stored the profile as A-Flow 3.0. */
 export function isAFlow3(record: Pick<ProfileRecord, 'metadata'>): boolean {
   return SKIN_SOURCES.includes(record.metadata?.source as string) && record.metadata?.aflow === AFLOW_VERSION;
