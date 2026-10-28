@@ -107,7 +107,7 @@ test('hot water, flush and steam print no step', async ({ page }) => {
 
   await toPage(page, 'steam');
   gateway.steamFor(6);
-  await expect(page.getByTestId('steam-state')).toContainText('steaming');
+  await expect(page.getByTestId('status-title')).toHaveText('Steam');
   await expect(page.getByTestId('state-step')).toHaveCount(0);
   expect(errors).toEqual([]);
 });

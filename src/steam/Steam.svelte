@@ -20,7 +20,9 @@
   /** s, the timer the machine has */
   const timer = $derived(skin.steamTimer);
   const reading = $derived(skin.weight === null ? null : readScale(skin.weight, settings));
-  const grams = (value: number) => `${+value.toFixed(1)} g`;
+  /** g without the unit: the mug's and the milk's are calculated, so no '.0' */
+  const grams = (value: number) => `${+value.toFixed(1)}`;
+  const scaled = $derived(skin.scaleLink === 'connected');
   /** s, a timer with the selected adjust button's amount (spec 3.7): what a tap sends */
   const adjusted = (seconds: number) => adjustedSeconds(seconds, skin.steamAdjustment);
   const calculated = $derived(reading ? adjusted(reading.seconds) : 0);
@@ -33,9 +35,10 @@
   <div class="header">
     <PageHeader {skin} heat="steam" title="Steam">
       {#snippet beside()}
-        {#if skin.steam}
+        <!-- Only after the steam: while it runs 'steam left' is the one clock (spec 3.18 item 4). -->
+        {#if skin.steam?.ended}
           <span class="run" data-testid="steam-state">
-            {steaming ? 'steaming' : 'last steam'}
+            last steam
             <b data-testid="steam-elapsed">{steamSeconds(skin.steam).toFixed(0)} s</b>
           </span>
         {/if}
@@ -82,31 +85,38 @@
       <b data-testid="steam-timer">{shown ?? '–'}<i>s</i></b>
     </div>
 
-    <dl>
-      <div class="weight">
-        <dt>scale</dt>
-        <dd>
-          <span data-testid="steam-weight">{gramsOf(skin.weight)}</span>
-          <!-- The one tare of the skin (Skin.tare, spec 3.7); without a scale it looks for the scale (spec 3.9). -->
-          <button class="tare" data-testid="steam-tare" onclick={() => skin.tare()}>tare</button>
-        </dd>
+    <!-- A grid of label, number and unit as on home: the numbers end on one edge, the units have
+         their own column (spec 3.18 item 4). The scale's row is the one tare of the skin (Skin.tare,
+         spec 3.7), off while steam runs; without a scale one line in place of the rows looks for
+         the scale (spec 3.9). -->
+    {#if scaled}
+      <div class="rows">
+        <button class="line" data-testid="steam-tare" disabled={steaming} onclick={() => skin.tare()}>
+          <span class="key">scale</span>
+          <span class="reading weight" data-testid="steam-weight">
+            {#if skin.weight === null}<b>–</b> <i></i>{:else}<b>{gramsOf(skin.weight, '')}</b> <i>g</i>{/if}
+          </span>
+        </button>
+        <div class="line">
+          <span class="key">
+            mug
+            {#if reading}<span class="badge" data-testid="steam-mug">{reading.mug.size}</span>{/if}
+          </span>
+          <span class="reading of" data-testid="steam-mug-weight">
+            {#if reading}<b>{grams(reading.mug.weight)}</b> <i>g</i>{:else}<b>–</b> <i></i>{/if}
+          </span>
+        </div>
+        <div class="line">
+          <span class="key">milk</span>
+          <span class="reading" data-testid="steam-milk">
+            {#if reading}<b>{grams(reading.milk)}</b> <i>g</i>{:else}<b>–</b> <i></i>{/if}
+          </span>
+        </div>
       </div>
-      <div>
-        <dt>mug</dt>
-        <dd>
-          {#if reading}
-            <span class="size" data-testid="steam-mug">{reading.mug.size}</span>
-            <span class="of" data-testid="steam-mug-weight">{grams(reading.mug.weight)}</span>
-          {:else}
-            –
-          {/if}
-        </dd>
-      </div>
-      <div>
-        <dt>milk</dt>
-        <dd data-testid="steam-milk">{reading ? grams(reading.milk) : '–'}</dd>
-      </div>
-    </dl>
+    {:else}
+      <button class="line none" data-testid="steam-no-scale" onclick={() => skin.findScale()}>no scale: the chips set the timer</button
+      >
+    {/if}
 
     <!-- The adjust buttons (spec 3.7): for milk colder or warmer than the calibration's. One at a
          time, a tap on the selected one clears it; while steam runs a tap moves the timer too. -->
@@ -133,6 +143,8 @@
       set timer
       {#if calculated > 0}
         <b data-testid="steam-seconds">{calculated} s</b>
+      {:else if !scaled}
+        <small data-testid="steam-needs-scale">needs the scale</small>
       {/if}
     </button>
 
@@ -241,8 +253,7 @@
     background: var(--raised);
   }
 
-  small,
-  dt {
+  small {
     color: var(--dim);
     font-size: var(--text-label);
   }
@@ -268,49 +279,76 @@
     font-variant-numeric: tabular-nums;
   }
 
-  dl {
-    margin: 0;
+  .rows {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
   }
 
-  dl div {
-    display: flex;
+  /* label, number, unit: the unit column has one width, so the numbers end on one edge */
+  .line {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto 1.6rem;
     align-items: baseline;
-    justify-content: space-between;
+    column-gap: 0.4rem;
+    padding: 0 0.6rem 0 1rem;
+    border: 1px solid transparent;
+    text-align: left;
   }
 
-  dd {
-    margin: 0;
+  /* the tare: the whole row a button, a finger's target */
+  button.line {
+    min-height: 3.5rem;
+    align-content: center;
+    border-color: var(--line);
+  }
+
+  .line.none {
+    display: block;
+    color: var(--dim);
+    font-size: var(--text-label);
+  }
+
+  .key {
+    color: var(--dim);
+    font-size: var(--text-label);
+  }
+
+  .badge {
+    margin-left: 0.4rem;
+    padding: 0 0.4rem;
+    border: 1px solid var(--line);
+    border-radius: 0.4rem;
+    color: var(--fg);
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .reading {
+    display: contents;
+  }
+
+  .reading b {
+    justify-self: end;
     font-size: var(--text-title);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
   }
 
-  .weight dd {
-    display: flex;
-    align-items: baseline;
-    gap: 0.8rem;
+  .reading i {
+    font-size: var(--text-label);
+  }
+
+  .weight b {
     color: var(--weight);
   }
 
-  .tare {
-    align-self: center;
-    min-height: 2.6rem;
-    padding: 0 1rem;
-    font-size: var(--text-body);
-    font-weight: 600;
+  button.line:disabled .weight b {
+    color: var(--dim);
   }
 
-  .size {
-    text-transform: uppercase;
-  }
-
-  .of {
-    margin-left: 0.5rem;
-    font-size: var(--text-label);
-    font-weight: 400;
+  /* the mug's weight is a setting, not a reading */
+  .of b {
     color: var(--dim);
   }
 
@@ -327,6 +365,10 @@
 
   .set b {
     font-variant-numeric: tabular-nums;
+  }
+
+  .set small {
+    font-weight: 400;
   }
 
   .notice {

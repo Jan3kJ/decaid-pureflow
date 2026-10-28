@@ -30,6 +30,7 @@
   const stopField = $derived(fields.find((field) => field.key === 'volume')!);
   /** Hot water or flush: the shell's ring covers the rows, with stop in it (spec 3.14). */
   const water = $derived(shownRun(skin.waterRun, skin.canStop));
+  const pouring = $derived(skin.waterRun !== null && !skin.waterRun.ended);
 
   /** The value a slider is dragged to: shown while it moves, written once when it is let go. */
   let dragged: { id: string; value: number } | null = $state.raw(null);
@@ -100,9 +101,12 @@
   </div>
 
   <aside>
-    <div class="shot">
-      <small>last shot</small>
-      <b data-testid="hot-water-last-shot">{gramsOf(lastShot)}</b>
+    <!-- label, number, unit as on the steam page: 'last shot' and 'scale' share the number column (spec 3.18 item 4) -->
+    <div class="line">
+      <span class="key">last shot</span>
+      <span class="reading" data-testid="hot-water-last-shot">
+        {#if lastShot === null}<b>–</b> <i></i>{:else}<b>{gramsOf(lastShot, '')}</b> <i>g</i>{/if}
+      </span>
     </div>
 
     <!-- The ratio favourites of the settings: the last shot times the ratio is the stop; only with a weighed last shot. -->
@@ -125,12 +129,14 @@
       </div>
     {/if}
 
-    <div class="scale">
-      <small>scale</small>
-      <span data-testid="hot-water-scale">{gramsOf(skin.weight)}</span>
-      <!-- The one tare of the skin (Skin.tare, spec 3.7); without a scale it looks for the scale (spec 3.9). -->
-      <button class="tare" data-testid="hot-water-tare" onclick={() => skin.tare()}>tare</button>
-    </div>
+    <!-- The scale's row is the one tare of the skin (Skin.tare, spec 3.7), live for an empty cup and
+         off while water runs; without a scale it looks for the scale (spec 3.9). -->
+    <button class="line" data-testid="hot-water-tare" disabled={pouring} onclick={() => skin.tare()}>
+      <span class="key">scale</span>
+      <span class="reading" data-testid="hot-water-scale">
+        {#if skin.weight === null}<b>–</b> <i></i>{:else}<b>{gramsOf(skin.weight, '')}</b> <i>g</i>{/if}
+      </span>
+    </button>
 
     <p class="hint" data-testid="hot-water-hint">
       Start hot water at the machine. With a scale Decaid tares it and stops at the weight; without one the machine stops at as many
@@ -334,24 +340,47 @@
     font-size: var(--text-label);
   }
 
-  .shot,
-  .scale {
-    display: flex;
+  /* label, number, unit: the unit column has one width, so the numbers end on one edge */
+  .line {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto 1.6rem;
     align-items: baseline;
-    justify-content: space-between;
-    gap: 0.8rem;
+    column-gap: 0.4rem;
+    padding: 0 0.6rem 0 1rem;
+    border: 1px solid transparent;
+    text-align: left;
   }
 
-  .shot b,
-  .scale span {
+  /* the tare: the whole row a button, a finger's target */
+  button.line {
+    min-height: 3.5rem;
+    align-content: center;
+    border-color: var(--line);
+  }
+
+  .key {
+    color: var(--dim);
+    font-size: var(--text-label);
+  }
+
+  .reading {
+    display: contents;
+  }
+
+  .reading b {
+    justify-self: end;
     font-size: var(--text-title);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     color: var(--weight);
   }
 
-  .scale span {
-    margin-left: auto;
+  button.line:disabled .reading b {
+    color: var(--dim);
+  }
+
+  .reading i {
+    font-size: var(--text-label);
   }
 
   .ratios {
@@ -384,14 +413,6 @@
   .chip.on {
     border-color: var(--fg);
     background: var(--raised);
-  }
-
-  .tare {
-    align-self: center;
-    min-height: 2.6rem;
-    padding: 0 1rem;
-    font-size: var(--text-body);
-    font-weight: 600;
   }
 
   .hint {

@@ -2841,6 +2841,13 @@ those rows.
   tap looks for the scale again (3.9); 'set timer' is off and says 'needs the scale'.
 - DR25: the header's elapsed time shows only after steam has ended ('last steam 28 s'); while it
   runs the countdown 'steam left' is the one clock.
+*Built (Z34):* the unit column is a fixed 1.6 rem in each row, so the numbers end on one edge
+without a shared grid; the numbers are title size, the units label size, the scale's yellow and
+grey while the row is off. The mug's and the milk's numbers keep their text without '.0'. 'No
+scale' is any scale link but connected (also while it is still unknown at the start), as for the
+tare. On the hot water page the scale row stays after the ratio chips, under 'last shot'; without
+a scale it shows '–' and its tap looks for the scale, as before. While steam runs the header
+shows nothing beside the state line.
 
 **5. Home: the names first (DR5; Z35).** The profile and bean buttons have two lines: the name
 (name role, one line, cut at its end) and a caption under it (the profile's family or the part

@@ -68,9 +68,12 @@ test('the menu is in the top left corner of home, steam and hot water, the state
   const steam = await measure(page, 'steam', home.values);
   await expect(steam.header.getByTestId('page-title')).toHaveText('Steam');
 
-  // While steaming, 'steaming 12 s' is beside the state line, left of the title.
+  // After a steam, 'last steam 18 s' is beside the state line, left of the title (while it runs
+  // the page's 'steam left' is the one clock).
   gateway.steamFor(18);
-  await expect(page.getByTestId('steam-state')).toContainText('steaming');
+  await expect(page.getByTestId('steam-stop')).toBeVisible();
+  gateway.state = 'idle';
+  await expect(page.getByTestId('steam-state')).toContainText('last steam');
   const run = (await page.getByTestId('steam-state').boundingBox())!;
   const title = (await steam.header.getByTestId('page-title').boundingBox())!;
   const line = (await steam.header.getByTestId('status').boundingBox())!;

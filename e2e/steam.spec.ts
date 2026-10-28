@@ -231,7 +231,9 @@ test('steam started at the machine shows its graph of pressure, flow and tempera
   gateway.steamFor(18);
   await expect(page.getByTestId('status-title')).toHaveText('Steam');
   await expect(page.getByTestId('steam-stop')).toBeVisible();
-  await expect(page.getByTestId('steam-state')).toContainText('steaming');
+  // While steam runs 'steam left' is the one clock: no elapsed time in the header.
+  await expect(page.getByText('steam left')).toBeVisible();
+  await expect(page.getByTestId('steam-state')).toHaveCount(0);
   expect(Number(await page.getByTestId('shot-graph').getAttribute('data-points'))).toBeGreaterThanOrEqual(72);
   for (const line of ['pressure', 'flow', 'temperature']) {
     expect((await page.getByTestId(`shot-line-${line}`).getAttribute('d'))!.length).toBeGreaterThan(100);
@@ -412,7 +414,8 @@ test("while steam runs the timer counts down; after the steam the graph adds no 
 
   // 10 s of steam: 38 s are left, then fewer as the machine's frames go on.
   gateway.steamFor(10);
-  await expect(page.getByTestId('steam-state')).toContainText('steaming');
+  await expect(page.getByTestId('status-title')).toHaveText('Steam');
+  await expect(page.getByTestId('steam-state')).toHaveCount(0);
   const left = async () => parseInt((await page.getByTestId('steam-timer').textContent())!, 10);
   await expect.poll(left).toBeLessThanOrEqual(38);
   const first = await left();
@@ -503,21 +506,100 @@ test('a swipe to the left opens the steam page, from the right edge too (spec 3.
   expect(errors).toEqual([]);
 });
 
-test("the steam page's tare button tares the scale, and without one looks for it (spec 3.9)", async ({ page }) => {
+test("the steam page's scale row is the tare: one button over the row, off while steam runs; without a scale one line looks for it (spec 3.9, 3.18 item 4)", async ({
+  page,
+}) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
   await toPage(page, 'steam');
   gateway.putOnScale(300);
   await expect(page.getByTestId('steam-weight')).toHaveText('300.0 g');
-  await page.getByTestId('steam-tare').click();
+  const row = page.getByTestId('steam-tare');
+  // The whole row: label, number and unit inside one button of 3.5 rem, with no hint.
+  await expect(row).toHaveText(/^scale\s*300\.0\s*g$/);
+  expect((await row.boundingBox())!.height).toBeGreaterThanOrEqual(3.5 * 16 - 0.5);
+  await expect(page.getByText(/tap to tare|tared/)).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'tare', exact: true })).toHaveCount(0);
+  await row.click();
   await expect(page.getByTestId('steam-weight')).toHaveText('0.0 g');
   expect(gateway.calls('PUT', '/api/v1/scale/tare')).toHaveLength(1);
 
+  gateway.steamFor(6);
+  await expect(row).toBeDisabled();
+  gateway.state = 'idle';
+  await expect(page.getByTestId('steam-state')).toContainText('last steam');
+  await expect(row).toBeEnabled();
+
+  // Without a scale one line in place of the three rows; its tap looks for the scale.
   gateway.connectScale(false);
-  await expect(page.getByTestId('steam-weight')).toHaveText('–');
-  await page.getByTestId('steam-tare').click();
+  const none = page.getByTestId('steam-no-scale');
+  await expect(none).toHaveText('no scale: the chips set the timer');
+  await expect(page.getByTestId('steam-tare')).toHaveCount(0);
+  await expect(page.getByTestId('steam-milk')).toHaveCount(0);
+  await expect(page.getByTestId('steam-mug-weight')).toHaveCount(0);
+  await expect(page.getByTestId('steam-set-timer')).toBeDisabled();
+  await expect(page.getByTestId('steam-set-timer')).toHaveText(/^set timer\s*needs the scale$/);
+  await page.screenshot({ path: 'docs/product/steam-no-scale.png' });
+  await none.click();
   await expect.poll(() => gateway.calls('GET', '/api/v1/devices/scan').length).toBe(1);
   expect(gateway.calls('PUT', '/api/v1/scale/tare')).toHaveLength(1);
+  expect(errors).toEqual([]);
+});
+
+test('the scale, mug and milk numbers end on one right edge, their units in one column, the mug size a badge in its label (spec 3.18 item 4)', async ({
+  page,
+}) => {
+  const gateway = await mockGateway(page);
+  await page.goto('/');
+  await toPage(page, 'steam');
+  gateway.putOnScale(725.4);
+  await expect(page.getByTestId('steam-milk')).toHaveText('450.4 g');
+  const ids = ['steam-weight', 'steam-mug-weight', 'steam-milk'];
+  const box = async (id: string, part: string) => (await page.getByTestId(id).locator(part).boundingBox())!;
+  const numbers = await Promise.all(ids.map((id) => box(id, 'b')));
+  const units = await Promise.all(ids.map((id) => box(id, 'i')));
+  for (const number of numbers) expect(Math.abs(number.x + number.width - (numbers[0].x + numbers[0].width))).toBeLessThanOrEqual(1);
+  for (const unit of units) expect(Math.abs(unit.x - units[0].x)).toBeLessThanOrEqual(1);
+  // The same size for the three numbers; the mug's is grey, a setting and not a reading.
+  const looks = await Promise.all(
+    ids.map((id) =>
+      page
+        .getByTestId(id)
+        .locator('b')
+        .evaluate((element) => [getComputedStyle(element).fontSize, getComputedStyle(element).color]),
+    ),
+  );
+  expect(new Set(looks.map(([size]) => size)).size).toBe(1);
+  const dim = await page.evaluate(() => {
+    const probe = document.body.appendChild(document.createElement('span'));
+    probe.style.color = 'var(--dim)';
+    const colour = getComputedStyle(probe).color;
+    probe.remove();
+    return colour;
+  });
+  expect(looks[1][1]).toBe(dim);
+  // The size sits in the mug's label.
+  const badge = (await page.getByTestId('steam-mug').boundingBox())!;
+  expect(badge.x + badge.width).toBeLessThan(numbers[1].x);
+  await expect(page.getByTestId('steam-mug')).toHaveText('l');
+  await page.screenshot({ path: 'docs/product/steam-rows.png' });
+  expect(errors).toEqual([]);
+});
+
+test("the header's elapsed time shows only after steam has ended (spec 3.18 item 4)", async ({ page }) => {
+  const gateway = await mockGateway(page);
+  await page.goto('/');
+  await toPage(page, 'steam');
+  gateway.steamFor(12);
+  await expect(page.getByTestId('steam-stop')).toBeVisible();
+  await expect(page.getByText('steam left')).toBeVisible();
+  await page.waitForTimeout(500);
+  await expect(page.getByTestId('steam-state')).toHaveCount(0);
+  await expect(page.getByTestId('steam-elapsed')).toHaveCount(0);
+  gateway.state = 'idle';
+  await expect(page.getByTestId('steam-state')).toContainText('last steam');
+  await expect(page.getByTestId('steam-elapsed')).toHaveText(/^\d+ s$/);
+  await expect(page.getByText('steam timer')).toBeVisible();
   expect(errors).toEqual([]);
 });
 

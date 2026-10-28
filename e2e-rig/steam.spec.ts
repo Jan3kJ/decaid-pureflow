@@ -181,7 +181,10 @@ test('steam: the written timer is read back from the workflow and from the machi
     await expect
       .poll(async () => Number(await page.getByTestId('shot-graph').getAttribute('data-points')), { timeout: 15_000 })
       .toBeGreaterThan(5);
-    await expect(page.getByTestId('steam-state')).toContainText('steaming');
+    // While steam runs 'steam left' is the one clock (spec 3.18 item 4); the scale row is off.
+    await expect(page.getByText('steam left')).toBeVisible();
+    await expect(page.getByTestId('steam-state')).toHaveCount(0);
+    await expect(page.getByTestId('steam-tare')).toBeDisabled();
     await page.screenshot({ path: 'e2e-rig/.results/steam-rig.png' });
 
     // The skin's stop button ends it.

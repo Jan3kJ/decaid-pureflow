@@ -124,9 +124,18 @@ test('a ratio favourite with a last shot of 40 g sets 80 g for 1:2; the tare but
   await expect(page.getByTestId('hot-water-weight')).toContainText('100g');
   await expect(ratios.nth(0)).not.toHaveClass(/on/);
 
-  // The tare button: the one tare of the skin (R2).
+  // The scale's row is the tare, the one tare of the skin (R2): one button of 3.5 rem over the row,
+  // live while idle; 'last shot' and 'scale' end on one right edge, their units in one column.
   await expect(page.getByTestId('hot-water-scale')).toHaveText('212.4 g');
-  await expect(page.getByTestId('hot-water-tare')).toBeEnabled();
+  const row = page.getByTestId('hot-water-tare');
+  await expect(row).toBeEnabled();
+  await expect(row).toHaveText(/^scale\s*212\.4\s*g$/);
+  expect((await row.boundingBox())!.height).toBeGreaterThanOrEqual(3.5 * 16 - 0.5);
+  await expect(page.getByText(/tap to tare|tared/)).toHaveCount(0);
+  const part = async (id: string, part: string) => (await page.getByTestId(id).locator(part).boundingBox())!;
+  const [shot, scale] = [await part('hot-water-last-shot', 'b'), await part('hot-water-scale', 'b')];
+  expect(Math.abs(shot.x + shot.width - (scale.x + scale.width))).toBeLessThanOrEqual(1);
+  expect(Math.abs((await part('hot-water-last-shot', 'i')).x - (await part('hot-water-scale', 'i')).x)).toBeLessThanOrEqual(1);
   await page.getByTestId('hot-water-tare').click();
   await expect.poll(() => gateway.calls('PUT', '/api/v1/scale/tare').length).toBe(1);
   await expect(page.getByTestId('hot-water-scale')).toHaveText('0.0 g');
@@ -162,6 +171,8 @@ test('the favourites come from the settings; without a last shot or a scale noth
   await expect(page.getByTestId('hot-water-ratio')).toHaveText(['1:1.5 60 ml', '1:2.5 100 ml', '1:3 120 ml']);
   await page.getByTestId('hot-water-ratio').first().click();
   expect(lastWrite(gateway)?.volume).toBe(60);
+  await expect(page.getByTestId('hot-water-scale')).toHaveText('–');
+  await page.screenshot({ path: 'docs/product/hot-water-no-scale.png' });
   // Without a scale a tap tares nothing and looks for the scale (spec 3.9).
   const tares = gateway.calls('PUT', '/api/v1/scale/tare').length;
   const scans = gateway.calls('GET', '/api/v1/devices/scan').length;
@@ -298,6 +309,8 @@ test('while hot water or flush runs the ring covers the rows, and they come back
   await expect(page.getByTestId('water-stop')).toHaveCount(1);
   await expect(screen.getByTestId('hot-water-tare')).toBeVisible();
   expect(await covered('hot-water-tare')).toBe(false);
+  // The scale's row is off while water runs (spec 3.18 item 4).
+  await expect(screen.getByTestId('hot-water-tare')).toBeDisabled();
   expect(await overflow(page)).toEqual({ scrolls: false, outside: 0 });
 
   await page.getByTestId('water-stop').click();
