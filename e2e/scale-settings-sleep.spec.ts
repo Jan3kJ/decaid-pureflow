@@ -83,7 +83,7 @@ test('scale: there is no scale page and no menu entry; a tap on the weight tares
 
   // The scale goes away: the warning looks for it (spec 3.9), and a tap on it tares nothing.
   gateway.connectScale(false);
-  await expect(page.getByTestId('state-scale')).toHaveText('⚠ looking for it');
+  await expect(page.getByTestId('state-scale')).toHaveText('looking for it');
   await expect(page.getByTestId('tare')).toHaveCount(0);
   await page.getByTestId('state-scale').click();
   await page.waitForTimeout(300);

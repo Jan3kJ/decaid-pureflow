@@ -158,7 +158,7 @@ test('scale: the simulated scale, missing at the start or dropped, is connected 
     // A drop while the skin runs.
     const before = scans.length;
     await api('PUT', '/api/v1/devices/disconnect', { deviceId: 'MockScale' });
-    await expect(page.getByTestId('state-scale')).toHaveText('⚠ looking for it', { timeout: 10_000 });
+    await expect(page.getByTestId('state-scale')).toHaveText('looking for it', { timeout: 10_000 });
     await expect.poll(scaleState, { timeout: 60_000, intervals: [1_000] }).toBe('connected');
     await expect(page.getByTestId('state-scale')).toHaveText(/ g$/, { timeout: 15_000 });
     expect(scans.length).toBeGreaterThan(before);

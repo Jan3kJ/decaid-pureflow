@@ -9,7 +9,8 @@
   // The question before a write or a procedure that can do harm (research.md 20.9): what it
   // does, Cancel and the action. The settings page, its device lists and maintenance use it;
   // with a `value` it holds a text field (the picker's rename), Enter is the action, and
-  // `error` says under it why the action was refused.
+  // `error` says under it why the action was refused. A `danger` action (a delete) is the
+  // warning outline, not the filled button (spec 3.18 item 2).
 
   interface Props {
     title: string;
@@ -21,11 +22,23 @@
     /** the text field's name for a screen reader */
     label?: string;
     error?: string | null;
+    /** the action deletes or discards */
+    danger?: boolean;
     onok: () => void;
     oncancel: () => void;
   }
 
-  let { title, text = '', ok = 'set', value = $bindable(), label = title, error = null, onok, oncancel }: Props = $props();
+  let {
+    title,
+    text = '',
+    ok = 'set',
+    value = $bindable(),
+    label = title,
+    error = null,
+    danger = false,
+    onok,
+    oncancel,
+  }: Props = $props();
 
   /** The field takes the focus at once, so the tablet's keyboard opens on it, the cursor at its end. */
   function focus(node: HTMLInputElement) {
@@ -56,7 +69,7 @@
     {/if}
     <div class="actions">
       <button class="action" data-testid="settings-confirm-cancel" onclick={oncancel}>cancel</button>
-      <button class="action primary" data-testid="settings-confirm-ok" onclick={onok}>{ok}</button>
+      <button class="action" class:primary={!danger} class:danger data-testid="settings-confirm-ok" onclick={onok}>{ok}</button>
     </div>
   </div>
 </div>

@@ -125,7 +125,7 @@
     </div>
 
     <button
-      class="set"
+      class="set primary"
       data-testid="steam-set-timer"
       disabled={calculated === 0}
       onclick={() => calculated > 0 && skin.setSteamTimer(calculated)}
@@ -327,12 +327,6 @@
 
   .set b {
     font-variant-numeric: tabular-nums;
-  }
-
-  .set:disabled {
-    background: var(--panel);
-    border-color: var(--line);
-    color: var(--dim);
   }
 
   .notice {

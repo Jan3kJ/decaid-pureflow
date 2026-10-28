@@ -250,7 +250,7 @@
   <section class="list" data-main-frame>
     {#if error}
       <div class="offer error" data-testid="profiles-error">
-        <span>{error}</span>
+        <span class="warning">{error}</span>
         <button data-testid="profiles-retry" onclick={read}>try again</button>
       </div>
     {/if}
@@ -284,7 +284,7 @@
           onlostpointercapture={(event) => event.target === event.currentTarget && (drag = null)}
         >
           {#if (open && openAt === -1) || (offset !== null && offset < 0)}
-            <button class="delete" data-testid="profile-delete" disabled={busy} onclick={() => (asking = entry)}>delete</button>
+            <button class="delete danger" data-testid="profile-delete" disabled={busy} onclick={() => (asking = entry)}>delete</button>
           {:else if (open && openAt === 1) || (offset !== null && offset > 0)}
             <button class="rename" data-testid="profile-rename" disabled={busy} onclick={() => askRename(entry)}>rename</button>
           {/if}
@@ -302,7 +302,7 @@
             onclick={() => tap(entry)}
           >
             <span class="title">{entry.profile.title}</span>
-            {#if refusedId === entry.id}<span class="refusal" data-testid="profile-refusal">{LOADED_REFUSAL}</span>
+            {#if refusedId === entry.id}<span class="refusal warning" data-testid="profile-refusal">{LOADED_REFUSAL}</span>
             {:else}
               {#if isLoaded(entry)}<span class="tag loaded">loaded</span>{/if}
               {#if entry.isDefault}<span class="tag" data-testid="default-tag">A-Flow 3.0 default</span>
@@ -366,6 +366,7 @@
     title={`Delete ${entry.profile.title}?`}
     text="The picker no longer lists it. Decaid keeps the record, marked deleted, with its versions."
     ok="delete"
+    danger
     onok={() => remove(entry)}
     oncancel={() => (asking = null)}
   />
@@ -420,10 +421,6 @@
     border-radius: 0.9rem;
     background: var(--raised);
     color: var(--dim);
-  }
-
-  .offer.error span {
-    color: var(--warn);
   }
 
   .offer button {
@@ -486,9 +483,6 @@
     width: calc(var(--delete-width) - 0.4rem);
     font-size: var(--text-body);
     font-weight: 600;
-    background: var(--warn);
-    border-color: var(--warn);
-    color: var(--bg);
   }
 
   .rename {
@@ -534,7 +528,6 @@
 
   .refusal {
     flex: none;
-    color: var(--warn);
     font-size: var(--text-label);
   }
 
@@ -569,7 +562,7 @@
   }
 
   .tag.loaded {
-    color: var(--pressure);
+    color: var(--accent);
     opacity: 1;
   }
 

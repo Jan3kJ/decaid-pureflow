@@ -268,7 +268,9 @@
        while it is empty, so the graph does not move. -->
   <div class="status" role="status" data-testid="editor-status">
     {#if notice}
-      <p class="notice {notice.tone}" data-testid="editor-notice" title={notice.text}>{notice.text}</p>
+      <p class="notice {notice.tone}" class:warning={notice.tone === 'warn'} data-testid="editor-notice" title={notice.text}>
+        {notice.text}
+      </p>
     {/if}
   </div>
 

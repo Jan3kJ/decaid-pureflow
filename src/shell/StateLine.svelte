@@ -22,7 +22,7 @@
 <!-- The machine's state in one line, on home, the hot water and the steam page (founder, 2026-10-13). -->
 <section class="state {status.tone}" class:heater-off={status.title === HEATER_OFF} data-testid="status" data-link={skin.link}>
   <span class="dot"></span>
-  <strong data-testid="status-title">{status.title}</strong>
+  <strong class:warning={status.tone === 'warn' || status.title === HEATER_OFF} data-testid="status-title">{status.title}</strong>
   {#if machine}
     {#each skin.stateValues as item (item.key)}
       {#if item.key === 'scale' && skin.scaleLink === 'connected'}
@@ -35,12 +35,12 @@
         <!-- Without a scale the warning is a button: a tap looks for the scale again (spec 3.9). -->
         <button class="value scale warn" data-testid="scale-retry" aria-label="look for the scale" onclick={() => skin.findScale()}>
           <small>{item.label}</small>
-          <b data-testid="state-scale">⚠ {item.value}</b>
+          <b class="warning" data-testid="state-scale">{item.value}</b>
         </button>
       {:else}
         <span class="value {item.key}" class:warn={item.warn}>
           <small>{item.label}</small>
-          <b data-testid="state-{item.key}">{item.value}</b>
+          <b class:warning={item.warn} data-testid="state-{item.key}">{item.value}</b>
         </span>
       {/if}
     {/each}
@@ -98,9 +98,7 @@
     font-weight: 600;
   }
 
-  .state.warn strong,
-  .state.warn .step,
-  .state.heater-off strong {
+  .state.warn .step {
     color: var(--warn);
   }
 
@@ -115,7 +113,7 @@
     font-variant-numeric: tabular-nums;
   }
 
-  .scale b {
+  .scale b:not(.warning) {
     color: var(--weight);
   }
 
@@ -134,10 +132,6 @@
 
   button.value:active {
     background: var(--raised);
-  }
-
-  .value.warn b {
-    color: var(--warn);
   }
 
   /* The scale's warning is a hint, not a value: at a label's size it fits beside the profile. */

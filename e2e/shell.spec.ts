@@ -86,7 +86,7 @@ test('the state line warns in place of the weight when the scale is not connecte
   await expect(page.getByTestId('state-scale')).toHaveText('0.0 g');
 
   gateway.connectScale(false);
-  await expect(page.getByTestId('state-scale')).toHaveText(/^⚠ (looking for it|not connected, tap to retry)$/);
+  await expect(page.getByTestId('state-scale')).toHaveText(/^(looking for it|not connected, tap to retry)$/);
   gateway.connectScale(true);
   gateway.putOnScale(12.3);
   await expect(page.getByTestId('state-scale')).toHaveText('12.3 g');

@@ -12,7 +12,8 @@
   --temperature: #ff6b6b;
   /* Weight is the fourth line of a measured graph. */
   --weight: #e0b057;
-  --warn: #ffb454;
+  /* Warning: clearly orange, apart from the weight's yellow (spec 3.18 item 2). */
+  --warn: #ff8a3d;
   /* The way back to home, light blue (founder, 2026-10-14): lighter and paler than --flow
      (HSL 200° 72% 78% against 211° 100% 65%, a CIELAB distance of 40), so no curve's colour. */
   --accent: #9fd4f0;
@@ -59,6 +60,34 @@ body {
 [data-lifted] {
   max-height: var(--keyboard-space, none);
   translate: 0 calc(-1 * var(--keyboard-lift, 0px));
+}
+
+/*
+ * Warning, danger, off (spec 3.18 item 2), one rule each for every page. `:root` puts them above
+ * a component's own rule for its buttons.
+ */
+/* Text that warns: the warning colour and the sign before it. */
+:root .warning {
+  color: var(--warn);
+}
+
+:root .warning::before {
+  content: '⚠\00a0';
+}
+
+/* An action that deletes or discards: an outline in the warning colour, never filled. */
+:root button.danger {
+  color: var(--warn);
+  background: transparent;
+  border: 1px solid var(--warn);
+}
+
+/* A main button that is off: the panel's background and grey words, not a pressed look. */
+:root button.primary:disabled {
+  opacity: 1;
+  color: var(--dim);
+  background: var(--panel);
+  border-color: var(--line);
 }
 
 /* Text no rule sizes is running text (spec 3.14's roles). */

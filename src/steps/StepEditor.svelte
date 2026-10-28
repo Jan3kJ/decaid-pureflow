@@ -276,7 +276,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   </header>
 
   {#if notice}
-    <p class="notice {notice.tone}" data-testid="editor-notice">{notice.text}</p>
+    <p class="notice {notice.tone}" class:warning={notice.tone === 'warn'} data-testid="editor-notice">{notice.text}</p>
   {/if}
 
   {#if tab === 'settings'}
@@ -355,7 +355,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
       <p id="delete-text">Delete step {index + 1}?</p>
       <p class="hint">“{profile.steps[index].name}” and its values go; saving makes it final.</p>
       <div class="actions">
-        <button class="discard" data-testid="delete-confirm" onclick={() => remove(index)}>delete</button>
+        <button class="danger" data-testid="delete-confirm" onclick={() => remove(index)}>delete</button>
         <button data-testid="delete-cancel" onclick={() => (deleting = null)}>cancel</button>
       </div>
     </div>
@@ -526,16 +526,14 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     gap: 0.8rem;
   }
 
+  .actions button:not(.danger) {
+    background: var(--panel);
+  }
+
   .actions button {
     flex: 1;
     min-height: 3.4rem;
     border-radius: 0.8rem;
     font-size: var(--text-body);
-    background: var(--panel);
-  }
-
-  .actions .discard {
-    color: var(--warn);
-    border-color: var(--warn);
   }
 </style>

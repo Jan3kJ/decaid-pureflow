@@ -2801,6 +2801,17 @@ corner menu. `e2e/button-words.spec.ts` walks the mock's main screens and every 
 - DR10: every disabled main button looks as the steam page's 'set timer' does (panel background,
   grey text): the number pad's 'set' and the bean and grinder forms' 'save'.
 - DR15: `.tag.loaded` in the accent colour (the light blue), not pressure green.
+*Built (Z30):* three shared rules in `src/app.css`: `.warning` (the warning colour and a '⚠' with a
+no-break space, drawn by CSS, so the words of a test stay as they are), `button.danger` (outline,
+no fill) and `button.primary:disabled` (the off look). The sign is on the state line's 'Off' and
+warning states and values ('looking for it', 'not connected, tap to retry'), 'delete step', the
+editors' warning notices, the picker's error and its 'loaded' refusal; the settings pages' red
+errors keep theirs, without the sign. Danger: the picker's swiped 'delete' (filled before) and its
+dialog's 'delete' (`Confirm` `danger`), 'discard and load', 'delete step' and the step editor's
+dialog 'delete'. The off look is on every `primary` button, also the settings' 'save' and 'send'
+and the bean pick's 'use for the next shot'; the steam page's 'set timer' and the number pad's
+'set' are `primary` now. On a selected picker row the 'loaded' tag keeps the row's dark text.
+`e2e/warn-danger.spec.ts`.
 
 **3. The scale's weight shows no jitter around zero (DR2; Z31).** One function writes every weight
 of the scale, `gramsOf()` in `src/display.ts`, in place of the `toFixed(1)` in `machine.ts` (the

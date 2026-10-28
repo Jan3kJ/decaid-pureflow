@@ -29,12 +29,12 @@ test('a dropped scale is scanned for 3 times, 5 s apart; then a tap on the warni
 
   const dropped = Date.now();
   gateway.connectScale(false);
-  await expect(page.getByTestId('state-scale')).toHaveText('⚠ looking for it');
+  await expect(page.getByTestId('state-scale')).toHaveText('looking for it');
   await expect.poll(() => gateway.calls('GET', SCAN).length, { timeout: 8_000 }).toBe(1);
   expect(Date.now() - dropped).toBeGreaterThan(4_000);
   expect(scanUrls[0]).toMatch(/\/api\/v1\/devices\/scan\?connect=true&quick=true$/);
   await expect.poll(() => gateway.calls('GET', SCAN).length, { timeout: 12_000 }).toBe(3);
-  await expect(page.getByTestId('state-scale')).toHaveText('⚠ not connected, tap to retry', { timeout: 8_000 });
+  await expect(page.getByTestId('state-scale')).toHaveText('not connected, tap to retry', { timeout: 8_000 });
   await page.waitForTimeout(5_500);
   expect(gateway.calls('GET', SCAN)).toHaveLength(3);
   await page.screenshot({ path: 'e2e/.results/scale-retry-gave-up.png' });
@@ -55,7 +55,7 @@ test('a scale missing at the start is scanned for without a touch and connects',
   gateway.connectScale(false);
   gateway.scanConnectsScale = true;
   await page.goto('/');
-  await expect(page.getByTestId('state-scale')).toHaveText('⚠ looking for it');
+  await expect(page.getByTestId('state-scale')).toHaveText('looking for it');
   await expect(page.getByTestId('state-scale')).toHaveText(/ g$/, { timeout: 10_000 });
   expect(gateway.calls('GET', SCAN)).toHaveLength(1);
   expect(errors).toEqual([]);
@@ -66,7 +66,7 @@ test('without a preferred scale no scan starts by itself; the hot water tare sca
   gateway.decaidSettings.preferredScaleId = null;
   gateway.connectScale(false);
   await page.goto('/');
-  await expect(page.getByTestId('state-scale')).toHaveText('⚠ not connected, tap to retry', { timeout: 10_000 });
+  await expect(page.getByTestId('state-scale')).toHaveText('not connected, tap to retry', { timeout: 10_000 });
   expect(gateway.calls('GET', SCAN)).toHaveLength(0);
 
   await toPage(page, 'hot-water');

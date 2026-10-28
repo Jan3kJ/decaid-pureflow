@@ -88,7 +88,7 @@
       <button data-testid="numpad-key-0" onclick={() => key('0')}>0</button>
       <button aria-label="delete the last digit" data-testid="numpad-back" onclick={() => (typed = typed.slice(0, -1))}>⌫</button>
       <button class="clear" data-testid="numpad-clear" onclick={() => (typed = '')}>clear</button>
-      <button class="confirm" data-testid="numpad-confirm" disabled={!inRange} onclick={confirm}>set</button>
+      <button class="confirm primary" data-testid="numpad-confirm" disabled={!inRange} onclick={confirm}>set</button>
     </div>
   </div>
 </div>

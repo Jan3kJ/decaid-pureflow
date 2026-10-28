@@ -174,7 +174,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     {/if}
 
     <footer>
-      <button class="act delete" data-testid="step-delete-{index}" disabled={disabled || count === 1} onclick={ondelete}
+      <button class="act danger warning" data-testid="step-delete-{index}" disabled={disabled || count === 1} onclick={ondelete}
         >delete step</button
       >
       <span class="moves">
@@ -376,10 +376,6 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   .moves {
     display: flex;
     gap: 0.6rem;
-  }
-
-  .act.delete {
-    color: var(--warn);
   }
 
   button:disabled {
