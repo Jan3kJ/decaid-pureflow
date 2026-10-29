@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import type { MachineSnapshot, PaginatedShots, ProfileRecord, ShotRecord } from '../src/api';
 import type { RigWorkflow } from './gateway';
 import { IDLE } from './idle';
+import { titleLines } from '../src/shell/profiles';
 
 // Acceptance item 5 (spec section 5) against the rig: simulated shots with another profile
 // or another bean give one entry each, a changed grinder setting does not; tapping an entry
@@ -110,7 +111,7 @@ test('the history: shots with another profile or bean are entries, a tap restore
     });
     await page.goto('/');
     await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 15_000 });
-    await expect(page.getByTestId('profile-name')).toHaveText(workflowBefore.profile.title);
+    await expect(page.getByTestId('profile-name')).toHaveText(titleLines(workflowBefore.profile.title).name);
 
     // The handle opens the overlay. The rig's older shots have their own entries.
     await page.getByTestId('history-handle').tap();
@@ -143,7 +144,7 @@ test('the history: shots with another profile or bean are entries, a tap restore
     await mine.nth(1).tap();
     await expect(page.getByTestId('history')).toHaveCount(0);
     await expect(page.getByTestId('history-graph')).toBeVisible();
-    await expect(page.getByTestId('profile-name')).toHaveText(PROFILE_A);
+    await expect(page.getByTestId('profile-name')).toHaveText(titleLines(PROFILE_A).name);
     await expect(page.getByTestId('recalled-bean')).toHaveText(`${ROASTER} · ${BEAN_A}`);
     await expect(page.getByTestId('recalled-grinder')).toHaveText('grinder 4.8');
     let workflow = await api<RigWorkflow>('GET', '/api/v1/workflow');
@@ -166,7 +167,7 @@ test('the history: shots with another profile or bean are entries, a tap restore
     await expect(page.getByTestId('history')).toBeVisible();
     await mine.first().tap();
     await expect(page.getByTestId('history')).toHaveCount(0);
-    await expect(page.getByTestId('profile-name')).toHaveText(PROFILE_B);
+    await expect(page.getByTestId('profile-name')).toHaveText(titleLines(PROFILE_B).name);
     await expect(graph.getByTestId('shot-graph')).toHaveAttribute('data-points', String(withWater(shotC)));
     workflow = await api<RigWorkflow>('GET', '/api/v1/workflow');
     expect(workflow.profile).toEqual(shotC.workflow!.profile);

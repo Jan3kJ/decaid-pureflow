@@ -7,6 +7,7 @@ import { buildProfile } from '../src/editor/save';
 import { paramsMetadata, splitNotes, workflowProfile } from '../src/editor/storage';
 import light from '../src/aflow/defaults/default-light.json' with { type: 'json' };
 import { back, selectPhase } from '../e2e/touch';
+import { titleLines } from '../src/shell/profiles';
 
 // Acceptance item 3 (spec section 5) against the rig: in simple and in detail mode, changing a
 // value redraws the curve, and the profile the gateway holds after the swipe back and after
@@ -101,7 +102,7 @@ async function expectWorkflow(about: { title: string; author: string }): Promise
 /** After the swipe back with changes: home, and the workflow read back. */
 async function expectLoaded(page: Page, about: { title: string; author: string }): Promise<AFlowParams> {
   await expect(page.getByTestId('screen-home')).toBeVisible();
-  await expect(page.getByTestId('profile-name')).toHaveText(about.title);
+  await expect(page.getByTestId('profile-name')).toHaveText(titleLines(about.title).name);
   return expectWorkflow(about);
 }
 
@@ -232,7 +233,7 @@ test('detail mode: typed values are loaded; a saved profile re-opens with them a
   expect((await api<RigWorkflow>('GET', '/api/v1/workflow')).context).toMatchObject({ targetYield: 48, targetDoseWeight: 18.5 });
   // Back has nothing more to load.
   await back(page);
-  await expect(page.getByTestId('profile-name')).toHaveText(about.title);
+  await expect(page.getByTestId('profile-name')).toHaveText(titleLines(about.title).name);
   expect(await expectWorkflow(about)).toEqual(wanted);
 
   // The saved profile re-opens in the editor with the same parameters: as the current profile

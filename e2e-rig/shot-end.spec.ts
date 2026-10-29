@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import type { MachineSnapshot, PaginatedShots, ShotRecord, ProfileRecord } from '../src/api';
 import type { RigWorkflow } from './gateway';
 import { IDLE } from './idle';
+import { titleLines } from '../src/shell/profiles';
 
 // T1 (spec 3.8, acceptance 27) against the rig: a simulated shot's live graph ends where the
 // shot ends and is as long as Decaid's record of it, within one second; its scale stays at 10
@@ -55,7 +56,7 @@ test('a simulated shot: the live graph ends with the shot, as long as its record
     await api('PUT', '/api/v1/workflow', { profile: record!.profile, context: { targetDoseWeight: 18, targetYield: TARGET } });
     await page.goto('/');
     await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 15_000 });
-    await expect(page.getByTestId('profile-name')).toHaveText(PROFILE);
+    await expect(page.getByTestId('profile-name')).toHaveText(titleLines(PROFILE).name);
     if (previous)
       await page
         .waitForResponse((response) => response.url().includes(`/api/v1/shots/${previous.id}`), { timeout: 15_000 })

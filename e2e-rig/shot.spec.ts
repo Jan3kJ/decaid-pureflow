@@ -3,6 +3,7 @@ import type { MachineSnapshot, PaginatedShots, ShotRecord, ProfileRecord } from 
 import { isWrite, type RigWorkflow } from './gateway';
 import { IDLE } from './idle';
 import { phaseTable, recordSamples } from '../src/shell/phases';
+import { titleLines } from '../src/shell/profiles';
 
 // Acceptance item 2 (spec section 5) against the rig: the skin loads, shows the machine
 // state, loads an A-Flow profile, runs a simulated shot with a live graph and stops at the
@@ -63,7 +64,7 @@ test('a simulated shot: the state, an A-Flow profile, a live graph, the stop at 
     await page.goto('/');
     await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 15_000 });
     await expect(page.getByTestId('status')).toHaveAttribute('data-link', 'machine');
-    await expect(page.getByTestId('profile-name')).toHaveText(workflowBefore.profile.title);
+    await expect(page.getByTestId('profile-name')).toHaveText(titleLines(workflowBefore.profile.title).name);
     // The state line: every value read from the gateway's streams, the tank from its own.
     await expect(page.getByTestId('state-group')).toHaveText(/^\d+\.\d °C$/);
     await expect(page.getByTestId('state-steam')).toHaveText(/^\d+ °C$/);
@@ -81,7 +82,7 @@ test('a simulated shot: the state, an A-Flow profile, a live graph, the stop at 
     await page.getByTestId('load-profile').click();
 
     await expect(page.getByTestId('screen-home')).toBeVisible();
-    await expect(page.getByTestId('profile-name')).toHaveText(PROFILE);
+    await expect(page.getByTestId('profile-name')).toHaveText(titleLines(PROFILE).name);
     // Dose and stop weight are not on home (founder, 2026-10-13): the workflow holds them.
     const workflow = await api<RigWorkflow>('GET', '/api/v1/workflow');
     expect(workflow.profile.title).toBe(PROFILE);
@@ -130,7 +131,7 @@ test('a simulated shot: the state, an A-Flow profile, a live graph, the stop at 
     await expect(page.getByTestId('shot-plot')).toHaveCount(0);
     await expect(page.getByTestId('last-shot')).toBeVisible();
     await expect(page.getByTestId('stop')).toHaveCount(0);
-    await expect(page.getByTestId('shot-column').getByTestId('profile-name')).toHaveText(PROFILE);
+    await expect(page.getByTestId('shot-column').getByTestId('profile-name')).toHaveText(titleLines(PROFILE).name);
     await expect(page.getByTestId('shot-column').getByTestId('open-pick')).toBeVisible();
     await expect(page.getByTestId('shot-timer-label')).toHaveText('time, finished');
     const grams = parseFloat((await page.getByTestId('shot-weight').textContent())!);

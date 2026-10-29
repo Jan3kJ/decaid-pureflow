@@ -159,7 +159,8 @@ test('beans and grinders: added, edited, archived and restored on the screen; th
     await page.getByTestId('pick-setting-up').click();
     await expect(page.getByTestId('pick-setting')).toHaveText('5.5');
     await page.getByTestId('pick-use').click();
-    await expect(page.getByTestId('next-bean')).toHaveText(`${ROASTER} · ${NAME}`);
+    await expect(page.getByTestId('next-bean')).toHaveText(NAME);
+    await expect(page.getByTestId('next-bean-caption')).toHaveText(ROASTER);
     const picked = {
       coffeeName: NAME,
       coffeeRoaster: ROASTER,
