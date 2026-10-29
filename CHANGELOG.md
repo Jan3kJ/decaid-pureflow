@@ -4,6 +4,31 @@ What changed in each version of pureflow, newest first. From 0.7.0 on a section 
 the release script (`npm run release`) from the commits' `Changelog:` lines; the sections up to
 0.6.1 summarise the hand-over builds that came before it.
 
+## 0.8.0 - 2026-10-29
+
+### Changed
+
+- Every button says what it does in lower case, as 'save', 'cancel', 'discard and load' and 'use for the next shot'. (Z29)
+- Warnings are orange with a '⚠', deleting is an orange outline, and a button that is off looks off. (Z30)
+- On the steam and hot water pages the scale's row is the tare button, the numbers line up, and without a scale one line says the chips set the timer. (Z34)
+- The profile picker opens with the loaded profile selected and shown, and the description's lower border lights up while there is more text below. (Z32)
+- A selected chip, mode or tab is always the white fill, and the row whose detail is shown beside its list is always the white outline. (Z33)
+- Home's profile and bean buttons show the name first, with the profile's family or the bean's roaster in a small line under it. (Z35)
+- Every button is at least 3 rem on its short side, so the page dots, the step card's - and +, the graph's 'infuse to' and 'stop at' chips and the settings' sub-entries are easier to hit. (Z36)
+- The settings' adjust fields read '−8 s', '−4 s', '+5 s' as on the steam page, 'Settings' and 'Beans and grinders' are headed like the other pages, and the corner menu's 'Steam heater' says 'on' or 'off'. (Z37)
+- The grinder's step is a value chip with - and + on its own row, no longer beside 'numbers' and 'named positions'. (Z38)
+- The A-Flow editor's detail view shows the fill and flow time under each phase's name. (Z39)
+- The history's three filter chips, 'all', bean and grinder, are one width, the chosen one filled white. (Z40)
+
+### Fixed
+
+- Two browser tests that failed now and then on a busy machine pass every time, and the test run's pictures no longer stop a release. (Z26)
+- The profile picker's estimate caption is never cut, and a forgotten device found again stays in the list. (Z44)
+- The scale's weight no longer flickers between '-0.0' and '0.0 g' around zero. (Z31)
+- In the A-Flow editor a dragged pressure, flow or temperature line follows the finger until it lifts; the page no longer starts to move. (Z45)
+
+Checks: npm ci, npm run verify, npm run e2e and the rig suite passed.
+
 ## 0.7.0 - 2026-10-26
 
 ### Added
