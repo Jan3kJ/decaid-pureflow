@@ -4,7 +4,7 @@
   import type { AFlowParams } from '../aflow';
   import { PHASE_LABEL, type Curve, type EditField, type PhaseId, type Projection } from './curve';
   import { formatValue } from './fields';
-  import { durationFields, type PlotBox } from './plot';
+  import { durationFields, phaseCaption, type PlotBox } from './plot';
 
   // What the editor's graph draws under its lines: the phases' columns with their names and
   // durations, the grid and its ticks, the phase borders.
@@ -33,6 +33,7 @@
   {@const x0 = projection.x(phase.x0)}
   {@const x1 = projection.x(phase.x1)}
   {@const duration = durationOf[phase.id]}
+  {@const caption = phaseCaption(params, phase.id)}
   <rect
     class="column"
     class:selected={mode === 'detail' && phase.id === selected}
@@ -58,6 +59,9 @@
     >
       {phase.id === 'secondFill' ? 'pause ' : ''}{formatValue(duration, params[duration])}
     </text>
+  {/if}
+  {#if mode === 'detail' && x1 > x0 && caption}
+    <text class="duration" data-testid="caption-{phase.id}" x={(x0 + x1) / 2} y={box.bottom + 2.65 * rem}>{caption}</text>
   {/if}
 {/each}
 

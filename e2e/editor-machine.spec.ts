@@ -413,3 +413,31 @@ test('the name in the top bar opens the picker: changes are loaded first, a choi
   await expect(page.getByTestId('notice')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
+
+test('detail mode: fill and flow show their time under their names, and follow the panel', async ({ page }) => {
+  (await mockGateway(page)).withDefaults('light');
+  await openEditor(page);
+  await expect(page.getByTestId('caption-fill')).toHaveCount(0);
+  await expect(page.getByTestId('caption-flow')).toHaveCount(0);
+
+  await page.getByTestId('mode-detail').click();
+  await expect(page.getByTestId('caption-fill')).toHaveText(`${light.fillTime} s`);
+  await expect(page.getByTestId('caption-flow')).toHaveText(`${light.pourTime} s`);
+
+  await selectPhase(page, 'fill');
+  await type(page, 'fillTime', '12');
+  await expect(page.getByTestId('caption-fill')).toHaveText('12 s');
+  await selectPhase(page, 'flow');
+  await type(page, 'pourTime', '40');
+  await expect(page.getByTestId('caption-flow')).toHaveText('40 s');
+
+  // A phase that is off has no caption; the others keep theirs.
+  await selectPhase(page, 'infuse');
+  await type(page, 'infuseTime', '0');
+  await expect(page.getByTestId('caption-infuse')).toHaveCount(0);
+  await expect(page.getByTestId('caption-fill')).toHaveText('12 s');
+
+  await page.getByTestId('mode-simple').click();
+  await expect(page.getByTestId('caption-fill')).toHaveCount(0);
+  await expect(page.getByTestId('caption-flow')).toHaveCount(0);
+});

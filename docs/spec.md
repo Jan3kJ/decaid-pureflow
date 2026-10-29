@@ -2927,6 +2927,7 @@ phase may leave by pressure, by weight or by time, and the caption would claim o
 the step's own time (`fillTime`, `pourTime`), in the style of the other durations, under the phase
 name, read only (the detail panel changes it); it is left out where the column is too narrow and for
 a phase that is off. **DR17 is not done** (above).
+*Built (Z39):* the caption is the same text as the number pad shows (`15 s`), set at the place of the other durations under the phase name, in the detail view only; a column with no width has none. Fill and flow cannot be off, so the off test only matters for the other phases, which show their own duration instead (`e2e/editor-machine.spec.ts`).
 
 **12. History (DR22; Z40).** The three filter chips equal, in the selected style of item 7. A third
 line '27.4 s · 33.8 g' (the weight in yellow) **only if the list's summary has the time and the

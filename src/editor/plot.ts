@@ -1,7 +1,17 @@
 // Where the editor's graph lands on the screen: the plot's box, the scales and the drawn
 // paths, in pixels. Pure: sizes and the curve in, numbers and strings out.
-import type { MachineLimits, NumberField } from '../aflow';
-import { GRAPH_WIDTH, type Curve, type LineId, type PhaseId, type Point, type Projection, type TemperatureAxis } from './curve';
+import type { AFlowParams, MachineLimits, NumberField } from '../aflow';
+import { formatValue } from './fields';
+import {
+  GRAPH_WIDTH,
+  phaseOff,
+  type Curve,
+  type LineId,
+  type PhaseId,
+  type Point,
+  type Projection,
+  type TemperatureAxis,
+} from './curve';
 
 /**
  * The plot in pixels: a band for the temperature on top, a gap that holds the weight chips,
@@ -94,6 +104,19 @@ export function flowPath(stretches: readonly (readonly Point[])[], projection: P
 /** The duration each border changes, by the phase on its left. */
 export function durationFields(curve: Pick<Curve, 'borders'>): Partial<Record<PhaseId, NumberField>> {
   return Object.fromEntries(curve.borders.map((b) => [b.phase, b.field]));
+}
+
+/** The time field of each phase whose time is no border of the graph (a fill or the flow ends on more than time). */
+const CAPTION_FIELD: Partial<Record<PhaseId, NumberField>> = { fill: 'fillTime', flow: 'pourTime' };
+
+/**
+ * The caption under the name of the fill and the flow phase in the detail view: the step's own
+ * time, e.g. '15 s'. None for any other phase and for a phase that is off.
+ */
+export function phaseCaption(params: AFlowParams, phase: PhaseId): string | undefined {
+  const field = CAPTION_FIELD[phase];
+  if (field === undefined || phaseOff(params, phase)) return undefined;
+  return formatValue(field, params[field]);
 }
 
 /** The phases that are off, by where they collapsed: two may collapse at one place. */

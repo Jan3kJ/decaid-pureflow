@@ -7,6 +7,7 @@ import {
   laneLefts,
   mainTicks,
   offGroups,
+  phaseCaption,
   plotBox,
   plotProjection,
   polylinePoints,
@@ -170,5 +171,24 @@ describe("the editor graph's plot", () => {
     expect(popupAt(500, 300, 1000, rem)).toEqual({ left: 500, top: 300 - 4.2 * rem });
     expect(popupAt(0, 0, 1000, rem)).toEqual({ left: 7 * rem, top: 0.2 * rem });
     expect(popupAt(1000, 300, 1000, rem).left).toBe(1000 - 7 * rem);
+  });
+});
+
+describe('phaseCaption', () => {
+  const params = DEFAULT_PROFILES[0].params;
+
+  it('is the step own time for the fill and the flow phase', () => {
+    expect(phaseCaption({ ...params, fillTime: 15, pourTime: 60 }, 'fill')).toBe('15 s');
+    expect(phaseCaption({ ...params, fillTime: 15, pourTime: 45 }, 'flow')).toBe('45 s');
+  });
+
+  it('shows 0 s as it is', () => {
+    expect(phaseCaption({ ...params, fillTime: 0 }, 'fill')).toBe('0 s');
+  });
+
+  it('is none for a phase that is off and for phases with their own duration', () => {
+    expect(phaseCaption({ ...params, infuseTime: 0 }, 'infuse')).toBeUndefined();
+    expect(phaseCaption({ ...params, rampTime: 0 }, 'pressurize')).toBeUndefined();
+    expect(phaseCaption(params, 'infuse')).toBeUndefined();
   });
 });
