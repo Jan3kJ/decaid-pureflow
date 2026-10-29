@@ -2934,6 +2934,12 @@ line '27.4 s · 33.8 g' (the weight in yellow) **only if the list's summary has 
 weight** (its `annotations`): the first step is to check that. If it has not, reading every record
 would undo the list's speed-up (3.8), the line is not built and the founder is told; the chips are
 built either way.
+*Built (Z40):* the chips only. The list's summary (`ShotRecordSummary`, `GET /api/v1/shots`) holds
+the weight, `annotations.actualYield`, but no time: on the rig's one shot `ee7495ea` its annotations
+are `actualDoseWeight` 18 and `actualYield` 34.3, and the schema's other fields (`drinkTds`,
+`drinkEy`, `enjoyment`, `espressoNotes`, `extras`) carry none either; the time is in the
+measurements alone. The three chips share the row's width equally; a long bean's name is cut at
+its end.
 
 **13. Spacing (DR13; Z41, after H6).** Four spacing tokens in `src/app.css` (0.3, 0.6, 1.2 and 2.4
 rem) and a lint rule like `scripts/font-sizes.mjs` that refuses any other `gap`. The first step

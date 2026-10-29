@@ -259,7 +259,9 @@
     gap: 0.5rem;
   }
 
+  /* Three chips of one width: 'all', the bean and the grinder. */
   .filter button {
+    flex: 1 1 0;
     min-width: 0;
     min-height: 3rem;
     padding: 0 0.9rem;
@@ -269,11 +271,6 @@
     border: 1px solid var(--line);
     border-radius: 1.5rem;
     background: var(--raised);
-  }
-
-  /* 'all' keeps its width; the bean and the grinder share the rest. */
-  .filter button:not(:first-child) {
-    flex: 1 1 0;
   }
 
   .filter .open {

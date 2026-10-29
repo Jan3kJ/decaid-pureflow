@@ -465,3 +465,63 @@ test('the filter by bean and grinder: the catalogue names the entries, a choice 
   expect(gateway.writes()).toEqual([]);
   expect(errors).toEqual([]);
 });
+
+// Spec 3.18 item 12 (acceptance 137): the three filter chips are equal in width, also with a long
+// bean's name, and the chosen one is the selected look's white fill.
+test("the filter's three chips are one width, the chosen one the white fill", async ({ page }) => {
+  const gateway = await mockGateway(page);
+  const at = '2026-10-20T10:00:00.000';
+  gateway.beans = [
+    {
+      id: 'bean-long',
+      roaster: 'Square Mile',
+      name: 'Red Brick Espresso Seasonal Blend',
+      archived: false,
+      decaf: false,
+      createdAt: at,
+      updatedAt: at,
+    },
+  ];
+  gateway.addShot('shot-1', '2026-10-10T08:00:00.000000', LIGHT, {
+    coffeeName: 'Red Brick Espresso Seasonal Blend',
+    coffeeRoaster: 'Square Mile',
+  });
+  await home(page);
+  await page.getByTestId('history-handle').tap();
+  await expect.poll(async () => (await page.getByTestId('history').boundingBox())?.x).toBe(0);
+
+  const chips = [page.getByTestId('filter-all'), page.getByTestId('filter-bean'), page.getByTestId('filter-grinder')];
+  const widths = () => Promise.all(chips.map(async (chip) => Math.round((await chip.boundingBox())!.width)));
+  const fills = () =>
+    Promise.all(
+      chips.map((chip) =>
+        chip.evaluate((element) => {
+          const style = getComputedStyle(element);
+          const probe = document.createElement('i');
+          probe.style.color = 'var(--fg)';
+          document.body.append(probe);
+          const fg = getComputedStyle(probe).color;
+          probe.remove();
+          return style.backgroundColor === fg && style.borderTopColor === fg;
+        }),
+      ),
+    );
+
+  const [all, bean, grinder] = await widths();
+  expect(all).toBeGreaterThan(0);
+  expect(bean).toBe(all);
+  expect(grinder).toBe(all);
+  await expect(chips[0]).toHaveAttribute('aria-pressed', 'true');
+  expect(await fills()).toEqual([true, false, false]);
+
+  // A long bean's name is cut at its end; the chips keep their width.
+  await chips[1].tap();
+  await page.getByTestId('filter-option').tap();
+  await expect(chips[1]).toHaveText('Square Mile · Red Brick Espresso Seasonal Blend');
+  await expect(chips[1]).toHaveAttribute('aria-pressed', 'true');
+  expect(await widths()).toEqual([all, all, all]);
+  expect(await fills()).toEqual([false, true, false]);
+  await page.screenshot({ path: 'e2e/.results/history-chips.png' });
+  expect(gateway.writes()).toEqual([]);
+  expect(errors).toEqual([]);
+});
