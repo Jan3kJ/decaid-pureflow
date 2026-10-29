@@ -123,7 +123,7 @@ test('beans and grinders: added, edited, archived and restored on the screen; th
     // A grinder, the same way.
     await page.getByTestId('beans-kind-grinders').click();
     await page.getByTestId('grinder-model').fill(MODEL);
-    await page.getByTestId('grinder-step').click();
+    await page.getByTestId('chip-edit-grinder-step').click();
     for (const key of ['0', '.', '5']) await page.keyboard.press(key);
     await page.keyboard.press('Enter');
     await page.getByTestId('grinder-save').click();

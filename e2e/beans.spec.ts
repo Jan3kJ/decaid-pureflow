@@ -194,11 +194,11 @@ test('a grinder is added, edited, archived after a confirm, listed with show arc
   await page.getByTestId('grinder-model').fill('Niche Zero');
   await page.getByTestId('grinder-burrs').fill('63 mm conical');
   // The step of the pick's − and +, on the number pad.
-  await page.getByTestId('grinder-step').click();
+  await page.getByTestId('chip-edit-grinder-step').click();
   await expect(page.getByTestId('numpad')).toBeVisible();
   for (const key of ['0', '.', '5']) await page.keyboard.press(key);
   await page.keyboard.press('Enter');
-  await expect(page.getByTestId('grinder-step')).toContainText('0.5');
+  await expect(page.getByTestId('chip-value-grinder-step')).toHaveText('0.5');
   await page.getByTestId('grinder-save').click();
   await expect(page.getByTestId('grinder-row')).toHaveCount(1);
   expect(gateway.calls('POST', '/api/v1/grinders').map((call) => call.body)).toEqual([
@@ -224,6 +224,25 @@ test('a grinder is added, edited, archived after a confirm, listed with show arc
   await expect(page.getByTestId('grinder-archive')).toBeVisible();
   expect(gateway.grinders[0].archived).toBe(false);
   expect(await noSideScroll(page)).toBe(true);
+});
+
+test("a grinder's step is changed with − and + on its chip and saved", async ({ page }) => {
+  await openBeans(page);
+  await page.getByTestId('beans-kind-grinders').click();
+  await page.getByTestId('grinder-model').fill('Hand grinder');
+  const chip = page.getByTestId('chip-grinder-step');
+  const value = page.getByTestId('chip-value-grinder-step');
+  await expect(value).toHaveText('1');
+  await chip.locator('[data-step="plus"]').click();
+  await expect(value).toHaveText('1.1');
+  await chip.locator('[data-step="minus"]').click();
+  await chip.locator('[data-step="minus"]').click();
+  await expect(value).toHaveText('0.9');
+  await page.getByTestId('grinder-save').click();
+  await expect(page.getByTestId('grinder-row')).toHaveCount(1);
+  expect(gateway.grinders[0].settingSmallStep).toBe(0.9);
+  await page.getByTestId('grinder-row').click();
+  await expect(page.getByTestId('chip-value-grinder-step')).toHaveText('0.9');
 });
 
 test("home's chip opens the pick: bean, grinder and setting go out in one PUT and show on the chip; 'no bean' clears", async ({

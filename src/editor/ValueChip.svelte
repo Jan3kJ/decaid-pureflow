@@ -97,6 +97,7 @@
 <div class="chip {tone}" class:compact class:open class:dragging bind:this={root} data-testid="chip-{testid}">
   {#if !compact || open}
     <button
+      type="button"
       class="step"
       data-step="minus"
       aria-label="less {label}"
@@ -109,6 +110,7 @@
   {/if}
   {#if compact}
     <button
+      type="button"
       class="body"
       aria-expanded={open}
       onpointerdown={grab}
@@ -121,7 +123,7 @@
       <span class="value" data-testid="chip-value-{testid}">{value}</span>
     </button>
   {:else if onedit}
-    <button class="body" aria-label="type {label}" data-testid="chip-edit-{testid}" onclick={onedit}>
+    <button type="button" class="body" aria-label="type {label}" data-testid="chip-edit-{testid}" onclick={onedit}>
       <span class="label">{label}</span>
       <span class="value" data-testid="chip-value-{testid}">{value}</span>
     </button>
@@ -133,6 +135,7 @@
   {/if}
   {#if !compact || open}
     <button
+      type="button"
       class="step"
       data-step="plus"
       aria-label="more {label}"

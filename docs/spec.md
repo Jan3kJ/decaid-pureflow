@@ -2918,6 +2918,7 @@ neither is known it reads 'not known' and the entry is disabled. `e2e/settings-t
 
 **10. The grinder's step (DR24; Z38).** 'step' on its own row as a value chip with - and +, like
 the other values, not beside the 'numbers | named positions' choice.
+*Built (Z38):* the - and + change the step by 0.1, within the number pad's range of 0.01 to 10; tapping the value still opens the pad.
 
 **11. The A-Flow editor's phases (DR18; Z39).** **Founder: the simple view stays as it is** (its
 shown durations are the values one changes), **and in the detail view the phases that have no time

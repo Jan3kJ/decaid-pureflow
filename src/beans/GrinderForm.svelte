@@ -4,6 +4,7 @@
   // notes. An edit sends only what changed; archive and restore are the screen's.
   import type { Grinder } from '../api';
   import NumberPad from '../editor/NumberPad.svelte';
+  import ValueChip from '../editor/ValueChip.svelte';
   import { grinderForm, validGrinder, type GrinderForm } from './catalogue';
 
   interface Props {
@@ -23,6 +24,11 @@
   const changed = $derived(JSON.stringify(form) !== JSON.stringify(grinderForm(grinder)));
   const valid = $derived(validGrinder(form));
   let typingStep = $state(false);
+
+  // The chip's − and + move the step by a tenth, inside the number pad's range.
+  function nudgeStep(direction: 1 | -1) {
+    form.smallStep = Math.min(10, Math.max(0.01, Math.round((form.smallStep + direction * 0.1) * 100) / 100));
+  }
 
   function submit(event: SubmitEvent) {
     event.preventDefault();
@@ -61,12 +67,18 @@
         onclick={() => (form.settingType = 'preset')}>named positions</button
       >
     </div>
-    {#if form.settingType === 'numeric'}
-      <button type="button" class="value" data-testid="grinder-step" onclick={() => (typingStep = true)}>
-        step <strong>{form.smallStep}</strong>
-      </button>
-    {/if}
   </div>
+  {#if form.settingType === 'numeric'}
+    <div class="step-row">
+      <ValueChip
+        label="step"
+        value={String(form.smallStep)}
+        testid="grinder-step"
+        onstep={nudgeStep}
+        onedit={() => (typingStep = true)}
+      />
+    </div>
+  {/if}
   {#if form.settingType === 'preset'}
     <label class:missing={!form.positions.trim()}>
       <span>positions, from fine to coarse, separated by commas</span>
@@ -210,8 +222,11 @@
     gap: 0.3rem;
   }
 
-  .value strong {
-    margin-left: 0.4rem;
-    font-variant-numeric: tabular-nums;
+  .step-row {
+    display: flex;
+  }
+
+  .step-row :global(.chip) {
+    min-width: 14rem;
   }
 </style>
