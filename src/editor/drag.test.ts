@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_MACHINE_LIMITS, DEFAULT_PROFILES, resolveParams } from '../aflow';
 import { borderTarget, buildCurve, dragTarget, weightTarget } from './curve';
-import { dragged, startDrag, startWeightDrag } from './drag';
+import { dragged, lifted, startDrag, startWeightDrag } from './drag';
 
 const params = DEFAULT_PROFILES[1].params;
 const resolved = resolveParams(params);
@@ -56,5 +56,18 @@ describe('a drag on the graph', () => {
       startValue: resolved.infuseWeight,
     });
     expect(dragged(drag, 300, 0)).toBeCloseTo(weightTarget(resolved.infuseWeight, 2));
+  });
+});
+
+describe('a finger that lifts or is cancelled', () => {
+  it('ends its drag where it last set the value; another pointer leaves the drag on', () => {
+    const level = curve.levels.find((l) => l.line === 'temperature')!;
+    const drag = startDrag({ kind: 'level', level }, finger, resolved, perPixel);
+    const last = dragged(drag, 300, 260);
+    // A pointercancel is handled as the lift: nothing more is set, the value stays at `last`.
+    expect(lifted(drag, finger.pointer)).toBeNull();
+    expect(last).not.toBe(drag.startValue);
+    expect(lifted(drag, 8)).toBe(drag);
+    expect(lifted(null, finger.pointer)).toBeNull();
   });
 });

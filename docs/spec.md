@@ -3107,6 +3107,12 @@ up by 60 px in many small steps and checks that the value follows to the end and
 arrives; Playwright's touch cannot start the browser's pan, so the e2e also dispatches the
 `touchstart` and checks `defaultPrevented`. The founder checks it on the tablet (acceptance 144).
 
+*Built (Z45):* the `touchstart` listener lives in `dragsOnly` (`swipe.ts`), so the graph's swipe check
+and the browser's pan are kept by the one hit test and removed together; it reads the touch that went
+down (`changedTouches[0]`) and prevents only a cancelable event. `pointercancel` already went to `up`;
+`up` now reads `lifted` (`drag.ts`), which says that a cancel ends the drag like a lift. The `svg` keeps
+`touch-action: pan-y`.
+
 ## 4. Technical approach
 
 ### 4.1 What a Decaid skin is

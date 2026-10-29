@@ -56,7 +56,8 @@ const CLEAN = {
   'img.png': '\0binary D:' + '\\Git',
 };
 
-describe('publish-check', () => {
+// Each test runs git a dozen times: on a busy machine that takes longer than vitest's 5 s.
+describe('publish-check', { timeout: 30_000 }, () => {
   it('passes on a clean tree and its history', () => {
     repository(CLEAN);
     expect(check().status).toBe(0);

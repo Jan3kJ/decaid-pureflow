@@ -97,3 +97,11 @@ export function dragged(drag: Drag, x: number, y: number): number {
   if (drag.field === 'infuseWeight') return weightTarget(drag.startValue, seconds);
   return borderTarget(drag.border!, drag.time, drag.startValue + seconds);
 }
+
+/**
+ * The drag after `pointer` lifts or the browser cancels it (`pointercancel`): a drag of that
+ * pointer ends, and the value stays at what the finger last set; another pointer's goes on.
+ */
+export function lifted(drag: Drag | null, pointer: number): Drag | null {
+  return drag && drag.pointer === pointer ? null : drag;
+}

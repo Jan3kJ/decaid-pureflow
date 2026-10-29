@@ -140,11 +140,30 @@ export interface Box {
   drags?: Drags;
 }
 
-/** Gives `element` its answer to `onControl`: the drags are its own only where `drags` says so. */
-export function dragsOnly(element: Element, drags: Drags): () => void {
-  const box = element as unknown as Box;
-  box.drags = drags;
-  return () => delete box.drags;
+/** The part of an element `dragsOnly` uses: its answer and its `touchstart` listener. */
+export interface Dragging {
+  drags?: Drags;
+  addEventListener(type: 'touchstart', listener: (event: TouchEvent) => void, options: AddEventListenerOptions): void;
+  removeEventListener(type: 'touchstart', listener: (event: TouchEvent) => void): void;
+}
+
+/**
+ * Gives `element` its answer to `onControl`: the drags are its own only where `drags` says so.
+ * A touch that goes down where it drags is its own until it lifts: its `touchstart` is
+ * prevented, so the browser starts no pan or scroll for it (`touch-action: pan-y` would take a
+ * move up or down, cancel the pointer and end the drag). Elsewhere the touch stays the page's.
+ */
+export function dragsOnly(element: Dragging, drags: Drags): () => void {
+  element.drags = drags;
+  const hold = (event: TouchEvent) => {
+    const touch = event.changedTouches[0];
+    if (touch && event.cancelable && drags({ x: touch.clientX, y: touch.clientY })) event.preventDefault();
+  };
+  element.addEventListener('touchstart', hold, { passive: false });
+  return () => {
+    element.removeEventListener('touchstart', hold);
+    delete element.drags;
+  };
 }
 
 type Style = (node: Box) => Pick<CSSStyleDeclaration, 'overflowX' | 'touchAction'>;

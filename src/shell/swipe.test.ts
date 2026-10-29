@@ -10,6 +10,7 @@ import {
   closing,
   commits,
   decide,
+  dragsOnly,
   destination,
   edgeWay,
   inDialog,
@@ -17,6 +18,7 @@ import {
   offset,
   onControl,
   type Box,
+  type Drags,
 } from './swipe';
 
 const width = 1280;
@@ -236,5 +238,56 @@ describe('the left edge', () => {
     expect(inDialog(at('[data-no-swipe]'))).toBe(true);
     expect(inDialog(at('[role="dialog"]'))).toBe(true);
     expect(inDialog(at('[data-own-swipe]'))).toBe(false);
+  });
+});
+
+describe("a touch on the graph's lines", () => {
+  type Listener = (event: TouchEvent) => void;
+  const element = () => {
+    const made = {
+      drags: undefined as Drags | undefined,
+      listener: null as Listener | null,
+      passive: undefined as boolean | undefined,
+      addEventListener(_type: 'touchstart', listener: Listener, options: AddEventListenerOptions) {
+        made.listener = listener;
+        made.passive = options.passive;
+      },
+      removeEventListener(_type: 'touchstart', listener: Listener) {
+        if (made.listener === listener) made.listener = null;
+      },
+    };
+    return made;
+  };
+  const touch = (x: number, y: number) => {
+    const event = {
+      cancelable: true,
+      defaultPrevented: false,
+      changedTouches: [{ clientX: x, clientY: y }],
+      preventDefault: () => (event.defaultPrevented = true),
+    };
+    return event;
+  };
+  // A fake hit test: the line lies at y 100, a finger reaches 20 px around it.
+  const hitAt: Drags = ({ y }) => Math.abs(y - 100) <= 20;
+
+  it('is kept from the browser on a line, and left to it off the lines', () => {
+    const graph = element();
+    dragsOnly(graph, hitAt);
+    expect(graph.passive).toBe(false);
+    const on = touch(300, 110);
+    graph.listener!(on as unknown as TouchEvent);
+    expect(on.defaultPrevented).toBe(true);
+    const off = touch(300, 200);
+    graph.listener!(off as unknown as TouchEvent);
+    expect(off.defaultPrevented).toBe(false);
+  });
+
+  it('is left to the browser again once the graph is gone', () => {
+    const graph = element();
+    const remove = dragsOnly(graph, hitAt);
+    expect(graph.drags).toBe(hitAt);
+    remove();
+    expect(graph.listener).toBeNull();
+    expect(graph.drags).toBeUndefined();
   });
 });

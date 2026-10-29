@@ -1,7 +1,7 @@
 <script lang="ts">
   import { DEFAULT_MACHINE_LIMITS, resolveParams, type AFlowParams, type MachineLimits } from '../aflow';
   import { PHASE_TIME, REENABLE_SECONDS, buildCurve, hitTest, temperatureAxis, type EditField, type PhaseId } from './curve';
-  import { dragged, startDrag, startWeightDrag, type Drag } from './drag';
+  import { dragged, lifted, startDrag, startWeightDrag, type Drag } from './drag';
   import { FIELD_LABEL, FIELD_STEP, formatValue, snap } from './fields';
   import GraphChips from './GraphChips.svelte';
   import GraphGrid from './GraphGrid.svelte';
@@ -72,7 +72,8 @@
   const hitAt = (x: number, y: number) => hitTest(draggable, x, y, projection, 1.8 * rem, 1.4 * rem);
 
   // The graph's drags are only those on a line or a border; elsewhere a drag on it is the page's
-  // (the swipe back), with the same hit test, so the two cannot differ.
+  // (the swipe back), with the same hit test, so the two cannot differ. A touch on a line or a
+  // border is the graph's until it lifts: the browser starts no pan for it (`dragsOnly`).
   $effect(() => {
     if (!svg) return;
     const element = svg;
@@ -123,8 +124,9 @@
     drag = null;
   }
 
+  // A lifted finger and a cancelled one (`pointercancel`, the browser took the touch) end the drag alike.
   function up(event: PointerEvent) {
-    if (drag && event.pointerId === drag.pointer) drag = null;
+    drag = lifted(drag, event.pointerId);
   }
 
   function reenable(phase: PhaseId) {
@@ -251,7 +253,8 @@
     display: block;
     /*
      * The graph takes the touches on its lines and borders itself (the swipe check asks it,
-     * `dragsOnly`); a move along elsewhere is the swipe back, and the page does not scroll sideways.
+     * `dragsOnly`, which also keeps the browser's pan off a touch that goes down on them); a move
+     * along elsewhere is the swipe back, and the page does not scroll sideways.
      */
     touch-action: pan-y;
     user-select: none;
