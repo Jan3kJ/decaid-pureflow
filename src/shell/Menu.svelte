@@ -11,7 +11,7 @@
   /**
    * The menu of the top left corner, the same button and the same menu on home, hot water and
    * steam (spec 3.14): what is rarely used. A list, so that an entry is one more line here. The
-   * steam switch and machine sleep are the shortcuts of spec 3.7; machine sleep puts only the
+   * steam heater and machine sleep are the shortcuts of spec 3.7; machine sleep puts only the
    * machine to sleep and keeps the app awake, machine and app sleep shows the Asleep screen too;
    * while the machine sleeps, wake machine stands in their place (spec 3.10). Beans and grinders
    * opens the catalogue (spec 3.9 item 19). Clean opens the settings page on Maintenance, whose
@@ -20,7 +20,8 @@
   interface Entry {
     id: string;
     label: () => string;
-    /** a second, smaller line: the state the entry is in; only the steam switch has one */
+    /** the state the entry is in, as a setting's value at the line's right end; only the steam
+     *  heater has one, and a tap switches it */
     detail?: () => string;
     disabled?: () => boolean;
     /** the entry is in the menu; always when left out */
@@ -44,8 +45,8 @@
     },
     {
       id: 'steam-heater',
-      label: () => (skin.steamHeater === 'off' ? 'Steam on' : 'Steam off'),
-      detail: () => (skin.steamHeater === null ? 'steam heater: not known' : `steam heater is ${skin.steamHeater}`),
+      label: () => 'Steam heater',
+      detail: () => skin.steamHeater ?? 'not known',
       disabled: () => skin.steamHeater === null,
       choose: () => void skin.toggleSteamHeater(),
     },
@@ -95,8 +96,8 @@
         <button role="menuitem" data-testid={entry.id} disabled={entry.disabled?.()} onclick={() => choose(entry)}>
           <span class="label">{entry.label()}</span>
           {#if entry.detail}
-            <small data-testid="{entry.id}-detail" class:off={entry.id === 'steam-heater' && skin.steamHeater === 'off'}
-              >{entry.detail()}</small
+            <span class="state" data-testid="{entry.id}-detail" class:off={entry.id === 'steam-heater' && skin.steamHeater === 'off'}
+              >{entry.detail()}</span
             >
           {/if}
         </button>
@@ -177,18 +178,20 @@
     color: var(--dim);
   }
 
-  .menu .label {
-    display: block;
+  /* an entry with a state reads as a setting: the name, and its value at the right end */
+  .menu button:has(.state) {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1.2rem;
   }
 
-  .menu small {
-    display: block;
-    font-size: var(--text-label);
+  .menu .state {
     color: var(--dim);
   }
 
   /* the heater is off: said in the colour of temperature */
-  .menu small.off {
+  .menu .state.off {
     color: var(--temperature);
   }
 </style>

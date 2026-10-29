@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { gramsOf } from '../display';
+  import { gramsOf, signed } from '../display';
   import ShotGraph from '../graph/ShotGraph.svelte';
   import type { Skin } from '../shell/skin.svelte';
   import PageHeader from '../shell/PageHeader.svelte';
@@ -28,7 +28,6 @@
   const calculated = $derived(reading ? adjusted(reading.seconds) : 0);
   /** While steam runs the timer counts down from the set seconds (spec 3.7). */
   const shown = $derived(timer === null ? null : steaming && skin.steam ? secondsLeft(timer, steamSeconds(skin.steam)) : timer);
-  const signed = (amount: number) => `${amount > 0 ? '+' : amount < 0 ? '−' : '±'}${Math.abs(amount)} s`;
 </script>
 
 <div class="steam">

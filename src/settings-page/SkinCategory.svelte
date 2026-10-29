@@ -24,7 +24,7 @@
   import { importQuestion, importReport, planImport, runImport, type ImportPlan } from '../editor/import';
   import Confirm from './Confirm.svelte';
   import Skins from './Skins.svelte';
-  import { DISPLAY_SIZES, LINE_WIDTHS, type DisplayChoice } from '../display';
+  import { DISPLAY_SIZES, LINE_WIDTHS, signed, type DisplayChoice } from '../display';
 
   interface Props {
     skin: Skin;
@@ -103,7 +103,11 @@
   const named = (field: SteamField) =>
     `${STEAM_FIELDS.find((group) => group.fields.some((entry) => entry.id === field.id))?.title}: ${field.label}`;
 
-  const shown = (field: SteamField) => `${+steamValue(settings.steam, field).toFixed(1)}`;
+  /** an adjust button's amount as the steam page shows it, '−8'; the unit stays in its own element */
+  const shown = (field: SteamField) => {
+    const value = steamValue(settings.steam, field);
+    return field.key === 'adjustments' ? signed(value, '') : `${+value.toFixed(1)}`;
+  };
 
   function confirm(value: number) {
     if (typing) skin.setSettings({ steam: withSteamValue(settings.steam, typing, value) });

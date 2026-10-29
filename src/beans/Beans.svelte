@@ -253,9 +253,10 @@
     min-width: 0;
   }
 
+  /* a page's header is a name, as on steam and hot water (spec 3.14's roles) */
   h1 {
     margin: 0;
-    font-size: var(--text-title);
+    font-size: var(--text-body);
     font-weight: 600;
     line-height: 1.15;
   }

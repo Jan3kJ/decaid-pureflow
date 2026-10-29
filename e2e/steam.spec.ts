@@ -385,14 +385,14 @@ test('the adjust amounts come from the settings, and the settings page changes t
   await page.getByTestId('menu').click();
   await page.getByTestId('open-settings').click();
   await page.getByTestId('settings-category-skin').click();
-  await expect(page.getByTestId('setting-adjust-1')).toContainText('-3');
+  await expect(page.getByTestId('setting-adjust-1')).toContainText('−3');
   await page.getByTestId('setting-adjust-1').click();
   await expect(page.getByTestId('numpad-range')).toHaveText('-60 to 60 s');
   await page.getByTestId('numpad-key-6').click();
   await page.getByTestId('numpad-key-sign').click();
   await expect(page.getByTestId('numpad-display')).toHaveText('-6');
   await page.getByTestId('numpad-confirm').click();
-  await expect(page.getByTestId('setting-adjust-1')).toContainText('-6');
+  await expect(page.getByTestId('setting-adjust-1')).toContainText('−6');
   await back(page);
   await toPage(page, 'steam');
   await expect(page.getByTestId('steam-adjust')).toHaveText(['−6 s', '+2 s', '+10 s']);

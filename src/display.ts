@@ -50,3 +50,12 @@ export function gramsOf(weight: number | null | undefined, unit = ' g'): string 
   const text = shown.toFixed(1);
   return `${text === '-0.0' ? '0.0' : text}${unit}`;
 }
+
+/**
+ * A steam adjust button's amount (spec 3.7, 3.18 item 9), the same on the steam page and in the
+ * settings: a true minus or a plus before the whole seconds, '±' for none, e.g. '−8 s', '+5 s'.
+ * `unit` is what follows the number: ' s' by default, '' where the unit stands in its own element.
+ */
+export function signed(amount: number, unit = ' s'): string {
+  return `${amount > 0 ? '+' : amount < 0 ? '−' : '±'}${Math.abs(amount)}${unit}`;
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DISPLAY_SIZES, LINE_WIDTHS, applyDisplay, gramsOf } from './display';
+import { DISPLAY_SIZES, LINE_WIDTHS, applyDisplay, gramsOf, signed } from './display';
 
 describe('Skin > Display', () => {
   it("offers Streamline's sizes and line widths, medium and normal at 1", () => {
@@ -44,5 +44,13 @@ describe('gramsOf', () => {
     expect(gramsOf(undefined)).toBe('–');
     expect(gramsOf(36.04, '')).toBe('36.0');
     expect(gramsOf(36.04, 'g')).toBe('36.0g');
+  });
+});
+
+describe('signed', () => {
+  it('writes an adjust amount with a true minus, a plus or ± and the unit', () => {
+    expect([-8, -4, 5].map((amount) => signed(amount))).toEqual(['−8 s', '−4 s', '+5 s']);
+    expect(signed(0)).toBe('±0 s');
+    expect(signed(-12, '')).toBe('−12');
   });
 });

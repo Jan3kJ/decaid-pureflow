@@ -74,20 +74,20 @@ test('home menu: steam off and on again, read back from the machine; machine sle
     await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 30_000 });
 
     await page.getByTestId('menu').click();
-    await expect(page.getByTestId('steam-heater-detail')).toHaveText('steam heater is on', { timeout: 15_000 });
+    await expect(page.getByTestId('steam-heater-detail')).toHaveText('on', { timeout: 15_000 });
     await page.getByTestId('steam-heater').click();
     await expect.poll(workflowSteam, { timeout: 15_000 }).toBe(0);
     await expect.poll(machineSteamTemp, { timeout: 15_000 }).toBe(0);
     await page.getByTestId('menu').click();
-    await expect(page.getByTestId('steam-heater')).toContainText('Steam on');
-    await expect(page.getByTestId('steam-heater-detail')).toHaveText('steam heater is off');
+    await expect(page.getByTestId('steam-heater')).toContainText('Steam heater');
+    await expect(page.getByTestId('steam-heater-detail')).toHaveText('off');
     await page.screenshot({ path: 'e2e-rig/.results/menu-steam-off-rig.png' });
 
     await page.getByTestId('steam-heater').click();
     await expect.poll(workflowSteam, { timeout: 15_000 }).toBe(temperatureBefore);
     await expect.poll(machineSteamTemp, { timeout: 15_000 }).toBe(temperatureBefore);
     await page.getByTestId('menu').click();
-    await expect(page.getByTestId('steam-heater-detail')).toHaveText('steam heater is on');
+    await expect(page.getByTestId('steam-heater-detail')).toHaveText('on');
 
     await expect(page.getByTestId('machine-sleep')).toHaveText('Machine sleep');
     await expect(page.getByTestId('machine-sleep-detail')).toHaveCount(0);

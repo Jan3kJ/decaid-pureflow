@@ -2909,6 +2909,12 @@ minimum in one constant, `MIN_REM`.
   dialogs and the picker keep the title token (roles table of 3.14, acceptance 95).
 - DR26: the menu entry reads 'Steam heater' with the state as its value ('on', 'off'); a tap
   switches.
+*Built (Z37):* `signed()` is in `src/display.ts` with a `unit` argument like `gramsOf`; the
+settings' adjust fields show its number ('−8') with the unit 's' in its own small element after
+it, as every other field there, and zero reads '±0'. The two titles take the name role's
+`--text-body` at weight 600; the settings' section headings stay title. The menu's state stands
+on the entry's line at its right end, dim, 'off' in the colour of temperature as before; while
+neither is known it reads 'not known' and the entry is disabled. `e2e/settings-titles-menu.spec.ts`.
 
 **10. The grinder's step (DR24; Z38).** 'step' on its own row as a value chip with - and +, like
 the other values, not beside the 'numbers | named positions' choice.

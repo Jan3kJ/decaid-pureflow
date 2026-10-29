@@ -107,7 +107,7 @@ test('the menu opens with settings, beans and grinders, clean, steam off and mac
     'Settings',
     /^Beans and grinders/,
     /^Clean/,
-    /^Steam off/,
+    /^Steam heater/,
     /^Machine sleep/,
     /^Machine and app sleep/,
   ]);

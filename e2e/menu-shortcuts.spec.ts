@@ -38,8 +38,8 @@ test('steam off switches the heater off, shows it, and a second tap switches it 
 
   await openMenu(page);
   await expect(page.getByTestId('steam-heater')).toBeEnabled();
-  await expect(page.getByTestId('steam-heater')).toContainText('Steam off');
-  await expect(page.getByTestId('steam-heater-detail')).toHaveText('steam heater is on');
+  await expect(page.getByTestId('steam-heater')).toContainText('Steam heater');
+  await expect(page.getByTestId('steam-heater-detail')).toHaveText('on');
   await page.getByTestId('steam-heater').click();
   await expect(page.getByTestId('menu-list')).toHaveCount(0);
   // Only the temperature is written: the steam timer and flow keep their values.
@@ -49,14 +49,14 @@ test('steam off switches the heater off, shows it, and a second tap switches it 
 
   // The menu says the heater is off, from the machine's own settings.
   await openMenu(page);
-  await expect(page.getByTestId('steam-heater')).toContainText('Steam on');
-  await expect(page.getByTestId('steam-heater-detail')).toHaveText('steam heater is off');
+  await expect(page.getByTestId('steam-heater')).toContainText('Steam heater');
+  await expect(page.getByTestId('steam-heater-detail')).toHaveText('off');
   await page.screenshot({ path: 'docs/product/home-menu-steam-off.png' });
   await page.getByTestId('steam-heater').click();
   await expect.poll(() => steamWrites(gateway)).toEqual([{ targetTemperature: 0 }, { targetTemperature: 150 }]);
   await expect.poll(() => gateway.shotSettings.targetSteamTemp).toBe(150);
   await openMenu(page);
-  await expect(page.getByTestId('steam-heater-detail')).toHaveText('steam heater is on');
+  await expect(page.getByTestId('steam-heater-detail')).toHaveText('on');
   expect(errors).toEqual([]);
 });
 
@@ -81,7 +81,7 @@ test('steam on brings back the temperature the heater had, and it is in the sett
   // After a reload the remembered temperature is still the one switched on with.
   await page.reload();
   await openMenu(page);
-  await expect(page.getByTestId('steam-heater')).toContainText('Steam on');
+  await expect(page.getByTestId('steam-heater')).toContainText('Steam heater');
   await page.getByTestId('steam-heater').click();
   await expect.poll(() => gateway.shotSettings.targetSteamTemp).toBe(158);
   expect(errors).toEqual([]);
@@ -93,13 +93,13 @@ test('steam on reaches the machine when the workflow already holds the temperatu
   gateway.shotSettings = { ...gateway.shotSettings, targetSteamTemp: 0 };
   await page.goto('/');
   await openMenu(page);
-  await expect(page.getByTestId('steam-heater-detail')).toHaveText('steam heater is off');
+  await expect(page.getByTestId('steam-heater-detail')).toHaveText('off');
   await page.getByTestId('steam-heater').click();
   await expect
     .poll(() => gateway.calls('POST', '/api/v1/machine/shotSettings').map((call) => call.body.targetSteamTemp))
     .toEqual([150]);
   await openMenu(page);
-  await expect(page.getByTestId('steam-heater-detail')).toHaveText('steam heater is on');
+  await expect(page.getByTestId('steam-heater-detail')).toHaveText('on');
   expect(errors).toEqual([]);
 });
 
@@ -137,11 +137,11 @@ test('beans and grinders and clean have no second line; the steam switch has its
   await expect(page.getByTestId('open-clean')).toHaveText('Clean');
   await expect(page.getByTestId('open-beans-detail')).toHaveCount(0);
   await expect(page.getByTestId('open-clean-detail')).toHaveCount(0);
-  await expect(page.getByTestId('steam-heater-detail')).toHaveText('steam heater is on');
+  await expect(page.getByTestId('steam-heater-detail')).toHaveText('on');
   await page.getByTestId('steam-heater').click();
   await expect.poll(() => gateway.shotSettings.targetSteamTemp).toBe(0);
   await openMenu(page);
-  await expect(page.getByTestId('steam-heater-detail')).toHaveText('steam heater is off');
+  await expect(page.getByTestId('steam-heater-detail')).toHaveText('off');
   await expect(page.getByTestId('steam-heater-detail')).toHaveClass(/off/);
   expect(errors).toEqual([]);
 });
@@ -157,7 +157,7 @@ test("the steam switch says 'not known' while neither the machine's settings nor
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
   await openMenu(page);
   await expect(page.getByTestId('steam-heater')).toBeDisabled();
-  await expect(page.getByTestId('steam-heater-detail')).toHaveText('steam heater: not known');
+  await expect(page.getByTestId('steam-heater-detail')).toHaveText('not known');
   await expect(page.getByTestId('open-beans-detail')).toHaveCount(0);
   await expect(page.getByTestId('open-clean-detail')).toHaveCount(0);
 });
@@ -260,6 +260,6 @@ test('without a machine the steam switch is offered from the workflow, machine s
   await expect(page.getByTestId('machine-sleep')).toBeDisabled();
   await expect(page.getByTestId('app-sleep')).toBeDisabled();
   await expect(page.getByTestId('wake-machine')).toHaveCount(0);
-  await expect(page.getByTestId('steam-heater-detail')).toHaveText('steam heater is on');
+  await expect(page.getByTestId('steam-heater-detail')).toHaveText('on');
   expect(errors).toEqual([]);
 });
