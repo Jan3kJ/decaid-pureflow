@@ -112,7 +112,7 @@
     display: flex;
     align-items: center;
     gap: 0.4rem;
-    min-height: 2.75rem;
+    min-height: 3rem;
     padding: 0 0.9rem;
     background: var(--panel);
     border: 1px dashed var(--dim);

@@ -376,7 +376,7 @@
   }
 
   .sub {
-    min-height: 2.8rem;
+    min-height: 3rem;
     margin-left: 1rem;
     padding: 0 0.8rem;
     text-align: left;

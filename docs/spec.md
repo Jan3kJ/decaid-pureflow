@@ -2895,6 +2895,12 @@ part, the graph's selected phase column and the page dots. `e2e/selected-look.sp
 **8. Touch targets (DR12; Z36).** At least 3 rem on the short side by padding, not by larger text:
 the page dots, the step card's - and + (the three 'maximum' chips stay in one row), the editor's
 'infuse to' and 'stop at' chips, the settings' sub-entries. The tare button goes with item 4.
+*Built (Z36):* the page dots are 3.5 x 3 rem (the dot stays 0.6 rem), a value chip's - and + keep
+4 rem and give up width only down to 3 rem (the three 'maximum' chips stay in one row), the compact
+chips on the graph and the graph's 'turn on' buttons are 3 rem high, the settings' sub-entries
+3 rem; the test also found the feedback form's 'attach' switch, now 3.6 rem high as the other
+settings' switches (the plugin page's switch follows). `e2e/touch-targets.spec.ts` keeps the
+minimum in one constant, `MIN_REM`.
 
 **9. Settings, titles, menu (DR20, DR21, DR26; Z37).**
 - DR20: the three adjust fields in the settings show '−8 s', '−4 s', '+5 s' with the steam page's

@@ -363,6 +363,7 @@
 
   .lever-button {
     flex: none;
+    min-height: 3.6rem;
     padding: 0;
     background: none;
     border: 0;

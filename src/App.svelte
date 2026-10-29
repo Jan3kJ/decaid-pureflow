@@ -458,7 +458,7 @@
 
   .dots button {
     width: 3.5rem;
-    height: 2.6rem;
+    height: 3rem;
     display: grid;
     place-items: center;
   }

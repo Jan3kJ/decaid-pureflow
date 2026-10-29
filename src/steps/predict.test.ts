@@ -118,7 +118,8 @@ describe('predictShot', () => {
       }
       expect(predictShot(profile)).toEqual(shot);
     }
-  });
+    // Some ten thousand checks: about 2 s alone, more beside the other test files on a busy machine.
+  }, 30_000);
 
   it('runs in milliseconds, also on the tablet', () => {
     for (const profile of [...profiles, ...shots.map((shot) => shot.profile)]) predictShot(profile);

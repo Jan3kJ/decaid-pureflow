@@ -197,6 +197,7 @@
 
   .step {
     width: 4rem;
+    min-width: 3rem;
     min-height: 3.6rem;
     background: var(--raised);
     border: 0;
@@ -218,7 +219,7 @@
   .compact .body {
     flex-direction: row;
     gap: 0.4rem;
-    min-height: 2.75rem;
+    min-height: 3rem;
     padding: 0 0.9rem;
   }
 
