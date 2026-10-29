@@ -3052,6 +3052,41 @@ history and the delete row followed a swipe that ended in a fling, which takes t
 keeps the list moving; the pause test's cause was not found (failed once of more than 20 runs
 here): it now waits for the time to follow the drag.
 
+### 3.21 A dragged line in the A-Flow editor keeps the finger until it lifts (planned, not built)
+
+The founder, 2026-10-29: 'if I drag a line (pressure, flow, temp) it switches to swiping the screen
+after small changes. I can drag the temperature down by 1 or 2 degrees, then the screen starts to
+move, up or down does nothing. While a line is dragged the screen swipe must be off until the finger
+lifts. It is no problem for the vertical lines and the infuse-to chip.' Work in the product
+repository, roadmap **Z45**, after Z44 and before Z17.
+
+**The cause (read in the code, not yet seen on the tablet).** The page's swipe is not the culprit:
+`App.svelte` starts none when the touch goes down on a line (`onControl` asks the graph's `drags`).
+The browser is: `Graph.svelte` gives its `svg` `touch-action: pan-y`, so a finger that moves up or
+down by a few millimetres is taken by the browser as a vertical pan, which fires `pointercancel`,
+ends the drag (`up`) and moves the page. Pointer capture and `preventDefault()` on `pointerdown` do
+not stop a pan. The vertical lines (the borders) are dragged sideways, which `pan-y` does not claim,
+and the infuse-to chip has `touch-action: none` (`ValueChip.svelte`); that is why only the three
+horizontal lines (pressure, flow, temperature) lose the drag, and only on a move up or down.
+
+**The fix (Z45).**
+- A touch that goes down on a line or a border is the graph's until it lifts: a non-passive
+  `touchstart` listener on the `svg` calls `preventDefault()` when the same `hitAt` test that
+  `dragsOnly` uses says the finger is on a line or a border, so the browser starts no pan or scroll
+  for that touch. Elsewhere on the graph nothing changes: the swipe back and the page's scroll stay.
+  (The listener is added in the `$effect` that registers `dragsOnly`, with `{ passive: false }`, and
+  removed with it.) If a test on the tablet shows that Android still pans, the fallback is
+  `touch-action: none` on the `svg`, with the vertical scroll over the graph given up.
+- `pointercancel` during a drag does not end it silently any more: it is handled like `up` (the value
+  stays at what the finger last set), and a test says so.
+- Nothing else is touched: the borders, the chips, the weight drag and the step editor behave as before.
+
+**Tests.** A unit test of the listener (a touch on a line is `defaultPrevented`, one off the lines is
+not, with a fake `hitAt`). An e2e that drags the temperature, the pressure and the flow line down and
+up by 60 px in many small steps and checks that the value follows to the end and `pointercancel` never
+arrives; Playwright's touch cannot start the browser's pan, so the e2e also dispatches the
+`touchstart` and checks `defaultPrevented`. The founder checks it on the tablet (acceptance 144).
+
 ## 4. Technical approach
 
 ### 4.1 What a Decaid skin is
@@ -3681,6 +3716,11 @@ Where an item here and one of 27-55 disagree, the item here wins (3.10 overrides
 143. **The CI's browser tests (test, Z44).** The `e2e` job is green on `main` in two runs in a row; a
      failing test uploads its trace and error context (the artifact has files); no test has a retry,
      a skip or a loosened check without a reason in its comment; the local `npm run e2e` is green.
+144. **A dragged line keeps the finger (test, Z45; founder on the tablet).** A touch that goes down on
+     a line or a border has its `touchstart` default prevented, one off the lines does not; dragging
+     the temperature, pressure or flow line up and down by any amount follows the finger to the lift
+     with no `pointercancel`; the swipe back still works from off the lines; on the tablet the founder
+     drags each of the three lines far up and down and the screen does not move.
 
 ## 6. Constraints
 - **Budget:** one Claude Pro plan. This product may use all of it up to 90% of the weekly
@@ -3805,6 +3845,7 @@ The weeks are a capacity guess on one Pro plan.
 | 5 (Nov 9-15) | P5 | publish: the user documentation, three short pages (`install.md`, `guide.md`, `troubleshooting.md`) in `docs/user/`, with the pictures | P4 |
 | 5 | P7 | publish (3.15): `scripts/release.mjs` and `npm run release`: the checks, the change history from the tasks' `Task:` and `Changelog:` trailers, the version bump if needed, the ZIP and its SHA-256, the commit and tag, then the GitHub release; `--dry-run` and `--local` (the hand-overs use it); `npm run verify` shared with CI; the work prompt gets the trailers; pushing and publishing are the founder's | P3 |
 | 5 | Z44 | the CI's `e2e` job fails on GitHub and says nothing: make the failure readable (artifact with hidden files, reporter), find each failing test's cause (font or time), fix the skin or the test, a green run twice (3.20); the first task of the next working day | P2 |
+| 5 | Z45 | a dragged pressure, flow or temperature line keeps the finger until it lifts: the browser's vertical pan (`touch-action: pan-y` on the graph) cancels the drag, so a touch on a line gets its `touchstart` default prevented (3.21) | Z44 |
 | 5 | Z17 | review 2026-10-25: the swipe back on the whole screen: `onControl` takes a drag only from a box that really scrolls sideways, the left edge (24 px) always goes back (3.17 item 1) | P2 |
 | 5 | Z18 | review 2026-10-25: the tank unit setting moves from Skin > Display to Quick Adjustments > Water Tank (3.17 item 2) | P2 |
 | 5 | Z19 | review 2026-10-25: the bean photo's reading dropped, the photo kept: `ocr.ts`, the probe, the `ocr/` folder, the three Tesseract packages, the credits and Z1/Z2's tests removed (3.17 item 3) | P2 |
@@ -3827,7 +3868,7 @@ The weeks are a capacity guess on one Pro plan.
 | 5 | Z39 | DR18: fill and flow show their time in the editor's detail view (3.18 item 11) | P2 |
 | 5 | Z40 | DR22: equal filter chips, time and weight on the history entries if the list has them (3.18 item 12) | Z33 |
 | 5 | Z41 | DR13: four spacing tokens and a lint rule, after the local release (3.18 item 13) | H6 |
-| 5 | H6 | review 2026-10-25: a local release for the tablet, `npm run release -- --local` (3.15), the founder's checks of 3.17 in install.md; the public release P6 resumes it | Z17-Z25, Z29-Z40, Z44, P7 |
+| 5 | H6 | review 2026-10-25: a local release for the tablet, `npm run release -- --local` (3.15), the founder's checks of 3.17 in install.md; the public release P6 resumes it | Z17-Z25, Z29-Z40, Z44, Z45, P7 |
 | 5 | P8 | docs cleanup: `docs/spec.md` and `docs/research.md` move to the team repository; a new `docs/architecture.md` holds the current state for contributors; README, CONTRIBUTING and docs-check link it (Stint plan O17-O24) | H6 |
 | 5 | P9 | comment cleanup: comments in `src`, `e2e` and `scripts` state the rule, not who asked or when (about 536 lines in 205 files) | P8 |
 | 5 | P6 | publish: the release 0.7.0: tag, GitHub release with the ZIP and its SHA-256, the URL install checked in Decaid, the founder's cold read and a new user's install (3.13 acceptance 84-87); pushing and announcing are the founder's | P3, P5, P7, H5, H6, P8, P9 |
