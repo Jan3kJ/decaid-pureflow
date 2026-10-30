@@ -4,6 +4,18 @@ What changed in each version of pureflow, newest first. From 0.7.0 on a section 
 the release script (`npm run release`) from the commits' `Changelog:` lines; the sections up to
 0.6.1 summarise the hand-over builds that came before it.
 
+## 0.9.0 - 2026-10-30
+
+### Added
+
+- The bean form reads a bag's photo in the OCR build. (Z43)
+
+### Changed
+
+- The space between controls now follows four steps. (Z41)
+
+Checks: npm ci, npm run verify, npm run e2e and the rig suite passed.
+
 ## 0.8.0 - 2026-10-29
 
 ### Changed

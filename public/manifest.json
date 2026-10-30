@@ -2,7 +2,7 @@
   "id": "pureflow",
   "name": "pureflow",
   "description": "A minimal landscape, dark skin for the DE1: espresso with a live graph, an editor for A-Flow 3.0 profiles, a steam timer set from the milk's weight, and a shot history.",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "author": "Janek",
   "repository": "https://github.com/Jan3kJ/decaid-pureflow"
 }
