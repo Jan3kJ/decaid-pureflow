@@ -1,4 +1,4 @@
-// A short text made from an A-Flow 3.0 profile's values (spec 3.16 item 3): what the picker
+// A short text made from an A-Flow 3.0 profile's values: what the picker
 // shows under the graph. It is made when it is shown and never stored, so a change of wording
 // changes every profile. English, facts only, a phase that is off left out.
 import type { EditField } from '../editor/curve';

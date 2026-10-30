@@ -5,7 +5,7 @@
 // Copyright (C) 2025-2026 Decent Espresso
 // Licensed under the GNU General Public License v3.0 or later; used here under GPL-3.0.
 //
-// Miscellaneous > Presence Detection's wake schedules (research.md 20.3, 20.10 S2c), without UI:
+// Miscellaneous > Presence Detection's wake schedules, without UI:
 // a schedule as one line, and the schedule a form gives. Presence and the sleep timeout are
 // fields (`PRESENCE` in fields.ts).
 import type { WakeSchedule, WakeScheduleInput } from '../api';

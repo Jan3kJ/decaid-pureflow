@@ -3,7 +3,7 @@ import type { Profile, MachineSnapshot, ProfileRecord } from '../src/api';
 import type { RigWorkflow } from './gateway';
 import { cyclePump, insertStepAfter, moveStep, removeStepAt, setValue, stepValue } from '../src/steps/model';
 
-// Acceptance item 10 (spec 3.6, research.md 17.11) against the rig: a profile that is not
+// The step editor against the rig: a profile that is not
 // A-Flow opens in the step editor; a value changed with ± and with the pad, a step added, one
 // deleted and one moved, saved as a copy of a bundled profile, then edited once more and
 // saved, give a stored profile whose steps equal the edit, and Decaid's lineage holds both
@@ -103,7 +103,7 @@ test('a bundled profile opens in the step editor; its edited copy is stored with
   // A bundled default: 'save as' only.
   await expect(page.getByTestId('save')).toBeDisabled();
 
-  // The edits of acceptance 10, on screen and, for the expected result, with the model.
+  // The edits, on screen and, for the expected result, with the model.
   let expected: Profile = structuredClone(source.profile);
   await page.getByTestId('chip-0-temperature').locator('[data-step="plus"]').click();
   expected = stepValue(expected, 0, 'temperature', 1);
@@ -165,7 +165,7 @@ test('a bundled profile opens in the step editor; its edited copy is stored with
   await expect(page.getByTestId('save')).toBeDisabled();
 });
 
-// Acceptance item 11 (research.md 17.11 E3) against the rig: the preview follows a step edit;
+// The step editor's preview and SETTINGS against the rig: the preview follows a step edit;
 // title, notes, target weight, target volume and tank temperature edited in SETTINGS are
 // stored with the profile and read back; a later change of the title alone, and of the notes
 // alone, is stored too. What Decaid hashes of them is written to the test's output.
@@ -209,7 +209,7 @@ test('the profile settings are saved with the steps and read back', async ({ pag
   const read = await api<ProfileRecord>('GET', `/api/v1/profiles/${encodeURIComponent(saved.id)}`);
   expect(read.profile).toMatchObject(wanted);
   expect(canonical(read.profile.steps)).toEqual(canonical(copy.profile.steps));
-  // The target weight is in the id (research.md 11): a new version, the copy hidden.
+  // The target weight is in the id: a new version, the copy hidden.
   expect(saved.id).not.toBe(copy.id);
   expect(saved.parentId).toBe(copy.id);
   expect((await api<ProfileRecord>('GET', `/api/v1/profiles/${encodeURIComponent(copy.id)}`)).visibility).toBe('hidden');
@@ -241,7 +241,7 @@ test('the profile settings are saved with the steps and read back', async ({ pag
   );
 });
 
-// Acceptance item 26, second half (spec 3.7, research.md 17.18) against the rig: in SCRIPT a tap
+// SCRIPT against the rig: in SCRIPT a tap
 // on a state word cycles it and a tap on a number opens the pad; both move the preview, and
 // 'save as' from the tab stores exactly those steps, which are read back; all made is purged.
 test('the SCRIPT tab: a cycled word and a typed number are stored', async ({ page }) => {
@@ -287,7 +287,7 @@ test('the SCRIPT tab: a cycled word and a typed number are stored', async ({ pag
   expect(canonical((await api<RigWorkflow>('GET', '/api/v1/workflow')).profile.steps)).toEqual(canonical(expected.steps));
 });
 
-// Acceptance item 50 (spec 3.9, item 17) against the rig: in SCRIPT step 2's exit cycled to off
+// Muted lines against the rig: in SCRIPT step 2's exit cycled to off
 // and step 5's limit typed 0 stay muted lines; 'save as' stores them as Decaid stores a step
 // without them (`exit: null`, `limiter: null`, as the bundled profiles hold), and they read back
 // so. The test purges the copy and puts the workflow back.

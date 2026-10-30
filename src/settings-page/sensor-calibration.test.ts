@@ -16,7 +16,7 @@ import {
 
 const sensor = (id: string) => SENSORS.find((entry) => entry.id === id)!;
 
-describe('the sensor calibration (research.md 20.10 S2c)', () => {
+describe('the sensor calibration', () => {
   it("has Streamline's three sensors: temperature an offset, pressure and flow ratios", () => {
     expect(SENSORS.map((entry) => [entry.id, entry.kind, entry.reading])).toEqual([
       ['temperature', 'offset', 'groupTemperature'],

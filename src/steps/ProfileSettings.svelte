@@ -6,7 +6,7 @@ Copyright (C) 2025-2026 Decent Espresso
 Licensed under the GNU General Public License v3.0 or later; used here under GPL-3.0.
 -->
 <script lang="ts">
-  // The step editor's SETTINGS tab (spec 3.6, research.md 17.10): the profile's title, notes,
+  // The step editor's SETTINGS tab: the profile's title, notes,
   // target weight, target volume and tank temperature. Each edit is the editor's, saved with
   // the steps by 'save' and 'save as'. The numbers take ± and the number pad, as on a card.
   import type { Profile } from '../api';

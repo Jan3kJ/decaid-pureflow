@@ -4,12 +4,12 @@ import type { RigWorkflow } from './gateway';
 import { IDLE } from './idle';
 import { toPage } from '../e2e/touch';
 
-// The hot water page against the rig (R5, spec 3.7, acceptance item 20). A short simulated
+// The hot water page against the rig. A short simulated
 // shot is pulled and its recorded yield set to 40 g, so the newest shot weighs 40 g; the page
 // dot opens the page, 1:2 sets 80 g, and the four values land in the workflow's hotWaterData.
 // Hot water is then asked for through the API, as the DE1's own button would (the skin starts
-// nothing): Decaid tares the mock scale and stops it at the weight, long before its duration
-// (research.md 21); the page shows the ring while it pours (spec 3.9). Last, the page's tare
+// nothing): Decaid tares the mock scale and stops it at the weight, long before its duration;
+// the page shows the ring while it pours. Last, the page's tare
 // button tares the scale. The test deletes the shot,
 // puts the workflow back and leaves the skin's KV namespace as it was.
 
@@ -92,7 +92,7 @@ test('the hot water page writes hotWaterData, 1:2 of a 40 g shot is 80 g, Decaid
     await expect.poll(async () => (await hotWaterData()).volume).toBe(80);
     await type(page, 'hot-water-temperature', '80');
     await type(page, 'hot-water-flow', '4');
-    // The time by its slider (spec 3.9 item 11): written once when it is let go.
+    // The time by its slider: written once when it is let go.
     await page.getByTestId('hot-water-slider-time').fill('60');
     await expect(page.getByTestId('hot-water-time')).toContainText('60s');
     await expect.poll(hotWaterData).toEqual({ targetTemperature: 80, duration: 60, volume: 80, flow: 4 });
@@ -104,7 +104,7 @@ test('the hot water page writes hotWaterData, 1:2 of a 40 g shot is 80 g, Decaid
     await api('PUT', '/api/v1/machine/state/hotWater');
     await expect.poll(machineState, { timeout: 10_000, intervals: [200] }).toBe('hotWater');
     const started = Date.now();
-    // While it pours the ring covers the rows (spec 3.9 item 13, 3.14): a finger on them reaches the ring.
+    // While it pours the ring covers the rows: a finger on them reaches the ring.
     await expect(page.getByTestId('water-view')).toHaveAttribute('data-kind', 'hotWater', { timeout: 5_000 });
     await expect
       .poll(() =>
@@ -116,7 +116,7 @@ test('the hot water page writes hotWaterData, 1:2 of a 40 g shot is 80 g, Decaid
         }),
       )
       .toBe(true);
-    // The page's state line says what home's says (spec 3.12): Hot water, then Idle or Heating.
+    // The page's state line says what home's says: Hot water, then Idle or Heating.
     const title = page.getByTestId('screen-hot-water').getByTestId('status-title');
     await expect(title).toHaveText('Hot water');
     await expect.poll(machineState, { timeout: 70_000, intervals: [300] }).not.toBe('hotWater');

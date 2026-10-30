@@ -2,9 +2,9 @@ import { expect, test, type Page } from '@playwright/test';
 import { mockGateway } from './mock-gateway';
 import { back, swipe } from './touch';
 
-// The row of pages (spec 3.8, acceptance item 32): hot water, home and steam from left to
+// The row of pages: hot water, home and steam from left to
 // right, a swipe slides to the neighbour; the history's swipe stays, and a drag on a control
-// moves no page. Since X4 (spec 3.11) there are no edge tabs: e2e/no-tabs.spec.ts has the dots
+// moves no page. There are no edge tabs: e2e/no-tabs.spec.ts has the dots
 // and the history's handle.
 
 const errors: string[] = [];
@@ -140,7 +140,7 @@ test('a drag on a control moves no page: a slider, the number pad', async ({ pag
   await swipe(page, { x: 400, y: 500 }, { x: 900, y: 500 });
   await expect(shown(page, 'hot-water')).toBeVisible();
 
-  // The page's own slider, the time's (spec 3.9 item 11): a drag along it to the left moves
+  // The page's own slider, the time's: a drag along it to the left moves
   // its value, not the page. The workflow's time is 30 s.
   const slider = (await page.getByTestId('hot-water-slider-time').boundingBox())!;
   const y = slider.y + slider.height / 2;

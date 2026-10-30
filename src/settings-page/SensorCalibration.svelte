@@ -7,7 +7,7 @@
   Licensed under the GNU General Public License v3.0 or later; used here under GPL-3.0.
 -->
 <script lang="ts">
-  // Calibration > Sensor Calibration (research.md 20.3, 20.10 S2c): for temperature, pressure
+  // Calibration > Sensor Calibration: for temperature, pressure
   // and flow the stored calibration, the one before this page's last write, and the machine's
   // live reading. Capture takes the reading while the machine runs (the mean of 5 s), the
   // measured value is typed, the outcome is shown, and Apply writes the correction after a

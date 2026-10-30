@@ -2,10 +2,10 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import { mockGateway } from './mock-gateway';
 import { toPage } from './touch';
 
-// One size per kind of text (spec 3.14, acceptance 95), on the mock gateway: the names of things
+// One size per kind of text, on the mock gateway: the names of things
 // are one role, the text size at weight 600. The profile and the bean on home have the same
 // computed size and weight, and so do the rows of the profile, bean and grinder lists and of the
-// bean pick. The state word and the page header are names too (Z23). The lint check (scripts/font-sizes.mjs) holds the rest: no literal size in the files.
+// bean pick. The state word and the page header are names too. The lint check (scripts/font-sizes.mjs) holds the rest: no literal size in the files.
 
 const errors: string[] = [];
 

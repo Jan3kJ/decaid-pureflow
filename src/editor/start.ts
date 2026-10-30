@@ -1,4 +1,4 @@
-// The editor's row of profiles to start from (founder, 2026-10-13): the profiles chosen in the
+// The editor's row of profiles to start from: the profiles chosen in the
 // settings (`startProfiles`), found among those the editor can open. One place for both
 // screens: the settings page offers what this finds, the editor shows what it keeps.
 import { DEFAULT_PROFILES } from '../aflow';
@@ -21,7 +21,7 @@ export function startName(title: string): string {
 
 /**
  * What a slot can hold: the five A-Flow 3.0 defaults, which the editor always has, then every
- * A-Flow 3.0 profile of the gateway's list (only those are editable, spec 3.2), each title once.
+ * A-Flow 3.0 profile of the gateway's list (only those are editable), each title once.
  */
 export function startChoices(records: readonly ProfileRecord[]): StartChoice[] {
   const titles: string[] = DEFAULT_PROFILES.map((entry) => entry.title);

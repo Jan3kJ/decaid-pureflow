@@ -40,8 +40,8 @@
   onMount(() => skin.connect());
   $effect(() => applyDisplay(skin.settings));
 
-  // One horizontal gesture for the pages, the way back and the shot history (src/shell/swipe.ts,
-  // spec 3.8, 3.14): hot water, home and steam are one row, and a swipe slides to the neighbour,
+  // One horizontal gesture for the pages, the way back and the shot history (src/shell/swipe.ts):
+  // hot water, home and steam are one row, and a swipe slides to the neighbour,
   // which is drawn beside the page only while it comes in; on home a swipe to the right from the
   // left fifth opens the history instead, and on the open history one to the left closes it. On
   // every other screen a swipe to the right is the way back, to where the screen was opened from,
@@ -49,7 +49,7 @@
   // starts on a control is the control's.
   const home = $derived(skin.screen === 'home');
   // Hot water or flush: the one large ring over the screen's main frame (`data-main-frame`), or over
-  // the screen under its header where none is marked (src/shell/cover.ts, spec 3.14). The open
+  // the screen under its header where none is marked (src/shell/cover.ts). The open
   // history is the screen then. The frame's content stays under the ring and is back when the run ends.
   const water = $derived(shownRun(skin.waterRun, skin.canStop));
   const watering = $derived(water !== null);
@@ -245,7 +245,7 @@
 
 {#snippet frame(screen: Screen)}
   {#if screen === 'home'}
-    <!-- Home has no edge tabs (spec 3.11): the history's handle at the left edge shows the swipe from there. -->
+    <!-- Home has no edge tabs: the history's handle at the left edge shows the swipe from there. -->
     <button
       class="handle"
       data-testid="history-handle"
@@ -263,7 +263,7 @@
     {:else if screen === 'profiles'}
       <Profiles {skin} />
     {:else if screen === 'editor'}
-      <!-- Every profile that is not A-Flow opens in the step editor (spec 3.6, research.md 17.5). -->
+      <!-- Every profile that is not A-Flow opens in the step editor. -->
       {#if editorFor(skin.workflow?.profile) === 'steps'}
         <StepEditor {skin} />
       {:else}
@@ -280,7 +280,7 @@
     {/if}
   </div>
 
-  <!-- The row of pages, the current one bright; a tap on a dot slides to its page (spec 3.11). -->
+  <!-- The row of pages, the current one bright; a tap on a dot slides to its page. -->
   {#if isPage(screen)}
     <div class="dots" role="group" aria-label="pages">
       {#each PAGES as page (page)}
@@ -335,7 +335,7 @@
   {/if}
 </main>
 
-<!-- Unsaved edits on the machine: asked before any load of the skin (founder, 2026-10-14). -->
+<!-- Unsaved edits on the machine: asked before any load of the skin. -->
 {#if skin.unsaved}
   <UnsavedDialog unsaved={skin.unsaved} onanswer={(answer: LoadAnswer) => skin.answerLoad(answer)} />
 {/if}
@@ -350,7 +350,7 @@
   </div>
 {/if}
 
-<!-- A start without settings took them from the backup in Decaid, said once (founder, 2026-10-14). -->
+<!-- A start without settings took them from the backup in Decaid, said once. -->
 {#if skin.restoredFrom !== null && !skin.refused}
   <div class="refused restored" role="status" data-testid="settings-restored">
     <span>
@@ -360,7 +360,7 @@
   </div>
 {/if}
 
-<!-- The machine sleeps, and not by the menu's 'Machine sleep': the skin is dark, and a touch anywhere wakes the machine (spec 3.1, 3.10). -->
+<!-- The machine sleeps, and not by the menu's 'Machine sleep': the skin is dark, and a touch anywhere wakes the machine. -->
 {#if skin.asleep}
   <button class="asleep" data-testid="asleep" onpointerdown={() => skin.wake()}>
     <strong>Asleep</strong>
@@ -378,7 +378,7 @@
     overflow: hidden;
   }
 
-  /* A page of the strip fills the screen, with no column at its edge (spec 3.14); the neighbour coming in lies beside it. */
+  /* A page of the strip fills the screen, with no column at its edge; the neighbour coming in lies beside it. */
   .page {
     position: absolute;
     inset: 0;
@@ -425,7 +425,7 @@
     position: absolute;
     left: 0;
     top: 50%;
-    /* over the ring of hot water and flush, under the menu (spec 3.14) */
+    /* over the ring of hot water and flush, under the menu */
     z-index: 10;
     width: 2.6rem;
     height: 8rem;

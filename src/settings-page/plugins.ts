@@ -5,7 +5,7 @@
 // Copyright (C) 2025-2026 Decent Espresso
 // Licensed under the GNU General Public License v3.0 or later; used here under GPL-3.0.
 //
-// The plugin cards of Extensions > Plugins (research.md 20.3, 20.10 S2c), without UI: a
+// The plugin cards of Extensions > Plugins, without UI: a
 // plugin's state from what `GET /api/v1/plugins` lists, and one control per setting its
 // manifest declares (string, number, boolean, enum, secure). A secure value never reaches the
 // page: the gateway reports `{ isSet }`, and the control shows only that.

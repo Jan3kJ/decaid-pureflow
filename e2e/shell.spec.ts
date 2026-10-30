@@ -6,7 +6,7 @@ import { defaultProfile } from '../src/shell/profiles';
 import { WATER_FRAMES, mockGateway, record } from './mock-gateway';
 import { back, toPage } from './touch';
 
-// The shell against a mocked gateway: home, the profile picker and a replayed shot (D6).
+// The shell against a mocked gateway: home, the profile picker and a replayed shot.
 
 const errors: string[] = [];
 
@@ -22,7 +22,7 @@ test.beforeEach(({ page }) => {
 async function expectInsideViewport(page: Page) {
   const overflow = await page.evaluate(() => {
     const root = document.documentElement;
-    // In the settings page's panels, which scroll (research.md 20.7), only the width counts.
+    // In the settings page's panels, which scroll, only the width counts.
     const scrolled = (element: Element) =>
       !!element.parentElement?.closest('[data-testid="settings-content"], [aria-label="settings categories"]');
     const outside = [...document.querySelectorAll('button, h1, section, aside, svg')].filter((element) => {
@@ -57,7 +57,7 @@ test('home shows the state line the machine sent, the profile, and no start: the
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
   await expect(page.getByTestId('state-group')).toHaveText('92.6 °C');
   await expect(page.getByTestId('state-steam')).toHaveText('148 °C');
-  // 38 mm of water is 1040 ml in Streamline's table (spec 3.14 'The tank in ml').
+  // 38 mm of water is 1040 ml in Streamline's table .
   await expect(page.getByTestId('state-tank')).toHaveText('1040 ml');
   await expect(page.getByTestId('state-scale')).toHaveText('0.0 g');
   const line = (await page.getByTestId('status').boundingBox())!;
@@ -235,7 +235,7 @@ test('a shot started at the machine: home shows it by itself with a live graph a
 
   await gateway.replay(page, 0.3, 0.7);
   await expect.poll(() => points(page)).toBeGreaterThan(early);
-  // The profile and bean buttons stay while the shot runs, but off (spec 3.17 item 10).
+  // The profile and bean buttons stay while the shot runs, but off.
   await expect(page.getByTestId('open-profiles')).toBeDisabled();
   expect(parseFloat((await page.getByTestId('shot-timer').textContent())!)).toBeGreaterThan(15);
   expect(parseFloat((await page.getByTestId('shot-weight').textContent())!)).toBeGreaterThan(5);
@@ -243,7 +243,7 @@ test('a shot started at the machine: home shows it by itself with a live graph a
   for (const line of ['pressure', 'flow', 'weight-flow', 'temperature']) {
     expect((await page.getByTestId(`shot-line-${line}`).getAttribute('d'))!.length).toBeGreaterThan(100);
   }
-  // The graph draws the weight flow in g/s, the screen keeps the weight in g (founder, 2026-10-14).
+  // The graph draws the weight flow in g/s, the screen keeps the weight in g.
   await expect(page.getByTestId('shot-line-weight')).toHaveCount(0);
   await expect(page.getByTestId('shot-unit-weight-flow')).toHaveText('g/s');
   await expectInsideViewport(page);
@@ -256,7 +256,7 @@ test('a shot started at the machine: home shows it by itself with a live graph a
 
   await gateway.replay(page, 0.7, 1);
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
-  // The finished shot stays on home with its table (spec 3.11); nothing dismisses it.
+  // The finished shot stays on home with its table; nothing dismisses it.
   await expect(page.getByTestId('shot-phases')).toBeVisible();
   await expect(page.getByTestId('shot-plot')).toHaveCount(0);
   await expect(page.getByTestId('dismiss-shot')).toHaveCount(0);
@@ -300,7 +300,7 @@ test('the picker lists the A-Flow 3.0 defaults of the skin first, offers no add 
   await expect(page.getByTestId('screen-profiles')).toBeVisible();
 
   // The skin's five defaults first, marked; the copies under their titles that Decaid stores
-  // (here the plugin's light and medium as Decaid bundles them) are not listed (spec 3.8, T5).
+  // (here the plugin's light and medium as Decaid bundles them) are not listed.
   const items = page.getByTestId('profile-item');
   await expect(items.locator('.title')).toHaveText([
     'A-Flow / default-floral',
@@ -320,7 +320,7 @@ test('the picker lists the A-Flow 3.0 defaults of the skin first, offers no add 
   await expect(page.getByRole('button', { name: /^add/ })).toHaveCount(0);
 
   await expectInsideViewport(page);
-  // A tap selects, 'load' loads (founder, 2026-10-17).
+  // A tap selects, 'load' loads.
   await items.filter({ hasText: 'A-Flow / default-dark' }).click();
   await expect(page.getByTestId('profile-detail')).toContainText('A-Flow / default-dark');
   await expect(page.getByTestId('profile-detail')).toContainText('16 g');
@@ -356,7 +356,7 @@ test('the picker lists the A-Flow 3.0 defaults of the skin first, offers no add 
 
 test('the picker lists a stored profile with a default’s steps under its own title only', async ({ page }) => {
   const gateway = (await mockGateway(page)).withDefaults();
-  // The founder's test-light: the steps of the light default under another title (spec 3.8).
+  // A test-light: the steps of the light default under another title.
   const light = DEFAULT_PROFILES[1];
   gateway.profiles.push(
     record(
@@ -389,7 +389,7 @@ test('the picker filters by title, a tap selects and shows the description and p
   const items = page.getByTestId('profile-item');
   await expect(items).toHaveCount(8);
 
-  // The filter: a part of the title, in any case (founder, 2026-10-17).
+  // The filter: a part of the title, in any case.
   const filter = page.getByTestId('profile-filter');
   // The skin's default only: the copy withDefaults stored and the plugin's bundled one are not listed.
   await filter.fill('LIGHT');
@@ -459,7 +459,7 @@ test('every screen is one tap from home and back, and the screen survives a relo
 
   await page.getByTestId('open-editor').click();
   await expect(page.getByTestId('graph')).toBeVisible();
-  // localStorage, not sessionStorage: the WebView unloads in the background (spec 4.1).
+  // localStorage, not sessionStorage: the WebView unloads in the background.
   expect(await page.evaluate(() => [localStorage.getItem('pureflow.screen'), sessionStorage.length])).toEqual(['editor', 0]);
   await page.reload();
   await expect(page.getByTestId('screen-editor')).toBeVisible();

@@ -81,7 +81,7 @@ export async function saveEdit(
 export type Stored = { record: ProfileRecord; workflow: Workflow } | { record: ProfileRecord; error: unknown };
 
 /**
- * 'save' and 'save as' load what they stored (founder, 2026-10-13): first the save, then the
+ * 'save' and 'save as' load what they stored: first the save, then the
  * stored profile with the picker's loading function.
  */
 export async function storeAndLoad(client: DecaidClient, store: () => Promise<ProfileRecord>): Promise<Stored> {
@@ -99,7 +99,7 @@ export function changed(params: AFlowParams, openedWith: AFlowParams): boolean {
 }
 
 /**
- * Leaving the editor (founder, 2026-10-13): changed values are loaded, saved or not, under the
+ * Leaving the editor: changed values are loaded, saved or not, under the
  * name of the profile they started from; unchanged ones load nothing and answer null.
  */
 export function loadOnLeave(

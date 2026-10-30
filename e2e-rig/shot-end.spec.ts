@@ -4,11 +4,11 @@ import type { RigWorkflow } from './gateway';
 import { IDLE } from './idle';
 import { titleLines } from '../src/shell/profiles';
 
-// T1 (spec 3.8, acceptance 27) against the rig: a simulated shot's live graph ends where the
+// Against the rig: a simulated shot's live graph ends where the
 // shot ends and is as long as Decaid's record of it, within one second; its scale stays at 10
 // (the simulation reaches 10.0 bar, not more); and the running time axis starts at the
-// profile's last shot. The simulated machine goes from pouring to idle without a tail
-// (research.md 23). The test removes the shot it makes and puts the workflow back.
+// profile's last shot. The simulated machine goes from pouring to idle without a tail.
+// The test removes the shot it makes and puts the workflow back.
 
 const GATEWAY = 'http://localhost:8080';
 const PROFILE = 'A-Flow / default-medium';
@@ -73,7 +73,7 @@ test('a simulated shot: the live graph ends with the shot, as long as its record
     expect(await graph.getAttribute('data-scale')).toBe('10');
     await page.screenshot({ path: 'e2e-rig/.results/espresso-shot-end-rig.png' });
 
-    // The finished shot stays on home (spec 3.11).
+    // The finished shot stays on home.
     await expect(page.getByTestId('last-shot')).toBeVisible({ timeout: 180_000 });
     await expect(page.getByTestId('screen-home')).toBeVisible();
     const last = page.getByTestId('last-shot');

@@ -2,8 +2,7 @@ import { expect, test } from '@playwright/test';
 import { mockGateway, profile, record } from './mock-gateway';
 
 // The description's lower border is the accent while more of its text lies below the visible
-// part; at the end of the text, and for a text that fits, it is as the others (spec 3.18 item 6,
-// acceptance 129).
+// part; at the end of the text, and for a text that fits, it is as the others.
 
 const LONG = Array.from({ length: 40 }, (_, i) => `Line ${i + 1} of a long description.`).join('\n');
 

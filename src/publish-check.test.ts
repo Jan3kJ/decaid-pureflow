@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
-// scripts/publish-check.mjs (spec 3.13 item 3, 3.15 step 8, acceptance 81): nothing private in the
+// scripts/publish-check.mjs: nothing private in the
 // product repository. It passes on a clean tree and fails on a planted Windows path, e-mail address,
 // foreign MAC address, the messenger's name and a token; with --history also on what only an
 // earlier commit holds, or a commit's author. The planted words are written in parts so that this

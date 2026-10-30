@@ -18,7 +18,7 @@
   let { skin, heat, title, beside }: Props = $props();
 </script>
 
-<!-- One header for home, steam and hot water (spec 3.11, 3.14): the menu in the top left corner, the
+<!-- One header for home, steam and hot water: the menu in the top left corner, the
      state line right of it, in the same place on each, and the page's title at the right end. -->
 <header class="page-header">
   <Menu {skin} />
@@ -42,7 +42,7 @@
     flex: 1;
   }
 
-  /* a name, like the state word: the profile name's size and weight (spec 3.14's roles) */
+  /* a name, like the state word: the profile name's size and weight */
   .title {
     flex: none;
     font-size: var(--text-body);

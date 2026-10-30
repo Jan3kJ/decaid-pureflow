@@ -3,7 +3,7 @@ import { mockGateway, shotEvents } from './mock-gateway';
 import { toPage } from './touch';
 
 // No strip above home's graph; the step that runs is printed in the state line, after the scale's
-// weight (spec 3.14, Z4; acceptance 94). The column's time says 'time, finished' after a shot.
+// weight. The column's time says 'time, finished' after a shot.
 
 const errors: string[] = [];
 

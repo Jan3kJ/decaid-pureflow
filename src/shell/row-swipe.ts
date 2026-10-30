@@ -1,4 +1,4 @@
-// A picker row's swipe (spec 3.10, 3.17 item 5): a drag to the left opens the row's delete
+// A picker row's swipe: a drag to the left opens the row's delete
 // button at its right end, a drag to the right its rename button at its left end, a drag back
 // closes it; a vertical drag is the list's scroll. Pure: distances in, decisions out.
 import { SWIPE_SLOP } from './swipe';

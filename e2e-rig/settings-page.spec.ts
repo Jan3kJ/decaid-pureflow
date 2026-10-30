@@ -3,11 +3,11 @@ import type { MachineSnapshot, DecaidSettings, MachineSettings, AdvancedSettings
 import type { RigWorkflow } from './gateway';
 import { IDLE } from './idle';
 
-// The ported settings page against the rig (acceptance 22, research.md 20.10 S2a): Decaid's
+// The ported settings page against the rig: Decaid's
 // settings changed through the page are read back from the running gateway, and the flush's
-// flow and duration (founder, 2026-10-17) reach the workflow and the machine. The test records
+// flow and duration reach the workflow and the machine. The test records
 // every value it changes before it starts, puts each back and checks them afterwards, and puts
-// back Streamline's remembered values (research.md 16) and the skin's KV backup as it found
+// back Streamline's remembered values and the skin's KV backup as it found
 // them. Without a gateway: e2e/settings-page.spec.ts.
 
 const GATEWAY = 'http://localhost:8080';
@@ -72,7 +72,7 @@ async function snapshot() {
   };
 }
 
-test('settings changed through the page are read back from the gateway, and restored (acceptance 22)', async ({ page }) => {
+test('settings changed through the page are read back from the gateway, and restored', async ({ page }) => {
   test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
   const before = await snapshot();
   console.log('before', JSON.stringify(before));
@@ -116,7 +116,7 @@ test('settings changed through the page are read back from the gateway, and rest
     const steam = (await api<RigWorkflow>('GET', '/api/v1/workflow')).steamSettings;
     expect(steam).toEqual({ ...before.steamSettings, flow: steamFlow });
 
-    // The flush (founder, 2026-10-17): the workflow's rinseData, which Decaid writes to the
+    // The flush: the workflow's rinseData, which Decaid writes to the
     // machine's flushFlow and flushTimeout; the simulated DE1 keeps the flow, not the time-out.
     await page.getByTestId('settings-sub-flush').click();
     await type(page, 'setting-flush-duration', String(flushDuration));

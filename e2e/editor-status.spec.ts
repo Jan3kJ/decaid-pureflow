@@ -5,7 +5,7 @@ import { DEFAULT_SAVE_HINT } from '../src/editor/status';
 import { mockGateway, record } from './mock-gateway';
 import { back } from './touch';
 
-// The A-Flow editor's status line and spacing (spec 3.9 items 8 and 9, U5): every notice stands
+// The A-Flow editor's status line and spacing: every notice stands
 // in the one line under the start row and nowhere else, and the header with the name, the start
 // row, save, save as and the mode switch is one row at 1280 x 800 with room between the buttons.
 

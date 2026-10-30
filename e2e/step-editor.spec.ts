@@ -5,7 +5,7 @@ import blooming from '../src/steps/fixtures/bundled-profiles.json' with { type: 
 import { mockGateway, type MockGateway } from './mock-gateway';
 import { back } from './touch';
 
-// The step editor (spec 3.6, acceptance 10, research.md 17.11), against a mocked gateway:
+// The step editor, against a mocked gateway:
 // every profile that is not A-Flow 3.0 opens in it; a value changed with ± and with the pad,
 // a step added, one deleted and one moved, then 'save', give a stored profile whose steps
 // equal the edit, with its parent for Decaid's lineage.
@@ -83,7 +83,7 @@ async function type(page: Page, testid: string, keys: string) {
   await page.getByTestId('numpad-confirm').click();
 }
 
-/** The edits of acceptance 10, on screen; the same edits, with the model, give what must be stored. */
+/** The edits on screen; the same edits, with the model, give what must be stored. */
 async function editOnScreen(page: Page): Promise<Profile> {
   let expected: Profile = structuredClone(MINE);
   // A value with ±: step 1's temperature, 97.5 → 98.0 °C.

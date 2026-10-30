@@ -4,10 +4,10 @@
 // Copyright (C) 2025-2026 Decent Espresso
 // Licensed under the GNU General Public License v3.0 or later; used here under GPL-3.0.
 //
-// The shot's values per phase, as Streamline's shot data table shows them (spec 3.9, the
-// founder's screenshot of 2026-10-17): rows Preinfusion, Extraction and Total; columns the
+// The shot's values per phase, as Streamline's shot data table shows them:
+// rows Preinfusion, Extraction and Total; columns the
 // seconds, the weight, the volume, the temperature (lowest → highest), the flow and the
-// pressure (start → peak → end). Pure: frames in, the table's cells out (research.md 24).
+// pressure (start → peak → end). Pure: frames in, the table's cells out.
 import type { MachineSnapshot, ShotRecord } from '../api';
 import { gramsOf } from '../display';
 
@@ -52,7 +52,7 @@ export interface PhaseTable {
 
 /**
  * The substates Streamline counts (`espressoStates` in shotData.js): water flows through the
- * puck. `preparingForShot` before and between steps (research.md 8.2) and `pouringDone` after
+ * puck. `preparingForShot` before and between steps and `pouringDone` after
  * the stop are left out.
  */
 const COUNTED: readonly string[] = ['preinfusion', 'pouring'];

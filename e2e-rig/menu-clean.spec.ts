@@ -3,7 +3,7 @@ import type { MachineSnapshot, WaterLevels } from '../src/api';
 import { mmToMl } from '../src/settings-page/water-tank';
 import { IDLE } from './idle';
 
-// Acceptance item 35's clean (spec 3.8 'Menu: clean', T9) against the rig: home's menu opens
+// The menu's clean against the rig: home's menu opens
 // the settings page on Maintenance's clean, which shows the tank's water in ml as Streamline
 // converts the level of `/ws/v1/machine/waterLevels` (Decaid 0.8.8 has no REST request for it:
 // `GET /api/v1/machine/waterLevels` is 404), and the drip tray hint. Nothing is started; the

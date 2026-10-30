@@ -1,4 +1,4 @@
-// A bean's photo of its bag (spec 3.9 item 20, research.md 29.14): Decaid's bean has no field
+// A bean's photo of its bag: Decaid's bean has no field
 // for an image, so the photo is a JPEG data URL in the skin's KV namespace under the bean's id.
 // A bean deleted anywhere (the skin only archives) leaves its key behind; the catalogue's read
 // deletes the keys of beans that are gone.

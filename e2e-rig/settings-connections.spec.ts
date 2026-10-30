@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import type { MachineSnapshot, DecaidSettings, DeviceInfo, MachineInfo } from '../src/api';
 import { IDLE } from './idle';
 
-// Connections, Maintenance and Machine Information against the rig (research.md 20.10 S2b):
+// Connections, Maintenance and Machine Information against the rig:
 // the device lists show the simulated MockDe1 and MockScale connected; the scale's power mode
 // and 'scale required' changed through the page are read back from the gateway and restored;
 // a clean is started and cancelled on the simulated DE1 and its state read back. No search,
@@ -116,7 +116,7 @@ test('a clean is started through the page and cancelled on the simulated DE1; th
     await openCategory(page, 'maintenance');
     await page.getByTestId('maintenance-start-clean').click();
     await page.getByTestId('settings-confirm-ok').click();
-    // The simulated DE1 enters cleaning (substate idle) and stays in it (research.md 20.14).
+    // The simulated DE1 enters cleaning (substate idle) and stays in it.
     await expect.poll(state, { timeout: 10_000 }).toBe('cleaning');
     await expect(page.getByTestId('maintenance-cancel-clean')).toBeVisible();
     await expect(page.getByTestId('maintenance-caption-clean')).toHaveText('Starting');

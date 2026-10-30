@@ -1,4 +1,4 @@
-// The steam timer from the weight on the scale (spec 3.4): which mug stands there, how much
+// The steam timer from the weight on the scale: which mug stands there, how much
 // milk is in it and how long that milk steams. Pure: no clock, no network, no storage.
 import type { SteamSettings } from '../settings';
 
@@ -20,7 +20,7 @@ export function mugs(settings: SteamSettings): Mug[] {
 }
 
 /**
- * The weights the size steps up above (founder, 2026-10-15, spec 3.4): the midpoint between
+ * The weights the size steps up above: the midpoint between
  * two full mugs, a mug of size n holding n drinks. With the defaults 412.5 g and 625 g.
  */
 export function mugSteps(settings: SteamSettings): { medium: number; large: number } {
@@ -69,11 +69,11 @@ export function readScale(weight: number, settings: SteamSettings): SteamReading
   return { mug, milk, seconds: timerSeconds(milk, settings) };
 }
 
-/** s, the machine's steam timer is one byte (research.md 8.3) */
+/** s, the machine's steam timer is one byte */
 export const TIMER_MAX = 255;
 
 /**
- * The seconds sent for a timer with an adjust button's amount (spec 3.7): the calculated
+ * The seconds sent for a timer with an adjust button's amount: the calculated
  * timer or a favourite plus the amount, whole seconds from 1 to 255. No amount (null) leaves
  * the seconds as they are; a timer of 0, an empty scale, stays 0.
  */

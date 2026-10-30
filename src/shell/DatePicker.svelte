@@ -1,7 +1,7 @@
 <script lang="ts">
   // Picks a date on screen, in the number pad's dialog: a month grid, weeks from Monday. The
   // value is an ISO date (`YYYY-MM-DD`) or '' for none; a date after today is allowed. A vertical
-  // drag on the day grid scrolls through the months, as the wheel does (spec 3.14 item 12).
+  // drag on the day grid scrolls through the months, as the wheel does.
   import {
     addMonths,
     DRAG_SLOP,

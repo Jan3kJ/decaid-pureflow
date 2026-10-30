@@ -1,5 +1,5 @@
 // `npm run type-sizes [file]`: lists every text's computed size and weight per screen, grouped by
-// the role of spec 3.14 ('One size per kind of text'), on the mock gateway at the design target
+// the type role (one size per kind of text), on the mock gateway at the design target
 // (e2e/type-sizes.sizes.ts). Prints the listing, and writes it to the file when one is given, so
 // that a listing before a change can be set beside one after it. With `--shots <folder>` it also
 // writes a picture of each screen there.

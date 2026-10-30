@@ -1,4 +1,4 @@
-// The steam heater's switch of home's menu (spec 3.7, research.md 22). Decaid has no request of
+// The steam heater's switch of home's menu. Decaid has no request of
 // its own for it: the workflow's `steamSettings.targetTemperature` is the heater, 0 is off, and
 // Decaid writes anything below 135 °C to the machine as 0. The machine's own `targetSteamTemp`
 // says which state the heater is in. No UI: the gateway and the machine's settings are parameters.
@@ -37,7 +37,7 @@ export interface HeaterGateway {
 
 /**
  * Switches the heater: off writes 0, on writes `temperature`. Decaid passes a value on to the
- * machine only when it differs from the workflow's old one (research.md 16), so when the
+ * machine only when it differs from the workflow's old one, so when the
  * machine's settings do not show the change after a moment they are written directly.
  * `machine` returns the latest frame of `/ws/v1/machine/shotSettings`.
  */

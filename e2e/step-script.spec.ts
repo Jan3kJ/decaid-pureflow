@@ -3,7 +3,7 @@ import type { Profile } from '../src/api';
 import blooming from '../src/steps/fixtures/bundled-profiles.json' with { type: 'json' };
 import { mockGateway, type MockGateway } from './mock-gateway';
 
-// The step editor's SCRIPT tab (spec 3.7, acceptance 26 second half, research.md 17.18), against
+// The step editor's SCRIPT tab, against
 // a mocked gateway: a tap on a state word cycles it, a tap on a number opens the number pad,
 // both change the preview and, saved, the stored steps; there is no text field.
 

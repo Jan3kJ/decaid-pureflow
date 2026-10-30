@@ -263,7 +263,7 @@
 
   /*
    * The graph's own sizes, inside its SVG: `text` and `text.value` fit the drawing, not a text
-   * role (spec 3.14; scripts/font-sizes.mjs lets these rules through).
+   * role (scripts/font-sizes.mjs lets these rules through).
    */
   text {
     fill: var(--dim);

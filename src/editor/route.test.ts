@@ -21,7 +21,7 @@ describe('editorFor', () => {
     expect(editorFor(saved)).toBe('aflow');
   });
 
-  it("Decaid's bundled de1app A-Flow profiles and the plugin's older ones open in the A-Flow editor, by their steps (spec 3.9)", () => {
+  it("Decaid's bundled de1app A-Flow profiles and the plugin's older ones open in the A-Flow editor, by their steps", () => {
     for (const profile of bundled.filter((entry) => entry.title.startsWith('A-Flow /')))
       expect(editorFor(profile as Profile)).toBe('aflow');
     for (const profile of plugin12) expect(editorFor(profile as Profile)).toBe('aflow');

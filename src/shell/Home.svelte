@@ -10,14 +10,14 @@
   let { skin }: Props = $props();
 </script>
 
-<!-- The menu and the state line only: the profile and bean are in the right column (spec 3.11, 3.14). -->
+<!-- The menu and the state line only: the profile and bean are in the right column. -->
 {#snippet header()}
   <PageHeader {skin} heat="group" />
 {/snippet}
 
 <div class="home">
-  <!-- Home is the shot screen: the graph and the right column, live while a shot runs (spec 3.11);
-       the column starts at the page's top, beside the header (spec 3.14). Hot water and flush
+  <!-- Home is the shot screen: the graph and the right column, live while a shot runs;
+       the column starts at the page's top, beside the header. Hot water and flush
        cover the graph's frame (App.svelte). -->
   <ShotView {skin} top={header} />
 </div>

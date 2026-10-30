@@ -2,7 +2,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import { HEATING_SECONDS, SHOT_EVENTS, WATER_FRAMES, measurementsOf, mockGateway, profile } from './mock-gateway';
 import { back } from './touch';
 
-// The shot graph against a mocked gateway (the founder's notes of 2026-10-13): the heating
+// The shot graph against a mocked gateway: the heating
 // before the water is cut, a stored shot fills the width, the profile's targets are dashed
 // lines with their own quantity, every scale has its unit, and the legend is a setting.
 
@@ -41,7 +41,7 @@ test('a live shot starts its graph and timer when water moves, not while the mac
 
   // The water: the graph starts at 0 s with the first frame of preinfusion.
   await gateway.replay(page, HEATING_SHARE, 1);
-  // The finished shot stays on home (spec 3.11).
+  // The finished shot stays on home.
   await expect(page.getByTestId('screen-home')).toBeVisible();
   const last = page.getByTestId('last-shot');
   expect(await points(last)).toBeGreaterThanOrEqual(WATER_FRAMES);
@@ -80,8 +80,8 @@ test('the targets are dashed lines with their quantity, every scale has its unit
   expect(temperatureTarget.y + temperatureTarget.height).toBeLessThan(mainUnit.y);
   expect(temperatureTarget.y).toBeGreaterThan(temperatureUnit.y);
   await expect(graph.getByTestId('shot-unit-temperature')).toHaveText('°C');
-  // The weight flow shares the scale of flow and pressure, so that scale names g/s too
-  // (founder, 2026-10-14); there is no scale in grams and no target weight on the graph.
+  // The weight flow shares the scale of flow and pressure, so that scale names g/s too;
+  // there is no scale in grams and no target weight on the graph.
   await expect(graph.getByTestId('shot-unit-main')).toHaveText('bar · ml/s · g/s');
   await expect(graph.getByTestId('shot-unit-weight-flow')).toHaveText('g/s');
   await expect(graph.getByTestId('shot-line-weight')).toHaveCount(0);
@@ -121,7 +121,7 @@ test('the targets are dashed lines with their quantity, every scale has its unit
 
 test('a shot without a scale has no weight flow: nothing yellow, no g/s', async ({ page }) => {
   const gateway = await mockGateway(page);
-  // As on 2026-10-13, when the founder's scale did not connect: measurements without a weight.
+  // As when a scale does not connect: measurements without a weight.
   gateway.addShot('no-scale', '2026-10-12T08:00:00.000000', profile('A-Flow / default-light', 48, 9), { targetYield: 48 });
   gateway.measurements['no-scale'] = measurementsOf(60).map((measurement) => ({ ...measurement, scale: null }));
   await home(page);

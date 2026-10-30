@@ -3,7 +3,7 @@ import type { DecaidSettings, MachineSnapshot, WebUiServerStatus, WebUiSkin } fr
 import type { RigWorkflow } from './gateway';
 import { IDLE } from './idle';
 
-// Skin > Active Skin against the rig (spec 3.9 item 15, U11, acceptance 53): the page lists the
+// Skin > Active Skin against the rig: the page lists the
 // rig's installed skins with Decaid's default marked, and a switch makes another skin Decaid's
 // default, starts its skin server again and opens the port it serves on. The other skin is not
 // loaded: its page is answered here, so it changes nothing in Decaid. The test records the default

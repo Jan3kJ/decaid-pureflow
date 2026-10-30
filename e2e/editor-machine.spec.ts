@@ -7,10 +7,10 @@ import { mockGateway, type MockGateway } from './mock-gateway';
 import { back, selectPhase } from './touch';
 import light from '../src/aflow/defaults/default-light.json' with { type: 'json' };
 
-// The editor wired to the generator and the machine (D7), against a mocked gateway: it opens on
+// The editor wired to the generator and the machine, against a mocked gateway: it opens on
 // the current profile, saves with Decaid's lineage and loads what the generator writes. There
 // is no 'load to machine': 'save' and 'save as' load what they stored, and leaving the editor
-// loads the values on screen when they changed (founder, 2026-10-13).
+// loads the values on screen when they changed.
 
 const errors: string[] = [];
 
@@ -73,7 +73,7 @@ function loadedProfile(gateway: MockGateway, title: string, author: string, work
   // The workflow has no metadata: its copy carries the values in its notes (storage.ts).
   const params = splitNotes(profile.notes).params;
   if (!params) throw new Error('the loaded profile carries no A-Flow values');
-  // The profile sent to the machine equals the generator's output for the values (acceptance 3).
+  // The profile sent to the machine equals the generator's output for the values.
   expect(profile).toEqual(workflowProfile(buildProfile(params, { title, author }, workaround), params));
   expect(context).toEqual({ targetYield: params.stopWeight, targetDoseWeight: params.dose });
   expect(profile.target_weight).toBe(params.stopWeight);
@@ -81,7 +81,7 @@ function loadedProfile(gateway: MockGateway, title: string, author: string, work
   return params;
 }
 
-test('a profile that is not A-Flow 3.0 opens in the step editor (spec 3.6)', async ({ page }) => {
+test('a profile that is not A-Flow 3.0 opens in the step editor', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.addInitScript(() => localStorage.setItem('pureflow.screen', 'editor'));
   await page.goto('/');
@@ -165,7 +165,7 @@ test('an edit of the dose alone changes the metadata of the same record', async 
   expect(errors).toEqual([]);
 });
 
-// Spec 3.6 and acceptance 14: a profile of version 1, its values in its notes.
+// A profile of version 1, its values in its notes.
 test('a profile with the values in its notes opens right and is moved on its next save', async ({ page }) => {
   const gateway = await withMorning(page, true);
   await openEditor(page);
@@ -267,7 +267,7 @@ test('detail mode: typed values redraw the curve, are loaded by back, and are op
   await expect(page.getByTestId('editor-notice')).toHaveCount(0);
   await page.getByTestId('mode-detail').click();
   await expect(page.getByTestId('chip-value-dose')).toHaveText('18.5 g');
-  // A default is saved under a new name, not over itself: 'save' only says so (T7).
+  // A default is saved under a new name, not over itself: 'save' only says so.
   await expect(page.getByTestId('save')).toBeEnabled();
   expect(errors).toEqual([]);
 });
@@ -388,7 +388,7 @@ test('the name in the top bar opens the picker: changes are loaded first, a choi
   await expect(page.getByTestId('screen-profiles')).toBeVisible();
   expect(loadedProfile(gateway, 'A-Flow / default-light', 'Janek')).toEqual({ ...light, flowUp: false });
 
-  // An A-Flow 3.0 profile: the unsaved changes are asked about first (founder, 2026-10-14),
+  // An A-Flow 3.0 profile: the unsaved changes are asked about first,
   // then it is loaded, and the editor is on it.
   await page.getByTestId('profile-item').filter({ hasText: 'A-Flow / default-dark' }).filter({ hasText: 'A-Flow 3.0' }).click();
   await page.getByTestId('load-profile').click();

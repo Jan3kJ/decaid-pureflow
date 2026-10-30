@@ -6,7 +6,7 @@ import { homeShot, wantsNewest } from './home-shot';
 import { emptySeries, recordFrame, type Shot, type ShotSeries } from './shot';
 import { Skin } from './skin.svelte';
 
-// What home shows (spec 3.11, X1): `homeShot` for the running and the finished shot, a recalled
+// What home shows: `homeShot` for the running and the finished shot, a recalled
 // history entry and none, and the skin's shot after the machine frames of a recorded shot.
 
 const frames = (recording as { machine?: MachineSnapshot }[]).flatMap((event) => (event.machine ? [event.machine] : []));
@@ -180,7 +180,7 @@ describe('the shot on home', () => {
   });
 });
 
-describe('the filter of the state line (spec 3.12)', () => {
+describe('the filter of the state line', () => {
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => vi.useRealTimers());
 

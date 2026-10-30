@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SMOOTH_JUMP, smooth, type Smoothed } from './smooth';
 
-// The state line's temperature filter (spec 3.12, Y10; acceptance 90): an exponential moving
+// The state line's temperature filter: an exponential moving
 // average with a time constant of 1.5 s that restarts on a stale value and on a jump.
 
 /** ms between two frames: the machine sends 4 a second */

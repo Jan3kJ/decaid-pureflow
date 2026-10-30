@@ -1,11 +1,11 @@
-// The hot water page (spec 3.7, acceptance 20): its four values are the workflow's
+// The hot water page: its four values are the workflow's
 // `hotWaterData`, and its stop at weight can be set from the last shot by a ratio.
 //
-// Decaid stops hot water at a weight by itself (research.md 21): with a scale connected and its
+// Decaid stops hot water at a weight by itself: with a scale connected and its
 // setting `stopHotWaterAtWeight` on (the default) it tares the scale when hot water starts and
 // stops at `hotWaterData.volume`, taken as grams. So stop at weight is that field, and the skin
 // stops nothing itself; without a scale the machine's own volume and time stop remain, so the
-// row reads stop at volume in ml then (spec 3.12).
+// row reads stop at volume in ml then.
 import type { DecaidClient, HotWaterData, ShotRecordSummary, Workflow } from '../api';
 import type { ScaleLink } from '../shell/machine';
 
@@ -24,7 +24,7 @@ export interface HotWaterField {
 
 /**
  * Streamline's ranges (src/settings/settings.js, v0.2.14), with the flow up to 8 ml/s, the DE1's
- * maximum (spec 3.9, item 16). The hot water page and the settings page both read them.
+ * maximum. The hot water page and the settings page both read them.
  */
 export const HOT_WATER_FIELDS: HotWaterField[] = [
   { id: 'temperature', label: 'temperature', key: 'targetTemperature', unit: '°C', min: 50, max: 95, decimals: false },
@@ -66,8 +66,8 @@ export function heldValue(field: HotWaterField, value: number): number {
 
 /**
  * `hotWaterData` as it is written: a flow above the DE1's 8 ml/s, stored by another app or by
- * an older pureflow (the rig's workflow has 10), is held to 8 by the next change of any value
- * (spec 3.9). It is shown as it is until then; the other values are sent as they are.
+ * an older pureflow (the rig's workflow has 10), is held to 8 by the next change of any value.
+ * It is shown as it is until then; the other values are sent as they are.
  */
 export function heldHotWater<T extends Partial<HotWaterData>>(data: T): T {
   return typeof data.flow === 'number' && data.flow > FLOW_FIELD.max ? { ...data, flow: FLOW_FIELD.max } : data;
@@ -83,7 +83,7 @@ export const ratioLabel = (ratio: number): string => `1:${+ratio.toFixed(1)}`;
 
 /**
  * g, the final weight of the last measured espresso shot: the newest shot record's
- * `annotations.actualYield`, which Decaid writes from the scale (research.md 8.4). Null when
+ * `annotations.actualYield`, which Decaid writes from the scale. Null when
  * there is no shot, or the newest has no weight (pulled without a scale).
  */
 export function shotGrams(shot: ShotRecordSummary | undefined): number | null {

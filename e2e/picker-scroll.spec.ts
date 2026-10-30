@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { mockGateway, profile, record } from './mock-gateway';
 
 // The picker opens on the loaded profile, not at the top of the list: selected, in view and its
-// detail shown, so 'edit' works at once (spec 3.18 item 6, acceptance 129).
+// detail shown, so 'edit' works at once.
 
 test('the picker selects the loaded profile and scrolls to it', async ({ page }) => {
   const gateway = await mockGateway(page);

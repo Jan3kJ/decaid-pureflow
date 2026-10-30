@@ -30,8 +30,8 @@ function fakeClient() {
 
 const field = (id: string) => HOT_WATER_FIELDS.find((entry) => entry.id === id)!;
 
-describe('stop at weight from the last shot by a ratio (spec 3.7)', () => {
-  it('gives 80 g for a shot of 40 g and 1:2, and the founder example of each default', () => {
+describe('stop at weight from the last shot by a ratio', () => {
+  it('gives 80 g for a shot of 40 g and 1:2, and the example of each default', () => {
     expect(ratioWeight(40, 2)).toBe(80);
     expect(ratioWeight(40, 2.5)).toBe(100);
     expect(ratioWeight(40, 3)).toBe(120);
@@ -99,7 +99,7 @@ describe('the workflow write', () => {
     ]);
   });
 
-  it("holds the flow to the DE1's 8 ml/s: a typed 10, and a stored 10 at the next change (spec 3.9)", async () => {
+  it("holds the flow to the DE1's 8 ml/s: a typed 10, and a stored 10 at the next change", async () => {
     expect(FLOW_FIELD.max).toBe(8);
     expect(heldValue(FLOW_FIELD, 10)).toBe(8);
     expect(heldHotWater(RIG)).toEqual({ ...RIG, flow: 8 });
@@ -128,7 +128,7 @@ describe('the workflow write', () => {
   });
 });
 
-describe('stop at weight with a scale, stop at volume without one (spec 3.12, item 74)', () => {
+describe('stop at weight with a scale, stop at volume without one', () => {
   const stop = (link: 'connected' | 'disconnected' | 'unknown') => hotWaterFields(link).find((entry) => entry.key === 'volume')!;
 
   it('reads stop at weight in g with a connected scale', () => {
@@ -152,7 +152,7 @@ describe('stop at weight with a scale, stop at volume without one (spec 3.12, it
   });
 });
 
-describe('the rows and their sliders (spec 3.9, item 11)', () => {
+describe('the rows and their sliders', () => {
   it('step flow by 0.1 and the other values by 1', () => {
     expect(HOT_WATER_FIELDS.map(fieldStep)).toEqual([1, 0.1, 1, 1]);
   });

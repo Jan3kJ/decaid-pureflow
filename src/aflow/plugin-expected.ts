@@ -1,11 +1,11 @@
-// Test data, written by hand from Jan3kJ/A_Flow (read 2026-10-12): proc update_A-Flow in
+// Test data, written by hand from Jan3kJ/A_Flow : proc update_A-Flow in
 // code.tcl and the files in profiles/. Nothing here is computed by the generator or
 // taken from its constants.
 //
 // Only the 3.0 defaults that still equal a plugin file are regression cases: light, medium
 // and dark. default-floral has no plugin file (it is new in 3.0), and default-46mm is the
 // plugin's default-very-dark with a pour pressure, a ramp time and a flow direction the
-// founder changed on 2026-10-12, so the plugin never wrote either. Their expected steps are
+// user changed, so the plugin never wrote either. Their expected steps are
 // fixtures in generator.test.ts.
 //
 // Each list is what the plugin writes for that default profile with ramp down off, the
@@ -211,7 +211,7 @@ const dark: ProfileStep[] = [
   },
 ];
 
-// The plugin's default-like-dflow file. It is no longer a 3.0 default (founder, 2026-10-12),
+// The plugin's default-like-dflow file. It is no longer a 3.0 default,
 // but it is the plugin's one file with ramp 0 s: Pressure Up stays with 0 seconds, and Flow
 // Start is on (10 s, exit flow over pour flow - 0.1).
 export const PLUGIN_LIKE_DFLOW_STEPS: ProfileStep[] = [

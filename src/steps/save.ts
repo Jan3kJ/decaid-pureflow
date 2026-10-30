@@ -1,5 +1,5 @@
-// What the step editor's 'save' and 'save as' send, and what leaving it loads (research.md
-// 17.7): the profile as edited, through the skin's one writer (`writeProfile`) and its one
+// What the step editor's 'save' and 'save as' send, and what leaving it loads:
+// the profile as edited, through the skin's one writer (`writeProfile`) and its one
 // loader (`loadProfile`), as the A-Flow editor saves its values.
 import type { DecaidClient, Profile, ProfileRecord, Workflow } from '../api';
 import { sameSteps, writeProfile } from '../editor/storage';
@@ -60,8 +60,8 @@ export function saveStepAs(
 
 /**
  * Leaving the step editor: a profile that differs from the one it opened with is loaded,
- * saved or not; an unchanged one loads nothing and answers null (founder, 2026-10-13, for the
- * A-Flow editor).
+ * saved or not; an unchanged one loads nothing and answers null, as in the
+ * A-Flow editor.
  */
 export function loadStepsOnLeave(client: DecaidClient, profile: Profile, openedWith: Profile): Promise<Workflow | null> {
   if (!profileChanged(profile, openedWith)) return Promise.resolve(null);

@@ -4,7 +4,7 @@
 // Copyright (C) 2025-2026 Decent Espresso
 // Licensed under the GNU General Public License v3.0 or later; used here under GPL-3.0.
 //
-// The step editor's model (research.md 17.10): pure operations on a v2 profile, each
+// The step editor's model: pure operations on a v2 profile, each
 // returning a new profile and leaving its input as it was. Nothing is dropped: a step that is
 // not edited is the same object afterwards, and an edited step is the old one with only the
 // edited fields changed, so every field the editor does not show (a top-level field of
@@ -77,7 +77,7 @@ export function readExitDef(step: ProfileStep): { type: 'pressure' | 'flow' | 'o
   return { type: exit.type, condition: exit.condition || 'over', value: num(exit.value) };
 }
 
-/** A number of the profile; the gateway sends numbers, a file may hold strings (research.md 8.6). */
+/** A number of the profile; the gateway sends numbers, a file may hold strings. */
 export function num(value: unknown): number {
   return typeof value === 'number' ? value : Number(value ?? 0);
 }

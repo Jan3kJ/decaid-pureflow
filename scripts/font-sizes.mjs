@@ -1,4 +1,4 @@
-// Part of `npm run lint`: one size per kind of text (spec 3.14, acceptance 95). Every font size in
+// Part of `npm run lint`: one size per kind of text. Every font size in
 // src's .svelte files and src/app.css is a role's token (`var(--text-label)` ... `var(--text-big)`)
 // or `inherit`; a literal size fails, with its file, line and rule. The exceptions are named here,
 // rule by rule, and in their files: the graphs' SVG text and the ring's figures, which fit their

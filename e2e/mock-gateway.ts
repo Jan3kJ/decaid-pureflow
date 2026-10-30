@@ -81,7 +81,7 @@ export const ESPRESSO_FRAMES = RECORDING.filter(isEspresso).length;
 export const WATER_FRAMES = RECORDING.slice(
   RECORDING.findIndex((event) => isEspresso(event) && event.machine!.state.substate !== 'preparingForShot'),
 ).filter(isEspresso).length;
-/** A real DE1's steams from the founder's export: from `preparingForShot` to idle (src/steam/fixtures). */
+/** A real DE1's steams from an export: from `preparingForShot` to idle (src/steam/fixtures). */
 export const EXPORT_STEAMS = JSON.parse(
   readFileSync(new URL('../src/steam/fixtures/export-steams.json', import.meta.url), 'utf8'),
 ) as {
@@ -111,7 +111,7 @@ export function measurementsFrom(events: readonly RecordedEvent[]): ShotMeasurem
 export const MEASUREMENTS: ShotMeasurement[] = measurementsFrom(RECORDING);
 /** How a replay changes the recorded shot. */
 export interface ReplayOptions {
-  /** s of the real DE1's tail after the stop: espresso frames in `pouringDone` (spec 3.8) */
+  /** s of the real DE1's tail after the stop: espresso frames in `pouringDone` */
   tail?: number;
   /** pressure and its target times this factor: 1.15 takes the recording's 10 bar to 11.5 */
   pressure?: number;
@@ -122,8 +122,8 @@ const stamp = (at: number) => new Date(at).toISOString().replace('Z', '000');
 /**
  * The recorded shot, changed: with `tail`, after its last espresso frame the machine stays in
  * espresso for `tail` s at 10 frames a second, in `pouringDone`, its pressure falling to
- * 0.5 bar and its flow rising to a target of 4 ml/s, as in the founder's screenshot of
- * 2026-10-17 (docs/product/review-10-17-espresso-tail.png). The frames after it follow later.
+ * 0.5 bar and its flow rising to a target of 4 ml/s, as a real
+ * machine's tail does. The frames after it follow later.
  */
 export function shotEvents(options: ReplayOptions = {}): RecordedEvent[] {
   const factor = options.pressure ?? 1;
@@ -261,11 +261,11 @@ export class MockGateway {
   tareBlocked = false;
   /** true: `POST /api/v1/machine/heartbeat` answers 500 */
   heartbeatFails = false;
-  /** true: a stream is answered with an error frame and closed (research.md 9.4) */
+  /** true: a stream is answered with an error frame and closed */
   refuseStreams = false;
   /** sockets refused with an error frame, every stream counted */
   refused = 0;
-  /** Decaid's bean and grinder catalogue, archived ones too (research.md 29.3) */
+  /** Decaid's bean and grinder catalogue, archived ones too */
   beans: CatalogueBean[] = [];
   batches: BeanBatch[] = [];
   grinders: Grinder[] = [];
@@ -287,7 +287,7 @@ export class MockGateway {
     profile: profile('A-Flow / default-medium', 42, 9),
     context: { targetDoseWeight: 18, targetYield: 36, grinderSetting: '5.2' },
     steamSettings: { targetTemperature: 150, duration: 50, flow: 0.8, stopAtTemperature: 0 },
-    // As on the rig (research.md 8.6).
+    // As on the rig.
     hotWaterData: { targetTemperature: 75, duration: 30, volume: 50, flow: 10 },
     rinseData: { targetTemperature: 90, duration: 10, flow: 6 },
   };
@@ -301,7 +301,7 @@ export class MockGateway {
 
   /**
    * The settings the machine itself holds: `/ws/v1/machine/shotSettings`. Its steam timer is
-   * not the workflow's (research.md, section 16).
+   * not the workflow's.
    */
   shotSettings: Json = {
     steamSetting: 0,
@@ -313,7 +313,7 @@ export class MockGateway {
     targetShotVolume: 36,
     groupTemp: 94,
   };
-  /** `GET /api/v1/settings`: Decaid's own settings, as on the rig (research.md 20.4) */
+  /** `GET /api/v1/settings`: Decaid's own settings, as on the rig */
   decaidSettings: Json = {
     gatewayMode: 'tracking',
     webUiPath: 'C:Decaidweb-uistreamline.js',
@@ -348,7 +348,7 @@ export class MockGateway {
     tankTemp: 20,
     steamPurgeMode: 0,
   };
-  /** the machine settings the simulated DE1 accepts and does not keep (research.md 20.4) */
+  /** the machine settings the simulated DE1 accepts and does not keep */
   machineIgnores = new Set(['tankTemp']);
   /** `GET /api/v1/machine/settings/advanced`, as on the rig */
   advancedSettings: Json = {
@@ -361,7 +361,7 @@ export class MockGateway {
   };
   /** `/ws/v1/machine/waterLevels`: the tank, in mm */
   water: Json = { currentLevel: 38, refillLevel: 5 };
-  /** `/ws/v1/devices` and `GET /api/v1/devices`: the devices Decaid knows, as on the rig (2026-10-18) */
+  /** `/ws/v1/devices` and `GET /api/v1/devices`: the devices Decaid knows, as on the rig */
   devices: DeviceInfo[] = [
     { name: 'Mock Scale', id: 'MockScale', state: 'connected', type: 'scale', available: true, connectionRole: 'primary' },
     { name: 'MockDe1', id: 'MockDe1', state: 'connected', type: 'machine', available: true },
@@ -369,7 +369,7 @@ export class MockGateway {
   scanning = false;
   /** what the next scan finds */
   scanFinds: DeviceInfo[] = [];
-  /** a scan connects the scale again, as Decaid's scan connects a missing preferred scale (spec 3.9) */
+  /** a scan connects the scale again, as Decaid's scan connects a missing preferred scale */
   scanConnectsScale = false;
   /** device ids whose connect times out */
   connectTimesOut = new Set<string>();
@@ -436,7 +436,7 @@ export class MockGateway {
   private scheduleCount = 0;
   /** `GET /api/v1/machine/calibration/{target}`: the stored value of each sensor */
   calibration: Record<string, number> = { flow: 1.0, pressure: 1.0, temperature: 0.0 };
-  /** `GET /api/v1/webui/skins`, three of the rig's (2026-10-21); the port Decaid serves each on */
+  /** `GET /api/v1/webui/skins`, three of the rig's; the port Decaid serves each on */
   skins: { id: string; name: string; path: string; version: string; isBundled: boolean; port: number }[] = [
     { id: 'streamline.js', name: 'Streamline.js', path: '/web-ui/streamline.js', version: '0.2.17', isBundled: true, port: 27906 },
     { id: 'insight', name: 'Insight', path: '/web-ui/insight', version: '0.2.7', isBundled: true, port: 27911 },
@@ -447,7 +447,7 @@ export class MockGateway {
   serving: string | null = 'streamline.js';
   /** what `POST /api/v1/webui/skins/update` installs: a skin's new version */
   skinUpdates: Record<string, string> = {};
-  /** `GET /api/v1/machine/firmware`, as on the rig (2026-10-18) */
+  /** `GET /api/v1/machine/firmware`, as on the rig */
   firmware: Json = {
     artifacts: [
       {
@@ -528,7 +528,7 @@ export class MockGateway {
   private readonly deviceSockets = new Set<WebSocketRoute>();
   /**
    * The machine's substate, where a test sets one: a real DE1 stays in state steam after the
-   * steam, in `pouringDone`, `puffing` or `pausedSteam` (spec 3.7). Else the rig's.
+   * steam, in `pouringDone`, `puffing` or `pausedSteam`. Else the rig's.
    */
   substate: string | null = null;
   private weight = 0;
@@ -600,7 +600,7 @@ export class MockGateway {
     return this.calls('GET', /^\/api\/v1\/shots\/(?!latest$)./);
   }
 
-  /** Every call but a read, and but the heartbeat, which a touch sends (spec 3.12): what the page changed. */
+  /** Every call but a read, and but the heartbeat, which a touch sends: what the page changed. */
   writes() {
     return this.requests.filter((request) => request.method !== 'GET' && request.path !== '/api/v1/machine/heartbeat');
   }
@@ -612,7 +612,7 @@ export class MockGateway {
     );
   }
 
-  /** A shot in Decaid's history: the workflow as it was, as a shot record copies it (research.md 8.4). */
+  /** A shot in Decaid's history: the workflow as it was, as a shot record copies it. */
   addShot(id: string, timestamp: string, shotProfile: Profile, context: WorkflowContext | null): void {
     this.shots.push({
       id,
@@ -636,11 +636,11 @@ export class MockGateway {
   private putWorkflowSteam(patch: Partial<SteamSettings> | undefined): void {
     const before = this.workflow.steamSettings.duration;
     const temperatureBefore = this.workflow.steamSettings.targetTemperature;
-    // What a patch leaves out keeps its value (research.md 8.3).
+    // What a patch leaves out keeps its value.
     this.workflow = { ...this.workflow, steamSettings: { ...this.workflow.steamSettings, ...patch } };
     const duration = this.workflow.steamSettings.duration;
     if (duration !== before) this.setMachineSteamTimer(duration);
-    // The steam heater: a changed temperature reaches the machine, below 135 °C as 0 (research.md 22).
+    // The steam heater: a changed temperature reaches the machine, below 135 °C as 0.
     const temperature = this.workflow.steamSettings.targetTemperature;
     if (temperature !== temperatureBefore) {
       this.shotSettings = { ...this.shotSettings, targetSteamTemp: temperature < 135 ? 0 : temperature };
@@ -708,7 +708,7 @@ export class MockGateway {
 
   /**
    * The machine has steamed for `seconds`: its frames of that time, sent at once, with the
-   * curve of a real machine (the simulated one has none, research.md 8.7). It goes on steaming;
+   * curve of a real machine (the simulated one has none). It goes on steaming;
    * with `hold` it repeats its latest frame, so the time on screen stands still.
    */
   steamFor(seconds: number, hold = false): void {
@@ -863,14 +863,14 @@ export class MockGateway {
       // The state itself changes when the test replays the shot or lets it end; only sleep
       // and the wake from it are the mock's own.
       const asked = path.split('/').pop()!;
-      // The maintenance states are entered and left at once, as the simulated DE1 does (research.md 20.14).
+      // The maintenance states are entered and left at once, as the simulated DE1 does.
       const own = ['sleeping', 'cleaning', 'descaling', 'airPurge'];
       if (own.includes(asked) || own.includes(this.state)) this.state = asked as MachineState;
       return json(null);
     }
     if (method === 'PUT' && path === '/api/v1/scale/tare') {
       if (this.tareBlocked) {
-        // As Decaid 0.8.8 answered on the rig (research.md 9.1).
+        // As Decaid 0.8.8 answered on the rig.
         return json({ details: 'Tare blocked: a shot is in progress', type: 'block_tare_during_shot' }, 400);
       }
       if (!this.scaleConnected) return json({ error: 'DeviceNotConnectedException: scale not connected' }, 500);
@@ -971,7 +971,7 @@ export class MockGateway {
     }
     if (path === '/api/v1/machine/heartbeat' && method === 'POST') {
       if (this.heartbeatFails) return json({ error: 'the mock fails the heartbeat' }, 500);
-      // As the rig answers (research.md 32): the whole timeout again, -1 with presence off.
+      // As the rig answers: the whole timeout again, -1 with presence off.
       const { userPresenceEnabled, sleepTimeoutMinutes } = this.presence;
       return json({ timeout: userPresenceEnabled && this.machineConnected ? sleepTimeoutMinutes * 60 : -1 });
     }
@@ -1111,7 +1111,7 @@ export class MockGateway {
     if (path === '/api/v1/machine/settings' && method === 'GET') return json(this.machineSettings);
     if (path === '/api/v1/machine/settings' && method === 'POST') {
       const kept = Object.fromEntries(Object.entries(body).filter(([key]) => !this.machineIgnores.has(key)));
-      // The USB charger is written as 'enable' or 'disable' and read as a boolean; a boolean is ignored (research.md 20.4).
+      // The USB charger is written as 'enable' or 'disable' and read as a boolean; a boolean is ignored.
       if ('usb' in kept) {
         if (kept.usb === 'enable' || kept.usb === 'disable') kept.usb = kept.usb === 'enable';
         else delete kept.usb;
@@ -1151,14 +1151,14 @@ export class MockGateway {
       this.workflow = {
         ...this.workflow,
         ...body,
-        // A null clears a field of the context: Decaid returns the context without it (research.md 14).
+        // A null clears a field of the context: Decaid returns the context without it.
         context: Object.fromEntries(
           Object.entries({ ...this.workflow.context, ...body.context }).filter(([, value]) => value !== null),
         ),
         steamSettings: this.workflow.steamSettings,
       };
       this.putWorkflowSteam(body.steamSettings);
-      // Decaid writes a changed rinseData to the machine's flush settings (research.md 20.12).
+      // Decaid writes a changed rinseData to the machine's flush settings.
       if (body.rinseData) {
         const { targetTemperature, duration, flow } = this.workflow.rinseData;
         this.machineSettings = { ...this.machineSettings, flushTemp: targetTemperature, flushTimeout: duration, flushFlow: flow };
@@ -1192,7 +1192,7 @@ export class MockGateway {
     if (path === '/api/v1/shots' && method === 'GET') {
       const limit = Number(url.searchParams.get('limit') ?? 20);
       const offset = Number(url.searchParams.get('offset') ?? 0);
-      // `profileTitle` matches the whole title, as on the rig (research.md 23).
+      // `profileTitle` matches the whole title, as on the rig.
       const title = url.searchParams.get('profileTitle');
       const matching = this.shots.filter((shot) => title === null || shot.workflow?.profile?.title === title);
       const newestFirst = matching.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
@@ -1205,7 +1205,7 @@ export class MockGateway {
     }
     if (path.startsWith('/api/v1/shots/') && method === 'GET') {
       const shot = this.shots.find((candidate) => candidate.id === decodeURIComponent(path.split('/').pop()!));
-      // Only this call has the measurements (research.md 8.4).
+      // Only this call has the measurements.
       return shot
         ? json({ ...shot, measurements: this.measurements[shot.id] ?? MEASUREMENTS })
         : json({ error: 'Shot not found' }, 404);
@@ -1216,7 +1216,7 @@ export class MockGateway {
     }
     if (path === '/api/v1/profiles' && method === 'POST') {
       // The id is a hash of the steps and the target weight: steps that exist give the
-      // existing record back, with its old title and notes (research.md 9.2 and 11).
+      // existing record back, with its old title and notes.
       const existing = this.profiles.find((stored) => content(stored.profile) === content(body.profile));
       if (existing) return json(existing, 201);
       const saved = record(`profile:saved${this.profiles.length}`, body.profile, body.metadata ?? null);
@@ -1250,7 +1250,7 @@ export class MockGateway {
   /**
    * The bean and grinder catalogue as Decaid answers it: 201 with the object for a POST, a PUT
    * keeps the fields it omits, the lists leave archived ones out unless `includeArchived=true`,
-   * and an unknown id is 404 (research.md 29.4).
+   * and an unknown id is 404.
    */
   private answerCatalogue(method: string, path: string, url: URL, body: RequestBody): { value: unknown; status: number } | null {
     const all = url.searchParams.get('includeArchived') === 'true';

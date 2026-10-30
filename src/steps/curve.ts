@@ -4,7 +4,7 @@
 // Copyright (C) 2025-2026 Decent Espresso
 // Licensed under the GNU General Public License v3.0 or later; used here under GPL-3.0.
 //
-// The step editor's curve preview as data (research.md 17.10): the profile's steps in, the
+// The step editor's curve preview as data: the profile's steps in, the
 // targets over time out, as `ShotGraph` draws them. It is a schematic of the targets, not a
 // simulation of a shot. Pure: no DOM and no Svelte.
 //

@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
-// scripts/docs-check.mjs (spec 3.13, acceptance 83): every link and image of README.md,
+// scripts/docs-check.mjs: every link and image of README.md,
 // docs/architecture.md and docs/user/ resolves. It passes on the repository's own tree and fails
 // on a planted broken link, a missing image and a missing anchor.
 

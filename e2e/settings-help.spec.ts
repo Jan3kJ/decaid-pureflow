@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mockGateway, type MockGateway } from './mock-gateway';
 
-// The rest of Streamline's settings (spec 3.9 item 15, U12): the Bengle pages (only on a Bengle),
+// The rest of Streamline's settings: the Bengle pages (only on a Bengle),
 // the manual, Send Feedback and the firmware upload from a file, against the mocked gateway.
 // Feedback and firmware are never sent anywhere else: the mock answers them. The same pages
 // against the running gateway, read only: e2e-rig/settings-help.spec.ts.

@@ -37,7 +37,7 @@ export function applyDisplay(
 }
 
 /**
- * Every shown weight of the scale (spec 3.18 item 3): one place after the point and the unit, e.g.
+ * Every shown weight of the scale: one place after the point and the unit, e.g.
  * '36.0 g'. A reading from -0.1 to 0.1 g, both ends included, is the scale's jitter around zero and
  * shows as '0.0 g', never '-0.0'; the band is applied to the raw reading before it is rounded, and
  * a weight below it stays negative ('-0.6 g'). Only the text changes: callers keep the raw reading
@@ -52,7 +52,7 @@ export function gramsOf(weight: number | null | undefined, unit = ' g'): string 
 }
 
 /**
- * A steam adjust button's amount (spec 3.7, 3.18 item 9), the same on the steam page and in the
+ * A steam adjust button's amount, the same on the steam page and in the
  * settings: a true minus or a plus before the whole seconds, '±' for none, e.g. '−8 s', '+5 s'.
  * `unit` is what follows the number: ' s' by default, '' where the unit stands in its own element.
  */

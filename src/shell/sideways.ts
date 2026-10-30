@@ -1,6 +1,6 @@
 // A row that scrolls sideways is the browser's pan along only while it overflows: `data-sideways`
 // is set then, and the row's CSS gives `touch-action: pan-x pan-y` for it. A row that fits keeps
-// the page's `pan-y` (app.css), so a move along it is the swipe back (spec 3.17 item 1), which a
+// the page's `pan-y` (app.css), so a move along it is the swipe back, which a
 // pan along would cancel even with nothing to scroll.
 
 /** Whether `node` is wider inside than its box: the rule of `onControl` (swipe.ts). */

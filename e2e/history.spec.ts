@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { WATER_FRAMES, mockGateway, profile, type MockGateway } from './mock-gateway';
 import { back, swipe } from './touch';
 
-// The shot history against a mocked gateway (D8b, acceptance item 5): an overlay on home,
+// The shot history against a mocked gateway: an overlay on home,
 // opened by its handle or by a swipe from the left edge, closed by a selection or a tap outside.
 // An entry is one profile with one bean; tapping it restores profile, bean and grinder
 // setting with one PUT of the workflow and shows the graph of its latest shot.
@@ -63,7 +63,7 @@ test('the handle opens the overlay: one entry per profile and bean, newest first
   await expect(entries.nth(2)).toHaveAttribute('data-shot', 'shot-2');
 
   // The list is read once, after the start, without measurements; nothing is written by
-  // opening it. (The workflow's profile has no shot, so the look-up of its last shot, spec 3.8,
+  // opening it. (The workflow's profile has no shot, so the look-up of its last shot,
   // reads no record; home, with no shot of its own, reads the newest one's, shot-4.)
   expect(gateway.historyListCalls()).toHaveLength(1);
   await expect.poll(() => gateway.recordCalls().map((call) => call.path)).toEqual(['/api/v1/shots/shot-4']);
@@ -76,7 +76,7 @@ test('a swipe from the left edge to the right opens the overlay, and no other sw
   fourShots(gateway);
   await home(page);
 
-  // From the middle of the screen and to the left: a page (spec 3.8), not the history; down
+  // From the middle of the screen and to the left: a page, not the history; down
   // along the edge: nothing.
   // Each step waits on the state the swipe ends in, the strip at rest with one page, not on time;
   // the way back is a swipe too (`back`).
@@ -99,7 +99,7 @@ test('a swipe from the left edge to the right opens the overlay, and no other sw
 
   // The finger rests before it lifts: a swipe that ends in a fling makes Chromium take the
   // next tap as the one that stops the fling, and Linux's fling runs long enough on the CI's
-  // runner to eat the tap that closes (spec 3.20; touch.ts).
+  // runner to eat the tap that closes (touch.ts).
   await swipe(page, { x: 10, y: 400 }, { x: 260, y: 420 }, 120);
   await expect(page.getByTestId('history')).toBeVisible();
   await expect(page.getByTestId('history-entry')).toHaveCount(3);
@@ -181,7 +181,7 @@ test('tapping an entry closes the overlay, restores profile, bean and grinder se
   await expect(page.getByTestId('recalled-bean')).toHaveText('Square Mile · Red Brick');
   await expect(page.getByTestId('recalled-grinder')).toHaveText('grinder 4.8');
   // The entry's latest shot is read for its graph; the restored profile's newest shot (shot-3,
-  // another bean) may be read for the next shot's time axis (spec 3.8), and home's newest shot
+  // another bean) may be read for the next shot's time axis, and home's newest shot
   // (shot-4) at the start, nothing else.
   const read = gateway.recordCalls().map((call) => call.path);
   expect(read).toContain('/api/v1/shots/shot-2');
@@ -194,7 +194,7 @@ test('tapping an entry closes the overlay, restores profile, bean and grinder se
     expect((await graph.getByTestId(`shot-line-${line}`).getAttribute('d'))!.length).toBeGreaterThan(100);
   }
   await expect(graph.getByTestId('shot-unit-main')).toHaveText('bar · ml/s · g/s');
-  // The same colours as the editor and the live graph (spec 3.2).
+  // The same colours as the editor and the live graph.
   const colours = await page.evaluate(() => {
     const style = getComputedStyle(document.documentElement);
     const stroke = (line: string) =>
@@ -206,7 +206,7 @@ test('tapping an entry closes the overlay, restores profile, bean and grinder se
       return getComputedStyle(probe).color;
     };
     const result = ['flow', 'pressure', 'temperature'].map((line) => stroke(line) === rgb(`--${line}`));
-    // The weight flow is yellow, the weight's colour (founder, 2026-10-14).
+    // The weight flow is yellow, the weight's colour.
     result.push(stroke('weight-flow') === rgb('--weight'));
     probe.remove();
     return result;
@@ -287,7 +287,7 @@ test('the history is on home only: the editor has no handle, and its drags never
   await page.waitForTimeout(200);
   await expect(page.getByTestId('history')).toHaveCount(0);
   await expect(page.getByTestId('screen-editor')).toBeVisible();
-  // From the left edge, off the graph: the editor's swipe home (spec 3.10), not the history.
+  // From the left edge, off the graph: the editor's swipe home, not the history.
   await swipe(page, { x: 10, y: 400 }, { x: 300, y: 400 });
   await expect(page.getByTestId('screen-home')).toBeVisible();
   await page.waitForTimeout(200);
@@ -369,7 +369,7 @@ test('a slow, long history: the newest 20 first, the rest after them, kept for a
   expect(errors).toEqual([]);
 });
 
-// Acceptance 52's last sentence (spec 3.9 item 19, research.md 29.6): the history filtered by a
+// The history filtered by a
 // bean and a grinder of Decaid's catalogue, on the shots held; its entries with the catalogue's
 // beans and grinders.
 test('the filter by bean and grinder: the catalogue names the entries, a choice keeps its shots, all brings every entry back', async ({
@@ -466,7 +466,7 @@ test('the filter by bean and grinder: the catalogue names the entries, a choice 
   expect(errors).toEqual([]);
 });
 
-// Spec 3.18 item 12 (acceptance 137): the three filter chips are equal in width, also with a long
+// The three filter chips are equal in width, also with a long
 // bean's name, and the chosen one is the selected look's white fill.
 test("the filter's three chips are one width, the chosen one the white fill", async ({ page }) => {
   const gateway = await mockGateway(page);

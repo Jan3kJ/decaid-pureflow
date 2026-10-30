@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { mockGateway, type MockGateway } from './mock-gateway';
 
 // A touch of the skin sends Decaid a heartbeat, so the machine sleeps after the presence
-// setting's minutes from the last touch (spec 3.12, acceptance 75): at most one every 30 s, on
+// setting's minutes from the last touch: at most one every 30 s, on
 // every screen, none while the machine sleeps, a failed one without a notice. The same against
 // the running gateway: e2e-rig/heartbeat.spec.ts.
 

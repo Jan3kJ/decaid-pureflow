@@ -33,8 +33,7 @@ export const LOADED = 'loaded';
 
 /**
  * The defaults first, then every saved A-Flow profile, then the loaded profile when none of
- * them has its title. A profile under a default's title counts as that default (spec 3.8 T5,
- * 3.9 U2).
+ * them has its title. A profile under a default's title counts as that default.
  */
 export function editorEntries(records: readonly ProfileRecord[], loaded: Loaded | null): Entry[] {
   const defaults: Entry[] = DEFAULT_PROFILES.map((entry) => {

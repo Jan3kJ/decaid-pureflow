@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mockGateway, type MockGateway } from './mock-gateway';
 
-// Acceptance item 35's clean (spec 3.8 'Menu: clean', T9; its exit is replaced by item 38)
+// The menu's clean
 // against the mocked gateway: home's menu opens the settings page on Maintenance with the clean,
 // which shows the tank's water in ml from `/ws/v1/machine/waterLevels`, warns under 350 ml and
 // says to empty the drip tray. The same against the running gateway: e2e-rig/menu-clean.spec.ts.

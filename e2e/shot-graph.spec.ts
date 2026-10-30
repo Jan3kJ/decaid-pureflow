@@ -1,7 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { MEASUREMENTS, espressoShare, measurementsFrom, measurementsOf, mockGateway, shotEvents } from './mock-gateway';
 
-// The espresso graph of the founder's review of 2026-10-17 (spec 3.8, T1; acceptance 27): the
+// The espresso graph: the
 // scale ends at 10 and opens to 12 only for a value over 10, the live shot ends at its first
 // frame after the pour (no tail, the timer stands), as the history's graph of the same shot,
 // and the running time axis starts at the shot's expected length.

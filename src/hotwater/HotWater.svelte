@@ -25,10 +25,10 @@
 
   // The values are the workflow's: what Decaid sends to the machine when hot water starts.
   const values = $derived(skin.workflow?.hotWaterData ?? null);
-  /** stop at weight in g with a connected scale, stop at volume in ml without one (spec 3.12) */
+  /** stop at weight in g with a connected scale, stop at volume in ml without one */
   const fields = $derived(hotWaterFields(skin.scaleLink));
   const stopField = $derived(fields.find((field) => field.key === 'volume')!);
-  /** Hot water or flush: the shell's ring covers the rows, with stop in it (spec 3.14). */
+  /** Hot water or flush: the shell's ring covers the rows, with stop in it. */
   const water = $derived(shownRun(skin.waterRun, skin.canStop));
   const pouring = $derived(skin.waterRun !== null && !skin.waterRun.ended);
 
@@ -57,7 +57,7 @@
     typing = null;
   }
 
-  // The last measured espresso shot (spec 3.7): read when the page opens.
+  // The last measured espresso shot: read when the page opens.
   let lastShot: number | null = $state(null);
   let unread: string | null = $state(null);
 
@@ -75,7 +75,7 @@
     <PageHeader {skin} heat="group" title="Hot water" />
   </div>
 
-  <!-- A row per value with a slider under it (spec 3.9); a tap on the value opens the number pad.
+  <!-- A row per value with a slider under it; a tap on the value opens the number pad.
        The page's main frame, which hot water and flush cover (App.svelte). -->
   <div class="values" data-main-frame>
     {#each fields as field (field.id)}
@@ -101,7 +101,7 @@
   </div>
 
   <aside>
-    <!-- label, number, unit as on the steam page: 'last shot' and 'scale' share the number column (spec 3.18 item 4) -->
+    <!-- label, number, unit as on the steam page: 'last shot' and 'scale' share the number column -->
     <div class="line">
       <span class="key">last shot</span>
       <span class="reading" data-testid="hot-water-last-shot">
@@ -129,8 +129,8 @@
       </div>
     {/if}
 
-    <!-- The scale's row is the one tare of the skin (Skin.tare, spec 3.7), live for an empty cup and
-         off while water runs; without a scale it looks for the scale (spec 3.9). -->
+    <!-- The scale's row is the one tare of the skin (Skin.tare), live for an empty cup and
+         off while water runs; without a scale it looks for the scale. -->
     <button class="line" data-testid="hot-water-tare" disabled={pouring} onclick={() => skin.tare()}>
       <span class="key">scale</span>
       <span class="reading" data-testid="hot-water-scale">
@@ -175,7 +175,7 @@
   .hot-water {
     height: 100%;
     box-sizing: border-box;
-    /* home's padding, so the header is in the same place (spec 3.11) */
+    /* home's padding, so the header is in the same place */
     padding: 0.8rem 1.2rem 1rem;
     display: grid;
     grid-template-columns: minmax(0, 1fr) 21rem;

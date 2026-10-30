@@ -1,4 +1,4 @@
-// The bean and grinder catalogue as the screens read it (spec 3.9 item 19, research.md 29.6):
+// The bean and grinder catalogue as the screens read it:
 // read from Decaid when the beans screen or the pick opens, written and read back, with the
 // last error. A part of `Skin`; the pick writes the skin's workflow (`CatalogueHost`).
 import type { BeanBatch, CatalogueBean, DecaidClient, Grinder, Workflow } from '../api';

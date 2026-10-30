@@ -55,7 +55,7 @@ class FakeSocket implements SocketLike {
   }
 }
 
-// Verbatim from the rig (research.md 8.2 and 8.5).
+// Verbatim from the rig.
 const MACHINE_FRAME =
   '{"timestamp":"2026-10-11T12:23:39.408036","state":{"state":"idle","substate":"idle"},"flow":0.0,"pressure":0.0,"targetFlow":0.0,"targetPressure":0.0,"mixTemperature":44.0,"groupTemperature":44.0,"targetMixTemperature":93.0,"targetGroupTemperature":93.0,"profileFrame":0,"steamTemperature":88}';
 const SCALE_STATUS = '{"status":"connected"}';
@@ -312,7 +312,7 @@ describe('connection-error frames', () => {
     const { stream, states, errors } = machineStream();
     stream.connect();
     refuse();
-    // Not failed yet: the skin tries again by itself (founder, 2026-10-15).
+    // Not failed yet: the skin tries again by itself.
     expect(stream.state).toBe('waiting');
 
     // 1, 2, 4 and 8 s (the backoff's maximum here), then 8 s, and the last delay ends at 30 s.

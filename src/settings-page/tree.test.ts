@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_CATEGORY, LOCATION_KEY, SETTINGS_TREE, loadLocation, saveLocation, visibleSubcategories } from './tree';
 
-describe('the settings tree (research.md 20.3, 20.10 S2a)', () => {
-  it("has Streamline's categories of S2 in its order and with its numbers", () => {
+describe('the settings tree', () => {
+  it("has Streamline's settings categories in its order and with its numbers", () => {
     expect(SETTINGS_TREE.map((category) => `${category.number}. ${category.name}`)).toEqual([
       '1. Quick Adjustments',
       '2. Connections',
@@ -48,7 +48,7 @@ describe('the settings tree (research.md 20.3, 20.10 S2a)', () => {
       'Backup and version',
     ]);
     expect(names('miscellaneous')).toEqual(['Decaid Settings', 'Brightness', 'Wake Lock', 'Presence Detection']);
-    // Visualizer and Shot Uploader are plugin cards of Plugins (research.md 20.3).
+    // Visualizer and Shot Uploader are plugin cards of Plugins.
     expect(names('extensions')).toEqual(['Plugins']);
     expect(names('updates')).toEqual(['Firmware Update', 'Decaid']);
     expect(names('usermanual')).toEqual(['Quick Start Guide', 'Send Feedback']);
@@ -57,7 +57,7 @@ describe('the settings tree (research.md 20.3, 20.10 S2a)', () => {
   it('leaves out what the port leaves out', () => {
     const all = SETTINGS_TREE.flatMap((category) => [category.name, ...category.subcategories.map((sub) => sub.name)]);
     for (const absent of [
-      // Streamline's own, Bengle only, the manual (research.md 20.11)
+      // Streamline's own, Bengle only, the manual
       'Theme',
       'Language',
       'Temperature',
@@ -66,7 +66,7 @@ describe('the settings tree (research.md 20.3, 20.10 S2a)', () => {
       'Home Assistant',
       // shown once, in Quick Adjustments
       'Calibration Steam',
-      // a Decent account (spec 3.9 item 15)
+      // a Decent account
       'Talk to Decent',
     ]) {
       expect(all).not.toContain(absent);
@@ -74,7 +74,7 @@ describe('the settings tree (research.md 20.3, 20.10 S2a)', () => {
     expect(SETTINGS_TREE.find((category) => category.id === 'calibration')!.subcategories.map((sub) => sub.id)).not.toContain('steam');
   });
 
-  it('draws the device lists, the procedures, the machine information (S2b), the plugins, the schedules, the firmware and the sensors (S2c) with their views', () => {
+  it('draws the device lists, the procedures, the machine information, the plugins, the schedules, the firmware and the sensors with their views', () => {
     const views = SETTINGS_TREE.flatMap((category) =>
       category.subcategories.map((sub) => [sub.id, sub.content.kind === 'fields' ? (sub.content.view ?? null) : null]),
     ).filter(([, view]) => view !== null);

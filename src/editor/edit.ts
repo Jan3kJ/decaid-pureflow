@@ -6,7 +6,7 @@ import { PAUSE_SECONDS } from '../aflow/constants';
 import type { EditField } from './curve';
 
 /**
- * The temperature lines a drag moves together (spec 3.2): the fill's with infuse and 2nd
+ * The temperature lines a drag moves together: the fill's with infuse and 2nd
  * fill, the flow's with pressurize.
  */
 export const TEMPERATURE_GROUPS: Partial<Record<EditField, readonly FollowField[]>> = {
@@ -40,7 +40,7 @@ export function setValue(p: AFlowParams, field: EditField, value: number): AFlow
 
 /**
  * A drag on the graph: sets one value as detail mode does, and moves a temperature group as a
- * whole. The distances detail mode set between the group's phases stay (founder, 2026-10-12),
+ * whole. The distances detail mode set between the group's phases stay,
  * so the group stops where its first line reaches the end of the range.
  */
 export function dragValue(p: AFlowParams, field: EditField, value: number): AFlowParams {

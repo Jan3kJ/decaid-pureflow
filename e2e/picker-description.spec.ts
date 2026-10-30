@@ -7,7 +7,7 @@ import { buildProfile } from '../src/editor/save';
 import { paramsMetadata } from '../src/editor/storage';
 import { mockGateway, record } from './mock-gateway';
 
-// The picker shows a text made from an A-Flow profile's values (spec 3.16 item 3): after the
+// The picker shows a text made from an A-Flow profile's values: after the
 // notes the user wrote, alone where the notes are empty or the old plugin's stock sentence. A
 // profile that is not A-Flow shows its notes alone. The text is never written to the profile.
 

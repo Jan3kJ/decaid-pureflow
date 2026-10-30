@@ -1,5 +1,5 @@
 <script lang="ts">
-  // The beans and grinders screen (spec 3.9 item 19, research.md 29.6), laid out as the
+  // The beans and grinders screen, laid out as the
   // settings page: the two kinds on the left, the chosen kind's list in the middle with a search
   // and 'show archived', and on the right the chosen one's form, or the form that adds one.
   // Every write goes to Decaid and is read back; archive asks first (the settings' `Confirm`).
@@ -253,7 +253,7 @@
     min-width: 0;
   }
 
-  /* a page's header is a name, as on steam and hot water (spec 3.14's roles) */
+  /* a page's header is a name, as on steam and hot water */
   h1 {
     margin: 0;
     font-size: var(--text-body);

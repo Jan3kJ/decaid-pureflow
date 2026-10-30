@@ -1,7 +1,7 @@
 // A touch of the skin tells Decaid that someone uses it, so the machine sleeps after the
-// presence setting's minutes from the last touch and not from the last thing Decaid saw
-// (spec 3.12). Decaid passes a heartbeat to the machine at most every 30 s, so the skin sends
-// no more often; none while the machine sleeps, which a heartbeat does not wake (research.md 32).
+// presence setting's minutes from the last touch and not from the last thing Decaid saw.
+// Decaid passes a heartbeat to the machine at most every 30 s, so the skin sends
+// no more often; none while the machine sleeps, which a heartbeat does not wake.
 // A part of `Skin`, which hands it every touch.
 import type { DecaidClient } from '../api';
 

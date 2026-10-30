@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Fits the shot model (src/steps/predict.ts) to a Decaid export and checks it on profiles the
-// fit did not see (research.md 'The shot model').
+// fit did not see.
 //
 //   node scripts/shot-model-fit.mjs <export .zip, its folder, or its shots.json>
 //

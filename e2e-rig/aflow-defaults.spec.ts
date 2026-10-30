@@ -5,7 +5,7 @@ import { DEFAULT_PROFILES } from '../src/aflow';
 import { workflowProfile } from '../src/editor/storage';
 import { defaultProfile, titleLines } from '../src/shell/profiles';
 
-// The A-Flow 3.0 defaults kept in the skin against the rig (T5, spec 3.8, acceptance item 31):
+// The A-Flow 3.0 defaults kept in the skin against the rig:
 // the picker lists the skin's five first and Decaid's bundled plugin profiles under the same
 // titles not, the other bundled A-Flow profiles as before; a default loads into the workflow
 // without a record and without a POST of a profile. The test stores nothing and puts the
@@ -72,7 +72,7 @@ test('the picker lists the skin’s defaults and loads one into the workflow wit
     await expect(page.getByTestId('screen-home')).toBeVisible();
     await expect(page.getByTestId('profile-name')).toHaveText(titleLines(LIGHT.title).name);
 
-    // What Decaid's workflow holds after a default is loaded without a record (research.md 25).
+    // What Decaid's workflow holds after a default is loaded without a record.
     const workflow = await api<RigWorkflow>('GET', '/api/v1/workflow');
     console.log(
       `rig workflow after loading ${LIGHT.title}: ${JSON.stringify({

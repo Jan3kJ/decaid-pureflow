@@ -1,5 +1,5 @@
 <script lang="ts">
-  // Hot water and flush, over the main frame of every screen (spec 3.6, 3.7, 3.14; drawn by
+  // Hot water and flush, over the main frame of every screen (drawn by
   // App.svelte): the countdown ring around the stop button, and inside the button what runs:
   // temperature, flow, time and, for hot water with a scale, the weight; for hot water with a stop, its
   // target under them. The numbers come from water.ts.
@@ -56,7 +56,7 @@
     background: var(--panel);
   }
 
-  /* 85 % of the frame's shorter side, centred, with stop and its values scaled with it (spec 3.9, 3.14). */
+  /* 85 % of the frame's shorter side, centred, with stop and its values scaled with it. */
   .ring {
     position: relative;
     width: min(100cqw, 100cqh);

@@ -4,8 +4,8 @@ import type { MachineSnapshot, ProfileRecord } from '../src/api';
 import { pickerEntries, previewLastStepSeconds } from '../src/shell/profiles';
 import { shotEstimate } from '../src/steps/estimate';
 
-// The picker's preview of every profile it lists against the rig (spec 3.10 'Profile picker:
-// graphs', acceptance 59; spec 3.16 'The picture', acceptance 112): Decaid's bundled profiles
+// The picker's preview of every profile it lists against the rig:
+// Decaid's bundled profiles
 // and the skin's defaults, each drawn as its modelled shot, as long as the model runs it, with a
 // border where the model starts each step, the targets dotted, a dotted limit line only where a
 // step has a limit, and no console error. The test only reads: it stores nothing and loads nothing.

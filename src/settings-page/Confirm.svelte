@@ -6,11 +6,11 @@
   Licensed under the GNU General Public License v3.0 or later; used here under GPL-3.0.
 -->
 <script lang="ts">
-  // The question before a write or a procedure that can do harm (research.md 20.9): what it
+  // The question before a write or a procedure that can do harm: what it
   // does, Cancel and the action. The settings page, its device lists and maintenance use it;
   // with a `value` it holds a text field (the picker's rename), Enter is the action, and
   // `error` says under it why the action was refused. A `danger` action (a delete) is the
-  // warning outline, not the filled button (spec 3.18 item 2).
+  // warning outline, not the filled button.
 
   interface Props {
     title: string;

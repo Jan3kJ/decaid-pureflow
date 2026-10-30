@@ -2,7 +2,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import { mockGateway } from './mock-gateway';
 import { toPage } from './touch';
 
-// One selected look per kind (spec 3.18 item 7, acceptance 130), against a mocked gateway: a choice
+// One selected look per kind, against a mocked gateway: a choice
 // of one among a few (a chip, a mode, a tab, history's 'all') is the white fill; the row whose
 // detail is shown beside its list (the picker, the bean and grinder lists, the settings'
 // categories) is the white outline on the raised background.

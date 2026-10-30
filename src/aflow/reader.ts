@@ -1,8 +1,8 @@
-// The inverse of the generator (spec 3.9, U2): a profile's steps in, A-Flow 3.0 parameters
+// The inverse of the generator: a profile's steps in, A-Flow 3.0 parameters
 // out. It reads what the de1app plugin wrote, of every version, and what the generator writes:
 // - plugin 1.0 to 1.3: Fill, Infuse, Pressure Up, Pressure Decline, Flow Start, Flow Extraction;
 // - plugin 1.4 on: Pre Fill, Fill, Infuse, 2nd Fill, Pause, then the same four;
-// - the generator: the steps of spec 3.2, a step that is off left out.
+// - the generator: the steps of docs/a-flow-3.0.md, a step that is off left out.
 // The plugin switches a step off with 0 s, the generator leaves it out: both read as off. The
 // plugin always writes Pressure Decline, the generator never. The plugin sets 2nd Fill and Pause
 // to 15 s or 0 s together, but Decaid's copies of its files keep the Pause at 15 s where the

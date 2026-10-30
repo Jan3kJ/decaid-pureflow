@@ -4,7 +4,7 @@
 // Copyright (C) 2025-2026 Decent Espresso
 // Licensed under the GNU General Public License v3.0 or later; used here under GPL-3.0.
 //
-// The bean and grinder catalogue (spec 3.9 item 19, research.md 29): Decaid's beans, their
+// The bean and grinder catalogue: Decaid's beans, their
 // batches (one bag each) and grinders, the forms that add and edit them, and the pick for the
 // next shot as a patch of the workflow's context. Pure, except the writes, which take the client.
 import type {

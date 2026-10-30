@@ -49,7 +49,7 @@ export interface Border {
   phase: PhaseId;
   /** how many seconds of the duration one graph unit to the right adds */
   secondsPerUnit: number;
-  /** dragged in detail mode only (the pause, founder 2026-10-12) */
+  /** dragged in detail mode only (the pause) */
   detailOnly: boolean;
   /** the duration a drag starts from: the seconds the phase is drawn with, or the pause's time */
   start: number;
@@ -88,7 +88,7 @@ export interface Curve {
   /**
    * the stretches of the flow line; it is not drawn during the infuse phase. It falls to 0 at
    * the end of the fill and rises from 0 at the start of the 2nd fill, each with a vertical
-   * edge (founder, 2026-10-13); the edges are not levels, so they cannot be dragged
+   * edge; the edges are not levels, so they cannot be dragged
    */
   flow: Point[][];
   pressure: Point[];
@@ -136,7 +136,7 @@ export interface TimeAxis {
 }
 
 // The infuse ends on its move-on weight long before a time limit of 60 s, so it is drawn by
-// the weight (founder, 2026-10-16): his estimate is 1 g ≈ 5 s and 6 g ≈ 25 s, and the line
+// the weight: his estimate is 1 g ≈ 5 s and 6 g ≈ 25 s, and the line
 // through the two points gives every other weight.
 /** s per g of the infuse's move-on weight */
 export const INFUSE_SECONDS_PER_GRAM = 4;
@@ -157,7 +157,7 @@ export function weightTarget(startWeight: number, seconds: number): number {
   return startWeight + seconds / INFUSE_SECONDS_PER_GRAM;
 }
 
-// A phase dragged to 0 s is off (founder, 2026-10-16): it collapses to no width, and a button
+// A phase dragged to 0 s is off: it collapses to no width, and a button
 // turns it on again with REENABLE_SECONDS. Only infuse and pressurize have a border that can
 // reach 0 s; the 2nd fill is off with its pause and has its own toggle.
 /** The time that turns each of these phases off at 0 s. */
@@ -197,7 +197,7 @@ export function expectedSeconds(p: AFlowParams): {
  * s, how long a shot of these parameters is expected to take, as the editor draws it: the
  * expected seconds of every phase before the pour, and the pour as far as its flow line is
  * drawn (POUR_SHOWN_SECONDS). The running shot graph's time axis starts there when the profile
- * has no shot yet (spec 3.8).
+ * has no shot yet.
  */
 export function drawnShotSeconds(p: AFlowParams): number {
   const seconds = expectedSeconds(p);
@@ -290,8 +290,8 @@ export function borderTarget(border: Pick<Border, 'weightSeconds'>, time: number
 }
 
 /**
- * The editor's graph. In detail mode the flow phase's flow line is split (founder,
- * 2026-10-16): its left half drags the start flow, its right half the end flow.
+ * The editor's graph. In detail mode the flow phase's flow line is split:
+ * its left half drags the start flow, its right half the end flow.
  */
 export function buildCurve(
   params: AFlowParams,
@@ -343,7 +343,7 @@ export function buildCurve(
   level('flow', 'fillFlow', 'fill', fillFlow[0], fillFlow[1]);
 
   // Infuse: pressure at its target. The flow is whatever the puck takes under the limiter,
-  // so its line is not drawn here (founder, 2026-10-12).
+  // so its line is not drawn here.
   pressure.push({ x: infuse.x0, y: p.infusePressure }, { x: infuse.x1, y: p.infusePressure });
   level('pressure', 'infusePressure', 'infuse', pressure[2], pressure[3]);
   borders.push({
@@ -514,7 +514,7 @@ export function hitTest(
   return best;
 }
 
-// The temperature axis (founder, 2026-10-14): 80 to 100 °C, where a profile's temperatures
+// The temperature axis: 80 to 100 °C, where a profile's temperatures
 // usually are. A temperature outside widens it to the next 5 °C step with at least 1 °C of
 // room, never beyond the allowed temperatures; when none is outside it is 80 to 100 again.
 export const TEMPERATURE_AXIS = { min: 80, max: 100 } as const;

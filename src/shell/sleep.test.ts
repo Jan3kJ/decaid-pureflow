@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { MachineState } from '../api';
 import { AWAKE, askSleep, followSleep, type SleepMark } from './sleep';
 
-// Who asked for the machine's sleep (spec 3.10): 'Machine sleep' keeps the app awake until the
+// Who asked for the machine's sleep: 'Machine sleep' keeps the app awake until the
 // machine wakes; every other sleep shows the Asleep screen.
 
 /** The mark after the frames, from `mark`, the machine idle before the first. */

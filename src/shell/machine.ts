@@ -7,7 +7,7 @@ import { tankText, type TankUnit } from './tank';
 /**
  * Whether the gateway answers: not known until the stream opened or failed once. `refused`:
  * the gateway sent an error frame and closed the socket, and still did so after the stream
- * tried again for 30 s (`REFUSED_RETRY_MS`, founder 2026-10-15); while it tries the gateway
+ * tried again for 30 s (`REFUSED_RETRY_MS`); while it tries the gateway
  * is `lost`.
  */
 export type Gateway = 'connecting' | 'connected' | 'lost' | 'refused';
@@ -31,7 +31,7 @@ export type Link = 'connecting' | 'no-gateway' | 'refused' | 'no-machine' | 'mac
 
 /**
  * A machine sends at least 2 frames per second. Without a machine the gateway keeps the
- * socket open and sends nothing (research.md, section 10), so silence is the sign.
+ * socket open and sends nothing, so silence is the sign.
  */
 export const FRAME_STALE_MS = 3000;
 
@@ -115,7 +115,7 @@ export function statusOf(link: Link, snapshot: MachineSnapshot | null, gatewayUr
   };
 }
 
-/** °C under its target from which a heater counts as heated (founder, 2026-10-17) */
+/** °C under its target from which a heater counts as heated */
 export const HEATED_MARGIN = 3;
 /** °C further down that a heated heater must fall before it counts as heating again */
 export const HEATED_HYSTERESIS = 1;
@@ -127,7 +127,7 @@ export type HeatTarget = 'group' | 'steam';
 export type HeaterWord = 'off' | 'heating' | 'heated';
 
 /**
- * The DE1 says `idle` while it heats, so the skin derives it (spec 3.8, 3.12): an idle machine
+ * The DE1 says `idle` while it heats, so the skin derives it: an idle machine
  * whose heater is more than `HEATED_MARGIN` under its target is heating; once heated it is heating
  * again only more than `HEATED_MARGIN + HEATED_HYSTERESIS` under it, so a value at the border does
  * not flip the word. A heater above its target is heated too. The group's target is the frame's
@@ -166,7 +166,7 @@ export function heatingStatus(status: Status, link: Link, word: HeaterWord | nul
 
 /**
  * The stop button: whatever runs can be stopped from the skin. Nothing is started from it: the
- * DE1 is started at the machine (founder, 2026-10-13).
+ * DE1 is started at the machine.
  */
 export function canStop(link: Link, snapshot: MachineSnapshot | null): boolean {
   return link === 'machine' && snapshot !== null && RUNNING.includes(snapshot.state.state);
@@ -202,7 +202,7 @@ export interface StateValue {
  * The state line of home and the steam page: the machine's values only from a fresh frame
  * (principle 3), the tank's level only from its stream, the weight only from a connected scale.
  * A value that was not read is '–'. Without a scale the warning says whether the skin is looking
- * for it (`scaleLooking`, spec 3.9) or that a tap looks again. The tank is in ml or mm
+ * for it (`scaleLooking`) or that a tap looks again. The tank is in ml or mm
  * (`tankUnit`); its warning compares the mm with the refill level either way.
  */
 export function stateLine(

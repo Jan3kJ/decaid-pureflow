@@ -1,4 +1,4 @@
-// The selected step card sits in the centre of the card row (spec 3.7, the step editor's cards):
+// The selected step card sits in the centre of the card row:
 // where the row must scroll to for that, held within what the row can scroll, so that the first
 // and last cards come as near the centre as the row allows.
 

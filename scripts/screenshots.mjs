@@ -1,4 +1,4 @@
-// `npm run screenshots`: the pictures of the user documentation (spec 3.13, acceptance 83).
+// `npm run screenshots`: the pictures of the user documentation.
 // Runs e2e/user-docs.shots.ts with Playwright on the mock gateway (playwright.screenshots.config.ts,
 // 1280 x 800 CSS pixels at device scale factor 2, dark) and checks that it wrote exactly the
 // planned eight into docs/user/img/, no more.

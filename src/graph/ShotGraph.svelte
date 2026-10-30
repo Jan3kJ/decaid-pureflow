@@ -1,8 +1,8 @@
 <script lang="ts">
   // A graph of measured values over time, fed with plain arrays: the live shot, steam and the
-  // history. The colours and the drawing are the editor's (spec 3.2): blue is flow, green is
-  // pressure, red is temperature in its own band on top; yellow is the weight flow in g/s
-  // (founder, 2026-10-14), on the scale of flow and pressure, and only while there is a scale.
+  // history. The colours and the drawing are the editor's: blue is flow, green is
+  // pressure, red is temperature in its own band on top; yellow is the weight flow in g/s,
+  // on the scale of flow and pressure, and only while there is a scale.
   // The profile's targets are thin dashed lines in the colour and on the scale of their
   // quantity. Every scale names its unit in its colour. As the step editor's preview (`preview`)
   // it draws a profile's targets alone, as solid lines, with its steps' borders, and each step's
@@ -52,7 +52,7 @@
     flowLimit?: (number | null)[];
     /** s, dashed lines across the plot: where a step starts */
     borders?: number[];
-    /** no ticks, units or times: the picker's small preview of a profile (spec 3.8) */
+    /** no ticks, units or times: the picker's small preview of a profile */
     bare?: boolean;
   }
 
@@ -285,7 +285,7 @@
 
   /*
    * The graph's own size, inside its SVG: ticks and units fit the drawing, not a text role
-   * (spec 3.14; scripts/font-sizes.mjs lets this rule through).
+   * (scripts/font-sizes.mjs lets this rule through).
    */
   text {
     fill: var(--dim);

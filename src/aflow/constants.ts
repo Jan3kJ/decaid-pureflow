@@ -1,7 +1,7 @@
 // Every fixed value of a generated profile, and the plugin's value of every parameter the
 // plugin fixed and A-Flow 3.0 lets the user edit (marked "default of"), in one place.
-// Sources: `code.tcl` and `profiles/A-Flow____default-*.tcl` of Jan3kJ/A_Flow (read
-// 2026-10-12), which agree with Decaid 0.8.8's `assets/defaultProfiles/A-Flow____default-*.json`
+// Sources: `code.tcl` and `profiles/A-Flow____default-*.tcl` of Jan3kJ/A_Flow ,
+// which agree with Decaid 0.8.8's `assets/defaultProfiles/A-Flow____default-*.json`
 // in all of these. docs/a-flow-3.0.md lists them with their source.
 
 /**
@@ -59,7 +59,7 @@ export const SECOND_FILL_PRESSURE_LIMIT = 3;
 /** bar; default of `secondFillExitPressure` */
 export const SECOND_FILL_EXIT_PRESSURE_OVER = 2.5;
 
-// Pause: pressure, fast. It ends at a flow under `pauseExitFlow` (founder, 2026-10-13).
+// Pause: pressure, fast. It ends at a flow under `pauseExitFlow`.
 /** s; the `pauseDuration` a 2nd fill starts with when it is switched on */
 export const PAUSE_SECONDS = 15;
 /** bar */

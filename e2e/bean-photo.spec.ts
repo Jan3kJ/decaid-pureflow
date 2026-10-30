@@ -2,10 +2,10 @@ import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { mockGateway, type MockGateway } from './mock-gateway';
 
-// A bean from a photo of its bag (spec 3.9 item 20, acceptance 54) against the mocked gateway:
+// A bean from a photo of its bag against the mocked gateway:
 // the bean form's photo button opens the live camera, a capture is shown in the form and stored
 // with the bean as a JPEG in the skin's KV namespace, and is deleted when the bean is gone. The
-// photo is not read (spec 3.17 item 3): the photo of a printed bag (`fixtures/bag.png`) leaves the
+// photo is not read: the photo of a printed bag (`fixtures/bag.png`) leaves the
 // fields as they were, and no request goes to another host. Where `getUserMedia` is missing the
 // file input stands in. The same on the rig: e2e-rig/bean-photo.spec.ts.
 

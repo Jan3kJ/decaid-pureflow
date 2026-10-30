@@ -1,5 +1,5 @@
 <script lang="ts">
-  // Types a value on screen: no system keyboard is needed (review of 2026-10-12, detail mode).
+  // Types a value on screen: no system keyboard is needed.
   interface Props {
     label: string;
     unit: string;

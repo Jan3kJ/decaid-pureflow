@@ -7,7 +7,7 @@ Copyright (C) 2025-2026 Decent Espresso
 Licensed under the GNU General Public License v3.0 or later; used here under GPL-3.0.
 -->
 <script lang="ts">
-  // The step editor's SCRIPT tab (spec 3.7, research.md 17.18): each step its name and
+  // The step editor's SCRIPT tab: each step its name and
   // Streamline's sentences, the preview beside them. A tap on a state word cycles it, a tap on
   // a number opens the number pad; either is an edit of the editor's profile at once. A limit,
   // maximum or exit that is off stays as a muted line: its chip or pill switches it on.

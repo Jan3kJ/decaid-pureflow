@@ -1,5 +1,5 @@
 // A stubbed fetch for the tests of storage.ts and save.ts: it keeps profiles the way Decaid
-// 0.8.8 does on the rig (research.md 9.2 and 11). A record's id comes from its steps and its
+// 0.8.8 does on the rig. A record's id comes from its steps and its
 // target weight alone, so a POST with steps that exist answers with the existing record.
 import { DecaidClient, type Profile, type ProfileRecord, type ProfileVisibility } from '../api';
 import { sameSteps } from './storage';

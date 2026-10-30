@@ -6,7 +6,7 @@
   Licensed under the GNU General Public License v3.0 or later; used here under GPL-3.0.
 -->
 <script lang="ts">
-  // The settings page (spec 3.7 'Settings', research.md 20): Streamline's categories in a
+  // The settings page: Streamline's categories in a
   // left column with the chosen one's subcategories under it, and the chosen category in a
   // panel that scrolls. A change is written at once and read back (20.11); the skin's own
   // settings are the category Skin.
@@ -109,7 +109,7 @@
   let busy: Record<string, boolean> = $state({});
   /** the message of a field's failed write */
   let failed: Record<string, string> = $state({});
-  /** a write that waits for its confirm (research.md 20.9) */
+  /** a write that waits for its confirm */
   let confirming: { title: string; text: string; run: () => void } | null = $state(null);
   /** what the last action of a subcategory did */
   let done: Record<string, string> = $state({});
@@ -125,7 +125,7 @@
     confirming = null;
     busy[field.id] = true;
     delete failed[field.id];
-    // The steam heater switched off here is switched on again by the menu with the temperature it had (spec 3.7).
+    // The steam heater switched off here is switched on again by the menu with the temperature it had.
     const before = rawValue(values, field);
     if (field === STEAM_TEMPERATURE && value === 0 && typeof before === 'number' && before >= STEAM_TEMPERATURE.min) {
       skin.setSettings({ steam: { ...skin.settings.steam, heaterTemperature: before } });
@@ -198,7 +198,7 @@
   <header>
     <h1>Settings</h1>
     <p>Decaid's and the machine's settings, written at once and read back; the skin's own under Skin.</p>
-    <!-- The skin's version, top right (founder, 2026-10-14); from the manifest, like the build. -->
+    <!-- The skin's version, top right; from the manifest, like the build. -->
     <small class="version" data-testid="skin-version">{PRODUCT_NAME} {PRODUCT_VERSION}</small>
   </header>
 
@@ -326,7 +326,7 @@
     min-width: 0;
   }
 
-  /* a page's header is a name, as on steam and hot water (spec 3.14's roles) */
+  /* a page's header is a name, as on steam and hot water */
   h1 {
     margin: 0;
     font-size: var(--text-body);

@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { mockGateway, type MockGateway } from './mock-gateway';
 import { back } from './touch';
 
-// The editor's row of profiles to start from, chosen in the settings (founder, 2026-10-13):
+// The editor's row of profiles to start from, chosen in the settings:
 // up to five A-Flow 3.0 profiles; 'save as' does not add to it.
 
 const errors: string[] = [];
@@ -70,7 +70,7 @@ test("'save as' does not change the row; a slot chosen in the settings does, and
   await expect(page.getByTestId('start-slot-2').locator('b')).toHaveText('morning');
   await expect(page.getByTestId('start-slot-5')).toContainText('empty');
   await expect(page.getByTestId('start-missing')).toHaveCount(0);
-  // the backup of the changed slots is written (founder, 2026-10-14)
+  // the backup of the changed slots is written
   await expect(page.getByTestId('backup-time')).toContainText('in Decaid');
   await page.screenshot({ path: 'docs/product/settings.png' });
 

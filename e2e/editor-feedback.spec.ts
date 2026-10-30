@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { mockGateway } from './mock-gateway';
 import light from '../src/aflow/defaults/default-light.json' with { type: 'json' };
 
-// The A-Flow editor's steps panel and save feedback (spec 3.8 T7, as 3.9 item 8 places it): the
+// The A-Flow editor's steps panel and save feedback: the
 // stop weight stands in the flow step's exit, 'save' on a default hints at 'save as', and what a
 // save answered stands in one line under the start row: a result goes after 4 s, a failure stays
 // until the next action, and the graph does not move for either.

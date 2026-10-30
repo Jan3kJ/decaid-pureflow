@@ -6,7 +6,7 @@
   Licensed under the GNU General Public License v3.0 or later; used here under GPL-3.0.
 -->
 <script lang="ts">
-  // Miscellaneous > Presence Detection, its wake schedules (research.md 20.3, 20.10 S2c): each
+  // Miscellaneous > Presence Detection, its wake schedules: each
   // schedule's time, days and keep-awake, its switch, Edit and Delete (after a confirm), and
   // Add. A change is one request, then the presence settings are read again and the list shows
   // what Decaid holds. Presence itself and the sleep timeout are the fields above it.

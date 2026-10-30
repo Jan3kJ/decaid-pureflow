@@ -1,6 +1,6 @@
-// The backup of the skin's settings in Decaid's KV store (founder, 2026-10-14): localStorage
+// The backup of the skin's settings in Decaid's KV store: localStorage
 // stays the store of the settings (settings.ts), the backup is a copy that survives a new
-// port or a cleared app (research.md 9.1 and 9.2). One key in the skin's own namespace; every
+// port or a cleared app. One key in the skin's own namespace; every
 // save writes it after a short pause, and a start without settings reads it back. No UI: the
 // gateway and the clock are parameters.
 import { FORMER_NAME } from './former-name';

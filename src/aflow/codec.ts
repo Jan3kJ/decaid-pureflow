@@ -12,7 +12,7 @@ const VALUE_FIELDS = Object.keys(paramRanges()) as (NumberField | FollowField)[]
  * the generator had fixed, so it generates the steps it did; the version stays '3.0'.
  */
 const ADDED_FIELDS: Partial<Record<NumberField | FollowField, number>> = {
-  // founder, 2026-10-13: the pause ends at a flow under an editable value
+  // The pause ends at a flow under an editable value
   pauseExitFlow: PAUSE_EXIT_FLOW_UNDER,
 };
 

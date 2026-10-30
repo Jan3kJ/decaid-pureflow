@@ -1,7 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { mockGateway } from './mock-gateway';
 
-// Acceptance 134 (spec 3.18 item 9): the settings' adjust fields are signed as on the steam page,
+// The settings' adjust fields are signed as on the steam page,
 // the page titles 'Settings' and 'Beans and grinders' are names like the other page headers, and
 // the corner menu's 'Steam heater' says its state as a value, a tap switching it.
 

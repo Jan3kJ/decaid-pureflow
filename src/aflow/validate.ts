@@ -12,7 +12,7 @@ export interface MachineLimits {
 }
 
 // 12 bar is de1app's `set ::de1(maxpressure) 12` (de1plus/machine.tcl). The maximum flow is
-// the skin's setting `maxFlow`, 8 ml/s by default (founder, 2026-10-15): `machineLimits`.
+// the skin's setting `maxFlow`, 8 ml/s by default: `machineLimits`.
 export const DEFAULT_MACHINE_LIMITS: MachineLimits = { maxPressure: 12, maxFlow: 8 };
 
 /** ml/s, what the setting `maxFlow` may be: de1app's `max_flowrate_v11` is 20. */

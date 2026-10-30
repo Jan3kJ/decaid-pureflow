@@ -36,7 +36,7 @@
         <td class={step.pump}>{target(step)}{step.transition === 'smooth' ? ', smooth' : ''}</td>
         <td class="temperature">{step.temperature} °C</td>
         <td>{step.seconds}</td>
-        <!-- The stop weight stands in the last step's exit: no line of its own (founder, 2026-10-17). -->
+        <!-- The stop weight stands in the last step's exit: no line of its own. -->
         <td data-testid="step-exit">{exitText(step, index === profile.steps.length - 1 ? profile.target_weight : null)}</td>
       </tr>
     {/each}

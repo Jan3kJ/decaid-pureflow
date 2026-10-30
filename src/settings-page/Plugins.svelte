@@ -7,7 +7,7 @@
   Licensed under the GNU General Public License v3.0 or later; used here under GPL-3.0.
 -->
 <script lang="ts">
-  // Extensions > Plugins (research.md 20.3, 20.10 S2c): a card per plugin Decaid lists, with
+  // Extensions > Plugins: a card per plugin Decaid lists, with
   // its version and state, Enabled, an update held back for permissions to approve, and one
   // control per setting its manifest declares. Every change is written at once and read back:
   // the card shows what the gateway holds. A secure value is never shown, only 'Saved' or 'Not
@@ -82,7 +82,7 @@
     try {
       await skin.client.updatePluginSettings(plugin.id, { [control.key]: value });
       if (control.kind === 'secure') secret[at] = '';
-      // The answer is redacted too, but a read is what the gateway holds (acceptance 22).
+      // The answer is redacted too, but a read is what the gateway holds.
       stored[plugin.id] = await skin.client.getPluginSettings(plugin.id);
     } catch (cause) {
       failed[at] = `${control.label} was not set: ${errorMessage(cause)}`;

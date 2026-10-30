@@ -4,7 +4,7 @@
 // Copyright (C) 2025-2026 Decent Espresso
 // Licensed under the GNU General Public License v3.0 or later; used here under GPL-3.0.
 //
-// The step editor's ranges, in one place (research.md 17.6): every value a step card edits,
+// The step editor's ranges, in one place: every value a step card edits,
 // with the step of its ± buttons. A value outside its range that a profile brings is shown
 // and kept; ± and the number pad move only inside the range.
 

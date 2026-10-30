@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { mockGateway } from './mock-gateway';
 import { back, flick, swipe, toPage } from './touch';
 
-// The way back (spec 3.14, Z3; acceptance 93): no screen has a left column or a back arrow; a
+// The way back: no screen has a left column or a back arrow; a
 // swipe from left to right leaves the editors, the settings, the beans screen and the picker for
 // where they were opened from, and on the hot water page a swipe from right to left goes home; a
 // swipe that starts on a slider or a row's swipe does not leave; the open history closes by a
@@ -118,7 +118,7 @@ test('the history opens by the edge swipe to the right and closes by a swipe to 
   expect(errors).toEqual([]);
 });
 
-// The swipe back on the whole screen (spec 3.17 item 1, Z17; acceptance 115): a list or a column
+// The swipe back on the whole screen: a list or a column
 // that scrolls only down is no row that scrolls sideways, so a swipe to the right on it goes back;
 // one that starts in the left 24 px goes back over anything; the editor's graph keeps only the
 // drags that start on a line, a border or a chip.

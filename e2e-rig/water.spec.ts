@@ -3,10 +3,10 @@ import type { MachineSnapshot } from '../src/api';
 import type { RigWorkflow } from './gateway';
 import { IDLE } from './idle';
 
-// The water view against the rig (V1 and R3, acceptance items 9 and 19): no picture, the
+// The water view against the rig: no picture, the
 // countdown ring, and the values inside the stop button. The test asks the simulated machine
 // for hot water and flush through the API, as the DE1's own buttons would (the skin starts
-// neither). On the rig (research.md 19) simulated hot water pours about 10 ml/s and ends by
+// neither). On the rig simulated hot water pours about 10 ml/s and ends by
 // itself at the volume, and the mock scale is tared and weighs the water; simulated flush
 // has flow 0 and does not end by itself, so the skin's stop ends it. Nothing is changed in
 // the workflow; any shot or steam record the runs leave is deleted.

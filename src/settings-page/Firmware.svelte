@@ -7,9 +7,9 @@
   Licensed under the GNU General Public License v3.0 or later; used here under GPL-3.0.
 -->
 <script lang="ts">
-  // Updates (research.md 20.3, 20.10 S2c). 'firmware': the machine's build, what the bundled
+  // Updates. 'firmware': the machine's build, what the bundled
   // firmware catalog says about it, every bundled build with its eligibility, and Install of
-  // the recommended build after a confirm, with its progress and Cancel, and (research.md 31) a
+  // the recommended build after a confirm, with its progress and Cancel, and a
   // firmware file chosen on the device, flashed after a confirm that says the machine must stay on.
   // 'app': Decaid's own update as the gateway reports it; the skin asks no outside service.
   import { onMount } from 'svelte';

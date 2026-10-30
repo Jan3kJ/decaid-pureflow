@@ -3,7 +3,7 @@ import type { DecaidClient, MachineSnapshot, MachineState, ScaleFrame } from '..
 import { Streams } from './streams.svelte';
 
 // The streams part of the skin: what a machine frame and a scale frame change, and when the
-// scale's retry rounds look for a scale (spec 3.9).
+// scale's retry rounds look for a scale.
 
 function frame(state: MachineState): MachineSnapshot {
   return {
@@ -54,7 +54,7 @@ describe('the streams', () => {
     expect(s.snapshot?.state.state).toBe('idle');
   });
 
-  it('keeps the raw frame and a copy with the group and steam temperatures filtered (spec 3.12)', () => {
+  it('keeps the raw frame and a copy with the group and steam temperatures filtered', () => {
     const { streams: s } = streams();
     s.machineFrame({ ...frame('idle'), groupTemperature: 90, steamTemperature: 140 });
     vi.advanceTimersByTime(250);

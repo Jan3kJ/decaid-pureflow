@@ -10,9 +10,9 @@ const device = (id: string, type: DeviceInfo['type'], state: DeviceInfo['state']
   ...(available === undefined ? {} : { available }),
 });
 
-describe('the device lists of Connections (research.md 20.10 S2b)', () => {
+describe('the device lists of Connections', () => {
   it("each list has its type only: the rig's frame gives two machines and one scale", () => {
-    // As /ws/v1/devices sent it on the rig, 2026-10-18: the mock DE1, a real DE1 found by Bluetooth, the mock scale.
+    // As /ws/v1/devices sent it on the rig: the mock DE1, a real DE1 found by Bluetooth, the mock scale.
     const devices = [
       device('MockScale', 'scale', 'connected', true),
       device('MockDe1', 'machine', 'connected', true),

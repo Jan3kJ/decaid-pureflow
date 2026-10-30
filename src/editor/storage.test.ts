@@ -233,7 +233,7 @@ describe('writeParams', () => {
   });
 });
 
-describe('openParams: what the A-Flow editor opens (spec 3.9, U2)', () => {
+describe('openParams: what the A-Flow editor opens', () => {
   const medium = rig14.find((profile) => profile.title === 'A-Flow / default-medium') as Profile;
   const veryDark = rig14.find((profile) => profile.title === 'A-Flow / default-very-dark') as Profile;
 

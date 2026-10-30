@@ -20,7 +20,7 @@ import { TREE_FIELDS } from './tree';
 const byId = (id: string) => TREE_FIELDS.find((field) => field.id === id)!;
 const numberField = (id: string) => byId(id) as NumberField;
 
-describe('the fields of the settings page (research.md 20.3)', () => {
+describe('the fields of the settings page', () => {
   // Streamline's ranges and steps (src/settings/settings.js, v0.2.14), and the source of each.
   const EXPECTED: [string, Field['source'], string, number, number, number][] = [
     ['weight-flow-multiplier', 'decaid', 'weightFlowMultiplier', 0, 5, 0.1],
@@ -68,7 +68,7 @@ describe('the fields of the settings page (research.md 20.3)', () => {
     expect(options('scale-power-mode')).toEqual(['disabled', 'displayOff', 'disconnect']);
   });
 
-  it('asks before the voltage and the gateway mode, and before nothing else (research.md 20.9)', () => {
+  it('asks before the voltage and the gateway mode, and before nothing else', () => {
     expect(TREE_FIELDS.filter((field) => field.confirm).map((field) => field.id)).toEqual(['heater-voltage', 'gateway-mode']);
   });
 
@@ -86,21 +86,21 @@ describe('the fields of the settings page (research.md 20.3)', () => {
     }
   });
 
-  it('presence is a switch and the sleep timeout a number of /api/v1/presence/settings (S2c)', () => {
+  it('presence is a switch and the sleep timeout a number of /api/v1/presence/settings', () => {
     expect(PRESENCE.map((field) => [field.kind, field.source, field.key])).toEqual([
       ['switch', 'presence', 'userPresenceEnabled'],
       ['number', 'presence', 'sleepTimeoutMinutes'],
     ]);
   });
 
-  it("the scale's settings are Decaid's scalePowerMode and blockOnNoScale (S2b)", () => {
+  it("the scale's settings are Decaid's scalePowerMode and blockOnNoScale", () => {
     expect(SCALE.map((field) => [field.kind, field.source, field.key])).toEqual([
       ['choice', 'decaid', 'scalePowerMode'],
       ['switch', 'decaid', 'blockOnNoScale'],
     ]);
   });
 
-  it("writes the USB charger as 'enable' / 'disable' (research.md 20.4)", () => {
+  it("writes the USB charger as 'enable' / 'disable'", () => {
     const usb = USB.find((field) => field.id === 'usb-charger');
     expect(usb).toMatchObject({ kind: 'switch', source: 'machine', key: 'usb', written: { on: 'enable', off: 'disable' } });
   });
@@ -109,7 +109,7 @@ describe('the fields of the settings page (research.md 20.3)', () => {
     expect(FAST_START).toEqual({ heaterIdleTemp: 99, heaterPh1Flow: 2, heaterPh2Flow: 4, heaterPh2Timeout: 1 });
   });
 
-  it("the flush is the workflow's rinseData: temperature, flow and duration (founder, 2026-10-17)", () => {
+  it("the flush is the workflow's rinseData: temperature, flow and duration", () => {
     expect(FLUSH.map((field) => [field.source, field.key])).toEqual([
       ['workflow.rinseData', 'targetTemperature'],
       ['workflow.rinseData', 'flow'],

@@ -2,8 +2,8 @@ import { expect, test, type Page } from '@playwright/test';
 import { mockGateway } from './mock-gateway';
 import { back, toPage } from './touch';
 
-// Tare by a tap on the weight (3.7, acceptance items 6 and 21), settings and sleep / wake
-// against a mocked gateway (D8c), and the stream the gateway closed with an error. The same
+// Tare by a tap on the weight, settings and sleep / wake
+// against a mocked gateway, and the stream the gateway closed with an error. The same
 // against the running gateway: e2e-rig/scale-sleep.spec.ts.
 
 const errors: string[] = [];
@@ -21,7 +21,7 @@ test.beforeEach(({ page }) => {
 async function overflow(page: Page) {
   return page.evaluate(() => {
     const root = document.documentElement;
-    // In the settings page's panels, which scroll (research.md 20.7), only the width counts.
+    // In the settings page's panels, which scroll, only the width counts.
     const scrolled = (element: Element) =>
       !!element.parentElement?.closest('[data-testid="settings-content"], [aria-label="settings categories"]');
     const outside = [...document.querySelectorAll('button, section, header, h1')].filter((element) => {
@@ -81,7 +81,7 @@ test('scale: there is no scale page and no menu entry; a tap on the weight tares
   await expect(page.getByTestId('notice')).toHaveCount(0);
   expect(await overflow(page)).toEqual({ scrolls: false, outside: 0 });
 
-  // The scale goes away: the warning looks for it (spec 3.9), and a tap on it tares nothing.
+  // The scale goes away: the warning looks for it, and a tap on it tares nothing.
   gateway.connectScale(false);
   await expect(page.getByTestId('state-scale')).toHaveText('looking for it');
   await expect(page.getByTestId('tare')).toHaveCount(0);
@@ -109,7 +109,7 @@ test('scale: the status frame alone makes the weight a tare button, before any w
 test('scale: a tare Decaid blocks during a shot is a notice, another failure is an error', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
-  // A shot runs; home's state line with the scale stays visible above it (spec 3.11).
+  // A shot runs; home's state line with the scale stays visible above it.
   await gateway.replay(page, 0, 0.4);
   await expect(page.getByTestId('shot-plot')).toBeVisible();
 
@@ -164,13 +164,13 @@ test('settings: the defaults, typed values and both switches survive a reload', 
     'adjust-2',
     'adjust-3',
   ];
-  // The founder's defaults of 2026-10-12, and the adjust buttons of 2026-10-16 (spec 3.7).
+  // The steam defaults and the adjust buttons.
   expect(await values(STEAM)).toEqual(['150g', '225g', '275g', '26s', '180g', '150g', '25s', '50s', '30s', '−8s', '−4s', '+5s']);
   const workaround = page.getByTestId('setting-first-step-workaround');
   const steps = page.getByTestId('setting-show-profile-steps');
   await expect(workaround).toHaveAttribute('aria-checked', 'false');
   await expect(steps).toHaveAttribute('aria-checked', 'true');
-  // The category Skin of the ported page (research.md 20.6): its subcategories, nothing else.
+  // The category Skin of the ported page: its subcategories, nothing else.
   await expect(page.locator('[data-testid="screen-settings"] h2')).toHaveText([
     'Steam',
     'Hot water',
@@ -198,7 +198,7 @@ test('settings: the defaults, typed values and both switches survive a reload', 
   await type(page, 'setting-reference-seconds', '30');
   await type(page, 'setting-reference-milk', '100');
   await type(page, 'setting-favourite-2', '45');
-  // The category Profile's numbers (founder, 2026-10-15): the maximum flow, 4 to 20 ml/s, and the default dose.
+  // The category Profile's numbers: the maximum flow, 4 to 20 ml/s, and the default dose.
   expect(await values(['max-flow', 'default-dose'])).toEqual(['8ml/s', '18g']);
   await page.getByTestId('setting-max-flow').click();
   await expect(page.getByTestId('numpad-range')).toHaveText('4 to 20 ml/s');
@@ -211,7 +211,7 @@ test('settings: the defaults, typed values and both switches survive a reload', 
   const changed = ['162.5g', '225g', '275g', '30s', '100g', '150g', '25s', '45s', '30s', '−8s', '−4s', '+5s'];
   expect(await values(STEAM)).toEqual(changed);
 
-  // One store in localStorage, nothing in sessionStorage (spec 4.1: the WebView unloads).
+  // One store in localStorage, nothing in sessionStorage (the WebView unloads).
   expect(
     await page.evaluate(() => ({
       keys: Object.keys(localStorage).sort(),
@@ -219,7 +219,7 @@ test('settings: the defaults, typed values and both switches survive a reload', 
       settings: JSON.parse(localStorage.getItem('pureflow.settings')!) as unknown,
     })),
   ).toEqual({
-    // The page's last category is not a setting (research.md 20.7).
+    // The page's last category is not a setting.
     keys: ['pureflow.screen', 'pureflow.settings', 'pureflow.settings-location'],
     session: 0,
     settings: {
@@ -270,8 +270,8 @@ test('settings: the defaults, typed values and both switches survive a reload', 
   await expect(page.getByTestId('steam-milk')).toHaveText('200 g');
   await expect(page.getByTestId('steam-seconds')).toHaveText('60 s');
 
-  // The editor follows both switches: no steps button while the setting is off (founder,
-  // 2026-10-13), and a Pre Fill step in the panel once it is on again.
+  // The editor follows both switches: no steps button while the setting is off,
+  // and a Pre Fill step in the panel once it is on again.
   await back(page);
   await page.getByTestId('open-editor').click();
   await expect(page.getByTestId('graph')).toBeVisible();
@@ -407,7 +407,7 @@ test('a stream the gateway closed with an error is tried again for 30 s, then sh
   await page.clock.install();
   await page.goto('/');
 
-  // The skin tries again by itself for 30 s (founder, 2026-10-15): no reconnect button yet.
+  // The skin tries again by itself for 30 s: no reconnect button yet.
   await expect(page.getByTestId('status-title')).toHaveText('Decaid is not reachable');
   const failed = page.getByTestId('stream-failed');
   let seconds = 0;

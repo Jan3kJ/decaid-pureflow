@@ -1,10 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mockGateway } from './mock-gateway';
 
-// The water view on home (V1 and R3, acceptance items 9 and 19): hot water and flush, started
-// at the machine; the frames are the mock's, shaped as the rig's (research.md 19). The
-// workflow's targets are the rig's: hot water 30 s and 50 ml, flush 10 s. Since R3 (spec 3.7)
-// there is no picture: the countdown ring, and the values inside the stop button.
+// The water view on home: hot water and flush, started
+// at the machine; the frames are the mock's, shaped as the rig's. The
+// workflow's targets are the rig's: hot water 30 s and 50 ml, flush 10 s.
+// There is no picture: the countdown ring, and the values inside the stop button.
 
 const errors: string[] = [];
 
@@ -74,7 +74,7 @@ test('flush: no picture, the ring counts against rinseData, stop shows temperatu
   await expect(page.getByTestId('water-label')).toHaveText('Flush');
   await expect(page.getByTestId('water-time')).toHaveText('6 / 10 s');
   await expect(page.getByTestId('water-ring')).toHaveAttribute('data-share', '0.600');
-  // Home shows the run over the graph's frame (spec 3.14); stop is in the ring, once.
+  // Home shows the run over the graph's frame; stop is in the ring, once.
   await expect(page.getByTestId('water-stop')).toHaveCount(1);
   await expectNoPicture(page);
   await expect(page.getByTestId('water-temperature')).toHaveText('90 °C');
@@ -83,11 +83,11 @@ test('flush: no picture, the ring counts against rinseData, stop shows temperatu
   // Flush shows no weight, though the mock's scale is connected.
   await expect(page.getByTestId('water-weight')).toHaveCount(0);
   await expectInsideViewport(page);
-  // The ring is 85 % of the panel's height, centred (spec 3.9 item 14), stop scaled with it.
+  // The ring is 85 % of the panel's height, centred, stop scaled with it.
   expect(await ringShare(page)).toEqual({ ring: 0.85, stop: 0.7, centred: true });
   await page.screenshot({ path: 'docs/product/water-flush.png' });
 
-  // The simulated flush has flow 0 all along (research.md 19); the ring goes on.
+  // The simulated flush has flow 0 all along; the ring goes on.
   gateway.waterFlow(0, 1);
   await expect(page.getByTestId('water-time')).toHaveText('7 / 10 s');
   await expect(page.getByTestId('water-ring')).toHaveAttribute('data-share', '0.700');

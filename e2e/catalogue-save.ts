@@ -1,7 +1,7 @@
 import type { Page, Response } from '@playwright/test';
 
 /**
- * The answer to a catalogue entry's save, its PUT to `path` (research.md 29.6). The form's save
+ * The answer to a catalogue entry's save, its PUT to `path`. The form's save
  * button is disabled from the tap on, while the write is still on its way, so a check that only
  * waits for a disabled button may read the entry before the write landed: it waits for this.
  * Start it before the tap.

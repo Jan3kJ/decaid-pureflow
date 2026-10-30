@@ -6,7 +6,7 @@
   Licensed under the GNU General Public License v3.0 or later; used here under GPL-3.0.
 -->
 <script lang="ts">
-  // The Bengle-only pages (research.md 31): Machine > Cup Warmer and Lighting, Calibration >
+  // The Bengle-only pages: Machine > Cup Warmer and Lighting, Calibration >
   // Load Cells. SettingsPage shows them only when the machine's model names a Bengle. Each value
   // is written alone and the page reads the machine again afterwards, so it shows what the
   // machine took.

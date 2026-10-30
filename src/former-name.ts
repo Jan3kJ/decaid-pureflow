@@ -1,4 +1,4 @@
-// The skin was called decaid-skin until 2026-10-18 (founder): its keys in localStorage, the
+// The skin was called decaid-skin before: its keys in localStorage, the
 // namespace of its settings' backup in the KV store and the `metadata.source` of the profiles
 // it stored carried that name. A start moves what it finds under the former name to the new
 // one (localStorage in former-keys.ts, the backup in settings-backup.ts), and the profiles keep counting

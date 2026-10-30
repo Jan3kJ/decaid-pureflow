@@ -1,12 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
 import type { MachineSnapshot } from '../src/api';
 
-// The hot water and flush ring on every screen against the rig (Y6, Z8, spec 3.12, 3.14,
-// acceptance 78, 98): hot water is started through the API, as at the machine, with the screen
+// The hot water and flush ring on every screen against the rig:
+// hot water is started through the API, as at the machine, with the screen
 // already open; the settings page, the picker and the hot water page show the one large ring over
 // their main frame with the kind in it; a flush on the beans screen shows it too, and its stop
 // stops it. Simulated
-// hot water ends by itself after about 5 s (research.md 19); simulated flush does not. Nothing is
+// hot water ends by itself after about 5 s; simulated flush does not. Nothing is
 // changed in the workflow; any shot or steam record the runs leave is deleted.
 
 const GATEWAY = 'http://localhost:8080';

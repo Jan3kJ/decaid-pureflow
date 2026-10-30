@@ -8,7 +8,7 @@ import { toPage } from './touch';
 
 // `npm run type-sizes` (scripts/type-sizes.mjs): every text's computed size and weight per screen
 // on the mock gateway at the design target, grouped by the role whose token gives that size
-// (spec 3.14, 'One size per kind of text'). It writes the listing to TYPE_SIZES_OUT and, with
+// (one size per kind of text). It writes the listing to TYPE_SIZES_OUT and, with
 // TYPE_SIZES_SHOTS, a picture of each screen into that folder.
 
 /** The role tokens of src/app.css, in rem. */

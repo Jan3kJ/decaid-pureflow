@@ -5,8 +5,8 @@ import { workflowProfile } from '../src/editor/storage';
 import { defaultProfile } from '../src/shell/profiles';
 import { mockGateway, type MockGateway } from './mock-gateway';
 
-// The warning before a load while the machine holds unsaved edits from the editor (founder,
-// 2026-10-14): leaving the editor with a change loads it unsaved; the next load of the skin
+// The warning before a load while the machine holds unsaved edits from the editor:
+// leaving the editor with a change loads it unsaved; the next load of the skin
 // asks first and loads nothing before the answer.
 
 const errors: string[] = [];
@@ -36,7 +36,7 @@ async function leaveWithChange(page: Page): Promise<MockGateway> {
   return gateway;
 }
 
-/** A tap selects the profile, 'load' loads it (founder, 2026-10-17). */
+/** A tap selects the profile, 'load' loads it. */
 async function pickFloral(page: Page) {
   await page.getByTestId('profile-item').filter({ hasText: 'A-Flow / default-floral' }).click();
   await page.getByTestId('load-profile').click();

@@ -4,8 +4,8 @@ import type { Backup } from '../src/settings-backup';
 import { mockGateway, type MockGateway } from './mock-gateway';
 import { back } from './touch';
 
-// The settings page ported from Streamline (spec 3.7 'Settings', acceptance 22, research.md
-// 20.10 S2a), against the mocked gateway: each category opens, a typed value is written with
+// The settings page ported from Streamline,
+// against the mocked gateway: each category opens, a typed value is written with
 // that key alone and the page shows what the next read returns, the confirms, the flush, and
 // the skin's own settings in Skin. The same against the running gateway:
 // e2e-rig/settings-page.spec.ts.
@@ -144,7 +144,7 @@ test('a typed number is written with its key alone, and the page shows what the 
   await type(page, 'setting-water-alert', '15');
   await expect(shown(page, 'water-alert')).toHaveText('15mm, about 400 ml');
   expect(writes('POST', '/api/v1/machine/waterLevels')).toEqual([{ refillLevel: 15 }]);
-  // Below them the skin's own tank unit (spec 3.17 item 2): saved in the skin, nothing to the machine.
+  // Below them the skin's own tank unit: saved in the skin, nothing to the machine.
   const tank = page.getByTestId('settings-section-watertank');
   await expect(tank.locator('[data-testid^="row-"]')).toHaveText([/tank temperature/, /water level alert/, /tank unit/]);
   await tank.getByTestId('setting-tank-unit-mm').click();
@@ -165,7 +165,7 @@ test('a typed number is written with its key alone, and the page shows what the 
   expect(gateway.decaidSettings.stopHotWaterAtWeight).toBe(false);
   expect(writes('POST', '/api/v1/machine/settings').at(-1)).toEqual({ steamPurgeMode: 1 });
 
-  // The USB charger takes 'enable' and reads back as true (research.md 20.4).
+  // The USB charger takes 'enable' and reads back as true.
   await page.getByTestId('settings-category-machine').click();
   await page.getByTestId('setting-usb-charger').click();
   await expect(page.getByTestId('setting-usb-charger')).toHaveAttribute('aria-checked', 'true');

@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import type { MachineInfo, MachineSnapshot } from '../src/api';
 import { IDLE } from './idle';
 
-// The rest of Streamline's settings against the rig (spec 3.9 item 15, U12), read only: the rig
+// The rest of Streamline's settings against the rig, read only: the rig
 // simulates a DE1, not a Bengle, so the Bengle pages are absent from the page and the gateway
 // answers 404 for what they would read; the manual's links; the feedback form is filled but never
 // sent (Decent's service) and no firmware file is chosen. The writes are in the mocked

@@ -9,7 +9,7 @@ import { paramsMetadata, splitNotes } from '../src/editor/storage';
 import { mockGateway, record, type MockGateway } from './mock-gateway';
 import { back } from './touch';
 
-// Every A-Flow profile opens in the A-Flow 3.0 editor (spec 3.9 items 4 and 5, U2): the reader
+// Every A-Flow profile opens in the A-Flow 3.0 editor: the reader
 // takes the values from the plugin's steps, ramp down is dropped and the status line says so,
 // and 'save' stores it as a 3.0 profile with the old one as its parent, hidden. A profile whose
 // A-Flow steps were changed elsewhere opens in the step editor with a line saying why.

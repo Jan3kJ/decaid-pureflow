@@ -48,7 +48,7 @@ function clientWith(...answers: Answer[]) {
   return { client: new DecaidClient({ fetch }), calls };
 }
 
-// Verbatim from the rig (research.md 8.2).
+// Verbatim from the rig.
 const SNAPSHOT: MachineSnapshot = {
   timestamp: '2026-10-11T12:23:39.408036',
   state: { state: 'idle', substate: 'idle' },
@@ -106,8 +106,8 @@ describe('base URL', () => {
   });
 });
 
-describe('devices (research.md 20.3)', () => {
-  // As the rig answered (Decaid 0.8.8 with simulated devices, 2026-10-18).
+describe('devices', () => {
+  // As the rig answered (Decaid 0.8.8 with simulated devices).
   const DEVICES = [
     { name: 'Mock Scale', id: 'MockScale', state: 'connected', type: 'scale', available: true, connectionRole: 'primary' },
     { name: 'MockDe1', id: 'MockDe1', state: 'connected', type: 'machine', available: true },
@@ -534,7 +534,7 @@ describe('errors', () => {
   });
 });
 
-describe('heartbeat (Y4)', () => {
+describe('heartbeat', () => {
   it('posts to the heartbeat and reads the seconds left before the sleep', async () => {
     const { client, calls } = clientWith({ body: { timeout: 60 } }, { body: { timeout: -1 } });
     expect(await client.heartbeat()).toBe(60);
@@ -546,7 +546,7 @@ describe('heartbeat (Y4)', () => {
   });
 });
 
-describe('plugins, presence, calibration, firmware (S2c)', () => {
+describe('plugins, presence, calibration, firmware', () => {
   it('sends each request to its path, with the body Decaid takes', async () => {
     const { client, calls } = clientWith();
     await client.listPlugins();
@@ -617,7 +617,7 @@ describe('plugins, presence, calibration, firmware (S2c)', () => {
   });
 });
 
-describe('firmware upload from a file, Bengle pages and feedback (U12)', () => {
+describe('firmware upload from a file, Bengle pages and feedback', () => {
   it('posts the raw file and reads the same progress stream', async () => {
     const lines = [
       '{"status":"erasing","progress":0.0}',
@@ -690,7 +690,7 @@ describe('firmware upload from a file, Bengle pages and feedback (U12)', () => {
   });
 });
 
-describe('beans and grinders (U9)', () => {
+describe('beans and grinders', () => {
   it('sends each request to its path, archived ones only when asked for', async () => {
     const { client, calls } = clientWith();
     await client.listBeans();

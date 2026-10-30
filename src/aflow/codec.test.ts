@@ -40,8 +40,8 @@ describe('serializeParams and parseParams', () => {
     expect(Object.keys((JSON.parse(serializeParams(medium)) as { params: object }).params)).not.toContain('secondFill');
   });
 
-  // A clean break (2026-10-13): no 3.0 string was saved before the format changed.
-  it('rejects the 3.0 string of 2026-10-12, which lacks the new values', () => {
+  // A clean break: no 3.0 string was saved before the format changed.
+  it('rejects an early 3.0 string, which lacks the new values', () => {
     const old = {
       dose: 18,
       fillFlow: 8,
@@ -118,7 +118,7 @@ describe('serializeParams and parseParams', () => {
     });
   });
 
-  // founder, 2026-10-13 (request 169): the pause's exit flow came after the first saved strings.
+  // The pause's exit flow came after the first saved strings.
   it("reads a saved string without the pause's exit flow as 1 ml/s, the value that was fixed", () => {
     for (const { id, params } of DEFAULT_PROFILES) {
       const saved: Partial<AFlowParams> = { ...params, pauseDuration: 12 };

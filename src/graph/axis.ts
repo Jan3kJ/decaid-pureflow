@@ -26,13 +26,13 @@ export interface MainScale {
   ticks: number[];
 }
 
-/** bar and ml/s: a shot's scale ends here unless a value goes over it (founder, 2026-10-17) */
+/** bar and ml/s: a shot's scale ends here unless a value goes over it */
 export const SHOT_SCALE = 10;
 /** bar and ml/s: the scale of a shot with a value over SHOT_SCALE; higher values are held at it */
 export const SHOT_SCALE_OPEN = 12;
 
 /**
- * The shot graph's scale of pressure, flow and weight flow (spec 3.8): 0 to 10 with a number
+ * The shot graph's scale of pressure, flow and weight flow: 0 to 10 with a number
  * every 2, opened to 12 only when a drawn value (measured or target; null is a gap) goes over
  * 10. The live graph and the history's draw with it.
  */
@@ -53,7 +53,7 @@ export function fixedScale(max: number): MainScale {
 export const DEFAULT_SHOT_SECONDS = 30;
 
 /**
- * Where a running shot's time axis starts (spec 3.8): the expected length in s, rounded up to
+ * Where a running shot's time axis starts: the expected length in s, rounded up to
  * ten seconds; DEFAULT_SHOT_SECONDS without one. `timeAxis` grows it in steps of ten past that.
  */
 export function startSeconds(expected: number | null | undefined): number {
@@ -68,7 +68,7 @@ export interface TemperatureBand {
 }
 
 /**
- * The temperature band: a fixed one where a graph has one (steam, 140 to 170 °C, spec 3.7),
+ * The temperature band: a fixed one where a graph has one (steam, 140 to 170 °C),
  * else 80 to 100 °C, opened in steps of ten for a colder or hotter value.
  */
 export function temperatureBand(values: readonly number[], fixed?: TemperatureBand): TemperatureBand {

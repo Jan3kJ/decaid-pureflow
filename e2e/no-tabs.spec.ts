@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { mockGateway } from './mock-gateway';
 import { swipe } from './touch';
 
-// Swipe only: the tabs go (X4, spec 3.11, acceptance item 70). Home has no edge tabs and uses
+// Swipe only: the tabs go. Home has no edge tabs and uses
 // the full width; three page dots in the bottom padding of hot water, home and steam show the
 // current page and slide to theirs on a tap; a thin handle at home's left edge opens the history.
 
@@ -40,7 +40,7 @@ test('home draws no edge tab and uses the full width', async ({ page }) => {
   const screen = (await page.getByTestId('screen-home').boundingBox())!;
   expect(screen.x).toBe(0);
   expect(screen.width).toBe(1280);
-  // The menu opens under its button, in the top left corner (spec 3.14).
+  // The menu opens under its button, in the top left corner.
   const button = (await page.getByTestId('menu').boundingBox())!;
   await page.getByTestId('menu').click();
   const menu = (await page.getByTestId('menu-list').boundingBox())!;
@@ -139,7 +139,7 @@ test("the history's handle: a thin bar at home's left edge, vertically centred, 
   await handle.tap();
   await expect(page.getByTestId('history')).toBeVisible();
   await expect(shown(page, 'home')).toBeVisible();
-  // Only on home; no page has a back arrow (spec 3.14).
+  // Only on home; no page has a back arrow.
   await page.touchscreen.tap(1100, 400);
   await expect(page.getByTestId('history')).toHaveCount(0);
   await page.getByTestId('page-dot-steam').tap();

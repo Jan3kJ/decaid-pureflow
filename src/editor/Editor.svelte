@@ -50,7 +50,7 @@
   let selected: PhaseId = $state('fill');
   let naming = $state(false);
   let busy = $state(false);
-  /** the status line under the start row: a result goes after 4 s, a failure stays (spec 3.8, 3.9) */
+  /** the status line under the start row: a result goes after 4 s, a failure stays */
   let notice: Notice | null = $state(null);
   /** the value the number pad is open for */
   let typing: EditField | null = $state(null);
@@ -79,8 +79,8 @@
   }
 
   /**
-   * Opens the editor on the current profile, the workflow's, when it is an A-Flow profile
-   * (spec 3.2, 3.9); without one it stays on a default. An older A-Flow profile, read from its
+   * Opens the editor on the current profile, the workflow's, when it is an A-Flow profile;
+   * without one it stays on a default. An older A-Flow profile, read from its
    * steps, says so and what was dropped.
    */
   async function init() {

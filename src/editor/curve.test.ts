@@ -520,9 +520,9 @@ describe('fields', () => {
     }
   });
 
-  // The founder's list 'values to be changable' (review of 2026-10-12), value by value. Its
-  // 'move on pressure pause' is the flow the pause ends under (founder, 2026-10-13).
-  it('lists per phase exactly the values of the review', () => {
+  // The detail panel's list of editable values, value by value. Its
+  // 'move on pressure pause' is the flow the pause ends under.
+  it('lists per phase exactly the editable values', () => {
     expect(PHASE_FIELDS).toEqual({
       fill: ['fillFlow', 'fillExitPressure', 'fillTemperature', 'fillTime'],
       infuse: ['infusePressure', 'infuseTime', 'infuseWeight', 'infuseTemperature', 'infuseFlowLimit'],
@@ -589,7 +589,7 @@ describe('temperatureAxis', () => {
   });
 });
 
-// founder, 2026-10-16: in detail mode the left half of the last step's flow line drags the
+// In detail mode the left half of the last step's flow line drags the
 // start flow, the right half the end flow; simple mode keeps one line for the start flow.
 describe('the split flow line of detail mode', () => {
   const projection: Projection = {
@@ -668,10 +668,10 @@ describe('the split flow line of detail mode', () => {
   });
 });
 
-// Review of 2026-10-16, A2: the infuse is drawn by its move-on weight, the weight is dragged,
+// The infuse is drawn by its move-on weight, the weight is dragged,
 // and a phase dragged to 0 s collapses.
 describe('the infuse drawn by its weight', () => {
-  it("is the founder's estimate: 1 g is 5 s, 6 g is 25 s, on one straight line", () => {
+  it('is the estimate: 1 g is 5 s, 6 g is 25 s, on one straight line', () => {
     expect(infuseWeightSeconds(1)).toBe(5);
     expect(infuseWeightSeconds(6)).toBe(25);
     expect(infuseWeightSeconds(3.6)).toBeCloseTo(15.4, 9);

@@ -1,9 +1,9 @@
 <script lang="ts">
-  // The shot history (spec 3.1, 3.5): an overlay from the left edge over home. One entry per
+  // The shot history: an overlay from the left edge over home. One entry per
   // profile and bean; a tap on one restores it, a tap outside closes the overlay. The shots are
-  // the skin's (`ShotCache`, spec 3.8): shown at once, and what is new is read on opening.
-  // Above the list, the filter by a bean and a grinder of Decaid's catalogue (spec 3.9 item 19,
-  // research.md 29.6): it works on the shots held, the catalogue is read on opening.
+  // the skin's (`ShotCache`): shown at once, and what is new is read on opening.
+  // Above the list, the filter by a bean and a grinder of Decaid's catalogue:
+  // it works on the shots held, the catalogue is read on opening.
   import { onMount } from 'svelte';
   import type { Skin } from '../shell/skin.svelte';
   import { beanTitle } from '../beans/catalogue';

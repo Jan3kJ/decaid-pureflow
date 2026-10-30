@@ -69,7 +69,7 @@ describe('the screen', () => {
     expect(loadScreen(memoryStore())).toBe('home');
     expect(loadScreen(memoryStore({ [SCREEN_KEY]: 'profiles' }))).toBe('profiles');
     expect(loadScreen(memoryStore({ [SCREEN_KEY]: 'no-such-screen' }))).toBe('home');
-    // The scale page is gone (spec 3.7): a skin that showed it opens home.
+    // The scale page is gone: a skin that showed it opens home.
     expect(loadScreen(memoryStore({ [SCREEN_KEY]: 'scale' }))).toBe('home');
   });
 
@@ -158,7 +158,7 @@ describe('the link to the machine', () => {
   });
 });
 
-describe('heating (spec 3.8)', () => {
+describe('heating', () => {
   const url = 'http://localhost:8080';
   const settings = (targetSteamTemp: number): ShotSettings => ({
     steamSetting: 0,

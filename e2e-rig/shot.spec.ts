@@ -5,17 +5,17 @@ import { IDLE } from './idle';
 import { phaseTable, recordSamples } from '../src/shell/phases';
 import { titleLines } from '../src/shell/profiles';
 
-// Acceptance item 2 (spec section 5) against the rig: the skin loads, shows the machine
+// The shot against the rig: the skin loads, shows the machine
 // state, loads an A-Flow profile, runs a simulated shot with a live graph and stops at the
 // target weight. The test removes what it creates (profiles, the shot) and puts the workflow
 // back as it was.
 
 const GATEWAY = 'http://localhost:8080';
 // A flow-up default: with flow down (dark, 46mm) the simulated machine pours nothing in the
-// last step and the shot ends by time at about 2 g (research.md, section 10).
+// last step and the shot ends by time at about 2 g.
 const PROFILE = 'A-Flow / default-medium';
 const TARGET = 42;
-/** The simulated cup ended 1.7 to 2.2 g under the target (research.md 8.2 and 10). */
+/** The simulated cup ended 1.7 to 2.2 g under the target. */
 const UNDER = 5;
 const OVER = 2;
 
@@ -72,9 +72,8 @@ test('a simulated shot: the state, an A-Flow profile, a live graph, the stop at 
     await expect(page.getByTestId('state-scale')).toHaveText(/^-?\d+\.\d g$/, { timeout: 15_000 });
     await page.screenshot({ path: 'e2e-rig/.results/home-idle-rig.png' });
 
-    // The picker: the skin's default, loaded without a record (spec 3.8, T5). Decaid's bundled
-    // plugin profile under the same title is not listed. A tap selects it, 'load' loads it
-    // (founder, 2026-10-17).
+    // The picker: the skin's default, loaded without a record. Decaid's bundled
+    // plugin profile under the same title is not listed. A tap selects it, 'load' loads it.
     await page.getByTestId('open-profiles').click();
     await expect(page.getByTestId('profile-item').first()).toBeVisible();
     await expect(page.getByTestId('profile-item').filter({ hasText: PROFILE })).toHaveCount(1);
@@ -83,7 +82,7 @@ test('a simulated shot: the state, an A-Flow profile, a live graph, the stop at 
 
     await expect(page.getByTestId('screen-home')).toBeVisible();
     await expect(page.getByTestId('profile-name')).toHaveText(titleLines(PROFILE).name);
-    // Dose and stop weight are not on home (founder, 2026-10-13): the workflow holds them.
+    // Dose and stop weight are not on home: the workflow holds them.
     const workflow = await api<RigWorkflow>('GET', '/api/v1/workflow');
     expect(workflow.profile.title).toBe(PROFILE);
     expect(workflow.profile.target_weight).toBe(TARGET);
@@ -96,7 +95,7 @@ test('a simulated shot: the state, an A-Flow profile, a live graph, the stop at 
     await expect(page.getByRole('button', { name: /start/ })).toHaveCount(0);
     await api('PUT', '/api/v1/machine/state/espresso');
     await expect(page.getByTestId('shot-plot')).toBeVisible({ timeout: 15_000 });
-    // While the shot runs the profile and bean buttons are shown but off (spec 3.17 item 10).
+    // While the shot runs the profile and bean buttons are shown but off.
     await expect(page.getByTestId('open-profiles')).toBeDisabled();
     await expect(page.getByTestId('open-pick')).toBeDisabled();
     await expect.poll(() => points(page), { timeout: 15_000 }).toBeGreaterThan(20);
@@ -111,7 +110,7 @@ test('a simulated shot: the state, an A-Flow profile, a live graph, the stop at 
       expect(parseFloat((await page.getByTestId(id).textContent())!)).not.toBeNaN();
     }
     await expect(page.getByTestId('shot-column').getByTestId('stop')).toBeEnabled();
-    // The step that runs is the state line's last item, a step of the profile (spec 3.14, Z4).
+    // The step that runs is the state line's last item, a step of the profile.
     const steps = workflow.profile.steps.map((step, i) => step.name?.trim() || `Step ${i + 1}`);
     await expect(page.getByTestId('status-title')).toHaveText('Pouring');
     expect(steps).toContain(await page.getByTestId('state-step').textContent());
@@ -119,7 +118,7 @@ test('a simulated shot: the state, an A-Flow profile, a live graph, the stop at 
     await page.screenshot({ path: 'e2e-rig/.results/espresso-rig.png' });
 
     // It ends by itself at the target weight; home keeps the finished shot with the per-phase
-    // table, its time and weight in the column (spec 3.11).
+    // table, its time and weight in the column.
     await expect(page.getByTestId('shot-phases')).toBeVisible({ timeout: 180_000 });
     await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 15_000 });
     await expect(page.getByTestId('shot-phases').locator('tbody th')).toHaveText(['Preinfusion', 'Extraction', 'Total']);
@@ -145,7 +144,7 @@ test('a simulated shot: the state, an A-Flow profile, a live graph, the stop at 
     expect(sent.filter((call) => call.includes('/scale/'))).toEqual([]);
     expect(sent.filter((call) => call.includes('/machine/profile'))).toEqual([]);
 
-    // The record names the profile that was pulled: what the history (spec 3.5) needs.
+    // The record names the profile that was pulled: what the history needs.
     let shot!: ShotRecord;
     await expect
       .poll(

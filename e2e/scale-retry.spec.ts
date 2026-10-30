@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { mockGateway } from './mock-gateway';
 import { toPage } from './touch';
 
-// The scale reconnects (spec 3.9 item 3, acceptance 40) against a mocked gateway: a drop, and a
+// The scale reconnects against a mocked gateway: a drop, and a
 // scale missing at the start while Decaid knows a preferred scale, are scanned for
 // (`GET /api/v1/devices/scan?connect=true&quick=true`) every 5 s, at most 3 times; the warning
 // says 'looking for it' meanwhile and 'not connected, tap to retry' after the round; a tap on it

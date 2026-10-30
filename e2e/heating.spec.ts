@@ -3,9 +3,9 @@ import { mockGateway } from './mock-gateway';
 import { toPage } from './touch';
 
 // The DE1 says idle while it heats; the state line says Heating until the page's heater is
-// 3 °C under its target: home and hot water the group's (spec 3.12), the steam page the steam heater's (spec 3.8).
-// Once Idle it says Heating again only 4 °C under it; the steam page says Off with the heater off (spec 3.12).
-// The words read the filtered temperature (spec 3.12, `smooth`): a step of more than 5 °C is taken
+// 3 °C under its target: home and hot water the group's, the steam page the steam heater's.
+// Once Idle it says Heating again only 4 °C under it; the steam page says Off with the heater off.
+// The words read the filtered temperature (`smooth`): a step of more than 5 °C is taken
 // at once, a smaller one is followed in about 1.5 s and comes near the frame's value but never quite
 // onto it, so a small step goes a little past the border and the test waits for the state line to
 // show it. The exact borders are unit tests (shell.test.ts).

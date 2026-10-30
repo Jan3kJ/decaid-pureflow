@@ -36,7 +36,7 @@ export function emptySteamSeries(): SteamSeries {
 /**
  * ml/s: the steam ends with the last frame of `pouring` at this flow or more. On the real DE1
  * the flow falls under it about 0.5 s after the machine's timer, while the substate stays
- * `pouring` for 3.5 to 5 s more (spec 3.12).
+ * `pouring` for 3.5 to 5 s more.
  */
 export const STEAM_FLOW = 0.5;
 
@@ -44,14 +44,14 @@ export const STEAM_FLOW = 0.5;
  * The substates in which a machine still in state steam has stopped steaming
  * (`MachineSubstate` in rest_v1.yml): `pouringDone` as the steam ends, `puffing` while it
  * purges and `pausedSteam` until the second tap of the two-tap purge. The real DE1 passes
- * them before idle; the simulated one goes from steam to idle at once (research.md 8.7).
+ * them before idle; the simulated one goes from steam to idle at once.
  */
 const STEAM_OVER: readonly string[] = ['pouringDone', 'puffing', 'pausedSteam'];
 
 /**
  * The machine steams in this frame: state steam, neither before the steam (`preparingForShot`,
  * the pump priming) nor after it. The real DE1 steams in `pouring`; the simulated machine
- * reports none of its substates and steams in `idle` (research.md 8.7).
+ * reports none of its substates and steams in `idle`.
  */
 export function steams(frame: Pick<MachineSnapshot, 'state'>): boolean {
   const { state, substate } = frame.state;
@@ -65,7 +65,7 @@ function continues(run: SteamRun, frame: MachineSnapshot): boolean {
 }
 
 /**
- * The run after one machine frame (spec 3.12). It starts with the first frame that steams:
+ * The run after one machine frame. It starts with the first frame that steams:
  * the first of `pouring`, or of a machine that never reports it. A run started in `pouring`
  * ends with the last frame at `STEAM_FLOW` or more, once the flow has been there, or when the
  * substate leaves `pouring`; any run ends when the machine leaves steam or passes to a
@@ -114,7 +114,7 @@ export function steamSeconds(run: SteamRun | null): number {
 }
 
 /**
- * The countdown of a running steam (spec 3.7): the whole seconds left of `timer` after
+ * The countdown of a running steam: the whole seconds left of `timer` after
  * `elapsed`, never under 0. It starts at the timer itself.
  */
 export function secondsLeft(timer: number, elapsed: number): number {

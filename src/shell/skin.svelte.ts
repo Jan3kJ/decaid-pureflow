@@ -43,20 +43,20 @@ import { errorMessage } from '../error-message';
 export class Skin {
   readonly baseUrl: string;
   readonly client: DecaidClient;
-  /** the shots read from Decaid for the session: the history, the restore and the expected length (spec 3.8) */
+  /** the shots read from Decaid for the session: the history, the restore and the expected length */
   readonly shots: ShotCache;
-  /** Decaid's beans and grinders, and the pick for the next shot (spec 3.9 item 19) */
+  /** Decaid's beans and grinders, and the pick for the next shot */
   readonly catalogue: Catalogue;
 
   screen: Screen = $state(loadScreen());
   workflow: Workflow | null = $state.raw(null);
-  /** the running shot, or the finished one until the next starts: home shows it (spec 3.11) */
+  /** the running shot, or the finished one until the next starts: home shows it */
   shot: Shot | null = $state.raw(null);
   /** a shot runs: home shows it live, and the pages do not swipe */
   get shotRunning(): boolean {
     return this.shot !== null && !this.shot.ended;
   }
-  /** the running hot water or flush, or the finished one until the next (spec 3.6) */
+  /** the running hot water or flush, or the finished one until the next */
   waterRun: WaterRun | null = $state.raw(null);
   /** what went wrong with the last action, for the user */
   notice: string | null = $state(null);
@@ -64,7 +64,7 @@ export class Skin {
   info: string | null = $state(null);
   /**
    * Where each screen outside the row of pages was opened from: its way back, a swipe to the
-   * right (spec 3.14), and the picker's after a load. Home for a screen the skin opened with.
+   * right, and the picker's after a load. Home for a screen the skin opened with.
    */
   private readonly opener: Partial<Record<Screen, Screen>> = {};
   /**
@@ -90,7 +90,7 @@ export class Skin {
 
   readonly status = $derived.by(() => statusOf(this.link, this.shown, this.baseUrl));
   /**
-   * The status of a page that waits for a heater (spec 3.8, 3.12): home and hot water the group,
+   * The status of a page that waits for a heater: home and hot water the group,
    * steam the steam heater. It reads the filtered temperatures (`shown`), as the state line does.
    */
   statusFor(target: HeatTarget | null): Status {
@@ -104,13 +104,13 @@ export class Skin {
   readonly canSleep = $derived(canSleep(this.link, this.snapshot));
   /** the machine sleeps, whoever put it to sleep */
   readonly machineAsleep = $derived(isAsleep(this.link, this.snapshot));
-  /** the Asleep screen is shown: the machine sleeps, and not by 'Machine sleep' (spec 3.10) */
+  /** the Asleep screen is shown: the machine sleeps, and not by 'Machine sleep' */
   readonly asleep = $derived(this.machineAsleep && !this.sleepMark.machineOnly);
   /** the values of the state line, on home and on the steam page */
   readonly stateValues = $derived(
     stateLine(this.link, this.shown, this.water, this.scaleLink, this.weight, this.scaleLooking, this.settings.tankUnit),
   );
-  /** the name of the step that runs, printed after the state line's values; null outside a shot (spec 3.14) */
+  /** the name of the step that runs, printed after the state line's values; null outside a shot */
   readonly step = $derived(runningStep(this.shot, this.link === 'machine' ? this.snapshot : null, this.workflow?.profile?.steps));
 
   constructor(baseUrl: string = gatewayBaseUrl(location)) {
@@ -167,7 +167,7 @@ export class Skin {
   set scaleLink(link: Streams['scaleLink']) {
     this.streams.scaleLink = link;
   }
-  /** a round of scans for the scale runs (spec 3.9, `ScaleRetry`) */
+  /** a round of scans for the scale runs (`ScaleRetry`) */
   get scaleLooking(): boolean {
     return this.streams.scaleLooking;
   }
@@ -211,7 +211,7 @@ export class Skin {
   get steam(): SteamControl['run'] {
     return this.steamer.run;
   }
-  /** the adjust button selected on the steam page (spec 3.7): its place in the settings' list, null for none */
+  /** the adjust button selected on the steam page: its place in the settings' list, null for none */
   get steamAdjust(): number | null {
     return this.steamer.adjust;
   }
@@ -226,7 +226,7 @@ export class Skin {
   get steamAdjustment(): number | null {
     return this.steamer.adjustment;
   }
-  /** the steam heater, on or off (spec 3.7, home's menu); null while neither the machine nor the workflow is known */
+  /** the steam heater, on or off (home's menu); null while neither the machine nor the workflow is known */
   get steamHeater(): SteamControl['heater'] {
     return this.steamer.heater;
   }
@@ -237,7 +237,7 @@ export class Skin {
 
   // --- the history and its restore (recall.svelte.ts) ---
 
-  /** the shot history's overlay is open (spec 3.1); only home shows it */
+  /** the shot history's overlay is open; only home shows it */
   get historyOpen(): boolean {
     return this.recall.historyOpen;
   }
@@ -259,7 +259,7 @@ export class Skin {
   get newestShot(): Recall['newest'] {
     return this.recall.newest;
   }
-  /** s, where the running shot graph's time axis starts (spec 3.8) */
+  /** s, where the running shot graph's time axis starts */
   get expectedSeconds(): number {
     return this.recall.expectedSeconds;
   }
@@ -370,7 +370,7 @@ export class Skin {
     return this.steamer.tapAdjust(index);
   }
 
-  /** Writes the steam timer, whole seconds (spec 3.4); see `SteamControl.setTimer`. */
+  /** Writes the steam timer, whole seconds; see `SteamControl.setTimer`. */
   setSteamTimer(seconds: number): Promise<void> {
     return this.steamer.setTimer(seconds);
   }
@@ -381,7 +381,7 @@ export class Skin {
   private hotWaterWritten = 0;
 
   /**
-   * Writes one value of the hot water page to the workflow's `hotWaterData` (spec 3.7). Hot
+   * Writes one value of the hot water page to the workflow's `hotWaterData`. Hot
    * water itself is started at the machine. Each write sends all four values, so the writes
    * queue: a value set before the previous write is answered is built on that answer, and does
    * not send the previous field's old value again.
@@ -411,15 +411,15 @@ export class Skin {
   }
 
   /**
-   * The menu's 'Machine sleep' (spec 3.10): only the machine sleeps, the app stays awake, without
+   * The menu's 'Machine sleep': only the machine sleeps, the app stays awake, without
    * the Asleep screen and without dimming, until the machine wakes. The state for sleep is
-   * `sleeping` (research.md, section 9).
+   * `sleeping`.
    */
   sleep(): Promise<void> {
     return this.askSleep(true);
   }
 
-  /** The menu's 'Machine and app sleep' (spec 3.10): the machine sleeps and the app shows the Asleep screen. */
+  /** The menu's 'Machine and app sleep': the machine sleeps and the app shows the Asleep screen. */
   sleepApp(): Promise<void> {
     return this.askSleep(false);
   }
@@ -430,7 +430,7 @@ export class Skin {
     if (this.notice) this.sleepMark = { ...this.sleepMark, asked: false };
   }
 
-  /** The menu's steam switch (spec 3.7); see `SteamControl.toggleHeater`. */
+  /** The menu's steam switch; see `SteamControl.toggleHeater`. */
   toggleSteamHeater(): Promise<void> {
     return this.steamer.toggleHeater();
   }
@@ -440,7 +440,7 @@ export class Skin {
     return this.steamer.setHeater(on);
   }
 
-  /** A touch anywhere on the skin: Decaid's sleep timer starts again (`Heartbeat`, spec 3.12). */
+  /** A touch anywhere on the skin: Decaid's sleep timer starts again (`Heartbeat`). */
   touched(): void {
     this.heartbeat.touch(this.machineAsleep);
   }
@@ -451,8 +451,8 @@ export class Skin {
 
   /**
    * Tares the scale: a tap on the weight in the state line, and the tare buttons of the steam
-   * and hot water pages (spec 3.7). Without a connected scale it tares nothing and looks for the
-   * scale at once (`findScale`, spec 3.9). Decaid refuses
+   * and hot water pages. Without a connected scale it tares nothing and looks for the
+   * scale at once (`findScale`). Decaid refuses
    * it during a shot when its setting `blockTareDuringShot` is on: that is what the user asked
    * Decaid for, so it is a notice and not an error.
    */
@@ -486,7 +486,7 @@ export class Skin {
     return this.store.restore();
   }
 
-  /** An entry of the shot history was tapped (spec 3.5); see `Recall.restore`. */
+  /** An entry of the shot history was tapped; see `Recall.restore`. */
   restore(entry: HistoryEntry): Promise<void> {
     return this.recall.restore(entry);
   }

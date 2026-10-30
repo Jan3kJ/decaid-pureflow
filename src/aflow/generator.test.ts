@@ -35,8 +35,8 @@ const PRE_FILL = (temperature: number): ProfileStep => ({
 // Fixtures, written by hand: the steps of each default profile without Pre Fill. light, medium
 // and dark are the plugin's own output (plugin-expected.ts). floral and 46mm are not
 // regression cases against the plugin: floral is new in 3.0 and has no plugin file, and 46mm
-// is the plugin's very-dark with the pour pressure, ramp time and flow direction the founder
-// set on 2026-10-12. Their steps are written from the mapping in docs/a-flow-3.0.md.
+// is the plugin's very-dark with the pour pressure, ramp time and flow direction set
+// on the tablet. Their steps are written from the mapping in docs/a-flow-3.0.md.
 const EXPECTED_STEPS: Record<string, ProfileStep[]> = {
   // light with infuse pressure 0 bar and the 2nd fill on: 2nd Fill and Pause, 15 s each, at
   // the fill temperature.
@@ -274,7 +274,7 @@ describe('the five default profiles', () => {
   }
 });
 
-// Regression, acceptance item 1: where a 3.0 profile uses the plugin's fixed values, its steps
+// Regression: where a 3.0 profile uses the plugin's fixed values, its steps
 // equal the plugin's output with ramp down off and the first-step workaround on. The cases
 // are the defaults that still equal a plugin file. floral and 46mm are not among them: see
 // the comment in plugin-expected.ts.
@@ -310,7 +310,7 @@ describe('regression against the plugin', () => {
     });
   }
 
-  // The one place 3.0 leaves the plugin on purpose (spec 3.2, founder 2026-10-11).
+  // The one place 3.0 leaves the plugin on purpose.
   it('default-dark with the 2nd fill on differs only in temperature, fill 93 instead of pour 88', () => {
     const p = { ...params('default-dark'), pauseDuration: 15 };
     const added = generateSteps(p, true).slice(3, 5);
@@ -489,7 +489,7 @@ describe('what each parameter moves', () => {
     ],
     ['2nd fill time', { secondFillTime: 6 }, { '2nd Fill.seconds': 6 }],
     ['pause time', { pauseDuration: 7 }, { 'Pause.seconds': 7 }],
-    // founder, 2026-10-13: the pause ends at a flow under this value
+    // The pause ends at a flow under this value
     ['pause ends at flow under', { pauseExitFlow: 0.4 }, { 'Pause.exit.value': 0.4 }],
     // pressurize
     [
@@ -664,7 +664,7 @@ describe('what 3.0 keeps from the plugin', () => {
     });
   });
 
-  // founder, 2026-10-13 (request 169): 'pause ends at flow under X (editable)'.
+  // The pause ends at a flow under an editable value.
   it("the pause's exit flow moves exactly the Pause step's exit, with and without the Pre Fill step", () => {
     for (const workaround of [false, true]) {
       const on = { ...base, pauseDuration: 9 };

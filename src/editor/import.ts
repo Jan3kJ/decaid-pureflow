@@ -1,8 +1,8 @@
-// The import of old A-Flow profiles (spec 3.9 item 6, U7): the settings' button converts every
+// The import of old A-Flow profiles: the settings' button converts every
 // visible profile that is A-Flow by its steps and has no 3.0 parameters, as the editor's 'save'
-// converts one it opened (U2): `saveEdit`, so each is stored as 3.0 with the old one as its
+// converts one it opened: `saveEdit`, so each is stored as 3.0 with the old one as its
 // parent, hidden. Decaid's bundled A-Flow profiles are skipped: the skin's defaults stand for
-// them (T5).
+// them.
 import { readSteps, type AFlowParams } from '../aflow';
 import type { DecaidClient, ProfileRecord } from '../api';
 import { errorMessage } from '../error-message';

@@ -1,7 +1,7 @@
 // The skin's navigation: one value says which screen is shown. No routes and no history
 // stack: every screen is one tap from home, and home is one tap from every screen. The shot
-// history is not a screen: it is an overlay on home (spec 3.1, src/history); nor is the shot:
-// home is the shot screen (spec 3.11, `ShotView.svelte`).
+// history is not a screen: it is an overlay on home (src/history); nor is the shot:
+// home is the shot screen (`ShotView.svelte`).
 import type { MachineState } from '../api';
 
 export const SCREENS = ['home', 'profiles', 'editor', 'steam', 'hot-water', 'settings', 'beans'] as const;
@@ -13,7 +13,7 @@ export const SCREEN_KEY = 'pureflow.screen';
 type Store = Pick<Storage, 'getItem' | 'setItem'>;
 
 /**
- * The screen the skin opens with: the one it showed before the WebView unloaded (spec 4.1).
+ * The screen the skin opens with: the one it showed before the WebView unloaded.
  * 'espresso', stored by a skin before 0.3, is no screen any more: home.
  */
 export function loadScreen(store: Store = localStorage): Screen {

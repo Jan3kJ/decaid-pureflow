@@ -92,7 +92,7 @@ describe('pickerEntries', () => {
     'A-Flow / default-46mm',
   ];
 
-  it('lists the five defaults of the skin first, in the order of the founder, to a gateway that has none', () => {
+  it('lists the five defaults of the skin first, in their fixed order, to a gateway that has none', () => {
     const entries = pickerEntries([record(other)]);
     expect(entries.map((entry) => entry.profile.title)).toEqual([...fiveDefaults, 'Best practice']);
     expect(entries.map((entry) => entry.isDefault)).toEqual([true, true, true, true, true, false]);
@@ -124,7 +124,7 @@ describe('pickerEntries', () => {
       record(other),
       record({ ...other, title: 'A-Flow / default-very-dark' }),
       record({ ...other, title: 'A-Flow / default-like-dflow' }),
-      // the founder's test-light: the steps of a default under another title (spec 3.8)
+      // a test-light: the steps of a default under another title
       record({ ...light, title: 'A-Flow / test-light' }, { metadata: { source: 'pureflow', aflow: '3.0' } }),
     ];
     expect(titles(list)).toEqual([
@@ -150,7 +150,7 @@ describe('sortProfiles', () => {
     ];
     expect(isAFlow3(list[2])).toBe(true);
     expect(isAFlow3(list[1])).toBe(false);
-    // the skin's former name (founder, 2026-10-18)
+    // the skin's former name
     expect(isAFlow3(record(other, { metadata: { source: 'decaid-skin', aflow: '3.0' } }))).toBe(true);
     expect(isAFlow3(record(other, { metadata: { source: 'other', aflow: '3.0' } }))).toBe(false);
     expect(sortProfiles(list).map((item) => item.profile.title)).toEqual([

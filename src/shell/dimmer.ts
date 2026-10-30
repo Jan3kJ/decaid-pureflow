@@ -1,6 +1,6 @@
 // The screen follows the Asleep screen: dim while it is shown, the system's own brightness
 // again when the machine is awake; a sleep by the menu's 'Machine sleep' is not dimmed
-// (sleep.ts). Only where Decaid says the platform can (spec 3.1); elsewhere the brightness is
+// (sleep.ts). Only where Decaid says the platform can; elsewhere the brightness is
 // not touched. A part of `Skin`, which hands it every machine frame's state.
 import type { DecaidClient } from '../api';
 

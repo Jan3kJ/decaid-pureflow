@@ -6,7 +6,7 @@
     skin: Skin;
     /**
      * the heater this page waits for: an idle machine says 'Heating' under its target, and the
-     * steam page 'Off' while the steam heater is off (spec 3.8, 3.12)
+     * steam page 'Off' while the steam heater is off
      */
     heat?: HeatTarget;
   }
@@ -19,20 +19,20 @@
   const machine = $derived(skin.link === 'machine' && skin.snapshot !== null);
 </script>
 
-<!-- The machine's state in one line, on home, the hot water and the steam page (founder, 2026-10-13). -->
+<!-- The machine's state in one line, on home, the hot water and the steam page. -->
 <section class="state {status.tone}" class:heater-off={status.title === HEATER_OFF} data-testid="status" data-link={skin.link}>
   <span class="dot"></span>
   <strong class:warning={status.tone === 'warn' || status.title === HEATER_OFF} data-testid="status-title">{status.title}</strong>
   {#if machine}
     {#each skin.stateValues as item (item.key)}
       {#if item.key === 'scale' && skin.scaleLink === 'connected'}
-        <!-- A tap on the weight tares the scale (founder, 2026-10-16); without a scale it is not a button. -->
+        <!-- A tap on the weight tares the scale; without a scale it is not a button. -->
         <button class="value scale" data-testid="tare" aria-label="tare the scale" onclick={() => skin.tare()}>
           <small>{item.label}</small>
           <b data-testid="state-scale">{item.value}</b>
         </button>
       {:else if item.key === 'scale'}
-        <!-- Without a scale the warning is a button: a tap looks for the scale again (spec 3.9). -->
+        <!-- Without a scale the warning is a button: a tap looks for the scale again. -->
         <button class="value scale warn" data-testid="scale-retry" aria-label="look for the scale" onclick={() => skin.findScale()}>
           <small>{item.label}</small>
           <b class="warning" data-testid="state-scale">{item.value}</b>
@@ -45,7 +45,7 @@
       {/if}
     {/each}
     {#if skin.step}
-      <!-- The step that runs, after the weight: in the values' size and the state word's colour (spec 3.14). -->
+      <!-- The step that runs, after the weight: in the values' size and the state word's colour. -->
       <span class="step" data-testid="state-step">{skin.step}</span>
     {/if}
   {:else}
@@ -84,7 +84,7 @@
     background: var(--warn);
   }
 
-  /* The state word is a name, the profile name's size and weight (spec 3.14's roles); its values are values. */
+  /* The state word is a name, the profile name's size and weight; its values are values. */
   strong {
     margin-left: -0.5rem;
     font-size: var(--text-body);

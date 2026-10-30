@@ -1,6 +1,6 @@
 <script lang="ts">
-  // The warning before a load while the machine holds unsaved edits from the editor (founder,
-  // 2026-10-14). Nothing is loaded before one of its three answers (`Skin.mayLoad`).
+  // The warning before a load while the machine holds unsaved edits from the editor.
+  // Nothing is loaded before one of its three answers (`Skin.mayLoad`).
   import { startName } from '../editor/start';
   import type { Unsaved } from '../editor/unsaved';
   import type { LoadAnswer } from './load-warning.svelte';

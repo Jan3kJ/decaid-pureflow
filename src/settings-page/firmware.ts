@@ -5,7 +5,7 @@
 // Copyright (C) 2025-2026 Decent Espresso
 // Licensed under the GNU General Public License v3.0 or later; used here under GPL-3.0.
 //
-// Updates > Firmware Update and Decaid's own update (research.md 20.3, 20.10 S2c), without UI:
+// Updates > Firmware Update and Decaid's own update, without UI:
 // what the bundled firmware catalog says about the connected machine, and the progress of an
 // update. "Could not check" never reads as "up to date": `updateAvailable` null is unknown.
 import type { AppUpdateState, FirmwareArtifact, FirmwareCatalog, FirmwareProgress } from '../api';
@@ -93,7 +93,7 @@ export function progressText(progress: FirmwareProgress | null): string {
   }
 }
 
-/** Decaid's own update as one line: the gateway's state only, no check of GitHub (spec 6). */
+/** Decaid's own update as one line: the gateway's state only, no check of GitHub. */
 export function appUpdateText(state: AppUpdateState): string {
   switch (state.phase) {
     case 'available':

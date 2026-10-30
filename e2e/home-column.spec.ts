@@ -1,9 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mockGateway } from './mock-gateway';
 
-// The profile and bean buttons sit at the top of home's right column while no shot runs (spec
-// 3.11, X2): one under the other, each as wide as the column, the name first and its family or
-// roaster in a caption under it, each line cut with an ellipsis (spec 3.18 item 5). During a shot they stay at their place but off (spec 3.17 item 10), so the time,
+// The profile and bean buttons sit at the top of home's right column while no shot runs:
+// one under the other, each as wide as the column, the name first and its family or
+// roaster in a caption under it, each line cut with an ellipsis. During a shot they stay at their place but off, so the time,
 // the weight and the stop do not move; the 7 rem stop button is at the column's bottom. Home's
 // header holds the state line and the menu only.
 
@@ -106,7 +106,7 @@ test('the profile and bean buttons are in the column while idle, off during a sh
   expect(errors).toEqual([]);
 });
 
-/** The review's long names: the part that tells two buttons apart comes after the long part. */
+/** Long names: the part that tells two buttons apart comes after the long part. */
 async function longNames(page: Page) {
   const gateway = await mockGateway(page);
   gateway.workflow.profile = {

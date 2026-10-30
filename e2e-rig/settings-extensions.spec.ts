@@ -2,9 +2,9 @@ import { expect, test, type Page } from '@playwright/test';
 import type { MachineSnapshot, PluginSettings, PresenceSettings, FirmwareCatalog, AppUpdateState, PluginManifest } from '../src/api';
 import { IDLE } from './idle';
 
-// Plugins, presence and firmware against the rig (research.md 20.10 S2c): a plugin setting
+// Plugins, presence and firmware against the rig: a plugin setting
 // changed through the page, read back from the gateway and restored (read back, and written a
-// second time when the first restore did not hold, as S1 saw once); the sleep timeout changed
+// second time when the first restore did not hold, as seen once); the sleep timeout changed
 // and restored; a wake schedule created and deleted through the page; the firmware catalog
 // shown, and its Install asks first and is cancelled: no firmware is applied here, no plugin is
 // enabled, disabled or updated. The test records what it changes before and checks it

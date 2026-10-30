@@ -32,7 +32,7 @@ const VISUALIZER: PluginManifest = {
 
 const control = (key: string) => pluginControls(VISUALIZER).find((entry) => entry.key === key)!;
 
-describe('the plugin cards (research.md 20.10 S2c)', () => {
+describe('the plugin cards', () => {
   it('has one control per declared setting, in the manifest order, of each type', () => {
     expect(pluginControls(VISUALIZER).map((entry) => [entry.key, entry.kind])).toEqual([
       ['Username', 'string'],

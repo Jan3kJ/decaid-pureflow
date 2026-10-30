@@ -1,5 +1,5 @@
 <script lang="ts">
-  // The pick for the next shot (research.md 29.6), a dialog over home: a bean that is not
+  // The pick for the next shot, a dialog over home: a bean that is not
   // archived or no bean, a grinder or none, and the grinder setting with − and + by the
   // grinder's step, typed on the number pad, or its named positions. 'Use for the next shot'
   // writes all of it in one `PUT /api/v1/workflow`; it stays for every next shot until changed.

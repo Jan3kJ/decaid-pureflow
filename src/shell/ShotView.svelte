@@ -16,7 +16,7 @@
 
   let { skin, top }: Props = $props();
 
-  // Home is the shot screen (spec 3.11): one graph on the left, and the right column of a fixed
+  // Home is the shot screen: one graph on the left, and the right column of a fixed
   // width with the shot's time, weight and values, so nothing changes size when a shot starts.
   // While the shot runs the curves are live and stop is at the column's bottom; after it the
   // shot stays with the per-phase table until the next one starts (`homeShot`).
@@ -53,7 +53,7 @@
 
 <div class="shot" class:values={table !== null} class:caption={recalled !== null} data-testid="home-shot" data-shot={shown.kind}>
   <div class="top">{@render top?.()}</div>
-  <!-- No strip over the graph (spec 3.14): the step is in the state line, the finished shot's time
+  <!-- No strip over the graph: the step is in the state line, the finished shot's time
        and weight in the column. A recalled history entry keeps its caption and 'dismiss'. -->
   {#if recalled}
     {@const entry = recalled.entry}
@@ -356,7 +356,7 @@
 
   /*
    * 7 rem high where the column has room; at a larger display size it gives up height, never
-   * less than 3.5 rem, so it stays whole in view under the values (spec 3.18 item 5).
+   * less than 3.5 rem, so it stays whole in view under the values.
    */
   .stop {
     margin-top: auto;

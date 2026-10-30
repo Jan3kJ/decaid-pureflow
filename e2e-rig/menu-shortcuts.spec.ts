@@ -3,11 +3,11 @@ import type { DecaidSettings, DisplayState, MachineSnapshot, ShotSettings } from
 import type { RigWorkflow } from './gateway';
 import { IDLE } from './idle';
 
-// Acceptance item 18 (spec 3.7, R4) against the rig: the home menu's steam off writes the
+// The menu's shortcuts against the rig: the home menu's steam off writes the
 // workflow's steam temperature 0 and the machine's own settings read back a heater that is off;
-// steam on brings the temperature back. The two sleeps (spec 3.10, acceptance 56) both put the
-// machine into sleeping, since Decaid 0.8.8 has no state that switches the DE1 off (research.md
-// 22): machine sleep keeps the app awake and 'Wake machine' wakes it; machine and app sleep shows
+// steam on brings the temperature back. The two sleeps both put the
+// machine into sleeping, since Decaid 0.8.8 has no state that switches the DE1 off:
+// machine sleep keeps the app awake and 'Wake machine' wakes it; machine and app sleep shows
 // the Asleep screen, dimmed to 5 where the platform can, until a touch. Neither changes Decaid's
 // keepAwake or wake lock. The tests leave the steam temperature, the machine's state, keepAwake,
 // the wake lock, the brightness and the skin's KV backup as they found them. The same with a
@@ -97,7 +97,7 @@ test('home menu: steam off and on again, read back from the machine; machine sle
     // The app stays awake: no Asleep screen, the screen not dimmed.
     await page.waitForTimeout(2_000);
     await expect(page.getByTestId('asleep')).toHaveCount(0);
-    // Decaid 0.8.8 itself lowers the screen to 10 while the machine sleeps (seen 2026-10-21 with the skin
+    // Decaid 0.8.8 itself lowers the screen to 10 while the machine sleeps (seen with the skin
     // closed); the skin's own dimming is 5 (Asleep screen) or 0, which 'Machine sleep' must not set.
     const dimmed = (await api<DisplayState>('GET', '/api/v1/display')).requestedBrightness;
     expect([displayBefore.requestedBrightness, 10]).toContain(dimmed);
@@ -106,7 +106,7 @@ test('home menu: steam off and on again, read back from the machine; machine sle
     await page.getByTestId('wake-machine').click();
     await expect.poll(machineState, { timeout: 15_000 }).not.toBe('sleeping');
     await expect(page.getByTestId('status-title')).not.toHaveText('Asleep', { timeout: 15_000 });
-    // The rig drops the scale while the machine sleeps (research.md 13): the next test needs it.
+    // The rig drops the scale while the machine sleeps: the next test needs it.
     await expect(page.getByTestId('state-scale')).toHaveText(/ g$/, { timeout: 30_000 });
   } finally {
     if ((await machineState().catch(() => undefined)) === 'sleeping') await api('PUT', '/api/v1/machine/state/idle');
@@ -185,7 +185,7 @@ test('home menu: machine and app sleep shows the Asleep screen at 5, a touch wak
     await expect
       .poll(() => sent)
       .toEqual(['PUT /api/v1/machine/state/sleeping', ...brightness(5), 'PUT /api/v1/machine/state/idle', ...brightness(100)]);
-    // The rig drops the scale while the machine sleeps (research.md 13): the next test needs it.
+    // The rig drops the scale while the machine sleeps: the next test needs it.
     await expect(page.getByTestId('state-scale')).toHaveText(/ g$/, { timeout: 30_000 });
   } finally {
     if ((await machineState().catch(() => undefined)) === 'sleeping') await api('PUT', '/api/v1/machine/state/idle');

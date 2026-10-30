@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Skin } from './skin.svelte';
 
-// The way back (spec 3.14): a swipe to the right leaves a screen outside the row of pages for
+// The way back: a swipe to the right leaves a screen outside the row of pages for
 // where it was opened from (`Skin.back`).
 
 beforeEach(() => {

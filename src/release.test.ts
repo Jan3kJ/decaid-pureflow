@@ -5,8 +5,8 @@ import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-// scripts/release.mjs and its pure parts, scripts/release-lib.mjs (spec 3.15, P7; acceptances 107
-// and 108): the trailers, the bump, the CHANGELOG section and the version writes; the whole flow
+// scripts/release.mjs and its pure parts, scripts/release-lib.mjs:
+// the trailers, the bump, the CHANGELOG section and the version writes; the whole flow
 // with the git, gh and npm calls replaced; and the script itself run in a temporary repository
 // with a bare origin, with --dry-run and --local (no network, no gh).
 

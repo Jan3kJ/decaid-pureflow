@@ -61,7 +61,7 @@ function pressureStep(pressure: number, v: StepValues): PressureStep {
   return { ...common(v), pump: 'pressure', pressure };
 }
 
-/** The steps of spec 3.2, items 0 to 7. A step that is off is not in the list. */
+/** The steps of an A-Flow 3.0 profile, 0 to 7 (docs/a-flow-3.0.md). A step that is off is not in the list. */
 export function generateSteps(params: AFlowParams, firstStepWorkaround = false): ProfileStep[] {
   const p = resolveParams(params);
   const steps: ProfileStep[] = [];

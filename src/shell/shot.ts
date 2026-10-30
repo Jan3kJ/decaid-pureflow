@@ -16,7 +16,7 @@ export interface ShotSeries {
   /**
    * g/s, the scale frame's `weightFlow`: the scale's own gravimetric flow, or Decaid's
    * smoothed estimate from the weight (websocket_v1.yml). The graph draws this, not the
-   * weight (founder, 2026-10-14). Null where the weight is null.
+   * weight. Null where the weight is null.
    */
   weightFlow: (number | null)[];
   /** °C at the group */
@@ -61,7 +61,7 @@ export interface Shot {
 
 /**
  * Decaid tares the scale when a shot starts; on the rig the weight was 0 half a second after
- * the first espresso frame (research.md, section 10). Until then the scale still shows what
+ * the first espresso frame. Until then the scale still shows what
  * stood on it, so the weight of the first second in espresso is not drawn.
  */
 export const TARE_SETTLE_S = 1;
@@ -75,18 +75,18 @@ export const TARE_SETTLE_S = 1;
 const WAITING: readonly string[] = ['idle', 'preparingForShot'];
 
 /**
- * The substates of state espresso after the shot (spec 3.8): the real DE1 stays in espresso
+ * The substates of state espresso after the shot: the real DE1 stays in espresso
  * for seconds after the stop, in `pouringDone` (`MachineSubstate` in rest_v1.yml; the
  * firmware's own name for it is Ending), and pumps towards other targets meanwhile: the tail
- * of the founder's screenshot of 2026-10-17. 'ending' is there for a gateway that uses the
+ * a real DE1 shows. 'ending' is there for a gateway that uses the
  * firmware's name. The simulated machine goes from `pouring` to idle at once and sends none
- * of them (research.md 23). The steam run treats its own end so (`steams` in steam/run.ts).
+ * of them. The steam run treats its own end so (`steams` in steam/run.ts).
  */
 const SHOT_DONE: readonly string[] = ['pouringDone', 'ending'];
 
 /**
  * s after the end of a shot in which the scale's highest reading is still the weight in the
- * cup (spec 3.14 item 9): the drops after the stop are over by then. Later readings are a cup,
+ * cup: the drops after the stop are over by then. Later readings are a cup,
  * a hand or the water of a hot water run.
  */
 export const SETTLE_S = 15;
@@ -155,11 +155,11 @@ export function pushPoint(
  * The shot after one machine frame. A frame in state espresso starts a shot (and replaces a
  * finished one) or adds a point; the first frame in which the shot is over (`shotOver`: another
  * state, or `pouringDone` after the stop) ends it and adds no point, so the graph and the timer
- * stop there (spec 3.8). Espresso frames after that, until the machine leaves espresso, are the
+ * stop there. Espresso frames after that, until the machine leaves espresso, are the
  * shot's tail and change nothing. The graph and the timer start with the first frame in which
  * water moves (`waterMoves`): the frames of the heating before it give no points. After that
  * every espresso frame is a point until the end, whatever its substate (the simulated machine
- * goes back to `preparingForShot` between two steps, research.md 8.2). `weight` is the scale's
+ * goes back to `preparingForShot` between two steps). `weight` is the scale's
  * latest weight, null without a scale, and `weightFlow` its latest weight flow in g/s. Nothing
  * is changed in place.
  */
@@ -233,8 +233,8 @@ function fixWeight(shot: Shot | null): Shot | null {
  * shot keeps the highest weight in the `SETTLE_S` after it ended as the weight in the cup.
  * Streamline follows the scale after the shot without an end (`setFinalWeight` in its
  * shotData.js); the highest weight keeps the drops after the stop but not a cup taken away
- * while the summary is still open (spec 3.8, T2), and the end keeps out what the scale weighs
- * later (spec 3.14 item 9). A weight without a time counts; the machine's frames fix the
+ * while the summary is still open, and the end keeps out what the scale weighs
+ * later. A weight without a time counts; the machine's frames fix the
  * weight then (`recordFrame`). Nothing is changed in place.
  */
 export function settleWeight(shot: Shot | null, weight: number | null, at = Number.NaN): Shot | null {
@@ -265,7 +265,7 @@ export function seriesWeight(series: ShotSeries): number | null {
 }
 
 /**
- * The step that runs, for the state line (spec 3.14): the profile's name of the step at the
+ * The step that runs, for the state line: the profile's name of the step at the
  * frame number the machine reports, 'Step n' for a step without one. Null unless a shot runs
  * and water moves; hot water, flush and steam have no steps.
  */

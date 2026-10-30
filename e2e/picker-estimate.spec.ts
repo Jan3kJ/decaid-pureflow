@@ -5,7 +5,7 @@ import bundled from '../src/steps/fixtures/bundled-profiles.json' with { type: '
 import { shotEstimate } from '../src/steps/estimate';
 import { mockGateway, profile, record } from './mock-gateway';
 
-// The estimate in the picker (spec 3.16 'The picture', acceptance 112), against a mocked
+// The estimate in the picker against a mocked
 // gateway: the graph draws the modelled flow, pressure and temperature as its lines, the
 // targets dotted under them, the step borders at the model's moments, and the caption says it
 // is an estimate; a profile without steps draws nothing and no error; the step editor's curve
@@ -89,7 +89,7 @@ test('the picker draws the modelled shot with the targets dotted under it and sa
   }, style.dim);
   expect(style.color).toBe(dim);
   // One line where the sentence fits on one with the font at hand, two where a wider font needs
-  // them (the runner's fonts are not the tablet's, spec 3.20): never cut.
+  // them (the runner's fonts are not the tablet's): never cut.
   const fontSize = await caption.evaluate((element) => parseFloat(getComputedStyle(element).fontSize));
   const lines = (await fitsOneLine(caption)) ? 1 : 2;
   expect((await caption.boundingBox())!.height).toBeLessThan(fontSize * (lines + 1));

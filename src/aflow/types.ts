@@ -1,9 +1,9 @@
-// A-Flow 3.0 parameters (spec 3.2) and the Decaid v2 profile the generator writes.
+// A-Flow 3.0 parameters and the Decaid v2 profile the generator writes.
 
 export const AFLOW_VERSION = '3.0';
 
 /**
- * The editable values of spec 3.2 and the toggle flow up / flow down, phase by phase.
+ * The editable values of A-Flow 3.0 and the toggle flow up / flow down, phase by phase.
  *
  * A value that is `number | null` follows another one while it is null (resolveParams says
  * which); a number makes it its own. The 2nd fill has no toggle of its own: it is on when
@@ -85,7 +85,7 @@ export interface GenerateOptions {
   title: string;
   author?: string;
   notes?: string;
-  /** The setting "first-step workaround" (spec 3.2): adds the Pre Fill step. Off by default. */
+  /** The setting "first-step workaround": adds the Pre Fill step. Off by default. */
   firstStepWorkaround?: boolean;
 }
 

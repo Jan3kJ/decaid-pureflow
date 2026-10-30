@@ -24,7 +24,7 @@ interface RigOptions {
 }
 
 /**
- * Decaid as the rig showed it (research.md, section 16): a workflow write reaches the machine
+ * Decaid as the rig showed it: a workflow write reaches the machine
  * only when the workflow's duration changes; a shot-settings write reaches only the machine.
  */
 function decaid(options: RigOptions = {}) {
@@ -81,7 +81,7 @@ describe('setting the steam timer', () => {
   });
 
   it('writes the machine directly when the workflow already had the duration and the machine another', async () => {
-    // The founder's 25 s and 30 s: the workflow says 25, the machine runs 30.
+    // 25 s and 30 s, as seen on the tablet: the workflow says 25, the machine runs 30.
     const rig = decaid({ workflow: 25, machine: 30 });
     const applied = await rig.apply(25);
     expect(rig.calls).toEqual(['workflow 25', `machine ${JSON.stringify({ ...SETTINGS, targetSteamDuration: 25 })}`]);

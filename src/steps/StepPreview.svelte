@@ -6,7 +6,7 @@ Copyright (C) 2025-2026 Decent Espresso
 Licensed under the GNU General Public License v3.0 or later; used here under GPL-3.0.
 -->
 <script lang="ts">
-  // The step editor's curve preview (research.md 17.15): the targets of the profile's steps,
+  // The step editor's curve preview: the targets of the profile's steps,
   // drawn by the skin's one chart, redrawn with every change of the profile. The CARDS tab
   // shows it above the cards, the SCRIPT tab beside the text. The picker's preview (`estimate`)
   // draws the modelled shot instead, the targets dotted under it (src/steps/estimate.ts).
@@ -17,13 +17,13 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
 
   interface Props {
     profile: Profile;
-    /** the picker's small preview: no labels (spec 3.8) */
+    /** the picker's small preview: no labels */
     bare?: boolean;
     /** s, the last step is drawn this far at most (`stepCurve`); without it every step whole */
     lastStepSeconds?: number;
     /** part of its screen's main frame, which hot water and flush cover (src/shell/cover.ts) */
     mainFrame?: boolean;
-    /** the modelled shot is the curves, the targets dotted under them (the picker, spec 3.16) */
+    /** the modelled shot is the curves, the targets dotted under them (the picker) */
     estimate?: boolean;
   }
 

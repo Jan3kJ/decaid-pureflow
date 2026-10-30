@@ -1,4 +1,4 @@
-// Where a profile's A-Flow parameters are stored (spec 3.6): in the record's `metadata`, as
+// Where a profile's A-Flow parameters are stored: in the record's `metadata`, as
 // `{ aflow: '3.0', params }` beside its `source`, and none in its `notes`. This module is the
 // one place that knows it. Profiles of version 1 hold them in their `notes`, as the codec's
 // string; they still read, and their next save moves the values and keeps the rest of the
@@ -113,7 +113,7 @@ function storedParams(profile: Pick<Profile, 'notes'>, metadata?: Record<string,
   return stored.ok ? stored.params : splitNotes(profile.notes).params;
 }
 
-/** A profile the A-Flow editor opens (spec 3.9, U2). */
+/** A profile the A-Flow editor opens. */
 export interface Opened {
   params: AFlowParams;
   /** read from the steps of an older A-Flow profile, with what that dropped; null for an A-Flow 3.0 profile */
@@ -165,9 +165,9 @@ export class StepsTakenError extends Error {
 }
 
 /**
- * Stores a profile and returns its record: the one writer of both editors (research.md 17.7).
+ * Stores a profile and returns its record: the one writer of both editors.
  *
- * A profile's id is a hash of its steps and its target weight (research.md 9.2 and 11). For
+ * A profile's id is a hash of its steps and its target weight. For
  * new steps `POST /api/v1/profiles` makes a record and that is all. For steps that exist it
  * answers with the existing record as it is, and then:
  * - the same title, other content outside the hash (notes, author, …): the profile is
@@ -186,7 +186,7 @@ export async function writeProfile(
   let record = await client.saveProfile(wanted, options);
   const renamed = record.profile.title !== wanted.title;
   if (renamed && record.visibility === 'visible' && record.id !== renaming) throw new StepsTakenError(record);
-  // The metadata is outside the id: a POST of stored steps answers with the old one (research.md 18.3).
+  // The metadata is outside the id: a POST of stored steps answers with the old one.
   const metadataDiffers = !!options.metadata && !sameSteps(record.metadata ?? {}, options.metadata);
   if (renamed || !sameSteps(record.profile, wanted) || metadataDiffers) {
     record = await client.updateProfile(record.id, {

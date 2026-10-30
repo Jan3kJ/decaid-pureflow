@@ -3,13 +3,13 @@ import { isWrite } from './gateway';
 import type { DisplayState, MachineSnapshot, DecaidSettings, DeviceInfo, PaginatedShots } from '../src/api';
 import { IDLE } from './idle';
 
-// Acceptance items 6 and 21 (spec section 5) against the rig: a tap on the weight in the state
+// Acceptance items 6 and 21 against the rig: a tap on the weight in the state
 // line tares, and the scale stream reads about 0 after it; with Decaid's setting
 // blockTareDuringShot on, a tare during a simulated shot shows the notice; the sleep button
 // puts the machine into `sleeping` and a touch wakes it. The tests delete the shot they
 // create and put the setting and the screen's brightness back. That settings survive a reload
 // needs no gateway: e2e/scale-settings-sleep.spec.ts. The simulated scale, disconnected, is
-// connected again by the skin's scan (spec 3.9, acceptance 40) and is left connected.
+// connected again by the skin's scan and is left connected.
 
 const GATEWAY = 'http://localhost:8080';
 
@@ -89,7 +89,7 @@ test('scale: with blockTareDuringShot on, a tare during a simulated shot shows t
     await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 15_000 });
 
     // The shot of whatever profile the workflow holds, started through the gateway as at the
-    // machine; home shows the shot by itself, under the state line (spec 3.11).
+    // machine; home shows the shot by itself, under the state line.
     await api('PUT', '/api/v1/machine/state/espresso');
     await expect(page.getByTestId('shot-plot')).toBeVisible({ timeout: 15_000 });
     expect(await machineState()).toBe('espresso');
@@ -122,8 +122,8 @@ const scaleState = async (): Promise<string | undefined> =>
 
 /**
  * Disconnects the simulated scale until it stays away for 30 s without a skin: for a while
- * after a wake Decaid takes a preferred scale back by itself (spec 3.9; seen on the rig after
- * the sleep test, 2026-10-19), and then the skin's scan would prove nothing. Otherwise Decaid
+ * after a wake Decaid takes a preferred scale back by itself (seen on the rig after
+ * the sleep test), and then the skin's scan would prove nothing. Otherwise Decaid
  * does not connect it again (seen for 60 s). This test runs before the file's sleep test.
  */
 async function dropScale(page: import('@playwright/test').Page): Promise<void> {
@@ -135,7 +135,7 @@ async function dropScale(page: import('@playwright/test').Page): Promise<void> {
   throw new Error('Decaid connects the simulated scale again by itself');
 }
 
-test('scale: the simulated scale, missing at the start or dropped, is connected again by the skin without a touch (spec 3.9, acceptance 40)', async ({
+test('scale: the simulated scale, missing at the start or dropped, is connected again by the skin without a touch', async ({
   page,
 }) => {
   test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
@@ -197,8 +197,8 @@ test('sleep: machine and app sleep puts the machine into sleeping with the Aslee
     await expect.poll(machineState, { timeout: 15_000 }).not.toBe('sleeping');
     await expect(page.getByTestId('asleep')).toHaveCount(0, { timeout: 15_000 });
     await expect(page.getByTestId('screen-home')).toBeVisible();
-    // The rig drops the scale while the machine sleeps (scalePowerMode "disconnect",
-    // research.md 9.1): it is back before the test ends, so the next one finds a scale.
+    // The rig drops the scale while the machine sleeps (scalePowerMode "disconnect"):
+    // it is back before the test ends, so the next one finds a scale.
     await expect(page.getByTestId('state-scale')).toHaveText(/ g$/, { timeout: 30_000 });
 
     const states = sent.filter((call) => call.includes('/machine/state/'));

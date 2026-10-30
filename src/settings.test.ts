@@ -103,7 +103,7 @@ describe('settings', () => {
     expect(loadSettings(fakeStore('{"tankUnit":5}')).tankUnit).toBe('ml');
   });
 
-  it('has the steam defaults of the founder', () => {
+  it('has the steam defaults', () => {
     expect(loadSettings(fakeStore()).steam).toEqual({
       mugSmall: 150,
       mugMedium: 225,
@@ -152,7 +152,7 @@ describe('settings', () => {
   });
 });
 
-describe("the editor's start row (founder, 2026-10-13)", () => {
+describe("the editor's start row", () => {
   const FLORAL = 'A-Flow / default-floral';
 
   it('holds the five A-Flow 3.0 defaults by default, in their order', () => {
@@ -266,7 +266,7 @@ describe('the steam values of the settings page', () => {
   });
 });
 
-describe('the adjust buttons of the steam page (spec 3.7)', () => {
+describe('the adjust buttons of the steam page', () => {
   const field = (id: string) => STEAM_FIELDS.flatMap((group) => group.fields).find((entry) => entry.id === id)!;
 
   it('are -8 s, -4 s and +5 s by default, and stored and read back with the other settings', () => {
@@ -295,7 +295,7 @@ describe('the adjust buttons of the steam page (spec 3.7)', () => {
   });
 });
 
-describe('the ratio favourites of the hot water page (spec 3.7)', () => {
+describe('the ratio favourites of the hot water page', () => {
   it('are 1:2, 1:2.5 and 1:3 by default', () => {
     expect(DEFAULT_HOT_WATER_SETTINGS.ratios).toEqual([2, 2.5, 3]);
     expect(loadSettings(fakeStore()).hotWater).toEqual({ ratios: [2, 2.5, 3] });

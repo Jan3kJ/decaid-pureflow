@@ -21,7 +21,7 @@ describe('validateParams', () => {
     }
   });
 
-  it('every temperature is 50 to 105 °C (founder, 2026-10-12)', () => {
+  it('every temperature is 50 to 105 °C', () => {
     const fields = ['fillTemperature', 'infuseTemperature', 'secondFillTemperature', 'rampTemperature', 'pourTemperature'] as const;
     for (const field of fields) {
       expect(paramRanges()[field]).toEqual({ min: 50, max: 105, unit: '°C' });
@@ -34,7 +34,7 @@ describe('validateParams', () => {
     expect(temperatures.map(([field]) => field).sort()).toEqual([...fields].sort());
   });
 
-  it('every time is 0 to 127 s, one profile step each (founder, 2026-10-12)', () => {
+  it('every time is 0 to 127 s, one profile step each', () => {
     const fields = ['fillTime', 'infuseTime', 'secondFillTime', 'pauseDuration', 'rampTime', 'pourTime'] as const;
     for (const field of fields) {
       expect(paramRanges()[field]).toEqual({ min: 0, max: 127, unit: 's' });
@@ -47,7 +47,7 @@ describe('validateParams', () => {
     expect(times.map(([field]) => field).sort()).toEqual([...fields].sort());
   });
 
-  it('the flow the pause ends under has the range of the other flows (founder, 2026-10-13)', () => {
+  it('the flow the pause ends under has the range of the other flows', () => {
     expect(paramRanges().pauseExitFlow).toEqual(paramRanges().secondFillFlow);
     expect(paramRanges().pauseExitFlow).toEqual({ min: 0.1, max: 8, unit: 'ml/s' });
     expect(codes({ pauseExitFlow: 1 })).toEqual([]);

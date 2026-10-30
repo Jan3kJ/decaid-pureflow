@@ -4,20 +4,20 @@ import { isWrite, type RigWorkflow } from './gateway';
 import { IDLE } from './idle';
 import { toPage } from '../e2e/touch';
 
-// The steam page against the rig (D8a): the duration the skin writes can be read back from
+// The steam page against the rig: the duration the skin writes can be read back from
 // the running gateway, and steam starts and is stopped by the skin's stop button. Only the
-// scale's frames are the test's: the simulated scale's weight cannot be set (research.md
-// 8.7). Simulated steam does not end by itself, so the timer running out is not checked.
+// scale's frames are the test's: the simulated scale's weight cannot be set,
+// and simulated steam does not end by itself, so the timer running out is not checked.
 // The test deletes the steam record it creates and puts the steam timer back.
 //
-// Since the founder's test of 2026-10-13 (25 s chosen, 30 s of steam; research.md section 16)
+// Since a test on the tablet (25 s chosen, 30 s of steam)
 // it reads the machine's own timer too, `targetSteamDuration` on `/ws/v1/machine/shotSettings`,
 // and runs with Decaid's default skin, Streamline, open in a second page and remembering
 // 30 s: without the skin's fix Streamline 0.2.13 writes its 30 s back over every timer the skin
-// sets. 0.2.14, on the rig since 2026-10-16, adopts another client's timer instead (research.md 18.4).
+// sets. 0.2.14 adopts another client's timer instead.
 
 const GATEWAY = 'http://localhost:8080';
-/** A medium mug of 225 g with two drinks, 300 g of milk: 43 s with the founder's defaults. */
+/** A medium mug of 225 g with two drinks, 300 g of milk: 43 s with the defaults. */
 const WEIGHT = 525;
 const SECONDS = 43;
 /** Where Streamline remembers the steam time its user set. */
@@ -82,7 +82,7 @@ test('steam: the written timer is read back from the workflow and from the machi
   const steamsBefore = await steamIds();
   const rememberedBefore = await api('GET', REMEMBERED);
   const storeBefore: string[] = await api('GET', STREAMLINE_STORE);
-  // Streamline 0.2.17's page switches Decaid's wake lock override on (research.md 13).
+  // Streamline 0.2.17's page switches Decaid's wake lock override on.
   const wakeLockBefore = (await api<DisplayState>('GET', '/api/v1/display')).wakeLockOverride === true;
   const sent: string[] = [];
   page.on('request', (request) => {
@@ -101,7 +101,7 @@ test('steam: the written timer is read back from the workflow and from the machi
 
   const streamline = await context.newPage();
   try {
-    // Streamline as on the founder's tablet: open, with a steam time of its own. The workflow
+    // Streamline as on the tablet: open, with a steam time of its own. The workflow
     // has the same seconds when it opens, so it has nothing to write back yet.
     await api('PUT', '/api/v1/workflow', { steamSettings: { duration: STREAMLINE_SECONDS } });
     await api('POST', REMEMBERED, STREAMLINE_SECONDS);
@@ -138,7 +138,7 @@ test('steam: the written timer is read back from the workflow and from the machi
     expect(await machineTimer()).toBe(SECONDS);
     await expect(page.getByTestId('steam-mismatch')).toHaveCount(0);
 
-    // An adjust button (spec 3.7, item 17): +5 s, the default third one, is in the seconds the
+    // An adjust button: +5 s, the default third one, is in the seconds the
     // machine gets; selected again it is cleared.
     const adjust = page.getByTestId('steam-adjust');
     await expect(adjust).toHaveText(['−8 s', '−4 s', '+5 s']);
@@ -181,7 +181,7 @@ test('steam: the written timer is read back from the workflow and from the machi
     await expect
       .poll(async () => Number(await page.getByTestId('shot-graph').getAttribute('data-points')), { timeout: 15_000 })
       .toBeGreaterThan(5);
-    // While steam runs 'steam left' is the one clock (spec 3.18 item 4); the scale row is off.
+    // While steam runs 'steam left' is the one clock; the scale row is off.
     await expect(page.getByText('steam left')).toBeVisible();
     await expect(page.getByTestId('steam-state')).toHaveCount(0);
     await expect(page.getByTestId('steam-tare')).toBeDisabled();
@@ -193,8 +193,8 @@ test('steam: the written timer is read back from the workflow and from the machi
     await expect(page.getByTestId('steam-stop')).toHaveCount(0, { timeout: 30_000 });
     expect(await machineState()).toBe('idle');
     await expect(page.getByTestId('steam-state')).toContainText('last steam');
-    // The simulated machine reports no `pouring` and no flow (research.md 8.7): its run is
-    // from the first steam frame to the last (spec 3.12, the fallback), so 'last steam' has
+    // The simulated machine reports no `pouring` and no flow: its run is
+    // from the first steam frame to the last (the fallback), so 'last steam' has
     // the seconds the machine steamed, no more.
     const lastSteam = parseInt((await page.getByTestId('steam-elapsed').textContent())!, 10);
     expect(lastSteam).toBeGreaterThanOrEqual(1);
@@ -220,9 +220,9 @@ test('steam: the written timer is read back from the workflow and from the machi
     ]);
 
     // The control: Streamline is alive in its page. Its version 0.2.13 replaced a timer
-    // written into the workflow alone by the seconds it remembered; 0.2.14 (on the rig since
-    // 2026-10-16) adopts it into its KV key instead and pushes nothing (`decideResync` in its
-    // `resync-policy.js`; research.md 18.4). So the workflow and the machine keep 26 s, and
+    // written into the workflow alone by the seconds it remembered; 0.2.14
+    // adopts it into its KV key instead and pushes nothing (`decideResync` in its
+    // `resync-policy.js`). So the workflow and the machine keep 26 s, and
     // Streamline remembers 26 s.
     await api('PUT', '/api/v1/workflow', { steamSettings: { duration: 26 } });
     await expect.poll(() => api('GET', REMEMBERED), { timeout: 15_000 }).toBe(26);
@@ -275,9 +275,7 @@ test("steam: the page's tare button tares the simulated scale (item 17)", async 
   await expect(page.getByTestId('notice')).toHaveCount(0);
 });
 
-test('steam: with the heater off Steam on sits in the header and switches it on, read back from the machine (spec 3.9 item 18, 3.12 item 8)', async ({
-  page,
-}) => {
+test('steam: with the heater off Steam on sits in the header and switches it on, read back from the machine', async ({ page }) => {
   test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
   const BACKUP = '/api/v1/store/pureflow/settings-backup';
   const temperatureBefore = (await steamSettings()).targetTemperature;
@@ -295,7 +293,7 @@ test('steam: with the heater off Steam on sits in the header and switches it on,
     // In the header, left of the title; the favourites stay where they are.
     await expect(page.getByTestId('screen-steam').locator('.page-header').getByTestId('steam-heater-on')).toBeVisible();
     await expect(page.getByTestId('steam-favourite')).toHaveCount(3);
-    // The state line says Off, not Idle, while the steam heater is off (spec 3.12).
+    // The state line says Off, not Idle, while the steam heater is off.
     const title = page.getByTestId('screen-steam').getByTestId('status-title');
     await expect(title).toHaveText('Off');
     await page.screenshot({ path: 'e2e-rig/.results/steam-heater-off-rig.png' });

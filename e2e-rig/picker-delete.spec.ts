@@ -2,8 +2,8 @@ import { expect, test } from '@playwright/test';
 import type { MachineSnapshot, Profile, ProfileRecord } from '../src/api';
 import { swipe } from '../e2e/touch';
 
-// The picker's delete against the rig (spec 3.10 'Profile picker: delete a profile', acceptance
-// 60): a profile stored for the test is swiped, deleted and confirmed in the skin; Decaid then
+// The picker's delete against the rig:
+// a profile stored for the test is swiped, deleted and confirmed in the skin; Decaid then
 // lists as many profiles as before it was stored. The skin's delete is soft (the record stays,
 // marked deleted), so the test purges the record afterwards and checks that the store holds as
 // many records, hidden ones too, as before.

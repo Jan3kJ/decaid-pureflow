@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import type { DisplayState, MachineSnapshot, PresenceSettings } from '../src/api';
 import { IDLE } from './idle';
 
-// Acceptance item 75 (spec 3.12, Y4) against the rig: with the sleep after 1 min and presence on,
+// The heartbeat against the rig: with the sleep after 1 min and presence on,
 // a heartbeat answers the whole minute and -1 with presence off; a skin touched every 30 s for
 // three minutes keeps the machine awake, at most one heartbeat every 30 s and never a write of
 // the presence settings; left alone the machine sleeps after the minute. The test puts the

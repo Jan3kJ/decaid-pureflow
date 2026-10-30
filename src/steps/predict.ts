@@ -1,6 +1,6 @@
-// A modelled shot (research.md 'The shot model'): the profile's steps in, the flow, pressure
+// A modelled shot: the profile's steps in, the flow, pressure
 // and temperature a shot would show out. An approximation for one typical puck, not the
-// founder's coffee. Pure: no DOM and no Svelte.
+// user's coffee. Pure: no DOM and no Svelte.
 //
 // Each step drives one quantity, which follows its target through a first-order lag (one time
 // constant for flow, one for pressure); a smooth step ramps the target from where the quantity

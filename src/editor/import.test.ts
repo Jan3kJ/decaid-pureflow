@@ -60,7 +60,7 @@ describe('planImport', () => {
   });
 });
 
-describe('profiles of the export of 2026-10-21', () => {
+describe('profiles of a Decaid export', () => {
   const withFirst = (profile: Profile, title: string, first: Record<string, unknown>) => ({
     ...asProfile(profile, title),
     steps: [{ ...profile.steps[0], ...first }, ...profile.steps],

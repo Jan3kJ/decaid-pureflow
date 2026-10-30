@@ -14,7 +14,7 @@ describe('mug detection', () => {
     ]);
   });
 
-  it('steps up at the midpoints between two full mugs (spec 3.4), 412.5 g and 625 g with the defaults', () => {
+  it('steps up at the midpoints between two full mugs, 412.5 g and 625 g with the defaults', () => {
     // ((150 + 150) + (225 + 300)) / 2 and ((225 + 300) + (275 + 450)) / 2
     expect(mugSteps(settings)).toEqual({ medium: 412.5, large: 625 });
     expect(size(412.4)).toBe('s');
@@ -102,9 +102,9 @@ describe('a scale weight', () => {
   });
 });
 
-describe('the adjust buttons (spec 3.7)', () => {
+describe('the adjust buttons', () => {
   it('add their amount to the calculated timer', () => {
-    // A medium mug with 300 g of milk: 43 s with the founder's defaults.
+    // A medium mug with 300 g of milk: 43 s with the defaults.
     const { seconds } = readScale(525, settings);
     expect(seconds).toBe(43);
     expect(settings.adjustments.map((amount) => adjustedSeconds(seconds, amount))).toEqual([35, 39, 48]);

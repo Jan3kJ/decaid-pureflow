@@ -4,7 +4,7 @@
 // Copyright (C) 2025-2026 Decent Espresso
 // Licensed under the GNU General Public License v3.0 or later; used here under GPL-3.0.
 //
-// The tank's water in ml (spec 3.14 'The tank in ml'): the DE1 measures the water's height in mm
+// The tank's water in ml: the DE1 measures the water's height in mm
 // (`WaterLevels`), and Streamline turns it into ml with a table taken from the TCL skin, one
 // entry per mm. The tank widens upward, so the table is not linear.
 

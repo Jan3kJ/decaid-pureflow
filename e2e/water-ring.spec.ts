@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { mockGateway, profile } from './mock-gateway';
 import { back, swipe, toPage } from './touch';
 
-// The ring's frame (Z8, spec 3.14, acceptance 98): while hot water or flush runs, every screen
+// The ring's frame: while hot water or flush runs, every screen
 // shows the one large ring of home over its main frame (`data-main-frame`; a screen without one
 // under its header), with stop in it; the header, the right column and the dots stay; a tap on
 // stop sends the stop, a swipe on the ring leaves nothing, and the frame's content is back when the
@@ -226,7 +226,7 @@ async function stopLines(page: Page) {
   });
 }
 
-// The target in the ring (Z22, spec 3.17 item 4, acceptance 121): hot water shows the stop of
+// The target in the ring: hot water shows the stop of
 // `hotWaterData.volume` under its values, in g with a connected scale and in ml without one, inside
 // the button over the frame; a flush and a target of 0 show none, and the ring still fills by time.
 test('hot water: the target under the values, in g with a scale and in ml without, none for a flush or 0', async ({ page }) => {
@@ -321,7 +321,7 @@ test('a swipe on the ring leaves neither the screen nor the page, and stops noth
   expect(errors).toEqual([]);
 });
 
-// Every screen times both kinds (spec 3.12, 3.14, acceptance 78, 98): the run starts at the machine
+// Every screen times both kinds: the run starts at the machine
 // with the screen already open, the one large ring shows over the screen's main frame, a tap on its
 // stop sends the stop, and it goes when the run ends.
 const MATRIX = ['home', 'steam', 'hot-water', 'profiles', 'editor-aflow', 'editor-steps', 'settings', 'beans', 'history'] as const;

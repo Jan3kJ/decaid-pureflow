@@ -72,7 +72,7 @@ describe('unsavedOnMachine', () => {
   });
 });
 
-// The step editor's profiles (research.md 17.7): judged by their steps and target weight.
+// The step editor's profiles: judged by their steps and target weight.
 describe('unsavedOnMachine, a profile that is not A-Flow 3.0', () => {
   const blooming = bundled.find((entry) => entry.title === 'Blooming Espresso') as Profile;
   const stored = (profile: Profile, visibility: 'visible' | 'hidden' = 'visible') => {

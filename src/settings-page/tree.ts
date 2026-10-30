@@ -4,7 +4,7 @@
 // Copyright (C) 2025-2026 Decent Espresso
 // Licensed under the GNU General Public License v3.0 or later; used here under GPL-3.0.
 //
-// The settings page's navigation (research.md 20.3, 20.7): Streamline's categories in its order
+// The settings page's navigation: Streamline's categories in its order
 // and with its numbers, each subcategory with what renders it. What the port leaves out is
 // absent.
 import {
@@ -37,9 +37,9 @@ export type SkinPart = 'steam' | 'hot-water' | 'profile' | 'graph' | 'display' |
 /**
  * A part of a subcategory that is not a list of fields: the device lists (`Devices.svelte`), a
  * maintenance procedure (`Maintenance.svelte`), the machine's information and the charging
- * status (`MachineInfo.svelte`) (S2b); the plugin cards (`Plugins.svelte`), the wake schedules
+ * status (`MachineInfo.svelte`); the plugin cards (`Plugins.svelte`), the wake schedules
  * (`Presence.svelte`), the firmware and Decaid's update (`Firmware.svelte`), the sensors'
- * calibration (`SensorCalibration.svelte`) (S2c); the skin's own tank unit beside the machine's
+ * calibration (`SensorCalibration.svelte`); the skin's own tank unit beside the machine's
  * tank settings (`TankUnit.svelte`). Drawn above the subcategory's fields, or below them.
  */
 export type View =

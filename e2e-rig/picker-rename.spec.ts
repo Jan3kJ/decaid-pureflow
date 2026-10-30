@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import type { MachineSnapshot, Profile, ProfileRecord } from '../src/api';
 import { swipe } from '../e2e/touch';
 
-// The picker's rename against the rig (spec 3.17 item 5, acceptance 118): a profile stored for
+// The picker's rename against the rig: a profile stored for
 // the test with metadata is moved to the right, renamed in the skin's dialog, and read back from
 // Decaid under the new title with the same id and the same metadata. The record is purged
 // afterwards and the store holds as many records, hidden ones too, as before.

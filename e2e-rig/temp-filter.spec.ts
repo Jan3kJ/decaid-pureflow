@@ -2,9 +2,9 @@ import { expect, test } from '@playwright/test';
 import type { MachineSnapshot, PaginatedShots } from '../src/api';
 import { IDLE } from './idle';
 
-// The state line's temperatures, filtered (spec 3.12, Y10) against the rig: when a shot starts
-// the simulated machine drops its group by far more than 5 °C in one frame (15.5 °C on
-// 2026-10-23), which restarts the filter, and heats it back at 1 to 5 °C a second, which the
+// The state line's temperatures, filtered against the rig: when a shot starts
+// the simulated machine drops its group by far more than 5 °C in one frame (15.5 °C, seen
+// on the rig), which restarts the filter, and heats it back at 1 to 5 °C a second, which the
 // state line follows in small steps. The test removes the shot record it makes; the workflow is
 // not changed.
 

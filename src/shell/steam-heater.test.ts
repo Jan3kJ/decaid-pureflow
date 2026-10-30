@@ -17,7 +17,7 @@ const SETTINGS: ShotSettings = {
 const workflowWith = (targetTemperature: number) => ({ steamSettings: { targetTemperature, duration: 50, flow: 0.8 } }) as Workflow;
 
 /**
- * Decaid as the rig showed it (research.md 22): a workflow write reaches the machine when the
+ * Decaid as the rig showed it: a workflow write reaches the machine when the
  * temperature changes, a value below 135 °C as 0; a shot-settings write reaches only the machine.
  */
 function decaid(options: { workflow?: number; machine?: number | null; writable?: boolean } = {}) {

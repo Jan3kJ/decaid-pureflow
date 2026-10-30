@@ -1,4 +1,4 @@
-// The five default profiles as A-Flow 3.0 parameters (founder, 2026-10-12). light, medium and
+// The five default profiles as A-Flow 3.0 parameters. light, medium and
 // dark are the plugin's .tcl files; floral is new and 46mm is the plugin's very-dark with
 // other values: see docs/a-flow-3.0.md.
 import * as C from '../constants';

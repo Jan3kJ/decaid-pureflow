@@ -1,8 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mockGateway } from './mock-gateway';
 
-// A dragged line in the A-Flow editor keeps the finger until it lifts (spec 3.21, acceptance
-// item 144): a touch on a line is the graph's, the browser starts no pan for it, and a cancelled
+// A dragged line in the A-Flow editor keeps the finger until it lifts:
+// a touch on a line is the graph's, the browser starts no pan for it, and a cancelled
 // pointer ends the drag where the finger last set the value.
 
 const errors: string[] = [];

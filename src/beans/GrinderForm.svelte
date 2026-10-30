@@ -1,5 +1,5 @@
 <script lang="ts">
-  // A grinder's form on the beans screen (research.md 29.6): the model (required), the burrs,
+  // A grinder's form on the beans screen: the model (required), the burrs,
   // the setting as numbers with the step of the pick's − and +, or as named positions, and
   // notes. An edit sends only what changed; archive and restore are the screen's.
   import type { Grinder } from '../api';

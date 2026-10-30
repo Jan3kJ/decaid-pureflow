@@ -3,9 +3,8 @@ import { recordSteamFrame, type SteamRun } from '../src/steam/run';
 import { EXPORT_STEAMS, mockGateway, type MockGateway } from './mock-gateway';
 import { back, swipe, toPage } from './touch';
 
-// The steam page against a mocked gateway (D8a, acceptance item 4): the scale's frames are
-// the mock's, because the simulated scale's weight cannot be set (research.md 8.7). The
-// founder agreed to this way of testing on 2026-10-13 (request 168).
+// The steam page against a mocked gateway: the scale's frames are
+// the mock's, because the simulated scale's weight cannot be set.
 
 const errors: string[] = [];
 
@@ -20,7 +19,7 @@ test.beforeEach(({ page }) => {
 /** The bodies of the workflow writes, in order. */
 const written = (gateway: MockGateway) => gateway.calls('PUT', '/api/v1/workflow').map((call) => call.body);
 
-// With the founder's defaults: mugs 150, 225 and 275 g, 26 s for 180 g of milk.
+// With the defaults: mugs 150, 225 and 275 g, 26 s for 180 g of milk.
 const MUGS = [
   { name: 'a small mug', weight: 300, size: 's', mug: '150 g', milk: '150 g', seconds: 22 },
   { name: 'a medium mug', weight: 525, size: 'm', mug: '225 g', milk: '300 g', seconds: 43 },
@@ -69,7 +68,7 @@ test('the mug follows the scale, and an empty scale offers no timer', async ({ p
   await expect(page.getByTestId('steam-set-timer')).toBeDisabled();
   await expect(page.getByTestId('steam-seconds')).toHaveCount(0);
 
-  // The midpoints of the founder's defaults (spec 3.4): above 412.5 g it is the medium mug,
+  // The midpoints of the defaults: above 412.5 g it is the medium mug,
   // above 625 g the large one.
   const borders = [
     [412.5, 's'],
@@ -108,8 +107,8 @@ test('a favourite chip writes its seconds directly, without a scale weight', asy
   expect(errors).toEqual([]);
 });
 
-// The founder's test of 2026-10-13: a favourite of 25 s was followed by 30 s of steam. The
-// workflow's duration is not the machine's timer (research.md, section 16).
+// Seen on the tablet: a favourite of 25 s was followed by 30 s of steam. The
+// workflow's duration is not the machine's timer.
 
 test("the timer on screen is the machine's, and a chip writes the machine when the workflow already had its seconds", async ({
   page,
@@ -268,7 +267,7 @@ test('steam started at the machine shows its graph of pressure, flow and tempera
 /** The points of a path's `d`: x and y in pixels. */
 const points = (d: string) => [...d.matchAll(/[ML]([\d.-]+) ([\d.-]+)/g)].map((match) => ({ x: +match[1], y: +match[2] }));
 
-// Spec 3.12 'Steam graph: the flow' (Y11): a real DE1's steam from the founder's export.
+// The steam graph's flow: a real DE1's steam from an export.
 test('a finished steam draws its flow in blue on the scale of pressure, ending where the run ends, with the legend', async ({
   page,
 }) => {
@@ -322,7 +321,7 @@ test('a finished steam draws its flow in blue on the scale of pressure, ending w
   expect(errors).toEqual([]);
 });
 
-// The founder's review of 2026-10-16 (spec 3.7, acceptance item 17).
+// The steam page's rows, values and buttons.
 
 test('a selected adjust button adds its amount to the calculated timer and to a favourite, and the seconds written include it', async ({
   page,
@@ -409,7 +408,7 @@ test("while steam runs the timer counts down; after the steam the graph adds no 
   await page.getByTestId('steam-adjust').nth(2).click();
   await page.getByTestId('steam-set-timer').click();
   await expect(page.getByTestId('steam-timer')).toHaveText('48s');
-  // The temperature axis of the steam graph (spec 3.7).
+  // The temperature axis of the steam graph.
   await expect(page.getByTestId('shot-tick-temperature')).toHaveText(['140', '170']);
 
   // 10 s of steam: 38 s are left, then fewer as the machine's frames go on.
@@ -443,7 +442,7 @@ test("while steam runs the timer counts down; after the steam the graph adds no 
   expect(errors).toEqual([]);
 });
 
-test("while steam runs a tap on an adjust button moves the machine's timer and 'steam left' by the change it makes (spec 3.17 item 8)", async ({
+test("while steam runs a tap on an adjust button moves the machine's timer and 'steam left' by the change it makes", async ({
   page,
 }) => {
   const gateway = await mockGateway(page);
@@ -454,7 +453,7 @@ test("while steam runs a tap on an adjust button moves the machine's timer and '
   await page.getByTestId('steam-favourite').nth(2).click();
   await expect(page.getByTestId('steam-timer')).toHaveText('30s');
 
-  // No steam: a tap selects and writes nothing (spec 3.7).
+  // No steam: a tap selects and writes nothing.
   await adjust.nth(2).click();
   await adjust.nth(2).click();
   await expect(page.locator('[data-testid="steam-adjust"][aria-pressed="true"]')).toHaveCount(0);
@@ -482,7 +481,7 @@ test("while steam runs a tap on an adjust button moves the machine's timer and '
   expect(errors).toEqual([]);
 });
 
-test('a swipe to the left opens the steam page, from the right edge too (spec 3.7, 3.8)', async ({ page }) => {
+test('a swipe to the left opens the steam page, from the right edge too', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
@@ -506,7 +505,7 @@ test('a swipe to the left opens the steam page, from the right edge too (spec 3.
   expect(errors).toEqual([]);
 });
 
-test("the steam page's scale row is the tare: one button over the row, off while steam runs; without a scale one line looks for it (spec 3.9, 3.18 item 4)", async ({
+test("the steam page's scale row is the tare: one button over the row, off while steam runs; without a scale one line looks for it", async ({
   page,
 }) => {
   const gateway = await mockGateway(page);
@@ -546,7 +545,7 @@ test("the steam page's scale row is the tare: one button over the row, off while
   expect(errors).toEqual([]);
 });
 
-test('the scale, mug and milk numbers end on one right edge, their units in one column, the mug size a badge in its label (spec 3.18 item 4)', async ({
+test('the scale, mug and milk numbers end on one right edge, their units in one column, the mug size a badge in its label', async ({
   page,
 }) => {
   const gateway = await mockGateway(page);
@@ -586,7 +585,7 @@ test('the scale, mug and milk numbers end on one right edge, their units in one 
   expect(errors).toEqual([]);
 });
 
-test("the header's elapsed time shows only after steam has ended (spec 3.18 item 4)", async ({ page }) => {
+test("the header's elapsed time shows only after steam has ended", async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
   await toPage(page, 'steam');
@@ -603,7 +602,7 @@ test("the header's elapsed time shows only after steam has ended (spec 3.18 item
   expect(errors).toEqual([]);
 });
 
-test('with the steam heater off Steam on sits in the header left of the title and switches it on; the column does not move (spec 3.12 item 8)', async ({
+test('with the steam heater off Steam on sits in the header left of the title and switches it on; the column does not move', async ({
   page,
 }) => {
   const gateway = await mockGateway(page);
@@ -613,7 +612,7 @@ test('with the steam heater off Steam on sits in the header left of the title an
   const screen = page.getByTestId('screen-steam');
   await expect(page.getByTestId('steam-favourite')).toHaveCount(3);
   await expect(page.getByTestId('steam-heater-on')).toHaveCount(0);
-  // No state dot on the left edge (spec 3.9 item 12): the state line says it.
+  // No state dot on the left edge: the state line says it.
   await expect(page.getByTestId('nav-status')).toHaveCount(0);
   await expect(page.locator('.page:not([inert]) nav span')).toHaveCount(0);
   const timerOn = (await page.getByTestId('steam-timer').boundingBox())!;
@@ -655,7 +654,7 @@ test('with the steam heater off Steam on sits in the header left of the title an
   expect(errors).toEqual([]);
 });
 
-test('Steam on in the header says so when Decaid refuses it, and stays (spec 3.12 item 8)', async ({ page }) => {
+test('Steam on in the header says so when Decaid refuses it, and stays', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
   await expect(page.getByTestId('status-title')).toHaveText('Idle');

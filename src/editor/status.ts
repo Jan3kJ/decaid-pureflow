@@ -1,6 +1,6 @@
 import type { Dropped, ProfileStep } from '../aflow';
 
-/** A line of the editor's status line (spec 3.8 T7, 3.9 item 8). */
+/** A line of the editor's status line. */
 export interface Notice {
   tone: 'info' | 'warn';
   text: string;
@@ -11,13 +11,13 @@ export const NOTICE_MS = 4000;
 
 /**
  * How long a notice stands, in milliseconds: a result goes after 4 s, a failure stays until
- * the next action (spec 3.8, T7).
+ * the next action.
  */
 export function noticeLasts(notice: Notice): number | null {
   return notice.tone === 'info' ? NOTICE_MS : null;
 }
 
-/** 'save' on a default: a default is saved under a new name (founder, 2026-10-17). */
+/** 'save' on a default: a default is saved under a new name. */
 export const DEFAULT_SAVE_HINT = 'A default is not changed: use ‘save as’ to save it under a new name.';
 
 const DROPPED_TEXT: Record<Dropped, string> = {
@@ -28,7 +28,7 @@ const DROPPED_TEXT: Record<Dropped, string> = {
 };
 
 /**
- * The line an older A-Flow profile opens with (spec 3.9, U2): that 'save' stores it as 3.0,
+ * The line an older A-Flow profile opens with: that 'save' stores it as 3.0,
  * and what reading its steps dropped. Pre Fill is not named while the setting 'first-step
  * workaround' writes it again. A drop stays until the next action, as a failure does.
  */
@@ -42,7 +42,7 @@ export function convertedNotice(dropped: readonly Dropped[], firstStepWorkaround
 
 /**
  * The exit column of the profile steps: a step's exit condition and weight, and on the last
- * step, the flow step that runs until the shot ends, the stop weight (founder, 2026-10-17).
+ * step, the flow step that runs until the shot ends, the stop weight.
  */
 export function exitText(step: ProfileStep, stopWeight: number | null): string {
   const parts: string[] = [];

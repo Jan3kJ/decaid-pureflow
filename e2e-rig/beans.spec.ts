@@ -6,13 +6,13 @@ import { pickDate } from '../e2e/date-picker';
 import { back } from '../e2e/touch';
 import { saveAnswered } from '../e2e/catalogue-save';
 
-// Acceptance item 52, its first half (spec 3.9 item 19, research.md 29.8), against the rig:
+// The catalogue and the pick against the rig:
 // through the beans screen a bean and a grinder of the test's own are added (name and roaster
 // typed), edited, archived (gone from Decaid's list, there with `includeArchived`) and restored;
 // home's pick writes them with a grinder setting into the workflow's context, and the next
 // simulated shot's record holds them, found again by `GET /shots?beanId=` and `?grinderId=`.
 // The test deletes the shot, the bags, the bean and the grinder (Decaid 0.8.8 refuses to delete
-// a bean that still has bags: research.md 29.12) and puts the context back as it was.
+// a bean that still has bags) and puts the context back as it was.
 
 const GATEWAY = 'http://localhost:8080';
 const PROFILE = 'Rao Allongé';

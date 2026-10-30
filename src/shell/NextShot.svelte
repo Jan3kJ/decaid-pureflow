@@ -13,9 +13,9 @@
   let { skin, off = false }: Props = $props();
 
   // The profile and the bean and grinder setting for the next shot, as the workflow holds them;
-  // a tap picks others (spec 3.9 item 19, 3.11). Drawn at the top of home's right column, off
-  // while a shot runs (spec 3.17 item 10). Each names the name first, its family or roaster in a
-  // caption under it (spec 3.18 item 5).
+  // a tap picks others. Drawn at the top of home's right column, off
+  // while a shot runs. Each names the name first, its family or roaster in a
+  // caption under it.
   const profile = $derived(titleLines(skin.workflow?.profile?.title ?? '–'));
   const bean = $derived(beanLines(contextBean(skin.workflow?.context)));
   const nextSetting = $derived(skin.workflow?.context?.grinderSetting?.trim() || null);
@@ -80,7 +80,7 @@
 
   /*
    * As wide as the column; the name and the bean are cut, not wrapped, so the column stays. Both
-   * are names (spec 3.14): the same size and weight, each with a caption under it. The height
+   * are names: the same size and weight, each with a caption under it. The height
    * holds both lines, also for a name without a caption, so the column does not move.
    */
   .profile {

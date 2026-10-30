@@ -1,4 +1,4 @@
-// Which editor a profile opens in (spec 3.6, research.md 17.5, spec 3.9 U2): the one place that
+// Which editor a profile opens in: the one place that
 // decides. A profile is A-Flow when the A-Flow editor can open it: an A-Flow 3.0 profile, or an
 // older A-Flow profile whose steps the reader reads (`openParams`); every other profile opens in
 // the step editor. A title or the picker's tag does not decide: a title says nothing about the

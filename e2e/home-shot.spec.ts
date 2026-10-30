@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { mockGateway, profile } from './mock-gateway';
 import { back, toPage } from './touch';
 
-// Home is the shot screen (spec 3.11, X1; acceptance 28 and 51): one graph and a right column
+// Home is the shot screen: one graph and a right column
 // of a fixed width in three states. Idle before a shot: the empty graph, the target yield and
 // '–'. A shot runs: live curves and values, and stop. After it: the shot with Streamline's
 // per-phase table stays until the next one starts. A recalled history entry has its caption
@@ -97,7 +97,7 @@ test('idle before a shot, a running shot, and the finished shot that stays: one 
   expect(await box(page, 'shot-column')).toEqual(column);
   const rows = page.getByTestId('shot-phases').locator('tbody th');
   await expect(rows).toHaveText(['Preinfusion', 'Extraction', 'Total']);
-  // Streamline 0.2.14's own table of the same frames (src/shell/phases.test.ts, research.md 24).
+  // Streamline 0.2.14's own table of the same frames (src/shell/phases.test.ts).
   expect(await cells(page, 'preinfusion')).toEqual({
     seconds: '4',
     weight: '0.0g',
@@ -126,7 +126,7 @@ test('idle before a shot, a running shot, and the finished shot that stays: one 
   const table = await box(page, 'shot-phases');
   expect(table.y + table.height).toBeLessThanOrEqual(viewport.height);
   expect(table.x + table.width).toBeLessThan(column.x);
-  // The table's frame has the graph's rounded corners (acceptance 62).
+  // The table's frame has the graph's rounded corners.
   const corners = (testid: string) =>
     page.getByTestId(testid).evaluate((element) => {
       const style = getComputedStyle(element);

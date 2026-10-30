@@ -3,13 +3,13 @@ import type { Backup } from '../src/settings-backup';
 import { mockGateway, profile, type MockGateway } from './mock-gateway';
 import { back, toPage } from './touch';
 
-// The hot water page (R5, spec 3.7, acceptance item 20) against a mocked gateway: its page dot
-// opens it (the tabs went in X4, spec 3.11); temperature, flow, time and stop at weight are written to the
+// The hot water page against a mocked gateway: its page dot
+// opens it (there are no tabs); temperature, flow, time and stop at weight are written to the
 // workflow's hotWaterData; a ratio favourite with a last shot of 40 g sets 80 g for 1:2; the
 // favourites come from the settings; its tare button tares. Without a scale the row reads stop at
-// volume in ml (Y3, spec 3.12). That Decaid stops hot water at the
-// weight is the rig's to show (e2e-rig/hot-water.spec.ts): the mock has no pump. Since U3 (spec
-// 3.9 items 11-13) a value is a row with a slider under it, the page shows the ring while hot
+// volume in ml. That Decaid stops hot water at the
+// weight is the rig's to show (e2e-rig/hot-water.spec.ts): the mock has no pump. A value
+// is a row with a slider under it, the page shows the ring while hot
 // water pours, and the left edge has no state dot.
 
 const errors: string[] = [];
@@ -25,7 +25,7 @@ test.beforeEach(({ page }) => {
 async function overflow(page: Page) {
   return page.evaluate(() => {
     const root = document.documentElement;
-    // In the settings page's panels, which scroll (research.md 20.7), only the width counts.
+    // In the settings page's panels, which scroll, only the width counts.
     const scrolled = (element: Element) =>
       !!element.parentElement?.closest('[data-testid="settings-content"], [aria-label="settings categories"]');
     const outside = [...document.querySelectorAll('button, section, header, aside')].filter((element) => {
@@ -124,7 +124,7 @@ test('a ratio favourite with a last shot of 40 g sets 80 g for 1:2; the tare but
   await expect(page.getByTestId('hot-water-weight')).toContainText('100g');
   await expect(ratios.nth(0)).not.toHaveAttribute('aria-pressed', 'true');
 
-  // The scale's row is the tare, the one tare of the skin (R2): one button of 3.5 rem over the row,
+  // The scale's row is the tare, the one tare of the skin: one button of 3.5 rem over the row,
   // live while idle; 'last shot' and 'scale' end on one right edge, their units in one column.
   await expect(page.getByTestId('hot-water-scale')).toHaveText('212.4 g');
   const row = page.getByTestId('hot-water-tare');
@@ -173,7 +173,7 @@ test('the favourites come from the settings; without a last shot or a scale noth
   expect(lastWrite(gateway)?.volume).toBe(60);
   await expect(page.getByTestId('hot-water-scale')).toHaveText('–');
   await page.screenshot({ path: 'docs/product/hot-water-no-scale.png' });
-  // Without a scale a tap tares nothing and looks for the scale (spec 3.9).
+  // Without a scale a tap tares nothing and looks for the scale.
   const tares = gateway.calls('PUT', '/api/v1/scale/tare').length;
   const scans = gateway.calls('GET', '/api/v1/devices/scan').length;
   await page.getByTestId('hot-water-tare').click();
@@ -186,9 +186,7 @@ test('the favourites come from the settings; without a last shot or a scale noth
   expect(errors).toEqual([]);
 });
 
-test('stop at weight in g with a scale, stop at volume in ml without one; no favourites without a weighed shot (spec 3.12, item 74)', async ({
-  page,
-}) => {
+test('stop at weight in g with a scale, stop at volume in ml without one; no favourites without a weighed shot', async ({ page }) => {
   const gateway = await mockGateway(page);
   gateway.connectScale(false);
   // The last shot was pulled without a scale: it has no weight.
@@ -220,9 +218,7 @@ test('stop at weight in g with a scale, stop at volume in ml without one; no fav
   expect(errors).toEqual([]);
 });
 
-test('a row per value with a slider: the drag moves the shown value and writes once when let go (spec 3.9 item 11)', async ({
-  page,
-}) => {
+test('a row per value with a slider: the drag moves the shown value and writes once when let go', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
   await toPage(page, 'hot-water');
@@ -278,13 +274,13 @@ test('a row per value with a slider: the drag moves the shown value and writes o
   expect(errors).toEqual([]);
 });
 
-test('while hot water or flush runs the ring covers the rows, and they come back after (spec 3.9 item 13, 3.14)', async ({ page }) => {
+test('while hot water or flush runs the ring covers the rows, and they come back after', async ({ page }) => {
   const gateway = await mockGateway(page);
   gateway.putOnScale(0);
   await page.goto('/');
   await toPage(page, 'hot-water');
   await expect(page.getByTestId('hot-water-time')).toBeVisible();
-  // No state dot and no column on the left edge (spec 3.9 item 12, 3.14).
+  // No state dot and no column on the left edge.
   await expect(page.getByTestId('nav-status')).toHaveCount(0);
   await expect(page.locator('.page > nav')).toHaveCount(0);
 
@@ -309,7 +305,7 @@ test('while hot water or flush runs the ring covers the rows, and they come back
   await expect(page.getByTestId('water-stop')).toHaveCount(1);
   await expect(screen.getByTestId('hot-water-tare')).toBeVisible();
   expect(await covered('hot-water-tare')).toBe(false);
-  // The scale's row is off while water runs (spec 3.18 item 4).
+  // The scale's row is off while water runs.
   await expect(screen.getByTestId('hot-water-tare')).toBeDisabled();
   expect(await overflow(page)).toEqual({ scrolls: false, outside: 0 });
 
@@ -320,7 +316,7 @@ test('while hot water or flush runs the ring covers the rows, and they come back
   await expect(screen.getByTestId('hot-water-time')).toContainText('30s');
   expect(await covered('hot-water-time')).toBe(false);
 
-  // A flush covers the rows too (spec 3.14).
+  // A flush covers the rows too.
   gateway.waterFor('flush', 3, 6, 90);
   await expect(page.getByTestId('water-view')).toHaveAttribute('data-kind', 'flush');
   await expect.poll(() => covered('hot-water-time')).toBe(true);

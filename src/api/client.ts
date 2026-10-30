@@ -95,7 +95,7 @@ export class DecaidApiError extends Error {
 
 /**
  * `PUT /api/v1/scale/tare` answered 400 `block_tare_during_shot`: the setting
- * `blockTareDuringShot` is on and a shot runs. The skin shows it as a notice (spec 3.1).
+ * `blockTareDuringShot` is on and a shot runs. The skin shows it as a notice.
  */
 export class TareBlockedError extends DecaidApiError {
   constructor(method: string, path: string, status: number, body: unknown) {
@@ -173,7 +173,7 @@ export class DecaidClient {
     await this.request('POST', '/api/v1/machine/shotSettings', settings);
   }
 
-  /** The machine's own settings: fan, USB, flush, tank, steam purge (research.md 20.3). */
+  /** The machine's own settings: fan, USB, flush, tank, steam purge. */
   getMachineSettings(): Promise<MachineSettings> {
     return this.request('GET', '/api/v1/machine/settings');
   }
@@ -326,7 +326,7 @@ export class DecaidClient {
     return this.request('PUT', '/api/v1/workflow', patch);
   }
 
-  /** The steam timer in whole seconds (spec 3.4). */
+  /** The steam timer in whole seconds. */
   setSteamDuration(seconds: number): Promise<Workflow> {
     return this.updateWorkflow({ steamSettings: { duration: seconds } });
   }
@@ -398,7 +398,7 @@ export class DecaidClient {
     return this.request('GET', '/api/v1/shots/latest');
   }
 
-  // --- beans and grinders (research.md 29.3) ---
+  // --- beans and grinders ---
 
   /** Archived beans only with `includeArchived`. */
   listBeans(includeArchived = false): Promise<CatalogueBean[]> {

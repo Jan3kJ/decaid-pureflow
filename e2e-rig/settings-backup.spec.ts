@@ -5,7 +5,7 @@ import type { Backup } from '../src/settings-backup';
 import { expect, test } from '@playwright/test';
 import { IDLE } from './idle';
 
-// The backup of the settings in Decaid's KV store (founder, 2026-10-14) against the rig: a
+// The backup of the settings in Decaid's KV store against the rig: a
 // changed setting can be read back from the running gateway's KV store, and a start without
 // settings in localStorage takes it back from there. The test deletes the key it creates (or
 // puts back the one it found); the setting it changes lives in the test browser's own
@@ -41,7 +41,7 @@ test.beforeAll(async () => {
 test('a changed setting is backed up in the KV store and comes back after localStorage is cleared', async ({ page }) => {
   test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
 
-  // A missing key answers 200 null (research.md 9.2).
+  // A missing key answers 200 null.
   const before = await api('GET', BACKUP);
   try {
     await api('DELETE', BACKUP);

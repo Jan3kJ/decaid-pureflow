@@ -4,7 +4,7 @@ import type { RigWorkflow } from './gateway';
 import { swipe } from '../e2e/touch';
 import { IDLE } from './idle';
 
-// The row of pages against the rig (T6, spec 3.8, acceptance item 32): from home a swipe to
+// The row of pages against the rig: from home a swipe to
 // the left opens steam with its machine values, back to home, and a swipe to the right opens
 // hot water. Moving between pages writes nothing to the machine; the test checks the workflow
 // is as it was and leaves the skin's KV namespace as it found it.

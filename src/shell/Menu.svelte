@@ -10,12 +10,12 @@
 
   /**
    * The menu of the top left corner, the same button and the same menu on home, hot water and
-   * steam (spec 3.14): what is rarely used. A list, so that an entry is one more line here. The
-   * steam heater and machine sleep are the shortcuts of spec 3.7; machine sleep puts only the
+   * steam: what is rarely used. A list, so that an entry is one more line here. The
+   * steam heater and machine sleep are the shortcuts; machine sleep puts only the
    * machine to sleep and keeps the app awake, machine and app sleep shows the Asleep screen too;
-   * while the machine sleeps, wake machine stands in their place (spec 3.10). Beans and grinders
-   * opens the catalogue (spec 3.9 item 19). Clean opens the settings page on Maintenance, whose
-   * first procedure is the clean (spec 3.8 'Menu: clean').
+   * while the machine sleeps, wake machine stands in their place. Beans and grinders
+   * opens the catalogue. Clean opens the settings page on Maintenance, whose
+   * first procedure is the clean.
    */
   interface Entry {
     id: string;

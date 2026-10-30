@@ -1,5 +1,5 @@
 // What the editor needs to know about each value beyond the generator's ranges: its name on
-// screen, the step it moves in, and which phase it belongs to (spec 3.2).
+// screen, the step it moves in, and which phase it belongs to.
 import { DEFAULT_MACHINE_LIMITS, DOSE_STEP, paramRanges, type MachineLimits } from '../aflow';
 import type { EditField, LineId, PhaseId } from './curve';
 
@@ -111,9 +111,9 @@ export const FIELD_TONE: Partial<Record<EditField, LineId>> = {
 };
 
 /**
- * The values of each phase in the detail panel, in the order of the founder's list 'values to
- * be changable' (review of 2026-10-12). Its 'move on pressure pause' is `pauseExitFlow`, the
- * flow the pause ends under (founder, 2026-10-13). Dose is a value of the shot.
+ * The values of each phase in the detail panel, in the order of the list of editable values.
+ * Its 'move on pressure pause' is `pauseExitFlow`, the
+ * flow the pause ends under. Dose is a value of the shot.
  */
 export const PHASE_FIELDS: Record<PhaseId, readonly EditField[]> = {
   fill: ['fillFlow', 'fillExitPressure', 'fillTemperature', 'fillTime'],

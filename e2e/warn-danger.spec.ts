@@ -4,7 +4,7 @@ import blooming from '../src/steps/fixtures/bundled-profiles.json' with { type: 
 import { mockGateway } from './mock-gateway';
 import { back, swipe, toPage } from './touch';
 
-// Warning, danger and off (spec 3.18 item 2, acceptance 127), against a mocked gateway: `--warn`
+// Warning, danger and off, against a mocked gateway: `--warn`
 // is the orange #ff8a3d and text that warns has the '⚠' before it; an action that deletes or
 // discards is an outline in the warning colour, never filled; a disabled main button looks as the
 // steam page's 'set timer' does when off; the picker's 'loaded' tag is the accent colour.

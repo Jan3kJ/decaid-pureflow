@@ -3,8 +3,8 @@ import type { Settings } from '../src/settings';
 import type { Backup } from '../src/settings-backup';
 import { mockGateway, type MockGateway } from './mock-gateway';
 
-// Skin > Display Size and Skin > Active Skin (spec 3.9 item 15, U11, acceptance 53), and the tank
-// unit under Quick Adjustments > Water Tank (spec 3.17 item 2, acceptance 116), against the
+// Skin > Display Size and Skin > Active Skin, and the tank
+// unit under Quick Adjustments > Water Tank, against the
 // mocked gateway: each display option applies at once and stays over a reload; the skin switch
 // lists Decaid's skins, asks, makes the chosen one Decaid's default, starts the skin server again
 // and opens the port it serves on. The switch against the running gateway:

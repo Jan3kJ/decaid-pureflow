@@ -82,7 +82,7 @@ describe('temperatureBand', () => {
     expect(temperatureBand([74, 103])).toEqual({ min: 70, max: 110 });
   });
 
-  it("is the steam page's 140 to 170 °C whatever the values (spec 3.7), and holds them inside", () => {
+  it("is the steam page's 140 to 170 °C whatever the values, and holds them inside", () => {
     const steam = { min: 140, max: 170 };
     expect(temperatureBand([95, 152, 181], steam)).toEqual(steam);
     expect([95, 152, 181].map((value) => inBand(value, steam))).toEqual([140, 152, 170]);

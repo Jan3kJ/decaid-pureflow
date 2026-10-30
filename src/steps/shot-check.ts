@@ -1,4 +1,4 @@
-// The check of the shot model (research.md 'The shot model'): a recorded shot against the
+// The check of the shot model: a recorded shot against the
 // model and against the profile's targets as the step curve draws them. The fit script and
 // the unit tests share it. Pure: no DOM.
 import type { Profile } from '../api';

@@ -3,7 +3,7 @@ import { mockGateway } from './mock-gateway';
 import { dragGrid, pickDate } from './date-picker';
 import { flick } from './touch';
 
-// The date picker scrolls through the months (spec 3.14 item 12, acceptance 103) against the
+// The date picker scrolls through the months against the
 // mocked gateway: a vertical drag on the day grid moves the shown month, up to the later one, and
 // settles on whole months; a quick flick passes several; the wheel steps too; a drag is no tap,
 // a tap picks; the buttons stay.

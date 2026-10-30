@@ -1,4 +1,4 @@
-// Where hot water and flush cover a screen (spec 3.14 'The ring's frame'): a screen marks its main
+// Where hot water and flush cover a screen: a screen marks its main
 // frame with `data-main-frame` (on one element or on several, which are covered as one box), and
 // the shell draws the one large ring over it; a screen without a mark is covered under its header.
 // Boxes are in CSS pixels from the top left of the shell's `main`, by layout offsets, so neither a

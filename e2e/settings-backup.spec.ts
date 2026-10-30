@@ -3,7 +3,7 @@ import { expect, test, type Page } from '@playwright/test';
 import type { Settings } from '../src/settings';
 import { GATEWAY, mockGateway, type MockGateway } from './mock-gateway';
 
-// The backup of the settings in Decaid's KV store (founder, 2026-10-14): every save writes it
+// The backup of the settings in Decaid's KV store: every save writes it
 // after a short pause, a start without settings takes it back, and the settings page restores
 // it on request. The same against the running gateway: e2e-rig/settings-backup.spec.ts.
 

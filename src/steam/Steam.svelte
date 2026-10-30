@@ -23,10 +23,10 @@
   /** g without the unit: the mug's and the milk's are calculated, so no '.0' */
   const grams = (value: number) => `${+value.toFixed(1)}`;
   const scaled = $derived(skin.scaleLink === 'connected');
-  /** s, a timer with the selected adjust button's amount (spec 3.7): what a tap sends */
+  /** s, a timer with the selected adjust button's amount: what a tap sends */
   const adjusted = (seconds: number) => adjustedSeconds(seconds, skin.steamAdjustment);
   const calculated = $derived(reading ? adjusted(reading.seconds) : 0);
-  /** While steam runs the timer counts down from the set seconds (spec 3.7). */
+  /** While steam runs the timer counts down from the set seconds. */
   const shown = $derived(timer === null ? null : steaming && skin.steam ? secondsLeft(timer, steamSeconds(skin.steam)) : timer);
 </script>
 
@@ -34,14 +34,14 @@
   <div class="header">
     <PageHeader {skin} heat="steam" title="Steam">
       {#snippet beside()}
-        <!-- Only after the steam: while it runs 'steam left' is the one clock (spec 3.18 item 4). -->
+        <!-- Only after the steam: while it runs 'steam left' is the one clock. -->
         {#if skin.steam?.ended}
           <span class="run" data-testid="steam-state">
             last steam
             <b data-testid="steam-elapsed">{steamSeconds(skin.steam).toFixed(0)} s</b>
           </span>
         {/if}
-        <!-- With the heater off the state line says Off; the switch that turns it on sits left of the title (spec 3.12). -->
+        <!-- With the heater off the state line says Off; the switch that turns it on sits left of the title. -->
         {#if skin.steamHeater === 'off'}
           <button class="heater-on" data-testid="steam-heater-on" onclick={() => skin.setSteamHeater(true)}>steam on</button>
         {/if}
@@ -78,16 +78,16 @@
       {/each}
     </div>
 
-    <!-- In the centre of the column, in line with 'set timer' (spec 3.7). -->
+    <!-- In the centre of the column, in line with 'set timer'. -->
     <div class="big">
       <small>{steaming ? 'steam left' : 'steam timer'}</small>
       <b data-testid="steam-timer">{shown ?? '–'}<i>s</i></b>
     </div>
 
     <!-- A grid of label, number and unit as on home: the numbers end on one edge, the units have
-         their own column (spec 3.18 item 4). The scale's row is the one tare of the skin (Skin.tare,
-         spec 3.7), off while steam runs; without a scale one line in place of the rows looks for
-         the scale (spec 3.9). -->
+         their own column. The scale's row is the one tare of the skin (Skin.tare),
+         off while steam runs; without a scale one line in place of the rows looks for
+         the scale. -->
     {#if scaled}
       <div class="rows">
         <button class="line" data-testid="steam-tare" disabled={steaming} onclick={() => skin.tare()}>
@@ -117,7 +117,7 @@
       >
     {/if}
 
-    <!-- The adjust buttons (spec 3.7): for milk colder or warmer than the calibration's. One at a
+    <!-- The adjust buttons: for milk colder or warmer than the calibration's. One at a
          time, a tap on the selected one clears it; while steam runs a tap moves the timer too. -->
     <div class="adjust">
       {#each settings.adjustments as amount, i (i)}
@@ -154,7 +154,7 @@
       <p class="notice" data-testid="steam-mismatch">{skin.steamMismatch}</p>
     {/if}
 
-    <!-- Steam is started at the machine (founder, 2026-10-13); it is stopped here. -->
+    <!-- Steam is started at the machine; it is stopped here. -->
     {#if skin.canStop}
       <button class="stop" data-testid="steam-stop" onclick={() => skin.stop()}>stop</button>
     {/if}
@@ -165,7 +165,7 @@
   .steam {
     height: 100%;
     box-sizing: border-box;
-    /* home's padding, so the header is in the same place (spec 3.11) */
+    /* home's padding, so the header is in the same place */
     padding: 0.8rem 1.2rem 1rem;
     display: grid;
     grid-template-columns: minmax(0, 1fr) 21rem;

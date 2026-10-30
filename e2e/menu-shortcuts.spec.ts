@@ -3,11 +3,11 @@ import type { Settings } from '../src/settings';
 import type { Backup } from '../src/settings-backup';
 import { mockGateway, type MockGateway } from './mock-gateway';
 
-// Acceptance item 18 (spec 3.7, R4) against a mocked gateway: the home menu's steam switch
-// writes the workflow's steam temperature (0 is off) and shows the heater's state. The two sleeps
-// (spec 3.10, acceptance 56): machine sleep sends the machine to sleep and keeps the app awake,
+// The menu's shortcuts against a mocked gateway: the home menu's steam switch
+// writes the workflow's steam temperature (0 is off) and shows the heater's state. The two sleeps:
+// machine sleep sends the machine to sleep and keeps the app awake,
 // with 'Wake machine' in the menu; machine and app sleep shows the Asleep screen, dimmed to 5,
-// until a touch; neither touches Decaid's wake lock or keepAwake. Acceptance 102: only the steam
+// until a touch; neither touches Decaid's wake lock or keepAwake. Only the steam
 // switch has a second line. The same against the running gateway: e2e-rig/menu-shortcuts.spec.ts.
 
 const errors: string[] = [];
@@ -112,7 +112,7 @@ function askedOf(gateway: MockGateway, start: number): () => string[] {
       .map((call) => `${call.method} ${call.path}${call.body === undefined ? '' : ` ${JSON.stringify(call.body)}`}`);
 }
 
-test('the two sleep entries have their labels alone, no line under either (spec 3.10, acceptance 56)', async ({ page }) => {
+test('the two sleep entries have their labels alone, no line under either', async ({ page }) => {
   await mockGateway(page);
   await page.goto('/');
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
@@ -126,9 +126,7 @@ test('the two sleep entries have their labels alone, no line under either (spec 
   expect(errors).toEqual([]);
 });
 
-test('beans and grinders and clean have no second line; the steam switch has its line in all three states (acceptance 102)', async ({
-  page,
-}) => {
+test('beans and grinders and clean have no second line; the steam switch has its line in all three states', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
@@ -146,9 +144,7 @@ test('beans and grinders and clean have no second line; the steam switch has its
   expect(errors).toEqual([]);
 });
 
-test("the steam switch says 'not known' while neither the machine's settings nor the workflow are read (acceptance 102)", async ({
-  page,
-}) => {
+test("the steam switch says 'not known' while neither the machine's settings nor the workflow are read", async ({ page }) => {
   await mockGateway(page);
   // Routes added later are matched first: no workflow, and a settings stream that sends nothing.
   await page.route(/:8080\/api\/v1\/workflow/, (route) => route.fulfill({ status: 503, body: '' }));
@@ -162,9 +158,7 @@ test("the steam switch says 'not known' while neither the machine's settings nor
   await expect(page.getByTestId('open-clean-detail')).toHaveCount(0);
 });
 
-test("machine sleep: sleeping, the app stays awake and undimmed, 'Wake machine' asks for idle (spec 3.10, acceptance 56)", async ({
-  page,
-}) => {
+test("machine sleep: sleeping, the app stays awake and undimmed, 'Wake machine' asks for idle", async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
@@ -213,7 +207,7 @@ test("machine sleep: sleeping, the app stays awake and undimmed, 'Wake machine' 
   expect(errors).toEqual([]);
 });
 
-test('machine and app sleep: sleeping and the Asleep screen at 5, a touch wakes and puts 100 back; the wake lock is not touched (spec 3.10, acceptance 56)', async ({
+test('machine and app sleep: sleeping and the Asleep screen at 5, a touch wakes and puts 100 back; the wake lock is not touched', async ({
   page,
 }) => {
   const gateway = await mockGateway(page);

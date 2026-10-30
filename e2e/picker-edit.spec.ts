@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mockGateway, profile, record, type MockGateway } from './mock-gateway';
 
-// Edit beside load in the picker's detail panel (spec 3.17 item 6): two buttons of half the
+// Edit beside load in the picker's detail panel: two buttons of half the
 // width in the place of the one load button. Edit loads the selected profile as load does,
 // asking about unsaved edits first, and opens its editor: the A-Flow editor on an A-Flow 3.0
 // profile, the step editor on another. Load still goes back to where the picker was opened from.

@@ -4,7 +4,7 @@
 // Copyright (C) 2025-2026 Decent Espresso
 // Licensed under the GNU General Public License v3.0 or later; used here under GPL-3.0.
 //
-// Calibration > Sensor Calibration (research.md 20.3, 20.10 S2c), without UI. A write is a
+// Calibration > Sensor Calibration, without UI. A write is a
 // correction, not a value: the machine multiplies its flow or pressure ratio by
 // measured / reported and adds measured - reported to its temperature offset, so the same pair
 // written twice corrects twice. The page shows the outcome before it writes and drops the pair

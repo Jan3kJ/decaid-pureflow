@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import manifest from '../public/manifest.json';
 import pkg from '../package.json';
 
-// One licence statement everywhere (spec 3.13 item 1, acceptance 80).
+// One licence statement everywhere.
 const ROOT = join(import.meta.dirname, '..');
 const read = (file: string) => readFileSync(join(ROOT, file), 'utf8');
 const SPDX = 'GPL-3.0-only';

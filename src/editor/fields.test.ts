@@ -3,7 +3,7 @@ import { machineLimits } from '../aflow';
 import { snap } from './fields';
 
 describe('snap', () => {
-  it('holds a flow at the maximum flow of the settings (founder, 2026-10-15)', () => {
+  it('holds a flow at the maximum flow of the settings', () => {
     expect(snap('pourFlow', 15)).toBe(8);
     expect(snap('pourFlow', 15, machineLimits(12))).toBe(12);
     expect(snap('pourFlow', 11.5, machineLimits(12))).toBe(11.5);

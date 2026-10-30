@@ -24,7 +24,7 @@ function run(procedure: Procedure, frames: [MachineState | null, string | null][
   );
 }
 
-describe('the maintenance procedures (research.md 20.10 S2b, Streamline maintenance-progress.js)', () => {
+describe('the maintenance procedures (Streamline maintenance-progress.js)', () => {
   it('ask for the states Decaid knows', () => {
     expect([CLEAN.state, DESCALE.state, TRANSPORT.state]).toEqual(['cleaning', 'descaling', 'airPurge']);
   });
@@ -77,7 +77,7 @@ describe('the maintenance procedures (research.md 20.10 S2b, Streamline maintena
     expect(isActive(done)).toBe(false);
   });
 
-  it('the simulated DE1 stays in cleaning with the substate idle: running at its first step (rig, 2026-10-18)', () => {
+  it('the simulated DE1 stays in cleaning with the substate idle: running at its first step (rig)', () => {
     const progress = run(CLEAN, [
       ['idle', 'idle'],
       ['cleaning', 'idle'],

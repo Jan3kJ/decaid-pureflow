@@ -1,8 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mockGateway, type MockGateway } from './mock-gateway';
 
-// The settings page's Connections, Maintenance and Machine Information (spec 3.7 'Settings',
-// research.md 20.10 S2b), against the mocked gateway and its `/ws/v1/devices` frames: the
+// The settings page's Connections, Maintenance and Machine Information,
+// against the mocked gateway and its `/ws/v1/devices` frames: the
 // device lists as the frames change, scan, connect, preferred, forget, the scale's power mode
 // and 'scale required'; a clean started after its confirm and cancelled. The same against the
 // running gateway: e2e-rig/settings-connections.spec.ts.

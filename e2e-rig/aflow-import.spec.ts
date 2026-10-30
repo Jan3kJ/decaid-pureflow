@@ -5,7 +5,7 @@ import { importReport, planImport } from '../src/editor/import';
 import { SKIN_METADATA } from '../src/editor/save';
 import { readRecord } from '../src/editor/storage';
 
-// The import of old A-Flow profiles (spec 3.9 item 6, U7) against the rig: the test stores one
+// The import of old A-Flow profiles against the rig: the test stores one
 // old A-Flow profile of its own (the plugin's 1.2 very-dark, under its own title and stop
 // weight), checks first that it is the only profile the import would convert, so none of the
 // rig's own profiles is touched, presses the settings' button and Convert, and checks the 3.0

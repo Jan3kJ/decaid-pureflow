@@ -12,7 +12,7 @@ export type RigWorkflow = Workflow & {
 
 /**
  * A request of the page to the gateway that changes something: not a read, a preflight, or the
- * heartbeat a touch sends (spec 3.12).
+ * heartbeat a touch sends.
  */
 export function isWrite(request: Request, gateway: string): boolean {
   const method = request.method();

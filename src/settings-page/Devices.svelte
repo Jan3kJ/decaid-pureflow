@@ -7,7 +7,7 @@
   Licensed under the GNU General Public License v3.0 or later; used here under GPL-3.0.
 -->
 <script lang="ts">
-  // The machine or scale list of Connections (research.md 20.3, 20.10 S2b): the devices of
+  // The machine or scale list of Connections: the devices of
   // `/ws/v1/devices` as they change, Search, Connect / Disconnect, Forget for a remembered one
   // that is absent, and the preferred switch Decaid connects by itself. The scale list also
   // has the Wi-Fi scales added by address. Commands go as REST requests; the stream shows

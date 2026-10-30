@@ -39,7 +39,7 @@ async function pick(page: Page, id: string) {
   await expect(page.getByTestId('editor-profile')).toHaveText(id);
 }
 
-/** The profile steps panel opens closed (founder, 2026-10-13). */
+/** The profile steps panel opens closed. */
 async function openSteps(page: Page) {
   await page.getByTestId('toggle-steps').click();
   await expect(page.getByTestId('steps')).toBeVisible();
@@ -87,7 +87,7 @@ test('loads in simple mode with no console errors; its name leads to the picker,
   await expect(page.getByTestId('detail-panel')).toHaveCount(0);
   await expect(page.getByTestId('value-infusePressure')).toHaveText('3 bar');
   // No 'load to machine'. The row to start from holds the five defaults until the settings
-  // change it (founder, 2026-10-13); the name is the shortcut to the picker.
+  // change it; the name is the shortcut to the picker.
   await expect(page.getByTestId('load-to-machine')).toHaveCount(0);
   await expect(page.getByTestId('start-row').locator('button')).toHaveText(['floral', 'light', 'medium', 'dark', '46mm']);
   await expect(page.getByTestId('start-light')).toHaveAttribute('aria-pressed', 'true');
@@ -180,7 +180,7 @@ test('the start flow is written at the left edge of the flow phase, in both mode
     await expect(page.getByTestId('value-pourFlow')).toHaveText('3 ml/s');
     // The label and the column are read in one layout, and waited for: detail mode's panel
     // narrows the graph after the click, and a column read before it with a label read after
-    // it are 200 px apart on a slow runner (spec 3.20).
+    // it are 200 px apart on a slow runner.
     const offset = () =>
       page.evaluate(() => {
         const label = document.querySelector('[data-testid="value-pourFlow"]')!.getBoundingClientRect();
@@ -237,7 +237,7 @@ test('the pause is dragged in detail mode only', async ({ page }) => {
   // The other borders still move in simple mode.
   await dragBy(page, await borderOf(page, 'infuse'), -40, 0);
   await expect(page.getByTestId('popup')).toContainText('infuse time');
-  // The time follows the finger while it is held: waited for, not read once (spec 3.20).
+  // The time follows the finger while it is held: waited for, not read once.
   await expect.poll(() => number(page, 'value-infuseTime')).toBeLessThan(60);
   await page.mouse.up();
   expect(await number(page, 'value-infuseTime')).toBeLessThan(60);
@@ -280,7 +280,7 @@ test('detail mode: a chip changes the value and the curve', async ({ page }) => 
   await page.screenshot({ path: 'docs/product/detail.png' });
 });
 
-test('detail mode lists the values of the review per phase, and the dose once', async ({ page }) => {
+test('detail mode lists the editable values per phase, and the dose once', async ({ page }) => {
   await page.getByTestId('mode-detail').click();
   await page.getByTestId('toggle-second-fill').click();
   const expected: Record<string, string[]> = {
@@ -298,7 +298,7 @@ test('detail mode lists the values of the review per phase, and the dose once', 
   await expect(page.getByTestId('chip-value-dose')).toHaveText('16 g');
 });
 
-// founder, 2026-10-13 (request 169): 'pause ends at flow under X (editable)', in ml/s, 1 by default.
+// The pause ends at a flow under an editable value, in ml/s, 1 by default.
 test('detail mode: the flow the pause ends under is a value of the 2nd fill, and moves the Pause step’s exit', async ({ page }) => {
   const pauseRow = page.getByTestId('steps').locator('tr', { hasText: 'Pause' });
   // floral has the 2nd fill on. Simple mode has no control for the value.
@@ -362,7 +362,7 @@ test('detail mode: the same lines are dragged as in simple mode', async ({ page 
   expect(await number(page, 'value-infuseTime')).toBeLessThan(60);
 });
 
-// founder, 2026-10-16 (acceptance 23, first half): "end flow"; the last step's flow line is
+// "end flow": the last step's flow line is
 // split in detail mode, left half start flow, right half end flow; no buttons above the graph.
 test('detail mode: the left half of the last flow line drags the start flow, the right half the end flow', async ({ page }) => {
   await page.getByTestId('mode-detail').click();
@@ -418,7 +418,7 @@ test('detail mode: the left half of the last flow line drags the start flow, the
   await expect(page.getByTestId('value-pourEndFlow')).toHaveCount(0);
 });
 
-// founder, 2026-10-16 (acceptance 23, second half): the infuse is as wide as its move-on
+// The infuse is as wide as its move-on
 // weight's estimate (1 g ≈ 5 s, 6 g ≈ 25 s); the infuse-to weight is dragged; a phase dragged
 // to 0 s collapses and its button sets it to 5 s.
 test('the infuse is drawn by its weight, and the infuse-to chip is dragged or tapped', async ({ page }) => {
@@ -571,7 +571,7 @@ test('temperatures: detail mode sets one phase, a drag in simple mode keeps the 
   await expect(page.getByTestId('value-pourTemperature')).toHaveText('95 °C');
 });
 
-test('the temperature axis is 80 to 100 °C and widens for a temperature outside (founder, 2026-10-14)', async ({ page }) => {
+test('the temperature axis is 80 to 100 °C and widens for a temperature outside', async ({ page }) => {
   const ticks = page.getByTestId('temperature-tick');
   await expect(ticks).toHaveText(['80', '100']);
   /** pixels per °C of the axis on screen now */
@@ -730,7 +730,7 @@ test('both toggles work', async ({ page }) => {
   await expect(page.getByTestId('steps')).not.toContainText('Pause');
 });
 
-// founder, 2026-10-15: the maximum flow is a setting, 8 ml/s by default.
+// The maximum flow is a setting, 8 ml/s by default.
 test('the flows of the editor follow the maximum flow of the settings', async ({ page }) => {
   await page.getByTestId('mode-detail').click();
   await selectPhase(page, 'flow');

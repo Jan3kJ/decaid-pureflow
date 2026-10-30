@@ -1,4 +1,4 @@
-// How long the next shot is expected to take (spec 3.8): where the running shot graph's time
+// How long the next shot is expected to take: where the running shot graph's time
 // axis starts, so a 50 s shot is not rescaled at 30, 40 and 50 s. Pure, except `lastShotSeconds`.
 import type { Profile } from '../api';
 import { drawnShotSeconds } from '../editor/curve';

@@ -23,7 +23,7 @@ function setup() {
   return { gateway, bundledRecord, mine };
 }
 
-/** A value, a step added, one deleted, one moved: the edits of acceptance 10. */
+/** A value, a step added, one deleted, one moved. */
 function edit(profile: Profile): Profile {
   let next = setValue(openProfile(profile), 1, 'target', 3.5);
   next = insertStepAfter(next, 2);

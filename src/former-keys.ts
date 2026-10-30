@@ -12,7 +12,7 @@ export const MOVED_KEYS: readonly (readonly [string, string])[] = [SETTINGS_KEY,
 
 /**
  * Moves each value kept under the former name to the new key, unless the new key holds one
- * already. Decaid derives a skin's port from its identity (research.md 9.1), so a new id likely
+ * already. Decaid derives a skin's port from its identity, so a new id likely
  * means a new origin and no former keys; then the backup brings the settings back.
  */
 export function moveFormerKeys(store: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> = localStorage): void {

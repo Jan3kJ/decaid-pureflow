@@ -4,7 +4,7 @@
 // Copyright (C) 2025-2026 Decent Espresso
 // Licensed under the GNU General Public License v3.0 or later; used here under GPL-3.0.
 //
-// The device lists of Connections (research.md 20.3, 20.10 S2b): which devices a list shows,
+// The device lists of Connections: which devices a list shows,
 // in which order, and what a row says and offers. No UI.
 import type { DeviceInfo, DevicesState, DeviceType } from '../api';
 

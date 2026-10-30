@@ -1,4 +1,4 @@
-// The steam page's state and actions (spec 3.4, 3.7): the running steam, the adjust buttons,
+// The steam page's state and actions: the running steam, the adjust buttons,
 // the timer and the steam heater. A part of `Skin`, which hands its steam fields to it; the
 // workflow, the machine's settings and the notice stay the skin's (`SteamHost`).
 import type { DecaidClient, MachineSnapshot, ShotSettings, Workflow } from '../api';
@@ -24,7 +24,7 @@ export class SteamControl {
   /** the running steam, or the finished one until the next */
   run: SteamRun | null = $state.raw(null);
   /**
-   * The adjust button selected on the steam page (spec 3.7): its place in the settings'
+   * The adjust button selected on the steam page: its place in the settings'
    * list, null for none. One at a time; it is cleared when a steam ends.
    */
   adjust: number | null = $state(null);
@@ -36,14 +36,14 @@ export class SteamControl {
 
   /**
    * The steam timer in s: the machine's own, and the workflow's `steamSettings.duration` only
-   * while the machine's settings are not known. The two can differ (research.md, section 16).
+   * while the machine's settings are not known. The two can differ.
    */
   readonly timer = $derived.by(
     () => this.host.shotSettings?.targetSteamDuration ?? this.host.workflow?.steamSettings?.duration ?? null,
   );
   /** s, the amount of the selected adjust button, null without one */
   readonly adjustment = $derived.by(() => (this.adjust === null ? null : (this.host.settings.steam.adjustments[this.adjust] ?? null)));
-  /** the steam heater, on or off (spec 3.7, home's menu); null while neither the machine nor the workflow is known */
+  /** the steam heater, on or off (home's menu); null while neither the machine nor the workflow is known */
   readonly heater = $derived.by(() => heaterState(this.host.shotSettings, this.host.workflow));
   /** The machine's timer is not the one set here any more: what the steam page says about it. */
   readonly mismatch = $derived.by(() => timerMismatch(this.asked, this.host.shotSettings?.targetSteamDuration ?? null));
@@ -60,7 +60,7 @@ export class SteamControl {
   }
 
   /**
-   * A tap on an adjust button (spec 3.7, 3.17 item 8): it selects the button, or clears it
+   * A tap on an adjust button: it selects the button, or clears it
    * when it was selected. While steam runs the tap also writes the machine's timer plus the
    * change it made to the selected amount, held within 1 to 255 s; a timer at or under the
    * time run ends the steam at the machine. With no steam running it writes nothing.
@@ -79,7 +79,7 @@ export class SteamControl {
   }
 
   /**
-   * Writes the steam timer, whole seconds (spec 3.4): to the workflow's `steamSettings.duration`,
+   * Writes the steam timer, whole seconds: to the workflow's `steamSettings.duration`,
    * and to the machine's own settings where Decaid did not pass it on (`applySteamTimer`).
    */
   async setTimer(seconds: number): Promise<void> {
@@ -96,7 +96,7 @@ export class SteamControl {
   }
 
   /**
-   * The menu's steam switch (spec 3.7): off writes 0 °C, after it remembered the temperature
+   * The menu's steam switch: off writes 0 °C, after it remembered the temperature
    * the heater had in the settings; on writes that temperature again.
    */
   async toggleHeater(): Promise<void> {
@@ -106,7 +106,7 @@ export class SteamControl {
 
   /**
    * The steam heater on or off, as the menu's switch does; the descale switches it off for the
-   * cycle (research.md 20.3). False when it was not switched: the notice says why.
+   * cycle. False when it was not switched: the notice says why.
    */
   async setHeater(on: boolean): Promise<boolean> {
     const host = this.host;

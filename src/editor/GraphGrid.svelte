@@ -88,7 +88,7 @@
 <style>
   /*
    * The grid's own sizes, inside the graph's SVG: `text`, `.phase` and `.tick` fit the drawing,
-   * not a text role (spec 3.14; scripts/font-sizes.mjs lets these rules through).
+   * not a text role (scripts/font-sizes.mjs lets these rules through).
    */
   text {
     fill: var(--dim);

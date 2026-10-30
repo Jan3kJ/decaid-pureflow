@@ -1,4 +1,4 @@
-// What home's graph and right column show (spec 3.11, X1): home is the shot screen. Pure: the
+// What home's graph and right column show: home is the shot screen. Pure: the
 // shot, the recalled history entry's series, the newest shot record's series and the scale's
 // weight in, one choice out.
 import { emptySeries, seriesWeight, shotSeconds, shotWeight, type Shot, type ShotSeries } from './shot';

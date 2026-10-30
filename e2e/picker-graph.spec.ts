@@ -4,8 +4,8 @@ import { pickerEntries, previewLastStepSeconds } from '../src/shell/profiles';
 import { shotEstimate } from '../src/steps/estimate';
 import { mockGateway, profile, record } from './mock-gateway';
 
-// The picker's preview (spec 3.10 'Profile picker: graphs', acceptance 59), against a mocked
-// gateway, on the time of the modelled shot (spec 3.16, Z15): a 0 s step adds no width;
+// The picker's preview against a mocked
+// gateway, on the time of the modelled shot: a 0 s step adds no width;
 // default-dark's pour target starts at 2 ml/s and ends at 1 ml/s, where the A-Flow editor's line
 // ends; its Pouring step's 9 bar pressure limit is a dotted pressure line across that step; a
 // step without a limit draws none.

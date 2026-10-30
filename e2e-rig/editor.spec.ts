@@ -9,9 +9,9 @@ import light from '../src/aflow/defaults/default-light.json' with { type: 'json'
 import { back, selectPhase } from '../e2e/touch';
 import { titleLines } from '../src/shell/profiles';
 
-// Acceptance item 3 (spec section 5) against the rig: in simple and in detail mode, changing a
+// The A-Flow editor against the rig: in simple and in detail mode, changing a
 // value redraws the curve, and the profile the gateway holds after the swipe back and after
-// 'save as' (there is no 'load to machine' since the founder's notes of 2026-10-13) equals the
+// 'save as' (there is no 'load to machine') equals the
 // generator's output for those values; a saved profile re-opens in the editor with the same
 // parameters. The tests remove the profiles they create and put the workflow back as it was.
 
@@ -61,7 +61,7 @@ function paramsOf(profile: { notes?: string }): AFlowParams {
   return params;
 }
 
-/** The values of a stored record: in its metadata, none in its notes (spec 3.6). */
+/** The values of a stored record: in its metadata, none in its notes. */
 function recordParams(record: { profile: { notes?: string }; metadata?: unknown }): AFlowParams {
   expect(splitNotes(record.profile.notes).params).toBeNull();
   const parsed = decodeParams(record.metadata);
@@ -294,7 +294,7 @@ test('detail mode: typed values are loaded; a saved profile re-opens with them a
   expect(await expectLoaded(page, about)).toEqual({ ...wanted, dose: 17, flowUp: false, pourPressure: 8 });
 });
 
-test('unsaved edits on the machine: the picker asks before it loads (founder, 2026-10-14)', async ({ page }) => {
+test('unsaved edits on the machine: the picker asks before it loads', async ({ page }) => {
   await openEditor(page);
   await page.getByTestId('toggle-flow').click();
   // Leaving by the name loads the change unsaved and opens the picker.
@@ -316,14 +316,14 @@ test('unsaved edits on the machine: the picker asks before it loads (founder, 20
   await other.click();
   await page.getByTestId('load-profile').click();
   await page.getByTestId('unsaved-discard').click();
-  // Not A-Flow 3.0: the picker opened from the editor comes back to the step editor on it (spec 3.6).
+  // Not A-Flow 3.0: the picker opened from the editor comes back to the step editor on it.
   await expect(page.getByTestId('step-cards')).toBeVisible();
   await expect(pressed(page)).toHaveText(title);
   expect((await api<RigWorkflow>('GET', '/api/v1/workflow')).profile.title).toBe(title);
   expect(await profileIds()).toEqual(profilesBefore);
 });
 
-// Review of 2026-10-16, A2 (acceptance 23, second half): a phase dragged to 0 s collapses, its
+// A phase dragged to 0 s collapses, its
 // button turns it on with 5 s, the infuse-to weight is dragged; the saved profile is the
 // generator's for those values and reads back with them.
 test('a phase turned off and on again at 5 s, and a dragged infuse weight, save and read back', async ({ page }) => {

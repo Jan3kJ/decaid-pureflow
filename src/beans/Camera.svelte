@@ -1,5 +1,5 @@
 <script lang="ts">
-  // The live camera in the number pad's dialog (spec 3.9 item 20): `getUserMedia`, the rear
+  // The live camera in the number pad's dialog: `getUserMedia`, the rear
   // camera preferred, and a capture button. Decaid's window gives the live camera without asking
   // each time; where it is refused or missing, the system's camera through a file input stands in.
   import { onMount } from 'svelte';

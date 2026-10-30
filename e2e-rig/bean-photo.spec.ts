@@ -2,9 +2,9 @@ import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import type { BeanBatch, CatalogueBean, MachineSnapshot } from '../src/api';
 
-// Acceptance item 54's photo (spec 3.9 item 20) against the rig: a bean added on the beans
+// A bean's photo against the rig: a bean added on the beans
 // screen with a photo of a printed bag (the live camera answers with `e2e/fixtures/bag.png`)
-// keeps the name and roaster typed (the photo is not read, spec 3.17 item 3); the photo is stored in
+// keeps the name and roaster typed (the photo is not read); the photo is stored in
 // the skin's KV namespace under the bean's id and shown when the bean is opened again. Deleted
 // in Decaid (the skin only archives), the bean's photo is deleted at the next read of the
 // catalogue: the namespace holds what it held before. The test deletes the bean and its bags.
@@ -32,7 +32,7 @@ const beans = () => api<CatalogueBean[]>('GET', '/api/v1/beans?includeArchived=t
 const keys = async () => ((await api<string[] | null>('GET', NAMESPACE)) ?? []).sort();
 
 async function deleteBean(id: string) {
-  // Decaid 0.8.8 refuses to delete a bean that still has bags (research.md 29.12).
+  // Decaid 0.8.8 refuses to delete a bean that still has bags.
   const bags = await api<BeanBatch[]>('GET', '/api/v1/bean-batches?includeArchived=true');
   for (const bag of bags.filter((candidate) => candidate.beanId === id)) await api('DELETE', `/api/v1/bean-batches/${bag.id}`);
   await api('DELETE', `/api/v1/beans/${id}`);

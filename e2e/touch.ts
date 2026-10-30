@@ -3,7 +3,7 @@ import { expect, type Page } from '@playwright/test';
 /**
  * A finger's swipe, as the tablet's screen sends it: touch events through the browser's input,
  * over a quarter of a second. Sent with no time between them they are a fling so fast that
- * Chromium drops the tap that follows it (research.md, section 14). With `hold`, the finger rests
+ * Chromium drops the tap that follows it. With `hold`, the finger rests
  * at the end that many milliseconds before it lifts: no fling, so a tap after it is never dropped.
  */
 export async function swipe(page: Page, from: { x: number; y: number }, to: { x: number; y: number }, hold = 0) {
@@ -44,8 +44,8 @@ export async function flick(page: Page, from: { x: number; y: number }, to: { x:
 }
 
 /**
- * Detail mode: a tap on a step of the editor's graph selects it; there are no phase buttons
- * (founder, 2026-10-16). It taps the step's name under the plot, away from every line.
+ * Detail mode: a tap on a step of the editor's graph selects it; there are no phase buttons.
+ * It taps the step's name under the plot, away from every line.
  */
 export async function selectPhase(page: Page, phase: string) {
   const column = (await page.getByTestId(`column-${phase}`).boundingBox())!;
@@ -53,7 +53,7 @@ export async function selectPhase(page: Page, phase: string) {
 }
 
 /**
- * A tap on a page's dot (spec 3.11), waited until the page is at rest: the dot slides to it, and
+ * A tap on a page's dot, waited until the page is at rest: the dot slides to it, and
  * while it slides both pages are drawn.
  */
 export async function toPage(page: Page, to: 'home' | 'steam' | 'hot-water') {
@@ -63,7 +63,7 @@ export async function toPage(page: Page, to: 'home' | 'steam' | 'hot-water') {
 }
 
 /**
- * The way back (spec 3.14): no screen has a back arrow; a swipe from left to right leaves a
+ * The way back: no screen has a back arrow; a swipe from left to right leaves a
  * screen for where it was opened from, and on the hot water page, the leftmost, a swipe from right
  * to left goes home. It starts on the first place, from the top, that is not on or near (Chromium
  * moves a touch to a control close by) a field, a drag of its own or a row that scrolls sideways

@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { mockGateway } from './mock-gateway';
 import { toPage } from './touch';
 
-// One header on home, steam and hot water (spec 3.11, 3.14, X3, Z3; acceptance 69, 93): the menu
+// One header on home, steam and hot water: the menu
 // in the top left corner, the state line right of it at the same place with the same values, the
 // page's title at the right end; on home the right column beside it.
 

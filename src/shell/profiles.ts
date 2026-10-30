@@ -11,7 +11,7 @@ import type { Screen } from './nav';
 /** `metadata.source` of a profile this skin stores. */
 export const SKIN_SOURCE = 'pureflow';
 
-/** `metadata.source` of the profiles this skin stored: the profiles of its former name count as its own (founder, 2026-10-18). */
+/** `metadata.source` of the profiles this skin stored: the profiles of its former name count as its own. */
 export const SKIN_SOURCES: readonly string[] = [SKIN_SOURCE, FORMER_NAME];
 
 /** A default as the v2 profile the generator writes for it; its parameters go with it as metadata (`pickerEntries`). */
@@ -34,7 +34,7 @@ export interface PickerEntry {
   id: string;
   profile: Profile;
   metadata: Record<string, unknown> | null;
-  /** one of the skin's defaults (spec 3.8, T5) */
+  /** one of the skin's defaults */
   isDefault: boolean;
 }
 
@@ -44,7 +44,7 @@ export function isDefaultTitle(title: string): boolean {
 }
 
 /**
- * The picker's list (spec 3.8, T5): the skin's five defaults first, in their order, then the
+ * The picker's list: the skin's five defaults first, in their order, then the
  * stored profiles as `sortProfiles` orders them. The defaults live in the skin, not in Decaid:
  * a stored profile under a default's title (a copy the picker's former 'add' stored, or the
  * plugin's default Decaid bundles under three of the titles) stays in Decaid and is not listed,
@@ -77,7 +77,7 @@ export function previewLastStepSeconds(entry: Pick<PickerEntry, 'profile' | 'met
 }
 
 /**
- * A profile's title in two lines, as home's profile button shows it (spec 3.18 item 5): the name,
+ * A profile's title in two lines, as home's profile button shows it: the name,
  * and as its caption the part before the first ' / ' ('A-Flow / default-medium' is
  * 'default-medium' under 'A-Flow'). A title without ' / ', or with nothing after it, is the name
  * alone, without a caption (null).
@@ -100,7 +100,7 @@ export function sortProfiles(records: readonly ProfileRecord[]): ProfileRecord[]
   return [...records].sort((a, b) => rank(a) - rank(b) || a.profile.title.localeCompare(b.profile.title));
 }
 
-/** The profiles whose title holds the filter, in any case (founder, 2026-10-17); an empty filter keeps them all. */
+/** The profiles whose title holds the filter, in any case; an empty filter keeps them all. */
 export function filterProfiles<T extends { profile: Pick<Profile, 'title'> }>(records: readonly T[], filter: string): T[] {
   const needle = filter.trim().toLocaleLowerCase();
   return records.filter((record) => record.profile.title.toLocaleLowerCase().includes(needle));
@@ -113,7 +113,7 @@ function isStockNotes(text: string): boolean {
 }
 
 /**
- * What the picker shows of a profile (spec 3.16 item 3): its notes without the A-Flow line the
+ * What the picker shows of a profile: its notes without the A-Flow line the
  * skin writes there, and for a profile whose A-Flow values are known (`openParams`) the text
  * made from them after a blank line; the plugin's stock sentence counts as no notes. The text
  * is made here, when it is shown, and never written to the profile. '' for none.
@@ -136,7 +136,7 @@ export function doseOf(profile: Profile, metadata?: Record<string, unknown> | nu
 }
 
 /**
- * The dose to write to the workflow, or null for none (founder, 2026-10-15): a workflow that
+ * The dose to write to the workflow, or null for none: a workflow that
  * holds a dose keeps it, whether a profile brought it (`loadProfile`) or the user set it in
  * Decaid; one without takes the default of the settings. A shot record copies the workflow,
  * so the next shot has a dose either way.
@@ -147,13 +147,13 @@ export function doseToSet(workflow: Workflow, defaultDose: number): number | nul
 }
 
 /**
- * Loads a profile: the one place that decides how (spec section 8).
+ * Loads a profile: the one place that decides how.
  *
  * `PUT /api/v1/workflow` sets the workflow's profile and sends it to the machine. A shot
- * record copies the workflow's profile, so the history (spec 3.5) names the profile that was
+ * record copies the workflow's profile, so the history names the profile that was
  * pulled; `POST /api/v1/machine/profile` would leave the workflow as it was (research 9.3).
  * Decaid stops a shot at the workflow's `targetYield`, not at the profile's `target_weight`,
- * and loading a profile does not change it (research.md, section 10): so the profile's stop
+ * and loading a profile does not change it: so the profile's stop
  * weight is written as the target yield here, and its dose where it has one. The picker, the
  * editor's 'load to machine' and the shot history all load with this function; the history
  * sends an entry's bean and grinder along as `more`, in the same call.
@@ -177,13 +177,13 @@ export function loadProfile(
 
 /**
  * Loads a picker entry (`loadProfile`): a stored profile with its metadata, a default as the
- * generator writes it, with no record (spec 3.8, T5).
+ * generator writes it, with no record.
  */
 export function loadEntry(client: DecaidClient, entry: PickerEntry): Promise<Workflow> {
   return loadProfile(client, entry.profile, {}, entry.metadata);
 }
 
-/** The picker's two buttons: both load the selected profile (spec 3.17 item 6). */
+/** The picker's two buttons: both load the selected profile. */
 export type PickerAction = 'edit' | 'load';
 
 /**
@@ -203,7 +203,7 @@ export function loadRecord(client: DecaidClient, record: ProfileRecord, more: Wo
 export const LOADED_REFUSAL = 'loaded on the machine: load another first';
 
 /**
- * Whether the picker may delete an entry (spec 3.10): a stored profile, Decaid's bundled ones
+ * Whether the picker may delete an entry: a stored profile, Decaid's bundled ones
  * among them, may; the skin's defaults are no records ('default'); the profile on the machine
  * may not ('loaded'), since the workflow still holds its copy and the editor would take that
  * copy, without its record, for unsaved edits.
@@ -236,7 +236,7 @@ export const NAME_TAKEN = 'A profile with that name exists.';
 export type RenameAnswer = { title: string } | { refusal: string } | 'same';
 
 /**
- * The rename dialog's rule (spec 3.17 item 5): the typed title is trimmed; empty is refused, so
+ * The rename dialog's rule: the typed title is trimmed; empty is refused, so
  * is the title of another listed profile or of one of the skin's defaults; the title as it was
  * is a cancel. An A-Flow 3.0 profile's title is taken as typed: its tag comes from its values.
  */
@@ -256,7 +256,7 @@ export function renameAnswer(
 
 /**
  * Renames a stored profile: `PUT /api/v1/profiles/{id}` with the profile under the new title and
- * no `metadata` field, so Decaid keeps the id and the metadata (research.md 11.1). Answers the
+ * no `metadata` field, so Decaid keeps the id and the metadata. Answers the
  * record as Decaid then holds it and the list read again.
  */
 export async function renameEntry(

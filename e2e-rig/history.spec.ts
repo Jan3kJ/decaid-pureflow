@@ -4,11 +4,11 @@ import type { RigWorkflow } from './gateway';
 import { IDLE } from './idle';
 import { titleLines } from '../src/shell/profiles';
 
-// Acceptance item 5 (spec section 5) against the rig: simulated shots with another profile
+// The history against the rig: simulated shots with another profile
 // or another bean give one entry each, a changed grinder setting does not; tapping an entry
 // restores profile, bean and grinder setting (the workflow is read back) and shows its
-// graph; the overlay closes on selection and on a tap outside it. The shots are read once
-// (spec 3.8, T8): a second opening reads no shot list, and a shot pulled while the skin is
+// graph; the overlay closes on selection and on a tap outside it. The shots are read once:
+// a second opening reads no shot list, and a shot pulled while the skin is
 // open is in it. The test deletes the shots it makes and puts the workflow back as it was.
 
 const GATEWAY = 'http://localhost:8080';
@@ -58,7 +58,7 @@ async function pull(page: Page, profile: unknown, context: Record<string, unknow
   } catch {
     await api('PUT', '/api/v1/machine/state/idle');
   }
-  // The record is written a few seconds after the end (research.md 10.1).
+  // The record is written a few seconds after the end.
   let id: string | undefined;
   await expect
     .poll(async () => (id = (await shotIds()).find((candidate) => !known.includes(candidate))), {
@@ -208,7 +208,7 @@ test('the history: shots with another profile or bean are entries, a tap restore
   expect(workflowAfter.context).toEqual(workflowBefore.context);
 });
 
-// Acceptance 52's last sentence (spec 3.9 item 19, research.md 29.6) against the rig: two beans
+// The history filtered by bean against the rig: two beans
 // of the test's own in Decaid's catalogue, a simulated shot with each; the overlay filtered by
 // one bean shows its entry only, and 'all' brings the rest back, the rig's own shot with its
 // free-text bean too. The test deletes its shots, bags and beans and puts the workflow back as it was.
@@ -273,7 +273,7 @@ test('the history filtered by a bean of the catalogue shows only its entry', asy
     for (const id of await shotIds()) {
       if (!shotsBefore.includes(id)) await api('DELETE', `/api/v1/shots/${encodeURIComponent(id)}`);
     }
-    // A bean with bags cannot be deleted (research.md 29.12): the bags first.
+    // A bean with bags cannot be deleted: the bags first.
     for (const { bean, batch } of made) {
       await api('DELETE', `/api/v1/bean-batches/${batch}`);
       await api('DELETE', `/api/v1/beans/${bean}`);

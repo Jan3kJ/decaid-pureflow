@@ -6,7 +6,7 @@
   Licensed under the GNU General Public License v3.0 or later; used here under GPL-3.0.
 -->
 <script lang="ts">
-  // 11. User Manual (research.md 31): the manual's links and Send Feedback. Feedback goes to
+  // 11. User Manual: the manual's links and Send Feedback. Feedback goes to
   // Decent through Decaid (`POST /api/v1/feedback`) and becomes a public GitHub issue, so the
   // Send button asks first.
   import type { FeedbackRequest } from '../api';

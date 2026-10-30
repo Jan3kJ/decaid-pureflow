@@ -32,9 +32,9 @@
 
   let { skin }: Props = $props();
 
-  // The category Skin of the settings page (research.md 20.6): the skin's own settings, all in
-  // the one settings object (src/settings.ts) and so in its KV backup. Moved from the settings
-  // page of D8c with its test ids.
+  // The category Skin of the settings page: the skin's own settings, all in
+  // the one settings object (src/settings.ts) and so in its KV backup. It keeps the test ids of the
+  // settings page it came from.
   const SUB = Object.fromEntries(SETTINGS_TREE.find((category) => category.id === 'skin')!.subcategories.map((sub) => [sub.id, sub]));
   type Switch = {
     key: 'firstStepWorkaround' | 'showProfileSteps' | 'showGraphLegend' | 'showShotValues';
@@ -123,7 +123,7 @@
     typingProfile = null;
   }
 
-  /** the ratio favourite of the hot water page the number pad is open for (spec 3.7) */
+  /** the ratio favourite of the hot water page the number pad is open for */
   let typingRatio: number | null = $state(null);
   const shownRatio = (index: number) => `${+settings.hotWater.ratios[index].toFixed(1)}`;
 
@@ -132,7 +132,7 @@
     typingRatio = null;
   }
 
-  // The editor's start row (founder, 2026-10-13): what a slot can hold is read from the gateway.
+  // The editor's start row: what a slot can hold is read from the gateway.
   let records: ProfileRecord[] | null = $state.raw(null);
   let unread: string | null = $state(null);
   /** the slot whose list is open */
@@ -161,7 +161,7 @@
 
   onMount(readProfiles);
 
-  // The import of old A-Flow profiles (spec 3.9, U7): it reads the list again, asks, converts.
+  // The import of old A-Flow profiles: it reads the list again, asks, converts.
   /** what the question is about; null while it is not asked */
   let importing: ImportPlan | null = $state.raw(null);
   let importBusy = $state(false);
@@ -192,7 +192,7 @@
     await readProfiles();
   }
 
-  // The backup in Decaid's KV store (founder, 2026-10-14): its time, and a restore with a confirm.
+  // The backup in Decaid's KV store: its time, and a restore with a confirm.
   let confirming = $state(false);
   /** what the last restore did */
   let restored: string | null = $state(null);
@@ -231,7 +231,7 @@
   {/each}
 </section>
 
-<!-- The hot water page's ratio favourites (spec 3.7). -->
+<!-- The hot water page's ratio favourites. -->
 <section id="sub-skin-hot-water" data-testid="settings-hot-water">
   <h2>{SUB['skin-hot-water'].name}</h2>
   <p class="hint">{SUB['skin-hot-water'].hint}</p>
@@ -253,7 +253,7 @@
 
 <section id="sub-skin-profile" data-testid="settings-profile">
   <h2>{SUB['skin-profile'].name}</h2>
-  <!-- founder, 2026-10-15: the editor's maximum flow and the dose of a shot that has none -->
+  <!-- The editor's maximum flow and the dose of a shot that has none -->
   <div class="row">
     <div class="about">
       <strong>editor and dose</strong>
@@ -348,7 +348,7 @@
   <Skins {skin} />
 </section>
 
-<!-- The backup in Decaid's KV store (founder, 2026-10-14), and the skin's name and version. -->
+<!-- The backup in Decaid's KV store, and the skin's name and version. -->
 <section id="sub-skin-backup" data-testid="settings-backup">
   <h2>{SUB['skin-backup'].name}</h2>
   <div class="row">

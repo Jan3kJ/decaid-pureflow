@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { NEW_SCHEDULE, daysText, formOf, keepAwakeText, scheduleOf, scheduleText } from './presence';
 
-describe('the wake schedules (research.md 20.10 S2c)', () => {
+describe('the wake schedules', () => {
   it('writes a schedule as Decaid takes it: HH:MM, the days in order, a keep-awake or null', () => {
     expect(scheduleOf({ minutes: 6 * 60 + 5, days: [5, 1, 3, 3], keepAwake: 90, enabled: true })).toEqual({
       time: '06:05',

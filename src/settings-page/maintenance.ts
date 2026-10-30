@@ -4,7 +4,7 @@
 // Copyright (C) 2025-2026 Decent Espresso
 // Licensed under the GNU General Public License v3.0 or later; used here under GPL-3.0.
 //
-// The maintenance procedures of the settings page (research.md 20.3, 20.10 S2b): clean, descale
+// The maintenance procedures of the settings page: clean, descale
 // and transport mode. `PUT /api/v1/machine/state/{cleaning,descaling,airPurge}` hands the cycle
 // to the firmware; the skin only watches the machine's state and substate. As Streamline says:
 // the machine enters the state some frames after the request, it leaves it without an event

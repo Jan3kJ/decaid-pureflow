@@ -6,7 +6,7 @@
   Licensed under the GNU General Public License v3.0 or later; used here under GPL-3.0.
 -->
 <script lang="ts">
-  // Skin > Active Skin (spec 3.9 item 15): Decaid's installed skins, the default one marked. A tap
+  // Skin > Active Skin: Decaid's installed skins, the default one marked. A tap
   // on another asks, since the switch leaves this skin, then makes it Decaid's default, starts
   // Decaid's skin server again and opens the port it serves on (src/settings-page/skins.ts).
   // 'Check for skin updates' has Decaid look for newer versions; the skin asks no outside service.

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { calibrationBusy, clampWhole, feedbackText, fromInputColour, isBengle, matReading, toInputColour, validGrams } from './bengle';
 
-describe('the Bengle pages (research.md 31)', () => {
+describe('the Bengle pages', () => {
   it('shows only for a model that names a Bengle', () => {
     expect(isBengle('Bengle')).toBe(true);
     expect(isBengle('DE1 Bengle Pro')).toBe(true);

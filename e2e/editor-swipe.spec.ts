@@ -4,8 +4,8 @@ import blooming from '../src/steps/fixtures/bundled-profiles.json' with { type: 
 import { mockGateway } from './mock-gateway';
 import { swipe } from './touch';
 
-// The editor's swipe back to home (spec 3.10, acceptance item 64): in the A-Flow editor and in
-// the step editor a swipe from left to right leaves for home, the way back (spec 3.14), loading
+// The editor's swipe back to home: in the A-Flow editor and in
+// the step editor a swipe from left to right leaves for home, the way back, loading
 // changed values once and nothing without changes; a drag on the A-Flow graph is the graph's,
 // and a swipe to the left stays.
 

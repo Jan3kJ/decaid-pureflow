@@ -4,7 +4,7 @@
 // Copyright (C) 2025-2026 Decent Espresso
 // Licensed under the GNU General Public License v3.0 or later; used here under GPL-3.0.
 //
-// The SCRIPT tab's sentences (spec 3.7, research.md 17.18): each step as Streamline's lines of
+// The SCRIPT tab's sentences: each step as Streamline's lines of
 // words, cycling chips and value pills, in Streamline's order (marker, temperature, pump,
 // limit, maximum, exit). Nothing is typed, so nothing can fail to parse: a chip is one of the
 // model's cycles, a pill opens the number pad on one of the model's values (`limitOf`).

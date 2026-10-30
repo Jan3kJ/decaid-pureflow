@@ -1,4 +1,4 @@
-// The picker's estimate (spec 3.16 'The picture'): the modelled shot of `predictShot` as the
+// The picker's estimate: the modelled shot of `predictShot` as the
 // series `ShotGraph` draws, with the profile's targets and limits under it on the model's time.
 // Pure: no DOM and no Svelte.
 //

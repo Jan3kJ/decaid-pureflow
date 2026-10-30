@@ -1,4 +1,4 @@
-// Setting the steam timer so that the machine has it (research.md, section 16). The workflow's
+// Setting the steam timer so that the machine has it. The workflow's
 // `steamSettings.duration` is not the machine's timer: Decaid writes it to the machine only
 // when it differs from the workflow's old value, and another client can change either of
 // them. So the timer is written, and then the machine's own value is read. No UI: the

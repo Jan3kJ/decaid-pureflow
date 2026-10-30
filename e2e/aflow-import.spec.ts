@@ -6,7 +6,7 @@ import { SKIN_METADATA } from '../src/editor/save';
 import { readRecord } from '../src/editor/storage';
 import { mockGateway, record, type MockGateway } from './mock-gateway';
 
-// The import of old A-Flow profiles (spec 3.9 item 6, U7): the settings' button asks, naming
+// The import of old A-Flow profiles: the settings' button asks, naming
 // what it found, converts each old profile as the editor's save does, skips Decaid's bundled
 // ones and reports the counts.
 

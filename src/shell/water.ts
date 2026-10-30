@@ -1,11 +1,11 @@
-// Hot water and flush on every screen (spec 3.6, 3.7, 3.14: the water view): snapshot frames in, the run's
+// Hot water and flush on every screen: snapshot frames in, the run's
 // time out, and the countdown ring and the values the stop button shows. Pure: time comes from
 // the frames' own timestamps, as in shot.ts and steam/run.ts.
 import type { MachineSnapshot, Workflow } from '../api';
 import { gramsOf } from '../display';
 import { frameTime } from './shot';
 
-/** The two machine states the water view draws (research.md 19). */
+/** The two machine states the water view draws. */
 export type WaterKind = 'hotWater' | 'flush';
 
 export const WATER_LABEL: Record<WaterKind, string> = { hotWater: 'Hot water', flush: 'Flush' };
@@ -100,7 +100,7 @@ export interface WaterValues {
 const shown = (value: number, digits: number): string => (Number.isFinite(value) ? value.toFixed(digits) : '–');
 
 /**
- * What the stop button shows inside the ring (spec 3.7): temperature, flow and time, and for
+ * What the stop button shows inside the ring: temperature, flow and time, and for
  * hot water the scale's weight in g when a scale sends one (`weight` is null without a scale).
  * Flow below 0 (sensor noise at rest) shows as 0, the weight as `gramsOf` writes it; a value the
  * machine did not send as '–'. Hot water with a target (`hotWaterData.volume`, the hot water

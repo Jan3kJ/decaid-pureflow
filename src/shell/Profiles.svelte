@@ -40,7 +40,7 @@
   /** The filter is not kept: the picker opens with the whole list. */
   let filter = $state('');
 
-  // The skin's defaults first, marked; stored copies under their titles are not listed (spec 3.8, T5).
+  // The skin's defaults first, marked; stored copies under their titles are not listed.
   const entries = $derived(pickerEntries(records ?? []));
   const shown = $derived(filterProfiles(entries, filter));
   // A selected profile the filter hides is not shown, nor loaded; it is again once the filter lets it through.
@@ -83,7 +83,7 @@
 
   /**
    * The picker opens on the loaded profile: selected, its detail shown, in the middle of the list,
-   * not at its top (spec 3.18 item 6). Once, when the list and the workflow are both known; the
+   * not at its top. Once, when the list and the workflow are both known; the
    * defaults are listed alone while the gateway's list is not read.
    */
   let opened = false;
@@ -98,7 +98,7 @@
 
   /**
    * The description's lower border is the accent while more of its text lies below the visible
-   * part (spec 3.18 item 6); checked on its scrolling, on a new text and on a new size.
+   * part; checked on its scrolling, on a new text and on a new size.
    */
   let notesEl: HTMLParagraphElement | undefined = $state();
   let more = $state(false);
@@ -133,14 +133,14 @@
   }
 
   /**
-   * A tap selects a profile and shows it; 'load' loads it (founder, 2026-10-17, overriding the
-   * tap that loaded of 2026-10-13) and goes back: to the editor when it opened the picker,
-   * which opens the profile in its editor (spec 3.6), to home otherwise. A default loads as
-   * the skin holds it, without a record (spec 3.8, T5).
+   * A tap selects a profile and shows it; 'load' loads it
+   * and goes back: to the editor when it opened the picker,
+   * which opens the profile in its editor, to home otherwise. A default loads as
+   * the skin holds it, without a record.
    */
   const load = (entry: PickerEntry, action: PickerAction = 'load') =>
     act('The profile could not be loaded', async () => {
-      // Unsaved edits on the machine are asked about first (founder, 2026-10-14).
+      // Unsaved edits on the machine are asked about first.
       const answer = await skin.mayLoad();
       if (answer === 'save-as') skin.openSaveAs();
       if (answer !== 'load') return;
@@ -152,7 +152,7 @@
   const restOf = (entry: PickerEntry): RowRest => (openId === entry.id ? openAt : 0);
 
   /**
-   * A row's swipe (spec 3.10, 3.17 item 5): to the left opens its delete button, to the right
+   * A row's swipe: to the left opens its delete button, to the right
    * its rename button, a move back closes it; a vertical drag is the list's (`touch-action:
    * pan-y`). The skin's defaults do not move; the loaded profile renames but does not delete,
    * and says why when moved to the left.
@@ -242,7 +242,7 @@
   }
 
   /**
-   * The dialog's Rename (spec 3.17 item 5): a refused title says why and keeps the dialog, the
+   * The dialog's Rename: a refused title says why and keeps the dialog, the
    * title as it was closes it; otherwise Decaid renames the record, the list is read again and the
    * renamed row is selected and shown. The loaded profile is loaded again under its new title, so
    * the workflow, the machine and the 'loaded' tag agree.
@@ -298,7 +298,7 @@
         {@const offset = dragOffset(entry)}
         {@const open = openId === entry.id}
         <!-- The row's drags are its own, not the shell's page swipe (data-own-swipe), but for one
-             from the screen's left edge, which goes back (spec 3.17). -->
+             from the screen's left edge, which goes back. -->
         <li
           class="row"
           class:open
@@ -370,7 +370,7 @@
           <dd>{dose === undefined ? '–' : `${dose} g`}</dd>
         </div>
       </dl>
-      <!-- The modelled shot of its steps, without labels, its targets dotted under it (spec 3.16); an A-Flow pour's targets as far as its editor draws them. -->
+      <!-- The modelled shot of its steps, without labels, its targets dotted under it; an A-Flow pour's targets as far as its editor draws them. -->
       <div class="preview" data-testid="profile-preview">
         <StepPreview {profile} bare estimate lastStepSeconds={previewLastStepSeconds(selected)} />
       </div>

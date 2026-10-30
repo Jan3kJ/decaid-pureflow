@@ -3,12 +3,12 @@ import type { Profile } from '../src/api';
 import blooming from '../src/steps/fixtures/bundled-profiles.json' with { type: 'json' };
 import { mockGateway } from './mock-gateway';
 
-// The keyboard lies over the app (spec 3.9 item 10, acceptance 41), against a mocked gateway.
+// The keyboard lies over the app, against a mocked gateway.
 // Decaid's Android WebView is shrunk to the space above the keyboard (`adjustResize`); here the
 // page's height is shrunk the same way, from 1280 x 800 to 1280 x 450, with a text field
 // focused. The root font size and the app's height stay; the field's dialog or label lies above
 // the new height; with the focus gone and the height back, everything is where it was. The
-// real keyboard on the tablet is the founder's check (acceptance 42).
+// real keyboard on the tablet is checked by hand.
 
 const errors: string[] = [];
 const FULL = { width: 1280, height: 800 };

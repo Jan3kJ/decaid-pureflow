@@ -1,6 +1,6 @@
-// Types of Decaid's gateway API, v1, as far as version 1 of the skin uses it (spec 3.1, 3.4, 3.5).
+// Types of Decaid's gateway API, v1, as far as version 1 of the skin uses it.
 // Field names are from the release's rest_v1.yml and websocket_v1.yml (Decaid 0.8.8) and from
-// the responses of the running rig (research.md, section 8).
+// the responses of the running rig.
 
 // --- machine ---
 
@@ -30,7 +30,7 @@ export type MachineState =
 /**
  * A frame of `/ws/v1/machine/shotSettings` and the body of `POST /api/v1/machine/shotSettings`:
  * the settings the machine itself holds. `targetSteamDuration` is the steam timer the machine
- * runs; it may differ from the workflow's `steamSettings.duration` (research.md, section 16).
+ * runs; it may differ from the workflow's `steamSettings.duration`.
  */
 export interface ShotSettings {
   steamSetting: number;
@@ -54,8 +54,8 @@ export interface WaterLevels {
 }
 
 /**
- * The states the skin asks for (spec 3.1). Sleep is `sleeping`; the settings page's maintenance
- * asks for `cleaning`, `descaling` and `airPurge` (research.md 20.3).
+ * The states the skin asks for. Sleep is `sleeping`; the settings page's maintenance
+ * asks for `cleaning`, `descaling` and `airPurge`.
  */
 export type RequestedMachineState = 'idle' | 'espresso' | 'steam' | 'sleeping' | 'cleaning' | 'descaling' | 'airPurge';
 
@@ -403,7 +403,7 @@ export interface PaginatedShots {
 
 // --- settings, skin server ---
 
-/** Decaid's own settings (`ReaSettings`); the fields the skin reads or its settings page sets are named (research.md 20.3). */
+/** Decaid's own settings (`ReaSettings`); the fields the skin reads or its settings page sets are named. */
 export interface DecaidSettings {
   gatewayMode?: 'disabled' | 'full' | 'tracking';
   blockOnNoScale?: boolean;
@@ -440,7 +440,7 @@ export interface DecaidSettings {
 
 /** `GET /api/v1/machine/settings` (`De1SettingsResponse`): the machine's own settings. */
 export interface MachineSettings {
-  /** read as a boolean, written as 'enable' or 'disable' (research.md 20.4) */
+  /** read as a boolean, written as 'enable' or 'disable' */
   usb?: boolean;
   /** °C */
   fan?: number;
@@ -490,7 +490,7 @@ export interface DisplayState {
   /** 0-100, what was asked for; 100 is the brightness the system manages */
   requestedBrightness?: number;
   lowBatteryBrightnessActive?: boolean;
-  /** What this platform can do. Brightness is only set where `brightness` is true (spec 3.1). */
+  /** What this platform can do. Brightness is only set where `brightness` is true. */
   platformSupported?: { brightness?: boolean; wakeLock?: boolean };
 }
 
@@ -517,7 +517,7 @@ export interface WebUiSkin {
   reaMetadata?: { sourceUrl?: string | null; commitHash?: string | null } | null;
 }
 
-// --- plugins, presence, calibration, firmware, Decaid's update (research.md 20.3, S2c) ---
+// --- plugins, presence, calibration, firmware, Decaid's update ---
 
 /** `PluginSettingSchema`: one setting a plugin's manifest declares. */
 export interface PluginSettingSchema {
@@ -694,7 +694,7 @@ export interface AppUpdateState {
   error?: string | null;
 }
 
-// --- beans and grinders (research.md 29.3) ---
+// --- beans and grinders ---
 
 /** A coffee, an origin or a blend, in Decaid's catalogue. Fields the skin does not show are kept as Decaid holds them. */
 export interface CatalogueBean {

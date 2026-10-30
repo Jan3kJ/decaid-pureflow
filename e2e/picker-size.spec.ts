@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mockGateway, profile, record } from './mock-gateway';
 
-// The picker's graph keeps its size (spec 3.16 item 1): one square box at the panel's width for
+// The picker's graph keeps its size: one square box at the panel's width for
 // every profile, the description the buffer under it that scrolls; title, author, the values,
 // the graph, the caption line and load stay where they are while the list is paged through. On
 // a lower display the graph gives way, the same for every profile.

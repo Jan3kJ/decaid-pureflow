@@ -4,7 +4,7 @@ import { LIFT_MARGIN, keptSize, liftFor } from './viewport';
 const FULL = { width: 1280, height: 800 };
 const KEYBOARD = { width: 1280, height: 450 };
 
-describe('keptSize (spec 3.9, item 10)', () => {
+describe('keptSize', () => {
   it('takes the first size and every size while nobody types', () => {
     expect(keptSize(null, FULL, false)).toEqual(FULL);
     expect(keptSize(null, KEYBOARD, true)).toEqual(KEYBOARD);

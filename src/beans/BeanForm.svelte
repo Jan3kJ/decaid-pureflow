@@ -1,8 +1,8 @@
 <script lang="ts">
-  // A bean's form on the beans screen (research.md 29.6): name and roaster (required), the
+  // A bean's form on the beans screen: name and roaster (required), the
   // current bag's roast date and notes. A new bean gets its first bag with it; an edit sends
   // only what changed. Archive, restore and a new bag are the screen's (it asks first).
-  // A photo of the bag (spec 3.9 item 20) is taken with the live camera and stored when the bean
+  // A photo of the bag is taken with the live camera and stored when the bean
   // is saved.
   import { onMount } from 'svelte';
   import type { BeanBatch, CatalogueBean } from '../api';

@@ -14,7 +14,7 @@ interface Call {
 }
 
 /**
- * A gateway as the rig's Decaid 0.8.8 answers (research.md 20.4): writes are merged, the
+ * A gateway as the rig's Decaid 0.8.8 answers: writes are merged, the
  * simulated machine does not keep `tankTemp`, a changed `rinseData` reaches the machine's flush.
  */
 function fakeGateway() {
@@ -174,7 +174,7 @@ describe('writeField', () => {
     const gateway = await opened();
     const fan = await writeField(gateway.client, gateway.values, field('fan-threshold'), 50);
     expect(rawValue(fan, field('fan-threshold'))).toBe(50);
-    // The simulated machine does not keep the tank temperature (research.md 20.4).
+    // The simulated machine does not keep the tank temperature.
     const tank = await writeField(gateway.client, fan, field('tank-temperature'), 30);
     expect(rawValue(tank, field('tank-temperature'))).toBe(20);
     expect(gateway.calls.filter((call) => call.method === 'GET').map((call) => call.path)).toEqual([
@@ -205,7 +205,7 @@ describe('writeField', () => {
     expect(gateway.state.machine).toMatchObject({ flushFlow: 4.5, flushTimeout: 14 });
   });
 
-  it("holds the stored hot water flow of 10 to the DE1's 8 ml/s when another hot water value changes (spec 3.9)", async () => {
+  it("holds the stored hot water flow of 10 to the DE1's 8 ml/s when another hot water value changes", async () => {
     const gateway = await opened();
     await writeField(gateway.client, gateway.values, field('hot-water-time'), 40);
     const workflow = gateway.writes().filter((write) => write.path === '/api/v1/workflow');
@@ -239,7 +239,7 @@ describe('writeField', () => {
     );
   });
 
-  it("moves Streamline's remembered value only when Streamline has one (research.md 16)", async () => {
+  it("moves Streamline's remembered value only when Streamline has one", async () => {
     const gateway = await opened();
     await writeField(gateway.client, gateway.values, field('flush-duration'), 12);
     expect(gateway.state.kv[`${STREAMLINE_NAMESPACE}/last-flush-duration`]).toBeUndefined();

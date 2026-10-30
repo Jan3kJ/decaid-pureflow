@@ -3,9 +3,9 @@ import type { Profile } from '../src/api';
 import blooming from '../src/steps/fixtures/bundled-profiles.json' with { type: 'json' };
 import { mockGateway } from './mock-gateway';
 
-// Touch targets (spec 3.18 item 8, acceptance 133): every visible, enabled button and
+// Touch targets: every visible, enabled button and
 // `[role=button]` on the mock's screens is at least MIN_REM on its short side, in CSS px at the
-// page's root font size. The minimum is kept here alone; spec 8 asks whether it should be more.
+// page's root font size. The minimum is kept here alone.
 const MIN_REM = 3;
 
 // The one exception: the history handle is a narrow strip at the edge, and an edge swipe as well.

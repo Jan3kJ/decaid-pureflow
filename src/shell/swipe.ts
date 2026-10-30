@@ -1,4 +1,4 @@
-// The skin's one horizontal gesture (spec 3.1, 3.7, 3.8, 3.10, 3.14): hot water, home and steam
+// The skin's one horizontal gesture: hot water, home and steam
 // are one row of pages, and a swipe moves to the neighbour; on home a swipe to the right that
 // starts in the left fifth opens the shot history instead, and one to the left closes it; on every
 // other screen a swipe to the right is the way back, to where it was opened from: no screen has a

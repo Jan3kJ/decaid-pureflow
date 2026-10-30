@@ -9,13 +9,13 @@ import { paramsMetadata, splitNotes, workflowProfile } from '../src/editor/stora
 import light from '../src/aflow/defaults/default-light.json' with { type: 'json' };
 import { selectPhase } from '../e2e/touch';
 
-// M1 (docs/research.md section 18): a profile record's `metadata` on the rig, the way the
-// skin's A-Flow values are to travel in it (spec 3.6). It holds through GET, PUT, the lineage,
+// A profile record's `metadata` on the rig, the way the
+// skin's A-Flow values are to travel in it. It holds through GET, PUT, the lineage,
 // the profile export and import, and Decaid's data export and import. The data import sends an
 // archive with this test's own profile only, so the rig's other data is not touched. Every
 // test purges the profiles it created and puts the workflow back as it was.
 //
-// M2 (acceptance 14): the skin stores the A-Flow values in `metadata`, none in `notes`; a saved
+// The skin stores the A-Flow values in `metadata`, none in `notes`; a saved
 // profile re-opens with every value, the 2nd fill's while it is off too, also after the data
 // export and import (cut down as above); a profile of version 1 with the values in its notes
 // opens and is moved on its next save.
@@ -73,7 +73,7 @@ async function profileIds(): Promise<string[]> {
 /** A temperature no stored profile has, so that the test's records are its own. */
 const BASE_TEMPERATURE = 80 + (Date.now() % 1000) / 100;
 
-/** A profile with steps no other record has: the id is a hash of the steps (research.md 11.1). */
+/** A profile with steps no other record has: the id is a hash of the steps. */
 function testProfile(shift = 0) {
   const profile = buildProfile(light, { title: 'M1 metadata check', author: 'pureflow rig' }, false);
   const temperature = BASE_TEMPERATURE + shift;
@@ -208,7 +208,7 @@ test('metadata takes a large object and refuses one that is not an object', asyn
   }
 });
 
-// --- M2: the skin's A-Flow values in metadata (acceptance 14) ---
+// --- The skin's A-Flow values in metadata ---
 
 const LIGHT = { title: 'A-Flow / default-light', author: 'Janek' };
 const pressed = (page: Page) => page.getByTestId('editor-profile');

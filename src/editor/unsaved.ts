@@ -1,5 +1,5 @@
-// Whether the machine holds unsaved edits from an editor (spec section 8, 'Loading from the
-// editor'): the one place that decides it, for both editors (research.md 17.7). It is read
+// Whether the machine holds unsaved edits from an editor:
+// the one place that decides it, for both editors. It is read
 // from Decaid alone, the workflow's profile against the stored profiles, so it is the same
 // after a page reload, and a profile that another app loaded or saved meanwhile is judged as
 // it is now; a marker in the skin would not know.
@@ -15,7 +15,7 @@ export interface Unsaved {
   profile: Profile;
 }
 
-/** What a record's id is made of: its steps and its target weight (research.md 9.2). */
+/** What a record's id is made of: its steps and its target weight. */
 const sameContent = (a: Profile, b: Profile) => sameSteps(a.steps, b.steps) && (a.target_weight ?? 0) === (b.target_weight ?? 0);
 
 /**

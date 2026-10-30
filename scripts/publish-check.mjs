@@ -1,10 +1,10 @@
-// `node scripts/publish-check.mjs [--history] [root]`: nothing private is in the product repository
-// (spec 3.13 item 3, 3.15 step 8). It fails on a Windows path, an e-mail address other than the
+// `node scripts/publish-check.mjs [--history] [root]`: nothing private is in the product repository.
+// It fails on a Windows path, an e-mail address other than the
 // noreply ones, a MAC address that does not start with AA:BB:CC:, the name of the messenger the
 // team's runner talks through, and a token pattern. Without the flag it reads the tracked files of
 // the working tree (CI, on the tip); with `--history` it reads every blob of `git rev-list --all`,
 // every commit message, author and committer, and the annotated tags. Binary files are skipped.
-// With `--cut=<dir>` (the team repository, before the cut of spec 3.15) it reads the tracked files
+// With `--cut=<dir>` (the team repository, before the cut) it reads the tracked files
 // as the cut makes them: only the paths of `<dir>/paths.txt`, rewritten by the rules of
 // `<dir>/text.txt` (git filter-repo's formats). Exits 1 and lists what it found.
 import { spawn, spawnSync } from 'node:child_process';
@@ -16,7 +16,7 @@ const history = args.includes('--history');
 const cut = args.find((arg) => arg.startsWith('--cut='))?.slice('--cut='.length);
 const root = resolve(args.find((arg) => !arg.startsWith('--')) ?? '.');
 
-/** The addresses a commit may carry: the founder's GitHub noreply one and the co-author line's. */
+/** The addresses a commit may carry: the owner's GitHub noreply one and the co-author line's. */
 const ALLOWED_ADDRESSES = new Set(['52261469+jan3kj@users.noreply.github.com', 'noreply@anthropic.com']);
 
 // Some words are written in parts so that this file passes its own check.

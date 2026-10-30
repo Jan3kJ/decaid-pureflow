@@ -1,5 +1,5 @@
 // Where the gateway is. Decaid serves the skin from the same host as the gateway, on another
-// port (spec 4.1), so the host is the page's own and the port is 8080.
+// port, so the host is the page's own and the port is 8080.
 
 export const GATEWAY_PORT = 8080;
 

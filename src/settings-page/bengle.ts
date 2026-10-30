@@ -5,7 +5,7 @@
 // Copyright (C) 2025-2026 Decent Espresso
 // Licensed under the GNU General Public License v3.0 or later; used here under GPL-3.0.
 //
-// The Bengle pages, the manual and the feedback form (research.md 31), without UI: what shows
+// The Bengle pages, the manual and the feedback form, without UI: what shows
 // the pages, the clamps and the colour conversion, and the wording of the calibration.
 import type { FeedbackRequest, ScaleCalibrationState } from '../api';
 

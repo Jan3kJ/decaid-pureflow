@@ -1,7 +1,7 @@
-// The shot history's logic (spec 3.5): the gateway's shot records in, the entries of the
+// The shot history's logic: the gateway's shot records in, the entries of the
 // overlay out, and what one entry writes back to the workflow. Pure, except `restoreEntry`;
 // the shots themselves are held by `ShotCache` (shots.svelte.ts). With Decaid's bean and grinder
-// catalogue (research.md 29.6) a shot's bean is the catalogue's when its batch or its name and
+// catalogue a shot's bean is the catalogue's when its batch or its name and
 // roaster are known there, and the history is filtered by a bean and a grinder.
 import type {
   BeanBatch,
@@ -126,9 +126,9 @@ export function grinderOf(shot: ShotRecordSummary, catalogue: CatalogueView = NO
 /**
  * What makes two shots one entry: the profile's title and the bean.
  *
- * The profile is its title, not its id. A shot record holds a copy of the profile and no id
- * (research.md 8.4), and the id is a hash of the steps and the target weight (research.md
- * 11.1): every edit of a profile in the editor would start a new entry, although it is the
+ * The profile is its title, not its id. A shot record holds a copy of the profile and no id,
+ * and the id is a hash of the steps and the target weight:
+ * every edit of a profile in the editor would start a new entry, although it is the
  * same profile to the user. The title is what the user chose and what the list shows.
  *
  * The bean is the catalogue's bean (`shotBean`) where there is one, so its shots stay one entry
@@ -181,7 +181,7 @@ export function beanLabel(bean: Bean | null): string {
 }
 
 /**
- * A bean in two lines, as home's bean button shows it (spec 3.18 item 5): its name, and its roaster
+ * A bean in two lines, as home's bean button shows it: its name, and its roaster
  * as the caption. A bean without a name is `beanLabel` alone, without a caption (null).
  */
 export function beanLines(bean: Bean | null): { name: string; caption: string | null } {
@@ -197,7 +197,7 @@ export function grinderLabel(entry: Pick<HistoryEntry, 'grinder' | 'grinderSetti
 
 /**
  * The bean and the grinder of a shot as a patch of the workflow's context. What the shot did
- * not have is sent as `null`, which clears it in the workflow (research.md, section 14):
+ * not have is sent as `null`, which clears it in the workflow:
  * the current bean must not stay under a profile it was never pulled with.
  */
 export function beanAndGrinder(shot: ShotRecordSummary): WorkflowContextPatch {
@@ -217,8 +217,8 @@ export function beanAndGrinder(shot: ShotRecordSummary): WorkflowContextPatch {
  * measurement from the first one in which water moved. A measurement's `machine` is a
  * snapshot frame with its substate, so the heating before the water is cut as in the live
  * shot (`waterMoves`). A record in which no measurement says that water moved is shown whole.
- * It ends where the live shot ends (`shotOver`, spec 3.8): Decaid's record of the simulated
- * shot already stops before that (research.md 23), and the cut keeps a record with a tail
+ * It ends where the live shot ends (`shotOver`): Decaid's record of the simulated
+ * shot already stops before that, and the cut keeps a record with a tail
  * equal to the live graph.
  */
 export function seriesOf(record: Pick<ShotRecord, 'measurements'>): ShotSeries {

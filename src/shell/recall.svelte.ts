@@ -1,4 +1,4 @@
-// The shot history's part of the skin (spec 3.5, 3.8): its overlay, the restore of an entry
+// The shot history's part of the skin: its overlay, the restore of an entry
 // with the graph of its latest shot, the newest shot record home shows when it has no shot of
 // its own, and the last shot's length per profile, where the next shot's time axis starts. A part of `Skin`, which hands its history fields to it; the
 // workflow, the notice and the warning before a load stay the skin's (`RecallHost`).
@@ -32,7 +32,7 @@ export interface RecallHost {
 }
 
 export class Recall {
-  /** the shot history's overlay is open (spec 3.1); only home shows it */
+  /** the shot history's overlay is open; only home shows it */
   historyOpen = $state(false);
   /** the history's filter by bean and grinder; it lasts for the session */
   historyFilter: HistoryFilter = $state.raw(NO_FILTER);
@@ -47,7 +47,7 @@ export class Recall {
   private readonly host: RecallHost;
 
   /**
-   * s, where the running shot graph's time axis starts (spec 3.8): the last shot with the
+   * s, where the running shot graph's time axis starts: the last shot with the
    * workflow's profile title, else the profile's estimate, else 30 s, rounded up to 10 s.
    */
   readonly expectedSeconds = $derived.by(() => {
@@ -114,7 +114,7 @@ export class Recall {
   }
 
   /**
-   * An entry of the shot history was tapped (spec 3.5): the overlay closes, the entry's
+   * An entry of the shot history was tapped: the overlay closes, the entry's
    * profile, bean and grinder setting become the current ones, and home shows the graph of
    * the last shot made with it. Only its record (`ShotCache.record`) has the measurements.
    */

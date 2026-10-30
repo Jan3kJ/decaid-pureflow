@@ -62,7 +62,7 @@ describe('the steam run', () => {
   });
 });
 
-// The founder's review of 2026-10-16 (spec 3.7, item 17): on the real DE1 the graph went on
+// On the real DE1 the graph went on
 // after steam and the last steam time was longer than the steam. The machine stays in state
 // steam after the steam itself: `pouringDone` as it ends, `puffing` while it purges, and
 // `pausedSteam` until the second tap of the two-tap purge (`MachineSubstate` in rest_v1.yml).
@@ -88,7 +88,7 @@ describe('the steam run after the steam', () => {
   });
 });
 
-// The founder's review of 2026-10-22 (spec 3.12, item 5): the clock started with the pump
+// Seen on the real DE1: the clock started with the pump
 // priming (`preparingForShot`) and ended with the purge, 32 s for a timer of 26 s. The run is
 // now the machine's timer: from the first `pouring` frame to the last at 0.5 ml/s or more.
 describe('the steam run is the machine timer', () => {

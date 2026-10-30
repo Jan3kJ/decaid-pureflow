@@ -1,4 +1,4 @@
-// The app keeps its size when the keyboard opens (spec 3.9, item 10). Decaid's Android activity
+// The app keeps its size when the keyboard opens. Decaid's Android activity
 // resizes its WebView to the space above the keyboard (`adjustResize`), and the skin sizes
 // everything by the viewport, so the whole app was drawn small in the upper half. Here the
 // viewport's size is stored in px on `:root` (`--app-w`, `--app-h`), at the start and on every

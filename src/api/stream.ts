@@ -48,7 +48,7 @@ export const DEFAULT_BACKOFF: Backoff = { initialMs: 1000, factor: 2, maxMs: 300
 
 /**
  * ms: how long a stream the gateway closed with an error is tried again, with the backoff,
- * before it stops in `failed` (founder, 2026-10-15).
+ * before it stops in `failed`.
  */
 export const REFUSED_RETRY_MS = 30000;
 
@@ -80,7 +80,7 @@ export interface SnapshotStreamOptions<Frame> {
  * machine is away and reports that in the stream, for the scale as `{"status":"disconnected"}`.
  * When the gateway sends an error frame and then closes the socket, it refused the stream:
  * the stream tries again with the same growing delay for `refusedRetryMs` from the first
- * refusal (founder, 2026-10-15), and stops in the state `failed` when the gateway still
+ * refusal, and stops in the state `failed` when the gateway still
  * refuses it then. A frame that is not an error ends the refusal. `connect()` starts a
  * failed stream again, with another `refusedRetryMs`.
  */

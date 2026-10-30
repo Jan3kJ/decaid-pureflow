@@ -3,8 +3,8 @@ import { mockGateway, type MockGateway } from './mock-gateway';
 import { pickDate } from './date-picker';
 import { saveAnswered, slowSave } from './catalogue-save';
 
-// The bean and grinder catalogue and the pick for the next shot (spec 3.9 item 19, acceptance
-// 52's first half, research.md 29.8) against the mocked gateway: home's menu opens the screen;
+// The bean and grinder catalogue and the pick for the next shot
+// against the mocked gateway: home's menu opens the screen;
 // a bean and a grinder are added, edited, archived after a confirm, listed again with 'show
 // archived' and restored; home's chip opens the pick, which writes bean, grinder and setting in
 // one `PUT /api/v1/workflow`. The same against the running gateway: e2e-rig/beans.spec.ts.
@@ -257,14 +257,14 @@ test("home's chip opens the pick: bean, grinder and setting go out in one PUT an
   gateway.grinders = [
     { id: 'g1', model: 'Niche Zero', archived: false, settingType: 'numeric', settingSmallStep: 0.5, createdAt: at, updatedAt: at },
   ];
-  // DYE2's keys, as on the rig (research.md 29.4): the pick leaves them alone.
+  // DYE2's keys, as on the rig: the pick leaves them alone.
   gateway.workflow.context = { ...gateway.workflow.context, extras: { basketId: null, rpm: null } };
   await page.goto('/');
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
   await expect(page.getByTestId('next-bean')).toHaveText('no bean');
   await expect(page.getByTestId('next-setting')).toHaveText('5.2');
 
-  // The pick is under the profile button at the top of home's right column (spec 3.11).
+  // The pick is under the profile button at the top of home's right column.
   const [profiles, pick] = await Promise.all(
     ['open-profiles', 'open-pick'].map(async (id) => (await page.getByTestId(id).boundingBox())!),
   );

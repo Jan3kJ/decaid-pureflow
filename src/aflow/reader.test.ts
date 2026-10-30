@@ -11,7 +11,7 @@ import type { AFlowParams } from './types';
 import { paramRanges, validateParams } from './validate';
 
 // The fixtures: rig-plugin-1.4.json holds the five A-Flow profiles of the rig (Decaid 0.8.8),
-// as `GET /api/v1/profiles` returned them on 2026-10-20: the plugin's 1.4 files, as Decaid
+// as `GET /api/v1/profiles` returned them: the plugin's 1.4 files, as Decaid
 // converted them, with its 15 s Pause. plugin-1.2.json holds the same five files as plugin 1.2
 // wrote them (Jan3kJ/A_Flow at 5cbdbd59, `profiles/`), six steps, put into the gateway's form
 // as Decaid converts a file: the pump's own target, `exit` only where `exit_if` is 1.

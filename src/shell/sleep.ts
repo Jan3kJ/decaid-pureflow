@@ -1,4 +1,4 @@
-// Who asked for the machine's sleep (spec 3.10 'Home menu: two sleeps'). The menu's 'Machine
+// Who asked for the machine's sleep. The menu's 'Machine
 // sleep' puts only the machine to sleep: the app stays awake, without the Asleep screen and
 // without dimming. 'Machine and app sleep', and every sleep the skin did not ask for (Decaid's
 // timeout, presence, the machine's button), shows the Asleep screen. Neither touches Decaid's

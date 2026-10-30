@@ -5,8 +5,8 @@ import { isWrite, type RigWorkflow } from './gateway';
 import { back } from '../e2e/touch';
 import { titleLines } from '../src/shell/profiles';
 
-// One of Decaid's own A-Flow profiles opens in the A-Flow 3.0 editor (spec 3.9, U2, acceptance
-// item 43), against the rig: Decaid's bundled 'A-Flow / default-very-dark', the plugin's 1.4
+// One of Decaid's own A-Flow profiles opens in the A-Flow 3.0 editor against
+// the rig: Decaid's bundled 'A-Flow / default-very-dark', the plugin's 1.4
 // file with ramp down on. The picker loads it as it is; the editor reads its steps, names what
 // it drops in the status line and offers 'save', which the test does not press. Leaving without
 // an edit loads nothing. The test stores nothing and puts the workflow back as it was.

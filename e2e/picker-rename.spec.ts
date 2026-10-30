@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { mockGateway, profile, record } from './mock-gateway';
 import { swipe } from './touch';
 
-// The picker's rename (spec 3.17 item 5, acceptance 118), against a mocked gateway: a move of a
+// The picker's rename, against a mocked gateway: a move of a
 // stored profile's row to the right shows 'rename' at its left end, which opens a dialog on the
 // title; Rename sends `PUT /api/v1/profiles/{id}` with the new title and no metadata. An empty
 // title, another profile's title and the same title send nothing; the skin's defaults do not

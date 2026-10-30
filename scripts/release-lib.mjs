@@ -1,4 +1,4 @@
-// The pure parts of the release script (spec 3.15, P7): the trailers of a commit message, the
+// The pure parts of the release script: the trailers of a commit message, the
 // entries and the bump they give, the version, the CHANGELOG section and the version writes.
 // No file, git or network access here; scripts/release.mjs does that.
 
@@ -6,7 +6,7 @@
 export const KINDS = ['added', 'changed', 'fixed'];
 const HEADINGS = { added: 'Added', changed: 'Changed', fixed: 'Fixed' };
 
-/** What the script leaves to people (spec 3.15 step 9), printed at the end of every run. */
+/** What the script leaves to people, printed at the end of every run. */
 export const NOT_IN_SCRIPT = [
   "Decaid's install by URL: install the release's ZIP from its URL in Decaid's skin selector and open the skin (only once the repository is public; while it is private Decaid cannot fetch the URL)",
   "the founder's cold read of the user pages on the tablet",
@@ -50,7 +50,7 @@ export function parseLog(output) {
     });
 }
 
-/** A subject as an entry: without a leading task id ('r25-picker-edit: '), a capital, a full stop. */
+/** A subject as an entry: without a leading task id and its colon, a capital, a full stop. */
 export function entryText(subject) {
   const text = subject.trim().replace(/^[a-z][a-z0-9-]*:\s+/, '');
   const capital = text.charAt(0).toUpperCase() + text.slice(1);

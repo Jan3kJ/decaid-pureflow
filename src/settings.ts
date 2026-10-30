@@ -1,7 +1,7 @@
-// The skin's own settings, one object under one localStorage key (spec 4.1: sessionStorage
+// The skin's own settings, one object under one localStorage key (sessionStorage
 // does not survive the WebView). This is the only store of settings: the skin holds one copy
 // of it (`Skin.settings`), the settings page changes it, and every screen reads it there.
-// A copy in Decaid's KV store is its backup (settings-backup.ts, founder, 2026-10-14).
+// A copy in Decaid's KV store is its backup (settings-backup.ts).
 import { DEFAULT_PROFILES } from './aflow/defaults';
 import { DOSE_MAX, MAX_FLOW_RANGE } from './aflow/validate';
 import { DISPLAY_SIZES, LINE_WIDTHS, type DisplayChoice } from './display';
@@ -9,16 +9,16 @@ import { isOnTemperature } from './shell/steam-heater';
 import { TANK_UNITS, type TankUnit } from './shell/tank';
 
 export interface Settings {
-  /** the editor offers the generated profile steps under the graph; its panel opens closed (founder, 2026-10-13) */
+  /** the editor offers the generated profile steps under the graph; its panel opens closed */
   showProfileSteps: boolean;
   /**
-   * 'first-step workaround' (spec 3.2): a profile the editor generates starts with the Pre
+   * 'first-step workaround': a profile the editor generates starts with the Pre
    * Fill step. This is the one place it is read from; the settings page shows it.
    */
   firstStepWorkaround: boolean;
   /** the shot graph shows its legend under it: on home, on the espresso screen and for a shot of the history */
   showGraphLegend: boolean;
-  /** home shows the per-phase values after a shot (spec 3.10, 3.11); off, the graph takes their room */
+  /** home shows the per-phase values after a shot; off, the graph takes their room */
   showShotValues: boolean;
   /** Skin > Display: the size of everything, a factor on the type scale (`DISPLAY_SIZES`) */
   displaySize: number;
@@ -27,25 +27,25 @@ export interface Settings {
   /** Quick Adjustments > Water Tank: the state line shows the tank in ml (Streamline's table) or in the machine's mm */
   tankUnit: TankUnit;
   /**
-   * The editor's row of profiles to start from (founder, 2026-10-13): five slots, each the
+   * The editor's row of profiles to start from: five slots, each the
    * title of an A-Flow 3.0 profile or null for an empty one. A title, not an id: the id is a
-   * hash of the steps and changes with every save (research.md 11), the title stays, as in
+   * hash of the steps and changes with every save, the title stays, as in
    * the shot history.
    */
   startProfiles: (string | null)[];
   /**
-   * ml/s, the highest pump flow the A-Flow editor offers (founder, 2026-10-15: newer machines
+   * ml/s, the highest pump flow the A-Flow editor offers (newer machines
    * drive more than 8). Read through `machineLimits`, which holds it in `MAX_FLOW_RANGE`.
    */
   maxFlow: number;
   /**
-   * g, the dose a shot takes when neither its profile nor the user set one (founder,
-   * 2026-10-15). Written to the workflow by `doseToSet` (src/shell/profiles.ts).
+   * g, the dose a shot takes when neither its profile nor the user set one.
+   * Written to the workflow by `doseToSet` (src/shell/profiles.ts).
    */
   defaultDose: number;
-  /** the category Steam (spec 3.4): what the steam page calculates with */
+  /** the category Steam: what the steam page calculates with */
   steam: SteamSettings;
-  /** the category Hot water (spec 3.7): what the hot water page offers */
+  /** the category Hot water: what the hot water page offers */
   hotWater: HotWaterSettings;
 }
 
@@ -57,7 +57,7 @@ export interface HotWaterSettings {
   ratios: number[];
 }
 
-/** The founder's, 2026-10-16: 1:2, 1:2.5 and 1:3. */
+/** 1:2, 1:2.5 and 1:3. */
 export const DEFAULT_HOT_WATER_SETTINGS: HotWaterSettings = { ratios: [2, 2.5, 3] };
 
 /** what a ratio may be, one decimal: 1:0.5 to 1:10 */
@@ -77,18 +77,18 @@ export interface SteamSettings {
   /** s, the three timer chips */
   favourites: number[];
   /**
-   * s, the three adjust buttons above 'set timer' (spec 3.7): a selected one is added to the
+   * s, the three adjust buttons above 'set timer': a selected one is added to the
    * calculated timer or to a favourite. The one list of numbers that may be negative.
    */
   adjustments: number[];
   /**
-   * °C, what the menu's steam switch turns the steam heater on with again (spec 3.7): the
+   * °C, what the menu's steam switch turns the steam heater on with again: the
    * workflow's temperature when it was switched off; 135-165, not on the settings page.
    */
   heaterTemperature: number;
 }
 
-/** The founder's values of 2026-10-12; the favourites are the sketch's. */
+/** The steam defaults and favourites. */
 export const DEFAULT_STEAM_SETTINGS: SteamSettings = {
   mugSmall: 150,
   mugMedium: 225,
@@ -107,7 +107,7 @@ export const ADJUST_RANGE = { min: -60, max: 60 };
 /** The editor's row holds up to five profiles. */
 export const START_SLOTS = 5;
 
-/** The five A-Flow 3.0 defaults in their order (spec 3.2): the row as it was before it could be chosen. */
+/** The five A-Flow 3.0 defaults in their order: the row as it was before it could be chosen. */
 export const DEFAULT_START_PROFILES: (string | null)[] = DEFAULT_PROFILES.map((entry) => entry.title);
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -175,7 +175,7 @@ export function loadSettings(store: Store = localStorage): Settings {
 
 /**
  * Settings from any value, field by field over the defaults: what localStorage holds and what
- * a backup holds (founder, 2026-10-14) pass the same checks.
+ * a backup holds pass the same checks.
  */
 export function readSettings(stored: unknown): Settings {
   const settings = merged(DEFAULT_SETTINGS, stored);
@@ -264,7 +264,7 @@ export interface SteamField {
   unit: 'g' | 's';
   min: number;
   max: number;
-  /** grams take one decimal, seconds are whole: the machine's timer is (research.md 8.3) */
+  /** grams take one decimal, seconds are whole: the machine's timer is */
   decimals: boolean;
 }
 
@@ -299,14 +299,14 @@ const amount = (index: number): SteamField => ({
   decimals: false,
 });
 
-/** The category Steam of the settings page, in the groups it shows (spec 3.4, 3.7). */
+/** The category Steam of the settings page, in the groups it shows. */
 export const STEAM_FIELDS: { title: string; hint: string; fields: SteamField[] }[] = [
   {
     title: 'mugs',
     hint: 'the weight of each empty mug',
     fields: [grams('mug-small', 's', 'mugSmall', 0), grams('mug-medium', 'm', 'mugMedium', 0), grams('mug-large', 'l', 'mugLarge', 0)],
   },
-  // One row with the milk of one drink, so the adjust buttons fit the page (spec 3.7).
+  // One row with the milk of one drink, so the adjust buttons fit the page.
   {
     title: 'calibration',
     hint: 'this many seconds steam this much milk; one drink is what the mug detection steps by',
@@ -352,7 +352,7 @@ export interface ProfileField {
   max: number;
 }
 
-/** The category Profile's numbers, one decimal each (founder, 2026-10-15). */
+/** The category Profile's numbers, one decimal each. */
 export const PROFILE_FIELDS: ProfileField[] = [
   { id: 'max-flow', label: 'max flow', key: 'maxFlow', unit: 'ml/s', ...MAX_FLOW_RANGE },
   // The editor's dose range from 5 g up: a dose below that is no shot.

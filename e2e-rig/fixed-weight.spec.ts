@@ -3,7 +3,7 @@ import type { MachineSnapshot, ProfileRecord } from '../src/api';
 import type { RigWorkflow } from './gateway';
 import { IDLE } from './idle';
 
-// Z9 (spec 3.14 item 9, acceptance 100) against the rig: a simulated shot's weight on home
+// Against the rig: a simulated shot's weight on home
 // settles for 15 s after the shot and is then fixed; hot water, which the mock scale weighs
 // after Decaid tared it, changes neither the right column's weight nor the graph, while the
 // state line follows the scale. The test logs what the mock scale reads in the 20 s after the

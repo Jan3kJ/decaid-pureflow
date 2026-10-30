@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { FirmwareCatalog } from '../api';
 import { appUpdateText, progressText, summarize } from './firmware';
 
-/** As the rig's Decaid 0.8.8 answered with the simulated DE1Pro (build 1337), 2026-10-18. */
+/** As the rig's Decaid 0.8.8 answered with the simulated DE1Pro (build 1337). */
 const RIG: FirmwareCatalog = {
   artifacts: [
     { id: 'de1-1352', build: 1352, versionLabel: '1352', channel: 'stable', eligibility: { status: 'applicable', reasons: [] } },
@@ -14,7 +14,7 @@ const RIG: FirmwareCatalog = {
   operation: { state: 'idle' },
 };
 
-describe('the firmware status (research.md 20.10 S2c)', () => {
+describe('the firmware status', () => {
   it('names the recommended build when an update is available', () => {
     const summary = summarize(RIG);
     expect([summary.status, summary.model, summary.installedBuild, summary.latest?.id, summary.operation]).toEqual([

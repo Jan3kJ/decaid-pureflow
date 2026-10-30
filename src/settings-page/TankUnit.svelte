@@ -1,5 +1,5 @@
 <script lang="ts">
-  // Quick Adjustments > Water Tank's own row of the skin (spec 3.17 item 2): the unit the state
+  // Quick Adjustments > Water Tank's own row of the skin: the unit the state
   // line shows the tank in. It is the skin's setting (`tankUnit` in src/settings.ts, and so in its
   // KV backup), not the machine's, so it is written at once and never read from the gateway.
   import type { Skin } from '../shell/skin.svelte';

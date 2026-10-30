@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { mockGateway, profile, type MockGateway } from './mock-gateway';
 import { toPage } from './touch';
 
-// The pictures of the user documentation (spec 3.13, 'User documentation: plan'; acceptance 83):
+// The pictures of the user documentation:
 // `npm run screenshots` writes the eight into docs/user/img/, on the mock gateway at the design
 // target. Every name in them is invented here: no real bean, roaster, device or address.
 

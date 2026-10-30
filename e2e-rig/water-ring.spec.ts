@@ -3,7 +3,7 @@ import type { MachineSnapshot } from '../src/api';
 import { IDLE } from './idle';
 import { toPage } from '../e2e/touch';
 
-// The countdown ring on every screen against the rig (W2, Z8, spec 3.10, 3.14): hot water is
+// The countdown ring on every screen against the rig: hot water is
 // started through the API, as at the machine; home shows the large ring over its graph, the steam
 // page the same ring over its graph, and a tap on its stop stops the hot water. Nothing is changed in the
 // workflow; any shot or steam record the run leaves is deleted.

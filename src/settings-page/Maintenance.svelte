@@ -6,7 +6,7 @@
   Licensed under the GNU General Public License v3.0 or later; used here under GPL-3.0.
 -->
 <script lang="ts">
-  // One maintenance procedure (research.md 20.3, 20.10 S2b): its instructions, Start with a
+  // One maintenance procedure: its instructions, Start with a
   // confirm, and Cancel while it runs; the steps the machine reports. It needs only the skin
   // and the procedure, so it can be opened on its own as well as in the settings page.
   import { onDestroy, onMount } from 'svelte';
@@ -156,7 +156,7 @@
       : caption(progress, procedure),
   );
   const active = $derived(isActive(progress) || cooling !== null);
-  // A clean uses about 300 ml and flushes it into the drip tray (spec 3.8 'Menu: clean'); the
+  // A clean uses about 300 ml and flushes it into the drip tray; the
   // warning does not stop Start.
   const water = $derived(procedure.id === 'clean' ? cleanWater(skin.link === 'machine' ? skin.water : null) : null);
 </script>

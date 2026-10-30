@@ -1,4 +1,4 @@
-// The state line's temperatures, filtered (spec 3.12): the raw frames jitter across a rounding
+// The state line's temperatures, filtered: the raw frames jitter across a rounding
 // border, so the group and steam values shown are an exponential moving average of them. Only
 // the display reads it; graphs, shot records and writes to the machine keep the raw frames.
 

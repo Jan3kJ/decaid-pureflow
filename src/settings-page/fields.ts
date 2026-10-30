@@ -4,7 +4,7 @@
 // Copyright (C) 2025-2026 Decent Espresso
 // Licensed under the GNU General Public License v3.0 or later; used here under GPL-3.0.
 //
-// Every gateway setting of the settings page (spec 3.7 'Settings', research.md 20.3): where it
+// Every gateway setting of the settings page: where it
 // is read and written, its range and its wording. One definition per setting: the page and the
 // tests read them here. Streamline's ranges and labels, not its code. No UI.
 import type { AdvancedSettings, DecaidInfo } from '../api';
@@ -39,7 +39,7 @@ interface Common {
   source: Source;
   /** the field in the source's object */
   key: string;
-  /** asked before a write: what it does (research.md 20.9) */
+  /** asked before a write: what it does */
   confirm?: string;
 }
 
@@ -88,7 +88,7 @@ export type Field = NumberField | ChoiceField | SwitchField | TimeField | InfoFi
 
 const number = (field: Omit<NumberField, 'kind'>): NumberField => ({ kind: 'number', ...field });
 
-/** A value of the hot water page (R5), on this page too: one range for both (research.md 20.9). */
+/** A value of the hot water page, on this page too: one range for both. */
 function hotWater(key: HotWaterField['key'], label: string, hint: string): NumberField {
   const field = HOT_WATER_FIELDS.find((entry) => entry.key === key)!;
   return number({
@@ -235,9 +235,9 @@ export const WATER_TANK: Field[] = [
 ];
 
 /**
- * The flush (founder, 2026-10-17: "I want to configure flow and time for flush"). The
+ * The flush, its flow and time configurable. The
  * workflow's `rinseData`: Decaid writes all three to the machine (`flushTemp`, `flushFlow`,
- * `flushTimeout`) whenever it changes, so the machine's own values follow it (research.md 20.12).
+ * `flushTimeout`) whenever it changes, so the machine's own values follow it.
  */
 export const FLUSH: Field[] = [
   number({
@@ -526,7 +526,7 @@ export const BRIGHTNESS: Field[] = [
   }),
 ];
 
-/** Presence Detection (S2c); its wake schedules are `Presence.svelte`. */
+/** Presence Detection; its wake schedules are `Presence.svelte`. */
 export const PRESENCE: Field[] = [
   {
     kind: 'switch',

@@ -4,7 +4,7 @@
 // Copyright (C) 2025-2026 Decent Espresso
 // Licensed under the GNU General Public License v3.0 or later; used here under GPL-3.0.
 //
-// The settings page and the gateway (research.md 20.11): every source is read once when the
+// The settings page and the gateway: every source is read once when the
 // page opens; a change is one request with that key alone, written at once, and then its source
 // is read again, so the page shows what the gateway holds, not what was typed. Streamline
 // stages its changes until SAVE; this port does not. No UI: the client is a parameter.
@@ -35,7 +35,7 @@ export interface Values {
   workflow: Workflow | null;
   display: DisplayState | null;
   info: DecaidInfo | null;
-  /** presence and its wake schedules (S2c) */
+  /** presence and its wake schedules */
   presence: PresenceSettings | null;
   /** the latest frame of `/ws/v1/machine/waterLevels`, from the skin's stream */
   waterLevels: WaterLevels | null;
@@ -135,7 +135,7 @@ export async function readAll(
 }
 
 /**
- * Streamline's remembered values in its KV namespace (research.md 20.2, section 16): its 0.2.13
+ * Streamline's remembered values in its KV namespace: its 0.2.13
  * writes them back over other values while a page of it is open. The page moves a remembered
  * value with its own, so both skins agree, and never creates a key.
  */
@@ -178,7 +178,7 @@ async function send(gateway: SettingsGateway, values: Values, field: Field, valu
     case 'advanced':
       return gateway.updateAdvancedSettings(patch);
     case 'workflow.steamSettings':
-      // A part of `steamSettings` changes only that part (research.md 16).
+      // A part of `steamSettings` changes only that part.
       await gateway.updateWorkflow({ steamSettings: patch });
       return;
     case 'workflow.hotWaterData':
@@ -187,7 +187,7 @@ async function send(gateway: SettingsGateway, values: Values, field: Field, valu
       const current = sourceObject(values, field.source);
       if (!current) throw new WriteError(`${field.label}: the workflow is not read yet`);
       const group = field.source === 'workflow.hotWaterData' ? 'hotWaterData' : 'rinseData';
-      // A hot water flow above the DE1's 8 ml/s is held to 8 with any change (spec 3.9).
+      // A hot water flow above the DE1's 8 ml/s is held to 8 with any change.
       const data = group === 'hotWaterData' ? heldHotWater({ ...current, ...patch }) : { ...current, ...patch };
       await gateway.updateWorkflow({ [group]: data });
       return;

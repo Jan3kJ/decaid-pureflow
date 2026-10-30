@@ -5,7 +5,7 @@ import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import pkg from '../package.json';
 
-// The repository's own files (spec 3.13 items 6 and 7): CI runs `npm run verify`, which is the one
+// The repository's own files: CI runs `npm run verify`, which is the one
 // list of checks the release script runs too, and CHANGELOG.md has a section per version.
 const ROOT = join(import.meta.dirname, '..');
 const read = (file: string) => readFileSync(join(ROOT, file), 'utf8');
@@ -51,7 +51,7 @@ describe('repository hygiene', () => {
     for (const job of Object.values(jobs)) expect(job).toMatch(/node-version: 22$/m);
     expect(runs(jobs.verify)).toEqual(['npm ci', 'npm run verify']);
     expect(runs(jobs.e2e)).toEqual(['npm ci', 'npx playwright install --with-deps chromium']);
-    // The browser tests, their output kept for a line on the job's page that names the failed ones (spec 3.20).
+    // The browser tests, their output kept for a line on the job's page that names the failed ones.
     expect(jobs.e2e).toMatch(/^ {8}run: npm run e2e 2>&1 \| tee "\$RUNNER_TEMP\/e2e\.log"$/m);
     expect(jobs.e2e).toMatch(/- name: Summary of the failed tests\n {8}if: failure\(\)\n[^]*e2e\.log[^]*GITHUB_STEP_SUMMARY/);
     // What failed is kept: the results folder of playwright.config.ts, a hidden one.

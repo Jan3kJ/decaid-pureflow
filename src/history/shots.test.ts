@@ -3,7 +3,7 @@ import { DecaidClient, type ShotRecordSummary } from '../api';
 import { merge } from './shot-list';
 import { FIRST_SHOTS, ShotCache } from './shots.svelte';
 
-// The shots the skin holds for the session (spec 3.8, T8): the newest 20 first, the rest
+// The shots the skin holds for the session: the newest 20 first, the rest
 // after them, what is new on a later read, and a record with measurements read once.
 
 /** Shot n is n minutes after the first; ids are `shot-n`. */

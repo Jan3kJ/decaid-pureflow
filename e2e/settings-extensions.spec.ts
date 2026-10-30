@@ -1,8 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mockGateway, type MockGateway } from './mock-gateway';
 
-// The settings page's plugins, presence, firmware and sensor calibration (spec 3.7 'Settings',
-// research.md 20.10 S2c), against the mocked gateway: a plugin setting of each type written and
+// The settings page's plugins, presence, firmware and sensor calibration,
+// against the mocked gateway: a plugin setting of each type written and
 // read back, a secure one never shown, enable / disable, a held update approved; the sleep
 // timeout, a wake schedule added, edited and deleted; the firmware's status and its confirm; a
 // sensor corrected and restored. The same against the running gateway:

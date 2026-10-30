@@ -323,7 +323,7 @@ describe('editing a step', () => {
 });
 
 // A profile the editor cannot show fully must lose nothing on save: what it sends is the
-// opened profile with only the edited fields changed (research.md 17, 'Built (E2)').
+// opened profile with only the edited fields changed.
 describe('nothing is lost', () => {
   it('every bundled profile of the rig opens unchanged, and every value is inside its range', () => {
     expect(PROFILES).toHaveLength(73);

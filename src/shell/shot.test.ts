@@ -87,7 +87,7 @@ describe('recordFrame', () => {
     shot = recordFrame(shot, frame('espresso', `${10 + TARE_SETTLE_S}.000`), 0, 0);
     shot = recordFrame(shot, frame('espresso', '15.000'), 3.2, 1.8);
     shot = recordFrame(shot, frame('espresso', '16.000'), null, 1.8);
-    // The weight flow is drawn, the weight stays the number (founder, 2026-10-14).
+    // The weight flow is drawn, the weight stays the number.
     expect(shot!.series.weightFlow).toEqual([null, 0, 1.8, null]);
     expect(shot!.series.weight).toEqual([null, 0, 3.2, null]);
   });
@@ -111,7 +111,7 @@ describe('recordFrame', () => {
   });
 
   it('ends the shot at its first frame after the pour: the tail in espresso adds nothing and the timer stands', () => {
-    // A real DE1 after the stop (spec 3.8, the founder's screenshot of 2026-10-17): still in
+    // A real DE1 after the stop : still in
     // espresso, substate pouringDone, the pressure falls and the pump drives the flow to 4 ml/s.
     let shot = recordFrame(null, frame('espresso', '10.000'), 0);
     shot = recordFrame(shot, frame('espresso', '40.000'), 36);
@@ -229,7 +229,7 @@ describe('recordFrame', () => {
   });
 });
 
-describe('the finished shot’s weight (spec 3.14 item 9)', () => {
+describe('the finished shot’s weight', () => {
   const at = (seconds: number) => frameTime(`2026-10-13T06:37:${seconds.toFixed(3).padStart(6, '0')}`);
 
   /** A shot of 10 s with the scale at 30 g at its end, ended by the idle frame at 20 s. */
@@ -344,7 +344,7 @@ describe('a recorded shot of the rig', () => {
   });
 });
 
-describe('runningStep (spec 3.14)', () => {
+describe('runningStep', () => {
   const steps = [{ name: 'Preinfusion' }, { name: '' }, { name: 'Extraction' }];
   const running = (startedAt: number | null = 1): Shot => ({
     enteredAt: 0,

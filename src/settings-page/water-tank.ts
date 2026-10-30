@@ -4,7 +4,7 @@
 // Copyright (C) 2025-2026 Decent Espresso
 // Licensed under the GNU General Public License v3.0 or later; used here under GPL-3.0.
 //
-// The tank's water in ml for the clean (spec 3.8 'Menu: clean'): Decaid reports the level in mm
+// The tank's water in ml for the clean: Decaid reports the level in mm
 // (`WaterLevels`), and Streamline turns it into ml with the TCL skin's table (`src/shell/tank.ts`). No UI.
 import type { WaterLevels } from '../api';
 import { MM_TO_ML, TANK_MAX_ML } from '../shell/tank';

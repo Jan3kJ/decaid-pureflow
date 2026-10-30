@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Skin } from './skin.svelte';
 
-// The tap on the weight in the state line calls `Skin.tare` (spec 3.7, acceptance item 21);
+// The tap on the weight in the state line calls `Skin.tare`;
 // the steam and hot water pages' tare buttons call the same function.
 
 const GATEWAY = 'http://rig:8080';
@@ -43,7 +43,7 @@ describe('tare', () => {
     expect(skin.info).toBeNull();
   });
 
-  it('without a connected scale tares nothing and scans for the scale at once (spec 3.9)', async () => {
+  it('without a connected scale tares nothing and scans for the scale at once', async () => {
     vi.useFakeTimers();
     for (const link of ['disconnected', 'unknown'] as const) {
       calls = [];

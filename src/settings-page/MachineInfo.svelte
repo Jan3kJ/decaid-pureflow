@@ -6,7 +6,7 @@
   Licensed under the GNU General Public License v3.0 or later; used here under GPL-3.0.
 -->
 <script lang="ts">
-  // Read only (research.md 20.3, 20.10 S2b): the connected machine's information
+  // Read only: the connected machine's information
   // (`GET /api/v1/machine/info`: model, firmware, serial number to copy, group head controller,
   // what the machine reports besides), or the USB page's charging status from Decaid's
   // settings, shown only where Decaid reports one.

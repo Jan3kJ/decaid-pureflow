@@ -3,7 +3,7 @@ import type { Profile } from '../src/api';
 import blooming from '../src/steps/fixtures/bundled-profiles.json' with { type: 'json' };
 import { mockGateway } from './mock-gateway';
 
-// One case for the words of buttons (spec 3.18 item 1, acceptance 126): a button's word is lower
+// One case for the words of buttons: a button's word is lower
 // case. The corner menu's entries and titles stay in sentence case: a menu item, the settings'
 // category list and a button that leads with a name or title in bold (a profile, a bean, a skin,
 // the sleep screen's 'Asleep') are left out; so are a button named by its aria-label (an icon or

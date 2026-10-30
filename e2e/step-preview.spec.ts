@@ -3,8 +3,8 @@ import type { Profile } from '../src/api';
 import blooming from '../src/steps/fixtures/bundled-profiles.json' with { type: 'json' };
 import { mockGateway, type MockGateway } from './mock-gateway';
 
-// The step editor's curve preview and the profile's settings (spec 3.6, acceptance 11,
-// research.md 17.11 E3), against a mocked gateway: every kind of step edit changes the
+// The step editor's curve preview and the profile's settings,
+// against a mocked gateway: every kind of step edit changes the
 // preview's paths; title, notes, target weight, target volume and tank temperature edited in
 // SETTINGS are in the stored profile, also when only the title or the notes changed.
 

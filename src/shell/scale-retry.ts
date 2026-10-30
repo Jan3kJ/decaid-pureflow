@@ -4,7 +4,7 @@
 // Copyright (C) 2025-2026 Decent Espresso
 // Licensed under the GNU General Public License v3.0 or later; used here under GPL-3.0.
 //
-// The scale is looked for again (spec 3.9, item 3): Decaid connects a missing scale with a scan
+// The scale is looked for again: Decaid connects a missing scale with a scan
 // (`GET /api/v1/devices/scan?connect=true&quick=true`), and nothing else asks it to. A round
 // scans every 5 s, at most 3 times. It starts by itself when the scale drops, and when the
 // first status frame after the start says no scale is connected; then it scans only with a

@@ -150,7 +150,7 @@ describe('the check', () => {
   });
 
   it('on the ten held-out shots of the fixture: flow and pressure pass, temperature and length do not', () => {
-    // research.md 'The shot model': the same check on all 242 held-out shots passes the flow
+    // Measured: the same check on all 242 held-out shots passes the flow
     // and the temperature and fails the pressure (39.7 percent below) and the length (59 percent)
     expect(shots).toHaveLength(10);
     const result = checkShots(shots);

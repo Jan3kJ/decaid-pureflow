@@ -1,5 +1,5 @@
 // The skin's streams from the gateway: the machine's snapshot, its settings and water levels,
-// the scale and the devices, the link they make, and the scale's retry rounds (spec 3.9). A
+// the scale and the devices, the link they make, and the scale's retry rounds. A
 // part of `Skin`, which hands its stream fields to it and gets the frames that change the
 // workflow, the shot and the screen (`StreamHandlers`).
 import {
@@ -42,7 +42,7 @@ export class Streams {
   /** the machine's latest frame; old while `link` is not 'machine' */
   snapshot: MachineSnapshot | null = $state.raw(null);
   /**
-   * `snapshot` with its group and steam temperatures filtered (`smooth`, spec 3.12): the values
+   * `snapshot` with its group and steam temperatures filtered (`smooth`): the values
    * the state line shows. Graphs, shots, the heating decision and writes read `snapshot`.
    */
   shown: MachineSnapshot | null = $state.raw(null);
@@ -56,7 +56,7 @@ export class Streams {
   water: WaterLevels | null = $state.raw(null);
   /** what the scale stream said about the scale */
   scaleLink: ScaleLink = $state('unknown');
-  /** a round of scans for the scale runs (spec 3.9, `ScaleRetry`) */
+  /** a round of scans for the scale runs (`ScaleRetry`) */
   scaleLooking = $state(false);
   /** the error frame of a stream the gateway closed */
   streamError: string | null = $state(null);
@@ -216,7 +216,7 @@ export class Streams {
       this.scaleLink = frame.status === 'connected' ? 'connected' : 'disconnected';
       if (this.scaleLink === 'disconnected') this.weight = null;
     }
-    // A drop, or no scale in the stream's first frame: a round looks for it (spec 3.9).
+    // A drop, or no scale in the stream's first frame: a round looks for it.
     if (this.scaleLink === 'connected') this.scaleRetry.stop();
     else if (before !== 'disconnected' && !this.scaleRetry.looking) this.scaleRetry.start(false);
   }

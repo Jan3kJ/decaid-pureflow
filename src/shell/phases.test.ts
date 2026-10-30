@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { isScaleSnapshot, type MachineSnapshot, type ScaleFrame, type ShotRecord } from '../api';
 // Both streams of a simulated shot recorded on the rig (Decaid 0.8.8, A-Flow / default-medium).
 import recording from '../../e2e/fixtures/shot.json';
-// The rig's own record of a shot (GET /api/v1/shots/{id}, Decaid 0.8.8, 2026-10-11), read on 2026-10-19.
+// The rig's own record of a shot (GET /api/v1/shots/{id}, Decaid 0.8.8).
 import rigShot from './fixtures/rig-shot.json';
 import { formatRange, formatStartPeakEnd, phaseSample, phaseTable, recordSamples, type PhaseSample } from './phases';
 import { recordFrame, settleWeight, type Shot } from './shot';
 
 // The expected cells are what Streamline 0.2.14's own shotData.js writes for the same shot:
-// its renderPastShot run under Node with a stub document (research.md 24.2).
+// its renderPastShot run under Node with a stub document.
 
 describe('the formats of Streamline', () => {
   it('writes start → peak → end, the peak only when it is neither', () => {

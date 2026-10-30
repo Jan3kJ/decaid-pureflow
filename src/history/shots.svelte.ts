@@ -1,4 +1,4 @@
-// The shots the skin has read from Decaid, kept for the session (spec 3.8, T8): the history's
+// The shots the skin has read from Decaid, kept for the session: the history's
 // list, the record of a shot with its measurements for the restore and for the next shot's
 // time axis. Read once in the background after the start, the newest `FIRST_SHOTS` first and
 // the rest after them; later only what is newer than the newest one held.
@@ -10,7 +10,7 @@ import { errorMessage } from '../error-message';
 export const FIRST_SHOTS = 20;
 /** How many shots the history reads at most, newest first. */
 export const HISTORY_SHOTS = 500;
-/** The gateway's largest page (`limit` is 1 to 100, research.md 14). */
+/** The gateway's largest page (`limit` is 1 to 100). */
 const PAGE = 100;
 /** How many records with measurements are kept, the newest read last. */
 const RECORDS = 20;
@@ -109,7 +109,7 @@ export class ShotCache {
 
   /**
    * A shot ended: its record is added when Decaid has written it, which is a few seconds
-   * after the end (research.md 10.1). Gives up after half a minute.
+   * after the end. Gives up after half a minute.
    */
   async shotEnded(): Promise<void> {
     if (this.read === 'none') return void (await this.sync().catch(() => undefined));

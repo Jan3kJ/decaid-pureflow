@@ -1,4 +1,4 @@
-// `npm run release`: the only way a release is made (spec 3.15, P7), run in the product repository.
+// `npm run release`: the only way a release is made, run in the product repository.
 // In order: the checks before anything, the history from the commits' `Changelog:` trailers since
 // the last tag, the version (behind a yes), every check, the files (versions, CHANGELOG.md, the ZIP
 // and release/SHA256SUMS.txt), the local commit and tag, and the publish step behind a second yes.
@@ -277,7 +277,7 @@ export async function release(argv, root, io = {}) {
   }
   return publish(version);
 
-  // 7. Publish, behind the second yes, which is the founder's.
+  // 7. Publish, behind the second yes, which is the owner's.
   async function publish(v) {
     const t = `v${v}`;
     log(`\n7. Publish ${t}`);

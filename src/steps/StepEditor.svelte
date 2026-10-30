@@ -6,12 +6,12 @@ Copyright (C) 2025-2026 Decent Espresso
 Licensed under the GNU General Public License v3.0 or later; used here under GPL-3.0.
 -->
 <script lang="ts">
-  // The step editor (spec 3.6, research.md 17): every profile that is not A-Flow opens here,
+  // The step editor: every profile that is not A-Flow opens here,
   // on the workflow's profile, as the A-Flow editor does. One card per step; 'save' and 'save
   // as' store through the skin's one writer and load what they stored; leaving loads a changed
   // profile. Above the cards, the curve preview draws the profile's targets and follows every
-  // edit (E3); the SETTINGS tab edits the profile's own values; the SCRIPT tab shows the steps
-  // as Streamline's sentences, whose words cycle and whose numbers open the number pad (E6).
+  // edit; the SETTINGS tab edits the profile's own values; the SCRIPT tab shows the steps
+  // as Streamline's sentences, whose words cycle and whose numbers open the number pad.
   import { onMount, tick } from 'svelte';
   import type { Profile, ProfileRecord } from '../api';
   import NameDialog from '../editor/NameDialog.svelte';
@@ -100,14 +100,14 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   }
 
   async function init() {
-    // The warning before a load asked for 'save as' on the machine's profile (founder, 2026-10-14).
+    // The warning before a load asked for 'save as' on the machine's profile.
     const saveAsNext = skin.saveAsNext;
     skin.saveAsNext = false;
     const loaded = skin.workflow?.profile;
     if (!loaded) return;
     openedWith = loaded;
     show(loaded, null);
-    // An A-Flow profile the A-Flow editor cannot open says why (spec 3.9, U2).
+    // An A-Flow profile the A-Flow editor cannot open says why.
     const reason = stepEditorReason(loaded);
     if (reason) notice = { tone: 'info', text: reason };
     try {
