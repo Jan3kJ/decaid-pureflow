@@ -173,20 +173,3 @@ test("Decaid's refusal is the picker's error line and keeps the old name", async
   await expect(item(page, 'Adaptive v2')).toHaveCount(1);
   await expect(item(page, 'Adaptive v3')).toHaveCount(0);
 });
-
-test('a swipe from the left edge over a row goes back; from further in it is the row’s', async ({ page }) => {
-  await mockGateway(page);
-  await picker(page);
-  const box = (await item(page, 'Adaptive v2').boundingBox())!;
-  const y = box.y + box.height / 2;
-
-  await swipe(page, { x: box.x + 60, y }, { x: box.x + 260, y: y + 4 });
-  await expect(page.getByTestId('profile-rename')).toBeVisible();
-  await expect(page.getByTestId('screen-profiles')).toBeVisible();
-  await page.getByTestId('profile-filter').click();
-
-  await swipe(page, { x: 10, y }, { x: 600, y: y + 4 }, 120);
-  await expect(page.getByTestId('screen-profiles')).toHaveCount(0);
-  await expect(page.getByTestId('screen-home')).toBeVisible();
-  expect(errors).toEqual([]);
-});

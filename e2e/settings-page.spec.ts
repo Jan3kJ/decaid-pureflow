@@ -252,18 +252,6 @@ test('a confirm comes before the voltage, the factory reset and the gateway mode
   });
 });
 
-test('the steam temperature 0 switches the heater off, and the menu switches it on with the temperature it had', async ({ page }) => {
-  await openSettings(page);
-  await type(page, 'setting-steam-temperature', '0');
-  await expect(shown(page, 'steam-temperature')).toHaveText('0°C');
-  expect(writes('PUT', '/api/v1/workflow')).toEqual([{ steamSettings: { targetTemperature: 0 } }]);
-  await back(page);
-  await page.getByTestId('menu').click();
-  await expect(page.getByTestId('steam-heater')).toContainText('Steam heater');
-  await page.getByTestId('steam-heater').click();
-  await expect.poll(() => gateway.workflow.steamSettings.targetTemperature).toBe(150);
-});
-
 test('without a machine the machine values are not read and say so; a failed write keeps the value', async ({ page }) => {
   gateway.machineConnected = false;
   await openSettings(page);

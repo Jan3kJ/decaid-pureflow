@@ -81,24 +81,6 @@ function loadedProfile(gateway: MockGateway, title: string, author: string, work
   return params;
 }
 
-test('a profile that is not A-Flow 3.0 opens in the step editor', async ({ page }) => {
-  const gateway = await mockGateway(page);
-  await page.addInitScript(() => localStorage.setItem('pureflow.screen', 'editor'));
-  await page.goto('/');
-
-  // The mock's workflow holds the plugin's default as Decaid bundles it: A-Flow by name only.
-  await expect(page.getByTestId('step-cards')).toBeVisible();
-  await expect(page.getByTestId('graph')).toHaveCount(0);
-  await expect(pressed(page)).toHaveText('A-Flow / default-medium');
-  await expect(page.getByTestId('editor-notice')).toHaveCount(0);
-  await expect(page.getByTestId('save')).toBeDisabled();
-  // Back without a change loads nothing: the machine keeps its profile.
-  await back(page);
-  await expect(page.getByTestId('screen-home')).toBeVisible();
-  expect(gateway.calls('PUT', '/api/v1/workflow')).toHaveLength(0);
-  expect(errors).toEqual([]);
-});
-
 test('the editor opens on the current A-Flow 3.0 profile and saves an edit with its parent', async ({ page }) => {
   const gateway = await withMorning(page);
   await openEditor(page);

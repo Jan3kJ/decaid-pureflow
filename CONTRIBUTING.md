@@ -29,9 +29,9 @@ base build leaves it out.
 `format:check` (Prettier), `test` (Vitest), `build` (both flavours), the checks of both ZIPs, the publish check (no local path, personal
 address or token in a file), the documentation's links and pictures, and `npm audit
 --audit-level=high`. CI runs the same list on every push and pull request to `main`, and beside it
-the browser tests on the mocked gateway, `npm run e2e` (about 11 minutes); run them before you send
+the browser tests on the mocked gateway, `npm run e2e` (about 11 minutes on one machine; CI runs it in 3 shards); run them before you send
 a change to the screens. When CI's browser tests fail, `gh run view <run id> --log-failed` shows
-each failed test's error; the run's artifact `e2e-results` has its trace (`npx playwright
+each failed test's error; the run's artifacts `e2e-results-1` to `-3` (one for each shard) have its trace (`npx playwright
 show-trace trace.zip`) and picture.
 `npm run e2e:rig` runs the tests that need a running Decaid with its simulated machine and scale
 ([the rig](docs/architecture.md#the-rig)); they stay local. `npm run format` writes Prettier's formatting.

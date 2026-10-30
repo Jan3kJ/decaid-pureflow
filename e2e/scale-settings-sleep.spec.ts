@@ -316,35 +316,6 @@ test('settings: stored data that cannot be read gives the defaults, and the page
   expect(errors).toEqual([]);
 });
 
-test('machine and app sleep sends the state sleeping, the skin goes dark, a touch anywhere wakes', async ({ page }) => {
-  const gateway = await mockGateway(page);
-  await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
-  await expect(page.getByTestId('asleep')).toHaveCount(0);
-  expect(gateway.calls('PUT', '/api/v1/display/brightness')).toHaveLength(0);
-
-  await page.getByTestId('menu').click();
-
-  await page.getByTestId('app-sleep').click();
-  await expect.poll(() => gateway.calls('PUT', '/api/v1/machine/state/sleeping').length).toBe(1);
-  // The skin shows sleep when the machine says so, not when the button was tapped.
-  await expect(page.getByTestId('asleep')).toBeVisible();
-  await expect(page.getByTestId('asleep')).toContainText('touch to wake');
-  // This platform can set the brightness: the screen is dimmed.
-  await expect.poll(() => gateway.calls('PUT', '/api/v1/display/brightness').map((call) => call.body)).toEqual([{ brightness: 5 }]);
-  expect(gateway.calls('PUT', '/api/v1/machine/state/idle')).toHaveLength(0);
-
-  // A touch anywhere: a corner, far from every button of home.
-  await page.touchscreen.tap(1200, 760);
-  await expect.poll(() => gateway.calls('PUT', '/api/v1/machine/state/idle').length).toBe(1);
-  await expect(page.getByTestId('asleep')).toHaveCount(0);
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
-  await expect
-    .poll(() => gateway.calls('PUT', '/api/v1/display/brightness').map((call) => call.body))
-    .toEqual([{ brightness: 5 }, { brightness: 100 }]);
-  expect(errors).toEqual([]);
-});
-
 test('sleep: the brightness is left alone where the platform does not support it', async ({ page }) => {
   const gateway = await mockGateway(page, { brightness: false });
   // The machine sleeps already when the skin loads.

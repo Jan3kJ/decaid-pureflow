@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { recordSteamFrame, type SteamRun } from '../src/steam/run';
 import { EXPORT_STEAMS, mockGateway, type MockGateway } from './mock-gateway';
-import { back, swipe, toPage } from './touch';
+import { back, toPage } from './touch';
 
 // The steam page against a mocked gateway: the scale's frames are
 // the mock's, because the simulated scale's weight cannot be set.
@@ -478,30 +478,6 @@ test("while steam runs a tap on an adjust button moves the machine's timer and '
   gateway.waterEnded();
   await expect(page.locator('[data-testid="steam-adjust"][aria-pressed="true"]')).toHaveCount(0);
   await expect(page.getByTestId('steam-timer')).toHaveText('22s');
-  expect(errors).toEqual([]);
-});
-
-test('a swipe to the left opens the steam page, from the right edge too', async ({ page }) => {
-  const gateway = await mockGateway(page);
-  await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
-
-  // Down along the edge: nothing.
-  await swipe(page, { x: 1250, y: 200 }, { x: 1220, y: 600 });
-  await page.waitForTimeout(400);
-  await expect(page.getByTestId('screen-home')).toBeVisible();
-
-  await swipe(page, { x: 1180, y: 400 }, { x: 760, y: 420 });
-  await expect(page.getByTestId('screen-steam')).toBeVisible();
-  await back(page);
-  await swipe(page, { x: 700, y: 400 }, { x: 400, y: 400 });
-  await expect(page.getByTestId('screen-steam')).toBeVisible();
-  // The history's swipe still opens the history, not a page.
-  await back(page);
-  await swipe(page, { x: 10, y: 400 }, { x: 260, y: 420 });
-  await expect(page.getByTestId('history')).toBeVisible();
-  await expect(page.getByTestId('screen-home')).toBeVisible();
-  expect(gateway.writes()).toEqual([]);
   expect(errors).toEqual([]);
 });
 

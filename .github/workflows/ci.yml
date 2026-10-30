@@ -1,6 +1,6 @@
 # The checks of `npm run verify` (scripts/verify.mjs) on every push and pull request to main, which
 # build both flavours, base and ocr, and check both ZIPs; the browser tests on the mocked gateway
-# against the base flavour (`npm run e2e`, about 11 minutes); and the ocr flavour's own browser
+# against the base flavour (`npm run e2e`, about 11 minutes on one machine, in 3 shards at GitHub); and the ocr flavour's own browser
 # tests (`npm run e2e:ocr`). The rig suite needs a running Decaid and runs locally; a release is
 # made by scripts/release.mjs.
 name: CI
@@ -34,6 +34,12 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # Three shards of the same suite, each on its own machine and so on its own port 24800.
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    name: e2e (shard ${{ matrix.shard }}/3)
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -46,7 +52,7 @@ jobs:
       # is `gh run view <run id> --log-failed`. The output is kept for the summary below.
       - name: npm run e2e
         shell: bash
-        run: npm run e2e 2>&1 | tee "$RUNNER_TEMP/e2e.log"
+        run: npm run e2e -- --shard=${{ matrix.shard }}/3 2>&1 | tee "$RUNNER_TEMP/e2e.log"
       - name: Summary of the failed tests
         if: failure()
         shell: bash
@@ -59,7 +65,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: failure()
         with:
-          name: e2e-results
+          name: e2e-results-${{ matrix.shard }}
           path: e2e/.results/
           include-hidden-files: true
           retention-days: 14

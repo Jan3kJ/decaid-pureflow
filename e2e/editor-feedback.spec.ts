@@ -17,7 +17,9 @@ test.beforeEach(({ page }) => {
   page.on('pageerror', (error) => errors.push(error.message));
 });
 
-async function openEditor(page: Page) {
+/** `timed`: the page's clock is a fake one, so that `fastForward` runs the 4 s of a notice at once. */
+async function openEditor(page: Page, timed = false) {
+  if (timed) await page.clock.install();
   await page.addInitScript(() => localStorage.setItem('pureflow.screen', 'editor'));
   await page.goto('/');
   await expect(page.getByTestId('graph')).toBeVisible();
@@ -43,7 +45,7 @@ test("the profile steps have no 'shot stops at' line; the flow step's exit holds
 
 test("'save' on a default hints at 'save as' under the start row, and the hint goes after 4 s", async ({ page }) => {
   const gateway = (await mockGateway(page)).withDefaults('light');
-  await openEditor(page);
+  await openEditor(page, true);
   await expect(page.getByTestId('editor-profile')).toHaveText('light');
   const before = await graphBox(page);
 
@@ -60,14 +62,15 @@ test("'save' on a default hints at 'save as' under the start row, and the hint g
   expect(gateway.calls('POST', '/api/v1/profiles')).toHaveLength(0);
   expect(gateway.calls('PUT', '/api/v1/workflow')).toHaveLength(0);
 
-  await expect(notice(page)).toHaveCount(0, { timeout: 6000 });
+  await page.clock.fastForward(4_500);
+  await expect(notice(page)).toHaveCount(0);
   expect(await graphBox(page)).toEqual(before);
   expect(errors).toEqual([]);
 });
 
 test('a save shows its result for 4 s; a failure stays until the next action', async ({ page }) => {
   (await mockGateway(page)).withDefaults('light');
-  await openEditor(page);
+  await openEditor(page, true);
   const before = await graphBox(page);
 
   await page.getByTestId('toggle-second-fill').click();
@@ -77,7 +80,8 @@ test('a save shows its result for 4 s; a failure stays until the next action', a
   await expect(notice(page)).toHaveText('Saved as “morning light” and loaded.');
   expect(await graphBox(page)).toEqual(before);
   await page.screenshot({ path: 'docs/product/editor-save-feedback.png' });
-  await expect(notice(page)).toHaveCount(0, { timeout: 6000 });
+  await page.clock.fastForward(4_500);
+  await expect(notice(page)).toHaveCount(0);
 
   // The same values under another name: Decaid keeps one profile for each set of steps.
   await page.getByTestId('save-as').click();
@@ -85,7 +89,7 @@ test('a save shows its result for 4 s; a failure stays until the next action', a
   await page.getByTestId('save-confirm').click();
   await expect(notice(page)).toContainText('The profile was not saved');
   expect(await graphBox(page)).toEqual(before);
-  await page.waitForTimeout(5000);
+  await page.clock.fastForward(5_000);
   await expect(notice(page)).toContainText('The profile was not saved');
 
   // The next action clears it: here a profile of the start row.
