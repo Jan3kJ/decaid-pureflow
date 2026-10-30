@@ -4,9 +4,9 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
-// scripts/docs-check.mjs (spec 3.13, acceptance 83): every link and image of README.md and
-// docs/user/ resolves. It passes on the repository's own tree and fails on a planted broken link,
-// a missing image and a missing anchor.
+// scripts/docs-check.mjs (spec 3.13, acceptance 83): every link and image of README.md,
+// docs/architecture.md and docs/user/ resolves. It passes on the repository's own tree and fails
+// on a planted broken link, a missing image and a missing anchor.
 
 const script = join(import.meta.dirname, '..', 'scripts', 'docs-check.mjs');
 const check = (root?: string) => spawnSync(process.execPath, root ? [script, root] : [script], { encoding: 'utf8' });
@@ -81,5 +81,16 @@ describe('docs-check', () => {
     const run = check(tree({ ...files, 'SECURITY.md': '# Security\n\n[Policy](docs/policy.md)\n' }));
     expect(run.status).toBe(1);
     expect(run.stderr).toContain('SECURITY.md: docs/policy.md (no such file)');
+  });
+
+  it('reads docs/architecture.md', () => {
+    const files = {
+      ...GOOD,
+      'docs/architecture.md': '# Architecture\n\n[Guide](user/guide.md#the-steam-page), [README](../README.md)\n',
+    };
+    expect(check(tree(files)).status).toBe(0);
+    const run = check(tree({ ...files, 'docs/architecture.md': '# Architecture\n\n[Spec](spec.md)\n' }));
+    expect(run.status).toBe(1);
+    expect(run.stderr).toContain('architecture.md: spec.md (no such file)');
   });
 });

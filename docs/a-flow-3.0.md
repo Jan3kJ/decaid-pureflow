@@ -159,7 +159,7 @@ them, as spec 3.2 allows; the founder confirmed the notes on 2026-10-13 (request
 - `writeParams(client, profile, params)` stores the profile with the string. Decaid's id of
   a profile is a hash of its steps and target weight, so for steps that exist the `POST`
   answers with the old record and its old notes; the notes are then changed with
-  `PUT /api/v1/profiles/{id}` (research.md, section 11).
+  `PUT /api/v1/profiles/{id}`.
 
 The five defaults are stored with their string as well (`defaultProfile` in
 `src/shell/profiles.ts`), in place of the plugin's notes text. The dose is read from the

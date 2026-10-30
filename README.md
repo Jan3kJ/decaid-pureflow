@@ -62,7 +62,8 @@ the browser tests.
 | Release | `npm run release` | the checks, the changelog from the commits, the version, the ZIP, the tag, then the GitHub release after a yes; `--dry-run` and `--local` change less |
 
 `npm run e2e:rig` runs the tests that need a running Decaid with its simulated machine and
-scale (docs/research.md 8.8). The product spec is [docs/spec.md](docs/spec.md).
+scale ([the rig](docs/architecture.md#the-rig)). How the skin is built, its modules and its checks
+are in [docs/architecture.md](docs/architecture.md).
 
 How to send a change, and the commit messages the release notes are made from, are in
 [CONTRIBUTING](CONTRIBUTING.md). What changed in each version is in the [CHANGELOG](CHANGELOG.md),

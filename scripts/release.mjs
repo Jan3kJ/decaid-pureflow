@@ -160,7 +160,7 @@ export async function release(argv, root, io = {}) {
   if (options.rig && !(await (io.rigUp ?? rigUp)())) {
     throw new Stop(
       'no Decaid answers on its port: the rig suite cannot run',
-      'start the rig (docs/research.md 8.8), or npm run release -- --no-rig',
+      'start the rig (docs/architecture.md, The rig), or npm run release -- --no-rig',
     );
   }
 

@@ -73,10 +73,10 @@ describe('publish-check', { timeout: 30_000 }, () => {
     ['token', 'bot 123456789:' + 'A'.repeat(35)],
     ['token', 'ghp_' + 'a1'.repeat(18)],
   ])('fails on a %s in the tip', (rule, text) => {
-    repository({ ...CLEAN, 'docs/spec.md': `# Spec\n\n${text}\n` });
+    repository({ ...CLEAN, 'docs/architecture.md': `# Architecture\n\n${text}\n` });
     const result = check();
     expect(result.status).toBe(1);
-    expect(result.stderr).toContain(`docs/spec.md:3: ${rule}`);
+    expect(result.stderr).toContain(`docs/architecture.md:3: ${rule}`);
   });
 
   it('with --history fails on what only an earlier commit holds, and on an author', () => {

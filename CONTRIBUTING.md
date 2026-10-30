@@ -1,8 +1,8 @@
 # Contributing to pureflow
 
 Thank you for helping. pureflow is a skin for Decaid, a static web app in TypeScript and Svelte;
-the [README](README.md) says what it does, and [docs/spec.md](docs/spec.md) is the product spec
-with the reasons behind it. Bugs and ideas go into an issue first (the templates ask what is
+the [README](README.md) says what it does, and [docs/architecture.md](docs/architecture.md) says how it
+is built. Bugs and ideas go into an issue first (the templates ask what is
 needed); a change comes as a pull request against `main`.
 
 ## Build and test
@@ -25,7 +25,7 @@ a change to the screens. When CI's browser tests fail, `gh run view <run id> --l
 each failed test's error; the run's artifact `e2e-results` has its trace (`npx playwright
 show-trace trace.zip`) and picture.
 `npm run e2e:rig` runs the tests that need a running Decaid with its simulated machine and scale
-(docs/research.md 8.8); they stay local. `npm run format` writes Prettier's formatting.
+([the rig](docs/architecture.md#the-rig)); they stay local. `npm run format` writes Prettier's formatting.
 
 The design target is a tablet in landscape, 1280 x 800 CSS pixels at device scale factor 2, dark,
 every layout relative to the viewport. Blue is flow, green pressure, red temperature, yellow
