@@ -58,6 +58,20 @@ describe('licence', () => {
     expect([...listed].sort()).toEqual([...ported].sort());
   });
 
+  it("the ocr ZIP's copy of NOTICE adds the reading's parts and their licence; the repository's NOTICE does not", async () => {
+    const { MODELS, NOTICE_SECTION } = await import('../scripts/fetch-ocr-models.mjs');
+    expect(NOTICE_SECTION).toContain('Apache License, Version 2.0 (Apache-2.0)');
+    expect(NOTICE_SECTION).toContain('https://github.com/PaddlePaddle/PaddleOCR');
+    for (const model of MODELS) {
+      expect(NOTICE_SECTION).toContain(model.name);
+      expect(read('NOTICE')).not.toContain(model.name);
+    }
+    expect(read('NOTICE')).not.toMatch(/PP-OCR|PaddleOCR/);
+    // The section's number follows the last of NOTICE.
+    const last = Math.max(...[...read('NOTICE').matchAll(/^(\d+)\. /gm)].map((match) => Number(match[1])));
+    expect(NOTICE_SECTION).toMatch(new RegExp(`^\\n\\n${last + 1}\\. `));
+  });
+
   it('NOTICE and README credit D-Flow and DSx2', () => {
     for (const file of ['NOTICE', 'README.md']) {
       expect(read(file), file).toContain('D-Flow');

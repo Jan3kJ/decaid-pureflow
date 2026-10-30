@@ -9,6 +9,7 @@
   import DatePicker from '../shell/DatePicker.svelte';
   import Camera from './Camera.svelte';
   import { beanForm, beanTitle, dateOf, validBean, type BeanForm } from './catalogue';
+  import { readPhoto } from './reading';
 
   interface Props {
     /** null: a new bean */
@@ -52,6 +53,8 @@
   function captured(taken: string) {
     shooting = false;
     photo = taken;
+    // The ocr flavour reads the new photo; the base flavour reads nothing. The form shows no line yet.
+    void readPhoto(taken);
   }
 
   function pickRoastDate(value: string) {

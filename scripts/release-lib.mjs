@@ -1,6 +1,7 @@
 // The pure parts of the release script: the trailers of a commit message, the
 // entries and the bump they give, the version, the CHANGELOG section and the version writes.
 // No file, git or network access here; scripts/release.mjs does that.
+import { FLAVOURS, zipName } from './flavours.mjs';
 
 /** The kinds of a `Changelog:` trailer, in the order of the CHANGELOG's headings. */
 export const KINDS = ['added', 'changed', 'fixed'];
@@ -215,6 +216,24 @@ export function withVersion(text, version) {
 /** The line of release/SHA256SUMS.txt for a file, as `sha256sum` writes it. */
 export function sumsLine(hex, name) {
   return `${hex}  ${name}\n`;
+}
+
+/** The ZIPs of a release, base first: `<id>-<version>.zip` and `<id>-<version>-ocr.zip`. */
+export function releaseZips(id, version) {
+  return FLAVOURS.map((flavour) => zipName(id, version, flavour));
+}
+
+/** release/SHA256SUMS.txt for { name: hex }, one line a ZIP in the order given. */
+export function sumsText(hashes) {
+  return Object.entries(hashes)
+    .map(([name, hex]) => sumsLine(hex, name))
+    .join('');
+}
+
+/** The release notes' paragraph that says which ZIP is which; `ocrBytes` is the ocr ZIP's size. */
+export function zipsNote([base, ocr], ocrBytes) {
+  const megabytes = Math.max(1, Math.round(ocrBytes / 1e6));
+  return `Files: ${base}: the skin; ${ocr}: the skin that also reads the bean bag, about ${megabytes} MB. Take the small one unless the reading is wanted.\n`;
 }
 
 /**

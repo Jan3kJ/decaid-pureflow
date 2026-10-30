@@ -16,8 +16,17 @@ npm run verify      # every check CI runs, in its order
 npm run e2e         # the browser tests on a mocked gateway (Playwright)
 ```
 
+The skin has two flavours of one source ([Two builds](docs/architecture.md#two-builds)): base, and
+ocr, which also reads the bean bag. `npm run build` builds both (`dist/`, `dist-ocr/`),
+`npm run build:base` and `npm run build:ocr` one; `npm run dev:ocr` serves the ocr flavour;
+`npm run zip` writes both ZIPs into `release/`; `npm run e2e:ocr` runs the ocr flavour's browser
+tests. The ocr build downloads its two models once (`npm run fetch-ocr-models`,
+`scripts/fetch-ocr-models.mjs`) into `.cache/ocr/` and checks their SHA-256; no model is committed.
+Code only the ocr flavour needs goes behind `if (__OCR__)` with a dynamic `import()`, so that the
+base build leaves it out.
+
 `npm run verify` runs `check` (TypeScript and Svelte), `lint` (ESLint and the font sizes),
-`format:check` (Prettier), `test` (Vitest), `build`, the publish check (no local path, personal
+`format:check` (Prettier), `test` (Vitest), `build` (both flavours), the checks of both ZIPs, the publish check (no local path, personal
 address or token in a file), the documentation's links and pictures, and `npm audit
 --audit-level=high`. CI runs the same list on every push and pull request to `main`, and beside it
 the browser tests on the mocked gateway, `npm run e2e` (about 11 minutes); run them before you send

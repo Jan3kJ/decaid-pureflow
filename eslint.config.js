@@ -13,6 +13,8 @@ export default tseslint.config(
       'node_modules/',
       'release/',
       'dist/',
+      'dist-ocr/',
+      '.cache/',
       'data/',
       'docs/product/',
       'test-results/',

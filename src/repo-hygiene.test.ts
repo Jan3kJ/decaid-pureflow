@@ -29,13 +29,14 @@ describe('repository hygiene', () => {
       'npm run format:check',
       'npm test',
       'npm run build',
+      'node scripts/zip.mjs --check',
       'node scripts/publish-check.mjs',
       'node scripts/docs-check.mjs',
       'npm audit --audit-level=high',
     ]);
   });
 
-  it('CI runs npm run verify and the browser tests on the mocked gateway on Node 22, on push and pull request to main', () => {
+  it('CI runs npm run verify and the browser tests of both flavours on the mocked gateway on Node 22, on push and pull request to main', () => {
     const ci = read('.github/workflows/ci.yml');
     expect(ci).toMatch(/^on:\n {2}push:\n {4}branches: \[main\]\n {2}pull_request:\n {4}branches: \[main\]$/m);
     // Each job: its name at two spaces under `jobs:`, and its lines up to the next job.
@@ -46,11 +47,16 @@ describe('repository hygiene', () => {
         .slice(1)
         .map((job) => [job.slice(0, job.indexOf(':')), job]),
     );
-    expect(Object.keys(jobs)).toEqual(['verify', 'e2e']);
+    expect(Object.keys(jobs)).toEqual(['verify', 'e2e', 'e2e-ocr']);
     const runs = (job: string) => [...job.matchAll(/^ +- run: (.+)$/gm)].map((match) => match[1]);
     for (const job of Object.values(jobs)) expect(job).toMatch(/node-version: 22$/m);
     expect(runs(jobs.verify)).toEqual(['npm ci', 'npm run verify']);
     expect(runs(jobs.e2e)).toEqual(['npm ci', 'npx playwright install --with-deps chromium']);
+    // The ocr flavour's browser tests in a job of their own; verify builds both flavours with their models.
+    expect(runs(jobs['e2e-ocr'])).toEqual(['npm ci', 'npx playwright install --with-deps chromium', 'npm run e2e:ocr']);
+    for (const job of [jobs.verify, jobs['e2e-ocr']])
+      expect(job).toMatch(/- uses: actions\/cache@v4\n {8}with:\n {10}path: \.cache\/ocr$/m);
+    expect(jobs['e2e-ocr']).toMatch(/if: failure\(\)\n[^]*path: e2e\/\.results\/ocr\/\n {10}include-hidden-files: true$/m);
     // The browser tests, their output kept for a line on the job's page that names the failed ones.
     expect(jobs.e2e).toMatch(/^ {8}run: npm run e2e 2>&1 \| tee "\$RUNNER_TEMP\/e2e\.log"$/m);
     expect(jobs.e2e).toMatch(/- name: Summary of the failed tests\n {8}if: failure\(\)\n[^]*e2e\.log[^]*GITHUB_STEP_SUMMARY/);

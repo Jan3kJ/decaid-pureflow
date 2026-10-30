@@ -44,6 +44,9 @@ interface Lib {
   withVersion(text: string, version: string): string;
   rigGroups(files: string[]): string[][];
   assetUrl(repository: unknown, tag: string, name: string): string;
+  releaseZips(id: string, version: string): string[];
+  sumsText(hashes: Record<string, string>): string;
+  zipsNote(names: string[], ocrBytes: number): string;
 }
 interface Result {
   status: number;
@@ -188,6 +191,17 @@ describe('the release script: pure parts', () => {
       'https://github.com/o/r/releases/download/v0.7.0/p-0.7.0.zip',
     );
   });
+
+  it('names the two ZIPs, writes a sums line for each and says in the notes which is which', () => {
+    const zips = lib.releaseZips('pureflow', '0.9.0');
+    expect(zips).toEqual(['pureflow-0.9.0.zip', 'pureflow-0.9.0-ocr.zip']);
+    expect(lib.sumsText({ [zips[0]]: 'a'.repeat(64), [zips[1]]: 'b'.repeat(64) })).toBe(
+      `${'a'.repeat(64)}  pureflow-0.9.0.zip\n${'b'.repeat(64)}  pureflow-0.9.0-ocr.zip\n`,
+    );
+    expect(lib.zipsNote(zips, 5_875_656)).toBe(
+      'Files: pureflow-0.9.0.zip: the skin; pureflow-0.9.0-ocr.zip: the skin that also reads the bean bag, about 6 MB. Take the small one unless the reading is wanted.\n',
+    );
+  });
 });
 
 /** A repository's files for the flow: versions 0.6.1, a CHANGELOG. */
@@ -201,7 +215,7 @@ function writeProduct(root: string, scripts: Record<string, string>) {
     'ok.mjs': '',
     'fail.mjs': 'process.exit(1);\n',
     'zip.mjs':
-      "import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';\nconst { id, version } = JSON.parse(readFileSync('public/manifest.json', 'utf8'));\nmkdirSync('release', { recursive: true });\nwriteFileSync(`release/${id}-${version}.zip`, `zip of ${version}`);\n",
+      "import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';\nconst { id, version } = JSON.parse(readFileSync('public/manifest.json', 'utf8'));\nmkdirSync('release', { recursive: true });\nwriteFileSync(`release/${id}-${version}.zip`, `zip of ${version}`);\nwriteFileSync(`release/${id}-${version}-ocr.zip`, `ocr zip of ${version}`);\n",
   };
   for (const [path, text] of Object.entries(files)) {
     mkdirSync(dirname(join(root, path)), { recursive: true });
@@ -252,7 +266,9 @@ describe('the release script: the flow, with git, gh and npm replaced', () => {
     expect(calls).toContain('gh auth status');
     expect(calls).toContain('git tag -a v0.7.0 -m pureflow 0.7.0');
     expect(calls.filter((call) => call.startsWith('git push') || call.startsWith('gh release'))).toEqual([]);
-    expect(readFileSync(join(root, 'release', 'SHA256SUMS.txt'), 'utf8')).toMatch(/^[0-9a-f]{64} {2}pureflow-0\.7\.0\.zip\n$/);
+    expect(readFileSync(join(root, 'release', 'SHA256SUMS.txt'), 'utf8')).toMatch(
+      /^[0-9a-f]{64} {2}pureflow-0\.7\.0\.zip\n[0-9a-f]{64} {2}pureflow-0\.7\.0-ocr\.zip\n$/,
+    );
   });
 
   it('with no to the first yes nothing is written; with the second it publishes a draft and checks the download', async () => {
@@ -264,14 +280,18 @@ describe('the release script: the flow, with git, gh and npm replaced', () => {
     expect(calls.some((call) => call.startsWith('npm'))).toBe(false);
 
     const publish: string[] = [];
+    const notes: string[] = [];
     const run = fake(publish);
     const withDownload: Run = (cmd, args, options) => {
       const result = run(cmd, args, options);
       if (args[0] === 'release' && args[1] === 'view') return { ...result, status: 1 };
+      if (args[0] === 'release' && args[1] === 'create') notes.push(readFileSync(args[args.indexOf('--notes-file') + 1], 'utf8'));
       if (args[0] === 'release' && args[1] === 'download') {
         const dir = args[args.indexOf('--dir') + 1];
         mkdirSync(dir, { recursive: true });
-        writeFileSync(join(dir, 'pureflow-0.7.0.zip'), readFileSync(join(root, 'release', 'pureflow-0.7.0.zip')));
+        for (const name of ['pureflow-0.7.0.zip', 'pureflow-0.7.0-ocr.zip']) {
+          writeFileSync(join(dir, name), readFileSync(join(root, 'release', name)));
+        }
       }
       return result;
     };
@@ -284,8 +304,20 @@ describe('the release script: the flow, with git, gh and npm replaced', () => {
       ),
     ).toBe('0.7.0');
     expect(publish).toContain('git push --atomic origin main v0.7.0');
-    expect(publish.find((call) => call.startsWith('gh release create'))).toMatch(/--draft$/);
+    const created = publish.find((call) => call.startsWith('gh release create')) ?? '';
+    expect(created).toMatch(/--draft$/);
+    // Both ZIPs and the sums go up, and both come down again to be compared.
+    expect(created).toMatch(/pureflow-0\.7\.0\.zip .*pureflow-0\.7\.0-ocr\.zip .*SHA256SUMS\.txt --title/);
+    expect(publish).toContainEqual(
+      expect.stringMatching(
+        /^gh release download v0\.7\.0 --pattern pureflow-0\.7\.0\.zip --pattern pureflow-0\.7\.0-ocr\.zip --dir /,
+      ),
+    );
+    expect(notes[0]).toMatch(
+      /^### Added\n[\s\S]*\nFiles: pureflow-0\.7\.0\.zip: the skin; pureflow-0\.7\.0-ocr\.zip: the skin that also reads the bean bag, about 1 MB\./,
+    );
     expect(lines.join('\n')).toContain('https://github.com/o/r/releases/download/v0.7.0/pureflow-0.7.0.zip');
+    expect(lines.join('\n')).toContain('https://github.com/o/r/releases/download/v0.7.0/pureflow-0.7.0-ocr.zip');
   });
 
   it('stops at each check before anything with the line that fixes it', async () => {
@@ -408,6 +440,8 @@ describe('the release script: run in a temporary repository', () => {
     expect(dry.stdout).toContain('3. The version: 0.7.0');
     expect(dry.stdout).toContain('- Move a row to the right to rename it. (Z20)');
     expect(dry.stdout).toContain('Not in the script');
+    expect(dry.stdout).toMatch(/release\/pureflow-0\.7\.0\.zip and release\/pureflow-0\.7\.0-ocr\.zip/);
+    expect(dry.stdout).toMatch(/<sha-256> {2}pureflow-0\.7\.0\.zip\r?\n.*<sha-256> {2}pureflow-0\.7\.0-ocr\.zip\r?\n/);
     expect(state()).toEqual(before);
     expect(existsSync(join(root, 'release'))).toBe(false);
 
@@ -419,7 +453,9 @@ describe('the release script: run in a temporary repository', () => {
     expect(readFileSync(join(root, 'CHANGELOG.md'), 'utf8')).toMatch(
       /^# Changelog\n\n## 0\.7\.0 - \d{4}-\d{2}-\d{2}\n\n### Added\n\n- Move a row to the right to rename it\. \(Z20\)\n\nChecks: .*rig suite: not run\.\n\n## 0\.6\.1/,
     );
-    expect(readFileSync(join(root, 'release', 'SHA256SUMS.txt'), 'utf8')).toMatch(/^[0-9a-f]{64} {2}pureflow-0\.7\.0\.zip\n$/);
+    expect(readFileSync(join(root, 'release', 'SHA256SUMS.txt'), 'utf8')).toMatch(
+      /^[0-9a-f]{64} {2}pureflow-0\.7\.0\.zip\n[0-9a-f]{64} {2}pureflow-0\.7\.0-ocr\.zip\n$/,
+    );
     expect(git('log', '--format=%s', '-1')).toBe('Release 0.7.0');
     expect(git('rev-list', '--count', 'v0.6.1..HEAD')).toBe('2');
     expect(git('cat-file', '-t', 'v0.7.0')).toBe('tag');

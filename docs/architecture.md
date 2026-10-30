@@ -118,11 +118,34 @@ settings survive a new port or a cleared app.
 ## Build and ZIP
 
 `npm run build` writes the static skin to `dist/`, with `index.html` and `manifest.json` at its
-root. `npm run zip` builds, checks what Decaid needs of a skin's ZIP (`index.html` at the root,
-relative asset paths, a safe id) and writes `release/pureflow-<version>.zip`. The version is set in
+root, and the ocr flavour to `dist-ocr/` (below). `npm run zip` builds, checks what Decaid needs of
+a skin's ZIP (`index.html` at the root, relative asset paths, a safe id) and writes
+`release/pureflow-<version>.zip` and `release/pureflow-<version>-ocr.zip`. The version is set in
 `package.json` and `public/manifest.json`, and `src/manifest.test.ts` keeps the two equal. The
 same ZIP runs in Decaid on Android, Windows, Linux and macOS. How a user installs it is in
 [Install](user/install.md).
+
+### Two builds
+
+One source makes two flavours, chosen at build time (`scripts/flavours.mjs`): **base**, the skin,
+and **ocr**, the same skin that will also read the bean bag's photo. The build constant `__OCR__`
+(Vite's `define`, declared in `src/env.d.ts`) is true only in `vite build --mode ocr`; the code
+that uses the reader sits behind `if (__OCR__) { await import('./read') }`
+(`src/beans/reading.ts`), so the base build leaves out the reader and all it imports.
+`npm run build:base` and `npm run build:ocr` build one; `npm run dev` serves the base flavour and
+`npm run dev:ocr` the ocr one. The ocr build needs the two model archives of PP-OCRv6 tiny:
+`scripts/fetch-ocr-models.mjs` downloads them once into the git-ignored `.cache/ocr/`, checks each
+against the SHA-256 pinned in the script and stops the build with a message on a wrong hash or with
+no network and no cache; the build copies them into `dist-ocr/ocr/`, adds ' With bag reading.' to
+the manifest's description and writes a copy of `NOTICE` with the models' licence. The base build
+never needs them, and no model is committed. Both ZIPs have the same id and version, so installing
+one replaces the other. Besides Decaid's needs, `scripts/zip.mjs` checks that the base ZIP has no
+`ocr/` folder, no `.onnx` or `.wasm` file, no reader chunk and no `paddleocr` or `onnxruntime` in
+its scripts and is under 1 MB, and that the ocr ZIP has the reader, both models with their pinned
+hash and the licence and is under 16 MB; `npm run verify` runs these checks with
+`node scripts/zip.mjs --check`, which writes nothing. The browser tests of `npm run e2e` run the
+base flavour; `npm run e2e:ocr` (`playwright.ocr.config.ts`, the specs `e2e/*.ocr.ts`) builds and
+serves the ocr flavour.
 
 ## The release script
 
@@ -137,9 +160,11 @@ way a release is made. In order, it stops at the first gate that fails:
 4. the version, from the trailers (major with `Breaking: yes`, minor with an `added` or `changed`
    entry, else patch), or from `--bump` or `--version`, behind a typed yes;
 5. `npm run verify`, `npm run e2e` and the rig suite in its groups;
-6. the files: both versions, the `CHANGELOG.md` section, the ZIP and `release/SHA256SUMS.txt`;
+6. the files: both versions, the `CHANGELOG.md` section, the two ZIPs and
+   `release/SHA256SUMS.txt` with a line for each;
 7. the local commit and the tag;
-8. the push and the GitHub release with the ZIP, behind a second yes.
+8. the push and the GitHub release with both ZIPs, behind a second yes; the release notes say which
+   ZIP is which, and both are downloaded again and compared with the local files.
 
 `--dry-run` runs the checks and prints what it would write. `--local` stops after the tag and
 never calls GitHub. `--resume` continues at the publish step when the tag exists.
@@ -158,10 +183,11 @@ are described in [CONTRIBUTING](../CONTRIBUTING.md#commit-messages).
 | `npm run lint` | ESLint, then `scripts/font-sizes.mjs`: every font size in `src` is one of the six type-role tokens (`--text-label` to `--text-big` in `src/app.css`); then `scripts/spacing.mjs`: every `gap` is one of the four spacing tokens (`--space-1` to `--space-4`, 0.3 to 2.4 rem) |
 | `npm run format:check` | Prettier, without writing |
 | `npm run e2e` | the Playwright tests of `e2e/` on the dev server (`npm run dev`, port 24800), with a mocked gateway (`e2e/mock-gateway.ts`) instead of Decaid; about 11 minutes |
+| `npm run e2e:ocr` | the Playwright tests of `e2e/*.ocr.ts` on the ocr flavour, built and served by `vite preview --mode ocr` on port 24800, with the mocked gateway |
 | `npm run e2e:rig` | the tests of `e2e-rig/` against a running Decaid with its simulated machine and scale; they skip themselves when no gateway answers |
-| `npm run publish-check` | no Windows path, personal e-mail address, real MAC address or token in a tracked file; `--history` reads every commit too |
+| `npm run publish-check` | no Windows path, personal e-mail address, real MAC address or token in a tracked file or in the builds `dist/` and `dist-ocr/`; `--history` reads every commit too |
 | `npm run docs-check` | every link and image of the README, CONTRIBUTING, CHANGELOG, SECURITY, this file and `docs/user/` resolves |
-| `npm run verify` | check, lint, format, test, build, the publish and docs checks and `npm audit --audit-level=high`, in that order; CI runs it on every push and pull request to `main`, and the mocked e2e beside it |
+| `npm run verify` | check, lint, format, test, build (both flavours), the checks of both ZIPs (`node scripts/zip.mjs --check`), the publish and docs checks and `npm audit --audit-level=high`, in that order; CI runs it on every push and pull request to `main`, and the mocked e2e and the ocr flavour's e2e beside it |
 
 The browser tests run on the design target: 1280 x 800 CSS pixels at device scale factor 2,
 landscape, dark, with touch.

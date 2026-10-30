@@ -49,17 +49,17 @@ the browser tests.
 | Step | Command | Result |
 |---|---|---|
 | Install | `npm ci` | the packages in `node_modules/` |
-| Dev server | `npm run dev` | the skin on port 24800 |
+| Dev server | `npm run dev` | the skin on port 24800; `npm run dev:ocr` the ocr flavour, which also reads the bean bag |
 | Type check | `npm run check` | checks the TypeScript and Svelte sources |
 | Lint | `npm run lint` | ESLint, and the font sizes |
 | Format | `npm run format:check` | Prettier, without writing |
 | Test | `npm test` | runs the Vitest tests once |
 | Browser tests | `npm run e2e` | the Playwright tests on fixture data and a mocked gateway |
-| Build | `npm run build` | the static skin in `dist/`, with `index.html` and `manifest.json` at its root |
-| Zip | `npm run zip` | builds, then writes `release/pureflow-<version>.zip` with `index.html` at the ZIP's root |
+| Build | `npm run build` | both flavours: the static skin in `dist/`, with `index.html` and `manifest.json` at its root, and the ocr flavour in `dist-ocr/` (`build:base`, `build:ocr` build one) |
+| Zip | `npm run zip` | builds, then writes `release/pureflow-<version>.zip` and `release/pureflow-<version>-ocr.zip`, each with `index.html` at the ZIP's root |
 | Publish check | `npm run publish-check` | no local path, personal address or token in the files |
-| All checks | `npm run verify` | check, lint, format, test, build, the publish and docs checks and `npm audit`, as CI runs them |
-| Release | `npm run release` | the checks, the changelog from the commits, the version, the ZIP, the tag, then the GitHub release after a yes; `--dry-run` and `--local` change less |
+| All checks | `npm run verify` | check, lint, format, test, build, the checks of both ZIPs, the publish and docs checks and `npm audit`, as CI runs them |
+| Release | `npm run release` | the checks, the changelog from the commits, the version, the two ZIPs, the tag, then the GitHub release after a yes; `--dry-run` and `--local` change less |
 
 `npm run e2e:rig` runs the tests that need a running Decaid with its simulated machine and
 scale ([the rig](docs/architecture.md#the-rig)). How the skin is built, its modules and its checks

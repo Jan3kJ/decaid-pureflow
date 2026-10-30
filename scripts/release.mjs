@@ -1,7 +1,8 @@
 // `npm run release`: the only way a release is made, run in the product repository.
 // In order: the checks before anything, the history from the commits' `Changelog:` trailers since
-// the last tag, the version (behind a yes), every check, the files (versions, CHANGELOG.md, the ZIP
-// and release/SHA256SUMS.txt), the local commit and tag, and the publish step behind a second yes.
+// the last tag, the version (behind a yes), every check, the files (versions, CHANGELOG.md, the two
+// ZIPs, base and ocr, and release/SHA256SUMS.txt with a line for each), the local commit and tag,
+// and the publish step behind a second yes.
 //
 //   npm run release -- [--dry-run] [--local] [--resume] [--no-rig] [--publish]
 //                      [--bump major|minor|patch] [--version X.Y.Z]
@@ -27,10 +28,12 @@ import {
   insertSection,
   lastTag,
   parseLog,
+  releaseZips,
   rigGroups,
   sectionOf,
-  sumsLine,
+  sumsText,
   withVersion,
+  zipsNote,
 } from './release-lib.mjs';
 
 /** A stop: what is wrong, and the one line that fixes it. */
@@ -123,6 +126,8 @@ export async function release(argv, root, io = {}) {
     if (result.status !== 0) throw new Stop(`git ${args.join(' ')} failed: ${result.stderr.trim()}`, 'git status');
     return result.stdout.trim();
   };
+  /** release/SHA256SUMS.txt for the ZIPs of release/ named. */
+  const sums = (names) => sumsText(Object.fromEntries(names.map((name) => [name, sha256(join(root, 'release', name))])));
   const step = (cmd, ...args) => {
     log(`\n> ${cmd} ${args.join(' ')}`);
     return exec(cmd, args, { cwd: root, inherit: true }).status === 0;
@@ -239,10 +244,12 @@ export async function release(argv, root, io = {}) {
 
   // 5. The files.
   const versionFiles = ['package.json', 'package-lock.json', 'public/manifest.json'];
+  const zips = releaseZips(JSON.parse(read('public/manifest.json')).id, version);
   if (options.dryRun) {
     log(
-      `\n5. Would write ${version} into ${versionFiles.join(', ')}, the section above into CHANGELOG.md, run npm run zip and write release/SHA256SUMS.txt`,
+      `\n5. Would write ${version} into ${versionFiles.join(', ')}, the section above into CHANGELOG.md, run npm run zip for ${zips.map((name) => `release/${name}`).join(' and ')} and write release/SHA256SUMS.txt with a line for each:`,
     );
+    for (const name of zips) log(`   <sha-256>  ${name}`);
     log('\nDry run: nothing has been changed.');
     printLeft();
     return version;
@@ -258,12 +265,10 @@ export async function release(argv, root, io = {}) {
   const changelog = existsSync(join(root, 'CHANGELOG.md')) ? read('CHANGELOG.md') : '# Changelog\n';
   writeFileSync(join(root, 'CHANGELOG.md'), insertSection(changelog, section(options.rig)));
   if (!step('npm', 'test', '--', 'src/manifest.test.ts')) throw new Stop('the versions test failed', undo);
-  if (!step('npm', 'run', 'zip')) throw new Stop('npm run zip or its checks of the ZIP failed', undo);
-  const { id } = JSON.parse(read('public/manifest.json'));
-  const zipName = `${id}-${version}.zip`;
-  if (!existsSync(join(root, 'release', zipName))) throw new Stop(`release/${zipName} was not written`, undo);
-  writeFileSync(join(root, 'release', 'SHA256SUMS.txt'), sumsLine(sha256(join(root, 'release', zipName)), zipName));
-  log(`   release/${zipName}, release/SHA256SUMS.txt`);
+  if (!step('npm', 'run', 'zip')) throw new Stop('npm run zip or its checks of the ZIPs failed', undo);
+  for (const name of zips) if (!existsSync(join(root, 'release', name))) throw new Stop(`release/${name} was not written`, undo);
+  writeFileSync(join(root, 'release', 'SHA256SUMS.txt'), sums(zips));
+  log(`   ${zips.map((name) => `release/${name}`).join(', ')}, release/SHA256SUMS.txt`);
 
   // 6. The local commit and the annotated tag.
   git('add', '--', ...versionFiles, 'CHANGELOG.md');
@@ -284,22 +289,23 @@ export async function release(argv, root, io = {}) {
     if (sh('git', 'rev-parse', '--verify', '-q', `refs/tags/${t}`).status !== 0) {
       throw new Stop(`no tag ${t} to publish`, 'npm run release (without --resume)');
     }
-    const { id } = JSON.parse(read('public/manifest.json'));
-    const zipName = `${id}-${v}.zip`;
-    const zip = join(root, 'release', zipName);
-    const sums = join(root, 'release', 'SHA256SUMS.txt');
-    if (!existsSync(zip)) {
+    const names = releaseZips(JSON.parse(read('public/manifest.json')).id, v);
+    const files = names.map((name) => join(root, 'release', name));
+    const sumsFile = join(root, 'release', 'SHA256SUMS.txt');
+    if (files.some((file) => !existsSync(file))) {
       if (!step('npm', 'run', 'zip')) throw new Stop('npm run zip failed', 'npm run zip');
-      writeFileSync(sums, sumsLine(sha256(zip), zipName));
+      writeFileSync(sumsFile, sums(names));
     }
-    if (!existsSync(sums) || !readFileSync(sums, 'utf8').startsWith(sha256(zip))) {
+    if (!existsSync(sumsFile) || readFileSync(sumsFile, 'utf8') !== sums(names)) {
       throw new Stop(
-        `release/SHA256SUMS.txt does not hold the SHA-256 of release/${zipName}`,
+        `release/SHA256SUMS.txt does not hold the SHA-256 of ${names.map((name) => `release/${name}`).join(' and ')}`,
         'npm run zip, then npm run release -- --resume',
       );
     }
-    const notes = sectionOf(read('CHANGELOG.md'), v);
-    if (notes === undefined) throw new Stop(`CHANGELOG.md has no section ${v}`, 'git show HEAD:CHANGELOG.md');
+    const body = sectionOf(read('CHANGELOG.md'), v);
+    if (body === undefined) throw new Stop(`CHANGELOG.md has no section ${v}`, 'git show HEAD:CHANGELOG.md');
+    // The notes say which ZIP is which; CHANGELOG.md keeps the entries only.
+    const notes = `${body}\n${zipsNote(names, readFileSync(files[1]).length)}`;
     const where = options.publish ? 'a public release' : 'a draft release';
     if (!(await yes(`Publish ${v}: push main and ${t} to origin and create ${where} on GitHub?`))) {
       log(`Not published. ${t} is local; later: npm run release -- --resume`);
@@ -313,14 +319,14 @@ export async function release(argv, root, io = {}) {
       writeFileSync(notesFile, notes);
       const exists = sh('gh', 'release', 'view', t).status === 0;
       const uploaded = exists
-        ? step('gh', 'release', 'upload', t, zip, sums, '--clobber')
+        ? step('gh', 'release', 'upload', t, ...files, sumsFile, '--clobber')
         : step(
             'gh',
             'release',
             'create',
             t,
-            zip,
-            sums,
+            ...files,
+            sumsFile,
             '--title',
             `pureflow ${v}`,
             '--notes-file',
@@ -329,17 +335,23 @@ export async function release(argv, root, io = {}) {
           );
       if (!uploaded) throw new Stop('the GitHub release failed', 'npm run release -- --resume');
       const download = join(scratch, 'download');
-      if (!step('gh', 'release', 'download', t, '--pattern', zipName, '--dir', download)) {
-        throw new Stop('the download of the asset failed', 'npm run release -- --resume');
+      const patterns = names.flatMap((name) => ['--pattern', name]);
+      if (!step('gh', 'release', 'download', t, ...patterns, '--dir', download)) {
+        throw new Stop('the download of the assets failed', 'npm run release -- --resume');
       }
-      if (sha256(join(download, zipName)) !== sha256(zip)) {
-        throw new Stop(`the downloaded ${zipName} differs from release/${zipName}`, 'npm run release -- --resume');
-      }
+      names.forEach((name, index) => {
+        const downloaded = join(download, name);
+        if (!existsSync(downloaded) || sha256(downloaded) !== sha256(files[index])) {
+          throw new Stop(`the downloaded ${name} differs from release/${name}`, 'npm run release -- --resume');
+        }
+      });
     } finally {
       rmSync(scratch, { recursive: true, force: true });
     }
-    log(`\nPublished ${where}; the downloaded asset has the same SHA-256.`);
-    log(`The ZIP's URL for Decaid's skin selector: ${assetUrl(JSON.parse(read('package.json')).repository, t, zipName)}`);
+    log(`\nPublished ${where}; each downloaded asset has the SHA-256 of its local ZIP.`);
+    for (const name of names) {
+      log(`The URL of ${name} for Decaid's skin selector: ${assetUrl(JSON.parse(read('package.json')).repository, t, name)}`);
+    }
     printLeft();
     return v;
   }

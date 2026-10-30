@@ -1,5 +1,7 @@
 node_modules/
 dist/
+dist-ocr/
+.cache/
 release/
 data/
 e2e/.results/

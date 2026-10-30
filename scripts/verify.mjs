@@ -1,5 +1,6 @@
 // `npm run verify`: the one list of checks that CI (.github/workflows/ci.yml) and the release script
-// run, in this order, stopping at the first that fails. The
+// run, in this order, stopping at the first that fails. The build makes both flavours and the zip
+// check checks both ZIPs without writing them. The
 // browser tests and the rig are not in it. In the team repository, before the cut, the publish check
 // reads the files as the cut makes them (`--cut=stint/cut`), since the team's own files and the
 // unscrubbed spec are not the product's.
@@ -17,6 +18,7 @@ export function verifySteps(root = '.') {
     'npm run format:check',
     'npm test',
     'npm run build',
+    'node scripts/zip.mjs --check',
     `node scripts/publish-check.mjs${cut}`,
     'node scripts/docs-check.mjs',
     'npm audit --audit-level=high',

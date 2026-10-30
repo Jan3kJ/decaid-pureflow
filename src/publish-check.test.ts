@@ -79,6 +79,19 @@ describe('publish-check', { timeout: 30_000 }, () => {
     expect(result.stderr).toContain(`docs/architecture.md:3: ${rule}`);
   });
 
+  it('reads the builds of both flavours, which are not tracked', () => {
+    repository(CLEAN);
+    mkdirSync(join(root, 'dist-ocr', 'assets'), { recursive: true });
+    mkdirSync(join(root, 'dist', 'assets'), { recursive: true });
+    writeFileSync(join(root, 'dist', 'assets', 'index.js'), 'console.log(1);\n');
+    writeFileSync(join(root, 'dist-ocr', 'ocr.tar'), '\0binary D:' + '\\Git');
+    expect(check().stdout).toContain('3 files, 2 built files');
+    writeFileSync(join(root, 'dist-ocr', 'assets', 'index.js'), "const p = 'D:" + "\\Git\\pureflow';\n");
+    const result = check();
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('dist-ocr/assets/index.js:1: Windows path');
+  });
+
   it('with --history fails on what only an earlier commit holds, and on an author', () => {
     repository({ ...CLEAN, 'docs/old.md': 'D:' + '/Git/streamline-js\n' });
     rmSync(join(root, 'docs/old.md'));

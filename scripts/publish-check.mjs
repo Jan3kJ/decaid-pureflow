@@ -6,10 +6,11 @@
 // every commit message, author and committer, and the annotated tags. Binary files are skipped.
 // With `--cut=<dir>` (the team repository, before the cut) it reads the tracked files
 // as the cut makes them: only the paths of `<dir>/paths.txt`, rewritten by the rules of
-// `<dir>/text.txt` (git filter-repo's formats). Exits 1 and lists what it found.
+// `<dir>/text.txt` (git filter-repo's formats). On the tip it also reads the two builds, dist/ and
+// dist-ocr/, where they exist: what goes into a ZIP is checked as well. Exits 1 and lists what it found.
 import { spawn, spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { join, relative, resolve, sep } from 'node:path';
 
 const args = process.argv.slice(2);
 const history = args.includes('--history');
@@ -194,7 +195,20 @@ if (history) {
     }
     if (!binary(bytes)) report(file, rewrite(bytes.toString('utf8')));
   }
-  summary = `${files.length} files${cut ? ' as the cut makes them' : ''}`;
+  // The builds of both flavours are not tracked; their text files go into the ZIPs.
+  const built = [];
+  for (const dir of ['dist', 'dist-ocr']) {
+    if (!existsSync(join(root, dir))) continue;
+    for (const entry of readdirSync(join(root, dir), { recursive: true, withFileTypes: true })) {
+      if (!entry.isFile()) continue;
+      const path = join(entry.parentPath, entry.name);
+      const bytes = readFileSync(path);
+      const name = relative(root, path).split(sep).join('/');
+      built.push(name);
+      if (!binary(bytes)) report(name, bytes.toString('utf8'));
+    }
+  }
+  summary = `${files.length} files${cut ? ' as the cut makes them' : ''}${built.length ? `, ${built.length} built files` : ''}`;
 }
 
 if (problems.length) {
