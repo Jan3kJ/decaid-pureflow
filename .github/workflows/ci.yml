@@ -18,14 +18,14 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
       - run: npm ci
       # The ocr build's models, fetched by their pinned SHA-256 (scripts/fetch-ocr-models.mjs).
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: .cache/ocr
           key: ocr-models-${{ hashFiles('scripts/fetch-ocr-models.mjs') }}
@@ -35,8 +35,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -56,7 +56,7 @@ jobs:
           echo "::error title=e2e failed::$(echo "$failed" | paste -sd '|' - | sed 's/|/ | /g')"
           { echo "### e2e failed"; echo "$failed" | sed 's/^/- /'; } | tee -a "$GITHUB_STEP_SUMMARY"
       # e2e/.results/ is a hidden folder: the trace, picture and error context of each failed test.
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: e2e-results
@@ -68,21 +68,21 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
       - run: npm ci
       # The ocr build's models, fetched by their pinned SHA-256 (scripts/fetch-ocr-models.mjs).
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: .cache/ocr
           key: ocr-models-${{ hashFiles('scripts/fetch-ocr-models.mjs') }}
       - run: npx playwright install --with-deps chromium
       - run: npm run e2e:ocr
       # e2e/.results/ocr/ is inside a hidden folder: the trace, picture and error context of each failed test.
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: e2e-ocr-results
