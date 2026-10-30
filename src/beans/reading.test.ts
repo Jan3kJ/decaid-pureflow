@@ -30,11 +30,6 @@ describe('readPhoto', () => {
     expect(readBag).toHaveBeenCalledWith('data:image/jpeg;base64,');
   });
 
-  it('the stub reader reads no line', async () => {
-    const { readBag: stub } = await vi.importActual<typeof import('./read')>('./read');
-    expect(await stub('data:image/jpeg;base64,')).toEqual([]);
-  });
-
   it('the base build holds no reader chunk and no import of it', () => {
     const root = join(import.meta.dirname, '..', '..');
     const out = mkdtempSync(join(tmpdir(), 'base-build-'));

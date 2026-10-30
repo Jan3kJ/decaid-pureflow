@@ -148,6 +148,7 @@ test('a photo from the live camera is shown in the form, stored with the bean, r
 async function noReading(page: Page) {
   const form = page.getByTestId('bean-form');
   await expect(form.getByRole('status')).toHaveCount(0);
+  await expect(form.getByTestId('bean-reading')).toHaveCount(0);
   await expect(form.getByRole('button', { name: 'cancel' })).toHaveCount(0);
   await expect(form.getByRole('button')).toHaveText(['new photo', 'remove photo', 'no roast date', 'add']);
 }

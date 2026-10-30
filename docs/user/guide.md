@@ -81,6 +81,12 @@ bean's form, **photo** takes a picture of the bag with **capture**. It is kept w
 when you save. **new photo** replaces it and **remove photo** deletes it. The photo stays in
 Decaid on the tablet; nothing is sent away.
 
+The skin with bag reading (the ZIP whose name ends in `-ocr`) also reads a new photo, on the
+tablet itself. While it reads, the form says **Reading the bag**; **cancel** stops it. Then the
+lines it read are buttons under the photo, the likely name first and the likely roaster second.
+Choose **name** or **roaster** at the start of the row and tap a line to put it in that field;
+the choice then moves to the other field. Nothing is filled in until you tap.
+
 ## The steam timer
 
 Steam is started at the machine. The steam page sets its timer from the milk's weight.

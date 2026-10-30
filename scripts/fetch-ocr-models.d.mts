@@ -6,6 +6,8 @@ export interface Model {
 }
 export const MODELS: readonly Model[];
 export const CACHE: string;
+export const OCR_PACKAGES: readonly { name: string; licence: string; by: string; url: string }[];
+export const OCR_LICENCES: Readonly<Record<string, string>>;
 export const NOTICE_SECTION: string;
 export function fetchModels(options?: {
   cache?: string;

@@ -128,7 +128,7 @@ same ZIP runs in Decaid on Android, Windows, Linux and macOS. How a user install
 ### Two builds
 
 One source makes two flavours, chosen at build time (`scripts/flavours.mjs`): **base**, the skin,
-and **ocr**, the same skin that will also read the bean bag's photo. The build constant `__OCR__`
+and **ocr**, the same skin that also reads the bean bag's photo. The build constant `__OCR__`
 (Vite's `define`, declared in `src/env.d.ts`) is true only in `vite build --mode ocr`; the code
 that uses the reader sits behind `if (__OCR__) { await import('./read') }`
 (`src/beans/reading.ts`), so the base build leaves out the reader and all it imports.
@@ -142,10 +142,28 @@ never needs them, and no model is committed. Both ZIPs have the same id and vers
 one replaces the other. Besides Decaid's needs, `scripts/zip.mjs` checks that the base ZIP has no
 `ocr/` folder, no `.onnx` or `.wasm` file, no reader chunk and no `paddleocr` or `onnxruntime` in
 its scripts and is under 1 MB, and that the ocr ZIP has the reader, both models with their pinned
-hash and the licence and is under 16 MB; `npm run verify` runs these checks with
+hash, ONNX Runtime's WASM and the licences and is under 16 MB; `npm run verify` runs these checks with
 `node scripts/zip.mjs --check`, which writes nothing. The browser tests of `npm run e2e` run the
 base flavour; `npm run e2e:ocr` (`playwright.ocr.config.ts`, the specs `e2e/*.ocr.ts`) builds and
 serves the ocr flavour.
+
+**The reading** (ocr flavour only). `src/beans/read.ts` makes the reader on the first photo and
+keeps it: PaddleOCR.js (`@paddleocr/paddleocr-js`, a devDependency bundled only into the ocr
+build) with the PP-OCRv6 tiny detector and recogniser from the skin's `ocr/` folder, on ONNX
+Runtime's WASM build (the ocr build aliases `onnxruntime-web` to `onnxruntime-web/wasm`, one
+thread, no proxy: the skin's page is not cross-origin isolated) and OpenCV.js. The SDK's own
+worker is left out of the build (`noOcrWorker` in `vite.config.ts`). The stored photo is drawn
+on a canvas and read upright; when nothing is read it is turned by 270 degrees and read again.
+Nothing is fetched from another host. `src/beans/fields.ts` (pure) orders the lines as chips:
+the guessed name first (the tallest line by its letters' height, leaving out a small line right
+under a taller one, tasting lines and countries), the guessed roaster second (a roaster of the
+catalogue, else the line next to a 'Coffee Roasters' line, else the line right above the name,
+else right below), title case for lines in capitals or small letters. The bean form shows
+'Reading the bag' with **cancel**, then the chips under the photo with the choice **name** or
+**roaster**; a tap puts the chip in the chosen field and moves the choice to the other one.
+Nothing is filled in by itself. `NOTICE`'s copy in the ocr ZIP names the models and the bundled
+packages (Apache-2.0, MIT, Boost); `src/licence.test.ts` checks each package's licence against
+that list, and `scripts/zip.mjs` that the ocr ZIP holds ONNX Runtime's `.wasm`.
 
 ## The release script
 

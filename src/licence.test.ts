@@ -72,6 +72,28 @@ describe('licence', () => {
     expect(NOTICE_SECTION).toMatch(new RegExp(`^\\n\\n${last + 1}\\. `));
   });
 
+  it("the reading's packages carry an allowed licence and the ocr ZIP's NOTICE names each", async () => {
+    const { OCR_LICENCES, OCR_PACKAGES, NOTICE_SECTION } = await import('../scripts/fetch-ocr-models.mjs');
+    // The licences the reading may bring in: free, open source, no registration.
+    expect(Object.keys(OCR_LICENCES).sort()).toEqual(['Apache-2.0', 'BSL', 'MIT']);
+    const packageOf = (name: string) =>
+      JSON.parse(read(`node_modules/${name}/package.json`)) as { license: string; dependencies?: Record<string, string> };
+    for (const entry of OCR_PACKAGES) {
+      expect(packageOf(entry.name).license, entry.name).toBe(entry.licence);
+      expect(NOTICE_SECTION).toContain(`${entry.name}, ${entry.by}, ${entry.url}\n       ${OCR_LICENCES[entry.licence]}`);
+    }
+    // Every package the reader's SDK needs at run time is listed.
+    const sdk = OCR_PACKAGES[0].name;
+    expect(Object.keys(packageOf(sdk).dependencies ?? {}).sort()).toEqual(
+      OCR_PACKAGES.slice(1)
+        .map((entry) => entry.name)
+        .sort(),
+    );
+    // Only for building: the reading is bundled into the ocr build, never installed with the skin.
+    expect(Object.keys((pkg as { dependencies?: object }).dependencies ?? {})).toEqual([]);
+    expect(Object.keys(pkg.devDependencies)).toContain(sdk);
+  });
+
   it('NOTICE and README credit D-Flow and DSx2', () => {
     for (const file of ['NOTICE', 'README.md']) {
       expect(read(file), file).toContain('D-Flow');

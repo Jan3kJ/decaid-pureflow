@@ -88,9 +88,15 @@ function flavourProblems(files, flavour, models) {
       if (!bytes) problems.push(`ocr/${model.name}: the model is missing`);
       else if (model.sha256 && sha256(bytes) !== model.sha256) problems.push(`ocr/${model.name}: not the pinned SHA-256`);
     }
+    if (!names.some((name) => /^assets\/ort-wasm[\w.-]*\.wasm$/.test(name))) {
+      problems.push("assets/ort-wasm-*.wasm: ONNX Runtime's WebAssembly file is missing");
+    }
     const notice = files['NOTICE']?.toString('utf8') ?? '';
     if (!notice.includes('Apache-2.0') || !models.every((model) => notice.includes(model.name))) {
       problems.push("NOTICE: the ocr ZIP's copy does not name the models and their licence, Apache-2.0");
+    }
+    if (!['(MIT)', '(BSL-1.0)', 'onnxruntime-web', 'clipper-lib'].every((part) => notice.includes(part))) {
+      problems.push("NOTICE: the ocr ZIP's copy does not name the reading's packages and their MIT and Boost licences");
     }
     const { description } = manifestOf(files);
     if (typeof description !== 'string' || !description.endsWith(OCR_DESCRIPTION)) {

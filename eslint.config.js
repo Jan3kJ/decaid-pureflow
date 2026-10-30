@@ -30,7 +30,8 @@ export default tseslint.config(
   svelte.configs.recommended,
   {
     languageOptions: {
-      globals: { ...globals.browser, ...globals.node },
+      // `__OCR__` is the build constant of vite.config.ts (declared in src/env.d.ts).
+      globals: { ...globals.browser, ...globals.node, __OCR__: 'readonly' },
       parserOptions: {
         project: './tsconfig.eslint.json',
         tsconfigRootDir: import.meta.dirname,

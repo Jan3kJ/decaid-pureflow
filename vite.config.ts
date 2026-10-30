@@ -55,6 +55,23 @@ function ocrFiles(): Plugin {
   };
 }
 
+/**
+ * The reader runs PaddleOCR.js on the page, never in its worker mode, so the SDK's prebuilt worker
+ * (11 MB, a second copy of OpenCV.js and ONNX Runtime) is left out of the ocr build: its URL becomes
+ * an error that only worker mode would reach.
+ */
+function noOcrWorker(): Plugin {
+  return {
+    name: 'pureflow-no-ocr-worker',
+    transform(code, id) {
+      if (!/[\\/]@paddleocr[\\/]paddleocr-js[\\/]dist[\\/]index\.mjs$/.test(id)) return null;
+      const url = /new URL\("\.\/assets\/worker-entry-[\w-]+\.js", import\.meta\.url\)/;
+      if (!url.test(code)) this.error("PaddleOCR.js's worker URL was not found; check the SDK's version");
+      return { code: code.replace(url, '(() => { throw new Error("worker mode is not in this build"); })()'), map: null };
+    },
+  };
+}
+
 // Two flavours of one source: `vite` and `vite build` make the base one into dist/, `--mode ocr` the
 // one that also reads the bean bag into dist-ocr/. `__OCR__` is a build constant, so the base
 // build leaves out the reader and everything it imports.
@@ -64,8 +81,10 @@ export default defineConfig(({ mode }) => {
   return {
     // Relative asset paths, so the build works from any path the gateway serves it on.
     base: './',
-    plugins: [svelte(), ...(ocr ? [ocrFiles()] : [])],
+    plugins: [svelte(), ...(ocr ? [ocrFiles(), noOcrWorker()] : [])],
     define: { __OCR__: JSON.stringify(ocr) },
+    // The reader runs ONNX Runtime on the CPU only: its WASM build, without the WebGPU one.
+    resolve: ocr ? { alias: [{ find: /^onnxruntime-web$/, replacement: 'onnxruntime-web/wasm' }] } : {},
     server: { port: PORT, strictPort: true },
     preview: { port: PORT, strictPort: true },
     build: { outDir: flavour.dist, emptyOutDir: true },

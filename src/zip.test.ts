@@ -63,7 +63,8 @@ function ocrTree(): Record<string, string | Buffer> {
     ...baseTree(),
     'manifest.json': manifest(DESCRIPTION + ' With bag reading.'),
     'assets/read-b2.js': 'export {};\n',
-    NOTICE: 'pureflow\n\n6. det.tar, rec.tar: Apache-2.0\n',
+    'assets/ort-wasm-simd-threaded-c3.wasm': MODEL_BYTES,
+    NOTICE: 'pureflow\n\n6. det.tar, rec.tar: Apache-2.0\n   onnxruntime-web: (MIT)\n   clipper-lib: (BSL-1.0)\n',
     'ocr/det.tar': MODEL_BYTES,
     'ocr/rec.tar': MODEL_BYTES,
   };
@@ -118,7 +119,7 @@ describe('zip.mjs: the two ZIPs', () => {
     expect(problems({ ...baseTree(), 'assets/index-a1.js': 'new PaddleOCR()' }, base)).toHaveLength(1);
   });
 
-  it('fails an ocr tree without the models, with a wrong model, without the reader, its NOTICE or its description', () => {
+  it('fails an ocr tree without the models, with a wrong model, without the reader, the WASM, its NOTICE or its description', () => {
     const { 'ocr/det.tar': _det, 'ocr/rec.tar': _rec, ...noModels } = ocrTree();
     expect([_det, _rec]).toEqual([MODEL_BYTES, MODEL_BYTES]);
     expect(problems(noModels, ocr)).toEqual(['ocr/det.tar: the model is missing', 'ocr/rec.tar: the model is missing']);
@@ -126,7 +127,13 @@ describe('zip.mjs: the two ZIPs', () => {
     const { 'assets/read-b2.js': _reader, ...noReader } = ocrTree();
     expect(_reader).toBeDefined();
     expect(problems(noReader, ocr)).toEqual(["assets/read-*.js: the bag's reader is missing"]);
-    expect(problems({ ...ocrTree(), NOTICE: 'pureflow\n' }, ocr)).toHaveLength(1);
+    const { 'assets/ort-wasm-simd-threaded-c3.wasm': _wasm, ...noWasm } = ocrTree();
+    expect(_wasm).toBeDefined();
+    expect(problems(noWasm, ocr)).toEqual(["assets/ort-wasm-*.wasm: ONNX Runtime's WebAssembly file is missing"]);
+    expect(problems({ ...ocrTree(), NOTICE: 'pureflow\n' }, ocr)).toHaveLength(2);
+    expect(problems({ ...ocrTree(), NOTICE: 'pureflow\n\n6. det.tar, rec.tar: Apache-2.0\n' }, ocr)).toEqual([
+      "NOTICE: the ocr ZIP's copy does not name the reading's packages and their MIT and Boost licences",
+    ]);
     expect(problems({ ...ocrTree(), 'manifest.json': manifest() }, ocr)).toEqual([
       "manifest.json: the description does not end with 'With bag reading.'",
     ]);

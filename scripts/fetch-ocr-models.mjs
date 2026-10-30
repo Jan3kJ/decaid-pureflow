@@ -26,6 +26,35 @@ export const MODELS = [
 
 export const CACHE = fileURLToPath(new URL('../.cache/ocr/', import.meta.url));
 
+/**
+ * The packages the ocr build bundles for the reading, with the licence each names in its
+ * package.json and the licence's full name; src/licence.test.ts checks both against node_modules.
+ */
+export const OCR_PACKAGES = [
+  {
+    name: '@paddleocr/paddleocr-js',
+    licence: 'Apache-2.0',
+    by: 'PaddlePaddle Authors',
+    url: 'https://github.com/PaddlePaddle/PaddleOCR',
+  },
+  {
+    name: '@techstark/opencv-js',
+    licence: 'Apache-2.0',
+    by: 'OpenCV team; packaged by TechStark',
+    url: 'https://github.com/TechStark/opencv-js',
+  },
+  { name: 'onnxruntime-web', licence: 'MIT', by: 'Microsoft Corporation', url: 'https://github.com/microsoft/onnxruntime' },
+  { name: 'js-yaml', licence: 'MIT', by: 'Vladimir Zapparov and contributors', url: 'https://github.com/nodeca/js-yaml' },
+  { name: 'clipper-lib', licence: 'BSL', by: 'Angus Johnson; JavaScript by Timo', url: 'https://github.com/junmer/clipper-lib' },
+];
+
+/** The licences the reading's parts may carry: their full names, by the name a package.json gives. */
+export const OCR_LICENCES = {
+  'Apache-2.0': 'Apache License, Version 2.0 (Apache-2.0), https://www.apache.org/licenses/LICENSE-2.0',
+  MIT: 'MIT License (MIT), https://opensource.org/license/mit',
+  BSL: 'Boost Software License 1.0 (BSL-1.0), https://www.boost.org/LICENSE_1_0.txt',
+};
+
 /** The section the ocr ZIP's copy of NOTICE adds: the licences of what only that ZIP holds. */
 export const NOTICE_SECTION = `
 
@@ -41,6 +70,11 @@ export const NOTICE_SECTION = `
    archives PaddlePaddle publishes. Copyright (c) PaddlePaddle Authors.
    Licensed under the Apache License, Version 2.0 (Apache-2.0),
    https://www.apache.org/licenses/LICENSE-2.0
+
+   Its scripts and assets/ hold the code that reads them, bundled from
+   these packages (ONNX Runtime's WebAssembly file among them):
+
+${OCR_PACKAGES.map((entry) => `     ${entry.name}, ${entry.by}, ${entry.url}\n       ${OCR_LICENCES[entry.licence]}`).join('\n')}
 `;
 
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');

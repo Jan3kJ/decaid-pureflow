@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 import { mockGateway } from './mock-gateway';
 
 // The ocr build loads, and a photo taken in the bean form is handed to the bag's reader: its
-// chunk is fetched from the skin's own server when the photo is captured. The form shows no line yet.
+// chunk is fetched from the skin's own server when the photo is captured (bag-reading.ocr.ts reads it).
 
 const BAG = readFileSync(new URL('./fixtures/bag.png', import.meta.url));
 const BAG_URL = `data:image/png;base64,${BAG.toString('base64')}`;

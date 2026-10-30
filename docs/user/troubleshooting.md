@@ -41,7 +41,8 @@ from.
 
 **photo** opens the live camera. Where Decaid's window refuses it, the dialog says so and
 shows **take a picture**, which opens the tablet's own camera instead. The skin does not read
-the bag: type the name and the roaster.
+the bag: type the name and the roaster. Only the skin with bag reading (the `-ocr` ZIP) reads it;
+when it says **Nothing read on the bag**, take the photo again closer and straight on, or type.
 
 ## A profile does not load
 
