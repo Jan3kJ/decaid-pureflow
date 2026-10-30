@@ -93,7 +93,7 @@ test.beforeAll(async () => {
 });
 
 test.beforeEach(async () => {
-  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
   profilesBefore = await profileIds();
   workflowBefore = await api<RigWorkflow>('GET', '/api/v1/workflow');
 });

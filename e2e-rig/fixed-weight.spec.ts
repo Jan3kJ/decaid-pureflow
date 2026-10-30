@@ -40,7 +40,7 @@ test.beforeAll(async () => {
 });
 
 test('the finished shot keeps its weight after 15 s and through hot water; the state line follows the scale', async ({ page }) => {
-  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
   test.setTimeout(280_000);
 
   const workflowBefore = await api<RigWorkflow>('GET', '/api/v1/workflow');

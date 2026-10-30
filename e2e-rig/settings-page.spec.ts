@@ -73,7 +73,7 @@ async function snapshot() {
 }
 
 test('settings changed through the page are read back from the gateway, and restored', async ({ page }) => {
-  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
   const before = await snapshot();
   console.log('before', JSON.stringify(before));
   // The values the test sets: each differs from the rig's.

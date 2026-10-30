@@ -60,7 +60,7 @@ test.beforeAll(async () => {
 test('home menu: steam off and on again, read back from the machine; machine sleep keeps the app awake (item 18, 56)', async ({
   page,
 }) => {
-  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
 
   const temperatureBefore = await workflowSteam();
   const machineBefore = await machineSteamTemp();
@@ -135,7 +135,7 @@ test('home menu: steam off and on again, read back from the machine; machine sle
 test('home menu: machine and app sleep shows the Asleep screen at 5, a touch wakes; keepAwake and the wake lock untouched (item 56)', async ({
   page,
 }) => {
-  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
 
   const displayBefore = await api<DisplayState>('GET', '/api/v1/display');
   const keepAwakeBefore = (await api<DecaidSettings>('GET', '/api/v1/settings')).keepAwake;

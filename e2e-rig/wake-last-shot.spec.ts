@@ -46,7 +46,7 @@ async function showsShot(page: Page) {
 test('wake: home shows the newest shot after a start, a sleep and wake, a reload while asleep and the screen on again', async ({
   page,
 }) => {
-  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
   test.skip(newest === null, 'the rig holds no shot');
   const displayBefore = await api<DisplayState>('GET', '/api/v1/display');
   const reads: string[] = [];

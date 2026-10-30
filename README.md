@@ -38,7 +38,7 @@ the stop at weight need one.
 
 ## State
 
-pureflow is a beta. The version is 0.6.1; it is set in `package.json` and
+pureflow is a beta. The version is 0.8.0; it is set in `package.json` and
 `public/manifest.json`, and a test keeps the two equal.
 
 ## Development

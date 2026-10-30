@@ -40,7 +40,7 @@ test.beforeAll(async () => {
 });
 
 test('a simulated shot: the live graph ends with the shot, as long as its record, on a scale to 10', async ({ page }) => {
-  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
   test.setTimeout(240_000);
 
   const workflowBefore = await api<RigWorkflow>('GET', '/api/v1/workflow');

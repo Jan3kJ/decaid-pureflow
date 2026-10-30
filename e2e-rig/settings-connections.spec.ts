@@ -66,7 +66,7 @@ async function snapshot() {
 test("the device lists show the rig's MockDe1 and MockScale connected; power mode and 'scale required' read back and restored", async ({
   page,
 }) => {
-  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
   const before = await snapshot();
   console.log('before', JSON.stringify(before));
   const mode = before.scalePowerMode === 'displayOff' ? 'disabled' : 'displayOff';
@@ -107,7 +107,7 @@ test("the device lists show the rig's MockDe1 and MockScale connected; power mod
 });
 
 test('a clean is started through the page and cancelled on the simulated DE1; the state is read back', async ({ page }) => {
-  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
   const before = await snapshot();
   expect(before.state.state).toBe('idle');
   const state = async () => (await api<MachineSnapshot>('GET', '/api/v1/machine/state')).state.state;
@@ -134,7 +134,7 @@ test('a clean is started through the page and cancelled on the simulated DE1; th
 });
 
 test("Machine Information shows the simulated DE1's model, firmware and serial as the gateway reports them", async ({ page }) => {
-  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
   const info = await api<MachineInfo>('GET', '/api/v1/machine/info');
   await openCategory(page, 'machine');
   await expect(page.getByTestId('machine-info-model')).toHaveText(info.model!);

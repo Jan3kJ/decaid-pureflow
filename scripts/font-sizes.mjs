@@ -70,7 +70,9 @@ for (const path of files('src')) {
 }
 
 if (problems.length) {
-  console.error(`A font size that is no role's token (spec 3.14; src/app.css names the roles):\n${problems.join('\n')}`);
+  console.error(
+    `A font size that is no role's token (the six type-role tokens; src/app.css names the roles):\n${problems.join('\n')}`,
+  );
   process.exit(1);
 }
 console.log('font sizes: every size is a role token');

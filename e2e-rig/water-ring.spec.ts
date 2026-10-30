@@ -36,7 +36,7 @@ test.beforeAll(async () => {
 });
 
 test('hot water started at the machine: the ring on home and on steam, whose stop stops it', async ({ page }) => {
-  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
 
   const before = { shots: await ids('shots'), steams: await ids('steams') };
   const ring = page.getByTestId('water-view');

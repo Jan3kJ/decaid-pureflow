@@ -54,7 +54,7 @@ test.beforeAll(async () => {
 });
 
 test("the settings' button converts the test's old A-Flow profile to 3.0, the rig's own are skipped", async ({ page }) => {
-  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
 
   const profilesBefore = await profileIds();
   const backupBefore = await api('GET', BACKUP);

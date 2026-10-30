@@ -50,7 +50,7 @@ async function open(page: Page, screen: string) {
 test('hot water on settings, the picker and its page, flush on beans: the large ring on each, its stop stops the flush', async ({
   page,
 }) => {
-  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
 
   const before = { shots: await ids('shots'), steams: await ids('steams') };
   const ring = page.getByTestId('water-view');

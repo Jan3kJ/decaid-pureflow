@@ -54,7 +54,7 @@ test.beforeAll(async () => {
 });
 
 test("home menu: clean opens Maintenance's clean with the rig's water in ml and the drip tray hint (item 35)", async ({ page }) => {
-  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
 
   const stateBefore = await machineState();
   const backupBefore = await api('GET', BACKUP);

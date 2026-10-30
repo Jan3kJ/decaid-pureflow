@@ -81,7 +81,7 @@ test.beforeAll(async () => {
 });
 
 test('the history: shots with another profile or bean are entries, a tap restores one and shows its graph', async ({ page }) => {
-  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
 
   const workflowBefore = await api<RigWorkflow>('GET', '/api/v1/workflow');
   const shotsBefore = await shotIds();
@@ -213,7 +213,7 @@ test('the history: shots with another profile or bean are entries, a tap restore
 // one bean shows its entry only, and 'all' brings the rest back, the rig's own shot with its
 // free-text bean too. The test deletes its shots, bags and beans and puts the workflow back as it was.
 test('the history filtered by a bean of the catalogue shows only its entry', async ({ page }) => {
-  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
 
   const PREFIX = 'pureflow-rig-filter';
   const workflowBefore = await api<RigWorkflow>('GET', '/api/v1/workflow');

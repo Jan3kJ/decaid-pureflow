@@ -54,7 +54,7 @@ test.beforeAll(async () => {
 });
 
 test('the hot water page writes hotWaterData, 1:2 of a 40 g shot is 80 g, Decaid stops at it, tare tares', async ({ page }) => {
-  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
 
   const workflowBefore = await api<RigWorkflow>('GET', '/api/v1/workflow');
   const shotsBefore = await shotIds();

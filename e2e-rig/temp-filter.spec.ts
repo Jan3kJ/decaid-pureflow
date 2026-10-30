@@ -36,7 +36,7 @@ test.beforeAll(async () => {
 const largestStep = (values: number[]) => Math.max(...values.slice(1).map((value, i) => Math.abs(value - values[i])));
 
 test("the state line takes the group's drop at once and its heating in small steps", async ({ page }) => {
-  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
 
   const shotsBefore = await shotIds();
   try {

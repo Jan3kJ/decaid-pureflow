@@ -70,7 +70,7 @@ test.afterAll(async () => {
 });
 
 test('a profile moved to the right and renamed keeps its id and metadata under the new title', async ({ page }) => {
-  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
   test.setTimeout(120_000);
   const allBefore = await count('?includeHidden=true');
   const workflowBefore = await api<{ profile: Profile }>('GET', '/api/v1/workflow');

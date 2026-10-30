@@ -60,7 +60,7 @@ async function pluginStates() {
 }
 
 test('a plugin setting changed through the page is read back and restored', async ({ page }) => {
-  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
   const before = await api<PluginSettings>('GET', `/api/v1/plugins/${PLUGIN}/settings`);
   const states = await pluginStates();
   console.log('before', JSON.stringify(before), JSON.stringify(states));
@@ -89,7 +89,7 @@ test('a plugin setting changed through the page is read back and restored', asyn
 test('the sleep timeout changed through the page is read back and restored; a wake schedule is created and deleted', async ({
   page,
 }) => {
-  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
   const before = await api<PresenceSettings>('GET', '/api/v1/presence/settings');
   console.log('before', JSON.stringify(before));
   const minutes = before.sleepTimeoutMinutes === 31 ? 32 : 31;
@@ -140,7 +140,7 @@ test('the sleep timeout changed through the page is read back and restored; a wa
 });
 
 test('the firmware catalog is shown; Install asks first and is cancelled, nothing is applied', async ({ page }) => {
-  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
   const catalog = await api<FirmwareCatalog>('GET', '/api/v1/machine/firmware');
   const update = await api<AppUpdateState>('GET', '/api/v1/update');
   console.log(

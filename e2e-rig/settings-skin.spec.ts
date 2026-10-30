@@ -53,7 +53,7 @@ async function served(): Promise<WebUiServerStatus> {
 }
 
 test("the skin switch makes another skin Decaid's default and opens it; the default is put back", async ({ page }) => {
-  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
   const skins = await api<WebUiSkin[]>('GET', '/api/v1/webui/skins');
   const before = {
     default: (await api<WebUiSkin>('GET', '/api/v1/webui/skins/default')).id,

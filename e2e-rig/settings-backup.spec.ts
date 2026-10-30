@@ -39,7 +39,7 @@ test.beforeAll(async () => {
 });
 
 test('a changed setting is backed up in the KV store and comes back after localStorage is cleared', async ({ page }) => {
-  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
 
   // A missing key answers 200 null.
   const before = await api('GET', BACKUP);

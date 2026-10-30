@@ -39,7 +39,7 @@ test.beforeAll(async () => {
 });
 
 test('hot water and flush started at the machine show the ring and the values in stop; stop ends the flush', async ({ page }) => {
-  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
 
   const workflow = await api<RigWorkflow>('GET', '/api/v1/workflow');
   const hotSeconds = Math.round(workflow.hotWaterData.duration);

@@ -30,7 +30,7 @@ test.beforeAll(async () => {
 });
 
 test('the picker previews every listed profile as its steps say', async ({ page }) => {
-  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
   test.setTimeout(180_000);
   const sent: string[] = [];
   const errors: string[] = [];

@@ -33,7 +33,7 @@ test.beforeAll(async () => {
 const shown = (page: Page, screen: string) => page.locator(`.page:not([inert]) [data-testid="screen-${screen}"]`);
 
 test('a swipe opens steam and hot water from home, and writes nothing to the machine', async ({ page }) => {
-  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
   const workflowBefore = await api<RigWorkflow>('GET', '/api/v1/workflow');
   const backupBefore = await api('GET', BACKUP);
   const workflowWrites: string[] = [];

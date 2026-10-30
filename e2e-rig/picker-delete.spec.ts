@@ -69,7 +69,7 @@ test.afterAll(async () => {
 });
 
 test('a profile swiped and deleted in the picker leaves the list; the count is back to before', async ({ page }) => {
-  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
   test.setTimeout(120_000);
   const visibleBefore = await count();
   const allBefore = await count('?includeHidden=true');

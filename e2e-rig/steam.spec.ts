@@ -76,7 +76,7 @@ test('steam: the written timer is read back from the workflow and from the machi
   page,
   context,
 }) => {
-  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
 
   const before = await steamSettings();
   const steamsBefore = await steamIds();
@@ -258,7 +258,7 @@ test('steam: the written timer is read back from the workflow and from the machi
 });
 
 test("steam: the page's tare button tares the simulated scale (item 17)", async ({ page }) => {
-  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
   const tares: number[] = [];
   page.on('response', (response) => {
     if (response.url() === `${GATEWAY}/api/v1/scale/tare`) tares.push(response.status());
@@ -276,7 +276,7 @@ test("steam: the page's tare button tares the simulated scale (item 17)", async 
 });
 
 test('steam: with the heater off Steam on sits in the header and switches it on, read back from the machine', async ({ page }) => {
-  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
   const BACKUP = '/api/v1/store/pureflow/settings-backup';
   const temperatureBefore = (await steamSettings()).targetTemperature;
   const backupBefore = await api('GET', BACKUP);

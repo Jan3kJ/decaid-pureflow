@@ -39,7 +39,7 @@ test.beforeAll(async () => {
 });
 
 test('the picker lists the skin’s defaults and loads one into the workflow without storing it', async ({ page }) => {
-  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
 
   const workflowBefore = await api<RigWorkflow>('GET', '/api/v1/workflow');
   const profilesBefore = await profileIds();

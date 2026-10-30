@@ -47,7 +47,7 @@ async function touch(page: Page) {
 }
 
 test('a touched skin keeps the machine awake; left alone it sleeps after the minute (item 75)', async ({ page }) => {
-  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
   const probe = await api('POST', HEARTBEAT);
   test.skip(probe.status === 404, `this Decaid has no ${HEARTBEAT} (it came with a later version than the rig's)`);
   test.setTimeout(480_000);

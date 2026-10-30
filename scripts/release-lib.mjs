@@ -9,9 +9,9 @@ const HEADINGS = { added: 'Added', changed: 'Changed', fixed: 'Fixed' };
 /** What the script leaves to people, printed at the end of every run. */
 export const NOT_IN_SCRIPT = [
   "Decaid's install by URL: install the release's ZIP from its URL in Decaid's skin selector and open the skin (only once the repository is public; while it is private Decaid cannot fetch the URL)",
-  "the founder's cold read of the user pages on the tablet",
+  "the maintainer's cold read of the user pages on the tablet",
   'the announcement',
-  'making the repository public (P6), on GitHub under Settings, Danger zone',
+  'making the repository public, on GitHub under Settings, Danger zone',
 ];
 
 /**

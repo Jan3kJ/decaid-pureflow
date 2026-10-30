@@ -49,7 +49,7 @@ test.beforeAll(async () => {
 });
 
 test('a bean with a photo: the fields as typed, the photo stored in KV and deleted with the bean', async ({ page, context }) => {
-  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
 
   const beansBefore = (await beans()).map((bean) => bean.id);
   const keysBefore = await keys();

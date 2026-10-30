@@ -58,7 +58,7 @@ test.beforeAll(async () => {
 });
 
 test('scale: no scale page; a tap on the weight tares, and the scale reads about 0 (item 21)', async ({ page }) => {
-  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
 
   await page.goto('/');
   await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 15_000 });
@@ -78,7 +78,7 @@ test('scale: no scale page; a tap on the weight tares, and the scale reads about
 });
 
 test('scale: with blockTareDuringShot on, a tare during a simulated shot shows the notice', async ({ page }) => {
-  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
 
   const settingBefore: boolean = (await api<DecaidSettings>('GET', '/api/v1/settings')).blockTareDuringShot ?? false;
   const shotsBefore = await shotIds();
@@ -138,7 +138,7 @@ async function dropScale(page: import('@playwright/test').Page): Promise<void> {
 test('scale: the simulated scale, missing at the start or dropped, is connected again by the skin without a touch', async ({
   page,
 }) => {
-  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
   test.setTimeout(400_000);
   // Only a scan connects it, and a scan takes about 15 s with Bluetooth searched too.
   expect(await scaleState(), 'the rig starts with its simulated scale connected').toBe('connected');
@@ -172,7 +172,7 @@ test('scale: the simulated scale, missing at the start or dropped, is connected 
 });
 
 test('sleep: machine and app sleep puts the machine into sleeping with the Asleep screen, a touch wakes it', async ({ page }) => {
-  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/research.md 8.8)`);
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
 
   const displayBefore = await api<DisplayState>('GET', '/api/v1/display');
   const sent: string[] = [];
