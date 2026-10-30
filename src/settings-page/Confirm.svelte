@@ -88,7 +88,7 @@
   .dialog {
     width: 30rem;
     box-sizing: border-box;
-    padding: 0.4rem 1.2rem 1.2rem;
+    padding: var(--space-1) var(--space-3) var(--space-3);
     background: var(--panel);
     border: 1px solid var(--line);
     border-radius: 1.2rem;
@@ -96,7 +96,7 @@
   }
 
   h2 {
-    margin: 0.6rem 0 0.4rem;
+    margin: var(--space-2) 0 var(--space-1);
     font-size: var(--text-title);
     font-weight: 600;
   }
@@ -110,7 +110,7 @@
     width: 100%;
     box-sizing: border-box;
     min-height: 3rem;
-    margin-top: 0.4rem;
+    margin-top: var(--space-1);
     padding: 0 1rem;
     font: inherit;
     font-size: var(--text-body);
@@ -123,7 +123,7 @@
   /* The reason's line holds its place, so the buttons do not move when it appears. */
   .error {
     min-height: 1lh;
-    margin-top: 0.4rem;
+    margin-top: var(--space-1);
     color: var(--warn);
     font-size: var(--text-label);
   }
@@ -132,7 +132,7 @@
     margin-top: 1rem;
     display: flex;
     justify-content: flex-end;
-    gap: 0.6rem;
+    gap: var(--space-2);
   }
 
   button {

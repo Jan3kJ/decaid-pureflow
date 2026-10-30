@@ -155,7 +155,7 @@ are described in [CONTRIBUTING](../CONTRIBUTING.md#commit-messages).
 |---|---|
 | `npm test` | the Vitest unit tests, `src/**/*.test.ts`; the generator, the client and every pure module have theirs |
 | `npm run check` | svelte-check over the TypeScript and Svelte sources |
-| `npm run lint` | ESLint, then `scripts/font-sizes.mjs`: every font size in `src` is one of the six type-role tokens (`--text-label` to `--text-big` in `src/app.css`) |
+| `npm run lint` | ESLint, then `scripts/font-sizes.mjs`: every font size in `src` is one of the six type-role tokens (`--text-label` to `--text-big` in `src/app.css`); then `scripts/spacing.mjs`: every `gap` is one of the four spacing tokens (`--space-1` to `--space-4`, 0.3 to 2.4 rem) |
 | `npm run format:check` | Prettier, without writing |
 | `npm run e2e` | the Playwright tests of `e2e/` on the dev server (`npm run dev`, port 24800), with a mocked gateway (`e2e/mock-gateway.ts`) instead of Decaid; about 11 minutes |
 | `npm run e2e:rig` | the tests of `e2e-rig/` against a running Decaid with its simulated machine and scale; they skip themselves when no gateway answers |

@@ -58,7 +58,7 @@
     min-width: 0;
     display: flex;
     align-items: baseline;
-    gap: 1.1rem;
+    gap: var(--space-3);
     font-size: var(--text-value);
     white-space: nowrap;
     /* Clipped sideways only: the weight's tap target reaches above and below the line. */
@@ -103,7 +103,7 @@
   }
 
   small {
-    margin-right: 0.35rem;
+    margin-right: var(--space-1);
     color: var(--dim);
     font-size: var(--text-label);
   }

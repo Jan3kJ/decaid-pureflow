@@ -19,7 +19,7 @@
     "zip": "npm run build && node scripts/zip.mjs",
     "e2e": "playwright test",
     "e2e:rig": "playwright test --config playwright.rig.config.ts",
-    "lint": "eslint . && node scripts/font-sizes.mjs",
+    "lint": "eslint . && node scripts/font-sizes.mjs && node scripts/spacing.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "screenshots": "node scripts/screenshots.mjs",

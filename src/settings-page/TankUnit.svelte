@@ -36,8 +36,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
-    padding: 0.7rem 0;
+    gap: var(--space-3);
+    padding: var(--space-2) 0;
     border-top: 1px solid var(--line);
   }
 
@@ -45,7 +45,7 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
+    gap: var(--space-1);
   }
 
   strong {
@@ -61,7 +61,7 @@
   .choices {
     flex: none;
     display: flex;
-    gap: 0.4rem;
+    gap: var(--space-1);
   }
 
   .chip {

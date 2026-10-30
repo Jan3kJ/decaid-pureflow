@@ -166,12 +166,12 @@
     height: 100%;
     box-sizing: border-box;
     /* home's padding, so the header is in the same place */
-    padding: 0.8rem 1.2rem 1rem;
+    padding: 0.8rem var(--space-3) 1rem;
     display: grid;
     grid-template-columns: minmax(0, 1fr) 21rem;
     grid-template-rows: auto minmax(0, 1fr);
     grid-template-areas: 'header header' 'plot side';
-    gap: 0.8rem 1.2rem;
+    gap: var(--space-2) var(--space-3);
   }
 
   .header {
@@ -186,7 +186,7 @@
   }
 
   .run b {
-    margin-left: 0.4rem;
+    margin-left: var(--space-1);
     color: var(--fg);
     font-variant-numeric: tabular-nums;
   }
@@ -204,7 +204,7 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.9rem;
+    gap: var(--space-3);
   }
 
   button {
@@ -230,7 +230,7 @@
   .favourites,
   .adjust {
     display: flex;
-    gap: 0.6rem;
+    gap: var(--space-2);
   }
 
   .adjust .chip {
@@ -275,7 +275,7 @@
   .rows {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--space-2);
   }
 
   /* label, number, unit: the unit column has one width, so the numbers end on one edge */
@@ -283,7 +283,7 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto 1.6rem;
     align-items: baseline;
-    column-gap: 0.4rem;
+    column-gap: var(--space-1);
     padding: 0 0.6rem 0 1rem;
     border: 1px solid transparent;
     text-align: left;
@@ -308,8 +308,8 @@
   }
 
   .badge {
-    margin-left: 0.4rem;
-    padding: 0 0.4rem;
+    margin-left: var(--space-1);
+    padding: 0 var(--space-1);
     border: 1px solid var(--line);
     border-radius: 0.4rem;
     color: var(--fg);
@@ -352,7 +352,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.6rem;
+    gap: var(--space-2);
     background: var(--raised);
   }
 

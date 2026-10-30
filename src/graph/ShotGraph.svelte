@@ -397,7 +397,7 @@
     list-style: none;
     display: flex;
     flex-wrap: wrap;
-    gap: 0.2rem 1.4rem;
+    gap: var(--space-1) var(--space-3);
     color: var(--dim);
     font-size: var(--text-label);
     line-height: 1.3;
@@ -406,7 +406,7 @@
   .legend li {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--space-2);
     white-space: nowrap;
   }
 

@@ -127,7 +127,7 @@
     padding: 1rem;
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: var(--space-2);
     background: var(--panel);
     border: 1px solid var(--line);
     border-radius: 1.2rem;
@@ -170,7 +170,7 @@
 
   .actions {
     display: flex;
-    gap: 0.6rem;
+    gap: var(--space-2);
   }
 
   button,

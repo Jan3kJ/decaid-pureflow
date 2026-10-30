@@ -61,7 +61,7 @@
   .next {
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: var(--space-2);
   }
 
   .off {
@@ -134,7 +134,7 @@
     padding: 0 1rem;
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: var(--space-2);
     font-size: var(--text-body);
   }
 

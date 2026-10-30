@@ -242,7 +242,7 @@
     padding: 1rem;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--space-2);
     background: var(--panel);
     border: 1px solid var(--line);
     border-radius: 1.2rem;
@@ -293,7 +293,7 @@
 
   .title {
     display: flex;
-    gap: 0.3rem;
+    gap: var(--space-1);
   }
 
   .part {
@@ -312,7 +312,7 @@
   .grid {
     display: grid;
     grid-template-columns: repeat(7, 3.5rem);
-    gap: 0.4rem;
+    gap: var(--space-1);
   }
 
   /* Six weeks of room for every month, so the dialog keeps its height and a drag slides by one
@@ -332,7 +332,7 @@
   .grid {
     height: var(--month);
     box-sizing: border-box;
-    padding-bottom: 0.4rem;
+    padding-bottom: var(--space-1);
     grid-template-rows: repeat(6, 3.5rem);
     align-content: start;
   }
@@ -365,8 +365,8 @@
   .actions {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 0.5rem;
-    margin-top: 0.3rem;
+    gap: var(--space-2);
+    margin-top: var(--space-1);
   }
 
   .actions button {

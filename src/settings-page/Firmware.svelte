@@ -219,9 +219,9 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
+    gap: var(--space-3);
     min-height: 3.2rem;
-    padding: 0.35rem 0;
+    padding: var(--space-1) 0;
     border-top: 1px solid var(--line);
   }
 
@@ -229,7 +229,7 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
+    gap: var(--space-1);
   }
 
   span {
@@ -238,7 +238,7 @@
   }
 
   em {
-    margin-left: 0.4rem;
+    margin-left: var(--space-1);
     font-style: normal;
     font-weight: 400;
     font-size: var(--text-label);
@@ -274,8 +274,8 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.5rem;
-    padding: 0.6rem 0;
+    gap: var(--space-2);
+    padding: var(--space-2) 0;
     border-top: 1px solid var(--line);
   }
 

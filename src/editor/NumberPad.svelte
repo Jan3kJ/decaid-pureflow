@@ -111,7 +111,7 @@
     padding: 1rem;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--space-2);
     background: var(--panel);
     border: 1px solid var(--line);
     border-radius: 1.2rem;
@@ -133,7 +133,7 @@
     display: flex;
     align-items: baseline;
     justify-content: flex-end;
-    gap: 0.5rem;
+    gap: var(--space-2);
     min-height: 3.6rem;
     padding: 0 0.9rem;
     background: var(--bg);
@@ -172,7 +172,7 @@
   .keys {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
-    gap: 0.5rem;
+    gap: var(--space-2);
   }
 
   button {

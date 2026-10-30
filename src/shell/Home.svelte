@@ -26,9 +26,9 @@
   .home {
     height: 100%;
     box-sizing: border-box;
-    padding: 0.8rem 1.2rem 1rem;
+    padding: 0.8rem var(--space-3) 1rem;
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: var(--space-2);
   }
 </style>

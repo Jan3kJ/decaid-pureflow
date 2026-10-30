@@ -105,13 +105,13 @@
   .lane {
     position: absolute;
     display: flex;
-    gap: 0.5rem;
+    gap: var(--space-2);
   }
 
   .enable {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: var(--space-1);
     min-height: 3rem;
     padding: 0 0.9rem;
     background: var(--panel);

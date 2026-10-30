@@ -370,21 +370,21 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   .editor {
     height: 100%;
     box-sizing: border-box;
-    padding: 0.7rem 1rem;
+    padding: var(--space-2) 1rem;
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: var(--space-2);
   }
 
   header {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: var(--space-3);
   }
 
   .group {
     display: flex;
-    gap: 0.4rem;
+    gap: var(--space-1);
   }
 
   .tabs {
@@ -431,7 +431,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     max-width: 24rem;
     display: flex;
     align-items: center;
-    gap: 0.7rem;
+    gap: var(--space-2);
     font-size: var(--text-body);
     font-weight: 600;
   }
@@ -454,7 +454,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
 
   .notice {
     margin: 0;
-    padding: 0.5rem 0.9rem;
+    padding: var(--space-2) 0.9rem;
     border: 1px solid var(--line);
     border-radius: 0.9rem;
     background: var(--raised);
@@ -472,7 +472,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     min-height: 0;
     display: flex;
     align-items: stretch;
-    gap: 0.7rem;
+    gap: var(--space-2);
     overflow-x: auto;
     scroll-snap-type: x proximity;
     scrollbar-width: none;
@@ -508,7 +508,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   }
 
   .dialog p {
-    margin: 0 0 0.6rem;
+    margin: 0 0 var(--space-2);
     font-size: var(--text-title);
   }
 
@@ -518,9 +518,9 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   }
 
   .actions {
-    margin-top: 1.2rem;
+    margin-top: var(--space-3);
     display: flex;
-    gap: 0.8rem;
+    gap: var(--space-2);
   }
 
   .actions button:not(.danger) {

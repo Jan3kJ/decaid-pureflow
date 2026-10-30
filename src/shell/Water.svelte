@@ -98,7 +98,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: min(0.7rem, 1.4cqw);
+    gap: min(var(--space-2), 1.4cqw);
     font: inherit;
     color: var(--fg);
     background: var(--raised);
@@ -124,7 +124,7 @@
 
   .values {
     display: flex;
-    gap: min(1.6rem, 3cqw);
+    gap: min(var(--space-3), 3cqw);
     font-size: min(var(--text-large), 6.2cqw);
   }
 

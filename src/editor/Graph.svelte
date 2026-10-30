@@ -349,7 +349,7 @@
     position: absolute;
     transform: translateX(-50%);
     display: flex;
-    gap: 0.6rem;
+    gap: var(--space-2);
     align-items: baseline;
     padding: 0.5rem 0.9rem;
     background: var(--fg);

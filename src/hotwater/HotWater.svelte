@@ -176,12 +176,12 @@
     height: 100%;
     box-sizing: border-box;
     /* home's padding, so the header is in the same place */
-    padding: 0.8rem 1.2rem 1rem;
+    padding: 0.8rem var(--space-3) 1rem;
     display: grid;
     grid-template-columns: minmax(0, 1fr) 21rem;
     grid-template-rows: auto minmax(0, 1fr);
     grid-template-areas: 'header header' 'values side';
-    gap: 0.8rem 1.2rem;
+    gap: var(--space-2) var(--space-3);
   }
 
   .header {
@@ -208,7 +208,7 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: var(--space-2);
   }
 
   .row {
@@ -218,8 +218,8 @@
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-rows: auto auto;
     align-content: center;
-    column-gap: 1rem;
-    padding: 0.4rem 1.4rem;
+    column-gap: var(--space-3);
+    padding: var(--space-1) 1.4rem;
     border: 1px solid var(--line);
     border-radius: 0.9rem;
     background: var(--panel);
@@ -332,7 +332,7 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.9rem;
+    gap: var(--space-3);
   }
 
   small {
@@ -345,7 +345,7 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto 1.6rem;
     align-items: baseline;
-    column-gap: 0.4rem;
+    column-gap: var(--space-1);
     padding: 0 0.6rem 0 1rem;
     border: 1px solid transparent;
     text-align: left;
@@ -385,7 +385,7 @@
 
   .ratios {
     display: flex;
-    gap: 0.6rem;
+    gap: var(--space-2);
   }
 
   .chip {
@@ -395,7 +395,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0.1rem;
+    gap: var(--space-1);
     font-size: var(--text-value);
     font-weight: 600;
     font-variant-numeric: tabular-nums;

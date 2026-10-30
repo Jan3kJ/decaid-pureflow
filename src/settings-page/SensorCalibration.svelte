@@ -262,22 +262,22 @@
 
 <style>
   .hint {
-    margin: 0 0 0.2rem;
+    margin: 0 0 var(--space-1);
     color: var(--dim);
     font-size: var(--text-label);
   }
 
   .sensor {
     border-top: 1px solid var(--line);
-    padding: 0.3rem 0;
+    padding: var(--space-1) 0;
   }
 
   .row {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: var(--space-3);
     min-height: 3.4rem;
-    padding: 0.2rem 0;
+    padding: var(--space-1) 0;
   }
 
   strong {
@@ -293,7 +293,7 @@
   }
 
   .cell b {
-    margin-left: 0.3rem;
+    margin-left: var(--space-1);
     color: var(--fg);
     font-weight: 600;
     font-variant-numeric: tabular-nums;

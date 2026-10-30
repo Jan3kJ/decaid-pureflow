@@ -36,6 +36,19 @@
   --text-large: 2.2rem;
   /* big: the big number of a page, the shot's time and weight */
   --text-big: 3.6rem;
+  /*
+   * Four steps of space, each twice the one before: every gap of the skin takes one;
+   * `npm run lint` refuses any other gap (scripts/spacing.mjs). Paddings and margins take them
+   * where they are near one.
+   */
+  /* within a group: a caption and its value, a chip's words */
+  --space-1: 0.3rem;
+  /* between the controls of a row or a list */
+  --space-2: 0.6rem;
+  /* between groups, a page's margin */
+  --space-3: 1.2rem;
+  /* between a page's main parts */
+  --space-4: 2.4rem;
   font-family: system-ui, sans-serif;
   /*
    * 16 px on the 1280 x 800 design target; every size is in rem and follows the viewport, as

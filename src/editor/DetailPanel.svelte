@@ -47,7 +47,7 @@
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--space-2);
   }
 
   h2 {
@@ -62,7 +62,7 @@
   h2.shot {
     min-height: 0;
     margin-top: auto;
-    padding-top: 0.5rem;
+    padding-top: var(--space-2);
     font-size: var(--text-label);
     font-weight: 400;
     color: var(--dim);

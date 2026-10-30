@@ -482,10 +482,10 @@
     z-index: 20;
     max-width: 90%;
     box-sizing: border-box;
-    padding: 0.6rem 0.6rem 0.6rem 1.2rem;
+    padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
     display: flex;
     align-items: center;
-    gap: 1.2rem;
+    gap: var(--space-3);
     color: var(--warn);
     background: var(--raised);
     border: 1px solid var(--warn);
@@ -528,7 +528,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0.6rem;
+    gap: var(--space-2);
     font: inherit;
     color: var(--dim);
     background: #000;

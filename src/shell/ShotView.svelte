@@ -152,7 +152,7 @@
     grid-template-columns: minmax(0, 1fr) 17rem;
     grid-template-rows: auto minmax(0, 1fr);
     grid-template-areas: 'top side' 'plot side';
-    gap: 0.6rem 1.2rem;
+    gap: var(--space-2) var(--space-3);
   }
 
   /* The caption's and the table's rows only when they are drawn: else the graph takes their height. */
@@ -176,7 +176,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
+    gap: var(--space-3);
     min-height: 3.2rem;
     color: var(--dim);
     font-size: var(--text-body);
@@ -232,13 +232,13 @@
 
   th,
   td {
-    padding: 0.25rem 0.8rem;
+    padding: var(--space-1) 0.8rem;
     text-align: left;
     white-space: nowrap;
   }
 
   thead th {
-    padding-top: 0.5rem;
+    padding-top: var(--space-2);
     color: var(--dim);
     font-size: var(--text-label);
     font-weight: 400;
@@ -252,7 +252,7 @@
 
   tbody tr:last-child th,
   tbody tr:last-child td {
-    padding-bottom: 0.5rem;
+    padding-bottom: var(--space-2);
   }
 
   tr.total td {
@@ -277,7 +277,7 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.9rem;
+    gap: var(--space-2);
   }
 
   small,
@@ -314,7 +314,7 @@
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--space-2);
   }
 
   dl div {

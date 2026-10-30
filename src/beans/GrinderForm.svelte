@@ -123,7 +123,7 @@
   .form {
     display: flex;
     flex-direction: column;
-    gap: 0.7rem;
+    gap: var(--space-2);
   }
 
   h2 {
@@ -138,7 +138,7 @@
   label {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: var(--space-1);
     color: var(--dim);
     font-size: var(--text-label);
   }
@@ -168,7 +168,7 @@
 
   .actions {
     display: flex;
-    gap: 0.6rem;
+    gap: var(--space-2);
   }
 
   button {
@@ -208,7 +208,7 @@
   .setting {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: var(--space-2);
   }
 
   .caption {
@@ -219,7 +219,7 @@
 
   .choice {
     display: flex;
-    gap: 0.3rem;
+    gap: var(--space-1);
   }
 
   .step-row {

@@ -177,7 +177,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0.1rem;
+    gap: var(--space-1);
     padding: 0.4rem 0.6rem;
     background: none;
     border: 0;
@@ -221,7 +221,7 @@
 
   .compact .body {
     flex-direction: row;
-    gap: 0.4rem;
+    gap: var(--space-1);
     min-height: 3rem;
     padding: 0 0.9rem;
   }

@@ -152,7 +152,7 @@
   .form {
     display: flex;
     flex-direction: column;
-    gap: 0.7rem;
+    gap: var(--space-2);
   }
 
   h2 {
@@ -168,7 +168,7 @@
   .field {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: var(--space-1);
     color: var(--dim);
     font-size: var(--text-label);
   }
@@ -209,7 +209,7 @@
 
   .actions {
     display: flex;
-    gap: 0.6rem;
+    gap: var(--space-2);
   }
 
   button {
@@ -239,7 +239,7 @@
 
   .photo {
     display: flex;
-    gap: 0.8rem;
+    gap: var(--space-2);
     align-items: center;
   }
 
@@ -254,13 +254,13 @@
   .photo-tools {
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
+    gap: var(--space-1);
     min-width: 0;
   }
 
   .photo-buttons {
     display: flex;
-    gap: 0.6rem;
+    gap: var(--space-2);
     align-items: center;
   }
 

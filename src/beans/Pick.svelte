@@ -195,7 +195,7 @@
     width: min(56rem, 90%);
     max-height: calc(100% - 6rem);
     box-sizing: border-box;
-    padding: 0.4rem 1.2rem 1.2rem;
+    padding: var(--space-1) var(--space-3) var(--space-3);
     display: flex;
     flex-direction: column;
     background: var(--panel);
@@ -205,13 +205,13 @@
   }
 
   h2 {
-    margin: 0.6rem 0 0.6rem;
+    margin: var(--space-2) 0 var(--space-2);
     font-size: var(--text-title);
     font-weight: 600;
   }
 
   h3 {
-    margin: 0 0 0.4rem;
+    margin: 0 0 var(--space-1);
     color: var(--dim);
     font-size: var(--text-label);
     font-weight: 400;
@@ -221,7 +221,7 @@
     min-height: 0;
     display: grid;
     grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-    gap: 1.2rem;
+    gap: var(--space-3);
   }
 
   section {
@@ -239,7 +239,7 @@
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
+    gap: var(--space-1);
   }
 
   button {
@@ -283,7 +283,7 @@
 
   .search {
     display: flex;
-    margin-bottom: 0.4rem;
+    margin-bottom: var(--space-1);
   }
 
   .hidden {
@@ -312,7 +312,7 @@
     margin-top: 0.8rem;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--space-2);
   }
 
   .caption {
@@ -339,20 +339,20 @@
   }
 
   .hint {
-    margin: 0.4rem 0 0;
+    margin: var(--space-1) 0 0;
     color: var(--dim);
     font-size: var(--text-label);
   }
 
   .warn {
-    margin: 0.6rem 0 0;
+    margin: var(--space-2) 0 0;
     color: var(--temperature);
   }
 
   .actions {
     margin-top: 1rem;
     display: flex;
-    gap: 0.6rem;
+    gap: var(--space-2);
   }
 
   .actions button {

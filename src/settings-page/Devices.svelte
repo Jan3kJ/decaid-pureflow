@@ -235,8 +235,8 @@
   .wifi {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    padding: 0.7rem 0;
+    gap: var(--space-3);
+    padding: var(--space-2) 0;
     border-top: 1px solid var(--line);
   }
 
@@ -249,7 +249,7 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
+    gap: var(--space-1);
   }
 
   strong {
@@ -342,7 +342,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.15rem;
+    gap: var(--space-1);
     background: none;
     border: 0;
   }
@@ -351,7 +351,7 @@
     display: block;
     width: 3.6rem;
     height: 1.9rem;
-    padding: 0.2rem;
+    padding: var(--space-1);
     box-sizing: border-box;
     border-radius: 1rem;
     background: var(--raised);
@@ -380,7 +380,7 @@
   .add {
     flex: none;
     display: flex;
-    gap: 0.5rem;
+    gap: var(--space-2);
   }
 
   input {

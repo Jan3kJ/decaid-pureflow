@@ -80,14 +80,14 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     flex: 1 1 0;
     min-height: 0;
     display: flex;
-    gap: 0.8rem;
+    gap: var(--space-2);
   }
 
   .steps {
     flex: 0 0 56%;
     min-width: 0;
     box-sizing: border-box;
-    padding: 0.4rem 0.9rem;
+    padding: var(--space-1) 0.9rem;
     overflow-y: auto;
     background: var(--panel);
     border: 1px solid var(--line);
@@ -96,8 +96,8 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
 
   .step {
     display: flex;
-    gap: 0.8rem;
-    padding: 0.6rem 0;
+    gap: var(--space-2);
+    padding: var(--space-2) 0;
   }
 
   /* A hairline between steps, not above the first. */
@@ -107,7 +107,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
 
   .name {
     flex: 0 0 11rem;
-    margin: 0.35rem 0 0;
+    margin: var(--space-1) 0 0;
     font-weight: 600;
     overflow-wrap: anywhere;
   }
@@ -116,10 +116,10 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     flex: 1;
     min-width: 0;
     margin: 0;
-    padding-left: 1.2rem;
+    padding-left: var(--space-3);
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: var(--space-1);
   }
 
   li {

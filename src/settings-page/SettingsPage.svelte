@@ -311,18 +311,18 @@
   .settings {
     height: 100%;
     box-sizing: border-box;
-    padding: 1rem 1.2rem;
+    padding: 1rem var(--space-3);
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 4fr);
     grid-template-rows: auto minmax(0, 1fr);
-    gap: 0.8rem 1.2rem;
+    gap: var(--space-2) var(--space-3);
   }
 
   header {
     grid-column: 1 / -1;
     display: flex;
     align-items: baseline;
-    gap: 1.2rem;
+    gap: var(--space-3);
     min-width: 0;
   }
 
@@ -351,7 +351,7 @@
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
+    gap: var(--space-1);
   }
 
   button {
@@ -394,12 +394,12 @@
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 0.8rem;
+    gap: var(--space-2);
     padding-bottom: 30vh;
   }
 
   section {
-    padding: 0.2rem 1.2rem 0.6rem;
+    padding: var(--space-1) var(--space-3) var(--space-2);
     border: 1px solid var(--line);
     border-radius: 0.9rem;
     background: var(--panel);
@@ -407,13 +407,13 @@
   }
 
   h2 {
-    margin: 0.6rem 0 0.1rem;
+    margin: var(--space-2) 0 0.1rem;
     font-size: var(--text-title);
     font-weight: 600;
   }
 
   .hint {
-    margin: 0 0 0.2rem;
+    margin: 0 0 var(--space-1);
     color: var(--dim);
     font-size: var(--text-label);
   }
@@ -426,8 +426,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
-    padding: 0.7rem 0;
+    gap: var(--space-3);
+    padding: var(--space-2) 0;
     border-top: 1px solid var(--line);
   }
 
@@ -435,7 +435,7 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
+    gap: var(--space-1);
   }
 
   strong {

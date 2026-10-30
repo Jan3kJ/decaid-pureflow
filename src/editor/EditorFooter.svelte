@@ -39,7 +39,7 @@
     grid-area: footer;
     display: flex;
     align-items: center;
-    gap: 0.8rem;
+    gap: var(--space-2);
   }
 
   button {
@@ -60,7 +60,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.6rem;
+    gap: var(--space-2);
     white-space: nowrap;
   }
 
@@ -108,9 +108,9 @@
   }
 
   .legend {
-    margin-left: 0.6rem;
+    margin-left: var(--space-2);
     display: flex;
-    gap: 1rem;
+    gap: var(--space-3);
     font-size: var(--text-label);
     color: var(--dim);
     white-space: nowrap;
@@ -121,7 +121,7 @@
     display: inline-block;
     width: 1.1rem;
     height: 0.24rem;
-    margin-right: 0.4rem;
+    margin-right: var(--space-1);
     border-radius: 0.12rem;
     vertical-align: middle;
     background: var(--tone);

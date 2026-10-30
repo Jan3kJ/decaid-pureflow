@@ -141,8 +141,8 @@
   .skins {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.6rem;
-    padding: 0.4rem 0 0.8rem;
+    gap: var(--space-2);
+    padding: var(--space-1) 0 0.8rem;
   }
 
   button {
@@ -159,7 +159,7 @@
     flex-direction: column;
     align-items: flex-start;
     justify-content: center;
-    gap: 0.25rem;
+    gap: var(--space-1);
     text-align: left;
     background: var(--raised);
     border: 1px solid var(--line);
@@ -178,7 +178,7 @@
   .name {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: var(--space-2);
   }
 
   .name b {
@@ -187,7 +187,7 @@
   }
 
   .badge {
-    padding: 0.1rem 0.6rem;
+    padding: 0.1rem var(--space-2);
     font-size: var(--text-label);
     font-weight: 700;
     letter-spacing: 0.08em;
@@ -202,7 +202,7 @@
   }
 
   .said {
-    margin: 0 0 0.6rem;
+    margin: 0 0 var(--space-2);
   }
 
   .warn {
@@ -217,7 +217,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
+    gap: var(--space-3);
     padding: 0.8rem 0;
     border-top: 1px solid var(--line);
   }
@@ -226,7 +226,7 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
+    gap: var(--space-1);
   }
 
   strong {

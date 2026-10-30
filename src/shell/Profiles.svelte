@@ -419,17 +419,17 @@
   .profiles {
     height: 100%;
     box-sizing: border-box;
-    padding: 1rem 1.2rem;
+    padding: 1rem var(--space-3);
     display: grid;
     grid-template-columns: minmax(0, 1fr) 24rem;
-    gap: 1.2rem;
+    gap: var(--space-3);
   }
 
   .list {
     min-height: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: var(--space-2);
   }
 
   button {
@@ -446,8 +446,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
-    padding: 0.6rem 0.6rem 0.6rem 1rem;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-2) var(--space-2) 1rem;
     border: 1px solid var(--line);
     border-radius: 0.9rem;
     background: var(--raised);
@@ -494,7 +494,7 @@
     overscroll-behavior: contain;
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
+    gap: var(--space-1);
     scrollbar-width: thin;
   }
 
@@ -540,7 +540,7 @@
     padding: 0 1rem;
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: var(--space-2);
     font-size: var(--text-body);
     text-align: left;
   }
@@ -573,7 +573,7 @@
 
   .tag {
     flex: none;
-    padding: 0.15rem 0.6rem;
+    padding: 0.15rem var(--space-2);
     border: 1px solid currentColor;
     border-radius: 1rem;
     font-size: var(--text-label);
@@ -596,8 +596,8 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.8rem;
-    padding: 1.1rem;
+    gap: var(--space-2);
+    padding: var(--space-3);
     border: 1px solid var(--line);
     border-radius: 0.9rem;
     background: var(--panel);
@@ -633,7 +633,7 @@
   dl {
     margin: 0;
     display: flex;
-    gap: 1.6rem;
+    gap: var(--space-3);
   }
 
   dt {
@@ -686,7 +686,7 @@
     font-size: var(--text-body);
     white-space: pre-line;
     scrollbar-width: thin;
-    padding: 0.4rem 0.7rem;
+    padding: var(--space-1) var(--space-2);
     border: 1px solid var(--line);
     border-radius: 0.6rem;
   }
@@ -698,7 +698,7 @@
   .actions {
     flex: none;
     display: flex;
-    gap: 0.6rem;
+    gap: var(--space-2);
   }
 
   .edit,

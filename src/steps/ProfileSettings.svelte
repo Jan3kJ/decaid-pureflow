@@ -108,8 +108,8 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     min-height: 0;
     display: grid;
     grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-    gap: 1.2rem;
-    padding: 1rem 1.2rem;
+    gap: var(--space-3);
+    padding: 1rem var(--space-3);
     background: var(--panel);
     border: 1px solid var(--line);
     border-radius: 1rem;
@@ -120,13 +120,13 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     min-height: 0;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: var(--space-3);
   }
 
   .field {
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
+    gap: var(--space-1);
   }
 
   .field.notes {
@@ -143,7 +143,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     box-sizing: border-box;
     width: 100%;
     min-height: 3rem;
-    padding: 0.5rem 0.8rem;
+    padding: var(--space-2) 0.8rem;
     font: inherit;
     font-size: var(--text-body);
     color: var(--fg);
@@ -167,7 +167,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   .number {
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
+    gap: var(--space-1);
   }
 
   .hint {

@@ -153,11 +153,11 @@
     z-index: 11;
     min-width: 14rem;
     margin: 0;
-    padding: 0.4rem;
+    padding: var(--space-1);
     list-style: none;
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
+    gap: var(--space-1);
     background: var(--raised);
     border: 1px solid var(--line);
     border-radius: 0.9rem;
@@ -183,7 +183,7 @@
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    gap: 1.2rem;
+    gap: var(--space-3);
   }
 
   .menu .state {

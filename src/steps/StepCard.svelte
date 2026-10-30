@@ -235,7 +235,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.45rem;
+    gap: var(--space-2);
     text-align: left;
     touch-action: manipulation;
     overflow: hidden;
@@ -244,9 +244,9 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   .head {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: var(--space-2);
     max-width: 100%;
-    margin-bottom: 0.3rem;
+    margin-bottom: var(--space-1);
   }
 
   .title {
@@ -287,10 +287,10 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
 
   .open {
     width: 46rem;
-    padding: 0.7rem 0.9rem;
+    padding: var(--space-2) 0.9rem;
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: var(--space-2);
     border-color: var(--fg);
     overflow-y: auto;
   }
@@ -302,7 +302,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   .open header {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: var(--space-2);
   }
 
   .name {
@@ -322,14 +322,14 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   .rows {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 0.6rem 1rem;
+    gap: var(--space-2) var(--space-3);
   }
 
   .pair {
     display: grid;
     grid-template-columns: 9.5rem minmax(0, 1fr);
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--space-2);
   }
 
   .maxima {
@@ -337,7 +337,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     display: grid;
     grid-template-columns: 5.5rem repeat(3, minmax(0, 1fr));
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--space-2);
   }
 
   .caption {
@@ -352,10 +352,10 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   }
 
   footer {
-    margin-top: 0.4rem;
+    margin-top: var(--space-1);
     display: flex;
     justify-content: space-between;
-    gap: 0.6rem;
+    gap: var(--space-2);
   }
 
   .act {
@@ -375,7 +375,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
 
   .moves {
     display: flex;
-    gap: 0.6rem;
+    gap: var(--space-2);
   }
 
   button:disabled {

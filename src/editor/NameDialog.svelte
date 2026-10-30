@@ -69,7 +69,7 @@
   .dialog {
     width: 26rem;
     box-sizing: border-box;
-    padding: 1.2rem;
+    padding: var(--space-3);
     background: var(--panel);
     border: 1px solid var(--line);
     border-radius: 1.2rem;
@@ -79,7 +79,7 @@
   form {
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: var(--space-2);
   }
 
   label {
@@ -114,7 +114,7 @@
 
   .actions {
     display: flex;
-    gap: 0.6rem;
+    gap: var(--space-2);
   }
 
   button {

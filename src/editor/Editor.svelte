@@ -334,12 +334,12 @@
   .editor {
     height: 100%;
     box-sizing: border-box;
-    padding: 0.7rem 1rem;
+    padding: var(--space-2) 1rem;
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto auto minmax(0, 1fr) auto auto;
     grid-template-areas: 'header' 'status' 'stage' 'footer' 'steps';
-    gap: 0.6rem 1rem;
+    gap: var(--space-2) var(--space-3);
   }
 
   /* The panel runs down to the bottom edge: a phase has up to six values and the dose. */
@@ -359,7 +359,7 @@
 
   .notice {
     margin: 0;
-    padding: 0 0.3rem;
+    padding: 0 var(--space-1);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -376,7 +376,7 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: var(--space-2);
   }
 
   .plot {
@@ -390,6 +390,6 @@
     grid-area: steps;
     background: var(--panel);
     border-radius: 1rem;
-    padding: 0.4rem 0.4rem;
+    padding: var(--space-1) var(--space-1);
   }
 </style>

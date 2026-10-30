@@ -53,7 +53,7 @@
 
   th,
   td {
-    padding: 0.22rem 0.8rem;
+    padding: var(--space-1) 0.8rem;
     text-align: left;
     white-space: nowrap;
   }

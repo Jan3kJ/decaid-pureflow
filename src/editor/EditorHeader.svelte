@@ -63,17 +63,17 @@
     grid-area: header;
     display: flex;
     justify-content: space-between;
-    gap: 2rem;
+    gap: var(--space-4);
   }
 
   .group {
     flex: none;
     display: flex;
-    gap: 0.75rem;
+    gap: var(--space-2);
   }
 
   header > .group:last-child {
-    gap: 2rem;
+    gap: var(--space-4);
   }
 
   /* The profile's name, and the way to the picker. */
@@ -83,7 +83,7 @@
     max-width: 16rem;
     display: flex;
     align-items: center;
-    gap: 0.7rem;
+    gap: var(--space-2);
     font-size: var(--text-body);
     font-weight: 600;
   }

@@ -35,7 +35,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     flex-direction: column;
     align-items: flex-start;
     justify-content: center;
-    gap: 0.1rem;
+    gap: var(--space-1);
     font: inherit;
     color: var(--fg);
     background: var(--raised);

@@ -238,18 +238,18 @@
   .beans {
     height: 100%;
     box-sizing: border-box;
-    padding: 1rem 1.2rem;
+    padding: 1rem var(--space-3);
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 3fr);
     grid-template-rows: auto minmax(0, 1fr);
-    gap: 0.8rem 1.2rem;
+    gap: var(--space-2) var(--space-3);
   }
 
   header {
     grid-column: 1 / -1;
     display: flex;
     align-items: baseline;
-    gap: 1.2rem;
+    gap: var(--space-3);
     min-width: 0;
   }
 
@@ -277,7 +277,7 @@
   .kinds {
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
+    gap: var(--space-1);
   }
 
   .kind {
@@ -295,12 +295,12 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--space-2);
   }
 
   .tools {
     display: flex;
-    gap: 0.5rem;
+    gap: var(--space-2);
   }
 
   .search {
@@ -354,7 +354,7 @@
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
+    gap: var(--space-1);
   }
 
   .row {
@@ -404,7 +404,7 @@
     min-height: 0;
     min-width: 0;
     overflow-y: auto;
-    padding: 0.8rem 1.2rem 1.2rem;
+    padding: 0.8rem var(--space-3) var(--space-3);
     border: 1px solid var(--line);
     border-radius: 0.9rem;
     background: var(--panel);

@@ -314,8 +314,8 @@
   }
 
   .card {
-    margin: 0.6rem 0 0.2rem;
-    padding: 0.4rem 1rem 0.2rem;
+    margin: var(--space-2) 0 var(--space-1);
+    padding: var(--space-1) 1rem var(--space-1);
     border: 1px solid var(--line);
     border-radius: 0.9rem;
     background: var(--bg);
@@ -325,8 +325,8 @@
     display: flex;
     align-items: baseline;
     flex-wrap: wrap;
-    gap: 0.4rem 0.8rem;
-    padding: 0.3rem 0;
+    gap: var(--space-1) var(--space-2);
+    padding: var(--space-1) 0;
   }
 
   h3 {
@@ -337,7 +337,7 @@
 
   .pill {
     margin-left: auto;
-    padding: 0.15rem 0.7rem;
+    padding: 0.15rem var(--space-2);
     border: 1px solid var(--line);
     border-radius: 1rem;
     color: var(--dim);
@@ -345,7 +345,7 @@
   }
 
   .description {
-    margin: 0 0 0.4rem;
+    margin: 0 0 var(--space-1);
     color: var(--dim);
     font-size: var(--text-body);
   }
@@ -354,8 +354,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
-    padding: 0.6rem 0;
+    gap: var(--space-3);
+    padding: var(--space-2) 0;
     border-top: 1px solid var(--line);
   }
 
@@ -367,7 +367,7 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
+    gap: var(--space-1);
   }
 
   strong {
@@ -447,7 +447,7 @@
     display: flex;
     flex-wrap: wrap;
     justify-content: flex-end;
-    gap: 0.4rem;
+    gap: var(--space-1);
   }
 
   .chip {
@@ -470,7 +470,7 @@
     display: block;
     width: 4.4rem;
     height: 2.4rem;
-    padding: 0.25rem;
+    padding: var(--space-1);
     box-sizing: border-box;
     border-radius: 1.2rem;
     background: var(--raised);

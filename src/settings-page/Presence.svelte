@@ -215,8 +215,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
-    padding: 0.6rem 0;
+    gap: var(--space-3);
+    padding: var(--space-2) 0;
     border-top: 1px solid var(--line);
   }
 
@@ -228,7 +228,7 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
+    gap: var(--space-1);
   }
 
   strong {
@@ -253,19 +253,19 @@
     flex: none;
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: var(--space-2);
   }
 
   .form {
-    margin: 0.4rem 0;
-    padding: 0.2rem 1rem;
+    margin: var(--space-1) 0;
+    padding: var(--space-1) 1rem;
     border: 1px solid var(--line);
     border-radius: 0.9rem;
     background: var(--bg);
   }
 
   h3 {
-    margin: 0.5rem 0 0.2rem;
+    margin: var(--space-2) 0 var(--space-1);
     font-size: var(--text-title);
     font-weight: 600;
   }
@@ -325,7 +325,7 @@
     display: flex;
     flex-wrap: wrap;
     justify-content: flex-end;
-    gap: 0.4rem;
+    gap: var(--space-1);
   }
 
   .chip {
@@ -349,7 +349,7 @@
     display: block;
     width: 4.4rem;
     height: 2.4rem;
-    padding: 0.25rem;
+    padding: var(--space-1);
     box-sizing: border-box;
     border-radius: 1.2rem;
     background: var(--raised);

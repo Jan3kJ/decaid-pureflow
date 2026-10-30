@@ -484,7 +484,7 @@
 
 <style>
   section {
-    padding: 0.2rem 1.2rem 0.6rem;
+    padding: var(--space-1) var(--space-3) var(--space-2);
     border: 1px solid var(--line);
     border-radius: 0.9rem;
     background: var(--panel);
@@ -492,13 +492,13 @@
   }
 
   h2 {
-    margin: 0.6rem 0 0.1rem;
+    margin: var(--space-2) 0 0.1rem;
     font-size: var(--text-title);
     font-weight: 600;
   }
 
   .hint {
-    margin: 0 0 0.2rem;
+    margin: 0 0 var(--space-1);
     color: var(--dim);
     font-size: var(--text-label);
   }
@@ -507,7 +507,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
+    gap: var(--space-3);
     padding: 0.8rem 0;
     border-top: 1px solid var(--line);
   }
@@ -516,7 +516,7 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
+    gap: var(--space-1);
     text-align: left;
   }
 
@@ -537,7 +537,7 @@
   .values {
     flex: none;
     display: flex;
-    gap: 0.6rem;
+    gap: var(--space-2);
   }
 
   button {
@@ -554,7 +554,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0.1rem;
+    gap: var(--space-1);
     background: var(--raised);
     border: 1px solid var(--line);
     border-radius: 0.9rem;
@@ -581,8 +581,8 @@
   .slots {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 0.6rem;
-    padding-bottom: 0.4rem;
+    gap: var(--space-2);
+    padding-bottom: var(--space-1);
   }
 
   .value.slot {
@@ -628,7 +628,7 @@
     margin-top: 1rem;
     display: flex;
     justify-content: flex-end;
-    gap: 0.6rem;
+    gap: var(--space-2);
   }
 
   .backdrop {
@@ -645,7 +645,7 @@
     width: 28rem;
     max-height: 80vh;
     box-sizing: border-box;
-    padding: 0.4rem 1.2rem 1.2rem;
+    padding: var(--space-1) var(--space-3) var(--space-3);
     display: flex;
     flex-direction: column;
     background: var(--panel);
@@ -661,13 +661,13 @@
 
   ul {
     min-height: 0;
-    margin: 0.6rem 0 0;
+    margin: var(--space-2) 0 0;
     padding: 0;
     list-style: none;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
+    gap: var(--space-1);
   }
 
   .choice {
@@ -684,7 +684,7 @@
   .chips {
     flex: none;
     display: flex;
-    gap: 0.4rem;
+    gap: var(--space-1);
   }
 
   .chip {
@@ -708,7 +708,7 @@
     flex: none;
     width: 4.4rem;
     height: 2.4rem;
-    padding: 0.25rem;
+    padding: var(--space-1);
     box-sizing: border-box;
     border-radius: 1.2rem;
     background: var(--raised);

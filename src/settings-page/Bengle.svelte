@@ -276,9 +276,9 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
+    gap: var(--space-3);
     min-height: 3.2rem;
-    padding: 0.35rem 0;
+    padding: var(--space-1) 0;
     border-top: 1px solid var(--line);
   }
 
@@ -286,7 +286,7 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
+    gap: var(--space-1);
     flex: 1;
   }
 
@@ -308,7 +308,7 @@
   }
 
   i {
-    margin-left: 0.3rem;
+    margin-left: var(--space-1);
     font-style: normal;
     color: var(--dim);
   }
@@ -323,7 +323,7 @@
 
   .buttons {
     display: flex;
-    gap: 0.6rem;
+    gap: var(--space-2);
   }
 
   button {
@@ -373,7 +373,7 @@
     display: block;
     width: 4.4rem;
     height: 2.4rem;
-    padding: 0.25rem;
+    padding: var(--space-1);
     box-sizing: border-box;
     border-radius: 1.2rem;
     background: var(--raised);

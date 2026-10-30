@@ -211,8 +211,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
-    padding: 0.7rem 0;
+    gap: var(--space-3);
+    padding: var(--space-2) 0;
     border-top: 1px solid var(--line);
   }
 
@@ -220,7 +220,7 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
+    gap: var(--space-1);
   }
 
   strong {
@@ -262,11 +262,11 @@
   }
 
   .progress {
-    padding: 0.4rem 0 0.6rem;
+    padding: var(--space-1) 0 var(--space-2);
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.4rem;
+    gap: var(--space-1);
   }
 
   .steps {
@@ -274,14 +274,14 @@
     padding: 0;
     list-style: none;
     display: flex;
-    gap: 1.6rem;
+    gap: var(--space-3);
   }
 
   li {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.2rem;
+    gap: var(--space-1);
   }
 
   .dot {
@@ -325,6 +325,6 @@
   }
 
   .warn {
-    margin: 0 0 0.6rem;
+    margin: 0 0 var(--space-2);
   }
 </style>

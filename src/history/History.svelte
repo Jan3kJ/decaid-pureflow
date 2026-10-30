@@ -169,7 +169,7 @@
     padding: 1rem 1rem 0;
     display: flex;
     flex-direction: column;
-    gap: 0.7rem;
+    gap: var(--space-2);
     background: var(--panel);
     border-right: 1px solid var(--line);
     box-shadow: 0.6rem 0 2.4rem rgb(0 0 0 / 60%);
@@ -205,7 +205,7 @@
     overscroll-behavior: contain;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--space-2);
     scrollbar-width: thin;
   }
 
@@ -216,7 +216,7 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    gap: 0.2rem;
+    gap: var(--space-1);
     text-align: left;
     border: 1px solid var(--line);
     border-radius: 0.9rem;
@@ -243,7 +243,7 @@
   .foot {
     display: flex;
     justify-content: space-between;
-    gap: 1rem;
+    gap: var(--space-3);
     font-size: var(--text-label);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
@@ -256,7 +256,7 @@
   .filter {
     flex: none;
     display: flex;
-    gap: 0.5rem;
+    gap: var(--space-2);
   }
 
   /* Three chips of one width: 'all', the bean and the grinder. */
@@ -284,7 +284,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 1rem;
+    gap: var(--space-3);
     text-align: left;
     border: 1px solid var(--line);
     border-radius: 0.9rem;
@@ -302,7 +302,7 @@
   }
 
   .empty {
-    padding: 1rem 0.2rem;
+    padding: 1rem var(--space-1);
     color: var(--dim);
   }
 

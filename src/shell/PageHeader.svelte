@@ -33,7 +33,7 @@
   .page-header {
     display: flex;
     align-items: center;
-    gap: 1.2rem;
+    gap: var(--space-3);
     /* as tall as the menu button, so the state line sits at the same height on every page */
     min-height: 3.5rem;
   }

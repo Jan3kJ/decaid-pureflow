@@ -60,14 +60,16 @@ test('the header is one row at 1280 x 800, in simple and in detail, with room be
   await openEditor(page);
   await headerOnOneRow(page);
 
-  // The start row's buttons and save / save as stand apart, the groups further.
+  // The start row's buttons and save / save as stand apart by one step of space (--space-2, 0.6 rem
+  // of the 16 px root, less half a pixel of the layout's rounding), the groups further.
+  const ROOM = 9.6 - 0.5;
   const buttons = page.getByTestId('start-row').locator('button');
   await expect(buttons).toHaveCount(5);
   const starts = await Promise.all((await buttons.all()).map(async (button) => (await button.boundingBox())!));
-  for (let i = 1; i < starts.length; i++) expect(starts[i].x - (starts[i - 1].x + starts[i - 1].width)).toBeGreaterThanOrEqual(10);
+  for (let i = 1; i < starts.length; i++) expect(starts[i].x - (starts[i - 1].x + starts[i - 1].width)).toBeGreaterThanOrEqual(ROOM);
   const save = await box(page, 'save');
   const saveAs = await box(page, 'save-as');
-  expect(saveAs.x - (save.x + save.width)).toBeGreaterThanOrEqual(10);
+  expect(saveAs.x - (save.x + save.width)).toBeGreaterThanOrEqual(ROOM);
   const simple = await box(page, 'mode-simple');
   expect(simple.x - (saveAs.x + saveAs.width)).toBeGreaterThanOrEqual(24);
 

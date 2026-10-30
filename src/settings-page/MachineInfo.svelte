@@ -120,9 +120,9 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
+    gap: var(--space-3);
     min-height: 3.2rem;
-    padding: 0.35rem 0;
+    padding: var(--space-1) 0;
     border-top: 1px solid var(--line);
   }
 
@@ -141,7 +141,7 @@
   .serial {
     display: flex;
     align-items: center;
-    gap: 0.8rem;
+    gap: var(--space-2);
   }
 
   .dim {

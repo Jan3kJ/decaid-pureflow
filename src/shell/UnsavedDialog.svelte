@@ -48,7 +48,7 @@
     padding: 1.4rem;
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: var(--space-2);
     background: var(--panel);
     border: 1px solid var(--line);
     border-radius: 1.2rem;
@@ -72,9 +72,9 @@
   }
 
   .actions {
-    margin-top: 0.6rem;
+    margin-top: var(--space-2);
     display: flex;
-    gap: 0.6rem;
+    gap: var(--space-2);
   }
 
   button {
