@@ -82,6 +82,8 @@ test('the display size scales the whole skin at once, is saved, backed up and st
 });
 
 test("the chart line width widens every graph's curves: the profile picker's preview and the editor's", async ({ page }) => {
+  // About 35 page loads: 24 s on a fast machine, so the default 30 s is not enough on GitHub's.
+  test.setTimeout(90_000);
   gateway.withDefaults('light');
   await openSkin(page, 'skin-display');
   await expect(page.getByTestId('setting-line-width-1')).toHaveAttribute('aria-pressed', 'true');
