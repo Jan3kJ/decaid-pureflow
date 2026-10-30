@@ -51,8 +51,10 @@ jobs:
         if: failure()
         shell: bash
         run: |
-          failed=$(grep -oE '✘ +[0-9]+ \[[a-z]+\] › [^ ]+' "$RUNNER_TEMP/e2e.log" | sed -E 's/.* › //' | sort -u | paste -sd ' ' - || true)
-          echo "e2e failed: ${failed:-no test failed, see the log}" | tee -a "$GITHUB_STEP_SUMMARY"
+          failed=$(grep -E '✘ +[0-9]+ \[[a-z]+\] › ' "$RUNNER_TEMP/e2e.log" | sed -E 's/^.*✘ +[0-9]+ \[[a-z]+\] › //; s/ \([0-9.]+(ms|s|m)\)$//' | sort -u || true)
+          if [ -z "$failed" ]; then failed="no test failed, see the log"; fi
+          echo "::error title=e2e failed::$(echo "$failed" | paste -sd '|' - | sed 's/|/ | /g')"
+          { echo "### e2e failed"; echo "$failed" | sed 's/^/- /'; } | tee -a "$GITHUB_STEP_SUMMARY"
       # e2e/.results/ is a hidden folder: the trace, picture and error context of each failed test.
       - uses: actions/upload-artifact@v4
         if: failure()

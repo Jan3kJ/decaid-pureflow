@@ -29,6 +29,7 @@ test('a touch sends a heartbeat, at most one every 30 s, on every screen', async
   await page.clock.install();
   await page.goto('/');
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await page.clock.pauseAt(Date.now() + 1000);
   const sent = heartbeats(gateway);
   // Nothing without a touch.
   await page.clock.runFor(60_000);
@@ -58,6 +59,7 @@ test('no heartbeat while the machine sleeps; the first touch after the wake send
   await page.clock.install();
   await page.goto('/');
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await page.clock.pauseAt(Date.now() + 1000);
   const sent = heartbeats(gateway);
   // 'Machine sleep' leaves the skin on screen while the machine sleeps.
   await page.getByTestId('menu').click();

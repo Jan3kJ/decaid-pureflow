@@ -404,10 +404,13 @@ test('a workflow without a dose takes the default dose; one with a dose keeps it
 test('a stream the gateway closed with an error is tried again for 30 s, then shown with a reconnect action', async ({ page }) => {
   const gateway = await mockGateway(page);
   gateway.refuseStreams = true;
-  await page.clock.install();
+  // The clock is paused from the start: an installed clock runs with real time, and on a slow
+  // machine the load would add seconds to the 30 s window the loop counts. Only `runFor` moves it.
+  await page.clock.install({ time: 0 });
+  await page.clock.pauseAt(1000);
   await page.goto('/');
 
-  // The skin tries again by itself for 30 s: no reconnect button yet.
+  // The skin tries again by itself for 30 s from the first refusal: no reconnect button yet.
   await expect(page.getByTestId('status-title')).toHaveText('Decaid is not reachable');
   const failed = page.getByTestId('stream-failed');
   let seconds = 0;
