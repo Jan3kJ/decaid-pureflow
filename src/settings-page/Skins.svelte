@@ -10,12 +10,14 @@
   // on another asks, since the switch leaves this skin, then makes it Decaid's default, starts
   // Decaid's skin server again and opens the port it serves on (src/settings-page/skins.ts).
   // 'Check for skin updates' has Decaid look for newer versions; the skin asks no outside service.
+  // When Decaid serves this skin at another version than this page runs, 'reload' loads the page
+  // again: Decaid serves the new files on the same port at once and sends them with no-store.
   import { onMount } from 'svelte';
   import type { WebUiSkin } from '../api';
-  import { PRODUCT_NAME } from '../product';
+  import { PRODUCT_ID, PRODUCT_NAME, PRODUCT_VERSION } from '../product';
   import type { Skin } from '../shell/skin.svelte';
   import Confirm from './Confirm.svelte';
-  import { OPEN_WAIT_MS, orderSkins, skinAddress, switchSkin } from './skins';
+  import { OPEN_WAIT_MS, installedOther, orderSkins, reloadLine, skinAddress, switchSkin } from './skins';
   import { errorMessage } from '../error-message';
 
   interface Props {
@@ -26,6 +28,8 @@
 
   let skins: WebUiSkin[] | null = $state.raw(null);
   let defaultId: string | null = $state(null);
+  /** Decaid's default skin as last read */
+  let served: WebUiSkin | null = $state.raw(null);
   let unread: string | null = $state(null);
   let asking: WebUiSkin | null = $state.raw(null);
   /** the switch or the update check in flight */
@@ -34,6 +38,7 @@
   let said: string | null = $state(null);
 
   const ordered = $derived(orderSkins(skins ?? [], defaultId));
+  const installed = $derived(installedOther(served, PRODUCT_ID, PRODUCT_VERSION));
 
   async function read() {
     unread = null;
@@ -41,6 +46,7 @@
       const [list, chosen] = await Promise.all([skin.client.listSkins(), skin.client.getDefaultSkin()]);
       skins = list;
       defaultId = chosen.id;
+      served = chosen;
     } catch (cause) {
       unread = errorMessage(cause);
     }
@@ -114,6 +120,16 @@
   </div>
 {/if}
 {#if said}<p class="said" data-testid="skins-said">{said}</p>{/if}
+
+{#if installed}
+  <div class="row" data-testid="skins-reload-row">
+    <span class="about">
+      <strong data-testid="skins-reload-line">{reloadLine(PRODUCT_NAME, installed, PRODUCT_VERSION)}</strong>
+      <small>loads this screen again with the installed version.</small>
+    </span>
+    <button class="action" data-testid="skins-reload" disabled={busy} onclick={() => location.reload()}>reload</button>
+  </div>
+{/if}
 
 <div class="row">
   <span class="about">

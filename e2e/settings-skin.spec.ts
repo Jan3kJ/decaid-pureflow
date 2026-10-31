@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import type { Settings } from '../src/settings';
 import type { Backup } from '../src/settings-backup';
@@ -7,8 +8,11 @@ import { mockGateway, type MockGateway } from './mock-gateway';
 // unit under Quick Adjustments > Water Tank, against the
 // mocked gateway: each display option applies at once and stays over a reload; the skin switch
 // lists Decaid's skins, asks, makes the chosen one Decaid's default, starts the skin server again
-// and opens the port it serves on. The switch against the running gateway:
+// and opens the port it serves on; after the update check a newer version of this skin is offered
+// for a reload. The switch and the reload against the running gateway:
 // e2e-rig/settings-skin.spec.ts.
+
+const VERSION = (JSON.parse(readFileSync('public/manifest.json', 'utf8')) as { version: string }).version;
 
 const errors: string[] = [];
 let gateway: MockGateway;
@@ -219,4 +223,25 @@ test('a refused switch says why and stays on the page; the update check reads th
   await expect(page.getByTestId('skins-said')).toHaveText('Checked: the versions above are what Decaid holds now.');
   await expect(page.getByTestId('skin-streamline.js')).toContainText('v0.2.18');
   expect(gateway.calls('POST', '/api/v1/webui/skins/update')).toHaveLength(1);
+});
+
+test('after the update check a newer version of this skin is offered, and reload loads the page again', async ({ page }) => {
+  gateway.skins.push({ id: 'pureflow', name: 'pureflow', path: '/web-ui/pureflow', version: VERSION, isBundled: false, port: 27920 });
+  gateway.defaultSkin = 'pureflow';
+  gateway.serving = 'pureflow';
+  await openSkin(page, 'skin-active');
+  await expect(page.getByTestId('skin-pureflow')).toContainText(`v${VERSION}`);
+  // The same version: nothing to reload.
+  await expect(page.getByTestId('skins-reload-row')).toHaveCount(0);
+
+  gateway.skinUpdates = { pureflow: '9.9.9' };
+  await page.getByTestId('skins-update').click();
+  await expect(page.getByTestId('skins-reload-line')).toHaveText(`pureflow 9.9.9 is installed, this screen runs ${VERSION}`);
+  await expect(page.getByTestId('skin-pureflow')).toContainText('v9.9.9');
+
+  await page.evaluate(() => ((window as unknown as { beforeReload: boolean }).beforeReload = true));
+  await Promise.all([page.waitForEvent('load'), page.getByTestId('skins-reload').click()]);
+  expect(await page.evaluate(() => (window as unknown as { beforeReload?: boolean }).beforeReload)).toBeUndefined();
+  // Decaid's skin server was not touched: it serves the new files on the same port.
+  expect(gateway.writes().filter((request) => request.path.startsWith('/api/v1/webui/server'))).toEqual([]);
 });

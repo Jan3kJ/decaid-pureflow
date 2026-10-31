@@ -132,7 +132,8 @@ and the machine's.
 - **Profile**: the highest flow the editor offers, the dose, the start row of the editor, and
   **convert to 3.0**.
 - **Display Size**: the size of everything on screen and the line width.
-- **Active Skin**: Decaid's skins; a tap on another one switches to it.
+- **Active Skin**: Decaid's skins; a tap on another one switches to it. **check** has Decaid look
+  for newer versions; when it holds another pureflow than this screen runs, **reload** loads it.
 - **Backup and version**: the backup in Decaid and the skin's version.
 
 One of the skin's settings sits with the machine's: **tank unit**, under **1. Quick

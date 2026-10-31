@@ -197,6 +197,13 @@ to type, and has Decaid install the ZIP with `POST /api/v1/webui/skins/install/u
 skin, the page starts Decaid's skin server again and opens it, as the skin switch does. How to
 use it: [CONTRIBUTING](../CONTRIBUTING.md#testing-a-build-on-the-tablet).
 
+After Settings > Skin > Active Skin > check (`POST /api/v1/webui/skins/update`), the page compares
+the version of Decaid's default skin with the build constant `PRODUCT_VERSION`; when this skin is
+the default at another version, it offers 'reload' (`installedOther` in
+`src/settings-page/skins.ts`). Decaid serves a skin's new files on the same port as soon as it has
+installed them, with `Cache-Control: no-store`, so the reload is `location.reload()` and the skin
+server is not started again.
+
 `--dry-run` runs the checks and prints what it would write. `--local` stops after the tag and
 never calls GitHub. `--resume` continues at the publish step when the tag exists.
 

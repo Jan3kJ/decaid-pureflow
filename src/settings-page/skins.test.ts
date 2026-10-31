@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { WebUiServerStatus, WebUiSkin } from '../api';
-import { SERVER_POLL_MS, orderSkins, skinAddress, switchSkin } from './skins';
+import { SERVER_POLL_MS, installedOther, orderSkins, reloadLine, skinAddress, switchSkin } from './skins';
 
 const skin = (id: string, name: string): WebUiSkin => ({ id, name, path: `/web-ui/${id}`, isBundled: true });
 
@@ -66,5 +66,23 @@ describe('the skin switch', () => {
 
   it("opens the served port on this page's host", () => {
     expect(skinAddress(27910, { protocol: 'http:', hostname: 'localhost' })).toBe('http://localhost:27910/');
+  });
+});
+
+describe('the reload after an update', () => {
+  const served = (id: string, version?: string | null): WebUiSkin => ({ ...skin(id, id), version });
+
+  it("offers the version Decaid serves of this skin when it is not the one running, with or without a 'v'", () => {
+    expect(installedOther(served('pureflow', '0.9.1'), 'pureflow', '0.9.0')).toBe('0.9.1');
+    expect(installedOther(served('pureflow', 'v0.8.9'), 'pureflow', '0.9.0')).toBe('0.8.9');
+    expect(reloadLine('pureflow', '0.9.1', '0.9.0')).toBe('pureflow 0.9.1 is installed, this screen runs 0.9.0');
+  });
+
+  it('offers nothing at the same version, without a version, or when Decaid serves another skin', () => {
+    expect(installedOther(served('pureflow', '0.9.0'), 'pureflow', '0.9.0')).toBeNull();
+    expect(installedOther(served('pureflow', 'v0.9.0'), 'pureflow', '0.9.0')).toBeNull();
+    expect(installedOther(served('pureflow', null), 'pureflow', '0.9.0')).toBeNull();
+    expect(installedOther(served('streamline.js', '0.2.21'), 'pureflow', '0.9.0')).toBeNull();
+    expect(installedOther(null, 'pureflow', '0.9.0')).toBeNull();
   });
 });

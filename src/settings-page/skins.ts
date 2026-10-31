@@ -6,7 +6,9 @@
 //
 // Skin > Active Skin without UI: the installed skins with the default one first, and the switch:
 // Decaid's default skin is set and checked, its skin server is started again so it serves the
-// new default, and the port it serves on is read back. The page then opens that port.
+// new default, and the port it serves on is read back. The page then opens that port. And the
+// reload: Decaid serves a skin's new files on the same port as soon as it has installed them, so
+// after an update this page only has to load itself again.
 import type { DecaidClient, WebUiSkin } from '../api';
 
 /** How long the skin server may take to come back, and how often it is asked (Streamline's). */
@@ -57,4 +59,21 @@ export async function switchSkin(
 /** The address of a skin Decaid serves on `port`, on this page's host. */
 export function skinAddress(port: number, here: Pick<Location, 'protocol' | 'hostname'>): string {
   return `${here.protocol}//${here.hostname}:${port}/`;
+}
+
+/** A version as Decaid's list and a manifest write it, with or without a leading 'v'. */
+const bare = (version: string | null | undefined) => (version ?? '').trim().replace(/^v/i, '');
+
+/**
+ * The version Decaid holds of this skin when it differs from the one this page runs, else null:
+ * only when this skin is Decaid's default, the one its skin server serves.
+ */
+export function installedOther(served: WebUiSkin | null, id: string, running: string): string | null {
+  if (!served || served.id !== id || !bare(served.version)) return null;
+  return bare(served.version) === bare(running) ? null : bare(served.version);
+}
+
+/** What the reload row says. */
+export function reloadLine(name: string, installed: string, running: string): string {
+  return `${name} ${installed} is installed, this screen runs ${bare(running)}`;
 }
