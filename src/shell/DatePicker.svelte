@@ -169,10 +169,15 @@
         onclick={() => step(-1)}>‹</button
       >
       <div class="title" data-testid="datepicker-month" data-month={shownKey}>
-        <button class="part" class:on={!byYear} data-testid="datepicker-month-name" onclick={() => (byYear = false)}>
+        <button
+          class="part select-outline"
+          aria-pressed={!byYear}
+          data-testid="datepicker-month-name"
+          onclick={() => (byYear = false)}
+        >
           {MONTH_NAMES[shown.month - 1]}
         </button>
-        <button class="part" class:on={byYear} aria-pressed={byYear} data-testid="datepicker-year" onclick={() => (byYear = !byYear)}>
+        <button class="part select-outline" aria-pressed={byYear} data-testid="datepicker-year" onclick={() => (byYear = !byYear)}>
           {shown.year}
         </button>
       </div>
@@ -301,11 +306,6 @@
     font-weight: 600;
     background: none;
     border-color: transparent;
-  }
-
-  /* the part the arrows step */
-  .part.on {
-    border-color: var(--line);
   }
 
   .weekdays,

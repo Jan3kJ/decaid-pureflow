@@ -116,6 +116,11 @@ body {
   font-weight: 600;
 }
 
+/* Inside it the values, units and small lines are the dark text too, whatever colour they have elsewhere. */
+:root .select-fill:is([aria-pressed='true'], [aria-current='true']) * {
+  color: inherit;
+}
+
 /* The row whose detail is shown beside its list: the white outline. */
 :root .select-outline:is([aria-pressed='true'], [aria-current='true']) {
   background: var(--raised);

@@ -1,9 +1,10 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { mockGateway } from './mock-gateway';
+import { MEASUREMENTS, mockGateway, profile } from './mock-gateway';
 import { toPage } from './touch';
 
 // One selected look per kind, against a mocked gateway: a choice
-// of one among a few (a chip, a mode, a tab, history's 'all') is the white fill; the row whose
+// of one among a few (a chip, a mode, a tab, history's 'all') is the white fill, the values, units
+// and small lines inside it dark too; the row whose
 // detail is shown beside its list (the picker, the bean and grinder lists, the settings'
 // categories) is the white outline on the raised background.
 
@@ -98,4 +99,37 @@ test('the row whose detail is shown beside its list is the white outline', async
   await expect(category).toHaveCount(1);
   expect(await look(category)).toMatchObject(outline);
   await page.screenshot({ path: 'e2e/.results/selected-settings.png' });
+});
+
+test('inside a selected chip the values, units and small lines are dark too: hot water and steam', async ({ page }) => {
+  const gateway = await mockGateway(page);
+  gateway.addShot('shot-40', '2026-10-17T07:00:00', profile('A-Flow / default-medium', 42, 9), { targetYield: 40 });
+  gateway.measurements['shot-40'] = MEASUREMENTS.map((measurement, i, all) => ({
+    ...measurement,
+    scale: i === all.length - 1 && measurement.scale ? { ...measurement.scale, weight: 40 } : measurement.scale,
+  }));
+  gateway.putOnScale(212.4);
+  await page.goto('/');
+  const { fill } = await looks(page);
+  const inside = (locator: Locator) =>
+    locator.evaluate((element) => [...element.querySelectorAll('*')].map((child) => getComputedStyle(child).color));
+
+  await toPage(page, 'hot-water');
+  const ratio = page.getByTestId('hot-water-ratio').first();
+  await ratio.click();
+  await expect(ratio).toHaveAttribute('aria-pressed', 'true');
+  await page.screenshot({ path: 'e2e/.results/selected-hot-water.png' });
+  expect(await look(ratio)).toEqual(fill);
+  expect(await inside(ratio)).toEqual([fill.color]);
+
+  await toPage(page, 'steam');
+  const adjust = page.getByTestId('steam-adjust').first();
+  await adjust.click();
+  await expect(adjust).toHaveAttribute('aria-pressed', 'true');
+  const favourite = page.getByTestId('steam-favourite').first();
+  await favourite.click();
+  await expect(favourite).toHaveAttribute('aria-pressed', 'true');
+  await page.screenshot({ path: 'e2e/.results/selected-steam-adjust.png' });
+  expect(await look(adjust)).toEqual(fill);
+  expect(await look(favourite)).toEqual(fill);
 });

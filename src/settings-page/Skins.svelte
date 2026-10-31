@@ -166,11 +166,6 @@
     border-radius: 0.9rem;
   }
 
-  .skin[aria-pressed='true'] small {
-    color: var(--bg);
-    opacity: 0.75;
-  }
-
   .skin:disabled:not([aria-pressed='true']) {
     opacity: 0.5;
   }
