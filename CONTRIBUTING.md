@@ -40,6 +40,29 @@ The design target is a tablet in landscape, 1280 x 800 CSS pixels at device scal
 every layout relative to the viewport. Blue is flow, green pressure, red temperature, yellow
 weight. Every font size is one of the six type-role tokens; the lint fails on any other.
 
+## Testing a build on the tablet
+
+A build can be installed on the tablet from the PC before it is published; Decaid's GitHub install
+reads only published releases.
+
+1. `npm run release -- --local` (or `npm run zip`) writes the two ZIPs into `release/`.
+2. `npm run serve-release` (`scripts/serve-release.mjs`, Node only) serves `release/` read only
+   on port 24810 of every network interface (`--port`, `--dir` choose others) and prints the
+   PC's addresses. Windows asks once whether Node may accept connections on the network: allow
+   it for private networks, or port 24810 stays closed to the tablet.
+3. On the tablet, in the same Wi-Fi: Settings > 6. Skin > Backup and version > **developer
+   options** on. Skin > **Developer** shows; type the PC's address (the port is 24810 unless
+   you type another), tap **list**, tap a ZIP and **install**. Decaid downloads and installs it;
+   when it is the skin Decaid serves, the page opens it again at the new version.
+
+Python's server works too, `python -m http.server 24810 --directory release`, but it sends no
+CORS header, so the page cannot read its list: the skin then offers the file's name to type,
+filled with this version's ZIP, and Decaid downloads it as before.
+
+Decaid keeps the server's address as the skin's source, so its update check looks there (and
+skips the skin while the server is stopped). Install from GitHub Release to go back. App Store
+builds of Decaid refuse an install from a URL.
+
 ## The rules of a change
 
 - **One pull request, one change.** A fix and an unrelated clean-up are two pull requests.

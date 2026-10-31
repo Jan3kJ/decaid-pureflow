@@ -500,6 +500,21 @@ describe('skin server', () => {
   });
 });
 
+describe('skin install from a URL', () => {
+  it('asks Decaid to download and install the ZIP at the URL', async () => {
+    const { client, calls } = clientWith({ body: { success: true, message: 'Skin installed successfully from URL' } });
+    await client.installSkinFromUrl('http://192.168.1.20:24810/pureflow-0.9.0.zip');
+    expect(calls.map((call) => [call.method, call.url, call.body])).toEqual([
+      ['POST', 'http://localhost:8080/api/v1/webui/skins/install/url', { url: 'http://192.168.1.20:24810/pureflow-0.9.0.zip' }],
+    ]);
+  });
+
+  it("throws Decaid's error, as the rig answers a missing file", async () => {
+    const { client } = clientWith({ status: 500, body: { error: 'Exception: Failed to download: 404' } });
+    await expect(client.installSkinFromUrl('http://pc:24810/nope.zip')).rejects.toThrow('500 Exception: Failed to download: 404');
+  });
+});
+
 describe('errors', () => {
   it('carries status, path and the parsed body', async () => {
     const body = { error: 'DeviceNotConnectedException: machine not connected' };

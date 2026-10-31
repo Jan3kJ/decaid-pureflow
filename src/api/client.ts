@@ -652,6 +652,14 @@ export class DecaidClient {
     await this.request('POST', '/api/v1/webui/skins/update');
   }
 
+  /**
+   * Decaid downloads the skin ZIP at `url` itself, unpacks it and installs it over a skin with the
+   * same manifest id; it keeps the URL as the skin's source for its update check.
+   */
+  async installSkinFromUrl(url: string): Promise<void> {
+    await this.request('POST', '/api/v1/webui/skins/install/url', { url });
+  }
+
   async stopWebUiServer(): Promise<void> {
     await this.request('POST', '/api/v1/webui/server/stop');
   }

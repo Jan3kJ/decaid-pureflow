@@ -1,3 +1,6 @@
+/** The skin's id in Decaid, from its manifest: the ZIPs' names start with it. */
+export const PRODUCT_ID: string = __PRODUCT_ID__;
+
 /** The name shown in the UI; the skin's manifest is its single source (vite.config.ts reads it). */
 export const PRODUCT_NAME: string = __PRODUCT_NAME__;
 

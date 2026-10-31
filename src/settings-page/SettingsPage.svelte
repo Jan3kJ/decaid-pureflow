@@ -44,6 +44,7 @@
   import { isBengle } from './bengle';
   import { SETTINGS_TREE, loadLocation, saveLocation, visibleSubcategories, type Action, type Subcategory } from './tree';
   import { errorMessage } from '../error-message';
+  import { loadDeveloper } from './local-install';
 
   interface Props {
     skin: Skin;
@@ -81,6 +82,8 @@
 
   /** the connected machine is a Bengle: its pages show */
   let bengle = $state(false);
+  /** Skin > Backup and version > developer options: Skin > Developer shows */
+  let developer = $state(loadDeveloper());
 
   onMount(() => {
     void readValues();
@@ -211,7 +214,7 @@
         onclick={() => open(entry.id)}><span class="number">{entry.number}.</span> {entry.name}</button
       >
       {#if entry.id === category.id}
-        {#each visibleSubcategories(entry, bengle) as sub (sub.id)}
+        {#each visibleSubcategories(entry, bengle, developer) as sub (sub.id)}
           <button class="sub" data-testid="settings-sub-{sub.id}" onclick={() => jump(sub)}>{sub.name}</button>
         {/each}
       {/if}
@@ -220,7 +223,7 @@
 
   <div class="panel" data-main-frame bind:this={panel} data-testid="settings-content" data-category={category.id}>
     {#if category.id === 'skin'}
-      <SkinCategory {skin} />
+      <SkinCategory {skin} bind:developer />
     {:else}
       {#each visibleSubcategories(category, bengle) as sub (sub.id)}
         <section id="sub-{sub.id}" data-testid="settings-section-{sub.id}">

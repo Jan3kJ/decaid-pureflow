@@ -15,7 +15,7 @@
   import { PRODUCT_NAME } from '../product';
   import type { Skin } from '../shell/skin.svelte';
   import Confirm from './Confirm.svelte';
-  import { orderSkins, skinAddress, switchSkin } from './skins';
+  import { OPEN_WAIT_MS, orderSkins, skinAddress, switchSkin } from './skins';
   import { errorMessage } from '../error-message';
 
   interface Props {
@@ -23,9 +23,6 @@
   }
 
   let { skin }: Props = $props();
-
-  /** ms, how long the page waits for the new skin before it says it did not open */
-  const OPEN_WAIT_MS = 6000;
 
   let skins: WebUiSkin[] | null = $state.raw(null);
   let defaultId: string | null = $state(null);

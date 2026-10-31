@@ -78,14 +78,15 @@ function noOcrWorker(): Plugin {
 export default defineConfig(({ mode }) => {
   const ocr = mode === 'ocr';
   const flavour = FLAVOURS[ocr ? 1 : 0];
-  // The skin's name and version, read here: a file of public/ is not imported from the code.
-  const manifest = JSON.parse(readFileSync('public/manifest.json', 'utf8')) as { name: string; version: string };
+  // The skin's id, name and version, read here: a file of public/ is not imported from the code.
+  const manifest = JSON.parse(readFileSync('public/manifest.json', 'utf8')) as { id: string; name: string; version: string };
   return {
     // Relative asset paths, so the build works from any path the gateway serves it on.
     base: './',
     plugins: [svelte(), ...(ocr ? [ocrFiles(), noOcrWorker()] : [])],
     define: {
       __OCR__: JSON.stringify(ocr),
+      __PRODUCT_ID__: JSON.stringify(manifest.id),
       __PRODUCT_NAME__: JSON.stringify(manifest.name),
       __PRODUCT_VERSION__: JSON.stringify(manifest.version),
     },

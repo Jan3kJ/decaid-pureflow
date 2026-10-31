@@ -46,6 +46,7 @@ describe('the settings tree', () => {
       'Display Size',
       'Active Skin',
       'Backup and version',
+      'Developer',
     ]);
     expect(names('miscellaneous')).toEqual(['Decaid Settings', 'Brightness', 'Wake Lock', 'Presence Detection']);
     // Visualizer and Shot Uploader are plugin cards of Plugins.
@@ -107,6 +108,16 @@ describe('the settings tree', () => {
         .map((sub) => sub.id);
     expect(shown(false)).toEqual([]);
     expect(shown(true)).toEqual(['loadcell', 'cupwarmer', 'ledstrip']);
+  });
+
+  it('shows Skin > Developer only with the developer options on', () => {
+    const skin = SETTINGS_TREE.find((category) => category.id === 'skin')!;
+    expect(visibleSubcategories(skin, false).map((sub) => sub.id)).not.toContain('skin-developer');
+    expect(
+      visibleSubcategories(skin, false, true)
+        .map((sub) => sub.id)
+        .at(-1),
+    ).toBe('skin-developer');
   });
 
   it('keeps the category opened last, and opens on the first without one', () => {

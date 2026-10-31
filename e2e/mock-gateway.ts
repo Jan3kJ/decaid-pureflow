@@ -437,7 +437,15 @@ export class MockGateway {
   /** `GET /api/v1/machine/calibration/{target}`: the stored value of each sensor */
   calibration: Record<string, number> = { flow: 1.0, pressure: 1.0, temperature: 0.0 };
   /** `GET /api/v1/webui/skins`, three of the rig's; the port Decaid serves each on */
-  skins: { id: string; name: string; path: string; version: string; isBundled: boolean; port: number }[] = [
+  skins: {
+    id: string;
+    name: string;
+    path: string;
+    version: string;
+    isBundled: boolean;
+    port: number;
+    reaMetadata?: { sourceUrl: string };
+  }[] = [
     { id: 'streamline.js', name: 'Streamline.js', path: '/web-ui/streamline.js', version: '0.2.17', isBundled: true, port: 27906 },
     { id: 'insight', name: 'Insight', path: '/web-ui/insight', version: '0.2.7', isBundled: true, port: 27911 },
     { id: 'NSX-skin', name: 'NSX', path: '/web-ui/NSX-skin', version: 'v0.4.3', isBundled: true, port: 27912 },
@@ -447,6 +455,11 @@ export class MockGateway {
   serving: string | null = 'streamline.js';
   /** what `POST /api/v1/webui/skins/update` installs: a skin's new version */
   skinUpdates: Record<string, string> = {};
+  /**
+   * What `POST /api/v1/webui/skins/install/url` installs from each URL, over a skin with the same
+   * id; another URL fails as Decaid's download of a missing file does on the rig.
+   */
+  installable: Record<string, { id: string; name: string; version: string }> = {};
   /** `GET /api/v1/machine/firmware`, as on the rig */
   firmware: Json = {
     artifacts: [
@@ -1092,6 +1105,21 @@ export class MockGateway {
       if (path === '/api/v1/webui/skins/update' && method === 'POST') {
         for (const skin of this.skins) skin.version = this.skinUpdates[skin.id] ?? skin.version;
         return json({ message: 'Skin update check completed' });
+      }
+      if (path === '/api/v1/webui/skins/install/url' && method === 'POST') {
+        const url = body.url as string;
+        const zip = this.installable[url];
+        if (!zip) return json({ error: 'Exception: Failed to download: 404' }, 500);
+        const before = skinOf(zip.id);
+        const installed = {
+          ...zip,
+          path: `/web-ui/${zip.id}`,
+          isBundled: false,
+          port: before?.port ?? 27920,
+          reaMetadata: { sourceUrl: url },
+        };
+        this.skins = [...this.skins.filter((skin) => skin.id !== zip.id), installed];
+        return json({ success: true, message: 'Skin installed successfully from URL', url });
       }
       if (path === '/api/v1/webui/server/stop' && method === 'POST') {
         this.serving = null;

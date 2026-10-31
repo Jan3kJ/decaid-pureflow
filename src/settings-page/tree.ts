@@ -32,7 +32,7 @@ import type { ProcedureId } from './maintenance';
 export type Action = 'fast-start' | 'reset' | 'dashboard';
 
 /** The skin's own settings (20.6), drawn by `SkinCategory.svelte`. */
-export type SkinPart = 'steam' | 'hot-water' | 'profile' | 'graph' | 'display' | 'skins' | 'backup';
+export type SkinPart = 'steam' | 'hot-water' | 'profile' | 'graph' | 'display' | 'skins' | 'backup' | 'developer';
 
 /**
  * A part of a subcategory that is not a list of fields: the device lists (`Devices.svelte`), a
@@ -66,6 +66,8 @@ export interface Subcategory {
   hint?: string;
   /** shown only when the connected machine is a Bengle */
   bengle?: boolean;
+  /** shown only with Skin > Backup and version > developer options on */
+  developer?: boolean;
   content: Content;
 }
 
@@ -211,6 +213,13 @@ export const SETTINGS_TREE: Category[] = [
         content: { kind: 'skin', part: 'skins' },
       },
       { id: 'skin-backup', name: 'Backup and version', content: { kind: 'skin', part: 'backup' } },
+      {
+        id: 'skin-developer',
+        name: 'Developer',
+        hint: 'for testing a build before it is published.',
+        developer: true,
+        content: { kind: 'skin', part: 'developer' },
+      },
     ],
   },
   {
@@ -267,9 +276,9 @@ export const TREE_FIELDS: Field[] = SETTINGS_TREE.flatMap((category) =>
   category.subcategories.flatMap((sub) => (sub.content.kind === 'fields' ? sub.content.fields : [])),
 );
 
-/** The subcategories shown for the connected machine: the Bengle's only on a Bengle. */
-export function visibleSubcategories(category: Category, bengle: boolean): Subcategory[] {
-  return category.subcategories.filter((sub) => bengle || !sub.bengle);
+/** The subcategories shown: the Bengle's only on a Bengle, the developer's only with its switch on. */
+export function visibleSubcategories(category: Category, bengle: boolean, developer = false): Subcategory[] {
+  return category.subcategories.filter((sub) => (bengle || !sub.bengle) && (developer || !sub.developer));
 }
 
 export const DEFAULT_CATEGORY = SETTINGS_TREE[0].id;

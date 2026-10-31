@@ -12,6 +12,8 @@ import type { DecaidClient, WebUiSkin } from '../api';
 /** How long the skin server may take to come back, and how often it is asked (Streamline's). */
 export const SERVER_WAIT_MS = 20_000;
 export const SERVER_POLL_MS = 500;
+/** How long the page waits for the skin it opened before it says it did not open. */
+export const OPEN_WAIT_MS = 6000;
 
 /** What `GET /api/v1/webui/skins` lists, the default skin first, the others by name. */
 export function orderSkins(skins: readonly WebUiSkin[], defaultId: string | null): WebUiSkin[] {

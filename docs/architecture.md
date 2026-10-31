@@ -186,6 +186,17 @@ way a release is made. In order, it stops at the first gate that fails:
 8. the push and the GitHub release with both ZIPs, behind a second yes; the release notes say which
    ZIP is which, and both are downloaded again and compared with the local files.
 
+`npm run serve-release` (`scripts/serve-release.mjs`, Node only) serves `release/` on port 24810
+for a test on the tablet before the release is published: `GET /index.json` lists the ZIPs with
+their size, time and SHA-256, every answer carries `Access-Control-Allow-Origin: *`, and only
+files directly in the folder are sent. Settings > Skin > Developer (shown with Skin > Backup and
+version > developer options on; the switch and the address are kept in `localStorage`, not in
+the settings) reads that list, else the server's directory listing, else offers the file's name
+to type, and has Decaid install the ZIP with `POST /api/v1/webui/skins/install/url`
+(`src/settings-page/local-install.ts`, `LocalInstall.svelte`). When Decaid serves the installed
+skin, the page starts Decaid's skin server again and opens it, as the skin switch does. How to
+use it: [CONTRIBUTING](../CONTRIBUTING.md#testing-a-build-on-the-tablet).
+
 `--dry-run` runs the checks and prints what it would write. `--local` stops after the tag and
 never calls GitHub. `--resume` continues at the publish step when the tag exists.
 
@@ -235,7 +246,7 @@ cannot be set.
 - Only free, open-source packages that need no account. No new runtime dependency without asking
   first in an issue.
 - No external service beyond GitHub and Decaid's local gateway.
-- The skin never uses ports 3000, 4001 or 8080; the dev server uses 24800.
+- The skin never uses ports 3000, 4001 or 8080; the dev server uses 24800, `npm run serve-release` 24810.
 - Nothing private in a file: no local path, e-mail address, real device address or token.
 - Every layout is relative to the viewport, and every font size is one of the six type-role
   tokens. Blue is flow, green pressure, red temperature, yellow weight.

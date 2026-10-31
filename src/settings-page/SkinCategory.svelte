@@ -24,13 +24,22 @@
   import { importQuestion, importReport, planImport, runImport, type ImportPlan } from '../editor/import';
   import Confirm from './Confirm.svelte';
   import Skins from './Skins.svelte';
+  import LocalInstall from './LocalInstall.svelte';
+  import { saveDeveloper } from './local-install';
   import { DISPLAY_SIZES, LINE_WIDTHS, signed, type DisplayChoice } from '../display';
 
   interface Props {
     skin: Skin;
+    /** developer options: Skin > Developer shows; kept on this tablet, not in the settings */
+    developer: boolean;
   }
 
-  let { skin }: Props = $props();
+  let { skin, developer = $bindable() }: Props = $props();
+
+  function toggleDeveloper() {
+    developer = !developer;
+    saveDeveloper(developer);
+  }
 
   // The category Skin of the settings page: the skin's own settings, all in
   // the one settings object (src/settings.ts) and so in its KV backup. It keeps the test ids of the
@@ -370,7 +379,22 @@
       <small>version {PRODUCT_VERSION}</small>
     </span>
   </div>
+  <button class="row switch" role="switch" aria-checked={developer} data-testid="setting-developer" onclick={toggleDeveloper}>
+    <span class="about">
+      <strong>developer options</strong>
+      <small>shows Skin > Developer, to install a build from a server on your PC. Only on this tablet.</small>
+    </span>
+    <span class="lever"><span></span></span>
+  </button>
 </section>
+
+{#if developer}
+  <section id="sub-skin-developer" data-testid="settings-developer">
+    <h2>{SUB['skin-developer'].name}</h2>
+    <p class="hint">{SUB['skin-developer'].hint}</p>
+    <LocalInstall {skin} />
+  </section>
+{/if}
 
 {#snippet lever(item: Switch)}
   <button
