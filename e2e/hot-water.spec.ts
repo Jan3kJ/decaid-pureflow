@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import type { Backup } from '../src/settings-backup';
-import { mockGateway, profile, type MockGateway } from './mock-gateway';
+import { MEASUREMENTS, mockGateway, profile, type MockGateway } from './mock-gateway';
 import { back, toPage } from './touch';
 
 // The hot water page against a mocked gateway: its page dot
@@ -48,10 +48,14 @@ async function type(page: Page, testid: string, value: string) {
   await expect(page.getByTestId('numpad')).toHaveCount(0);
 }
 
-/** A shot in the history whose final weight is `grams`. */
-function shotOf(gateway: MockGateway, grams: number) {
+/** A shot in the history whose last scale reading is `grams`; its actualYield is `yielded`. */
+function shotOf(gateway: MockGateway, grams: number, yielded = grams) {
   gateway.addShot('shot-40', '2026-10-17T07:00:00', profile('A-Flow / default-medium', 42, 9), { targetYield: 40 });
-  gateway.shots.at(-1)!.annotations!.actualYield = grams;
+  gateway.shots.at(-1)!.annotations!.actualYield = yielded;
+  gateway.measurements['shot-40'] = MEASUREMENTS.map((measurement, i, all) => ({
+    ...measurement,
+    scale: i === all.length - 1 && measurement.scale ? { ...measurement.scale, weight: grams } : measurement.scale,
+  }));
 }
 
 const lastWrite = (gateway: MockGateway) =>
@@ -192,6 +196,7 @@ test('stop at weight in g with a scale, stop at volume in ml without one; no fav
   // The last shot was pulled without a scale: it has no weight.
   gateway.addShot('shot-unweighed', '2026-10-17T07:00:00', profile('A-Flow / default-medium', 42, 9), { targetYield: 40 });
   gateway.shots.at(-1)!.annotations = { actualDoseWeight: 18 };
+  gateway.measurements['shot-unweighed'] = MEASUREMENTS.map((measurement) => ({ ...measurement, scale: null }));
   await page.goto('/');
   await toPage(page, 'hot-water');
   const label = page.locator('.row.weight .label');
@@ -324,4 +329,16 @@ test('while hot water or flush runs the ring covers the rows, and they come back
   gateway.waterEnded();
   await expect(page.getByTestId('water-view')).toHaveCount(0);
   expect(errors).toEqual([]);
+});
+
+test('the last shot is the same weight on home and on hot water, whatever the annotated actualYield says', async ({ page }) => {
+  const gateway = await mockGateway(page);
+  // The scale read 44.6 g at the end; Decaid's annotation says 45.6 g.
+  shotOf(gateway, 44.6, 45.6);
+  await page.goto('/');
+  await expect(page.getByTestId('shot-weight')).toHaveText('44.6g');
+  await toPage(page, 'hot-water');
+  await expect(page.getByTestId('hot-water-last-shot')).toHaveText('44.6 g');
+  // The ratio chips follow it: 44.6 g times 2 is 89 g.
+  await expect(page.getByTestId('hot-water-ratio').first()).toHaveText('1:2 89 g');
 });

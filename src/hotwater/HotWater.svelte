@@ -63,7 +63,7 @@
 
   onMount(async () => {
     try {
-      lastShot = await lastShotGrams(skin.client);
+      lastShot = await lastShotGrams(skin.shot, skin.shots);
     } catch (cause) {
       unread = `The last shot could not be read: ${errorMessage(cause)}`;
     }

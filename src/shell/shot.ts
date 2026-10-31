@@ -254,6 +254,16 @@ export function shotWeight(shot: Shot | null): number | null {
   return shot ? seriesWeight(shot.series) : null;
 }
 
+/**
+ * What the last shot weighs, for home and hot water alike: a finished shot kept in the page
+ * weighs its final weight, else its last measured weight; without one, the newest record's
+ * series weighs its last measured weight. Null when there is no weight.
+ */
+export function lastShotWeight(shot: Shot | null, record: ShotSeries | null): number | null {
+  if (shot) return shot.finalWeight ?? shotWeight(shot);
+  return record ? seriesWeight(record) : null;
+}
+
 /** The latest weight in a series, null when it has none. */
 export function seriesWeight(series: ShotSeries): number | null {
   const weights = series.weight;

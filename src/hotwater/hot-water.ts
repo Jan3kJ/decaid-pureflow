@@ -6,8 +6,10 @@
 // stops at `hotWaterData.volume`, taken as grams. So stop at weight is that field, and the skin
 // stops nothing itself; without a scale the machine's own volume and time stop remain, so the
 // row reads stop at volume in ml then.
-import type { DecaidClient, HotWaterData, ShotRecordSummary, Workflow } from '../api';
+import type { DecaidClient, HotWaterData, ShotRecord, ShotRecordSummary, Workflow } from '../api';
+import { seriesOf } from '../history/entries';
 import type { ScaleLink } from '../shell/machine';
+import { lastShotWeight, type Shot } from '../shell/shot';
 
 /** One value of the page: where it is in `hotWaterData`, and what the number pad allows. */
 export interface HotWaterField {
@@ -81,20 +83,26 @@ export function ratioWeight(shotGrams: number, ratio: number): number {
 /** '1:2', '1:2.5' */
 export const ratioLabel = (ratio: number): string => `1:${+ratio.toFixed(1)}`;
 
-/**
- * g, the final weight of the last measured espresso shot: the newest shot record's
- * `annotations.actualYield`, which Decaid writes from the scale. Null when
- * there is no shot, or the newest has no weight (pulled without a scale).
- */
-export function shotGrams(shot: ShotRecordSummary | undefined): number | null {
-  const grams = shot?.annotations?.actualYield;
-  return typeof grams === 'number' && Number.isFinite(grams) && grams > 0 ? grams : null;
+/** The shots hot water reads the last one from: the cache's newest summary and its record. */
+export interface LastShotSource {
+  newest(): Promise<Pick<ShotRecordSummary, 'id'> | null>;
+  record(id: string): Promise<Pick<ShotRecord, 'measurements'>>;
 }
 
-/** Reads the newest shot record's weight from the gateway (`shotGrams`). */
-export async function lastShotGrams(client: Pick<DecaidClient, 'listShots'>): Promise<number | null> {
-  const page = await client.listShots({ limit: 1, order: 'desc' });
-  return shotGrams(page.items[0]);
+/**
+ * g, what the last espresso shot weighs, the number home shows (`lastShotWeight`): the
+ * finished shot kept in the page, else the newest record's last measured weight. Null when
+ * there is no shot or it has no weight (pulled without a scale).
+ */
+export async function lastShotGrams(shot: Shot | null, source: LastShotSource): Promise<number | null> {
+  let grams: number | null;
+  if (shot?.ended) {
+    grams = lastShotWeight(shot, null);
+  } else {
+    const latest = await source.newest();
+    grams = latest ? lastShotWeight(null, seriesOf(await source.record(latest.id))) : null;
+  }
+  return grams !== null && Number.isFinite(grams) && grams > 0 ? grams : null;
 }
 
 /**

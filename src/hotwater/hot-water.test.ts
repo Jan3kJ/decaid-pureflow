@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import type { HotWaterData, PaginatedShots, WorkflowPatch } from '../api';
+import type { HotWaterData, ShotRecord, WorkflowPatch } from '../api';
+import { seriesOf } from '../history/entries';
+import { homeShot } from '../shell/home-shot';
+import { emptySeries, type Shot } from '../shell/shot';
 import {
   HOT_WATER_FIELDS,
   FLOW_FIELD,
@@ -11,7 +14,6 @@ import {
   lastShotGrams,
   ratioLabel,
   ratioWeight,
-  shotGrams,
   shownValue,
   writeHotWater,
 } from './hot-water';
@@ -53,29 +55,58 @@ describe('stop at weight from the last shot by a ratio', () => {
 });
 
 describe('the last measured shot', () => {
-  it('is the newest record final weight, its actualYield', () => {
-    expect(shotGrams({ id: 'a', timestamp: 't', annotations: { actualYield: 40 } })).toBe(40);
-  });
-
-  it('has no weight without a record or a yield', () => {
-    expect(shotGrams(undefined)).toBeNull();
-    expect(shotGrams({ id: 'a', timestamp: 't' })).toBeNull();
-    expect(shotGrams({ id: 'a', timestamp: 't', annotations: { actualYield: null } })).toBeNull();
-    expect(shotGrams({ id: 'a', timestamp: 't', annotations: { actualYield: 0 } })).toBeNull();
-  });
-
-  it('asks the gateway for one shot, newest first', async () => {
-    const asked: unknown[] = [];
-    const page = (items: PaginatedShots['items']): PaginatedShots => ({ items, total: items.length, limit: 1, offset: 0 });
-    const client = {
-      listShots: (query: unknown) => {
-        asked.push(query);
-        return Promise.resolve(page([{ id: 'new', timestamp: '2026-10-17T07:00:00', annotations: { actualYield: 40 } }]));
+  /** a record whose scale reads 44.6 g at the end while Decaid's actualYield says 45.6 g */
+  const record = (): Pick<ShotRecord, 'measurements'> => ({
+    measurements: [3, 4, 5].map((seconds, i) => ({
+      machine: {
+        timestamp: new Date(Date.UTC(2026, 9, 13, 8, 0, seconds)).toISOString().replace('Z', ''),
+        state: { state: 'espresso', substate: 'pouring' },
+        flow: 2,
+        pressure: 9,
+        targetFlow: 0,
+        targetPressure: 0,
+        mixTemperature: 90,
+        groupTemperature: 92,
+        targetMixTemperature: 93,
+        targetGroupTemperature: 93,
+        profileFrame: 0,
+        steamTemperature: 150,
       },
-    };
-    expect(await lastShotGrams(client)).toBe(40);
-    expect(asked).toEqual([{ limit: 1, order: 'desc' }]);
-    expect(await lastShotGrams({ listShots: () => Promise.resolve(page([])) })).toBeNull();
+      scale: { timestamp: '', weight: [10, 30, 44.6][i], weightFlow: 1, battery: 100, timerValue: null },
+    })),
+  });
+  const source = (measured: Pick<ShotRecord, 'measurements'> | null) => ({
+    newest: () => Promise.resolve(measured ? { id: 'new' } : null),
+    record: () => Promise.resolve(measured ?? { measurements: [] }),
+  });
+  const kept = (over: Partial<Shot>): Shot => ({
+    enteredAt: 0,
+    startedAt: 0,
+    series: emptySeries(),
+    samples: [],
+    finalWeight: null,
+    ended: true,
+    endedAt: 1,
+    ...over,
+  });
+
+  it("is the record's last measured weight, as home shows it, not its actualYield", async () => {
+    const grams = await lastShotGrams(null, source(record()));
+    expect(grams).toBe(44.6);
+    expect(grams).toBe(homeShot(null, null, null, seriesOf(record())).weight);
+  });
+
+  it('is a finished shot kept in the page before any record, as home shows it', async () => {
+    const shot = kept({ finalWeight: 36.2 });
+    expect(await lastShotGrams(shot, source(record()))).toBe(36.2);
+    expect(homeShot(shot, null, null, seriesOf(record())).weight).toBe(36.2);
+  });
+
+  it('has no weight without a record, or without a scale reading', async () => {
+    expect(await lastShotGrams(null, source(null))).toBeNull();
+    const unweighed = record();
+    unweighed.measurements.forEach((entry) => (entry.scale = null));
+    expect(await lastShotGrams(null, source(unweighed))).toBeNull();
   });
 });
 
