@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mayMove, rowGesture, rowOffset, settlesAt, type RowSides } from './row-swipe';
-
-const both: RowSides = { left: true, right: true };
-const renameOnly: RowSides = { left: false, right: true };
-const none: RowSides = { left: false, right: false };
+import { mayMove, rowGesture, rowOffset, settlesOpen } from './row-swipe';
 
 describe('rowGesture', () => {
   it('waits for the slop', () => {
@@ -19,66 +15,43 @@ describe('rowGesture', () => {
 });
 
 describe('mayMove', () => {
-  it('lets a closed row move only to a side it has', () => {
-    expect(mayMove(0, -30, both)).toBe(true);
-    expect(mayMove(0, 30, both)).toBe(true);
-    expect(mayMove(0, -30, renameOnly)).toBe(false);
-    expect(mayMove(0, 30, renameOnly)).toBe(true);
-    expect(mayMove(0, 30, none)).toBe(false);
+  it('lets a closed row move only to the left, and only when it has a button', () => {
+    expect(mayMove(false, -30, true)).toBe(true);
+    expect(mayMove(false, 30, true)).toBe(false);
+    expect(mayMove(false, -30, false)).toBe(false);
   });
 
-  it('lets an open row move back', () => {
-    expect(mayMove(1, -30, renameOnly)).toBe(true);
-    expect(mayMove(-1, 30, both)).toBe(true);
+  it('lets an open row move either way', () => {
+    expect(mayMove(true, 30, true)).toBe(true);
+    expect(mayMove(true, -30, true)).toBe(true);
   });
 });
 
 describe('rowOffset', () => {
-  it('follows the finger between closed and open to the left', () => {
-    expect(rowOffset(0, -40, 120, both)).toBe(-40);
-    expect(rowOffset(0, -300, 120, both)).toBe(-120);
-    expect(rowOffset(-1, 30, 120, both)).toBe(-90);
-    expect(rowOffset(-1, -30, 120, both)).toBe(-120);
+  it('follows the finger between closed and open', () => {
+    expect(rowOffset(false, -40, 240)).toBe(-40);
+    expect(rowOffset(false, -300, 240)).toBe(-240);
+    expect(rowOffset(true, 30, 240)).toBe(-210);
+    expect(rowOffset(true, -30, 240)).toBe(-240);
   });
 
-  it('follows the finger between closed and open to the right', () => {
-    expect(rowOffset(0, 40, 120, both)).toBe(40);
-    expect(rowOffset(0, 300, 120, both)).toBe(120);
-    expect(rowOffset(1, -30, 120, both)).toBe(90);
-    expect(rowOffset(1, 30, 120, both)).toBe(120);
-  });
-
-  it('moves one button at most from where the row rests, and not to a side it lacks', () => {
-    expect(rowOffset(-1, 300, 120, both)).toBe(0);
-    expect(rowOffset(1, -300, 120, both)).toBe(0);
-    expect(rowOffset(0, -50, 120, renameOnly)).toBe(0);
-    expect(rowOffset(0, 50, 120, none)).toBe(0);
+  it('never moves the row to the right of its place', () => {
+    expect(rowOffset(false, 50, 240)).toBe(0);
+    expect(rowOffset(true, 400, 240)).toBe(0);
   });
 });
 
-describe('settlesAt', () => {
-  it('opens after a third of the button either way', () => {
-    expect(settlesAt(0, -39, 120, both)).toBe(0);
-    expect(settlesAt(0, -41, 120, both)).toBe(-1);
-    expect(settlesAt(0, 39, 120, both)).toBe(0);
-    expect(settlesAt(0, 41, 120, both)).toBe(1);
+describe('settlesOpen', () => {
+  it('opens after a third of the buttons to the left', () => {
+    expect(settlesOpen(false, -79, 240)).toBe(false);
+    expect(settlesOpen(false, -81, 240)).toBe(true);
+    expect(settlesOpen(false, 300, 240)).toBe(false);
   });
 
-  it('closes after a third back, and stays open otherwise', () => {
-    expect(settlesAt(-1, 41, 120, both)).toBe(0);
-    expect(settlesAt(-1, 20, 120, both)).toBe(-1);
-    expect(settlesAt(-1, -50, 120, both)).toBe(-1);
-    expect(settlesAt(1, -41, 120, both)).toBe(0);
-    expect(settlesAt(1, 300, 120, both)).toBe(1);
-  });
-
-  it('closes only, from open, however far the move back goes', () => {
-    expect(settlesAt(-1, 400, 120, both)).toBe(0);
-    expect(settlesAt(1, -400, 120, both)).toBe(0);
-  });
-
-  it('does not open to a side the row lacks', () => {
-    expect(settlesAt(0, -80, 120, renameOnly)).toBe(0);
-    expect(settlesAt(0, 80, 120, renameOnly)).toBe(1);
+  it('closes after a third back to the right, and stays open otherwise', () => {
+    expect(settlesOpen(true, 81, 240)).toBe(false);
+    expect(settlesOpen(true, 400, 240)).toBe(false);
+    expect(settlesOpen(true, 40, 240)).toBe(true);
+    expect(settlesOpen(true, -50, 240)).toBe(true);
   });
 });

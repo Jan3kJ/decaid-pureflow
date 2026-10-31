@@ -28,6 +28,7 @@
     neighbour,
     offset,
     onControl,
+    ownsLeftOnly,
     type Page,
     type Point,
   } from './shell/swipe';
@@ -169,8 +170,10 @@
     }
     const target = event.target as Element;
     const point = { x: event.clientX, y: event.clientY };
-    // The left edge goes back over anything but a dialog; it decides a move to the right only.
-    const edge = atBackEdge(event.clientX - main.getBoundingClientRect().left, skin.screen) && !inDialog(target);
+    // The left edge goes back over anything but a dialog, and so does a picker row that is closed;
+    // both decide a move to the right only.
+    const edge =
+      !inDialog(target) && (atBackEdge(event.clientX - main.getBoundingClientRect().left, skin.screen) || ownsLeftOnly(target));
     if (!edge && onControl(target, main, undefined, point)) return;
     swipe = {
       ...point,

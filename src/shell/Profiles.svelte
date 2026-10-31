@@ -24,7 +24,7 @@
   } from './profiles';
   import type { Skin } from './skin.svelte';
   import { errorMessage } from '../error-message';
-  import { mayMove, rowGesture, rowOffset, settlesAt, type RowGesture, type RowRest, type RowSides } from './row-swipe';
+  import { mayMove, rowGesture, rowOffset, settlesOpen, type RowGesture } from './row-swipe';
 
   interface Props {
     skin: Skin;
@@ -48,13 +48,10 @@
   const current = $derived(skin.workflow?.profile);
   const isLoaded = (entry: PickerEntry) => !!current && sameProfile(entry.profile, current);
 
-  /** rem, the width of a row's delete and rename buttons, and so how far an open row is moved */
-  const DELETE_REM = 7;
-  /** the open row, one at a time: its delete button shows when it rests moved left, its rename button when moved right */
+  /** rem, the width of one of a row's buttons; an open row is moved by the width of the buttons it has */
+  const BUTTON_REM = 7;
+  /** the open row, one at a time: moved to the left, its buttons under its right end */
   let openId: string | null = $state(null);
-  let openAt: RowRest = $state(0);
-  /** the loaded row, swiped to the left: it says why it does not open */
-  let refusedId: string | null = $state(null);
   let asking: PickerEntry | null = $state(null);
   /** the rename dialog: the row, the title as typed, the reason it was refused */
   let renaming: { entry: PickerEntry; title: string; refusal: string | null } | null = $state(null);
@@ -66,7 +63,6 @@
     dx: number;
     width: number;
     gesture: RowGesture;
-    sides: RowSides;
   } | null = $state(null);
   /** A drag of a row ends in a click on it, which must not select. */
   let dragged = false;
@@ -148,14 +144,17 @@
       skin.go(screenAfter(action, skin.back()));
     });
 
-  /** Where a row rests: moved left, moved right or closed. */
-  const restOf = (entry: PickerEntry): RowRest => (openId === entry.id ? openAt : 0);
+  /**
+   * A row's buttons, rename left of delete: the skin's defaults have none, the loaded profile
+   * renames but does not delete.
+   */
+  const buttonsOf = (entry: PickerEntry) => ({ rename: !entry.isDefault, delete: deleteRefusal(entry, current) === null });
+  const buttonCount = (entry: PickerEntry) => Object.values(buttonsOf(entry)).filter(Boolean).length;
 
   /**
-   * A row's swipe: to the left opens its delete button, to the right
-   * its rename button, a move back closes it; a vertical drag is the list's (`touch-action:
-   * pan-y`). The skin's defaults do not move; the loaded profile renames but does not delete,
-   * and says why when moved to the left.
+   * A row's swipe: to the left opens it, its buttons under its right end; to the right closes an
+   * open row, and on a closed row it is the page's swipe back (`data-own-swipe="left"`); a vertical
+   * drag is the list's (`touch-action: pan-y`).
    */
   function down(event: PointerEvent, entry: PickerEntry) {
     if (busy || !event.isPrimary) return;
@@ -166,9 +165,8 @@
       x: event.clientX,
       y: event.clientY,
       dx: 0,
-      width: DELETE_REM * rem,
+      width: buttonCount(entry) * BUTTON_REM * rem,
       gesture: null,
-      sides: { left: deleteRefusal(entry, current) === null, right: !entry.isDefault },
     };
     dragged = false;
   }
@@ -183,8 +181,7 @@
         return;
       }
       dragged = true;
-      if (!mayMove(restOf(entry), dx, drag.sides)) {
-        if (dx < 0 && deleteRefusal(entry, current) === 'loaded') refusedId = entry.id;
+      if (!mayMove(openId === entry.id, dx, drag.width > 0)) {
         drag = null;
         return;
       }
@@ -198,9 +195,7 @@
     if (!drag || drag.pointer !== event.pointerId) return;
     if (drag.gesture === 'row') {
       const id = drag.id;
-      const rest = settlesAt(openId === id ? openAt : 0, drag.dx, drag.width, drag.sides);
-      openId = rest === 0 ? null : id;
-      openAt = rest;
+      openId = settlesOpen(openId === id, drag.dx, drag.width) ? id : null;
     }
     drag = null;
   }
@@ -208,12 +203,11 @@
   /** How far a row is moved, in px, while it is dragged (negative: to the left); null while it rests. */
   function dragOffset(entry: PickerEntry): number | null {
     if (drag?.id !== entry.id || drag.gesture !== 'row') return null;
-    return rowOffset(restOf(entry), drag.dx, drag.width, drag.sides);
+    return rowOffset(openId === entry.id, drag.dx, drag.width);
   }
 
-  /** A tap anywhere but the open row closes it; the loaded row's reason goes with the next tap. */
+  /** A tap anywhere but the open row closes it. */
   function outside(event: PointerEvent) {
-    refusedId = null;
     if (openId && !(event.target as Element).closest('[data-open="true"]')) openId = null;
   }
 
@@ -297,31 +291,38 @@
       {#each shown as entry (entry.id)}
         {@const offset = dragOffset(entry)}
         {@const open = openId === entry.id}
-        <!-- The row's drags are its own, not the shell's page swipe (data-own-swipe), but for one
-             from the screen's left edge, which goes back. -->
+        {@const buttons = buttonsOf(entry)}
+        <!-- The open row's drags are its own, not the shell's page swipe (data-own-swipe); a closed
+             row's are its own only to the left, to the right it goes back, as from the screen's
+             left edge over any row. -->
         <li
           class="row"
           class:open
-          class:renaming={open && openAt === 1}
-          style:--delete-width={`${DELETE_REM}rem`}
+          style:--buttons-width={`${buttonCount(entry) * BUTTON_REM}rem`}
           data-open={open}
-          data-own-swipe
+          data-own-swipe={open ? '' : 'left'}
           onpointerdown={(event) => down(event, entry)}
           onpointermove={(event) => move(event, entry)}
           onpointerup={up}
           onpointercancel={() => (drag = null)}
           onlostpointercapture={(event) => event.target === event.currentTarget && (drag = null)}
         >
-          {#if (open && openAt === -1) || (offset !== null && offset < 0)}
-            <button class="delete danger" data-testid="profile-delete" disabled={busy} onclick={() => (asking = entry)}>delete</button>
-          {:else if (open && openAt === 1) || (offset !== null && offset > 0)}
-            <button class="rename" data-testid="profile-rename" disabled={busy} onclick={() => askRename(entry)}>rename</button>
+          {#if open || (offset !== null && offset < 0)}
+            <div class="buttons">
+              {#if buttons.rename}
+                <button class="rename" data-testid="profile-rename" disabled={busy} onclick={() => askRename(entry)}>rename</button>
+              {/if}
+              {#if buttons.delete}
+                <button class="delete danger" data-testid="profile-delete" disabled={busy} onclick={() => (asking = entry)}
+                  >delete</button
+                >
+              {/if}
+            </div>
           {/if}
           <button
             class="item select-outline"
             class:dragging={offset !== null}
-            style:width={offset === null ? undefined : `calc(100% - ${Math.abs(offset)}px)`}
-            style:margin-left={offset === null || offset <= 0 ? undefined : `${offset}px`}
+            style:width={offset === null ? undefined : `calc(100% - ${-offset}px)`}
             aria-pressed={entry.id === selectedId}
             data-testid="profile-item"
             data-id={entry.id}
@@ -331,7 +332,10 @@
             onclick={() => tap(entry)}
           >
             <span class="title">{entry.profile.title}</span>
-            {#if refusedId === entry.id}<span class="refusal warning" data-testid="profile-refusal">{LOADED_REFUSAL}</span>
+            <!-- The loaded row, open, says why it has no delete. -->
+            {#if open && deleteRefusal(entry, current) === 'loaded'}<span class="refusal warning" data-testid="profile-refusal"
+                >{LOADED_REFUSAL}</span
+              >
             {:else}
               {#if isLoaded(entry)}<span class="tag loaded">loaded</span>{/if}
               {#if entry.isDefault}<span class="tag" data-testid="default-tag">A-Flow 3.0 default</span>
@@ -496,32 +500,33 @@
     scrollbar-width: thin;
   }
 
-  /* The delete button rests under the row's right end, the rename button under its left end; the
-     row narrows to show one, its title kept. */
+  /* The buttons rest under the row's right end, rename left of delete; the row narrows to show
+     them, its title kept. */
   .row {
     position: relative;
     flex: none;
     touch-action: pan-y;
   }
 
-  .delete {
+  .buttons {
     position: absolute;
     top: 0;
     right: 0;
     bottom: 0;
-    width: calc(var(--delete-width) - 0.4rem);
+    width: calc(var(--buttons-width) - var(--space-1));
+    display: flex;
+    gap: var(--space-1);
+  }
+
+  .delete,
+  .rename {
+    flex: 1 1 0;
+    min-width: 0;
     font-size: var(--text-body);
     font-weight: 600;
   }
 
   .rename {
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    width: calc(var(--delete-width) - 0.4rem);
-    font-size: var(--text-body);
-    font-weight: 600;
     background: var(--dim);
     border-color: var(--dim);
     color: var(--bg);
@@ -530,9 +535,7 @@
   .item {
     position: relative;
     touch-action: pan-y;
-    transition:
-      width 0.2s ease,
-      margin-left 0.2s ease;
+    transition: width 0.2s ease;
     width: 100%;
     min-height: 3.4rem;
     padding: 0 1rem;
@@ -548,11 +551,7 @@
   }
 
   .open .item {
-    width: calc(100% - var(--delete-width));
-  }
-
-  .open.renaming .item {
-    margin-left: var(--delete-width);
+    width: calc(100% - var(--buttons-width));
   }
 
   .refusal {

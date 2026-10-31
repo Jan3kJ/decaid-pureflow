@@ -3,10 +3,11 @@ import { mockGateway, profile, record } from './mock-gateway';
 import { swipe } from './touch';
 
 // The picker's delete against a
-// mocked gateway: a swipe from right to left on a stored profile's row shows 'delete', which
-// asks once and then sends `DELETE /api/v1/profiles/{id}`; the row leaves the list. The skin's
-// defaults and the loaded profile do not open; a vertical drag still scrolls the list, a tap
-// still selects, and no swipe on a row moves the shell's pages.
+// mocked gateway: a swipe from right to left on a stored profile's row shows 'rename' and 'delete'
+// under its right end; delete asks once and then sends `DELETE /api/v1/profiles/{id}`; the row
+// leaves the list. The skin's defaults do not open, the loaded profile shows rename only and says
+// why; a vertical drag still scrolls the list, a tap still selects, and a swipe to the right on an
+// open row closes it without moving the shell's pages.
 
 const errors: string[] = [];
 
@@ -33,7 +34,9 @@ async function picker(page: Page) {
   await expect(item(page, 'D-Flow / default')).toHaveCount(1);
 }
 
-test('a swipe to the left shows delete, which asks once; cancel keeps the profile, Delete removes it', async ({ page }) => {
+test('a swipe to the left shows rename and delete side by side; delete asks once, cancel keeps the profile, Delete removes it', async ({
+  page,
+}) => {
   const gateway = await mockGateway(page);
   await picker(page);
   const deletes = () => gateway.requests.filter((request) => request.method === 'DELETE').map((request) => request.path);
@@ -42,6 +45,21 @@ test('a swipe to the left shows delete, which asks once; cancel keeps the profil
   const button = page.getByTestId('profile-delete');
   await expect(button).toHaveCount(1);
   await expect(button).toBeVisible();
+  // Rename left of delete, both under the row's right end, the row narrowed by them.
+  const right = async () => {
+    const box = (await item(page, 'D-Flow / default').boundingBox())!;
+    return box.x + box.width;
+  };
+  // The row has narrowed when it stops moving.
+  await expect.poll(right).toBeLessThanOrEqual((await page.getByTestId('profile-rename').boundingBox())!.x + 1);
+  const rename = (await page.getByTestId('profile-rename').boundingBox())!;
+  const remove = (await button.boundingBox())!;
+  const row = (await item(page, 'D-Flow / default').boundingBox())!;
+  const list = (await page.getByTestId('profile-list').boundingBox())!;
+  expect(rename.x).toBeGreaterThanOrEqual(row.x + row.width - 1);
+  expect(rename.x + rename.width).toBeLessThanOrEqual(remove.x + 1);
+  expect(Math.abs(remove.x + remove.width - (list.x + list.width))).toBeLessThan(2);
+  expect(Math.abs(rename.y - remove.y)).toBeLessThan(1);
   await expect(page.getByTestId('screen-profiles')).toBeVisible();
   // The swipe selected nothing.
   await expect(page.locator('[data-testid="profile-item"][aria-pressed="true"]')).toHaveCount(0);
@@ -78,16 +96,18 @@ test('a swipe to the left shows delete, which asks once; cancel keeps the profil
   expect(errors).toEqual([]);
 });
 
-test("the skin's defaults and the loaded profile do not open; the loaded one says why", async ({ page }) => {
+test("the skin's defaults do not open; the loaded profile shows rename only and says why", async ({ page }) => {
   const gateway = await mockGateway(page);
   gateway.workflow.profile = gateway.profiles[0].profile;
   await picker(page);
 
   await swipeRow(page, 'A-Flow / default-light', -200);
   await expect(page.getByTestId('profile-delete')).toHaveCount(0);
+  await expect(page.getByTestId('profile-rename')).toHaveCount(0);
 
   await swipeRow(page, 'Best practice', -200);
   await expect(page.getByTestId('profile-delete')).toHaveCount(0);
+  await expect(page.getByTestId('profile-rename')).toBeVisible();
   await expect(page.getByTestId('profile-refusal')).toHaveText('loaded on the machine: load another first');
   // The next tap takes the note away.
   await item(page, 'Adaptive v2').click();

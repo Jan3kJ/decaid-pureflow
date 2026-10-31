@@ -3,11 +3,11 @@ import { mockGateway, profile, record } from './mock-gateway';
 import { swipe } from './touch';
 
 // The picker's rename, against a mocked gateway: a move of a
-// stored profile's row to the right shows 'rename' at its left end, which opens a dialog on the
-// title; Rename sends `PUT /api/v1/profiles/{id}` with the new title and no metadata. An empty
-// title, another profile's title and the same title send nothing; the skin's defaults do not
-// move to the right; the loaded profile is loaded again under its new name; Decaid's refusal is
-// the picker's error line. The swipe from the screen's left edge still goes back over a row.
+// stored profile's row to the left shows 'rename' left of 'delete' under its right end; rename
+// opens a dialog on the title; Rename sends `PUT /api/v1/profiles/{id}` with the new title and no
+// metadata. An empty title, another profile's title and the same title send nothing; the skin's
+// defaults do not open; the loaded profile is loaded again under its new name; Decaid's refusal is
+// the picker's error line.
 
 const errors: string[] = [];
 
@@ -23,11 +23,11 @@ const item = (page: Page, title: string) => page.getByTestId('profile-item').fil
 const puts = (gateway: { requests: { method: string; path: string }[] }) =>
   gateway.requests.filter((request) => request.method === 'PUT' && request.path.startsWith('/api/v1/profiles/'));
 
-/** A finger's move along a row, from near its left end (well inside the edge strip) `dx` pixels across. */
+/** A finger's move along a row, from near its right end `dx` pixels across. */
 async function swipeRow(page: Page, title: string, dx: number) {
   await item(page, title).scrollIntoViewIfNeeded();
   const box = (await item(page, title).boundingBox())!;
-  const from = { x: box.x + 60, y: box.y + box.height / 2 };
+  const from = { x: box.x + box.width - 60, y: box.y + box.height / 2 };
   await swipe(page, from, { x: from.x + dx, y: from.y + 4 });
 }
 
@@ -39,7 +39,7 @@ async function picker(page: Page) {
 
 /** Opens the rename dialog of a row. */
 async function askRename(page: Page, title: string) {
-  await swipeRow(page, title, 200);
+  await swipeRow(page, title, -200);
   await page.getByTestId('profile-rename').click();
   await expect(page.getByTestId('settings-confirm')).toBeVisible();
 }
@@ -49,27 +49,35 @@ async function typeTitle(page: Page, title: string) {
   await page.getByTestId('settings-confirm-ok').click();
 }
 
-test('a move to the right shows rename at the left end; Rename sends the new title and selects the row', async ({ page }) => {
+test('a move to the left shows rename beside delete; Rename sends the new title and selects the row', async ({ page }) => {
   const gateway = await mockGateway(page);
   await picker(page);
 
-  await swipeRow(page, 'D-Flow / default', 200);
+  await swipeRow(page, 'D-Flow / default', -200);
   const button = page.getByTestId('profile-rename');
   await expect(button).toBeVisible();
-  await expect(page.getByTestId('profile-delete')).toHaveCount(0);
+  await expect(page.getByTestId('profile-delete')).toBeVisible();
   await expect(page.getByTestId('screen-profiles')).toBeVisible();
   await expect(page.locator('[data-testid="profile-item"][aria-pressed="true"]')).toHaveCount(0);
-  // At the row's left end, the row narrowed by it.
+  // Right of the row, left of delete; the row narrowed by both, once it stops moving.
+  const right = async () => {
+    const box = (await item(page, 'D-Flow / default').boundingBox())!;
+    return box.x + box.width;
+  };
+  await expect.poll(right).toBeLessThanOrEqual((await button.boundingBox())!.x + 1);
   const row = (await item(page, 'D-Flow / default').boundingBox())!;
   const at = (await button.boundingBox())!;
-  expect(at.x + at.width).toBeLessThanOrEqual(row.x + 1);
-  expect(Math.abs(at.width - 7 * 16 + 0.4 * 16)).toBeLessThan(2);
+  const remove = (await page.getByTestId('profile-delete').boundingBox())!;
+  expect(at.x).toBeGreaterThanOrEqual(row.x + row.width - 1);
+  expect(at.x + at.width).toBeLessThanOrEqual(remove.x + 1);
+  expect(Math.abs(at.width - remove.width)).toBeLessThan(1);
   await page.screenshot({ path: 'docs/product/picker-rename.png' });
 
-  // A move back closes it.
-  await swipeRow(page, 'D-Flow / default', -200);
+  // A move back to the right closes it.
+  await swipeRow(page, 'D-Flow / default', 200);
   await expect(button).toHaveCount(0);
   await expect(page.getByTestId('profile-delete')).toHaveCount(0);
+  await expect(page.getByTestId('screen-profiles')).toBeVisible();
 
   await askRename(page, 'D-Flow / default');
   const field = page.getByTestId('settings-confirm-field');
@@ -118,12 +126,12 @@ test('an empty title and another profile’s title say why; the same title is a 
   expect(errors).toEqual([]);
 });
 
-test("the skin's defaults do not move to the right; a vertical drag still scrolls the list", async ({ page }) => {
+test("the skin's defaults do not open; a vertical drag still scrolls the list", async ({ page }) => {
   const gateway = await mockGateway(page);
   for (let i = 10; i < 40; i += 1) gateway.profiles.push(record(`profile:extra${i}`, profile(`Extra ${i}`, i), null));
   await picker(page);
 
-  await swipeRow(page, 'A-Flow / default-light', 200);
+  await swipeRow(page, 'A-Flow / default-light', -200);
   await expect(page.getByTestId('profile-rename')).toHaveCount(0);
   await expect(page.getByTestId('screen-profiles')).toBeVisible();
 
@@ -133,15 +141,16 @@ test("the skin's defaults do not move to the right; a vertical drag still scroll
   await expect.poll(() => list.evaluate((node) => node.scrollTop)).toBeGreaterThan(100);
   await expect(page.getByTestId('profile-rename')).toHaveCount(0);
 
-  // One open row at a time: rename on one, delete on another closes the first; a tap elsewhere closes.
-  await swipeRow(page, 'Extra 30', 200);
+  // One open row at a time: opening another closes the first; a tap elsewhere closes.
+  await swipeRow(page, 'Extra 30', -200);
   await expect(page.getByTestId('profile-rename')).toHaveCount(1);
   await page.getByTestId('profile-filter').click();
   await expect(page.getByTestId('profile-rename')).toHaveCount(0);
-  await swipeRow(page, 'Extra 30', 200);
+  await swipeRow(page, 'Extra 30', -200);
   await swipeRow(page, 'Extra 31', -200);
-  await expect(page.getByTestId('profile-rename')).toHaveCount(0);
+  await expect(page.getByTestId('profile-rename')).toHaveCount(1);
   await expect(page.getByTestId('profile-delete')).toHaveCount(1);
+  await expect(page.locator('.row[data-open="true"]')).toContainText('Extra 31');
   expect(errors).toEqual([]);
 });
 

@@ -116,7 +116,8 @@ export function edgeWay(gesture: Gesture, dx: number): Gesture {
 /**
  * What a drag on it belongs to rather than to the pages: the fields, a dialog (the number
  * pad), a backdrop marked `data-no-swipe` (home's menu), a row with a swipe of its own
- * (`data-own-swipe`, the picker's rows), and anything that takes drags itself
+ * (`data-own-swipe`, the picker's open row; a closed one, `data-own-swipe="left"`, leaves the
+ * move to the right to the pages, `ownsLeftOnly`), and anything that takes drags itself
  * (`touch-action: none`, the chips).
  */
 const CONTROLS =
@@ -204,4 +205,12 @@ export function onControl(
 /** Whether the edge may go back from `target`: anywhere but in a dialog or over its backdrop. */
 export function inDialog(target: Box | null): boolean {
   return Boolean(target?.closest(DIALOGS));
+}
+
+/**
+ * Whether the drag starts on a row that swipes on its own only to the left (`data-own-swipe="left"`,
+ * the picker's closed rows): there the pages decide a move to the right only, as at the edge (`edgeWay`).
+ */
+export function ownsLeftOnly(target: Box | null): boolean {
+  return Boolean(target?.closest('[data-own-swipe="left"]'));
 }

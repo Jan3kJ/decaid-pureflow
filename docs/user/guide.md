@@ -24,7 +24,8 @@ move between them; the dots at the bottom show where you are.
 
 ![The shot history over home](img/history.png)
 
-A swipe does not start on a slider, the editor's graph or a list row that swipes on its own.
+A swipe does not start on a slider or the editor's graph. In the profile picker a swipe to the
+right on a row goes back too, unless the row is open: then it closes the row.
 
 ## Home is also the shot screen
 
@@ -38,6 +39,10 @@ A tap on the scale's weight in the top line tares the scale.
 
 Tap the profile's name on home to open the picker. Tap a profile to see it; **load** sends it
 to the machine. **edit** beside it sends it to the machine too and opens it in its editor.
+
+Swipe a profile's row to the left to show **rename** and **delete** under its right end; swipe
+it back to the right, or tap elsewhere, to close it. The skin's A-Flow defaults have neither, and
+the profile loaded on the machine can be renamed but not deleted.
 
 The graph shows an **estimate** of the shot: the flow, pressure and temperature a shot of this
 profile would roughly show. The profile's own targets are the dotted lines under it. It is

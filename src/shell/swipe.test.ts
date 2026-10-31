@@ -17,6 +17,7 @@ import {
   neighbour,
   offset,
   onControl,
+  ownsLeftOnly,
   type Box,
   type Drags,
 } from './swipe';
@@ -238,6 +239,19 @@ describe('the left edge', () => {
     expect(inDialog(at('[data-no-swipe]'))).toBe(true);
     expect(inDialog(at('[role="dialog"]'))).toBe(true);
     expect(inDialog(at('[data-own-swipe]'))).toBe(false);
+  });
+
+  it('leaves the move to the right on a closed picker row to the pages, not on an open one', () => {
+    const on = (attribute: string | null) => ({
+      closest: (s: string) => (attribute !== null && s === `[data-own-swipe${attribute}]` ? {} : null),
+      parentElement: null,
+      scrollWidth: 0,
+      clientWidth: 0,
+    });
+    expect(ownsLeftOnly(on('="left"'))).toBe(true);
+    expect(ownsLeftOnly(on(''))).toBe(false);
+    expect(ownsLeftOnly(on(null))).toBe(false);
+    expect(ownsLeftOnly(null)).toBe(false);
   });
 });
 

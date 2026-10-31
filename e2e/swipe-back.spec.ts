@@ -5,8 +5,8 @@ import { back, flick, swipe, toPage } from './touch';
 // The way back: no screen has a left column or a back arrow; a
 // swipe from left to right leaves the editors, the settings, the beans screen and the picker for
 // where they were opened from, and on the hot water page a swipe from right to left goes home; a
-// swipe that starts on a slider or a row's swipe does not leave; the open history closes by a
-// swipe to the left.
+// swipe that starts on a slider or on an open picker row does not leave (it closes the row), one on
+// a closed row does; the open history closes by a swipe to the left.
 
 const errors: string[] = [];
 
@@ -56,12 +56,17 @@ test('a swipe to the right leaves the settings, the beans, the picker and the ed
 
   await page.getByTestId('open-profiles').click();
   await noColumn(page, 'profiles');
-  // A drag to the right on a row is the row's: the picker stays.
-  const row = (await page.getByTestId('profile-item').first().boundingBox())!;
-  await swipe(page, { x: row.x + 40, y: row.y + row.height / 2 }, { x: row.x + 600, y: row.y + row.height / 2 });
+  // A drag to the right on an open row closes it: the picker stays.
+  const row = (await page.locator('[data-testid="profile-item"][data-default="false"]').first().boundingBox())!;
+  const middle = row.y + row.height / 2;
+  await swipe(page, { x: row.x + row.width - 60, y: middle }, { x: row.x + row.width - 260, y: middle + 4 });
+  await expect(page.getByTestId('profile-rename')).toBeVisible();
+  await swipe(page, { x: row.x + 40, y: middle }, { x: row.x + 600, y: middle });
   await page.waitForTimeout(400);
   await expect(shown(page, 'profiles')).toBeVisible();
-  await back(page);
+  await expect(page.getByTestId('profile-rename')).toHaveCount(0);
+  // On a closed row it is the way back.
+  await swipe(page, { x: row.x + 40, y: middle }, { x: row.x + 600, y: middle }, 120);
   await expect(shown(page, 'home')).toBeVisible();
 
   // The editor's picker goes back to the editor, and the editor home.
@@ -172,6 +177,9 @@ test('a swipe to the right goes back from the settings, the picker and the beans
   // From the left edge over a row: the row's own swipe yields to the edge.
   const edge = async () => ({ x: 8, y: (await inside(page, 'profile-item')).y });
   await goesBack(page, picker, 'profiles', edge, "the picker's left edge over a row");
+  // From anywhere along a closed row, its right end too.
+  const rowEnd = () => inside(page, 'profile-item', { x: 0.85, y: 0.5 });
+  await goesBack(page, picker, 'profiles', rowEnd, 'the right end of a closed picker row');
 
   const at = '2026-10-01T08:00:00.000Z';
   gateway.beans.push({ id: 'bean-1', roaster: 'Roaster', name: 'A bean', archived: false, createdAt: at, updatedAt: at } as never);
