@@ -50,10 +50,26 @@ function look(selector: string): string[] {
 const RESET = look(':where(button)');
 const CLASSES = {
   action: look('.action'),
+  'big-number': look('.big-number'),
   chip: look('.chip'),
+  'form-button': look('.form-button'),
   hint: look('.hint'),
   notice: look('.notice'),
   primary: look(':root :is(button, label).primary'),
+  seg: look('.seg'),
+};
+
+/**
+ * The parts of the pages built twice, which their shared components hold: SidePage and ValueLine
+ * (src/ui), ProfileName (src/editor), Form and Field (src/beans).
+ */
+const SHARED_PARTS: Record<string, RegExp> = {
+  'steam/Steam.svelte': /^(aside|\.line|button\.line|\.key|\.reading\b.*|\.stop|\.header|\.big b)$/,
+  'hotwater/HotWater.svelte': /^(aside|\.line|button\.line|\.key|\.reading\b.*|\.stop|\.header)$/,
+  'editor/EditorHeader.svelte': /^(\.seg\b.*|\.name\b.*|button)$/,
+  'steps/StepEditor.svelte': /^(\.seg\b.*|\.name\b.*)$/,
+  'beans/BeanForm.svelte': /^(\.form|h2|label|input\b.*|\.missing input|button\b.*|\.primary|\.actions|\.archived)$/,
+  'beans/GrinderForm.svelte': /^(\.form|h2|label|input\b.*|\.missing input|button\b.*|\.primary|\.actions|\.archived)$/,
 };
 
 /** A selector that styles buttons by their element: `button`, `.row button`, `button.value`. */
@@ -90,5 +106,16 @@ describe('the shared looks of a control', () => {
     );
     expect(hidden).toContain('clip-path: inset(50%)');
     expect(found.map((rule) => `${rule.file}: ${rule.selectors.join(', ')}`)).toEqual([]);
+  });
+
+  it('the pages built twice take their shared parts from one place', () => {
+    const found = Object.entries(SHARED_PARTS).flatMap(([file, parts]) => {
+      const own = COMPONENTS.filter((rule) => rule.file === file);
+      expect(own.length, file).toBeGreaterThan(0);
+      return own
+        .filter((rule) => rule.selectors.some((selector) => parts.test(selector)))
+        .map((rule) => `${file}: ${rule.selectors.join(', ')}`);
+    });
+    expect(found).toEqual([]);
   });
 });

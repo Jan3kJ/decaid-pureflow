@@ -16,6 +16,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   import type { Profile, ProfileRecord } from '../api';
   import NameDialog from '../editor/NameDialog.svelte';
   import NumberPad from '../editor/NumberPad.svelte';
+  import ProfileName from '../editor/ProfileName.svelte';
   import { storeAndLoad, type Stored } from '../editor/save';
   import { sameContent, stepEditorReason } from '../editor/storage';
   import type { Skin } from '../shell/skin.svelte';
@@ -249,16 +250,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
 <div class="editor">
   <header>
     <!-- The shortcut to the profile picker: a profile chosen there is loaded and opens in its editor. -->
-    <button
-      class="seg name"
-      data-testid="editor-profile"
-      aria-label="choose another profile"
-      disabled={busy}
-      onclick={() => skin.leave('profiles')}
-    >
-      <span class="truncate">{profile.title}</span>
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h9" /></svg>
-    </button>
+    <ProfileName name={profile.title} disabled={busy} width="24rem" onclick={() => skin.leave('profiles')} />
     <div class="group tabs" role="group" aria-label="view">
       <button class="seg select-fill" aria-pressed={tab === 'cards'} data-testid="tab-cards" onclick={() => open('cards')}
         >cards</button
@@ -396,47 +388,6 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   button {
     border: 1px solid var(--line);
     background: var(--panel);
-  }
-
-  .seg {
-    min-height: var(--control);
-    min-width: 6rem;
-    padding: 0 1.1rem;
-    border-radius: var(--radius);
-    font-size: var(--text-body);
-  }
-
-  .seg.save {
-    min-width: 0;
-    background: var(--raised);
-    white-space: nowrap;
-  }
-
-  .seg:disabled {
-    background: var(--panel);
-    border-color: var(--line);
-    color: var(--dim);
-  }
-
-  .name {
-    flex: none;
-    min-width: 0;
-    max-width: 24rem;
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    font-size: var(--text-body);
-    font-weight: 600;
-  }
-
-  .name svg {
-    flex: none;
-    width: 1.3rem;
-    height: 1.3rem;
-    fill: none;
-    stroke: var(--dim);
-    stroke-width: 2.4;
-    stroke-linecap: round;
   }
 
   .notice {

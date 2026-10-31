@@ -1,6 +1,7 @@
 <script lang="ts">
   import { sideways } from '../shell/sideways';
   import type { Entry } from './entries';
+  import ProfileName from './ProfileName.svelte';
 
   // The A-Flow editor's header, on one row at 1280 px: the profile's name, the start row,
   // save and save as, the mode.
@@ -24,10 +25,7 @@
 
 <header>
   <!-- The shortcut to the profile picker: a profile chosen there is loaded. -->
-  <button class="seg name" data-testid="editor-profile" aria-label="choose another profile" disabled={busy} onclick={onprofile}>
-    <span class="truncate">{origin.name}</span>
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h9" /></svg>
-  </button>
+  <ProfileName name={origin.name} disabled={busy} width="16rem" onclick={onprofile} />
   <!-- The profiles to start from, chosen in the settings; 'save as' does not add to them. -->
   <div class="group start" role="group" aria-label="start from" data-testid="start-row" use:sideways>
     {#each row as entry (entry.key)}
@@ -76,28 +74,6 @@
     gap: var(--space-4);
   }
 
-  /* The profile's name, and the way to the picker. */
-  .name {
-    flex: none;
-    min-width: 0;
-    max-width: 16rem;
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    font-size: var(--text-body);
-    font-weight: 600;
-  }
-
-  .name svg {
-    flex: none;
-    width: 1.3rem;
-    height: 1.3rem;
-    fill: none;
-    stroke: var(--dim);
-    stroke-width: 2.4;
-    stroke-linecap: round;
-  }
-
   /* The row takes the room between the name and the actions and scrolls when it has no more. */
   .start {
     flex: 1;
@@ -116,31 +92,5 @@
     min-width: 4.5rem;
     max-width: 11rem;
     padding: 0 0.9rem;
-  }
-
-  button {
-    border: 1px solid var(--line);
-    background: var(--panel);
-  }
-
-  .seg {
-    min-height: var(--control);
-    min-width: 6rem;
-    padding: 0 1.1rem;
-    border-radius: var(--radius);
-    font-size: var(--text-body);
-  }
-
-  .seg.save {
-    min-width: 0;
-    background: var(--raised);
-    white-space: nowrap;
-  }
-
-  .seg:disabled {
-    background: var(--panel);
-    border-color: var(--line);
-    color: var(--dim);
-    font-weight: 400;
   }
 </style>

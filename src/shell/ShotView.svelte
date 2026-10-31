@@ -114,13 +114,13 @@
          width, so every number ends on one edge. -->
     <div class="row big">
       <small data-testid="shot-timer-label">{finished ? 'time, finished' : 'time'}</small>
-      <b data-testid="shot-timer">{value(shown.seconds)}<i>s</i></b>
+      <b class="big-number" data-testid="shot-timer">{value(shown.seconds)}<i>s</i></b>
     </div>
     <div class="row big weight">
       <small data-testid="shot-weight-label"
         ><span>weight</span>{#if target}<span data-testid="shot-stops-at">stops at {+target.toFixed(1)} g</span>{/if}</small
       >
-      <b data-testid="shot-weight">{gramsOf(shown.weight, '')}<i>g</i></b>
+      <b class="big-number" data-testid="shot-weight">{gramsOf(shown.weight, '')}<i>g</i></b>
     </div>
     <dl>
       <div class="row pressure">
@@ -314,10 +314,6 @@
 
   .big b {
     flex: none;
-    font-size: var(--text-big);
-    font-weight: 600;
-    line-height: 1.1;
-    font-variant-numeric: tabular-nums;
   }
 
   .big.weight b {
@@ -351,10 +347,6 @@
   }
   .temperature dd {
     color: var(--temperature);
-  }
-
-  .info {
-    color: var(--fg);
   }
 
   /*

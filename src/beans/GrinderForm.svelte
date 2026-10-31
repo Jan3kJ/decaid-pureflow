@@ -5,6 +5,8 @@
   import type { Grinder } from '../api';
   import NumberPad from '../editor/NumberPad.svelte';
   import ValueChip from '../editor/ValueChip.svelte';
+  import Field from './Field.svelte';
+  import Form from './Form.svelte';
   import { grinderForm, validGrinder, type GrinderForm } from './catalogue';
 
   interface Props {
@@ -36,32 +38,29 @@
   }
 </script>
 
-<form class="form" onsubmit={submit} data-testid="grinder-form">
-  <h2 class="truncate">{grinder ? grinder.model : 'Add a grinder'}</h2>
-  {#if grinder?.archived}
-    <p class="archived" data-testid="grinder-archived">Archived: not offered for the next shot; its shots stay in the history.</p>
-  {/if}
-  <label class:missing={!form.model.trim()}>
-    <span>model</span>
-    <input bind:value={form.model} autocomplete="off" spellcheck="false" enterkeyhint="next" data-testid="grinder-model" />
-  </label>
-  <label>
-    <span>burrs</span>
-    <input bind:value={form.burrs} autocomplete="off" spellcheck="false" enterkeyhint="next" data-testid="grinder-burrs" />
-  </label>
+<Form kind="grinder" title={grinder ? grinder.model : 'Add a grinder'} archived={grinder?.archived ?? false} onsubmit={submit}>
+  <Field
+    label="model"
+    bind:value={form.model}
+    missing={!form.model.trim()}
+    spellcheck={false}
+    enterkeyhint="next"
+    testid="grinder-model"
+  />
+  <Field label="burrs" bind:value={form.burrs} spellcheck={false} enterkeyhint="next" testid="grinder-burrs" />
   <div class="setting">
     <span class="caption">setting</span>
     <div class="choice" role="group" aria-label="setting type">
       <button
         type="button"
-        class="select-fill"
+        class="form-button select-fill"
         aria-pressed={form.settingType === 'numeric'}
         data-testid="grinder-numeric"
         onclick={() => (form.settingType = 'numeric')}>numbers</button
       >
       <button
         type="button"
-        class="select-fill"
+        class="form-button select-fill"
         aria-pressed={form.settingType === 'preset'}
         data-testid="grinder-preset"
         onclick={() => (form.settingType = 'preset')}>named positions</button
@@ -80,27 +79,33 @@
     </div>
   {/if}
   {#if form.settingType === 'preset'}
-    <label class:missing={!form.positions.trim()}>
-      <span>positions, from fine to coarse, separated by commas</span>
-      <input bind:value={form.positions} autocomplete="off" spellcheck="false" enterkeyhint="next" data-testid="grinder-positions" />
-    </label>
+    <Field
+      label="positions, from fine to coarse, separated by commas"
+      bind:value={form.positions}
+      missing={!form.positions.trim()}
+      spellcheck={false}
+      enterkeyhint="next"
+      testid="grinder-positions"
+    />
   {/if}
-  <label>
-    <span>notes</span>
-    <input bind:value={form.notes} autocomplete="off" enterkeyhint="done" data-testid="grinder-notes" />
-  </label>
+  <Field label="notes" bind:value={form.notes} enterkeyhint="done" testid="grinder-notes" />
 
-  <div class="actions">
-    <button type="submit" class="primary" data-testid="grinder-save" disabled={busy || !valid || (grinder !== null && !changed)}>
+  {#snippet actions()}
+    <button
+      type="submit"
+      class="form-button primary"
+      data-testid="grinder-save"
+      disabled={busy || !valid || (grinder !== null && !changed)}
+    >
       {grinder ? 'save' : 'add'}
     </button>
     {#if grinder && !grinder.archived}
-      <button type="button" data-testid="grinder-archive" disabled={busy} onclick={onarchive}>archive</button>
+      <button type="button" class="form-button" data-testid="grinder-archive" disabled={busy} onclick={onarchive}>archive</button>
     {:else if grinder}
-      <button type="button" data-testid="grinder-restore" disabled={busy} onclick={onrestore}>restore</button>
+      <button type="button" class="form-button" data-testid="grinder-restore" disabled={busy} onclick={onrestore}>restore</button>
     {/if}
-  </div>
-</form>
+  {/snippet}
+</Form>
 
 {#if typingStep}
   <NumberPad
@@ -120,80 +125,6 @@
 {/if}
 
 <style>
-  .form {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-  }
-
-  h2 {
-    margin: 0;
-    font-size: var(--text-title);
-    font-weight: 600;
-  }
-
-  label {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-    color: var(--dim);
-    font-size: var(--text-label);
-  }
-
-  input {
-    min-height: var(--control-tall);
-    box-sizing: border-box;
-    padding: 0 0.9rem;
-    font: inherit;
-    font-size: var(--text-value);
-    color: var(--fg);
-    color-scheme: dark;
-    background: var(--bg);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    outline: none;
-  }
-
-  input:focus {
-    border-color: var(--fg);
-  }
-
-  /* a required field that is empty */
-  .missing input {
-    border-color: var(--temperature);
-  }
-
-  .actions {
-    display: flex;
-    gap: var(--space-2);
-  }
-
-  button {
-    min-height: var(--control-big);
-    padding: 0 var(--space-3);
-    font-size: var(--text-body);
-    background: var(--raised);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-  }
-
-  button:disabled {
-    opacity: 0.4;
-  }
-
-  .primary {
-    min-width: 8rem;
-  }
-
-  .archived {
-    margin: 0;
-    color: var(--dim);
-    font-size: var(--text-label);
-  }
-
-  .archived {
-    color: var(--warn);
-  }
   .setting {
     display: flex;
     align-items: center;

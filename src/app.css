@@ -179,6 +179,61 @@ body {
   font-size: var(--text-label);
 }
 
+/* What the scale or a tare says: the plain colour, not a warning. */
+.notice.info {
+  color: var(--fg);
+}
+
+/* A page's big number: the steam timer, the shot's time and weight. */
+.big-number {
+  font-size: var(--text-big);
+  font-weight: 600;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A button of an editor's header: a tab, a mode, a profile to start from. Save is raised; off is grey. */
+.seg {
+  min-height: var(--control);
+  min-width: 6rem;
+  padding: 0 1.1rem;
+  font-size: var(--text-body);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.seg.save {
+  min-width: 0;
+  background: var(--raised);
+  white-space: nowrap;
+}
+
+.seg:disabled {
+  background: var(--panel);
+  border-color: var(--line);
+  color: var(--dim);
+  font-weight: 400;
+}
+
+/* A button of the bean's and the grinder's form: raised, as high as a dialog's button; off it fades. */
+.form-button {
+  min-height: var(--control-big);
+  padding: 0 var(--space-3);
+  font-size: var(--text-body);
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.form-button:disabled {
+  opacity: 0.4;
+}
+
+.form-button.primary {
+  min-width: 8rem;
+}
+
 /* One line, cut with an ellipsis where it does not fit. */
 .truncate {
   overflow: hidden;

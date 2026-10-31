@@ -3,6 +3,8 @@
   import { gramsOf } from '../display';
   import NumberPad from '../editor/NumberPad.svelte';
   import PageHeader from '../shell/PageHeader.svelte';
+  import SidePage from '../ui/SidePage.svelte';
+  import ValueLine from '../ui/ValueLine.svelte';
   import type { Skin } from '../shell/skin.svelte';
   import { shownRun } from '../shell/water';
   import {
@@ -70,93 +72,94 @@
   });
 </script>
 
-<div class="hot-water">
-  <div class="header">
+<!-- The ring holds stop while hot water or flush runs; this one stops anything else that runs. -->
+<SidePage onstop={skin.canStop && !water ? () => skin.stop() : undefined} stopTestid="hot-water-stop">
+  {#snippet header()}
     <PageHeader {skin} heat="group" title="Hot water" />
-  </div>
+  {/snippet}
 
   <!-- A row per value with a slider under it; a tap on the value opens the number pad.
        The page's main frame, which hot water and flush cover (App.svelte). -->
-  <div class="values" data-main-frame>
-    {#each fields as field (field.id)}
-      <div class="row {field.id}">
-        <span class="label">{field.label}</span>
-        <button class="value" data-testid="hot-water-{field.id}" disabled={!values} onclick={() => (typing = field)}>
-          <b>{shown(field)}<i>{field.unit}</i></b>
-        </button>
-        <input
-          type="range"
-          aria-label={field.label}
-          data-testid="hot-water-slider-{field.id}"
-          min={field.min}
-          max={field.max}
-          step={fieldStep(field)}
-          value={valueOf(field) ?? field.min}
-          disabled={!values}
-          oninput={(event) => drag(field, event)}
-          onchange={(event) => release(field, event)}
-        />
-      </div>
-    {/each}
-  </div>
-
-  <aside>
-    <!-- label, number, unit as on the steam page: 'last shot' and 'scale' share the number column -->
-    <div class="line">
-      <span class="key">last shot</span>
-      <span class="reading" data-testid="hot-water-last-shot">
-        {#if lastShot === null}<b>–</b> <i></i>{:else}<b>{gramsOf(lastShot, '')}</b> <i>g</i>{/if}
-      </span>
-    </div>
-
-    <!-- The ratio favourites of the settings: the last shot times the ratio is the stop; only with a weighed last shot. -->
-    {#if lastShot !== null}
-      {@const shot = lastShot}
-      <div class="ratios">
-        {#each skin.settings.hotWater.ratios as ratio, i (i)}
-          {@const amount = ratioWeight(shot, ratio)}
-          <button
-            class="chip select-fill"
-            aria-pressed={amount === values?.volume}
-            data-testid="hot-water-ratio"
-            disabled={!values}
-            onclick={() => skin.setHotWater(stopField, amount)}
-          >
-            {ratioLabel(ratio)}
-            <small>{amount} {stopField.unit}</small>
+  {#snippet main()}
+    <div class="values" data-main-frame>
+      {#each fields as field (field.id)}
+        <div class="row {field.id}">
+          <span class="label">{field.label}</span>
+          <button class="value" data-testid="hot-water-{field.id}" disabled={!values} onclick={() => (typing = field)}>
+            <b>{shown(field)}<i>{field.unit}</i></b>
           </button>
-        {/each}
-      </div>
-    {/if}
+          <input
+            type="range"
+            aria-label={field.label}
+            data-testid="hot-water-slider-{field.id}"
+            min={field.min}
+            max={field.max}
+            step={fieldStep(field)}
+            value={valueOf(field) ?? field.min}
+            disabled={!values}
+            oninput={(event) => drag(field, event)}
+            onchange={(event) => release(field, event)}
+          />
+        </div>
+      {/each}
+    </div>
+  {/snippet}
 
-    <!-- The scale's row is the one tare of the skin (Skin.tare), live for an empty cup and
+  <!-- label, number, unit as on the steam page: 'last shot' and 'scale' share the number column -->
+  <ValueLine
+    baseline
+    label="last shot"
+    value={lastShot === null ? null : gramsOf(lastShot, '')}
+    tone="weight"
+    testid="hot-water-last-shot"
+  />
+
+  <!-- The ratio favourites of the settings: the last shot times the ratio is the stop; only with a weighed last shot. -->
+  {#if lastShot !== null}
+    {@const shot = lastShot}
+    <div class="ratios">
+      {#each skin.settings.hotWater.ratios as ratio, i (i)}
+        {@const amount = ratioWeight(shot, ratio)}
+        <button
+          class="chip select-fill"
+          aria-pressed={amount === values?.volume}
+          data-testid="hot-water-ratio"
+          disabled={!values}
+          onclick={() => skin.setHotWater(stopField, amount)}
+        >
+          {ratioLabel(ratio)}
+          <small>{amount} {stopField.unit}</small>
+        </button>
+      {/each}
+    </div>
+  {/if}
+
+  <!-- The scale's row is the one tare of the skin (Skin.tare), live for an empty cup and
          off while water runs; without a scale it looks for the scale. -->
-    <button class="line" data-testid="hot-water-tare" disabled={pouring} onclick={() => skin.tare()}>
-      <span class="key">scale</span>
-      <span class="reading" data-testid="hot-water-scale">
-        {#if skin.weight === null}<b>–</b> <i></i>{:else}<b>{gramsOf(skin.weight, '')}</b> <i>g</i>{/if}
-      </span>
-    </button>
+  <ValueLine
+    baseline
+    label="scale"
+    value={skin.weight === null ? null : gramsOf(skin.weight, '')}
+    tone="weight"
+    testid="hot-water-scale"
+    buttonTestid="hot-water-tare"
+    disabled={pouring}
+    onclick={() => skin.tare()}
+  />
 
-    <p class="hint" data-testid="hot-water-hint">
-      Start hot water at the machine. With a scale Decaid tares it and stops at the weight; without one the machine stops at as many
-      ml, or at the time.
-    </p>
+  <p class="hint" data-testid="hot-water-hint">
+    Start hot water at the machine. With a scale Decaid tares it and stops at the weight; without one the machine stops at as many ml,
+    or at the time.
+  </p>
 
-    {#if skin.notice}
-      <p class="notice" data-testid="notice">{skin.notice}</p>
-    {:else if skin.info}
-      <p class="notice info" data-testid="tare-notice">{skin.info}</p>
-    {:else if unread}
-      <p class="notice" data-testid="hot-water-unread">{unread}</p>
-    {/if}
-
-    <!-- The ring holds stop while hot water or flush runs; this one stops anything else that runs. -->
-    {#if skin.canStop && !water}
-      <button class="stop" data-testid="hot-water-stop" onclick={() => skin.stop()}>stop</button>
-    {/if}
-  </aside>
-</div>
+  {#if skin.notice}
+    <p class="notice" data-testid="notice">{skin.notice}</p>
+  {:else if skin.info}
+    <p class="notice info" data-testid="tare-notice">{skin.info}</p>
+  {:else if unread}
+    <p class="notice" data-testid="hot-water-unread">{unread}</p>
+  {/if}
+</SidePage>
 
 {#if typing}
   <NumberPad
@@ -172,23 +175,6 @@
 {/if}
 
 <style>
-  .hot-water {
-    height: 100%;
-    box-sizing: border-box;
-    /* home's padding, so the header is in the same place */
-    padding: 0.8rem var(--space-3) 1rem;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 21rem;
-    grid-template-rows: auto minmax(0, 1fr);
-    grid-template-areas: 'header header' 'values side';
-    gap: var(--space-2) var(--space-3);
-  }
-
-  .header {
-    grid-area: header;
-    min-width: 0;
-  }
-
   button {
     border: 1px solid var(--line);
     background: var(--panel);
@@ -200,7 +186,6 @@
   }
 
   .values {
-    grid-area: values;
     min-height: 0;
     display: flex;
     flex-direction: column;
@@ -323,59 +308,8 @@
     color: var(--dim);
   }
 
-  aside {
-    grid-area: side;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-  }
-
   small {
     color: var(--dim);
-    font-size: var(--text-label);
-  }
-
-  /* label, number, unit: the unit column has one width, so the numbers end on one edge */
-  .line {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto 1.6rem;
-    align-items: baseline;
-    column-gap: var(--space-1);
-    padding: 0 0.6rem 0 1rem;
-    border: 1px solid transparent;
-    text-align: left;
-  }
-
-  /* the tare: the whole row a button, a finger's target */
-  button.line {
-    min-height: var(--control-big);
-    align-content: center;
-    border-color: var(--line);
-  }
-
-  .key {
-    color: var(--dim);
-    font-size: var(--text-label);
-  }
-
-  .reading {
-    display: contents;
-  }
-
-  .reading b {
-    justify-self: end;
-    font-size: var(--text-title);
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    color: var(--weight);
-  }
-
-  button.line:disabled .reading b {
-    color: var(--dim);
-  }
-
-  .reading i {
     font-size: var(--text-label);
   }
 
@@ -404,19 +338,5 @@
 
   .chip:disabled small {
     color: var(--dim);
-  }
-
-  .info {
-    color: var(--fg);
-  }
-
-  .stop {
-    margin-top: auto;
-    min-height: 6rem;
-    font-size: var(--text-large);
-    font-weight: 600;
-    color: var(--bg);
-    background: var(--temperature);
-    border-color: var(--temperature);
   }
 </style>

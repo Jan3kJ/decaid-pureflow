@@ -66,8 +66,8 @@ a time. One folder per part:
 |---|---|
 | `src/aflow/` | A-Flow 3.0: the parameters, the generator, its inverse (the reader), the codec, the validation and the default profiles. Pure, no UI and no network |
 | `src/api/` | The gateway's REST client, its snapshot streams and their types. Plain TypeScript, no Svelte |
-| `src/beans/` | The bean and grinder catalogue, their forms, the pick for the next shot, and a bean's photo of its bag in the KV store |
-| `src/editor/` | The A-Flow editor: the graph that is the editor, its chips and number pad, the step list, routing to the right editor, save, and the unsaved-edits warning |
+| `src/beans/` | The bean and grinder catalogue, their forms, the pick for the next shot, and a bean's photo of its bag in the KV store. Both forms are `Form.svelte` (title, archived line, the row of buttons) with `Field.svelte` for each text field |
+| `src/editor/` | The A-Flow editor: the graph that is the editor, its chips and number pad, the step list, routing to the right editor, save, and the unsaved-edits warning. `ProfileName.svelte` is the first button of both editors' headers, the name that opens the picker |
 | `src/graph/` | The shot graph and its axes |
 | `src/history/` | The shot history overlay and the shots read from Decaid for the session |
 | `src/hotwater/` | The hot water page; its values are the workflow's `hotWaterData` |
@@ -75,7 +75,7 @@ a time. One folder per part:
 | `src/shell/` | The skin's live state (`skin.svelte.ts`) and its parts: the streams, home and the shot view, the profile picker, the corner menu, the pages and swipes, sleep and wake |
 | `src/steam/` | The steam page, its graph, and the steam timer set from the milk's weight |
 | `src/steps/` | The step editor for profiles that are not A-Flow, ported from Streamline, and the modelled shot behind the picker's estimate |
-| `src/ui/` | The controls the parts share: `Lever.svelte`, the on/off switch (a caption above a smaller track for a list row's switch, or text beside it when the whole row is the switch); `Dialog.svelte`, every modal: the scrim, the frame with the dialog's corner and shadow, `role="dialog"` and `aria-modal`, Escape and a tap beside the frame to cancel (only the dialog on top takes Escape); the content brings its own padding, a pad its own keys. The frame is what `viewport.ts` lifts above the keyboard |
+| `src/ui/` | The controls the parts share: `Lever.svelte`, the on/off switch (a caption above a smaller track for a list row's switch, or text beside it when the whole row is the switch); `Dialog.svelte`, every modal: the scrim, the frame with the dialog's corner and shadow, `role="dialog"` and `aria-modal`, Escape and a tap beside the frame to cancel (only the dialog on top takes Escape); the content brings its own padding, a pad its own keys. The frame is what `viewport.ts` lifts above the keyboard; `SidePage.svelte`, the steam and hot water page: the header, the main frame and the column at the right with the big stop; `ValueLine.svelte`, a line of that column: caption, number and unit, the whole line a button for the tare |
 
 The files at the top of `src/` hold the skin's settings (`settings.ts`) and their backup
 (`settings-backup.ts`), the font and line sizes (`display.ts`), the keyboard's effect on the
@@ -267,7 +267,10 @@ cannot be set.
 - The shared looks of a control are in `src/app.css` only: the button reset on `:where(button)`
   (the page's font and colour, a tap without zoom or text selection), `.action` (a button beside a
   setting), `.primary` (the main button's white fill), `.chip` (the pill beside a setting),
-  `.hint`, `.notice`, `.truncate` (one line with an ellipsis) and `.visually-hidden`, beside
+  `.hint`, `.notice` (`.notice.info` in the plain colour), `.truncate` (one line with an ellipsis),
+  `.visually-hidden`, `.big-number` (a page's timer or weight), `.seg` (a button of an editor's
+  header, `.seg.save` raised) and `.form-button` (a button of the bean's and grinder's form), beside
   `.warning`, `.danger` and the two selected looks `.select-fill` and `.select-outline`. A
   component adds to a class (a width, a taller height) or makes a variant of it; it does not
-  write the look again, which `src/ui/controls.test.ts` checks.
+  write the look again, which `src/ui/controls.test.ts` checks; it also checks that steam and
+  hot water, the two editors and the two catalogue forms do not write their shared parts again.

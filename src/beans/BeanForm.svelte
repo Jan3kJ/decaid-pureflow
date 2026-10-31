@@ -9,6 +9,8 @@
   import type { BeanBatch, CatalogueBean } from '../api';
   import DatePicker from '../shell/DatePicker.svelte';
   import Camera from './Camera.svelte';
+  import Field from './Field.svelte';
+  import Form from './Form.svelte';
   import { beanForm, beanTitle, dateOf, validBean, type BeanForm } from './catalogue';
   import { bagFields } from './fields';
   import { readPhoto } from './reading';
@@ -102,23 +104,20 @@
   }
 </script>
 
-<form class="form" onsubmit={submit} data-testid="bean-form">
-  <h2 class="truncate">{bean ? beanTitle(bean) : 'Add a bean'}</h2>
-  {#if bean?.archived}
-    <p class="archived" data-testid="bean-archived">Archived: not offered for the next shot; its shots stay in the history.</p>
-  {/if}
+<Form kind="bean" title={bean ? beanTitle(bean) : 'Add a bean'} archived={bean?.archived ?? false} onsubmit={submit}>
   <div class="photo">
     {#if photo}
       <img src={photo} alt="the bag" data-testid="bean-photo" />
     {/if}
     <div class="photo-tools">
       <div class="photo-buttons">
-        <button type="button" data-testid="bean-photo-take" disabled={busy} onclick={() => (shooting = true)}>
+        <button type="button" class="form-button" data-testid="bean-photo-take" disabled={busy} onclick={() => (shooting = true)}>
           {photo ? 'new photo' : 'photo'}
         </button>
         {#if photo}
           <button
             type="button"
+            class="form-button"
             data-testid="bean-photo-remove"
             disabled={busy}
             onclick={() => {
@@ -134,84 +133,80 @@
     <div class="reading" data-testid="bean-reading">
       {#if reading}
         <span class="status" role="status" data-testid="bean-reading-status">Reading the bag</span>
-        <button type="button" data-testid="bean-reading-cancel" onclick={endReading}>cancel</button>
+        <button type="button" class="form-button" data-testid="bean-reading-cancel" onclick={endReading}>cancel</button>
       {:else if chips?.length}
         <div class="choice" role="group" aria-label="a chip goes into">
           <button
             type="button"
-            class="select-fill"
+            class="form-button select-fill"
             aria-pressed={target === 'name'}
             data-testid="bean-chip-to-name"
             onclick={() => (target = 'name')}>name</button
           >
           <button
             type="button"
-            class="select-fill"
+            class="form-button select-fill"
             aria-pressed={target === 'roaster'}
             data-testid="bean-chip-to-roaster"
             onclick={() => (target = 'roaster')}>roaster</button
           >
         </div>
         {#each chips as chip (chip)}
-          <button type="button" class="chip truncate" data-testid="bean-chip" onclick={() => put(chip)}>{chip}</button>
+          <button type="button" class="form-button chip truncate" data-testid="bean-chip" onclick={() => put(chip)}>{chip}</button>
         {/each}
       {:else}
         <span class="status" role="status" data-testid="bean-reading-status">Nothing read on the bag</span>
       {/if}
     </div>
   {/if}
-  <label class:missing={!form.name.trim()}>
-    <span>name</span>
-    <input bind:value={form.name} autocomplete="off" spellcheck="false" enterkeyhint="next" data-testid="bean-name" />
-  </label>
-  <label class:missing={!form.roaster.trim()}>
-    <span>roaster</span>
-    <input
-      bind:value={form.roaster}
-      list="bean-roasters"
-      autocomplete="off"
-      spellcheck="false"
-      enterkeyhint="next"
-      data-testid="bean-roaster"
-    />
+  <Field label="name" bind:value={form.name} missing={!form.name.trim()} spellcheck={false} enterkeyhint="next" testid="bean-name" />
+  <Field
+    label="roaster"
+    bind:value={form.roaster}
+    missing={!form.roaster.trim()}
+    list="bean-roasters"
+    spellcheck={false}
+    enterkeyhint="next"
+    testid="bean-roaster"
+  >
     <datalist id="bean-roasters">
       {#each roasters as roaster (roaster)}<option value={roaster}></option>{/each}
     </datalist>
-  </label>
+  </Field>
   <div class="field">
     <span id="bean-roast-date-label">roast date{bean ? ' of this bag' : ''}</span>
     <button
       type="button"
-      class="date"
+      class="form-button date"
       class:none={!form.roastDate}
       aria-labelledby="bean-roast-date-label"
       data-testid="bean-roast-date"
       onclick={() => (picking = true)}>{dateOf(form.roastDate) || 'no roast date'}</button
     >
   </div>
-  <label>
-    <span>notes</span>
-    <input bind:value={form.notes} autocomplete="off" enterkeyhint="done" data-testid="bean-notes" />
-  </label>
+  <Field label="notes" bind:value={form.notes} enterkeyhint="done" testid="bean-notes" />
 
-  <div class="actions">
-    <button type="submit" class="primary" data-testid="bean-save" disabled={busy || !valid || (bean !== null && !changed)}>
+  {#snippet actions()}
+    <button type="submit" class="form-button primary" data-testid="bean-save" disabled={busy || !valid || (bean !== null && !changed)}>
       {bean ? 'save' : 'add'}
     </button>
     {#if bean && !bean.archived}
-      <button type="button" data-testid="bean-new-bag" disabled={busy} onclick={onnewbag}>new bag</button>
-      <button type="button" data-testid="bean-archive" disabled={busy} onclick={onarchive}>archive</button>
+      <button type="button" class="form-button" data-testid="bean-new-bag" disabled={busy} onclick={onnewbag}>new bag</button>
+      <button type="button" class="form-button" data-testid="bean-archive" disabled={busy} onclick={onarchive}>archive</button>
     {:else if bean}
-      <button type="button" data-testid="bean-restore" disabled={busy} onclick={onrestore}>restore</button>
+      <button type="button" class="form-button" data-testid="bean-restore" disabled={busy} onclick={onrestore}>restore</button>
     {/if}
-  </div>
-  {#if bean && batch}
-    <p class="hint" data-testid="bean-bag">
-      This bag since {dateOf(batch.createdAt)}{batch.roastDate ? `, roasted ${dateOf(batch.roastDate)}` : ''}. A new bag starts the
-      next one of this bean.
-    </p>
-  {/if}
-</form>
+  {/snippet}
+
+  {#snippet after()}
+    {#if bean && batch}
+      <p class="hint" data-testid="bean-bag">
+        This bag since {dateOf(batch.createdAt)}{batch.roastDate ? `, roasted ${dateOf(batch.roastDate)}` : ''}. A new bag starts the
+        next one of this bean.
+      </p>
+    {/if}
+  {/snippet}
+</Form>
 
 {#if shooting}
   <Camera oncapture={captured} oncancel={() => (shooting = false)} />
@@ -222,48 +217,13 @@
 {/if}
 
 <style>
-  .form {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-  }
-
-  h2 {
-    margin: 0;
-    font-size: var(--text-title);
-    font-weight: 600;
-  }
-
-  label,
+  /* the roast date: a caption over a button, as a field's */
   .field {
     display: flex;
     flex-direction: column;
     gap: var(--space-1);
     color: var(--dim);
     font-size: var(--text-label);
-  }
-
-  input {
-    min-height: var(--control-tall);
-    box-sizing: border-box;
-    padding: 0 0.9rem;
-    font: inherit;
-    font-size: var(--text-value);
-    color: var(--fg);
-    color-scheme: dark;
-    background: var(--bg);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    outline: none;
-  }
-
-  input:focus {
-    border-color: var(--fg);
-  }
-
-  /* a required field that is empty */
-  .missing input {
-    border-color: var(--temperature);
   }
 
   .date {
@@ -275,28 +235,6 @@
 
   .date.none {
     color: var(--dim);
-  }
-
-  .actions {
-    display: flex;
-    gap: var(--space-2);
-  }
-
-  button {
-    min-height: var(--control-big);
-    padding: 0 var(--space-3);
-    font-size: var(--text-body);
-    background: var(--raised);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-  }
-
-  button:disabled {
-    opacity: 0.4;
-  }
-
-  .primary {
-    min-width: 8rem;
   }
 
   .photo {
@@ -348,15 +286,5 @@
   .chip {
     max-width: 100%;
     background: var(--bg);
-  }
-
-  .archived {
-    margin: 0;
-    color: var(--dim);
-    font-size: var(--text-label);
-  }
-
-  .archived {
-    color: var(--warn);
   }
 </style>

@@ -3,6 +3,8 @@
   import ShotGraph from '../graph/ShotGraph.svelte';
   import type { Skin } from '../shell/skin.svelte';
   import PageHeader from '../shell/PageHeader.svelte';
+  import SidePage from '../ui/SidePage.svelte';
+  import ValueLine from '../ui/ValueLine.svelte';
   import { emptySteamSeries, secondsLeft, steamSeconds } from './run';
   import { adjustedSeconds, readScale } from './timer';
 
@@ -30,8 +32,9 @@
   const shown = $derived(timer === null ? null : steaming && skin.steam ? secondsLeft(timer, steamSeconds(skin.steam)) : timer);
 </script>
 
-<div class="steam">
-  <div class="header">
+<!-- Steam is started at the machine; it is stopped here. -->
+<SidePage onstop={skin.canStop ? () => skin.stop() : undefined} stopTestid="steam-stop">
+  {#snippet header()}
     <PageHeader {skin} heat="steam" title="Steam">
       {#snippet beside()}
         <!-- Only after the steam: while it runs 'steam left' is the one clock. -->
@@ -47,138 +50,108 @@
         {/if}
       {/snippet}
     </PageHeader>
+  {/snippet}
+
+  {#snippet main()}
+    <div class="plot" data-main-frame>
+      <ShotGraph
+        t={series.t}
+        pressure={series.pressure}
+        flow={series.flow}
+        temperature={series.temperature}
+        yMax={4}
+        temperatureScale={{ min: 140, max: 170 }}
+        minSeconds={Math.max(30, timer ?? 0)}
+        legend={skin.settings.showGraphLegend}
+        label="steam graph"
+      />
+    </div>
+  {/snippet}
+
+  <div class="favourites">
+    <!-- A chip shows the seconds it sends: its own with the selected adjust button's amount. -->
+    {#each settings.favourites as seconds, i (i)}
+      <button
+        class="chip select-fill"
+        aria-pressed={adjusted(seconds) === timer}
+        data-testid="steam-favourite"
+        onclick={() => skin.setSteamTimer(adjusted(seconds))}
+      >
+        {adjusted(seconds)} s
+      </button>
+    {/each}
   </div>
 
-  <div class="plot" data-main-frame>
-    <ShotGraph
-      t={series.t}
-      pressure={series.pressure}
-      flow={series.flow}
-      temperature={series.temperature}
-      yMax={4}
-      temperatureScale={{ min: 140, max: 170 }}
-      minSeconds={Math.max(30, timer ?? 0)}
-      legend={skin.settings.showGraphLegend}
-      label="steam graph"
-    />
+  <!-- In the centre of the column, in line with 'set timer'. -->
+  <div class="big">
+    <small>{steaming ? 'steam left' : 'steam timer'}</small>
+    <b class="big-number" data-testid="steam-timer">{shown ?? '–'}<i>s</i></b>
   </div>
 
-  <aside>
-    <div class="favourites">
-      <!-- A chip shows the seconds it sends: its own with the selected adjust button's amount. -->
-      {#each settings.favourites as seconds, i (i)}
-        <button
-          class="chip select-fill"
-          aria-pressed={adjusted(seconds) === timer}
-          data-testid="steam-favourite"
-          onclick={() => skin.setSteamTimer(adjusted(seconds))}
-        >
-          {adjusted(seconds)} s
-        </button>
-      {/each}
-    </div>
-
-    <!-- In the centre of the column, in line with 'set timer'. -->
-    <div class="big">
-      <small>{steaming ? 'steam left' : 'steam timer'}</small>
-      <b data-testid="steam-timer">{shown ?? '–'}<i>s</i></b>
-    </div>
-
-    <!-- A grid of label, number and unit as on home: the numbers end on one edge, the units have
+  <!-- A grid of label, number and unit as on home: the numbers end on one edge, the units have
          their own column. The scale's row is the one tare of the skin (Skin.tare),
          off while steam runs; without a scale one line in place of the rows looks for
          the scale. -->
-    {#if scaled}
-      <div class="rows">
-        <button class="line" data-testid="steam-tare" disabled={steaming} onclick={() => skin.tare()}>
-          <span class="key">scale</span>
-          <span class="reading weight" data-testid="steam-weight">
-            {#if skin.weight === null}<b>–</b> <i></i>{:else}<b>{gramsOf(skin.weight, '')}</b> <i>g</i>{/if}
-          </span>
-        </button>
-        <div class="line">
-          <span class="key">
-            mug
-            {#if reading}<span class="badge" data-testid="steam-mug">{reading.mug.size}</span>{/if}
-          </span>
-          <span class="reading of" data-testid="steam-mug-weight">
-            {#if reading}<b>{grams(reading.mug.weight)}</b> <i>g</i>{:else}<b>–</b> <i></i>{/if}
-          </span>
-        </div>
-        <div class="line">
-          <span class="key">milk</span>
-          <span class="reading" data-testid="steam-milk">
-            {#if reading}<b>{grams(reading.milk)}</b> <i>g</i>{:else}<b>–</b> <i></i>{/if}
-          </span>
-        </div>
-      </div>
-    {:else}
-      <button class="line none" data-testid="steam-no-scale" onclick={() => skin.findScale()}>no scale: the chips set the timer</button
-      >
-    {/if}
-
-    <!-- The adjust buttons: for milk colder or warmer than the calibration's. One at a
-         time, a tap on the selected one clears it; while steam runs a tap moves the timer too. -->
-    <div class="adjust">
-      {#each settings.adjustments as amount, i (i)}
-        <button
-          class="chip select-fill"
-          aria-pressed={skin.steamAdjust === i}
-          data-testid="steam-adjust"
-          onclick={() => skin.tapSteamAdjust(i)}
-        >
-          {signed(amount)}
-        </button>
-      {/each}
+  {#if scaled}
+    <div class="rows">
+      <ValueLine
+        label="scale"
+        value={skin.weight === null ? null : gramsOf(skin.weight, '')}
+        tone="weight"
+        testid="steam-weight"
+        buttonTestid="steam-tare"
+        disabled={steaming}
+        onclick={() => skin.tare()}
+      />
+      <!-- the mug's weight is a setting, not a reading -->
+      <ValueLine label="mug" value={reading && grams(reading.mug.weight)} tone="setting" testid="steam-mug-weight">
+        {#if reading}<span class="badge" data-testid="steam-mug">{reading.mug.size}</span>{/if}
+      </ValueLine>
+      <ValueLine label="milk" value={reading && grams(reading.milk)} testid="steam-milk" />
     </div>
+  {:else}
+    <button class="none" data-testid="steam-no-scale" onclick={() => skin.findScale()}>no scale: the chips set the timer</button>
+  {/if}
 
-    <button
-      class="set primary"
-      data-testid="steam-set-timer"
-      disabled={calculated === 0}
-      onclick={() => calculated > 0 && skin.setSteamTimer(calculated)}
-    >
-      set timer
-      {#if calculated > 0}
-        <b data-testid="steam-seconds">{calculated} s</b>
-      {:else if !scaled}
-        <small data-testid="steam-needs-scale">needs the scale</small>
-      {/if}
-    </button>
+  <!-- The adjust buttons: for milk colder or warmer than the calibration's. One at a
+         time, a tap on the selected one clears it; while steam runs a tap moves the timer too. -->
+  <div class="adjust">
+    {#each settings.adjustments as amount, i (i)}
+      <button
+        class="chip select-fill"
+        aria-pressed={skin.steamAdjust === i}
+        data-testid="steam-adjust"
+        onclick={() => skin.tapSteamAdjust(i)}
+      >
+        {signed(amount)}
+      </button>
+    {/each}
+  </div>
 
-    {#if skin.notice}
-      <p class="notice" data-testid="notice">{skin.notice}</p>
-    {:else if skin.info}
-      <p class="notice info" data-testid="tare-notice">{skin.info}</p>
-    {:else if skin.steamMismatch}
-      <p class="notice" data-testid="steam-mismatch">{skin.steamMismatch}</p>
+  <button
+    class="set primary"
+    data-testid="steam-set-timer"
+    disabled={calculated === 0}
+    onclick={() => calculated > 0 && skin.setSteamTimer(calculated)}
+  >
+    set timer
+    {#if calculated > 0}
+      <b data-testid="steam-seconds">{calculated} s</b>
+    {:else if !scaled}
+      <small data-testid="steam-needs-scale">needs the scale</small>
     {/if}
+  </button>
 
-    <!-- Steam is started at the machine; it is stopped here. -->
-    {#if skin.canStop}
-      <button class="stop" data-testid="steam-stop" onclick={() => skin.stop()}>stop</button>
-    {/if}
-  </aside>
-</div>
+  {#if skin.notice}
+    <p class="notice" data-testid="notice">{skin.notice}</p>
+  {:else if skin.info}
+    <p class="notice info" data-testid="tare-notice">{skin.info}</p>
+  {:else if skin.steamMismatch}
+    <p class="notice" data-testid="steam-mismatch">{skin.steamMismatch}</p>
+  {/if}
+</SidePage>
 
 <style>
-  .steam {
-    height: 100%;
-    box-sizing: border-box;
-    /* home's padding, so the header is in the same place */
-    padding: 0.8rem var(--space-3) 1rem;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 21rem;
-    grid-template-rows: auto minmax(0, 1fr);
-    grid-template-areas: 'header header' 'plot side';
-    gap: var(--space-2) var(--space-3);
-  }
-
-  .header {
-    grid-area: header;
-    min-width: 0;
-  }
-
   .run {
     color: var(--dim);
     font-size: var(--text-body);
@@ -192,19 +165,10 @@
   }
 
   .plot {
-    grid-area: plot;
     min-height: 0;
     border: 1px solid var(--line);
     border-radius: var(--radius);
     background: var(--panel);
-  }
-
-  aside {
-    grid-area: side;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
   }
 
   button {
@@ -261,51 +225,19 @@
     align-items: center;
   }
 
-  .big b {
-    font-size: var(--text-big);
-    font-weight: 600;
-    line-height: 1.1;
-    font-variant-numeric: tabular-nums;
-  }
-
   .rows {
-    /* the number's line height, which the size badge is as high as */
-    --number-line: 1.2;
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
   }
 
-  /* label, number, unit: the unit column has one width, so the numbers end on one edge */
-  .line {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto 1.6rem;
-    align-items: baseline;
-    column-gap: var(--space-1);
-    padding: 0 0.6rem 0 1rem;
-    border: 1px solid transparent;
-    text-align: left;
-  }
-
-  /* the tare: the whole row a button, a finger's target */
-  button.line {
+  /* in place of the scale's lines, as high as one */
+  .none {
+    display: block;
     min-height: var(--control-big);
     align-content: center;
-    border-color: var(--line);
-  }
-
-  .line.none {
-    display: block;
-    color: var(--dim);
-    font-size: var(--text-label);
-  }
-
-  /* the numbers and units share a baseline; the caption is centred against the number */
-  .key {
-    align-self: center;
-    display: flex;
-    align-items: center;
-    gap: var(--space-1);
+    padding: 0 0.6rem 0 1rem;
+    text-align: left;
     color: var(--dim);
     font-size: var(--text-label);
   }
@@ -327,35 +259,6 @@
     text-transform: uppercase;
   }
 
-  .reading {
-    display: contents;
-  }
-
-  .reading b {
-    justify-self: end;
-    font-size: var(--text-title);
-    font-weight: 600;
-    line-height: var(--number-line);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .reading i {
-    font-size: var(--text-label);
-  }
-
-  .weight b {
-    color: var(--weight);
-  }
-
-  button.line:disabled .weight b {
-    color: var(--dim);
-  }
-
-  /* the mug's weight is a setting, not a reading */
-  .of b {
-    color: var(--dim);
-  }
-
   /* Raised like the chips, not the main button's fill; off, it takes the shared off look of `.primary`. */
   .set.primary {
     min-height: 4.5rem;
@@ -375,19 +278,5 @@
 
   .set small {
     font-weight: 400;
-  }
-
-  .info {
-    color: var(--fg);
-  }
-
-  .stop {
-    margin-top: auto;
-    min-height: 6rem;
-    font-size: var(--text-large);
-    font-weight: 600;
-    color: var(--bg);
-    background: var(--temperature);
-    border-color: var(--temperature);
   }
 </style>
