@@ -3,6 +3,7 @@
   // camera preferred, and a capture button. Decaid's window gives the live camera without asking
   // each time; where it is refused or missing, the system's camera through a file input stands in.
   import { onMount } from 'svelte';
+  import Dialog from '../ui/Dialog.svelte';
   import { fileToPhoto, toPhoto } from './photo';
 
   interface Props {
@@ -70,17 +71,10 @@
       failed = 'That file is not a picture.';
     }
   }
-
-  function keydown(event: KeyboardEvent) {
-    if (event.key === 'Escape') oncancel();
-  }
 </script>
 
-<svelte:window onkeydown={keydown} />
-
-<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-<div class="backdrop" data-no-swipe data-testid="camera-backdrop" onclick={(e) => e.target === e.currentTarget && oncancel()}>
-  <div class="pad" role="dialog" aria-modal="true" aria-label="photo of the bag" data-testid="camera">
+<Dialog label="photo of the bag" width="min(48rem, 92vw)" testid="camera" backdrop="camera-backdrop" {oncancel}>
+  <div class="pad">
     <div class="head">
       <span class="label">photo of the bag</span>
       <button class="close" aria-label="cancel" data-testid="camera-close" onclick={oncancel}>×</button>
@@ -106,32 +100,14 @@
       <button data-testid="camera-cancel" onclick={oncancel}>cancel</button>
     </div>
   </div>
-</div>
+</Dialog>
 
 <style>
-  .backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: var(--layer-dialog);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--scrim);
-  }
-
   .pad {
-    width: min(48rem, 92vw);
-    max-height: 96%;
-    overflow-y: auto;
-    box-sizing: border-box;
     padding: 1rem;
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-dialog);
-    box-shadow: var(--shadow-dialog);
   }
 
   .head {

@@ -16,6 +16,7 @@
     WHEEL_STEP,
     type Month,
   } from './calendar';
+  import Dialog from '../ui/Dialog.svelte';
 
   interface Props {
     label: string;
@@ -132,9 +133,9 @@
     return () => target.removeEventListener('wheel', wheel);
   });
 
+  // Escape is the dialog's.
   function keydown(event: KeyboardEvent) {
-    if (event.key === 'Escape') oncancel();
-    else if (event.key === 'ArrowLeft' || event.key === 'PageUp') step(-1);
+    if (event.key === 'ArrowLeft' || event.key === 'PageUp') step(-1);
     else if (event.key === 'ArrowRight' || event.key === 'PageDown') step(1);
     else return;
     event.preventDefault();
@@ -154,9 +155,8 @@
   </div>
 {/snippet}
 
-<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-<div class="backdrop" data-no-swipe data-testid="datepicker-backdrop" onclick={(e) => e.target === e.currentTarget && oncancel()}>
-  <div class="pad" role="dialog" aria-modal="true" aria-label="pick {label}" data-testid="datepicker">
+<Dialog label="pick {label}" testid="datepicker" backdrop="datepicker-backdrop" {oncancel}>
+  <div class="pad">
     <div class="head">
       <span class="label">{label}</span>
       <button class="close" aria-label="cancel" data-testid="datepicker-close" onclick={oncancel}>×</button>
@@ -227,31 +227,14 @@
       <button data-testid="datepicker-cancel" onclick={oncancel}>cancel</button>
     </div>
   </div>
-</div>
+</Dialog>
 
 <style>
-  .backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: var(--layer-dialog);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--scrim);
-  }
-
   .pad {
-    max-height: 96%;
-    overflow-y: auto;
-    box-sizing: border-box;
     padding: 1rem;
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-dialog);
-    box-shadow: var(--shadow-dialog);
   }
 
   .head,

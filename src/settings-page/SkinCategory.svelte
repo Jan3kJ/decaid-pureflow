@@ -16,6 +16,7 @@
     type Settings,
     type SteamField,
   } from '../settings';
+  import Dialog from '../ui/Dialog.svelte';
   import Lever from '../ui/Lever.svelte';
   import { PRODUCT_NAME, PRODUCT_VERSION } from '../product';
   import { backupTime } from '../settings-backup';
@@ -406,9 +407,8 @@
 {/snippet}
 
 {#if confirming}
-  <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-  <div class="backdrop" onclick={(e) => e.target === e.currentTarget && (confirming = false)}>
-    <div class="dialog" role="dialog" aria-modal="true" aria-label="restore from backup" data-testid="backup-confirm">
+  <Dialog label="restore from backup" width="28rem" maxHeight="80vh" testid="backup-confirm" oncancel={() => (confirming = false)}>
+    <div class="dialog">
       <h2>Restore from backup?</h2>
       <p>Every setting on this page becomes the backup's{skin.backupAt ? ` of ${backupTime(skin.backupAt)}` : ''}.</p>
       <div class="actions">
@@ -416,7 +416,7 @@
         <button class="retry primary" data-testid="backup-confirm-restore" onclick={restore}>restore</button>
       </div>
     </div>
-  </div>
+  </Dialog>
 {/if}
 
 {#if importing}
@@ -430,9 +430,8 @@
 {/if}
 
 {#if choosing !== null}
-  <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-  <div class="backdrop" onclick={(e) => e.target === e.currentTarget && (choosing = null)}>
-    <div class="dialog" role="dialog" aria-modal="true" aria-label="slot {choosing + 1}" data-testid="start-choices">
+  <Dialog label="slot {choosing + 1}" width="28rem" maxHeight="80vh" testid="start-choices" oncancel={() => (choosing = null)}>
+    <div class="dialog">
       <h2>slot {choosing + 1}</h2>
       <ul>
         <li>
@@ -457,7 +456,7 @@
         {#if !records && !unread}<li class="none">Reading the profiles …</li>{/if}
       </ul>
     </div>
-  </div>
+  </Dialog>
 {/if}
 
 {#if typing}
@@ -648,27 +647,11 @@
     gap: var(--space-2);
   }
 
-  .backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: var(--layer-dialog);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--scrim);
-  }
-
   .dialog {
-    width: 28rem;
-    max-height: 80vh;
-    box-sizing: border-box;
+    min-height: 0;
     padding: var(--space-1) var(--space-3) var(--space-3);
     display: flex;
     flex-direction: column;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-dialog);
-    box-shadow: var(--shadow-dialog);
   }
 
   .dialog p {

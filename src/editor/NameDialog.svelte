@@ -1,5 +1,7 @@
 <script lang="ts">
   // Asks for the name of 'save as'. What happens with the name is the caller's (onconfirm).
+  import Dialog from '../ui/Dialog.svelte';
+
   interface Props {
     /** names that exist already, compared without case */
     taken: readonly string[];
@@ -25,58 +27,32 @@
   }
 </script>
 
-<svelte:window onkeydown={(e: KeyboardEvent) => e.key === 'Escape' && oncancel()} />
-
-<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-<div class="backdrop" data-no-swipe onclick={(e) => e.target === e.currentTarget && oncancel()}>
-  <div class="dialog" role="dialog" aria-modal="true" aria-label="save as" data-testid="save-dialog">
-    <form onsubmit={submit}>
-      <label for="save-name">save the profile as</label>
-      <input
-        id="save-name"
-        bind:this={input}
-        bind:value={text}
-        maxlength={MAX_LENGTH}
-        placeholder="name"
-        autocomplete="off"
-        autocapitalize="off"
-        spellcheck="false"
-        enterkeyhint="done"
-        data-testid="save-name"
-      />
-      <p class="hint" data-testid="save-hint">{exists ? 'This name is in use.' : ' '}</p>
-      <div class="actions">
-        <button type="button" data-testid="save-cancel" onclick={oncancel}>cancel</button>
-        <button type="submit" class="confirm" data-testid="save-confirm" disabled={!valid}>save</button>
-      </div>
-    </form>
-  </div>
-</div>
+<Dialog label="save as" width="26rem" top testid="save-dialog" {oncancel}>
+  <form onsubmit={submit}>
+    <label for="save-name">save the profile as</label>
+    <input
+      id="save-name"
+      bind:this={input}
+      bind:value={text}
+      maxlength={MAX_LENGTH}
+      placeholder="name"
+      autocomplete="off"
+      autocapitalize="off"
+      spellcheck="false"
+      enterkeyhint="done"
+      data-testid="save-name"
+    />
+    <p class="hint" data-testid="save-hint">{exists ? 'This name is in use.' : ' '}</p>
+    <div class="actions">
+      <button type="button" data-testid="save-cancel" onclick={oncancel}>cancel</button>
+      <button type="submit" class="confirm" data-testid="save-confirm" disabled={!valid}>save</button>
+    </div>
+  </form>
+</Dialog>
 
 <style>
-  .backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: var(--layer-dialog);
-    display: flex;
-    /* Near the top: the system keyboard covers the lower half of a tablet. */
-    align-items: flex-start;
-    justify-content: center;
-    padding-top: 5rem;
-    background: var(--scrim);
-  }
-
-  .dialog {
-    width: 26rem;
-    box-sizing: border-box;
-    padding: var(--space-3);
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-dialog);
-    box-shadow: var(--shadow-dialog);
-  }
-
   form {
+    padding: var(--space-3);
     display: flex;
     flex-direction: column;
     gap: var(--space-2);

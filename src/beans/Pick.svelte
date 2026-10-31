@@ -7,6 +7,7 @@
   import type { CatalogueBean, Grinder } from '../api';
   import NumberPad from '../editor/NumberPad.svelte';
   import type { Skin } from '../shell/skin.svelte';
+  import Dialog from '../ui/Dialog.svelte';
   import { beanTitle, dateOf, newestFirst, pickedBean, pickedGrinder, search, selectableBeans, stepSetting } from './catalogue';
 
   interface Props {
@@ -55,11 +56,15 @@
   }
 </script>
 
-<svelte:window onkeydown={(e: KeyboardEvent) => e.key === 'Escape' && !typing && onclose()} />
-
-<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-<div class="backdrop" data-no-swipe onclick={(e) => e.target === e.currentTarget && onclose()}>
-  <div class="dialog" role="dialog" aria-modal="true" aria-label="bean and grinder for the next shot" data-testid="pick">
+<Dialog
+  label="bean and grinder for the next shot"
+  width="min(56rem, 90%)"
+  maxHeight="calc(100% - 6rem)"
+  top
+  testid="pick"
+  oncancel={onclose}
+>
+  <div class="content">
     <h2>For the next shot</h2>
     <div class="columns">
       <section aria-label="bean">
@@ -160,7 +165,7 @@
       <button class="primary" data-testid="pick-use" disabled={!ready || catalogue.busy} onclick={use}>use for the next shot</button>
     </div>
   </div>
-</div>
+</Dialog>
 
 {#if typing}
   <NumberPad
@@ -180,28 +185,11 @@
 {/if}
 
 <style>
-  .backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: var(--layer-dialog);
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    padding-top: 4rem;
-    background: var(--scrim);
-  }
-
-  .dialog {
-    width: min(56rem, 90%);
-    max-height: calc(100% - 6rem);
-    box-sizing: border-box;
+  .content {
+    min-height: 0;
     padding: var(--space-1) var(--space-3) var(--space-3);
     display: flex;
     flex-direction: column;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-dialog);
-    box-shadow: var(--shadow-dialog);
   }
 
   h2 {

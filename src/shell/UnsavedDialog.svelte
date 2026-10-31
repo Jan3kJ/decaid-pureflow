@@ -3,6 +3,7 @@
   // Nothing is loaded before one of its three answers (`Skin.mayLoad`).
   import { startName } from '../editor/start';
   import type { Unsaved } from '../editor/unsaved';
+  import Dialog from '../ui/Dialog.svelte';
   import type { LoadAnswer } from './load-warning.svelte';
 
   interface Props {
@@ -13,11 +14,14 @@
   let { unsaved, onanswer }: Props = $props();
 </script>
 
-<svelte:window onkeydown={(e: KeyboardEvent) => e.key === 'Escape' && onanswer('cancel')} />
-
-<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-<div class="backdrop" onclick={(e) => e.target === e.currentTarget && onanswer('cancel')}>
-  <div class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="unsaved-text" data-testid="unsaved-dialog">
+<Dialog
+  role="alertdialog"
+  labelledby="unsaved-text"
+  width="min(36rem, 90vw)"
+  testid="unsaved-dialog"
+  oncancel={() => onanswer('cancel')}
+>
+  <div class="content">
     <p id="unsaved-text">
       <strong data-testid="unsaved-name">{startName(unsaved.title)}</strong>
       has unsaved changes on the machine
@@ -29,30 +33,14 @@
       <button data-testid="unsaved-cancel" onclick={() => onanswer('cancel')}>cancel</button>
     </div>
   </div>
-</div>
+</Dialog>
 
 <style>
-  .backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: var(--layer-dialog);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--scrim);
-  }
-
-  .dialog {
-    width: min(36rem, 90vw);
-    box-sizing: border-box;
+  .content {
     padding: 1.4rem;
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-dialog);
-    box-shadow: var(--shadow-dialog);
   }
 
   p {

@@ -75,7 +75,7 @@ a time. One folder per part:
 | `src/shell/` | The skin's live state (`skin.svelte.ts`) and its parts: the streams, home and the shot view, the profile picker, the corner menu, the pages and swipes, sleep and wake |
 | `src/steam/` | The steam page, its graph, and the steam timer set from the milk's weight |
 | `src/steps/` | The step editor for profiles that are not A-Flow, ported from Streamline, and the modelled shot behind the picker's estimate |
-| `src/ui/` | The controls the parts share: `Lever.svelte`, the on/off switch (a caption above a smaller track for a list row's switch, or text beside it when the whole row is the switch) |
+| `src/ui/` | The controls the parts share: `Lever.svelte`, the on/off switch (a caption above a smaller track for a list row's switch, or text beside it when the whole row is the switch); `Dialog.svelte`, every modal: the scrim, the frame with the dialog's corner and shadow, `role="dialog"` and `aria-modal`, Escape and a tap beside the frame to cancel (only the dialog on top takes Escape); the content brings its own padding, a pad its own keys. The frame is what `viewport.ts` lifts above the keyboard |
 
 The files at the top of `src/` hold the skin's settings (`settings.ts`) and their backup
 (`settings-backup.ts`), the font and line sizes (`display.ts`), the keyboard's effect on the

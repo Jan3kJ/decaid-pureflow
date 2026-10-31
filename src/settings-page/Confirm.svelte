@@ -10,7 +10,8 @@
   // does, Cancel and the action. The settings page, its device lists and maintenance use it;
   // with a `value` it holds a text field (the picker's rename), Enter is the action, and
   // `error` says under it why the action was refused. A `danger` action (a delete) is the
-  // warning outline, not the filled button.
+  // warning outline, not the filled button. Escape cancels.
+  import Dialog from '../ui/Dialog.svelte';
 
   interface Props {
     title: string;
@@ -47,9 +48,8 @@
   }
 </script>
 
-<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-<div class="backdrop" onclick={(e) => e.target === e.currentTarget && oncancel()}>
-  <div class="dialog" role="dialog" aria-modal="true" aria-label={title} data-testid="settings-confirm">
+<Dialog label={title} width="30rem" testid="settings-confirm" {oncancel}>
+  <div class="content">
     <h2>{title}</h2>
     {#if text}<p>{text}</p>{/if}
     {#if value !== undefined}
@@ -72,27 +72,11 @@
       <button class="action" class:primary={!danger} class:danger data-testid="settings-confirm-ok" onclick={onok}>{ok}</button>
     </div>
   </div>
-</div>
+</Dialog>
 
 <style>
-  .backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: var(--layer-dialog);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--scrim);
-  }
-
-  .dialog {
-    width: 30rem;
-    box-sizing: border-box;
+  .content {
     padding: var(--space-1) var(--space-3) var(--space-3);
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-dialog);
-    box-shadow: var(--shadow-dialog);
   }
 
   h2 {

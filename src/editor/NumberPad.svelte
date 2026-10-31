@@ -1,5 +1,7 @@
 <script lang="ts">
   // Types a value on screen: no system keyboard is needed.
+  import Dialog from '../ui/Dialog.svelte';
+
   interface Props {
     label: string;
     unit: string;
@@ -46,14 +48,13 @@
     if (value !== null && inRange) onconfirm(value);
   }
 
-  // A keyboard works too where there is one (development on a PC).
+  // A keyboard works too where there is one (development on a PC); Escape is the dialog's.
   function keydown(event: KeyboardEvent) {
     if (/^[0-9]$/.test(event.key)) key(event.key);
     else if (event.key === '.' || event.key === ',') key('.');
     else if (event.key === '-') sign();
     else if (event.key === 'Backspace') typed = typed.slice(0, -1);
     else if (event.key === 'Enter') confirm();
-    else if (event.key === 'Escape') oncancel();
     else return;
     event.preventDefault();
   }
@@ -61,9 +62,8 @@
 
 <svelte:window onkeydown={keydown} />
 
-<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-<div class="backdrop" data-no-swipe data-testid="numpad-backdrop" onclick={(e) => e.target === e.currentTarget && oncancel()}>
-  <div class="pad" role="dialog" aria-modal="true" aria-label="type {label}" data-testid="numpad">
+<Dialog label="type {label}" width="21rem" testid="numpad" backdrop="numpad-backdrop" {oncancel}>
+  <div class="pad">
     <div class="head">
       <span class="label">{label}</span>
       <button class="close" aria-label="cancel" data-testid="numpad-cancel" onclick={oncancel}>×</button>
@@ -91,31 +91,14 @@
       <button class="confirm primary" data-testid="numpad-confirm" disabled={!inRange} onclick={confirm}>set</button>
     </div>
   </div>
-</div>
+</Dialog>
 
 <style>
-  .backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: var(--layer-dialog);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--scrim);
-  }
-
   .pad {
-    width: 21rem;
-    max-height: 96%;
-    box-sizing: border-box;
     padding: 1rem;
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-dialog);
-    box-shadow: var(--shadow-dialog);
   }
 
   .head {

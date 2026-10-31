@@ -42,6 +42,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   import StepCard from './StepCard.svelte';
   import StepPreview from './StepPreview.svelte';
   import { errorMessage } from '../error-message';
+  import Dialog from '../ui/Dialog.svelte';
   import { sideways } from '../shell/sideways';
 
   interface Props {
@@ -316,8 +317,6 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   {/if}
 </div>
 
-<svelte:window onkeydown={(e: KeyboardEvent) => e.key === 'Escape' && deleting !== null && (deleting = null)} />
-
 {#if naming}
   <NameDialog
     {taken}
@@ -352,9 +351,8 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
 
 {#if deleting !== null}
   {@const index = deleting}
-  <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-  <div class="backdrop" data-no-swipe onclick={(e) => e.target === e.currentTarget && (deleting = null)}>
-    <div class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="delete-text" data-testid="delete-dialog">
+  <Dialog role="alertdialog" labelledby="delete-text" testid="delete-dialog" oncancel={() => (deleting = null)}>
+    <div class="dialog">
       <p id="delete-text">Delete step {index + 1}?</p>
       <p class="hint">“{profile.steps[index].name}” and its values go; saving makes it final.</p>
       <div class="actions">
@@ -362,7 +360,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
         <button data-testid="delete-cancel" onclick={() => (deleting = null)}>cancel</button>
       </div>
     </div>
-  </div>
+  </Dialog>
 {/if}
 
 <style>
@@ -488,22 +486,9 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     font-size: var(--text-body);
   }
 
-  .backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: var(--layer-dialog);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--scrim);
-  }
-
   .dialog {
     min-width: 28rem;
     padding: 1.4rem 1.6rem;
-    background: var(--raised);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-dialog);
   }
 
   .dialog p {
@@ -523,7 +508,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   }
 
   .actions button:not(.danger) {
-    background: var(--panel);
+    background: var(--raised);
   }
 
   .actions button {
