@@ -273,6 +273,8 @@
   }
 
   .rows {
+    /* the number's line height, which the size badge is as high as */
+    --number-line: 1.2;
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
@@ -302,18 +304,30 @@
     font-size: var(--text-label);
   }
 
+  /* the numbers and units share a baseline; the caption is centred against the number */
   .key {
+    align-self: center;
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
     color: var(--dim);
     font-size: var(--text-label);
   }
 
+  /* as high as the number's frame: the number's size and line height, the border inside it */
   .badge {
-    margin-left: var(--space-1);
+    box-sizing: border-box;
+    height: calc(var(--number-line) * 1em);
+    min-width: 1.6em;
+    display: grid;
+    place-items: center;
     padding: 0 var(--space-1);
     border: 1px solid var(--line);
     border-radius: 0.4rem;
     color: var(--fg);
+    font-size: var(--text-title);
     font-weight: 600;
+    line-height: 1;
     text-transform: uppercase;
   }
 
@@ -325,6 +339,7 @@
     justify-self: end;
     font-size: var(--text-title);
     font-weight: 600;
+    line-height: var(--number-line);
     font-variant-numeric: tabular-nums;
   }
 

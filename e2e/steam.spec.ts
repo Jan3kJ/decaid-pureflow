@@ -557,6 +557,16 @@ test('the scale, mug and milk numbers end on one right edge, their units in one 
   const badge = (await page.getByTestId('steam-mug').boundingBox())!;
   expect(badge.x + badge.width).toBeLessThan(numbers[1].x);
   await expect(page.getByTestId('steam-mug')).toHaveText('l');
+  // The badge is as high as the number's frame, its letter as large as the number.
+  expect(Math.abs(badge.height - numbers[1].height)).toBeLessThanOrEqual(1);
+  expect(await page.getByTestId('steam-mug').evaluate((element) => getComputedStyle(element).fontSize)).toBe(looks[1][0]);
+  // Each caption is centred vertically against its number.
+  const keys = await Promise.all(ids.map((id) => page.getByTestId(id).locator('xpath=preceding-sibling::span[1]').boundingBox()));
+  keys.forEach((key, i) => {
+    expect(Math.abs(key!.y + key!.height / 2 - (numbers[i].y + numbers[i].height / 2))).toBeLessThanOrEqual(1);
+  });
+  // The scale's row stays a finger's target.
+  expect((await page.getByTestId('steam-tare').boundingBox())!.height).toBeGreaterThanOrEqual(3 * 16 - 1);
   await page.screenshot({ path: 'docs/product/steam-rows.png' });
   expect(errors).toEqual([]);
 });
