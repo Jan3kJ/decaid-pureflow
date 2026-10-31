@@ -13,7 +13,7 @@
 // PUREFLOW_RIG_URL names the gateway the rig is looked for at (default http://localhost:8080).
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createInterface } from 'node:readline';
@@ -23,9 +23,11 @@ import {
   assetUrl,
   changelogSection,
   checksLine,
+  fixedZips,
   chooseVersion,
   classify,
   insertSection,
+  latestAssetUrl,
   lastTag,
   parseLog,
   releaseZips,
@@ -290,6 +292,7 @@ export async function release(argv, root, io = {}) {
       throw new Stop(`no tag ${t} to publish`, 'npm run release (without --resume)');
     }
     const names = releaseZips(JSON.parse(read('public/manifest.json')).id, v);
+    const fixed = fixedZips(JSON.parse(read('public/manifest.json')).id);
     const files = names.map((name) => join(root, 'release', name));
     const sumsFile = join(root, 'release', 'SHA256SUMS.txt');
     if (files.some((file) => !existsSync(file))) {
@@ -302,10 +305,15 @@ export async function release(argv, root, io = {}) {
         'npm run zip, then npm run release -- --resume',
       );
     }
+    // Each ZIP is built once and carried a second time under its fixed name, byte for byte.
+    const fixedFiles = fixed.map((name) => join(root, 'release', name));
+    fixedFiles.forEach((file, index) => copyFileSync(files[index], file));
+    const uploads = [...files, ...fixedFiles];
+    const downloads = [...names, ...fixed];
     const body = sectionOf(read('CHANGELOG.md'), v);
     if (body === undefined) throw new Stop(`CHANGELOG.md has no section ${v}`, 'git show HEAD:CHANGELOG.md');
     // The notes say which ZIP is which; CHANGELOG.md keeps the entries only.
-    const notes = `${body}\n${zipsNote(names, readFileSync(files[1]).length)}`;
+    const notes = `${body}\n${zipsNote(names, readFileSync(files[1]).length, fixed)}`;
     const where = options.publish ? 'a public release' : 'a draft release';
     if (!(await yes(`Publish ${v}: push main and ${t} to origin and create ${where} on GitHub?`))) {
       log(`Not published. ${t} is local; later: npm run release -- --resume`);
@@ -319,13 +327,13 @@ export async function release(argv, root, io = {}) {
       writeFileSync(notesFile, notes);
       const exists = sh('gh', 'release', 'view', t).status === 0;
       const uploaded = exists
-        ? step('gh', 'release', 'upload', t, ...files, sumsFile, '--clobber')
+        ? step('gh', 'release', 'upload', t, ...uploads, sumsFile, '--clobber')
         : step(
             'gh',
             'release',
             'create',
             t,
-            ...files,
+            ...uploads,
             sumsFile,
             '--title',
             `pureflow ${v}`,
@@ -335,13 +343,13 @@ export async function release(argv, root, io = {}) {
           );
       if (!uploaded) throw new Stop('the GitHub release failed', 'npm run release -- --resume');
       const download = join(scratch, 'download');
-      const patterns = names.flatMap((name) => ['--pattern', name]);
+      const patterns = downloads.flatMap((name) => ['--pattern', name]);
       if (!step('gh', 'release', 'download', t, ...patterns, '--dir', download)) {
         throw new Stop('the download of the assets failed', 'npm run release -- --resume');
       }
-      names.forEach((name, index) => {
+      downloads.forEach((name, index) => {
         const downloaded = join(download, name);
-        if (!existsSync(downloaded) || sha256(downloaded) !== sha256(files[index])) {
+        if (!existsSync(downloaded) || sha256(downloaded) !== sha256(uploads[index])) {
           throw new Stop(`the downloaded ${name} differs from release/${name}`, 'npm run release -- --resume');
         }
       });
@@ -349,9 +357,11 @@ export async function release(argv, root, io = {}) {
       rmSync(scratch, { recursive: true, force: true });
     }
     log(`\nPublished ${where}; each downloaded asset has the SHA-256 of its local ZIP.`);
-    for (const name of names) {
-      log(`The URL of ${name} for Decaid's skin selector: ${assetUrl(JSON.parse(read('package.json')).repository, t, name)}`);
+    const repository = JSON.parse(read('package.json')).repository;
+    for (const name of downloads) {
+      log(`The URL of ${name} for Decaid's skin selector: ${assetUrl(repository, t, name)}`);
     }
+    for (const name of fixed) log(`The URL of the latest ${name}: ${latestAssetUrl(repository, name)}`);
     printLeft();
     return v;
   }

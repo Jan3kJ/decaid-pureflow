@@ -223,6 +223,11 @@ export function releaseZips(id, version) {
   return FLAVOURS.map((flavour) => zipName(id, version, flavour));
 }
 
+/** The same ZIPs under names without the version, base first: `<id>.zip` and `<id>-ocr.zip`. */
+export function fixedZips(id) {
+  return FLAVOURS.map((flavour) => zipName(id, undefined, flavour));
+}
+
 /** release/SHA256SUMS.txt for { name: hex }, one line a ZIP in the order given. */
 export function sumsText(hashes) {
   return Object.entries(hashes)
@@ -230,10 +235,16 @@ export function sumsText(hashes) {
     .join('');
 }
 
-/** The release notes' paragraph that says which ZIP is which; `ocrBytes` is the ocr ZIP's size. */
-export function zipsNote([base, ocr], ocrBytes) {
+/**
+ * The release notes' paragraphs that say which ZIP is which and which fixed name goes into the
+ * asset field of Decaid's install; `ocrBytes` is the ocr ZIP's size.
+ */
+export function zipsNote([base, ocr], ocrBytes, [fixedBase, fixedOcr]) {
   const megabytes = Math.max(1, Math.round(ocrBytes / 1e6));
-  return `Files: ${base}: the skin; ${ocr}: the skin that also reads the bean bag, about ${megabytes} MB. Take the small one unless the reading is wanted.\n`;
+  return (
+    `Files: ${base}: the skin; ${ocr}: the skin that also reads the bean bag, about ${megabytes} MB. Take the small one unless the reading is wanted.\n\n` +
+    `${fixedBase} and ${fixedOcr} are the same two files under names without the version. In Decaid's install from a GitHub release, type ${fixedBase} (the skin) or ${fixedOcr} (the skin with the bean bag reading) into the asset field. With the field empty Decaid takes the first asset, which is the ocr ZIP, because '-ocr' sorts before '.zip'.\n`
+  );
 }
 
 /**
@@ -253,6 +264,15 @@ export function rigGroups(files) {
   ];
   groups.push(specs.filter((file) => !groups.flat().includes(file)));
   return groups.filter((group) => group.length > 0).map((group) => group.map((file) => `e2e-rig/${file}`));
+}
+
+/** The URL of an asset of the latest release, which does not change with the version. */
+export function latestAssetUrl(repository, name) {
+  const url = typeof repository === 'string' ? repository : repository?.url;
+  const base = String(url ?? '')
+    .replace(/^git\+/, '')
+    .replace(/\.git$/, '');
+  return `${base}/releases/latest/download/${name}`;
 }
 
 /** The download URL of a release's asset, from package.json's repository. */

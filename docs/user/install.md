@@ -24,6 +24,15 @@ ZIP from the release page and give it to Decaid's skin installer (see
 install by URL does not select the skin: select **pureflow** afterwards in Decaid's skin
 selector.
 
+### The asset field
+
+Decaid's install from a GitHub release has an **asset** field. Type `pureflow.zip` into it for the
+skin, or `pureflow-ocr.zip` for the skin that also reads the bean bag. Every release carries both
+names, so the field stays the same from version to version and the check for updates finds the newer
+file. If you leave the field empty, Decaid takes the first asset of the release, which is the ocr
+ZIP (`-ocr` sorts before `.zip`), about 6 MB larger than the base one. The versioned ZIPs,
+`pureflow-<version>.zip` and `pureflow-<version>-ocr.zip`, hold the same files.
+
 ## What you see after
 
 Decaid lists the skin as **pureflow** with its version. The skin opens on home:

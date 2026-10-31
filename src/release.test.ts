@@ -46,7 +46,9 @@ interface Lib {
   assetUrl(repository: unknown, tag: string, name: string): string;
   releaseZips(id: string, version: string): string[];
   sumsText(hashes: Record<string, string>): string;
-  zipsNote(names: string[], ocrBytes: number): string;
+  zipsNote(names: string[], ocrBytes: number, fixed: string[]): string;
+  fixedZips(id: string): string[];
+  latestAssetUrl(repository: unknown, name: string): string;
 }
 interface Result {
   status: number;
@@ -198,8 +200,13 @@ describe('the release script: pure parts', () => {
     expect(lib.sumsText({ [zips[0]]: 'a'.repeat(64), [zips[1]]: 'b'.repeat(64) })).toBe(
       `${'a'.repeat(64)}  pureflow-0.9.0.zip\n${'b'.repeat(64)}  pureflow-0.9.0-ocr.zip\n`,
     );
-    expect(lib.zipsNote(zips, 5_875_656)).toBe(
-      'Files: pureflow-0.9.0.zip: the skin; pureflow-0.9.0-ocr.zip: the skin that also reads the bean bag, about 6 MB. Take the small one unless the reading is wanted.\n',
+    expect(lib.fixedZips('pureflow')).toEqual(['pureflow.zip', 'pureflow-ocr.zip']);
+    expect(lib.zipsNote(zips, 5_875_656, lib.fixedZips('pureflow'))).toBe(
+      'Files: pureflow-0.9.0.zip: the skin; pureflow-0.9.0-ocr.zip: the skin that also reads the bean bag, about 6 MB. Take the small one unless the reading is wanted.\n\n' +
+        "pureflow.zip and pureflow-ocr.zip are the same two files under names without the version. In Decaid's install from a GitHub release, type pureflow.zip (the skin) or pureflow-ocr.zip (the skin with the bean bag reading) into the asset field. With the field empty Decaid takes the first asset, which is the ocr ZIP, because '-ocr' sorts before '.zip'.\n",
+    );
+    expect(lib.latestAssetUrl({ url: 'git+https://github.com/o/r.git' }, 'pureflow.zip')).toBe(
+      'https://github.com/o/r/releases/latest/download/pureflow.zip',
     );
   });
 });
@@ -289,7 +296,7 @@ describe('the release script: the flow, with git, gh and npm replaced', () => {
       if (args[0] === 'release' && args[1] === 'download') {
         const dir = args[args.indexOf('--dir') + 1];
         mkdirSync(dir, { recursive: true });
-        for (const name of ['pureflow-0.7.0.zip', 'pureflow-0.7.0-ocr.zip']) {
+        for (const name of ['pureflow-0.7.0.zip', 'pureflow-0.7.0-ocr.zip', 'pureflow.zip', 'pureflow-ocr.zip']) {
           writeFileSync(join(dir, name), readFileSync(join(root, 'release', name)));
         }
       }
@@ -306,18 +313,36 @@ describe('the release script: the flow, with git, gh and npm replaced', () => {
     expect(publish).toContain('git push --atomic origin main v0.7.0');
     const created = publish.find((call) => call.startsWith('gh release create')) ?? '';
     expect(created).toMatch(/--draft$/);
-    // Both ZIPs and the sums go up, and both come down again to be compared.
-    expect(created).toMatch(/pureflow-0\.7\.0\.zip .*pureflow-0\.7\.0-ocr\.zip .*SHA256SUMS\.txt --title/);
+    // The four names and the sums go up, and the four come down again to be compared.
+    expect(created).toMatch(
+      /pureflow-0\.7\.0\.zip .*pureflow-0\.7\.0-ocr\.zip .*pureflow\.zip .*pureflow-ocr\.zip .*SHA256SUMS\.txt --title/,
+    );
     expect(publish).toContainEqual(
       expect.stringMatching(
-        /^gh release download v0\.7\.0 --pattern pureflow-0\.7\.0\.zip --pattern pureflow-0\.7\.0-ocr\.zip --dir /,
+        /^gh release download v0\.7\.0 --pattern pureflow-0\.7\.0\.zip --pattern pureflow-0\.7\.0-ocr\.zip --pattern pureflow\.zip --pattern pureflow-ocr\.zip --dir /,
       ),
     );
+    // The fixed names carry the versioned ZIPs' bytes, and the sums list the versioned ZIPs only.
+    for (const [fixed, versioned] of [
+      ['pureflow.zip', 'pureflow-0.7.0.zip'],
+      ['pureflow-ocr.zip', 'pureflow-0.7.0-ocr.zip'],
+    ]) {
+      expect(readFileSync(join(root, 'release', fixed)).equals(readFileSync(join(root, 'release', versioned)))).toBe(true);
+    }
+    expect(readFileSync(join(root, 'release', 'SHA256SUMS.txt'), 'utf8').match(/ {2}\S+/g)).toEqual([
+      '  pureflow-0.7.0.zip',
+      '  pureflow-0.7.0-ocr.zip',
+    ]);
     expect(notes[0]).toMatch(
       /^### Added\n[\s\S]*\nFiles: pureflow-0\.7\.0\.zip: the skin; pureflow-0\.7\.0-ocr\.zip: the skin that also reads the bean bag, about 1 MB\./,
     );
+    expect(notes[0]).toContain(
+      'type pureflow.zip (the skin) or pureflow-ocr.zip (the skin with the bean bag reading) into the asset field',
+    );
     expect(lines.join('\n')).toContain('https://github.com/o/r/releases/download/v0.7.0/pureflow-0.7.0.zip');
     expect(lines.join('\n')).toContain('https://github.com/o/r/releases/download/v0.7.0/pureflow-0.7.0-ocr.zip');
+    expect(lines.join('\n')).toContain('https://github.com/o/r/releases/latest/download/pureflow.zip');
+    expect(lines.join('\n')).toContain('https://github.com/o/r/releases/latest/download/pureflow-ocr.zip');
   });
 
   it('stops at each check before anything with the line that fixes it', async () => {
