@@ -17,6 +17,8 @@
   /* The way back to home, light blue: lighter and paler than --flow
      (HSL 200° 72% 78% against 211° 100% 65%, a CIELAB distance of 40), so no curve's colour. */
   --accent: #9fd4f0;
+  /* The asleep screen: black, the display gives no light. */
+  --asleep: #000;
   /*
    * One token per meaning, not per value: a component takes the token of what its part is, so
    * that a change of one kind (a dialog's corner) leaves the others (a button's) as they are.

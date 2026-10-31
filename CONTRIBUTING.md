@@ -25,7 +25,7 @@ tests. The ocr build downloads its two models once (`npm run fetch-ocr-models`,
 Code only the ocr flavour needs goes behind `if (__OCR__)` with a dynamic `import()`, so that the
 base build leaves it out.
 
-`npm run verify` runs `check` (TypeScript and Svelte), `lint` (ESLint and the font sizes),
+`npm run verify` runs `check` (TypeScript and Svelte), `lint` (ESLint, the font sizes, the gaps and the tokens),
 `format:check` (Prettier), `test` (Vitest), `build` (both flavours), the checks of both ZIPs, the publish check (no local path, personal
 address or token in a file), the documentation's links and pictures, and `npm audit
 --audit-level=high`. CI runs the same list on every push and pull request to `main`, and beside it
@@ -38,7 +38,9 @@ show-trace trace.zip`) and picture.
 
 The design target is a tablet in landscape, 1280 x 800 CSS pixels at device scale factor 2, dark,
 every layout relative to the viewport. Blue is flow, green pressure, red temperature, yellow
-weight. Every font size is one of the six type-role tokens; the lint fails on any other.
+weight. Every font size is one of the six type-role tokens, every gap one of the four spacing tokens, and
+every corner, shadow, layer, colour and control height a token of `src/app.css`; the lint fails on
+any other.
 
 ## Testing a build on the tablet
 

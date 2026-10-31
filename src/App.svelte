@@ -534,7 +534,7 @@
     gap: var(--space-2);
     font: inherit;
     color: var(--dim);
-    background: #000;
+    background: var(--asleep);
     border: 0;
     touch-action: manipulation;
     user-select: none;

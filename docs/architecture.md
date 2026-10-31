@@ -218,7 +218,7 @@ are described in [CONTRIBUTING](../CONTRIBUTING.md#commit-messages).
 |---|---|
 | `npm test` | the Vitest unit tests, `src/**/*.test.ts`; the generator, the client and every pure module have theirs |
 | `npm run check` | svelte-check over the TypeScript and Svelte sources |
-| `npm run lint` | ESLint, then `scripts/font-sizes.mjs`: every font size in `src` is one of the six type-role tokens (`--text-label` to `--text-big` in `src/app.css`); then `scripts/spacing.mjs`: every `gap` is one of the four spacing tokens (`--space-1` to `--space-4`, 0.3 to 2.4 rem) |
+| `npm run lint` | ESLint, then `scripts/font-sizes.mjs`: every font size in `src` is one of the six type-role tokens (`--text-label` to `--text-big` in `src/app.css`); then `scripts/spacing.mjs`: every `gap` is one of the four spacing tokens (`--space-1` to `--space-4`, 0.3 to 2.4 rem); then `scripts/tokens.mjs`: outside `src/app.css` no literal `border-radius`, `box-shadow`, `z-index`, colour (hex or a colour function) or control `min-height` (from `--control` to below 4 rem). The three walk the rules of `src` with `scripts/css-rules.mjs` |
 | `npm run format:check` | Prettier, without writing |
 | `npm run e2e` | the Playwright tests of `e2e/` on the dev server (`npm run dev`, port 24800), with a mocked gateway (`e2e/mock-gateway.ts`) instead of Decaid; about 11 minutes on one machine, CI runs it in 3 shards |
 | `npm run e2e:ocr` | the Playwright tests of `e2e/*.ocr.ts` on the ocr flavour, built and served by `vite preview --mode ocr` on port 24800, with the mocked gateway |
@@ -260,4 +260,6 @@ cannot be set.
 - A corner, a control's height, a dialog's shadow, a backdrop, a layer and a motion take a token of
   `src/app.css` (`--radius*`, `--control*`, `--shadow-*`, `--scrim*`, `--layer-*`, `--motion*`),
   one per meaning, not per value: a dialog's corner and a button's are two tokens even where
-  their values meet.
+  their values meet. A colour is one of `src/app.css`'s too. The lint refuses a literal corner,
+  shadow, layer, colour or control height; `e2e/touch-targets.spec.ts` takes its minimum from
+  `--control`.

@@ -1,12 +1,13 @@
 import { expect, test, type Page } from '@playwright/test';
 import type { Profile } from '../src/api';
+import { tokenRem } from '../scripts/css-rules.mjs';
 import blooming from '../src/steps/fixtures/bundled-profiles.json' with { type: 'json' };
 import { mockGateway } from './mock-gateway';
 
 // Touch targets: every visible, enabled button and
 // `[role=button]` on the mock's screens is at least MIN_REM on its short side, in CSS px at the
-// page's root font size. The minimum is kept here alone.
-const MIN_REM = 3;
+// page's root font size. The minimum is the least control's height, `--control` in src/app.css.
+const MIN_REM = tokenRem('--control');
 
 // The one exception: the history handle is a narrow strip at the edge, and an edge swipe as well.
 const EXCEPTED = new Set(['history-handle']);

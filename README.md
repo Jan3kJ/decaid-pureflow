@@ -51,7 +51,7 @@ the browser tests.
 | Install | `npm ci` | the packages in `node_modules/` |
 | Dev server | `npm run dev` | the skin on port 24800; `npm run dev:ocr` the ocr flavour, which also reads the bean bag |
 | Type check | `npm run check` | checks the TypeScript and Svelte sources |
-| Lint | `npm run lint` | ESLint, and the font sizes |
+| Lint | `npm run lint` | ESLint, the font sizes, the gaps and the tokens |
 | Format | `npm run format:check` | Prettier, without writing |
 | Test | `npm test` | runs the Vitest tests once |
 | Browser tests | `npm run e2e` | the Playwright tests on fixture data and a mocked gateway |
