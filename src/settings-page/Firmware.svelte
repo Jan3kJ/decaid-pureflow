@@ -16,6 +16,7 @@
   import type { AppUpdateState, FirmwareCatalog, FirmwareProgress } from '../api';
   import type { Skin } from '../shell/skin.svelte';
   import Confirm from './Confirm.svelte';
+  import SettingsRow from './SettingsRow.svelte';
   import { DURATION_NOTE, REASON_TEXT, STATUS_TEXT, appUpdateText, progressText, summarize } from './firmware';
   import { errorMessage } from '../error-message';
 
@@ -112,9 +113,9 @@
 {:else if part === 'app'}
   {#if app}
     <div data-testid="app-update">
-      <div class="row"><span>Decaid version</span><b>{app.currentVersion}</b></div>
-      <div class="row"><span>update</span><b data-testid="app-update-state">{appUpdateText(app)}</b></div>
-      <div class="row"><span>releases</span><b>{app.releaseUrl}</b></div>
+      <SettingsRow label="Decaid version" spacing="tight"><b>{app.currentVersion}</b></SettingsRow>
+      <SettingsRow label="update" spacing="tight"><b data-testid="app-update-state">{appUpdateText(app)}</b></SettingsRow>
+      <SettingsRow label="releases" spacing="tight"><b>{app.releaseUrl}</b></SettingsRow>
     </div>
   {:else}
     <p class="dim">Reading Decaid's update state…</p>
@@ -122,34 +123,35 @@
 {:else if summary && catalog}
   {@const latest = summary.latest}
   <div data-testid="firmware">
-    <div class="row"><span>machine</span><b>{summary.model ?? 'None connected'}</b></div>
-    <div class="row"><span>installed build</span><b data-testid="firmware-installed">{summary.installedBuild ?? '–'}</b></div>
-    <div class="row">
-      <span>status</span>
+    <SettingsRow label="machine" spacing="tight"><b>{summary.model ?? 'None connected'}</b></SettingsRow>
+    <SettingsRow label="installed build" spacing="tight"
+      ><b data-testid="firmware-installed">{summary.installedBuild ?? '–'}</b></SettingsRow
+    >
+    <SettingsRow label="status" spacing="tight">
       <b data-testid="firmware-status" data-status={summary.status}>
         {STATUS_TEXT[summary.status]}{#if summary.status === 'unknown' && summary.reason}: {REASON_TEXT[summary.reason] ??
             summary.reason}{/if}
       </b>
-    </div>
+    </SettingsRow>
 
     {#each catalog.artifacts ?? [] as artifact (artifact.id)}
       {@const reason = artifact.eligibility?.reasons?.[0]}
-      <div class="row artifact" data-testid="firmware-artifact-{artifact.id}">
-        <div class="about">
-          <span>
-            build {artifact.versionLabel ?? artifact.build}
-            {#if artifact.id === catalog.recommendedArtifactId}<em>recommended</em>{/if}
-          </span>
+      <SettingsRow spacing="tight" testid="firmware-artifact-{artifact.id}">
+        {#snippet label()}
+          build {artifact.versionLabel ?? artifact.build}
+          {#if artifact.id === catalog?.recommendedArtifactId}<em>recommended</em>{/if}
+        {/snippet}
+        {#snippet about()}
           {#if artifact.releaseNotes}<small class="name">{artifact.releaseNotes}</small>{/if}
-        </div>
-        <b>
+        {/snippet}
+        <b class="eligibility">
           {artifact.eligibility?.status === 'applicable'
             ? 'Applies'
             : artifact.eligibility?.status === 'notApplicable'
               ? `Does not apply${reason ? `: ${REASON_TEXT[reason] ?? reason}` : ''}`
               : 'Not known'}{artifact.channel ? `, ${artifact.channel}` : ''}
         </b>
-      </div>
+      </SettingsRow>
     {/each}
 
     {#if busy}
@@ -165,23 +167,19 @@
         >
       </div>
     {:else if summary.status === 'update-available' && latest}
-      <div class="row">
-        <div class="about">
-          <span>install build {latest.versionLabel ?? latest.build}</span>
-          <small>{DURATION_NOTE}</small>
-        </div>
+      <SettingsRow label="install build {latest.versionLabel ?? latest.build}" hint={DURATION_NOTE} spacing="tight">
         <button class="action" data-testid="firmware-install" onclick={() => (confirming = true)}>install</button>
-      </div>
+      </SettingsRow>
     {/if}
     {#if !busy}
-      <div class="row">
-        <div class="about">
-          <span>install from a file</span>
-          <small>a firmware image from this device. Only for a file you trust; the machine must stay on until it is done.</small>
-        </div>
+      <SettingsRow
+        label="install from a file"
+        hint="a firmware image from this device. Only for a file you trust; the machine must stay on until it is done."
+        spacing="tight"
+      >
         <button class="action" data-testid="firmware-file" onclick={() => chooser?.click()}>choose file</button>
         <input type="file" hidden bind:this={chooser} data-testid="firmware-file-input" onchange={choose} />
-      </div>
+      </SettingsRow>
     {/if}
     {#if failed}<p class="warn" data-testid="firmware-failed">{failed}</p>{/if}
     {#if progress?.status === 'done' && !running}<p data-testid="firmware-done">{progressText(progress)}</p>{/if}
@@ -215,28 +213,6 @@
 {/if}
 
 <style>
-  .row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3);
-    min-height: var(--control-tall);
-    padding: var(--space-1) 0;
-    border-top: 1px solid var(--line);
-  }
-
-  .about {
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-  }
-
-  span {
-    font-size: var(--text-body);
-    font-weight: 600;
-  }
-
   em {
     margin-left: var(--space-1);
     font-style: normal;
@@ -245,21 +221,9 @@
     color: var(--dim);
   }
 
-  b {
-    font-weight: 400;
-    color: var(--dim);
-    overflow-wrap: anywhere;
-    text-align: right;
-  }
-
-  .artifact b {
+  .eligibility {
     flex: none;
     max-width: 40%;
-  }
-
-  small {
-    color: var(--dim);
-    font-size: var(--text-label);
   }
 
   .dim {

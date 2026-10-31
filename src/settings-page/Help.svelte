@@ -15,6 +15,7 @@
   import Lever from '../ui/Lever.svelte';
   import { FEEDBACK_TYPES, MANUAL_LINKS, feedbackText } from './bengle';
   import Confirm from './Confirm.svelte';
+  import SettingsRow from './SettingsRow.svelte';
 
   interface Props {
     skin: Skin;
@@ -60,10 +61,9 @@
 {#if part === 'manual'}
   <div data-testid="manual">
     {#each MANUAL_LINKS as link (link.id)}
-      <div class="row">
-        <span>{link.label}</span>
+      <SettingsRow label={link.label} spacing="tight">
         <a class="action" data-testid="manual-{link.id}" href={link.url} target="_blank" rel="noopener noreferrer">view</a>
-      </div>
+      </SettingsRow>
     {/each}
     <p class="dim">The guides open in the browser and need the internet.</p>
   </div>
@@ -88,19 +88,19 @@
       <span>description</span>
       <textarea data-testid="feedback-description" rows="5" bind:value={description} placeholder="Tell us more…"></textarea>
     </label>
-    <div class="row">
-      <div class="about">
-        <span>attach system information and logs</span>
-        <small>Decaid's version, the machine and its log help to find the cause.</small>
-      </div>
+    <SettingsRow
+      label="attach system information and logs"
+      hint="Decaid's version, the machine and its log help to find the cause."
+      spacing="tight"
+    >
       <Lever
         checked={attach}
         label="Attach system information and logs"
         testid="feedback-attach"
         onchange={(on: boolean) => (attach = on)}
       />
-    </div>
-    <div class="row">
+    </SettingsRow>
+    <SettingsRow spacing="tight">
       <div class="status" aria-live="polite">
         {#if failed}<b class="warn" data-testid="feedback-failed">Error: {failed}</b>{/if}
         {#if sent}
@@ -113,7 +113,7 @@
       <button class="action primary" data-testid="feedback-send" disabled={!ready || sending} onclick={() => (asking = true)}
         >{sending ? 'submitting…' : 'send'}</button
       >
-    </div>
+    </SettingsRow>
   </div>
 {/if}
 
@@ -128,23 +128,6 @@
 {/if}
 
 <style>
-  .row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3);
-    min-height: var(--control-tall);
-    padding: var(--space-1) 0;
-    border-top: 1px solid var(--line);
-  }
-
-  .about {
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-  }
-
   span {
     font-size: var(--text-body);
     font-weight: 600;

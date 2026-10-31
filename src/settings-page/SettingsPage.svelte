@@ -23,6 +23,7 @@
   import Maintenance from './Maintenance.svelte';
   import Plugins from './Plugins.svelte';
   import Presence from './Presence.svelte';
+  import SettingsRow from './SettingsRow.svelte';
   import SensorCalibration from './SensorCalibration.svelte';
   import SkinCategory from './SkinCategory.svelte';
   import TankUnit from './TankUnit.svelte';
@@ -285,19 +286,17 @@
             {/each}
             {#if sub.content.below}{@render shown()}{/if}
             {#each (sub.content.actions ?? []).filter(offered) as action (action)}
-              <div class="row">
-                <div class="about">
-                  <strong>{ACTIONS[action].label}</strong>
-                  <small>{ACTIONS[action].hint}</small>
+              <SettingsRow label={ACTIONS[action].label} hint={ACTIONS[action].hint}>
+                {#snippet about()}
                   {#if done[sub.id]}<small data-testid="settings-done-{action}">{done[sub.id]}</small>{/if}
-                </div>
+                {/snippet}
                 <button
                   class="action"
                   data-testid="settings-action-{action}"
                   disabled={!!busy[action]}
                   onclick={() => act(sub, action)}>{ACTIONS[action].label}</button
                 >
-              </div>
+              </SettingsRow>
             {/each}
           {/if}
         </section>
@@ -341,6 +340,11 @@
     margin: 0;
     min-width: 0;
     color: var(--dim);
+  }
+
+  small {
+    color: var(--dim);
+    font-size: var(--text-label);
   }
 
   .version {
@@ -410,32 +414,6 @@
 
   .warn {
     color: var(--temperature);
-  }
-
-  .row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3);
-    padding: var(--space-2) 0;
-    border-top: 1px solid var(--line);
-  }
-
-  .about {
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-  }
-
-  strong {
-    font-size: var(--text-body);
-    font-weight: 600;
-  }
-
-  small {
-    color: var(--dim);
-    font-size: var(--text-label);
   }
 
   .action:disabled {

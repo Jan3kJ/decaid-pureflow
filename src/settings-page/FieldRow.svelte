@@ -9,6 +9,7 @@
   // One setting of the settings page: its name and hint on the left, its value on the right as
   // a value button (the number pad), a row of choices or a switch. The page writes it.
   import Lever from '../ui/Lever.svelte';
+  import SettingsRow from './SettingsRow.svelte';
   import NumberPad from '../editor/NumberPad.svelte';
   import { clock, heldNumber, minutesOf, numberText, padMin, shownValue, type Field } from './fields';
 
@@ -52,14 +53,11 @@
   const info = $derived(field.kind === 'info' ? (field.format ? field.format(raw, all ?? {}) : known ? String(raw) : null) : null);
 </script>
 
-<div class="row" class:busy data-testid="row-{field.id}">
-  <div class="about">
-    <strong>{field.label}</strong>
-    {#if field.hint}<small>{field.hint}</small>{/if}
+<SettingsRow label={field.label} hint={field.hint} {busy} testid="row-{field.id}">
+  {#snippet about()}
     {#if error}<small class="warn" data-testid="setting-error-{field.id}">{error}</small>{/if}
     {#if read && !known && field.kind !== 'info'}<small class="warn">not supported by this machine</small>{/if}
-  </div>
-
+  {/snippet}
   {#if field.kind === 'number' || field.kind === 'time'}
     <button class="value" data-testid="setting-{field.id}" disabled={!known || busy} onclick={() => (typing = true)}>
       <b
@@ -91,7 +89,7 @@
   {:else}
     <span class="info" data-testid="setting-{field.id}">{info ?? '–'}</span>
   {/if}
-</div>
+</SettingsRow>
 
 {#if typing && field.kind === 'number'}
   <NumberPad
@@ -119,66 +117,12 @@
 {/if}
 
 <style>
-  .row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3);
-    padding: var(--space-2) 0;
-    border-top: 1px solid var(--line);
-  }
-
-  .busy {
-    opacity: 0.6;
-  }
-
-  .about {
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-  }
-
-  strong {
-    font-size: var(--text-body);
-    font-weight: 600;
-  }
-
-  small {
-    color: var(--dim);
-    font-size: var(--text-label);
-  }
-
   .warn {
     color: var(--temperature);
   }
 
   button:disabled {
     opacity: 0.5;
-  }
-
-  .value {
-    flex: none;
-    min-width: 8rem;
-    min-height: var(--control-big);
-    padding: 0 0.8rem;
-    background: var(--raised);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-  }
-
-  .value b {
-    font-size: var(--text-value);
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-  }
-
-  i {
-    margin-left: 0.25em;
-    font-style: normal;
-    font-size: var(--text-label);
-    font-weight: 400;
-    color: var(--dim);
   }
 
   .choices {

@@ -13,6 +13,7 @@
   import { onMount } from 'svelte';
   import type { CupWarmerPreheat, CupWarmerState, LedStripState, ScaleCalibrationState } from '../api';
   import Lever from '../ui/Lever.svelte';
+  import SettingsRow from './SettingsRow.svelte';
   import NumberPad from '../editor/NumberPad.svelte';
   import { errorMessage } from '../error-message';
   import type { Skin } from '../shell/skin.svelte';
@@ -132,11 +133,10 @@
 {:else if part === 'cup-warmer'}
   {#if warmer}
     <div data-testid="cup-warmer">
-      <div class="row">
-        <span>mat temperature</span><b data-testid="cup-warmer-current">{matReading(warmer.currentTemperature)}</b>
-      </div>
-      <div class="row">
-        <span>cup warmer</span>
+      <SettingsRow label="mat temperature" spacing="tight">
+        <b data-testid="cup-warmer-current">{matReading(warmer.currentTemperature)}</b>
+      </SettingsRow>
+      <SettingsRow label="cup warmer" spacing="tight">
         <Lever
           checked={heating}
           label="Cup warmer"
@@ -144,20 +144,21 @@
           testid="cup-warmer-switch"
           onchange={(on: boolean) => setMat(on ? { temperature: target } : { enabled: false })}
         />
-      </div>
-      <div class="row">
-        <span>target</span>
-        <button class="value" disabled={busy} data-testid="cup-warmer-target" onclick={() => (typing = 'temperature')}
+      </SettingsRow>
+      <SettingsRow label="target" spacing="tight">
+        <button class="action" disabled={busy} data-testid="cup-warmer-target" onclick={() => (typing = 'temperature')}
           >{target}<i>°C</i></button
         >
-      </div>
+      </SettingsRow>
       {#if preheat}
-        <div class="row">
-          <div class="about">
-            <span>pre-warm before a wake schedule</span>
-            <small>the firmware starts the mat before a scheduled wake and holds it until the window closes.</small>
-            {#if preheat.active}<small data-testid="cup-warmer-preheat-active">the wake schedule heats the mat now.</small>{/if}
-          </div>
+        <SettingsRow
+          label="pre-warm before a wake schedule"
+          hint="the firmware starts the mat before a scheduled wake and holds it until the window closes."
+          spacing="tight"
+        >
+          {#snippet about()}
+            {#if preheat?.active}<small data-testid="cup-warmer-preheat-active">the wake schedule heats the mat now.</small>{/if}
+          {/snippet}
           <Lever
             checked={preheat.enabled}
             label="Pre-warm"
@@ -165,13 +166,12 @@
             testid="cup-warmer-preheat"
             onchange={(on: boolean) => setPreheat({ enabled: on })}
           />
-        </div>
-        <div class="row">
-          <span>pre-warm lead</span>
-          <button class="value" disabled={busy} data-testid="cup-warmer-lead" onclick={() => (typing = 'lead')}
+        </SettingsRow>
+        <SettingsRow label="pre-warm lead" spacing="tight">
+          <button class="action" disabled={busy} data-testid="cup-warmer-lead" onclick={() => (typing = 'lead')}
             >{preheat.leadMinutes}<i>min</i></button
           >
-        </div>
+        </SettingsRow>
       {/if}
     </div>
   {:else}
@@ -182,8 +182,7 @@
     <div data-testid="lighting">
       {#each ZONES as zone (zone.id)}
         {#each MOMENTS as moment (moment.id)}
-          <div class="row">
-            <span>{zone.label}, {moment.label}</span>
+          <SettingsRow label="{zone.label}, {moment.label}" spacing="tight">
             <input
               type="color"
               aria-label="{zone.label}, {moment.label}"
@@ -192,62 +191,56 @@
               disabled={busy}
               onchange={(event) => (draft![zone.id][moment.id] = fromInputColour(event.currentTarget.value))}
             />
-          </div>
+          </SettingsRow>
         {/each}
       {/each}
-      <div class="row">
-        <small>the strips take the colours at once and the machine keeps them.</small>
+      <SettingsRow hint="the strips take the colours at once and the machine keeps them." spacing="tight">
         <span class="buttons">
           <button class="action" data-testid="led-reload" disabled={busy || !changed} onclick={read}>discard</button>
           <button class="action primary" data-testid="led-save" disabled={busy || !changed} onclick={saveStrip}>save</button>
         </span>
-      </div>
+      </SettingsRow>
     </div>
   {:else}
     <p class="dim">Reading the lighting…</p>
   {/if}
 {:else if calibration}
   <div data-testid="load-cells">
-    <div class="row">
-      <span>calibration</span>
+    <SettingsRow label="calibration" spacing="tight">
       <b data-testid="calibration-step">{STEP_TEXT[calibration.step]}{running ? ` (${calibration.secondsRemaining} s)` : ''}</b>
-    </div>
-    <div class="row">
-      <span>last latch</span>
+    </SettingsRow>
+    <SettingsRow label="last latch" spacing="tight">
       <b data-testid="calibration-result"
         >{RESULT_TEXT[calibration.status] ?? calibration.status}{#if calibration.detectedCell !== 'none'}, load cell {calibration.detectedCell.toUpperCase()}{/if}</b
       >
-    </div>
-    <div class="row">
-      <div class="about">
-        <span>1. precision zero</span>
-        <small>the platform stays empty.</small>
-      </div>
+    </SettingsRow>
+    <SettingsRow label="1. precision zero" hint="the platform stays empty." spacing="tight">
       <button class="action" data-testid="calibration-zero" disabled={busy || running} onclick={() => sendCalibration('zero')}
         >find zero</button
       >
-    </div>
-    <div class="row">
-      <div class="about">
-        <span>2. known mass on one load cell</span>
-        <small>take the platform off, put the mass on one load cell, once for each cell.</small>
-      </div>
-      <button class="value" disabled={busy || running} data-testid="calibration-grams" onclick={() => (typing = 'grams')}
-        >{grams}<i>g</i></button
-      >
-      <button
-        class="action"
-        data-testid="calibration-latch"
-        disabled={busy || running || !validGrams(grams)}
-        onclick={() => sendCalibration({ latch: grams })}>latch</button
-      >
-    </div>
-    <div class="row">
-      <span>stop the procedure</span>
+    </SettingsRow>
+    <SettingsRow
+      label="2. known mass on one load cell"
+      hint="take the platform off, put the mass on one load cell, once for each cell."
+      spacing="tight"
+    >
+      <span class="pair">
+        <button class="action" disabled={busy || running} data-testid="calibration-grams" onclick={() => (typing = 'grams')}
+          >{grams}<i>g</i></button
+        >
+        <button
+          class="action"
+          data-testid="calibration-latch"
+          disabled={busy || running || !validGrams(grams)}
+          onclick={() => sendCalibration({ latch: grams })}>latch</button
+        >
+      </span>
+    </SettingsRow>
+    <SettingsRow label="stop the procedure" spacing="tight">
       <button class="action" data-testid="calibration-abort" disabled={busy || !running} onclick={() => sendCalibration('abort')}
         >abort</button
       >
-    </div>
+    </SettingsRow>
   </div>
 {:else}
   <p class="dim">Reading the calibration…</p>
@@ -268,41 +261,6 @@
 {/if}
 
 <style>
-  .row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3);
-    min-height: var(--control-tall);
-    padding: var(--space-1) 0;
-    border-top: 1px solid var(--line);
-  }
-
-  .about {
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-    flex: 1;
-  }
-
-  span {
-    font-size: var(--text-body);
-    font-weight: 600;
-  }
-
-  b {
-    font-weight: 400;
-    color: var(--dim);
-    overflow-wrap: anywhere;
-    text-align: right;
-  }
-
-  small {
-    color: var(--dim);
-    font-size: var(--text-label);
-  }
-
   i {
     margin-left: var(--space-1);
     font-style: normal;
@@ -322,21 +280,20 @@
     gap: var(--space-2);
   }
 
+  /* The known mass beside its latch, both at the row's right end. */
+  .pair {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
   button {
     font-weight: 400;
   }
 
   button:disabled {
     opacity: 0.5;
-  }
-
-  .value {
-    flex: none;
-    min-height: var(--control);
-    padding: 0 1rem;
-    background: var(--raised);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
   }
 
   /* The row's main action: the white outline, not the main button's fill; off, it is the shared off look. */

@@ -18,6 +18,7 @@
   import NumberPad from '../editor/NumberPad.svelte';
   import type { Skin } from '../shell/skin.svelte';
   import Confirm from './Confirm.svelte';
+  import SettingsRow from './SettingsRow.svelte';
   import { textOf } from './text';
   import {
     STATUS_LABEL,
@@ -149,16 +150,17 @@
 </script>
 
 <div class="plugins" data-testid="plugins">
-  <div class="row">
-    <div class="about">
-      <strong>check for plugin updates</strong>
-      <small>Decaid checks every plugin installed from GitHub; one that asks for more permissions waits for approval.</small>
+  <SettingsRow
+    label="check for plugin updates"
+    hint="Decaid checks every plugin installed from GitHub; one that asks for more permissions waits for approval."
+  >
+    {#snippet about()}
       {#if checked}<small data-testid="plugins-checked">{checked}</small>{/if}
-    </div>
+    {/snippet}
     <button class="action" data-testid="plugins-check" disabled={checking || !plugins} onclick={checkUpdates}
       >{checking ? 'checking…' : 'check'}</button
     >
-  </div>
+  </SettingsRow>
 
   {#if readError}
     <p class="warn" data-testid="plugins-error">
@@ -183,11 +185,10 @@
       {#if plugin.description}<p class="description">{plugin.description}</p>{/if}
       {#if plugin.source?.lastError}<p class="warn">{plugin.source.lastError}</p>{/if}
 
-      <div class="row">
-        <div class="about">
-          <strong>enabled</strong>
+      <SettingsRow label="enabled">
+        {#snippet about()}
           {#if failed[plugin.id]}<small class="warn" data-testid="plugin-error-{plugin.id}">{failed[plugin.id]}</small>{/if}
-        </div>
+        {/snippet}
         <Lever
           checked={plugin.loaded === true}
           label="{plugin.name || plugin.id} enabled"
@@ -195,31 +196,34 @@
           testid="plugin-enabled-{plugin.id}"
           onchange={(on: boolean) => enable(plugin, on)}
         />
-      </div>
+      </SettingsRow>
 
       {#if plugin.pendingUpdate}
-        <div class="row">
-          <div class="about">
-            <strong>update {plugin.pendingUpdate.version ?? ''}</strong>
-            <small>asks for: {(plugin.pendingUpdate.addedPermissions ?? []).join(', ') || 'more permissions'}</small>
-          </div>
+        <SettingsRow
+          label="update {plugin.pendingUpdate.version ?? ''}"
+          hint="asks for: {(plugin.pendingUpdate.addedPermissions ?? []).join(', ') || 'more permissions'}"
+        >
           <button class="action" data-testid="plugin-approve-{plugin.id}" disabled={!!busy[plugin.id]} onclick={() => approve(plugin)}
             >approve</button
           >
-        </div>
+        </SettingsRow>
       {/if}
 
       {#each controls as control (control.key)}
         {@const at = `${plugin.id}/${control.key}`}
         {@const value = valueOf(plugin, control)}
         {@const read = stored[plugin.id] !== undefined}
-        <div class="row" class:busy={busy[at]} data-testid="plugin-row-{plugin.id}-{control.key}">
-          <div class="about">
-            <strong class="name">{control.label}</strong>
-            {#if control.description}<small class="name">{control.description}</small>{/if}
+        <SettingsRow
+          label={control.label}
+          hint={control.description || undefined}
+          named
+          busy={!!busy[at]}
+          testid="plugin-row-{plugin.id}-{control.key}"
+        >
+          {#snippet about()}
             {#if read && !isStored(control, stored[plugin.id]) && control.kind !== 'secure'}<small>default</small>{/if}
             {#if failed[at]}<small class="warn" data-testid="plugin-error-{plugin.id}-{control.key}">{failed[at]}</small>{/if}
-          </div>
+          {/snippet}
           {#if control.kind === 'boolean'}
             <Lever
               checked={value === true}
@@ -269,7 +273,7 @@
               onchange={(event) => write(plugin, control, event.currentTarget.value)}
             />
           {/if}
-        </div>
+        </SettingsRow>
       {/each}
     </article>
   {/each}
@@ -347,36 +351,6 @@
     font-size: var(--text-body);
   }
 
-  .row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3);
-    padding: var(--space-2) 0;
-    border-top: 1px solid var(--line);
-  }
-
-  .busy {
-    opacity: 0.6;
-  }
-
-  .about {
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-  }
-
-  strong {
-    font-size: var(--text-body);
-    font-weight: 600;
-  }
-
-  small {
-    color: var(--dim);
-    font-size: var(--text-label);
-  }
-
   .dim {
     color: var(--dim);
   }
@@ -395,22 +369,6 @@
   button:disabled,
   input:disabled {
     opacity: 0.5;
-  }
-
-  .value {
-    flex: none;
-    min-width: 8rem;
-    min-height: var(--control-big);
-    padding: 0 0.8rem;
-    background: var(--raised);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-  }
-
-  .value b {
-    font-size: var(--text-value);
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
   }
 
   input {

@@ -15,6 +15,7 @@
   import type { Skin } from '../shell/skin.svelte';
   import Lever from '../ui/Lever.svelte';
   import Confirm from './Confirm.svelte';
+  import SettingsRow from './SettingsRow.svelte';
   import { clock, minutesOf } from './fields';
   import { DAYS, KEEP_AWAKE_MAX, NEW_SCHEDULE, formOf, scheduleOf, scheduleText, type ScheduleForm } from './presence';
   import { errorMessage } from '../error-message';
@@ -84,27 +85,24 @@
 </script>
 
 <div class="presence" data-testid="presence-schedules">
-  <div class="row">
-    <div class="about">
-      <strong>wake schedules</strong>
-      <small>the machine wakes at these times, and stays awake for the time given.</small>
+  <SettingsRow label="wake schedules" hint="the machine wakes at these times, and stays awake for the time given.">
+    {#snippet about()}
       {#if error}<small class="warn" data-testid="schedule-error">{error}</small>{/if}
-    </div>
+    {/snippet}
     <button
       class="action"
       data-testid="schedule-add"
       disabled={busy || schedules === null || editing !== null}
       onclick={() => edit(null)}>add schedule</button
     >
-  </div>
+  </SettingsRow>
 
   {#if schedules !== null && !schedules.length && editing !== 'new'}
     <p class="dim">No schedules.</p>
   {/if}
 
   {#each schedules ?? [] as schedule (schedule.id)}
-    <div class="row" data-testid="schedule-{schedule.id}">
-      <div class="about"><strong class="name" data-testid="schedule-text-{schedule.id}">{scheduleText(schedule)}</strong></div>
+    <SettingsRow label={scheduleText(schedule)} named testid="schedule-{schedule.id}" labelTestid="schedule-text-{schedule.id}">
       <div class="buttons">
         <Lever
           checked={schedule.enabled}
@@ -123,18 +121,16 @@
           >delete</button
         >
       </div>
-    </div>
+    </SettingsRow>
   {/each}
 
   {#if editing !== null}
     <div class="form" data-testid="schedule-form">
       <h3>{editing === 'new' ? 'New schedule' : 'Edit schedule'}</h3>
-      <div class="row">
-        <div class="about"><strong>wake at</strong></div>
+      <SettingsRow label="wake at">
         <button class="value" data-testid="schedule-time" onclick={() => (typing = 'time')}><b>{clock(form.minutes)}</b></button>
-      </div>
-      <div class="row">
-        <div class="about"><strong>days</strong><small>none chosen: every day.</small></div>
+      </SettingsRow>
+      <SettingsRow label="days" hint="none chosen: every day.">
         <div class="choices">
           {#each DAYS as day, i (day)}
             <button
@@ -145,19 +141,16 @@
             >
           {/each}
         </div>
-      </div>
-      <div class="row">
-        <div class="about">
-          <strong>keep awake for</strong><small>minutes after it wakes, at most 720 (12 hours); 0 only wakes.</small>
-        </div>
+      </SettingsRow>
+      <SettingsRow label="keep awake for" hint="minutes after it wakes, at most 720 (12 hours); 0 only wakes.">
         <button class="value" data-testid="schedule-keep-awake" onclick={() => (typing = 'keep-awake')}
           ><b>{form.keepAwake}<i>min</i></b></button
         >
-      </div>
-      <div class="row end">
+      </SettingsRow>
+      <SettingsRow end>
         <button class="action" data-testid="schedule-cancel" disabled={busy} onclick={() => (editing = null)}>cancel</button>
         <button class="action primary" data-testid="schedule-save" disabled={busy} onclick={save}>save</button>
-      </div>
+      </SettingsRow>
     </div>
   {/if}
 </div>
@@ -210,36 +203,6 @@
     flex-direction: column;
   }
 
-  .row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3);
-    padding: var(--space-2) 0;
-    border-top: 1px solid var(--line);
-  }
-
-  .row.end {
-    justify-content: flex-end;
-  }
-
-  .about {
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-  }
-
-  strong {
-    font-size: var(--text-body);
-    font-weight: 600;
-  }
-
-  small {
-    color: var(--dim);
-    font-size: var(--text-label);
-  }
-
   .dim {
     color: var(--dim);
   }
@@ -271,30 +234,6 @@
 
   button:disabled {
     opacity: 0.5;
-  }
-
-  .value {
-    flex: none;
-    min-width: 8rem;
-    min-height: var(--control-big);
-    padding: 0 0.8rem;
-    background: var(--raised);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-  }
-
-  .value b {
-    font-size: var(--text-value);
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-  }
-
-  i {
-    margin-left: 0.25em;
-    font-style: normal;
-    font-size: var(--text-label);
-    font-weight: 400;
-    color: var(--dim);
   }
 
   .choices {

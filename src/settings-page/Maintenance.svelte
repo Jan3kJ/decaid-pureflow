@@ -12,6 +12,7 @@
   import { onDestroy, onMount } from 'svelte';
   import type { Skin } from '../shell/skin.svelte';
   import Confirm from './Confirm.svelte';
+  import SettingsRow from './SettingsRow.svelte';
   import {
     IDLE,
     NEEDS_WATER,
@@ -162,10 +163,8 @@
 </script>
 
 <div class="procedure" data-testid="maintenance-{procedure.id}">
-  <div class="row">
-    <div class="about">
-      {#if titled}<strong>{procedure.title}</strong>{/if}
-      <small>{procedure.description}</small>
+  <SettingsRow label={titled ? procedure.title : undefined} hint={procedure.description}>
+    {#snippet about()}
       {#if procedure.link}
         <small><a href={procedure.link.href} target="_blank" rel="noreferrer">{procedure.link.label}</a></small>
       {/if}
@@ -178,13 +177,13 @@
         {/if}
         <small data-testid="maintenance-drip-tray-{procedure.id}">empty the drip tray before starting.</small>
       {/if}
-    </div>
+    {/snippet}
     {#if active}
       <button class="action" data-testid="maintenance-cancel-{procedure.id}" onclick={cancel}>cancel</button>
     {:else}
       <button class="action primary" data-testid="maintenance-start-{procedure.id}" onclick={ask}>start</button>
     {/if}
-  </div>
+  </SettingsRow>
 
   {#if line}
     <div class="progress" role="status" aria-live="polite">
@@ -207,27 +206,6 @@
 {/if}
 
 <style>
-  .row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3);
-    padding: var(--space-2) 0;
-    border-top: 1px solid var(--line);
-  }
-
-  .about {
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-  }
-
-  strong {
-    font-size: var(--text-body);
-    font-weight: 600;
-  }
-
   small {
     color: var(--dim);
     font-size: var(--text-label);

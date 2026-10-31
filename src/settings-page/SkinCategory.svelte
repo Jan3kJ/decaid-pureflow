@@ -26,6 +26,7 @@
   import { importQuestion, importReport, planImport, runImport, type ImportPlan } from '../editor/import';
   import Confirm from './Confirm.svelte';
   import Skins from './Skins.svelte';
+  import SettingsRow from './SettingsRow.svelte';
   import LocalInstall from './LocalInstall.svelte';
   import { saveDeveloper } from './local-install';
   import { DISPLAY_SIZES, LINE_WIDTHS, signed, type DisplayChoice } from '../display';
@@ -225,20 +226,16 @@
   <h2>{SUB['skin-steam'].name}</h2>
   <p class="hint">{SUB['skin-steam'].hint}</p>
   {#each STEAM_FIELDS as group (group.title)}
-    <div class="row">
-      <div class="about">
-        <strong>{group.title}</strong>
-        <small>{group.hint}</small>
-      </div>
+    <SettingsRow label={group.title} hint={group.hint} spacing="skin">
       <div class="values">
         {#each group.fields as field (field.id)}
-          <button class="value" data-testid="setting-{field.id}" onclick={() => (typing = field)}>
+          <button class="tile" data-testid="setting-{field.id}" onclick={() => (typing = field)}>
             <small>{field.label}</small>
             <b>{shown(field)}<i>{field.unit}</i></b>
           </button>
         {/each}
       </div>
-    </div>
+    </SettingsRow>
   {/each}
 </section>
 
@@ -246,66 +243,64 @@
 <section id="sub-skin-hot-water" data-testid="settings-hot-water">
   <h2>{SUB['skin-hot-water'].name}</h2>
   <p class="hint">{SUB['skin-hot-water'].hint}</p>
-  <div class="row">
-    <div class="about">
-      <strong>ratios</strong>
-      <small>last shot × ratio is the stop at weight</small>
-    </div>
+  <SettingsRow label="ratios" hint="last shot × ratio is the stop at weight" spacing="skin">
     <div class="values">
       {#each settings.hotWater.ratios, index}
-        <button class="value" data-testid="setting-ratio-{index + 1}" onclick={() => (typingRatio = index)}>
+        <button class="tile" data-testid="setting-ratio-{index + 1}" onclick={() => (typingRatio = index)}>
           <small>{index + 1}</small>
           <b><i class="lead">1:</i>{shownRatio(index)}</b>
         </button>
       {/each}
     </div>
-  </div>
+  </SettingsRow>
 </section>
 
 <section id="sub-skin-profile" data-testid="settings-profile">
   <h2>{SUB['skin-profile'].name}</h2>
   <!-- The editor's maximum flow and the dose of a shot that has none -->
-  <div class="row">
-    <div class="about">
-      <strong>editor and dose</strong>
-      <small>the highest flow the A-Flow editor offers; the dose of a shot that has none</small>
-    </div>
+  <SettingsRow
+    label="editor and dose"
+    hint="the highest flow the A-Flow editor offers; the dose of a shot that has none"
+    spacing="skin"
+  >
     <div class="values">
       {#each PROFILE_FIELDS as field (field.id)}
-        <button class="value" data-testid="setting-{field.id}" onclick={() => (typingProfile = field)}>
+        <button class="tile" data-testid="setting-{field.id}" onclick={() => (typingProfile = field)}>
           <small>{field.label}</small>
           <b>{shownProfile(field)}<i>{field.unit}</i></b>
         </button>
       {/each}
     </div>
-  </div>
+  </SettingsRow>
   {#each SWITCHES as item (item.key)}
     {@render lever(item)}
   {/each}
 
-  <div class="row">
-    <span class="about">
-      <strong>old A-Flow profiles</strong>
-      <small>converts every older A-Flow profile to A-Flow 3.0, as the editor's save does; Decaid's bundled ones are skipped.</small>
+  <SettingsRow
+    label="old A-Flow profiles"
+    hint="converts every older A-Flow profile to A-Flow 3.0, as the editor's save does; Decaid's bundled ones are skipped."
+    spacing="skin"
+  >
+    {#snippet about()}
       {#if imported}<small data-testid="aflow-import-result">{imported}</small>{/if}
-    </span>
+    {/snippet}
     <button class="retry" data-testid="aflow-import" disabled={importBusy} onclick={findOld}>convert to 3.0</button>
-  </div>
+  </SettingsRow>
 
   <div class="start" data-testid="settings-start">
-    <div class="row">
-      <div class="about">
-        <strong>start row</strong>
-        <small>the editor's profiles to start from, up to five. A tap on a slot chooses its profile.</small>
-      </div>
+    <SettingsRow
+      label="start row"
+      hint="the editor's profiles to start from, up to five. A tap on a slot chooses its profile."
+      spacing="skin"
+    >
       {#if unread}
         <button class="retry" data-testid="start-retry" onclick={readProfiles}>{unread} try again</button>
       {/if}
-    </div>
+    </SettingsRow>
     <div class="slots">
       {#each settings.startProfiles as title, index (index)}
         <button
-          class="value slot"
+          class="tile slot"
           class:missing={title !== null && isMissing(title)}
           data-testid="start-slot-{index + 1}"
           onclick={() => (choosing = index)}
@@ -334,11 +329,7 @@
   <h2>{SUB['skin-display'].name}</h2>
   <p class="hint">{SUB['skin-display'].hint}</p>
   {#each DISPLAY as item (item.key)}
-    <div class="row">
-      <span class="about">
-        <strong>{item.title}</strong>
-        <small>{item.hint}</small>
-      </span>
+    <SettingsRow label={item.title} hint={item.hint} spacing="skin">
       <div class="chips" data-testid="setting-{item.id}">
         {#each item.choices as choice (choice.value)}
           <button
@@ -349,7 +340,7 @@
           >
         {/each}
       </div>
-    </div>
+    </SettingsRow>
   {/each}
 </section>
 
@@ -362,25 +353,19 @@
 <!-- The backup in Decaid's KV store, and the skin's name and version. -->
 <section id="sub-skin-backup" data-testid="settings-backup">
   <h2>{SUB['skin-backup'].name}</h2>
-  <div class="row">
-    <span class="about">
-      <strong>backup</strong>
+  <SettingsRow label="backup" spacing="skin">
+    {#snippet about()}
       <small data-testid="backup-time">
         {skin.backupAt ? `in Decaid, ${backupTime(skin.backupAt)}` : 'none yet'}; every change is copied to Decaid
       </small>
       {#if skin.backupError}<small class="warn" data-testid="backup-error">{skin.backupError}</small>{/if}
       {#if restored}<small data-testid="backup-restored">{restored}</small>{/if}
-    </span>
+    {/snippet}
     <button class="retry" data-testid="backup-restore" onclick={() => ((restored = null), (confirming = true))}
       >restore from backup</button
     >
-  </div>
-  <div class="row">
-    <span class="about">
-      <strong>{PRODUCT_NAME}</strong>
-      <small>version {PRODUCT_VERSION}</small>
-    </span>
-  </div>
+  </SettingsRow>
+  <SettingsRow label={PRODUCT_NAME} hint="version {PRODUCT_VERSION}" spacing="skin" />
   <Lever checked={developer} testid="setting-developer" onchange={toggleDeveloper}>
     <span class="about">
       <strong>developer options</strong>
@@ -513,15 +498,6 @@
     font-weight: 600;
   }
 
-  .row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3);
-    padding: 0.8rem 0;
-    border-top: 1px solid var(--line);
-  }
-
   .about {
     min-width: 0;
     display: flex;
@@ -550,7 +526,8 @@
     gap: var(--space-2);
   }
 
-  .value {
+  /* A value with its caption above, to tap for the number pad. */
+  .tile {
     width: 7rem;
     min-height: 4.2rem;
     display: flex;
@@ -563,22 +540,14 @@
     border-radius: var(--radius);
   }
 
-  .value b {
+  .tile b {
     font-size: var(--text-value);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
   }
 
-  .value .lead {
+  .tile .lead {
     margin: 0 0.1em 0 0;
-  }
-
-  i {
-    margin-left: 0.25em;
-    font-style: normal;
-    font-size: var(--text-label);
-    font-weight: 400;
-    color: var(--dim);
   }
 
   .slots {
@@ -588,7 +557,7 @@
     padding-bottom: var(--space-1);
   }
 
-  .value.slot {
+  .tile.slot {
     width: auto;
     min-width: 0;
     padding: 0 0.6rem;

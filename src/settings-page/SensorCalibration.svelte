@@ -180,7 +180,7 @@
       {@const live = reading(sensor, skin.snapshot)}
       {@const planned = plan(sensor, entry)}
       <div class="sensor" data-testid="sensor-{sensor.id}">
-        <div class="row">
+        <div class="line">
           <strong>{sensor.label}</strong>
           <span class="cell">stored <b data-testid="sensor-stored-{sensor.id}">{calibrationText(sensor.kind, entry.current)}</b></span>
           <span class="cell"
@@ -194,7 +194,7 @@
             onclick={() => restore(sensor)}>restore</button
           >
         </div>
-        <div class="row">
+        <div class="line">
           <span class="cell">machine reads <b data-testid="sensor-reading-{sensor.id}">{readingText(sensor, live)}</b></span>
           <button
             class="action"
@@ -266,7 +266,8 @@
     padding: var(--space-1) 0;
   }
 
-  .row {
+  /* A sensor's line: its name, readings and buttons side by side, no setting's row. */
+  .line {
     display: flex;
     align-items: center;
     gap: var(--space-3);

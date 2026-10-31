@@ -118,7 +118,7 @@ function capitalisedTexts(page: Page, where: string): Promise<string[]> {
   return page
     .getByTestId('settings-content')
     .locator(
-      '.about > strong:visible, .about > small:visible, .about > span:visible, .row > span:first-child:visible, section > p.hint:visible',
+      '.about > strong:visible, .about > small:visible, .about > span:visible, .row > strong:first-child:visible, section > p.hint:visible',
     )
     .evaluateAll(
       (texts, [where, proper]) =>

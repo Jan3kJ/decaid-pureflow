@@ -13,6 +13,7 @@
   import { onMount } from 'svelte';
   import type { DecaidSettings, MachineInfo } from '../api';
   import type { Skin } from '../shell/skin.svelte';
+  import SettingsRow from './SettingsRow.svelte';
   import { errorMessage } from '../error-message';
 
   interface Props {
@@ -77,10 +78,11 @@
 {#if part === 'machine-info'}
   <div class="info" data-testid="machine-info">
     {#if info}
-      <div class="row"><span>model</span><b data-testid="machine-info-model">{info.model ?? '–'}</b></div>
-      <div class="row"><span>firmware version</span><b data-testid="machine-info-firmware">{info.version ?? '–'}</b></div>
-      <div class="row">
-        <span>serial number</span>
+      <SettingsRow label="model" spacing="tight"><b data-testid="machine-info-model">{info.model ?? '–'}</b></SettingsRow>
+      <SettingsRow label="firmware version" spacing="tight"
+        ><b data-testid="machine-info-firmware">{info.version ?? '–'}</b></SettingsRow
+      >
+      <SettingsRow label="serial number" spacing="tight">
         <span class="serial">
           {#if info.serialNumber}
             <button class="action" data-testid="machine-info-copy" onclick={() => copy(info!.serialNumber!)}>{copied ?? 'copy'}</button
@@ -88,10 +90,10 @@
           {/if}
           <b data-testid="machine-info-serial">{info.serialNumber ?? '–'}</b>
         </span>
-      </div>
-      <div class="row"><span>group head controller</span><b>{info.GHC ? 'Present' : 'None'}</b></div>
+      </SettingsRow>
+      <SettingsRow label="group head controller" spacing="tight"><b>{info.GHC ? 'Present' : 'None'}</b></SettingsRow>
       {#each Object.entries(info.extra ?? {}) as [key, value] (key)}
-        <div class="row"><span>{labelOf(key)}</span><b>{valueOf(value)}</b></div>
+        <SettingsRow label={labelOf(key)} spacing="tight"><b>{valueOf(value)}</b></SettingsRow>
       {/each}
     {:else if error}
       <p class="warn" data-testid="machine-info-error">
@@ -104,33 +106,19 @@
   </div>
 {:else if charging}
   <div class="info" data-testid="charging-status">
-    <div class="row">
-      <span>battery</span><b>{charging.batteryPercent ?? '--'}%{charging.isEmergency ? ' (emergency)' : ''}</b>
-    </div>
-    <div class="row">
-      <span>phase</span><b>{PHASES[charging.currentPhase ?? ''] ?? charging.currentPhase ?? '--'}</b>
-    </div>
-    <div class="row"><span>USB charger</span><b>{charging.usbChargerOn ? 'On' : 'Off'}</b></div>
+    <SettingsRow label="battery" spacing="tight">
+      <b>{charging.batteryPercent ?? '--'}%{charging.isEmergency ? ' (emergency)' : ''}</b>
+    </SettingsRow>
+    <SettingsRow label="phase" spacing="tight">
+      <b>{PHASES[charging.currentPhase ?? ''] ?? charging.currentPhase ?? '--'}</b>
+    </SettingsRow>
+    <SettingsRow label="USB charger" spacing="tight"><b>{charging.usbChargerOn ? 'On' : 'Off'}</b></SettingsRow>
   </div>
 {/if}
 
 <style>
-  .row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3);
-    min-height: var(--control-tall);
-    padding: var(--space-1) 0;
-    border-top: 1px solid var(--line);
-  }
-
-  span {
-    font-size: var(--text-body);
-    font-weight: 600;
-  }
-
-  b {
+  /* The serial beside its copy button: the look of a value read from the machine. */
+  .serial b {
     font-weight: 400;
     color: var(--dim);
     overflow-wrap: anywhere;

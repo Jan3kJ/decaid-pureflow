@@ -3,6 +3,7 @@
   // line shows the tank in. It is the skin's setting (`tankUnit` in src/settings.ts, and so in its
   // KV backup), not the machine's, so it is written at once and never read from the gateway.
   import type { Skin } from '../shell/skin.svelte';
+  import SettingsRow from './SettingsRow.svelte';
   import { TANK_UNITS } from '../shell/tank';
 
   interface Props {
@@ -12,13 +13,11 @@
   let { skin }: Props = $props();
 </script>
 
-<div class="row" data-testid="row-tank-unit">
-  <div class="about">
-    <strong>tank unit</strong>
-    <small
-      >the water in the tank on the state line: in ml, or in mm as the machine measures it. This one is the skin's, not the machine's.</small
-    >
-  </div>
+<SettingsRow
+  label="tank unit"
+  hint="the water in the tank on the state line: in ml, or in mm as the machine measures it. This one is the skin's, not the machine's."
+  testid="row-tank-unit"
+>
   <div class="choices" data-testid="setting-tank-unit">
     {#each TANK_UNITS as choice (choice.value)}
       <button
@@ -29,35 +28,9 @@
       >
     {/each}
   </div>
-</div>
+</SettingsRow>
 
 <style>
-  .row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3);
-    padding: var(--space-2) 0;
-    border-top: 1px solid var(--line);
-  }
-
-  .about {
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-  }
-
-  strong {
-    font-size: var(--text-body);
-    font-weight: 600;
-  }
-
-  small {
-    color: var(--dim);
-    font-size: var(--text-label);
-  }
-
   .choices {
     flex: none;
     display: flex;

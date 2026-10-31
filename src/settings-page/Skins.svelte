@@ -17,6 +17,7 @@
   import { PRODUCT_ID, PRODUCT_NAME, PRODUCT_VERSION } from '../product';
   import type { Skin } from '../shell/skin.svelte';
   import Confirm from './Confirm.svelte';
+  import SettingsRow from './SettingsRow.svelte';
   import { OPEN_WAIT_MS, installedOther, orderSkins, reloadLine, skinAddress, switchSkin } from './skins';
   import { errorMessage } from '../error-message';
 
@@ -122,22 +123,24 @@
 {#if said}<p class="said" data-testid="skins-said">{said}</p>{/if}
 
 {#if installed}
-  <div class="row" data-testid="skins-reload-row">
-    <span class="about">
-      <strong data-testid="skins-reload-line">{reloadLine(PRODUCT_NAME, installed, PRODUCT_VERSION)}</strong>
-      <small>loads this screen again with the installed version.</small>
-    </span>
+  <SettingsRow
+    label={reloadLine(PRODUCT_NAME, installed, PRODUCT_VERSION)}
+    hint="loads this screen again with the installed version."
+    spacing="skin"
+    testid="skins-reload-row"
+    labelTestid="skins-reload-line"
+  >
     <button class="action" data-testid="skins-reload" disabled={busy} onclick={() => location.reload()}>reload</button>
-  </div>
+  </SettingsRow>
 {/if}
 
-<div class="row">
-  <span class="about">
-    <strong>check for skin updates</strong>
-    <small>Decaid looks for a newer version of every skin where it was installed from, and installs it.</small>
-  </span>
+<SettingsRow
+  label="check for skin updates"
+  hint="Decaid looks for a newer version of every skin where it was installed from, and installs it."
+  spacing="skin"
+>
   <button class="action" data-testid="skins-update" disabled={busy || !skins} onclick={checkUpdates}>check</button>
-</div>
+</SettingsRow>
 
 {#if asking}
   {@const target = asking}
@@ -212,27 +215,6 @@
 
   .dim {
     color: var(--dim);
-  }
-
-  .row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3);
-    padding: 0.8rem 0;
-    border-top: 1px solid var(--line);
-  }
-
-  .about {
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-  }
-
-  strong {
-    font-size: var(--text-body);
-    font-weight: 600;
   }
 
   .action:disabled {

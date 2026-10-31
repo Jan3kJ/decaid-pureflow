@@ -7,6 +7,7 @@
   import { PRODUCT_ID, PRODUCT_NAME, PRODUCT_VERSION } from '../product';
   import type { Skin } from '../shell/skin.svelte';
   import Confirm from './Confirm.svelte';
+  import SettingsRow from './SettingsRow.svelte';
   import { errorMessage } from '../error-message';
   import {
     LOCAL_PORT,
@@ -94,12 +95,9 @@
   }
 </script>
 
-<div class="row">
-  <span class="about">
-    <strong>install from a local server</strong>
-    <small>the ZIPs of a server on your PC, for example <code>npm run serve-release</code>; Decaid downloads the one you tap.</small>
-  </span>
-</div>
+<SettingsRow label="install from a local server" spacing="lead">
+  {#snippet hint()}the ZIPs of a server on your PC, for example <code>npm run serve-release</code>; Decaid downloads the one you tap.{/snippet}
+</SettingsRow>
 <div class="server">
   <input
     class="field"
@@ -182,27 +180,6 @@
 {/if}
 
 <style>
-  .row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3);
-    padding: 0.8rem 0 var(--space-1);
-    border-top: 1px solid var(--line);
-  }
-
-  .about {
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-  }
-
-  strong {
-    font-size: var(--text-body);
-    font-weight: 600;
-  }
-
   small {
     color: var(--dim);
     font-size: var(--text-label);
