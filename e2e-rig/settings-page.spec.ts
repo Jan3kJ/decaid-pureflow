@@ -118,7 +118,9 @@ test('settings changed through the page are read back from the gateway, and rest
 
     // The flush: the workflow's rinseData, which Decaid writes to the
     // machine's flushFlow and flushTimeout; the simulated DE1 keeps the flow, not the time-out.
+    // No temperature row: the flush's water is the group's, and targetTemperature stays as it was.
     await page.getByTestId('settings-sub-flush').click();
+    await expect(page.getByTestId('setting-flush-temperature')).toHaveCount(0);
     await type(page, 'setting-flush-duration', String(flushDuration));
     await expect(shown('flush-duration')).toHaveText(`${flushDuration}s`);
     await type(page, 'setting-flush-flow', String(flushFlow));

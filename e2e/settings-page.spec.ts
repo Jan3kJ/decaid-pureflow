@@ -186,10 +186,11 @@ test('a typed number is written with its key alone, and the page shows what the 
   expect(gateway.calls('POST', '/api/v1/display/wakelock')).toHaveLength(1);
 });
 
-test('the flush: temperature, flow and duration are the workflow rinseData, read back, and reach the machine', async ({ page }) => {
+test('the flush: flow and duration are the workflow rinseData, read back, and reach the machine; no temperature', async ({ page }) => {
   await openSettings(page);
   await page.getByTestId('settings-sub-flush').click();
   await expect(shown(page, 'flush-flow')).toHaveText('6.0ml/s');
+  await expect(page.getByTestId('setting-flush-temperature')).toHaveCount(0);
   await expect(shown(page, 'flush-duration')).toHaveText('10s');
   await type(page, 'setting-flush-duration', '14');
   await expect(shown(page, 'flush-duration')).toHaveText('14s');
@@ -201,7 +202,7 @@ test('the flush: temperature, flow and duration are the workflow rinseData, read
   ]);
   expect(gateway.workflow.rinseData).toEqual({ targetTemperature: 90, duration: 14, flow: 4.5 });
   await page.screenshot({ path: 'docs/product/settings-flush.png' });
-  expect(gateway.machineSettings).toMatchObject({ flushFlow: 4.5, flushTimeout: 14, flushTemp: 90 });
+  expect(gateway.machineSettings).toMatchObject({ flushFlow: 4.5, flushTimeout: 14, flushTemp: 25 });
   // The ring of a flush on home counts the new duration.
   await back(page);
   gateway.waterFor('flush', 3, 4.5);

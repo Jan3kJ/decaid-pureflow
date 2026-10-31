@@ -235,22 +235,12 @@ export const WATER_TANK: Field[] = [
 ];
 
 /**
- * The flush, its flow and time configurable. The
- * workflow's `rinseData`: Decaid writes all three to the machine (`flushTemp`, `flushFlow`,
- * `flushTimeout`) whenever it changes, so the machine's own values follow it.
+ * The flush, its flow and time configurable: the workflow's `rinseData`, which Decaid writes to
+ * the machine's `flushFlow` and `flushTimeout` whenever it changes. No temperature: a flush's
+ * water is at the group's temperature, which the loaded profile sets; `targetTemperature` changes
+ * neither the machine's `flushTemp` nor the water, and the page writes it back unchanged.
  */
 export const FLUSH: Field[] = [
-  number({
-    id: 'flush-temperature',
-    label: 'flush temperature',
-    source: 'workflow.rinseData',
-    key: 'targetTemperature',
-    unit: '°C',
-    min: 5,
-    max: 95,
-    step: 1,
-    places: 0,
-  }),
   number({
     id: 'flush-flow',
     label: 'flush flow',

@@ -340,7 +340,7 @@ export class MockGateway {
   machineSettings: Json = {
     fan: 55,
     usb: false,
-    flushTemp: 90,
+    flushTemp: 25,
     flushTimeout: 10,
     flushFlow: 6,
     hotWaterFlow: 10,
@@ -1158,10 +1158,11 @@ export class MockGateway {
         steamSettings: this.workflow.steamSettings,
       };
       this.putWorkflowSteam(body.steamSettings);
-      // Decaid writes a changed rinseData to the machine's flush settings.
+      // Decaid writes a changed rinseData's flow and duration to the machine's flush settings;
+      // its temperature does not reach the machine's flushTemp.
       if (body.rinseData) {
-        const { targetTemperature, duration, flow } = this.workflow.rinseData;
-        this.machineSettings = { ...this.machineSettings, flushTemp: targetTemperature, flushTimeout: duration, flushFlow: flow };
+        const { duration, flow } = this.workflow.rinseData;
+        this.machineSettings = { ...this.machineSettings, flushTimeout: duration, flushFlow: flow };
       }
       // Each response describes the workflow resulting from that request (rest_v1.yml).
       const answer = { ...this.workflow, steamSettings: { ...this.workflow.steamSettings, ...body.steamSettings } };

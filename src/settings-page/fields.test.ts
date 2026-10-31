@@ -34,7 +34,6 @@ describe('the fields of the settings page', () => {
     ['hot-water-flow-multiplier', 'decaid', 'hotWaterFlowMultiplier', 0, 2, 0.05],
     ['tank-temperature', 'machine', 'tankTemp', 10, 40, 1],
     ['water-alert', 'waterLevels', 'refillLevel', 0, 30, 5],
-    ['flush-temperature', 'workflow.rinseData', 'targetTemperature', 5, 95, 1],
     ['flush-flow', 'workflow.rinseData', 'flow', 1, 8, 0.1],
     ['flush-duration', 'workflow.rinseData', 'duration', 1, 120, 1],
     ['heater-idle-temperature', 'advanced', 'heaterIdleTemp', 0, 99, 1],
@@ -109,9 +108,8 @@ describe('the fields of the settings page', () => {
     expect(FAST_START).toEqual({ heaterIdleTemp: 99, heaterPh1Flow: 2, heaterPh2Flow: 4, heaterPh2Timeout: 1 });
   });
 
-  it("the flush is the workflow's rinseData: temperature, flow and duration", () => {
+  it("the flush is the workflow's rinseData: flow and duration, no temperature", () => {
     expect(FLUSH.map((field) => [field.source, field.key])).toEqual([
-      ['workflow.rinseData', 'targetTemperature'],
       ['workflow.rinseData', 'flow'],
       ['workflow.rinseData', 'duration'],
     ]);
