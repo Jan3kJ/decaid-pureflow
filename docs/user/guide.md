@@ -47,8 +47,10 @@ it back to the right, or tap elsewhere, to close it. The skin's A-Flow defaults 
 the profile loaded on the machine can be renamed but not deleted.
 
 The graph shows an **estimate** of the shot: the flow, pressure and temperature a shot of this
-profile would roughly show. The profile's own targets are the dotted lines under it. It is
-an estimate from the steps; a real shot differs with the coffee.
+profile would roughly show. The profile's own targets are the dotted lines under it. A ramp's
+target falls or rises at the step's own pace, so where the stop weight or an exit ends a step
+early, the line shows only the part of the ramp the machine gets before then. It is an estimate
+from the steps; a real shot differs with the coffee.
 
 ## The A-Flow editor
 

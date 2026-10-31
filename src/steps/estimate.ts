@@ -4,12 +4,18 @@
 //
 // The model's steps start and end where the coffee ends them, not at their seconds, so each
 // step's targets (as `stepCurve` draws them: a ramp from where the step starts to where it ends,
-// a last step cut at `lastStepSeconds`) are laid across the span the model gave that step. A step
-// the model did not reach (the stop weight ended the shot first) draws nothing. The model's
-// pressure and flow jump for one sample where a step ends on its exit; a median of three
-// samples takes that out and keeps the steps' edges.
+// a last step cut at `lastStepSeconds`) start where the model starts that step. A step drawn
+// whole moves its ramp at the step's rate, as the machine's target does, and is cut where the
+// model ends the step: a step ended early by its exit or the stop weight draws the part of the
+// ramp the machine was given, not the whole ramp pressed into a shorter span. A last step cut at
+// `lastStepSeconds` (an A-Flow pour, drawn as the A-Flow editor draws it) is laid across the
+// model's span, so its line ends where the editor's does. A step the model did not reach (the
+// stop weight ended the shot first) draws nothing. The model's pressure and flow jump for one
+// sample where a step ends on its exit; a median of three samples takes that out and keeps the
+// steps' edges.
 import type { Profile } from '../api';
 import { stepCurve, type CurveOptions } from './curve';
+import { num } from './model';
 import { predictShot, type Puck } from './predict';
 
 export interface ShotEstimate {
@@ -64,6 +70,7 @@ export function shotEstimate(
     };
   }
   const curve = stepCurve(profile, options);
+  const steps = profile.steps ?? [];
   const series = {
     targetFlow: [] as (number | null)[],
     targetPressure: [] as (number | null)[],
@@ -84,7 +91,10 @@ export function shotEstimate(
     while (span < shot.steps.length - 1 && time >= shot.steps[span + 1].start - 1e-9) span += 1;
     const { index, start, end } = shot.steps[span];
     const drawn = curve.steps.findIndex((step) => step.index === index);
-    const share = end > start ? Math.min(1, Math.max(0, (time - start) / (end - start))) : 0;
+    const length = drawn < 0 ? 0 : curve.steps[drawn].end - curve.steps[drawn].start;
+    const whole = length >= num(steps[index].seconds) - 1e-9;
+    const over = whole ? length : end - start;
+    const share = over > 0 ? Math.min(1, Math.max(0, (time - start) / over)) : 0;
     for (const key of Object.keys(series) as (keyof typeof series)[]) {
       const from = drawn < 0 ? null : sources[key][2 * drawn];
       const to = drawn < 0 ? null : sources[key][2 * drawn + 1];

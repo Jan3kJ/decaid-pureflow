@@ -4,7 +4,8 @@ import { pickerEntries, previewLastStepSeconds } from '../shell/profiles';
 import bundled from './fixtures/bundled-profiles.json' with { type: 'json' };
 import { stepCurve } from './curve';
 import { median3, shotEstimate } from './estimate';
-import { predictShot } from './predict';
+import { PREDICT_STEP, predictShot } from './predict';
+import { PUCK } from './puck';
 
 const base = { volume: 0, weight: 0, temperature: 93, sensor: 'coffee', exit: null, limiter: null } as const;
 const flowStep = (flow: number, seconds: number, more: Partial<ProfileStep> = {}): ProfileStep => ({
@@ -25,6 +26,7 @@ const pressureStep = (pressure: number, seconds: number, more: Partial<ProfileSt
   seconds,
   ...more,
 });
+const lever = (bundled as unknown as Profile[]).find((profile) => profile.title === 'Advanced spring lever')!;
 
 describe('median3', () => {
   it('takes out a spike of one sample and keeps a step', () => {
@@ -76,6 +78,35 @@ describe('shotEstimate', () => {
     expect(estimate.targetFlow.at(-1)).toBeCloseTo(6);
     const middle = Math.round((start + estimate.t.length - 1) / 2);
     expect(estimate.targetFlow[middle]).toBeCloseTo(4, 1);
+  });
+
+  it('draws the part of a ramp the machine was given where the stop weight ends its step early', () => {
+    const steps = [pressureStep(9, 10), pressureStep(4, 20, { transition: 'smooth' })];
+    expect(shotEstimate({ steps, target_weight: 0 }).targetPressure.at(-1)).toBeCloseTo(4);
+    const stopped = { steps, target_weight: 36 };
+    const { start, end } = predictShot(stopped).steps.at(-1)!;
+    expect(end - start).toBeLessThan(15);
+    // 9 to 4 bar over 20 s: the target falls 0.25 bar a second and is cut where the model stops
+    const estimate = shotEstimate(stopped);
+    expect(estimate.targetPressure.at(-1)).toBeCloseTo(9 - 0.25 * (end - start), 2);
+    const middle = Math.round((start + 2) / PREDICT_STEP);
+    expect(estimate.targetPressure[middle]).toBeCloseTo(8.5, 2);
+  });
+
+  it("follows a pressure ramp's target with a delay of about a second: Advanced spring lever's decline", () => {
+    const estimate = shotEstimate(lever);
+    const decline = predictShot(lever).steps.find((span) => span.index === 2)!;
+    const delay = PUCK.pressureLag;
+    expect(delay).toBeGreaterThan(0.5);
+    expect(delay).toBeLessThan(2);
+    const at = (time: number) => Math.round(time / PREDICT_STEP);
+    let checked = 0;
+    for (let i = at(decline.start + delay); i < at(decline.end); i += 1) {
+      const target = estimate.targetPressure[i - at(delay)]!;
+      expect(Math.abs(estimate.pressure[i] - target), `at ${estimate.t[i].toFixed(1)} s`).toBeLessThanOrEqual(0.3);
+      checked += 1;
+    }
+    expect(checked).toBeGreaterThan(20);
   });
 
   it('draws a limit across its step and none where a step has none', () => {

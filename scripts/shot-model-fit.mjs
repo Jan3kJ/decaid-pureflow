@@ -6,7 +6,8 @@
 //
 // Writes src/steps/puck.ts (the constants), src/steps/fixtures/shots-model.json (ten held-out
 // shots, one sample per 0.5 s, the measurements and the steps only) and three plots
-// docs/product/shot-model-<n>.svg, and prints the check. The export stays out of the
+// docs/product/shot-model-<n>.svg, and prints the check and how closely the model and the picker's
+// drawn target follow the pressure ramps. The export stays out of the
 // repository: nothing of its beans, notes or names is written.
 //
 // A shot recorded by the de1app and imported carries a `profileFrame` that only follows the
@@ -28,7 +29,8 @@ registerHooks({
     return nextResolve(specifier, context);
   },
 });
-const { predictShot } = await import('../src/steps/predict.ts');
+const { predictShot, PREDICT_STEP } = await import('../src/steps/predict.ts');
+const { shotEstimate } = await import('../src/steps/estimate.ts');
 const { stepCurve } = await import('../src/steps/curve.ts');
 const { shotErrors, addSums, means, lengthFits, checkShots, modelAt, QUANTITIES } = await import('../src/steps/shot-check.ts');
 
@@ -369,6 +371,38 @@ function reportByKind(set, puck) {
 }
 const emptyTotals = Object.fromEntries(QUANTITIES.map((q) => [q, { model: 0, target: 0, count: 0 }]));
 
+/** s, a ramp shorter than this is a step in all but name and is left out of the ramp report */
+const RAMP_SECONDS = 5;
+
+/**
+ * The pressure's mean absolute error on the ramps (smooth pressure steps of 5 s or more): the
+ * model's and the picker's drawn target (`shotEstimate`), each against the real shot at the same
+ * moment after the start of the step, so that a step the model starts early or late does not count.
+ */
+function reportRamps(name, set, puck) {
+  let model = 0;
+  let target = 0;
+  let count = 0;
+  for (const { shot, labels } of set) {
+    const estimate = shotEstimate(shot.profile, {}, puck);
+    const spans = predictShot(shot.profile, puck).steps;
+    for (const [i, time] of shot.t.entries()) {
+      const step = shot.profile.steps[labels[i]];
+      if (step.pump !== 'pressure' || step.transition !== 'smooth' || !(Number(step.seconds) >= RAMP_SECONDS)) continue;
+      const span = spans.find((s) => s.index === labels[i]);
+      const at = span && span.start + time - shot.t[labels.indexOf(labels[i])];
+      const drawn = span && estimate.targetPressure[Math.round(at / PREDICT_STEP)];
+      if (!span || at >= span.end || drawn === null || drawn === undefined) continue;
+      model += Math.abs(estimate.pressure[Math.round(at / PREDICT_STEP)] - shot.pressure[i]);
+      target += Math.abs(drawn - shot.pressure[i]);
+      count += 1;
+    }
+  }
+  console.log(
+    `${name}: pressure on the ramps, model ${(model / count).toFixed(2)} bar, drawn target ${(target / count).toFixed(2)} bar (${count} samples)`,
+  );
+}
+
 // ---- the plots
 
 const COLOURS = { flow: '#4da3ff', pressure: '#3fcf8e', temperature: '#ff6b6b' };
@@ -480,6 +514,9 @@ console.log('\nthe puck:', JSON.stringify(rounded));
 report('\nfit set', train, rounded);
 const check = report('\nheld-out set (the check)', held, rounded);
 reportByKind(held, rounded);
+console.log('');
+reportRamps('fit set', train, rounded);
+reportRamps('held-out set', held, rounded);
 
 writeFileSync(
   join(root, 'src/steps/puck.ts'),
