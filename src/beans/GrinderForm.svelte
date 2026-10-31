@@ -37,7 +37,7 @@
 </script>
 
 <form class="form" onsubmit={submit} data-testid="grinder-form">
-  <h2>{grinder ? grinder.model : 'Add a grinder'}</h2>
+  <h2 class="truncate">{grinder ? grinder.model : 'Add a grinder'}</h2>
   {#if grinder?.archived}
     <p class="archived" data-testid="grinder-archived">Archived: not offered for the next shot; its shots stay in the history.</p>
   {/if}
@@ -130,9 +130,6 @@
     margin: 0;
     font-size: var(--text-title);
     font-weight: 600;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   label {
@@ -174,14 +171,10 @@
   button {
     min-height: var(--control-big);
     padding: 0 var(--space-3);
-    font: inherit;
     font-size: var(--text-body);
-    color: var(--fg);
     background: var(--raised);
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    touch-action: manipulation;
-    user-select: none;
   }
 
   button:disabled {
@@ -190,10 +183,6 @@
 
   .primary {
     min-width: 8rem;
-    color: var(--bg);
-    background: var(--fg);
-    border-color: var(--fg);
-    font-weight: 600;
   }
 
   .archived {
@@ -226,7 +215,7 @@
     display: flex;
   }
 
-  .step-row :global(.chip) {
+  .step-row :global(.value-chip) {
     min-width: 14rem;
   }
 </style>

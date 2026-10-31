@@ -208,13 +208,9 @@
   }
 
   button {
-    font: inherit;
-    color: var(--fg);
     border: 1px solid var(--line);
     background: var(--panel);
     border-radius: var(--radius);
-    touch-action: manipulation;
-    user-select: none;
   }
 
   /* no taller than the header (PageHeader's 3.5rem), so the column under it does not move */
@@ -360,15 +356,17 @@
     color: var(--dim);
   }
 
-  .set {
+  /* Raised like the chips, not the main button's fill; off, it takes the shared off look of `.primary`. */
+  .set.primary {
     min-height: 4.5rem;
     font-size: var(--text-value);
-    font-weight: 600;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: var(--space-2);
+    color: var(--fg);
     background: var(--raised);
+    border-color: var(--line);
   }
 
   .set b {
@@ -377,12 +375,6 @@
 
   .set small {
     font-weight: 400;
-  }
-
-  .notice {
-    margin: 0;
-    color: var(--warn);
-    font-size: var(--text-label);
   }
 
   .info {

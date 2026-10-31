@@ -149,6 +149,14 @@
     gap: var(--space-2);
   }
 
+  /* A label that opens the file picker, drawn as a button: the buttons' reset of app.css. */
+  .button {
+    font: inherit;
+    color: var(--fg);
+    touch-action: manipulation;
+    user-select: none;
+  }
+
   button,
   .button {
     display: inline-flex;
@@ -156,14 +164,10 @@
     justify-content: center;
     min-height: var(--control-big);
     padding: 0 var(--space-3);
-    font: inherit;
     font-size: var(--text-body);
-    color: var(--fg);
     background: var(--raised);
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    touch-action: manipulation;
-    user-select: none;
   }
 
   button:disabled {
@@ -172,10 +176,6 @@
 
   .primary {
     min-width: 9rem;
-    color: var(--bg);
-    background: var(--fg);
-    border-color: var(--fg);
-    font-weight: 600;
   }
 
   .close {

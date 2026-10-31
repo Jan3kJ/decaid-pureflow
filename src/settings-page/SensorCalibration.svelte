@@ -261,12 +261,6 @@
 {/if}
 
 <style>
-  .hint {
-    margin: 0 0 var(--space-1);
-    color: var(--dim);
-    font-size: var(--text-label);
-  }
-
   .sensor {
     border-top: 1px solid var(--line);
     padding: var(--space-1) 0;
@@ -314,31 +308,8 @@
     color: var(--temperature);
   }
 
-  button {
-    font: inherit;
-    color: var(--fg);
-    touch-action: manipulation;
-    user-select: none;
-  }
-
   button:disabled {
     opacity: 0.5;
-  }
-
-  .action {
-    flex: none;
-    min-height: var(--control);
-    padding: 0 1rem;
-    background: var(--raised);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-  }
-
-  .primary {
-    background: var(--fg);
-    border-color: var(--fg);
-    color: var(--bg);
-    font-weight: 600;
   }
 
   .value {
@@ -367,5 +338,9 @@
     font-style: normal;
     font-size: var(--text-label);
     color: var(--dim);
+  }
+
+  .hint {
+    margin-bottom: var(--space-1);
   }
 </style>

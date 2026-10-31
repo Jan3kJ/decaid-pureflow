@@ -71,7 +71,7 @@
         <h3>Bean</h3>
         {#if offered.length > SEARCH_FROM}
           <label class="search">
-            <span class="hidden">search the beans</span>
+            <span class="visually-hidden">search the beans</span>
             <input
               type="search"
               bind:value={query}
@@ -90,7 +90,7 @@
               data-testid="pick-no-bean"
               onclick={() => (bean = null)}
             >
-              <strong>no bean</strong>
+              <strong class="truncate">no bean</strong>
             </button>
           </li>
           {#each beans as entry (entry.id)}
@@ -102,7 +102,7 @@
                 data-testid="pick-bean"
                 onclick={() => (bean = entry)}
               >
-                <strong>{beanTitle(entry)}</strong>
+                <strong class="truncate">{beanTitle(entry)}</strong>
                 {#if bag?.roastDate}<small>roasted {dateOf(bag.roastDate)}</small>{/if}
               </button>
             </li>
@@ -123,7 +123,7 @@
               data-testid="pick-no-grinder"
               onclick={() => (grinder = null)}
             >
-              <strong>no grinder</strong>
+              <strong class="truncate">no grinder</strong>
             </button>
           </li>
           {#each grinders as entry (entry.id)}
@@ -134,7 +134,7 @@
                 data-testid="pick-grinder"
                 onclick={() => (grinder = entry)}
               >
-                <strong>{entry.model}</strong>
+                <strong class="truncate">{entry.model}</strong>
               </button>
             </li>
           {/each}
@@ -231,13 +231,9 @@
   }
 
   button {
-    font: inherit;
-    color: var(--fg);
     background: var(--raised);
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    touch-action: manipulation;
-    user-select: none;
   }
 
   button:disabled {
@@ -257,9 +253,6 @@
 
   .row strong {
     max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
     font-size: var(--text-body);
     font-weight: 600;
   }
@@ -272,14 +265,6 @@
   .search {
     display: flex;
     margin-bottom: var(--space-1);
-  }
-
-  .hidden {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
   }
 
   input {
@@ -328,8 +313,6 @@
 
   .hint {
     margin: var(--space-1) 0 0;
-    color: var(--dim);
-    font-size: var(--text-label);
   }
 
   .warn {
@@ -352,12 +335,5 @@
     margin-right: auto;
     color: var(--dim);
     background: none;
-  }
-
-  .primary {
-    color: var(--bg);
-    background: var(--fg);
-    border-color: var(--fg);
-    font-weight: 600;
   }
 </style>

@@ -63,16 +63,4 @@
     display: flex;
     gap: var(--space-1);
   }
-
-  .chip {
-    min-height: var(--control);
-    padding: 0 0.9rem;
-    font: inherit;
-    color: var(--fg);
-    touch-action: manipulation;
-    user-select: none;
-    background: var(--raised);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-pill);
-  }
 </style>

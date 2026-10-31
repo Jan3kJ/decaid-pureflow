@@ -72,20 +72,20 @@
   {/if}
   <div class="filter" data-testid="history-filter">
     <button
-      class="select-fill"
+      class="select-fill truncate"
       aria-pressed={!filtered}
       data-testid="filter-all"
       onclick={() => ((skin.historyFilter = NO_FILTER), (choosing = null))}>all</button
     >
     <button
-      class="select-fill"
+      class="select-fill truncate"
       aria-pressed={filter.beanId !== null}
       class:open={choosing === 'bean'}
       data-testid="filter-bean"
       onclick={() => (choosing = choosing === 'bean' ? null : 'bean')}>{beanChosen}</button
     >
     <button
-      class="select-fill"
+      class="select-fill truncate"
       aria-pressed={filter.grinderId !== null}
       class:open={choosing === 'grinder'}
       data-testid="filter-grinder"
@@ -110,7 +110,7 @@
             data-testid="filter-option"
             onclick={() => choose(option.id)}
           >
-            <span>{option.title}</span>
+            <span class="truncate">{option.title}</span>
             {#if option.archived}<small>archived</small>{/if}
           </button>
         </li>
@@ -125,8 +125,8 @@
       {#each entries as entry (entry.key)}
         <li>
           <button class="entry" data-testid="history-entry" data-shot={entry.latest.id} onclick={() => skin.restore(entry)}>
-            <strong data-testid="entry-profile">{entry.profileTitle}</strong>
-            <span class="bean" class:none={!entry.bean} data-testid="entry-bean">{beanLabel(entry.bean)}</span>
+            <strong class="truncate" data-testid="entry-profile">{entry.profileTitle}</strong>
+            <span class="bean truncate" class:none={!entry.bean} data-testid="entry-bean">{beanLabel(entry.bean)}</span>
             <span class="foot">
               <span data-testid="entry-grinder">{grinderLabel(entry)}</span>
               <span data-testid="entry-when">
@@ -188,13 +188,6 @@
     font-weight: 600;
   }
 
-  button {
-    font: inherit;
-    color: var(--fg);
-    touch-action: manipulation;
-    user-select: none;
-  }
-
   ul {
     flex: 1;
     min-height: 0;
@@ -221,13 +214,6 @@
     border: 1px solid var(--line);
     border-radius: var(--radius);
     background: var(--raised);
-  }
-
-  .entry strong,
-  .bean {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   .entry strong {
@@ -265,9 +251,6 @@
     min-width: 0;
     min-height: var(--control);
     padding: 0 0.9rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
     border: 1px solid var(--line);
     border-radius: var(--radius-pill);
     background: var(--raised);
@@ -289,12 +272,6 @@
     border: 1px solid var(--line);
     border-radius: var(--radius);
     background: var(--raised);
-  }
-
-  .option span {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   .option small {

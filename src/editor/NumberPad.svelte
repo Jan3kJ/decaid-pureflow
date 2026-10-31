@@ -161,14 +161,10 @@
   button {
     grid-column: span 2;
     min-height: 4.2rem;
-    font: inherit;
     font-size: var(--text-title);
-    color: var(--fg);
     background: var(--raised);
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    touch-action: manipulation;
-    user-select: none;
   }
 
   button:active:not(:disabled) {
@@ -191,12 +187,5 @@
   .confirm {
     grid-column: span 3;
     font-size: var(--text-body);
-  }
-
-  .confirm {
-    background: var(--fg);
-    border-color: var(--fg);
-    color: var(--bg);
-    font-weight: 600;
   }
 </style>

@@ -143,6 +143,70 @@ body {
 }
 
 /*
+ * Shared looks, one class each for every page; a component's own rule for the class (its width,
+ * a taller height) wins.
+ */
+/* A button beside a setting: raised, the line's border, as high as a finger. */
+.action {
+  flex: none;
+  min-height: var(--control);
+  padding: 0 1rem;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+/* A choice among a few, beside a setting: the pill. Selected it is `.select-fill`. */
+.chip {
+  min-height: var(--control);
+  padding: 0 0.9rem;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+}
+
+/* The small grey line that explains a setting or a field. */
+.hint {
+  margin: 0;
+  color: var(--dim);
+  font-size: var(--text-label);
+}
+
+/* The small line the machine or the scale says on a page: the warning colour. */
+.notice {
+  margin: 0;
+  color: var(--warn);
+  font-size: var(--text-label);
+}
+
+/* One line, cut with an ellipsis where it does not fit. */
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Read by a screen reader, not shown. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+/*
+ * The main button of a page, a dialog or a group: the white fill. `:root` puts it above a
+ * component's own rule for its buttons; a component's variant names both classes.
+ */
+:root :is(button, label).primary {
+  color: var(--bg);
+  background: var(--fg);
+  border-color: var(--fg);
+  font-weight: 600;
+}
+
+/*
  * Warning, danger, off, one rule each for every page. `:root` puts them above
  * a component's own rule for its buttons.
  */
@@ -211,6 +275,18 @@ body {
  */
 :where(main, main *) {
   touch-action: pan-y;
+}
+
+/*
+ * A button takes the page's words and colour, a tap is a tap (no zoom, no text selection). Without
+ * specificity, so a component's own rule for its buttons wins; after the swipe's pan above, so
+ * a button keeps its tap.
+ */
+:where(button) {
+  font: inherit;
+  color: var(--fg);
+  touch-action: manipulation;
+  user-select: none;
 }
 
 /* Portrait by the stored size (src/viewport.ts), not by a viewport the keyboard shrank. */

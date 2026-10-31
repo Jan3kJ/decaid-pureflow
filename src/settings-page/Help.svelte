@@ -186,8 +186,6 @@
     align-items: flex-start;
     min-height: var(--control-tall);
     padding: 0.4rem 1rem;
-    background: var(--raised);
-    border: 1px solid var(--line);
     border-radius: var(--radius);
   }
 
@@ -209,13 +207,16 @@
     resize: none;
   }
 
-  button,
   a {
     font: inherit;
-    font-weight: 400;
     color: var(--fg);
     touch-action: manipulation;
     user-select: none;
+  }
+
+  button,
+  a {
+    font-weight: 400;
   }
 
   button:disabled {
@@ -223,18 +224,16 @@
   }
 
   .action {
-    flex: none;
-    min-height: var(--control);
     padding: 0 1.4rem;
     display: inline-flex;
     align-items: center;
-    background: var(--raised);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
     text-decoration: none;
   }
 
-  .primary {
-    border-color: var(--fg);
+  /* The row's main action: the white outline, not the main button's fill; off, it is the shared off look. */
+  .action.primary {
+    color: var(--fg);
+    background: var(--raised);
+    font-weight: 400;
   }
 </style>

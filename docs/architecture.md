@@ -264,3 +264,10 @@ cannot be set.
   their values meet. A colour is one of `src/app.css`'s too. The lint refuses a literal corner,
   shadow, layer, colour or control height; `e2e/touch-targets.spec.ts` takes its minimum from
   `--control`.
+- The shared looks of a control are in `src/app.css` only: the button reset on `:where(button)`
+  (the page's font and colour, a tap without zoom or text selection), `.action` (a button beside a
+  setting), `.primary` (the main button's white fill), `.chip` (the pill beside a setting),
+  `.hint`, `.notice`, `.truncate` (one line with an ellipsis) and `.visually-hidden`, beside
+  `.warning`, `.danger` and the two selected looks `.select-fill` and `.select-outline`. A
+  component adds to a class (a width, a taller height) or makes a variant of it; it does not
+  write the look again, which `src/ui/controls.test.ts` checks.

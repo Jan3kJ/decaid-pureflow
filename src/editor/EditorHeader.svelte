@@ -25,14 +25,14 @@
 <header>
   <!-- The shortcut to the profile picker: a profile chosen there is loaded. -->
   <button class="seg name" data-testid="editor-profile" aria-label="choose another profile" disabled={busy} onclick={onprofile}>
-    <span>{origin.name}</span>
+    <span class="truncate">{origin.name}</span>
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h9" /></svg>
   </button>
   <!-- The profiles to start from, chosen in the settings; 'save as' does not add to them. -->
   <div class="group start" role="group" aria-label="start from" data-testid="start-row" use:sideways>
     {#each row as entry (entry.key)}
       <button
-        class="seg select-fill"
+        class="seg select-fill truncate"
         aria-pressed={entry.key === origin.key}
         data-testid="start-{entry.name}"
         disabled={busy}
@@ -44,8 +44,8 @@
   </div>
   <div class="group">
     <div class="group" role="group" aria-label="profile actions">
-      <button class="seg action" data-testid="save" disabled={busy || !canSave} onclick={onsave}>save</button>
-      <button class="seg action" data-testid="save-as" disabled={busy} onclick={onsaveas}> save as </button>
+      <button class="seg save" data-testid="save" disabled={busy || !canSave} onclick={onsave}>save</button>
+      <button class="seg save" data-testid="save-as" disabled={busy} onclick={onsaveas}> save as </button>
     </div>
     <div class="group" role="group" aria-label="editor mode">
       <button class="seg select-fill" aria-pressed={mode === 'simple'} data-testid="mode-simple" onclick={() => onmode('simple')}
@@ -88,12 +88,6 @@
     font-weight: 600;
   }
 
-  .name span {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
   .name svg {
     flex: none;
     width: 1.3rem;
@@ -122,18 +116,11 @@
     min-width: 4.5rem;
     max-width: 11rem;
     padding: 0 0.9rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   button {
-    font: inherit;
-    color: var(--fg);
     border: 1px solid var(--line);
     background: var(--panel);
-    touch-action: manipulation;
-    user-select: none;
   }
 
   .seg {
@@ -144,7 +131,7 @@
     font-size: var(--text-body);
   }
 
-  .seg.action {
+  .seg.save {
     min-width: 0;
     background: var(--raised);
     white-space: nowrap;

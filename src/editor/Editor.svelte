@@ -268,7 +268,7 @@
        while it is empty, so the graph does not move. -->
   <div class="status" role="status" data-testid="editor-status">
     {#if notice}
-      <p class="notice {notice.tone}" class:warning={notice.tone === 'warn'} data-testid="editor-notice" title={notice.text}>
+      <p class="notice truncate {notice.tone}" class:warning={notice.tone === 'warn'} data-testid="editor-notice" title={notice.text}>
         {notice.text}
       </p>
     {/if}
@@ -358,13 +358,8 @@
   }
 
   .notice {
-    margin: 0;
     padding: 0 var(--space-1);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
     color: var(--fg);
-    font-size: var(--text-label);
   }
 
   .notice.warn {

@@ -152,19 +152,6 @@
   }
 
   button {
-    font: inherit;
     font-weight: 400;
-    color: var(--fg);
-    touch-action: manipulation;
-    user-select: none;
-  }
-
-  .action {
-    flex: none;
-    min-height: var(--control);
-    padding: 0 1rem;
-    background: var(--raised);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
   }
 </style>

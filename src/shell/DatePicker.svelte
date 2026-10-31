@@ -251,14 +251,10 @@
 
   button {
     min-height: var(--control-big);
-    font: inherit;
     font-size: var(--text-value);
-    color: var(--fg);
     background: var(--raised);
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    touch-action: manipulation;
-    user-select: none;
   }
 
   button:active {

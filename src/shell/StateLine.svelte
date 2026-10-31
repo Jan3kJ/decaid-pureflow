@@ -121,13 +121,10 @@
   button.value {
     margin: -0.9rem -0.6rem;
     padding: 0.9rem 0.6rem;
-    font: inherit;
     color: inherit;
     background: none;
     border: 0;
     border-radius: var(--radius-small);
-    touch-action: manipulation;
-    user-select: none;
   }
 
   button.value:active {

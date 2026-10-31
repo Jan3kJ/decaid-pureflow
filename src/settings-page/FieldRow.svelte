@@ -153,13 +153,6 @@
     color: var(--temperature);
   }
 
-  button {
-    font: inherit;
-    color: var(--fg);
-    touch-action: manipulation;
-    user-select: none;
-  }
-
   button:disabled {
     opacity: 0.5;
   }
@@ -195,14 +188,6 @@
     flex-wrap: wrap;
     justify-content: flex-end;
     gap: var(--space-1);
-  }
-
-  .chip {
-    min-height: var(--control);
-    padding: 0 0.9rem;
-    background: var(--raised);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-pill);
   }
 
   .info {

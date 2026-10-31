@@ -125,7 +125,7 @@
       {#each listing.zips as zip (zip.name)}
         <button class="zip" disabled={busy} data-testid="local-zip" data-name={zip.name} onclick={() => (asking = zip.name)}>
           <span class="name">
-            <b>{zip.name}</b>
+            <b class="truncate">{zip.name}</b>
             {#if zip.name === names[0]}<span class="badge" data-testid="local-running">running</span>{/if}
           </span>
           {#if zip.size !== undefined || zip.modified}
@@ -232,22 +232,6 @@
     border-radius: var(--radius);
   }
 
-  button {
-    font: inherit;
-    color: var(--fg);
-    touch-action: manipulation;
-    user-select: none;
-  }
-
-  .action {
-    flex: none;
-    min-height: var(--control);
-    padding: 0 1rem;
-    background: var(--raised);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-  }
-
   .action:disabled,
   .zip:disabled {
     opacity: 0.5;
@@ -283,9 +267,6 @@
 
   .name b {
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
     font-size: var(--text-body);
     font-weight: 600;
   }
@@ -306,14 +287,6 @@
     flex-wrap: wrap;
     gap: var(--space-1);
     padding-bottom: var(--space-1);
-  }
-
-  .chip {
-    min-height: var(--control);
-    padding: 0 0.9rem;
-    background: var(--raised);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-pill);
   }
 
   p {

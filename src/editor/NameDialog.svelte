@@ -81,9 +81,7 @@
   }
 
   .hint {
-    margin: 0;
     min-height: 1.2rem;
-    font-size: var(--text-label);
     color: var(--temperature);
     white-space: pre;
   }
@@ -96,19 +94,17 @@
   button {
     flex: 1;
     min-height: var(--control-big);
-    font: inherit;
     font-size: var(--text-body);
-    color: var(--fg);
     background: var(--raised);
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    touch-action: manipulation;
   }
 
   button:disabled {
     opacity: 0.35;
   }
 
+  /* The main button's fill, but off it fades rather than taking the shared off look of `.primary`. */
   .confirm {
     background: var(--fg);
     border-color: var(--fg);

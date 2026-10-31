@@ -357,13 +357,6 @@
     gap: var(--space-1);
   }
 
-  button {
-    font: inherit;
-    color: var(--fg);
-    touch-action: manipulation;
-    user-select: none;
-  }
-
   .category {
     min-height: var(--control-tall);
     padding: 0 0.9rem;
@@ -415,12 +408,6 @@
     font-weight: 600;
   }
 
-  .hint {
-    margin: 0 0 var(--space-1);
-    color: var(--dim);
-    font-size: var(--text-label);
-  }
-
   .warn {
     color: var(--temperature);
   }
@@ -451,16 +438,11 @@
     font-size: var(--text-label);
   }
 
-  .action {
-    flex: none;
-    min-height: var(--control);
-    padding: 0 1rem;
-    background: var(--raised);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-  }
-
   .action:disabled {
     opacity: 0.5;
+  }
+
+  .hint {
+    margin-bottom: var(--space-1);
   }
 </style>

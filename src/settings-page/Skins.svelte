@@ -158,13 +158,6 @@
     padding: var(--space-1) 0 0.8rem;
   }
 
-  button {
-    font: inherit;
-    color: var(--fg);
-    touch-action: manipulation;
-    user-select: none;
-  }
-
   .skin {
     min-height: 4.4rem;
     padding: 0.6rem 1rem;
@@ -240,15 +233,6 @@
   strong {
     font-size: var(--text-body);
     font-weight: 600;
-  }
-
-  .action {
-    flex: none;
-    min-height: var(--control);
-    padding: 0 1rem;
-    background: var(--raised);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
   }
 
   .action:disabled {

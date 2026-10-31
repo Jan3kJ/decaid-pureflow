@@ -269,31 +269,8 @@
     font-weight: 600;
   }
 
-  button {
-    font: inherit;
-    color: var(--fg);
-    touch-action: manipulation;
-    user-select: none;
-  }
-
   button:disabled {
     opacity: 0.5;
-  }
-
-  .action {
-    flex: none;
-    min-height: var(--control);
-    padding: 0 1rem;
-    background: var(--raised);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-  }
-
-  .primary {
-    background: var(--fg);
-    border-color: var(--fg);
-    color: var(--bg);
-    font-weight: 600;
   }
 
   .value {
@@ -328,11 +305,7 @@
   }
 
   .chip {
-    min-height: var(--control);
     min-width: 3.6rem;
     padding: 0 0.7rem;
-    background: var(--raised);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-pill);
   }
 </style>

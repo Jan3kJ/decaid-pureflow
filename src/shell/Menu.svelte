@@ -108,13 +108,9 @@
 
 <style>
   button {
-    font: inherit;
-    color: var(--fg);
     border: 1px solid var(--line);
     background: var(--panel);
     border-radius: var(--radius);
-    touch-action: manipulation;
-    user-select: none;
   }
 
   .corner {

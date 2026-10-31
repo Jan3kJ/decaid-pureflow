@@ -346,7 +346,7 @@
 <!-- A stream the gateway closed with an error is tried again for 30 s by itself, then waits for this button. -->
 {#if skin.refused}
   <div class="refused" role="alert" data-testid="stream-failed">
-    <span>
+    <span class="truncate">
       Decaid closed the connection{skin.streamError ? `: ${skin.streamError}` : ' with an error'}
     </span>
     <button data-testid="reconnect" onclick={() => skin.reconnect()}>reconnect</button>
@@ -356,7 +356,7 @@
 <!-- A start without settings took them from the backup in Decaid, said once. -->
 {#if skin.restoredFrom !== null && !skin.refused}
   <div class="refused restored" role="status" data-testid="settings-restored">
-    <span>
+    <span class="truncate">
       Settings restored from the backup in Decaid{skin.restoredFrom ? ` of ${backupTime(skin.restoredFrom)}` : ''}.
     </span>
     <button data-testid="settings-restored-ok" onclick={() => (skin.restoredFrom = null)}>ok</button>
@@ -417,10 +417,8 @@
   .handle,
   .dots button {
     padding: 0;
-    font: inherit;
     background: none;
     border: 0;
-    touch-action: manipulation;
   }
 
   /* A thin bar at home's left edge, vertically centred, in a finger's target over home's padding. */
@@ -503,23 +501,18 @@
 
   .refused span {
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   .refused button {
     flex: none;
     min-height: var(--control-big);
     padding: 0 1.6rem;
-    font: inherit;
     font-size: var(--text-body);
     font-weight: 600;
     color: var(--bg);
     background: var(--fg);
     border: 0;
     border-radius: var(--radius-note);
-    touch-action: manipulation;
   }
 
   .asleep {
@@ -532,12 +525,9 @@
     align-items: center;
     justify-content: center;
     gap: var(--space-2);
-    font: inherit;
     color: var(--dim);
     background: var(--asleep);
     border: 0;
-    touch-action: manipulation;
-    user-select: none;
   }
 
   .asleep strong {

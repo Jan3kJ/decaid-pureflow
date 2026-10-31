@@ -103,7 +103,7 @@
 </script>
 
 <form class="form" onsubmit={submit} data-testid="bean-form">
-  <h2>{bean ? beanTitle(bean) : 'Add a bean'}</h2>
+  <h2 class="truncate">{bean ? beanTitle(bean) : 'Add a bean'}</h2>
   {#if bean?.archived}
     <p class="archived" data-testid="bean-archived">Archived: not offered for the next shot; its shots stay in the history.</p>
   {/if}
@@ -153,7 +153,7 @@
           >
         </div>
         {#each chips as chip (chip)}
-          <button type="button" class="chip" data-testid="bean-chip" onclick={() => put(chip)}>{chip}</button>
+          <button type="button" class="chip truncate" data-testid="bean-chip" onclick={() => put(chip)}>{chip}</button>
         {/each}
       {:else}
         <span class="status" role="status" data-testid="bean-reading-status">Nothing read on the bag</span>
@@ -232,9 +232,6 @@
     margin: 0;
     font-size: var(--text-title);
     font-weight: 600;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   label,
@@ -288,14 +285,10 @@
   button {
     min-height: var(--control-big);
     padding: 0 var(--space-3);
-    font: inherit;
     font-size: var(--text-body);
-    color: var(--fg);
     background: var(--raised);
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    touch-action: manipulation;
-    user-select: none;
   }
 
   button:disabled {
@@ -304,10 +297,6 @@
 
   .primary {
     min-width: 8rem;
-    color: var(--bg);
-    background: var(--fg);
-    border-color: var(--fg);
-    font-weight: 600;
   }
 
   .photo {
@@ -358,13 +347,9 @@
 
   .chip {
     max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
     background: var(--bg);
   }
 
-  .hint,
   .archived {
     margin: 0;
     color: var(--dim);

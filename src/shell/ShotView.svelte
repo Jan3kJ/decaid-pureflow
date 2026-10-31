@@ -58,7 +58,7 @@
   {#if recalled}
     {@const entry = recalled.entry}
     <header data-testid="shot-caption">
-      <span class="recalled" data-testid="recalled">
+      <span class="recalled truncate" data-testid="recalled">
         last shot with
         <strong data-testid="recalled-profile">{entry.profileTitle}</strong>
         <strong data-testid="recalled-bean">{beanLabel(entry.bean)}</strong>
@@ -188,9 +188,6 @@
 
   header > span {
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   header strong {
@@ -204,14 +201,9 @@
     min-width: 7rem;
     min-height: var(--control-tall);
     padding: 0 1rem;
-    font: inherit;
     font-size: var(--text-body);
-    color: var(--fg);
-    border: 1px solid var(--line);
     background: var(--panel);
     border-radius: var(--radius);
-    touch-action: manipulation;
-    user-select: none;
   }
 
   .plot {
@@ -361,12 +353,6 @@
     color: var(--temperature);
   }
 
-  .notice {
-    margin: 0;
-    color: var(--warn);
-    font-size: var(--text-label);
-  }
-
   .info {
     color: var(--fg);
   }
@@ -379,15 +365,12 @@
     margin-top: auto;
     flex: 0 1 7rem;
     min-height: var(--control-big);
-    font: inherit;
     font-size: var(--text-large);
     font-weight: 600;
     color: var(--bg);
     background: var(--temperature);
     border: 1px solid var(--temperature);
     border-radius: var(--radius);
-    touch-action: manipulation;
-    user-select: none;
   }
 
   .stop:disabled {

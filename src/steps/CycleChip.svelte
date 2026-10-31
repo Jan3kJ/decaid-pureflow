@@ -36,13 +36,9 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     align-items: flex-start;
     justify-content: center;
     gap: var(--space-1);
-    font: inherit;
-    color: var(--fg);
     background: var(--raised);
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    touch-action: manipulation;
-    user-select: none;
     white-space: nowrap;
   }
 

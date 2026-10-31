@@ -43,12 +43,8 @@
   }
 
   button {
-    font: inherit;
-    color: var(--fg);
     border: 1px solid var(--line);
     background: var(--panel);
-    touch-action: manipulation;
-    user-select: none;
   }
 
   .toggle {

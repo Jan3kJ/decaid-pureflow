@@ -28,8 +28,8 @@
 <div class="next" class:off data-testid="next-shot">
   <div class="profile">
     <button class="name" data-testid="open-profiles" aria-label="choose a profile" disabled={off} onclick={() => skin.go('profiles')}>
-      <strong data-testid="profile-name">{profile.name}</strong>
-      {#if profile.caption}<small data-testid="profile-caption">{profile.caption}</small>{/if}
+      <strong class="truncate" data-testid="profile-name">{profile.name}</strong>
+      {#if profile.caption}<small class="truncate" data-testid="profile-caption">{profile.caption}</small>{/if}
     </button>
     <button class="icon" data-testid="open-editor" aria-label="edit the profile" disabled={off} onclick={() => skin.go('editor')}>
       <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -46,8 +46,8 @@
     onclick={() => (picking = true)}
   >
     <span class="lines">
-      <strong data-testid="next-bean">{bean.name}</strong>
-      {#if bean.caption}<small data-testid="next-bean-caption">{bean.caption}</small>{/if}
+      <strong class="truncate" data-testid="next-bean">{bean.name}</strong>
+      {#if bean.caption}<small class="truncate" data-testid="next-bean-caption">{bean.caption}</small>{/if}
     </span>
     {#if nextSetting}<small data-testid="next-setting">{nextSetting}</small>{/if}
   </button>
@@ -69,13 +69,9 @@
   }
 
   button {
-    font: inherit;
-    color: var(--fg);
     border: 1px solid var(--line);
     background: var(--panel);
     border-radius: var(--radius);
-    touch-action: manipulation;
-    user-select: none;
   }
 
   /*
@@ -111,9 +107,6 @@
   .lines small,
   .name small {
     display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   strong {

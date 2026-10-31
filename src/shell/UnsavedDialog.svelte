@@ -54,11 +54,6 @@
     overflow-wrap: anywhere;
   }
 
-  .hint {
-    font-size: var(--text-label);
-    color: var(--dim);
-  }
-
   .actions {
     margin-top: var(--space-2);
     display: flex;
@@ -68,12 +63,9 @@
   button {
     flex: 1;
     min-height: var(--control-big);
-    font: inherit;
     font-size: var(--text-body);
-    color: var(--fg);
     background: var(--raised);
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    touch-action: manipulation;
   }
 </style>

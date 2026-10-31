@@ -314,7 +314,7 @@
           {#if title === null}
             <span class="none">empty</span>
           {:else}
-            <b>{startName(title)}</b>
+            <b class="truncate">{startName(title)}</b>
             {#if isMissing(title)}<small class="warn" data-testid="start-missing">missing</small>{/if}
           {/if}
         </button>
@@ -513,12 +513,6 @@
     font-weight: 600;
   }
 
-  .hint {
-    margin: 0 0 var(--space-1);
-    color: var(--dim);
-    font-size: var(--text-label);
-  }
-
   .row {
     display: flex;
     align-items: center;
@@ -554,13 +548,6 @@
     flex: none;
     display: flex;
     gap: var(--space-2);
-  }
-
-  button {
-    font: inherit;
-    color: var(--fg);
-    touch-action: manipulation;
-    user-select: none;
   }
 
   .value {
@@ -609,9 +596,6 @@
 
   .slot b {
     max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
     font-size: var(--text-value);
   }
 
@@ -631,13 +615,6 @@
     background: var(--raised);
     border: 1px solid var(--line);
     border-radius: var(--radius);
-  }
-
-  .retry.primary {
-    color: var(--bg);
-    background: var(--fg);
-    border-color: var(--fg);
-    font-weight: 600;
   }
 
   .actions {
@@ -687,11 +664,7 @@
     gap: var(--space-1);
   }
 
-  .chip {
-    min-height: var(--control);
-    padding: 0 0.9rem;
-    background: var(--raised);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-pill);
+  .hint {
+    margin-bottom: var(--space-1);
   }
 </style>

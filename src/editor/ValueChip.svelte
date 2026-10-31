@@ -94,7 +94,7 @@
 
 <svelte:window onpointerdown={outside} />
 
-<div class="chip {tone}" class:compact class:open class:dragging bind:this={root} data-testid="chip-{testid}">
+<div class="value-chip {tone}" class:compact class:open class:dragging bind:this={root} data-testid="chip-{testid}">
   {#if !compact || open}
     <button
       type="button"
@@ -149,7 +149,7 @@
 </div>
 
 <style>
-  .chip {
+  .value-chip {
     --tone: var(--fg);
     display: flex;
     align-items: stretch;
@@ -161,13 +161,13 @@
     user-select: none;
   }
 
-  .chip.flow {
+  .value-chip.flow {
     --tone: var(--flow);
   }
-  .chip.pressure {
+  .value-chip.pressure {
     --tone: var(--pressure);
   }
-  .chip.temperature {
+  .value-chip.temperature {
     --tone: var(--temperature);
   }
 

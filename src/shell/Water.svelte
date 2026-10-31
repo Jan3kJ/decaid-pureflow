@@ -99,12 +99,9 @@
     align-items: center;
     justify-content: center;
     gap: min(var(--space-2), 1.4cqw);
-    font: inherit;
     color: var(--fg);
     background: var(--raised);
     border: 0.35rem solid var(--temperature);
-    touch-action: manipulation;
-    user-select: none;
     font-variant-numeric: tabular-nums;
   }
 

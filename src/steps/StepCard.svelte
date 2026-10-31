@@ -197,7 +197,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     {disabled}
     onclick={onopen}
   >
-    <span class="head"><span class="number">{index + 1}</span><span class="title">{step.name}</span></span>
+    <span class="head"><span class="number">{index + 1}</span><span class="title truncate">{step.name}</span></span>
     <span class="line temperature">{shown(step, 'temperature')} {step.sensor === 'water' ? 'water' : 'coffee'}</span>
     <span class="line {pressure ? 'pressure' : 'flow'}"
       >{pumpLabel({ pump: step.pump, transition: step.transition })} {shown(step, 'target')}</span
@@ -252,9 +252,6 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   .title {
     font-size: var(--text-body);
     font-weight: 600;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   .number {
@@ -360,13 +357,9 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
 
   .act {
     min-height: var(--control);
-    font: inherit;
-    color: var(--fg);
     background: var(--raised);
     border: 1px solid var(--line);
     border-radius: var(--radius-inner);
-    touch-action: manipulation;
-    user-select: none;
   }
 
   .act {

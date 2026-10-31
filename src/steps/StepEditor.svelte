@@ -256,7 +256,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
       disabled={busy}
       onclick={() => skin.leave('profiles')}
     >
-      <span>{profile.title}</span>
+      <span class="truncate">{profile.title}</span>
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h9" /></svg>
     </button>
     <div class="group tabs" role="group" aria-label="view">
@@ -272,8 +272,8 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     </div>
     <span class="count" data-testid="step-count">{profile.steps.length} {profile.steps.length === 1 ? 'step' : 'steps'}</span>
     <div class="group" role="group" aria-label="profile actions">
-      <button class="seg action" data-testid="save" disabled={busy || !canSave} onclick={save}>save</button>
-      <button class="seg action" data-testid="save-as" disabled={busy || profile.steps.length === 0} onclick={() => (naming = true)}>
+      <button class="seg save" data-testid="save" disabled={busy || !canSave} onclick={save}>save</button>
+      <button class="seg save" data-testid="save-as" disabled={busy || profile.steps.length === 0} onclick={() => (naming = true)}>
         save as
       </button>
     </div>
@@ -394,12 +394,8 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   }
 
   button {
-    font: inherit;
-    color: var(--fg);
     border: 1px solid var(--line);
     background: var(--panel);
-    touch-action: manipulation;
-    user-select: none;
   }
 
   .seg {
@@ -410,7 +406,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     font-size: var(--text-body);
   }
 
-  .seg.action {
+  .seg.save {
     min-width: 0;
     background: var(--raised);
     white-space: nowrap;
@@ -433,12 +429,6 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     font-weight: 600;
   }
 
-  .name span {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
   .name svg {
     flex: none;
     width: 1.3rem;
@@ -450,13 +440,11 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   }
 
   .notice {
-    margin: 0;
     padding: var(--space-2) 0.9rem;
     border: 1px solid var(--line);
     border-radius: var(--radius);
     background: var(--raised);
     color: var(--dim);
-    font-size: var(--text-label);
   }
 
   .notice.warn {
@@ -494,11 +482,6 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   .dialog p {
     margin: 0 0 var(--space-2);
     font-size: var(--text-title);
-  }
-
-  .dialog .hint {
-    font-size: var(--text-label);
-    color: var(--dim);
   }
 
   .actions {

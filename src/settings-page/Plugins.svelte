@@ -386,29 +386,15 @@
     color: var(--temperature);
   }
 
-  button,
   input {
     font: inherit;
     color: var(--fg);
     touch-action: manipulation;
   }
 
-  button {
-    user-select: none;
-  }
-
   button:disabled,
   input:disabled {
     opacity: 0.5;
-  }
-
-  .action {
-    flex: none;
-    min-height: var(--control);
-    padding: 0 1rem;
-    background: var(--raised);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
   }
 
   .value {
@@ -445,13 +431,5 @@
     flex-wrap: wrap;
     justify-content: flex-end;
     gap: var(--space-1);
-  }
-
-  .chip {
-    min-height: var(--control);
-    padding: 0 0.9rem;
-    background: var(--raised);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-pill);
   }
 </style>

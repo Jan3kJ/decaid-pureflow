@@ -43,12 +43,8 @@
     flex: none;
     min-height: var(--control-big);
     padding: 0;
-    font: inherit;
-    color: var(--fg);
     background: none;
     border: 0;
-    touch-action: manipulation;
-    user-select: none;
   }
 
   .lever-button:disabled {

@@ -169,9 +169,4 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     flex-direction: column;
     gap: var(--space-1);
   }
-
-  .hint {
-    font-size: var(--text-label);
-    color: var(--dim);
-  }
 </style>

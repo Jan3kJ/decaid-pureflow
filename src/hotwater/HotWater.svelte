@@ -190,13 +190,9 @@
   }
 
   button {
-    font: inherit;
-    color: var(--fg);
     border: 1px solid var(--line);
     background: var(--panel);
     border-radius: var(--radius);
-    touch-action: manipulation;
-    user-select: none;
   }
 
   button:disabled {
@@ -408,18 +404,6 @@
 
   .chip:disabled small {
     color: var(--dim);
-  }
-
-  .hint {
-    margin: 0;
-    color: var(--dim);
-    font-size: var(--text-label);
-  }
-
-  .notice {
-    margin: 0;
-    color: var(--warn);
-    font-size: var(--text-label);
   }
 
   .info {

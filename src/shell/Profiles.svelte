@@ -331,7 +331,7 @@
             disabled={busy}
             onclick={() => tap(entry)}
           >
-            <span class="title">{entry.profile.title}</span>
+            <span class="title truncate">{entry.profile.title}</span>
             <!-- The loaded row, open, says why it has no delete. -->
             {#if open && deleteRefusal(entry, current) === 'loaded'}<span class="refusal warning" data-testid="profile-refusal"
                 >{LOADED_REFUSAL}</span
@@ -358,8 +358,8 @@
       {@const description = profileDescription(selected)}
       <!-- Every line of the panel but the description holds its place for every profile: the title
            is one line, the author's and the A-Flow note's lines are there when empty. -->
-      <h1>{profile.title}</h1>
-      <p class="author" data-testid="profile-author">{profile.author ? `by ${profile.author}` : ''}</p>
+      <h1 class="truncate">{profile.title}</h1>
+      <p class="author truncate" data-testid="profile-author">{profile.author ? `by ${profile.author}` : ''}</p>
       <dl>
         <div>
           <dt>steps</dt>
@@ -388,7 +388,7 @@
         <button class="load" data-testid="load-profile" disabled={busy} onclick={() => load(selected)}>load</button>
       </div>
     {:else}
-      <p class="hint">Tap a profile to see it; load sends it to the machine.</p>
+      <p class="empty">Tap a profile to see it; load sends it to the machine.</p>
     {/if}
   </aside>
 </div>
@@ -435,13 +435,9 @@
   }
 
   button {
-    font: inherit;
-    color: var(--fg);
     border: 1px solid var(--line);
     background: var(--panel);
     border-radius: var(--radius);
-    touch-action: manipulation;
-    user-select: none;
   }
 
   .offer {
@@ -562,9 +558,6 @@
   .title {
     flex: 1;
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
     font-weight: 600;
   }
 
@@ -583,8 +576,7 @@
     opacity: 1;
   }
 
-  .empty,
-  .hint {
+  .empty {
     color: var(--dim);
     padding: 1rem;
   }
@@ -604,9 +596,6 @@
     margin: 0;
     font-size: var(--text-title);
     font-weight: 600;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
 
   p {
@@ -622,9 +611,6 @@
   .author {
     min-height: 1lh;
     color: var(--dim);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
 
   dl {

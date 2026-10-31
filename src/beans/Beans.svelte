@@ -119,7 +119,7 @@
   <section class="list" aria-label={kind} data-main-frame>
     <div class="tools">
       <label class="search">
-        <span class="hidden">search</span>
+        <span class="visually-hidden">search</span>
         <input
           type="search"
           bind:value={query}
@@ -154,7 +154,7 @@
               data-testid="bean-row"
               onclick={() => (chosen = entry.id)}
             >
-              <strong>{beanTitle(entry)}</strong>
+              <strong class="truncate">{beanTitle(entry)}</strong>
               <small>
                 {entry.archived ? 'archived' : bag?.roastDate ? `roasted ${dateOf(bag.roastDate)}` : 'no roast date'}
               </small>
@@ -171,7 +171,7 @@
               data-testid="grinder-row"
               onclick={() => (chosen = entry.id)}
             >
-              <strong>{entry.model}</strong>
+              <strong class="truncate">{entry.model}</strong>
               <small
                 >{entry.archived
                   ? 'archived'
@@ -267,13 +267,6 @@
     color: var(--dim);
   }
 
-  button {
-    font: inherit;
-    color: var(--fg);
-    touch-action: manipulation;
-    user-select: none;
-  }
-
   .kinds {
     display: flex;
     flex-direction: column;
@@ -307,14 +300,6 @@
     flex: 1;
     min-width: 0;
     display: flex;
-  }
-
-  .hidden {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
   }
 
   input {
@@ -372,9 +357,6 @@
 
   .row strong {
     max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
     font-size: var(--text-body);
     font-weight: 600;
   }

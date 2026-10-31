@@ -323,18 +323,13 @@
   }
 
   button {
-    font: inherit;
     font-weight: 400;
-    color: var(--fg);
-    touch-action: manipulation;
-    user-select: none;
   }
 
   button:disabled {
     opacity: 0.5;
   }
 
-  .action,
   .value {
     flex: none;
     min-height: var(--control);
@@ -344,8 +339,11 @@
     border-radius: var(--radius);
   }
 
-  .primary {
-    border-color: var(--fg);
+  /* The row's main action: the white outline, not the main button's fill; off, it is the shared off look. */
+  .action.primary {
+    color: var(--fg);
+    background: var(--raised);
+    font-weight: 400;
   }
 
   input[type='color'] {

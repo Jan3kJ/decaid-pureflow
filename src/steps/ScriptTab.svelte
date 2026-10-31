@@ -137,14 +137,11 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     min-height: 2.6rem;
     margin: 0;
     padding: 0 0.5rem;
-    font: inherit;
     font-weight: 600;
     color: var(--tone);
     background: none;
     border: 1px solid transparent;
     border-radius: var(--radius-small);
-    touch-action: manipulation;
-    user-select: none;
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
   }

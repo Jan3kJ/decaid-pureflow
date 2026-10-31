@@ -163,7 +163,7 @@
       <span class="dot"></span>
       <div class="about">
         <strong class="name">{row.device.name}</strong>
-        <small class="id name">{row.device.id}</small>
+        <small class="id name truncate">{row.device.id}</small>
         {#if messages[row.device.id]}<small class="warn" data-testid="device-message-{row.device.id}">{messages[row.device.id]}</small
           >{/if}
       </div>
@@ -263,9 +263,6 @@
   }
 
   .id {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
     font-family: ui-monospace, monospace;
   }
 
@@ -305,15 +302,10 @@
     color: var(--temperature);
   }
 
-  button,
   input {
     font: inherit;
     color: var(--fg);
     touch-action: manipulation;
-  }
-
-  button {
-    user-select: none;
   }
 
   button:disabled {
@@ -321,13 +313,9 @@
   }
 
   .action {
-    flex: none;
     min-width: 7.5rem;
     min-height: var(--control-tall);
     padding: 0 0.9rem;
-    background: var(--raised);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
   }
 
   .action.danger {
