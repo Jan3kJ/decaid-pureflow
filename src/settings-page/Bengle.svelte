@@ -12,6 +12,7 @@
   // machine took.
   import { onMount } from 'svelte';
   import type { CupWarmerPreheat, CupWarmerState, LedStripState, ScaleCalibrationState } from '../api';
+  import Lever from '../ui/Lever.svelte';
   import NumberPad from '../editor/NumberPad.svelte';
   import { errorMessage } from '../error-message';
   import type { Skin } from '../shell/skin.svelte';
@@ -136,16 +137,13 @@
       </div>
       <div class="row">
         <span>cup warmer</span>
-        <button
-          class="lever-button"
-          role="switch"
-          aria-label="Cup warmer"
-          aria-checked={heating}
+        <Lever
+          checked={heating}
+          label="Cup warmer"
           disabled={busy}
-          data-testid="cup-warmer-switch"
-          onclick={() => setMat(heating ? { enabled: false } : { temperature: target })}
-          ><span class="lever"><span></span></span></button
-        >
+          testid="cup-warmer-switch"
+          onchange={(on: boolean) => setMat(on ? { temperature: target } : { enabled: false })}
+        />
       </div>
       <div class="row">
         <span>target</span>
@@ -160,15 +158,13 @@
             <small>the firmware starts the mat before a scheduled wake and holds it until the window closes.</small>
             {#if preheat.active}<small data-testid="cup-warmer-preheat-active">the wake schedule heats the mat now.</small>{/if}
           </div>
-          <button
-            class="lever-button"
-            role="switch"
-            aria-label="Pre-warm"
-            aria-checked={preheat.enabled}
+          <Lever
+            checked={preheat.enabled}
+            label="Pre-warm"
             disabled={busy}
-            data-testid="cup-warmer-preheat"
-            onclick={() => setPreheat({ enabled: !preheat!.enabled })}><span class="lever"><span></span></span></button
-          >
+            testid="cup-warmer-preheat"
+            onchange={(on: boolean) => setPreheat({ enabled: on })}
+          />
         </div>
         <div class="row">
           <span>pre-warm lead</span>
@@ -359,43 +355,5 @@
     background: var(--raised);
     border: 1px solid var(--line);
     border-radius: var(--radius);
-  }
-
-  .lever-button {
-    flex: none;
-    min-height: var(--control-big);
-    padding: 0;
-    background: none;
-    border: 0;
-  }
-
-  .lever {
-    display: block;
-    width: 4.4rem;
-    height: 2.4rem;
-    padding: var(--space-1);
-    box-sizing: border-box;
-    border-radius: var(--radius-lever);
-    background: var(--raised);
-    border: 1px solid var(--line);
-  }
-
-  .lever span {
-    display: block;
-    width: 1.8rem;
-    height: 100%;
-    border-radius: var(--radius-round);
-    background: var(--dim);
-    transition: transform var(--motion-fast);
-  }
-
-  [aria-checked='true'] .lever {
-    background: var(--pressure);
-    border-color: var(--pressure);
-  }
-
-  [aria-checked='true'] .lever span {
-    background: var(--bg);
-    transform: translateX(2rem);
   }
 </style>

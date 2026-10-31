@@ -15,6 +15,7 @@
   import { onDestroy, onMount } from 'svelte';
   import { DecaidApiError, devicesStream, type DevicesState, type DeviceInfo, type SnapshotStream } from '../api';
   import type { Skin } from '../shell/skin.svelte';
+  import Lever from '../ui/Lever.svelte';
   import Confirm from './Confirm.svelte';
   import { PREFERRED_KEY, afterForget, connectMessage, deviceRows, type DeviceKind, type DeviceRow } from './devices';
   import { errorMessage } from '../error-message';
@@ -166,15 +167,14 @@
         {#if messages[row.device.id]}<small class="warn" data-testid="device-message-{row.device.id}">{messages[row.device.id]}</small
           >{/if}
       </div>
-      <button
-        class="lever-button"
-        role="switch"
-        aria-label="preferred {name}"
-        aria-checked={row.preferred}
+      <Lever
+        checked={row.preferred}
+        label="preferred {name}"
+        caption="preferred"
         disabled={preferred === undefined || !!busy[`preferred-${row.device.id}`]}
-        data-testid="device-preferred-{row.device.id}"
-        onclick={() => prefer(row)}><small>preferred</small><span class="lever"><span></span></span></button
-      >
+        testid="device-preferred-{row.device.id}"
+        onchange={() => prefer(row)}
+      />
       <span class="badge" data-testid="device-state-{row.device.id}">{row.label}</span>
       {#each row.actions as action (action)}
         <button
@@ -333,48 +333,6 @@
   .action.danger {
     border-color: var(--temperature);
     color: var(--temperature);
-  }
-
-  .lever-button {
-    flex: none;
-    min-height: var(--control-tall);
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-1);
-    background: none;
-    border: 0;
-  }
-
-  .lever {
-    display: block;
-    width: 3.6rem;
-    height: 1.9rem;
-    padding: var(--space-1);
-    box-sizing: border-box;
-    border-radius: var(--radius-lever);
-    background: var(--raised);
-    border: 1px solid var(--line);
-  }
-
-  .lever span {
-    display: block;
-    width: 1.4rem;
-    height: 100%;
-    border-radius: var(--radius-round);
-    background: var(--dim);
-    transition: transform var(--motion-fast);
-  }
-
-  [aria-checked='true'] .lever {
-    background: var(--pressure);
-    border-color: var(--pressure);
-  }
-
-  [aria-checked='true'] .lever span {
-    background: var(--bg);
-    transform: translateX(1.7rem);
   }
 
   .add {

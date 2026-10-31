@@ -13,6 +13,7 @@
   import type { WakeSchedule } from '../api';
   import NumberPad from '../editor/NumberPad.svelte';
   import type { Skin } from '../shell/skin.svelte';
+  import Lever from '../ui/Lever.svelte';
   import Confirm from './Confirm.svelte';
   import { clock, minutesOf } from './fields';
   import { DAYS, KEEP_AWAKE_MAX, NEW_SCHEDULE, formOf, scheduleOf, scheduleText, type ScheduleForm } from './presence';
@@ -105,15 +106,13 @@
     <div class="row" data-testid="schedule-{schedule.id}">
       <div class="about"><strong class="name" data-testid="schedule-text-{schedule.id}">{scheduleText(schedule)}</strong></div>
       <div class="buttons">
-        <button
-          class="lever-button"
-          role="switch"
-          aria-label="schedule {schedule.time} on"
-          aria-checked={schedule.enabled}
+        <Lever
+          checked={schedule.enabled}
+          label="schedule {schedule.time} on"
           disabled={busy}
-          data-testid="schedule-enabled-{schedule.id}"
-          onclick={() => toggle(schedule)}><span class="lever"><span></span></span></button
-        >
+          testid="schedule-enabled-{schedule.id}"
+          onchange={() => toggle(schedule)}
+        />
         <button
           class="action"
           data-testid="schedule-edit-{schedule.id}"
@@ -335,43 +334,5 @@
     background: var(--raised);
     border: 1px solid var(--line);
     border-radius: var(--radius-pill);
-  }
-
-  .lever-button {
-    flex: none;
-    min-height: var(--control-big);
-    padding: 0;
-    background: none;
-    border: 0;
-  }
-
-  .lever {
-    display: block;
-    width: 4.4rem;
-    height: 2.4rem;
-    padding: var(--space-1);
-    box-sizing: border-box;
-    border-radius: var(--radius-lever);
-    background: var(--raised);
-    border: 1px solid var(--line);
-  }
-
-  .lever span {
-    display: block;
-    width: 1.8rem;
-    height: 100%;
-    border-radius: var(--radius-round);
-    background: var(--dim);
-    transition: transform var(--motion-fast);
-  }
-
-  [aria-checked='true'] .lever {
-    background: var(--pressure);
-    border-color: var(--pressure);
-  }
-
-  [aria-checked='true'] .lever span {
-    background: var(--bg);
-    transform: translateX(2rem);
   }
 </style>

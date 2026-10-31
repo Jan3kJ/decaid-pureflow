@@ -8,6 +8,7 @@
 <script lang="ts">
   // One setting of the settings page: its name and hint on the left, its value on the right as
   // a value button (the number pad), a row of choices or a switch. The page writes it.
+  import Lever from '../ui/Lever.svelte';
   import NumberPad from '../editor/NumberPad.svelte';
   import { clock, heldNumber, minutesOf, numberText, padMin, shownValue, type Field } from './fields';
 
@@ -80,15 +81,13 @@
       {/each}
     </div>
   {:else if field.kind === 'switch'}
-    <button
-      class="lever-button"
-      role="switch"
-      aria-label={field.label}
-      aria-checked={value === true}
+    <Lever
+      checked={value === true}
+      label={field.label}
       disabled={!known || busy}
-      data-testid="setting-{field.id}"
-      onclick={() => onwrite(value !== true)}><span class="lever"><span></span></span></button
-    >
+      testid="setting-{field.id}"
+      onchange={(on: boolean) => onwrite(on)}
+    />
   {:else}
     <span class="info" data-testid="setting-{field.id}">{info ?? '–'}</span>
   {/if}
@@ -211,43 +210,5 @@
     overflow-wrap: anywhere;
     text-align: right;
     color: var(--dim);
-  }
-
-  .lever-button {
-    flex: none;
-    min-height: var(--control-big);
-    padding: 0;
-    background: none;
-    border: 0;
-  }
-
-  .lever {
-    display: block;
-    width: 4.4rem;
-    height: 2.4rem;
-    padding: var(--space-1);
-    box-sizing: border-box;
-    border-radius: var(--radius-lever);
-    background: var(--raised);
-    border: 1px solid var(--line);
-  }
-
-  .lever span {
-    display: block;
-    width: 1.8rem;
-    height: 100%;
-    border-radius: var(--radius-round);
-    background: var(--dim);
-    transition: transform var(--motion-fast);
-  }
-
-  [aria-checked='true'] .lever {
-    background: var(--pressure);
-    border-color: var(--pressure);
-  }
-
-  [aria-checked='true'] .lever span {
-    background: var(--bg);
-    transform: translateX(2rem);
   }
 </style>

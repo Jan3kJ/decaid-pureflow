@@ -12,6 +12,7 @@
   import type { FeedbackRequest } from '../api';
   import { errorMessage } from '../error-message';
   import type { Skin } from '../shell/skin.svelte';
+  import Lever from '../ui/Lever.svelte';
   import { FEEDBACK_TYPES, MANUAL_LINKS, feedbackText } from './bengle';
   import Confirm from './Confirm.svelte';
 
@@ -92,14 +93,12 @@
         <span>attach system information and logs</span>
         <small>Decaid's version, the machine and its log help to find the cause.</small>
       </div>
-      <button
-        class="lever-button"
-        role="switch"
-        aria-label="Attach system information and logs"
-        aria-checked={attach}
-        data-testid="feedback-attach"
-        onclick={() => (attach = !attach)}><span class="lever"><span></span></span></button
-      >
+      <Lever
+        checked={attach}
+        label="Attach system information and logs"
+        testid="feedback-attach"
+        onchange={(on: boolean) => (attach = on)}
+      />
     </div>
     <div class="row">
       <div class="status" aria-live="polite">
@@ -237,43 +236,5 @@
 
   .primary {
     border-color: var(--fg);
-  }
-
-  .lever-button {
-    flex: none;
-    min-height: var(--control-big);
-    padding: 0;
-    background: none;
-    border: 0;
-  }
-
-  .lever {
-    display: block;
-    width: 4.4rem;
-    height: 2.4rem;
-    padding: var(--space-1);
-    box-sizing: border-box;
-    border-radius: var(--radius-lever);
-    background: var(--raised);
-    border: 1px solid var(--line);
-  }
-
-  .lever span {
-    display: block;
-    width: 1.8rem;
-    height: 100%;
-    border-radius: var(--radius-round);
-    background: var(--dim);
-    transition: transform var(--motion-fast);
-  }
-
-  [aria-checked='true'] .lever {
-    background: var(--pressure);
-    border-color: var(--pressure);
-  }
-
-  [aria-checked='true'] .lever span {
-    background: var(--bg);
-    transform: translateX(2rem);
   }
 </style>

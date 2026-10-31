@@ -14,6 +14,7 @@
   // set'; typing one writes it and the field is emptied.
   import { onMount } from 'svelte';
   import type { PluginManifest, PluginSettings } from '../api';
+  import Lever from '../ui/Lever.svelte';
   import NumberPad from '../editor/NumberPad.svelte';
   import type { Skin } from '../shell/skin.svelte';
   import Confirm from './Confirm.svelte';
@@ -187,15 +188,13 @@
           <strong>enabled</strong>
           {#if failed[plugin.id]}<small class="warn" data-testid="plugin-error-{plugin.id}">{failed[plugin.id]}</small>{/if}
         </div>
-        <button
-          class="lever-button"
-          role="switch"
-          aria-label="{plugin.name || plugin.id} enabled"
-          aria-checked={plugin.loaded === true}
+        <Lever
+          checked={plugin.loaded === true}
+          label="{plugin.name || plugin.id} enabled"
           disabled={!!busy[plugin.id]}
-          data-testid="plugin-enabled-{plugin.id}"
-          onclick={() => enable(plugin, plugin.loaded !== true)}><span class="lever"><span></span></span></button
-        >
+          testid="plugin-enabled-{plugin.id}"
+          onchange={(on: boolean) => enable(plugin, on)}
+        />
       </div>
 
       {#if plugin.pendingUpdate}
@@ -222,15 +221,13 @@
             {#if failed[at]}<small class="warn" data-testid="plugin-error-{plugin.id}-{control.key}">{failed[at]}</small>{/if}
           </div>
           {#if control.kind === 'boolean'}
-            <button
-              class="lever-button"
-              role="switch"
-              aria-label={control.label}
-              aria-checked={value === true}
+            <Lever
+              checked={value === true}
+              label={control.label}
               disabled={!read || !!busy[at]}
-              data-testid="plugin-setting-{plugin.id}-{control.key}"
-              onclick={() => write(plugin, control, value !== true)}><span class="lever"><span></span></span></button
-            >
+              testid="plugin-setting-{plugin.id}-{control.key}"
+              onchange={(on: boolean) => write(plugin, control, on)}
+            />
           {:else if control.kind === 'number'}
             <button
               class="value"
@@ -456,43 +453,5 @@
     background: var(--raised);
     border: 1px solid var(--line);
     border-radius: var(--radius-pill);
-  }
-
-  .lever-button {
-    flex: none;
-    min-height: var(--control-big);
-    padding: 0;
-    background: none;
-    border: 0;
-  }
-
-  .lever {
-    display: block;
-    width: 4.4rem;
-    height: 2.4rem;
-    padding: var(--space-1);
-    box-sizing: border-box;
-    border-radius: var(--radius-lever);
-    background: var(--raised);
-    border: 1px solid var(--line);
-  }
-
-  .lever span {
-    display: block;
-    width: 1.8rem;
-    height: 100%;
-    border-radius: var(--radius-round);
-    background: var(--dim);
-    transition: transform var(--motion-fast);
-  }
-
-  [aria-checked='true'] .lever {
-    background: var(--pressure);
-    border-color: var(--pressure);
-  }
-
-  [aria-checked='true'] .lever span {
-    background: var(--bg);
-    transform: translateX(2rem);
   }
 </style>

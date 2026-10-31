@@ -16,6 +16,7 @@
     type Settings,
     type SteamField,
   } from '../settings';
+  import Lever from '../ui/Lever.svelte';
   import { PRODUCT_NAME, PRODUCT_VERSION } from '../product';
   import { backupTime } from '../settings-backup';
   import type { Skin } from '../shell/skin.svelte';
@@ -379,13 +380,12 @@
       <small>version {PRODUCT_VERSION}</small>
     </span>
   </div>
-  <button class="row switch" role="switch" aria-checked={developer} data-testid="setting-developer" onclick={toggleDeveloper}>
+  <Lever checked={developer} testid="setting-developer" onchange={toggleDeveloper}>
     <span class="about">
       <strong>developer options</strong>
       <small>shows Skin > Developer, to install a build from a server on your PC. Only on this tablet.</small>
     </span>
-    <span class="lever"><span></span></span>
-  </button>
+  </Lever>
 </section>
 
 {#if developer}
@@ -397,19 +397,12 @@
 {/if}
 
 {#snippet lever(item: Switch)}
-  <button
-    class="row switch"
-    role="switch"
-    aria-checked={settings[item.key]}
-    data-testid="setting-{item.id}"
-    onclick={() => skin.setSettings({ [item.key]: !settings[item.key] })}
-  >
+  <Lever checked={settings[item.key]} testid="setting-{item.id}" onchange={(on: boolean) => skin.setSettings({ [item.key]: on })}>
     <span class="about">
       <strong>{item.title}</strong>
       <small>{item.hint}</small>
     </span>
-    <span class="lever"><span></span></span>
-  </button>
+  </Lever>
 {/snippet}
 
 {#if confirming}
@@ -717,44 +710,5 @@
     background: var(--raised);
     border: 1px solid var(--line);
     border-radius: var(--radius-pill);
-  }
-
-  .switch {
-    width: 100%;
-    min-height: 5.2rem;
-    background: none;
-    border-width: 1px 0 0;
-    border-style: solid;
-    border-color: var(--line);
-  }
-
-  .lever {
-    flex: none;
-    width: 4.4rem;
-    height: 2.4rem;
-    padding: var(--space-1);
-    box-sizing: border-box;
-    border-radius: var(--radius-lever);
-    background: var(--raised);
-    border: 1px solid var(--line);
-  }
-
-  .lever span {
-    display: block;
-    width: 1.8rem;
-    height: 100%;
-    border-radius: var(--radius-round);
-    background: var(--dim);
-    transition: transform var(--motion-fast);
-  }
-
-  [aria-checked='true'] .lever {
-    background: var(--pressure);
-    border-color: var(--pressure);
-  }
-
-  [aria-checked='true'] .lever span {
-    background: var(--bg);
-    transform: translateX(2rem);
   }
 </style>
