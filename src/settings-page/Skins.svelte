@@ -120,7 +120,7 @@
 
 <div class="row">
   <span class="about">
-    <strong>Check for skin updates</strong>
+    <strong>check for skin updates</strong>
     <small>Decaid looks for a newer version of every skin where it was installed from, and installs it.</small>
   </span>
   <button class="action" data-testid="skins-update" disabled={busy || !skins} onclick={checkUpdates}>check</button>

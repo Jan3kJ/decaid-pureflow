@@ -42,9 +42,9 @@ test("the menu's clean opens Maintenance's clean with the water in ml and the dr
   });
   await openClean(page);
   // 38 mm is 1042 ml in Streamline's table.
-  await expect(page.getByTestId('maintenance-water-clean')).toHaveText('Water tank: 1042 ml');
+  await expect(page.getByTestId('maintenance-water-clean')).toHaveText('water tank: 1042 ml');
   await expect(page.getByTestId('maintenance-water-low-clean')).toHaveCount(0);
-  await expect(page.getByTestId('maintenance-drip-tray-clean')).toHaveText('Empty the drip tray before starting.');
+  await expect(page.getByTestId('maintenance-drip-tray-clean')).toHaveText('empty the drip tray before starting.');
   await expect(page.getByTestId('maintenance-start-clean')).toBeEnabled();
   // Only the clean says so: the descale and transport mode do not use the tank this way.
   await expect(page.getByTestId('maintenance-water-descale')).toHaveCount(0);
@@ -55,7 +55,7 @@ test('under 350 ml the clean warns, and the warning goes when the tank is filled
   // 13 mm is 343 ml.
   gateway.water = { ...gateway.water, currentLevel: 13 };
   await openClean(page);
-  await expect(page.getByTestId('maintenance-water-clean')).toHaveText('Water tank: 343 ml');
+  await expect(page.getByTestId('maintenance-water-clean')).toHaveText('water tank: 343 ml');
   await expect(page.getByTestId('maintenance-water-low-clean')).toHaveText(
     'Under 350 ml: a clean uses about 300 ml. Fill the tank first.',
   );
@@ -63,7 +63,7 @@ test('under 350 ml the clean warns, and the warning goes when the tank is filled
 
   // 14 mm is 371 ml: over 350, no warning.
   gateway.setWater(14);
-  await expect(page.getByTestId('maintenance-water-clean')).toHaveText('Water tank: 371 ml');
+  await expect(page.getByTestId('maintenance-water-clean')).toHaveText('water tank: 371 ml');
   await expect(page.getByTestId('maintenance-water-low-clean')).toHaveCount(0);
 
   // The warning does not block Start: the confirm comes as without it.

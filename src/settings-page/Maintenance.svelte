@@ -170,13 +170,13 @@
         <small><a href={procedure.link.href} target="_blank" rel="noreferrer">{procedure.link.label}</a></small>
       {/if}
       {#if water}
-        <small data-testid="maintenance-water-{procedure.id}">Water tank: {water.ml === null ? '–' : `${water.ml} ml`}</small>
+        <small data-testid="maintenance-water-{procedure.id}">water tank: {water.ml === null ? '–' : `${water.ml} ml`}</small>
         {#if water.low}
           <small class="low" data-testid="maintenance-water-low-{procedure.id}">
             Under {CLEAN_WATER_MIN_ML} ml: a clean uses about 300 ml. Fill the tank first.
           </small>
         {/if}
-        <small data-testid="maintenance-drip-tray-{procedure.id}">Empty the drip tray before starting.</small>
+        <small data-testid="maintenance-drip-tray-{procedure.id}">empty the drip tray before starting.</small>
       {/if}
     </div>
     {#if active}

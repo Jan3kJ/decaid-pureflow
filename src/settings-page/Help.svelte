@@ -61,7 +61,7 @@
     {#each MANUAL_LINKS as link (link.id)}
       <div class="row">
         <span>{link.label}</span>
-        <a class="action" data-testid="manual-{link.id}" href={link.url} target="_blank" rel="noopener noreferrer">View</a>
+        <a class="action" data-testid="manual-{link.id}" href={link.url} target="_blank" rel="noopener noreferrer">view</a>
       </div>
     {/each}
     <p class="dim">The guides open in the browser and need the internet.</p>
@@ -80,16 +80,16 @@
       {/each}
     </div>
     <label>
-      <span>Title</span>
+      <span>title</span>
       <input data-testid="feedback-title" bind:value={title} placeholder="Short summary of your feedback…" />
     </label>
     <label>
-      <span>Description</span>
+      <span>description</span>
       <textarea data-testid="feedback-description" rows="5" bind:value={description} placeholder="Tell us more…"></textarea>
     </label>
     <div class="row">
       <div class="about">
-        <span>Attach system information and logs</span>
+        <span>attach system information and logs</span>
         <small>Decaid's version, the machine and its log help to find the cause.</small>
       </div>
       <button

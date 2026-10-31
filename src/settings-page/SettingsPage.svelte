@@ -148,16 +148,16 @@
 
   const ACTIONS: Record<Action, { label: string; hint: string; confirm?: string }> = {
     'fast-start': {
-      label: 'Fast Start Defaults',
-      hint: 'Idle temperature 99 °C, warmup flow 2 ml/s, test flow 4 ml/s, time-out 1 s.',
+      label: 'fast start defaults',
+      hint: 'idle temperature 99 °C, warmup flow 2 ml/s, test flow 4 ml/s, time-out 1 s.',
     },
     reset: {
-      label: 'Reset to defaults',
-      hint: "The machine's settings above come back as the factory set them. The profile and the workflow are not touched.",
+      label: 'reset to defaults',
+      hint: "the machine's settings above come back as the factory set them. The profile and the workflow are not touched.",
       confirm:
         "Fan, idle temperature, heater flows and time-out, refill kit, flow estimation and steam purge go back to the factory's.",
     },
-    dashboard: { label: 'Go to dashboard', hint: "Leaves the skin for Decaid's own screens." },
+    dashboard: { label: 'go to dashboard', hint: "leaves the skin for Decaid's own screens." },
   };
 
   /** Decaid's host function; only inside Decaid's own window */
@@ -292,7 +292,7 @@
                   class="action"
                   data-testid="settings-action-{action}"
                   disabled={!!busy[action]}
-                  onclick={() => act(sub, action)}>{ACTIONS[action].label.toLowerCase()}</button
+                  onclick={() => act(sub, action)}>{ACTIONS[action].label}</button
                 >
               </div>
             {/each}

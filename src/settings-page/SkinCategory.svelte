@@ -47,13 +47,13 @@
       key: 'firstStepWorkaround',
       id: 'first-step-workaround',
       title: 'first-step workaround',
-      hint: 'A profile from the editor starts with a Pre Fill step of 1 s, for a machine that skips the first step.',
+      hint: 'a profile from the editor starts with a Pre Fill step of 1 s, for a machine that skips the first step.',
     },
     {
       key: 'showProfileSteps',
       id: 'show-profile-steps',
       title: 'profile steps',
-      hint: 'The editor has a button that shows the generated steps under the graph. It opens closed.',
+      hint: 'the editor has a button that shows the generated steps under the graph. It opens closed.',
     },
   ];
 
@@ -62,13 +62,13 @@
       key: 'showGraphLegend',
       id: 'show-graph-legend',
       title: 'legend',
-      hint: 'The shot graph names its curves under it, and what a dashed line is.',
+      hint: 'the shot graph names its curves under it, and what a dashed line is.',
     },
     {
       key: 'showShotValues',
       id: 'show-shot-values',
       title: 'shot values',
-      hint: 'After a shot its overlay shows the values of preinfusion, extraction and the whole shot under the graph.',
+      hint: 'after a shot its overlay shows the values of preinfusion, extraction and the whole shot under the graph.',
     },
   ];
 
@@ -84,14 +84,14 @@
       key: 'displaySize',
       id: 'display-size',
       title: 'display size',
-      hint: 'Every text, button and graph of the skin, larger or smaller. Medium fits the screen as designed.',
+      hint: 'every text, button and graph of the skin, larger or smaller. Medium fits the screen as designed.',
       choices: DISPLAY_SIZES,
     },
     {
       key: 'lineWidth',
       id: 'line-width',
       title: 'chart line width',
-      hint: 'The curves of the shot graph, the profile previews and the A-Flow editor.',
+      hint: 'the curves of the shot graph, the profile previews and the A-Flow editor.',
       choices: LINE_WIDTHS,
     },
   ];
@@ -275,7 +275,7 @@
   <div class="row">
     <span class="about">
       <strong>old A-Flow profiles</strong>
-      <small>Converts every older A-Flow profile to A-Flow 3.0, as the editor's save does; Decaid's bundled ones are skipped.</small>
+      <small>converts every older A-Flow profile to A-Flow 3.0, as the editor's save does; Decaid's bundled ones are skipped.</small>
       {#if imported}<small data-testid="aflow-import-result">{imported}</small>{/if}
     </span>
     <button class="retry" data-testid="aflow-import" disabled={importBusy} onclick={findOld}>convert to 3.0</button>
@@ -285,7 +285,7 @@
     <div class="row">
       <div class="about">
         <strong>start row</strong>
-        <small>The editor's profiles to start from, up to five. A tap on a slot chooses its profile.</small>
+        <small>the editor's profiles to start from, up to five. A tap on a slot chooses its profile.</small>
       </div>
       {#if unread}
         <button class="retry" data-testid="start-retry" onclick={readProfiles}>{unread} try again</button>
@@ -353,7 +353,7 @@
   <h2>{SUB['skin-backup'].name}</h2>
   <div class="row">
     <span class="about">
-      <strong>Backup</strong>
+      <strong>backup</strong>
       <small data-testid="backup-time">
         {skin.backupAt ? `in Decaid, ${backupTime(skin.backupAt)}` : 'none yet'}; every change is copied to Decaid
       </small>

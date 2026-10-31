@@ -78,9 +78,9 @@ export function calibrationBusy(state: ScaleCalibrationState | null): boolean {
 }
 
 export const FEEDBACK_TYPES: Array<{ value: FeedbackRequest['type']; label: string; hint: string }> = [
-  { value: 'bug', label: 'bug report', hint: 'Something does not work' },
-  { value: 'feature', label: 'feature request', hint: 'Something that should be added' },
-  { value: 'question', label: 'general feedback', hint: 'Thoughts or ideas' },
+  { value: 'bug', label: 'bug report', hint: 'something does not work' },
+  { value: 'feature', label: 'feature request', hint: 'something that should be added' },
+  { value: 'question', label: 'general feedback', hint: 'thoughts or ideas' },
 ];
 
 /** Streamline's text of the issue: the title in bold above the description. */
@@ -90,6 +90,6 @@ export function feedbackText(title: string, description: string): string {
 
 /** The pages the manual links to; they open outside the skin. */
 export const MANUAL_LINKS = [
-  { id: 'quickstart', label: 'Quick Start Guide', url: 'https://decentespresso.com/doc/quickstart/' },
-  { id: 'skin', label: 'User manual of this skin', url: 'https://github.com/Jan3kJ/decaid-pureflow/blob/main/README.md' },
+  { id: 'quickstart', label: 'Decent quick start guide', url: 'https://decentespresso.com/doc/quickstart/' },
+  { id: 'skin', label: 'user manual of this skin', url: 'https://github.com/Jan3kJ/decaid-pureflow/blob/main/README.md' },
 ];

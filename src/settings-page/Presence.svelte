@@ -85,8 +85,8 @@
 <div class="presence" data-testid="presence-schedules">
   <div class="row">
     <div class="about">
-      <strong>Wake schedules</strong>
-      <small>The machine wakes at these times, and stays awake for the time given.</small>
+      <strong>wake schedules</strong>
+      <small>the machine wakes at these times, and stays awake for the time given.</small>
       {#if error}<small class="warn" data-testid="schedule-error">{error}</small>{/if}
     </div>
     <button
@@ -103,7 +103,7 @@
 
   {#each schedules ?? [] as schedule (schedule.id)}
     <div class="row" data-testid="schedule-{schedule.id}">
-      <div class="about"><strong data-testid="schedule-text-{schedule.id}">{scheduleText(schedule)}</strong></div>
+      <div class="about"><strong class="name" data-testid="schedule-text-{schedule.id}">{scheduleText(schedule)}</strong></div>
       <div class="buttons">
         <button
           class="lever-button"
@@ -135,7 +135,7 @@
         <button class="value" data-testid="schedule-time" onclick={() => (typing = 'time')}><b>{clock(form.minutes)}</b></button>
       </div>
       <div class="row">
-        <div class="about"><strong>days</strong><small>None chosen: every day.</small></div>
+        <div class="about"><strong>days</strong><small>none chosen: every day.</small></div>
         <div class="choices">
           {#each DAYS as day, i (day)}
             <button
@@ -149,7 +149,7 @@
       </div>
       <div class="row">
         <div class="about">
-          <strong>keep awake for</strong><small>Minutes after it wakes, at most 720 (12 hours); 0 only wakes.</small>
+          <strong>keep awake for</strong><small>minutes after it wakes, at most 720 (12 hours); 0 only wakes.</small>
         </div>
         <button class="value" data-testid="schedule-keep-awake" onclick={() => (typing = 'keep-awake')}
           ><b>{form.keepAwake}<i>min</i></b></button

@@ -161,8 +161,8 @@
     <div class="device {row.state}" data-testid="device-{row.device.id}" data-state={row.state}>
       <span class="dot"></span>
       <div class="about">
-        <strong>{row.device.name}</strong>
-        <small class="id">{row.device.id}</small>
+        <strong class="name">{row.device.name}</strong>
+        <small class="id name">{row.device.id}</small>
         {#if messages[row.device.id]}<small class="warn" data-testid="device-message-{row.device.id}">{messages[row.device.id]}</small
           >{/if}
       </div>
@@ -192,7 +192,7 @@
     <div class="wifi">
       <div class="about">
         <strong>Wi-Fi scale by address</strong>
-        <small>Most Wi-Fi scales are found by Search. Add one by its IP address or host name only if it is not.</small>
+        <small>most Wi-Fi scales are found by search. Add one by its IP address or host name only if it is not.</small>
       </div>
       <div class="add">
         <input
@@ -210,7 +210,7 @@
     </div>
     {#each hosts ?? [] as entry (entry)}
       <div class="device">
-        <div class="about"><strong>{entry}</strong></div>
+        <div class="about"><strong class="name">{entry}</strong></div>
         <button class="action" data-testid="wifi-remove-{entry}" onclick={() => removeWifi(entry)}>remove</button>
       </div>
     {/each}

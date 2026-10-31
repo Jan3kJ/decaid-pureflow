@@ -39,7 +39,7 @@ export const CLEAN: Procedure = {
   id: 'clean',
   state: 'cleaning',
   title: 'Clean',
-  description: 'Runs a cleaning cycle that backflushes the group head.',
+  description: 'runs a cleaning cycle that backflushes the group head.',
   confirm: 'Put a blind basket in the portafilter and lock it into the group head.',
   milestones: ['Starting', 'Filling', 'Soak', 'Flush'],
   milestoneFor: (substate, previous) => {
@@ -56,9 +56,9 @@ export const DESCALE: Procedure = {
   state: 'descaling',
   title: 'Machine Descaling',
   description:
-    'Runs a descaling cycle that removes mineral buildup. The steam heater is switched off first and the cycle starts once the steam boiler is down to 60 °C; the heater comes on again afterwards.',
+    'runs a descaling cycle that removes mineral buildup. The steam heater is switched off first and the cycle starts once the steam boiler is down to 60 °C; the heater comes on again afterwards.',
   confirm: "Prepare to descale as Decent's descaling instructions say: the descaling solution in the tank.",
-  link: { label: 'Descaling instructions', href: 'https://decentespresso.com/docs/de1_descaling_instructions' },
+  link: { label: 'descaling instructions', href: 'https://decentespresso.com/docs/de1_descaling_instructions' },
   milestones: ['Starting', 'Descaling', 'Steam'],
   milestoneFor: (substate, previous) => {
     if (substate === 'cleaningStart') return 0;
@@ -74,7 +74,7 @@ export const TRANSPORT: Procedure = {
   state: 'airPurge',
   title: 'Transport Mode',
   description:
-    'Purges the remaining water from inside the machine. Run it before packing the machine, so that it does not leak during transport.',
+    'purges the remaining water from inside the machine. Run it before packing the machine, so that it does not leak during transport.',
   confirm: 'Prepare your espresso machine for transport: the water inside it is removed.',
   milestones: ['Removing water'],
   milestoneFor: () => 0,

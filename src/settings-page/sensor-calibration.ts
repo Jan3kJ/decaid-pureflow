@@ -25,9 +25,9 @@ export interface Sensor {
 
 /** Streamline's order. */
 export const SENSORS: Sensor[] = [
-  { id: 'temperature', label: 'Temperature', kind: 'offset', unit: '°C', reading: 'groupTemperature' },
-  { id: 'pressure', label: 'Pressure', kind: 'ratio', unit: 'bar', reading: 'pressure' },
-  { id: 'flow', label: 'Flow', kind: 'ratio', unit: 'ml/s', reading: 'flow' },
+  { id: 'temperature', label: 'temperature', kind: 'offset', unit: '°C', reading: 'groupTemperature' },
+  { id: 'pressure', label: 'pressure', kind: 'ratio', unit: 'bar', reading: 'pressure' },
+  { id: 'flow', label: 'flow', kind: 'ratio', unit: 'ml/s', reading: 'flow' },
 ];
 
 /** Both values go to the machine as signed Q16.16; Decaid refuses anything outside. */

@@ -16,7 +16,7 @@
   <div class="about">
     <strong>tank unit</strong>
     <small
-      >The water in the tank on the state line: in ml, or in mm as the machine measures it. This one is the skin's, not the machine's.</small
+      >the water in the tank on the state line: in ml, or in mm as the machine measures it. This one is the skin's, not the machine's.</small
     >
   </div>
   <div class="choices" data-testid="setting-tank-unit">

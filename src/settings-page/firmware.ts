@@ -75,7 +75,7 @@ export const REASON_TEXT: Record<string, string> = {
 
 /** Said before an update starts (Streamline's note): a flash taken for a hang and switched off breaks the machine. */
 export const DURATION_NOTE =
-  'The whole update takes at least 50 minutes. Do not switch the machine off or leave this page until it finishes; restart the machine afterwards.';
+  'the whole update takes at least 50 minutes. Do not switch the machine off or leave this page until it finishes; restart the machine afterwards.';
 
 /** The line under the bar while an update runs. */
 export function progressText(progress: FirmwareProgress | null): string {

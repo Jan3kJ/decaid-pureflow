@@ -132,10 +132,10 @@
   {#if warmer}
     <div data-testid="cup-warmer">
       <div class="row">
-        <span>Mat temperature</span><b data-testid="cup-warmer-current">{matReading(warmer.currentTemperature)}</b>
+        <span>mat temperature</span><b data-testid="cup-warmer-current">{matReading(warmer.currentTemperature)}</b>
       </div>
       <div class="row">
-        <span>Cup warmer</span>
+        <span>cup warmer</span>
         <button
           class="lever-button"
           role="switch"
@@ -148,7 +148,7 @@
         >
       </div>
       <div class="row">
-        <span>Target</span>
+        <span>target</span>
         <button class="value" disabled={busy} data-testid="cup-warmer-target" onclick={() => (typing = 'temperature')}
           >{target}<i>°C</i></button
         >
@@ -156,9 +156,9 @@
       {#if preheat}
         <div class="row">
           <div class="about">
-            <span>Pre-warm before a wake schedule</span>
-            <small>The firmware starts the mat before a scheduled wake and holds it until the window closes.</small>
-            {#if preheat.active}<small data-testid="cup-warmer-preheat-active">The wake schedule heats the mat now.</small>{/if}
+            <span>pre-warm before a wake schedule</span>
+            <small>the firmware starts the mat before a scheduled wake and holds it until the window closes.</small>
+            {#if preheat.active}<small data-testid="cup-warmer-preheat-active">the wake schedule heats the mat now.</small>{/if}
           </div>
           <button
             class="lever-button"
@@ -171,7 +171,7 @@
           >
         </div>
         <div class="row">
-          <span>Pre-warm lead</span>
+          <span>pre-warm lead</span>
           <button class="value" disabled={busy} data-testid="cup-warmer-lead" onclick={() => (typing = 'lead')}
             >{preheat.leadMinutes}<i>min</i></button
           >
@@ -200,7 +200,7 @@
         {/each}
       {/each}
       <div class="row">
-        <small>The strips take the colours at once and the machine keeps them.</small>
+        <small>the strips take the colours at once and the machine keeps them.</small>
         <span class="buttons">
           <button class="action" data-testid="led-reload" disabled={busy || !changed} onclick={read}>discard</button>
           <button class="action primary" data-testid="led-save" disabled={busy || !changed} onclick={saveStrip}>save</button>
@@ -213,19 +213,19 @@
 {:else if calibration}
   <div data-testid="load-cells">
     <div class="row">
-      <span>Calibration</span>
+      <span>calibration</span>
       <b data-testid="calibration-step">{STEP_TEXT[calibration.step]}{running ? ` (${calibration.secondsRemaining} s)` : ''}</b>
     </div>
     <div class="row">
-      <span>Last latch</span>
+      <span>last latch</span>
       <b data-testid="calibration-result"
         >{RESULT_TEXT[calibration.status] ?? calibration.status}{#if calibration.detectedCell !== 'none'}, load cell {calibration.detectedCell.toUpperCase()}{/if}</b
       >
     </div>
     <div class="row">
       <div class="about">
-        <span>1. Precision zero</span>
-        <small>The platform stays empty.</small>
+        <span>1. precision zero</span>
+        <small>the platform stays empty.</small>
       </div>
       <button class="action" data-testid="calibration-zero" disabled={busy || running} onclick={() => sendCalibration('zero')}
         >find zero</button
@@ -233,8 +233,8 @@
     </div>
     <div class="row">
       <div class="about">
-        <span>2. Known mass on one load cell</span>
-        <small>Take the platform off, put the mass on one load cell, once for each cell.</small>
+        <span>2. known mass on one load cell</span>
+        <small>take the platform off, put the mass on one load cell, once for each cell.</small>
       </div>
       <button class="value" disabled={busy || running} data-testid="calibration-grams" onclick={() => (typing = 'grams')}
         >{grams}<i>g</i></button
@@ -247,7 +247,7 @@
       >
     </div>
     <div class="row">
-      <span>Stop the procedure</span>
+      <span>stop the procedure</span>
       <button class="action" data-testid="calibration-abort" disabled={busy || !running} onclick={() => sendCalibration('abort')}
         >abort</button
       >

@@ -113,8 +113,8 @@
   {#if app}
     <div data-testid="app-update">
       <div class="row"><span>Decaid version</span><b>{app.currentVersion}</b></div>
-      <div class="row"><span>Update</span><b data-testid="app-update-state">{appUpdateText(app)}</b></div>
-      <div class="row"><span>Releases</span><b>{app.releaseUrl}</b></div>
+      <div class="row"><span>update</span><b data-testid="app-update-state">{appUpdateText(app)}</b></div>
+      <div class="row"><span>releases</span><b>{app.releaseUrl}</b></div>
     </div>
   {:else}
     <p class="dim">Reading Decaid's update state…</p>
@@ -122,10 +122,10 @@
 {:else if summary && catalog}
   {@const latest = summary.latest}
   <div data-testid="firmware">
-    <div class="row"><span>Machine</span><b>{summary.model ?? 'None connected'}</b></div>
-    <div class="row"><span>Installed build</span><b data-testid="firmware-installed">{summary.installedBuild ?? '–'}</b></div>
+    <div class="row"><span>machine</span><b>{summary.model ?? 'None connected'}</b></div>
+    <div class="row"><span>installed build</span><b data-testid="firmware-installed">{summary.installedBuild ?? '–'}</b></div>
     <div class="row">
-      <span>Status</span>
+      <span>status</span>
       <b data-testid="firmware-status" data-status={summary.status}>
         {STATUS_TEXT[summary.status]}{#if summary.status === 'unknown' && summary.reason}: {REASON_TEXT[summary.reason] ??
             summary.reason}{/if}
@@ -137,10 +137,10 @@
       <div class="row artifact" data-testid="firmware-artifact-{artifact.id}">
         <div class="about">
           <span>
-            Build {artifact.versionLabel ?? artifact.build}
+            build {artifact.versionLabel ?? artifact.build}
             {#if artifact.id === catalog.recommendedArtifactId}<em>recommended</em>{/if}
           </span>
-          {#if artifact.releaseNotes}<small>{artifact.releaseNotes}</small>{/if}
+          {#if artifact.releaseNotes}<small class="name">{artifact.releaseNotes}</small>{/if}
         </div>
         <b>
           {artifact.eligibility?.status === 'applicable'
@@ -167,7 +167,7 @@
     {:else if summary.status === 'update-available' && latest}
       <div class="row">
         <div class="about">
-          <span>Install build {latest.versionLabel ?? latest.build}</span>
+          <span>install build {latest.versionLabel ?? latest.build}</span>
           <small>{DURATION_NOTE}</small>
         </div>
         <button class="action" data-testid="firmware-install" onclick={() => (confirming = true)}>install</button>
@@ -176,8 +176,8 @@
     {#if !busy}
       <div class="row">
         <div class="about">
-          <span>Install from a file</span>
-          <small>A firmware image from this device. Only for a file you trust; the machine must stay on until it is done.</small>
+          <span>install from a file</span>
+          <small>a firmware image from this device. Only for a file you trust; the machine must stay on until it is done.</small>
         </div>
         <button class="action" data-testid="firmware-file" onclick={() => chooser?.click()}>choose file</button>
         <input type="file" hidden bind:this={chooser} data-testid="firmware-file-input" onchange={choose} />

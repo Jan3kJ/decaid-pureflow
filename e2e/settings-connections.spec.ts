@@ -258,7 +258,7 @@ test("Machine Information shows the machine's model, firmware and serial; the ch
   await expect(page.getByTestId('machine-info-model')).toHaveText('DE1Pro');
   await expect(page.getByTestId('machine-info-firmware')).toHaveText('1337');
   await expect(page.getByTestId('machine-info-serial')).toHaveText('mock-de1');
-  await expect(page.getByTestId('machine-info')).toContainText('Refill kit');
+  await expect(page.getByTestId('machine-info')).toContainText('refill kit');
   await expect(page.getByTestId('charging-status')).toHaveCount(0);
 
   gateway.decaidSettings = {

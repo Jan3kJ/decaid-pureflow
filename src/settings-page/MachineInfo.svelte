@@ -55,13 +55,12 @@
     setTimeout(() => (copied = null), 1500);
   }
 
-  /** `refillKit` → 'Refill kit' */
+  /** `refillKit` → 'refill kit' */
   const labelOf = (key: string) => {
-    const words = key
+    return key
       .replace(/([A-Z])/g, ' $1')
       .toLowerCase()
       .trim();
-    return words.charAt(0).toUpperCase() + words.slice(1);
   };
   const valueOf = (value: unknown) => (typeof value === 'boolean' ? (value ? 'Yes' : 'No') : String(value));
 
@@ -78,10 +77,10 @@
 {#if part === 'machine-info'}
   <div class="info" data-testid="machine-info">
     {#if info}
-      <div class="row"><span>Model</span><b data-testid="machine-info-model">{info.model ?? '–'}</b></div>
-      <div class="row"><span>Firmware version</span><b data-testid="machine-info-firmware">{info.version ?? '–'}</b></div>
+      <div class="row"><span>model</span><b data-testid="machine-info-model">{info.model ?? '–'}</b></div>
+      <div class="row"><span>firmware version</span><b data-testid="machine-info-firmware">{info.version ?? '–'}</b></div>
       <div class="row">
-        <span>Serial number</span>
+        <span>serial number</span>
         <span class="serial">
           {#if info.serialNumber}
             <button class="action" data-testid="machine-info-copy" onclick={() => copy(info!.serialNumber!)}>{copied ?? 'copy'}</button
@@ -90,7 +89,7 @@
           <b data-testid="machine-info-serial">{info.serialNumber ?? '–'}</b>
         </span>
       </div>
-      <div class="row"><span>Group head controller</span><b>{info.GHC ? 'Present' : 'None'}</b></div>
+      <div class="row"><span>group head controller</span><b>{info.GHC ? 'Present' : 'None'}</b></div>
       {#each Object.entries(info.extra ?? {}) as [key, value] (key)}
         <div class="row"><span>{labelOf(key)}</span><b>{valueOf(value)}</b></div>
       {/each}
@@ -106,10 +105,10 @@
 {:else if charging}
   <div class="info" data-testid="charging-status">
     <div class="row">
-      <span>Battery</span><b>{charging.batteryPercent ?? '--'}%{charging.isEmergency ? ' (emergency)' : ''}</b>
+      <span>battery</span><b>{charging.batteryPercent ?? '--'}%{charging.isEmergency ? ' (emergency)' : ''}</b>
     </div>
     <div class="row">
-      <span>Phase</span><b>{PHASES[charging.currentPhase ?? ''] ?? charging.currentPhase ?? '--'}</b>
+      <span>phase</span><b>{PHASES[charging.currentPhase ?? ''] ?? charging.currentPhase ?? '--'}</b>
     </div>
     <div class="row"><span>USB charger</span><b>{charging.usbChargerOn ? 'On' : 'Off'}</b></div>
   </div>

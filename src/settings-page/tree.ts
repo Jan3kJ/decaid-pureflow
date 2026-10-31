@@ -90,13 +90,13 @@ export const SETTINGS_TREE: Category[] = [
       {
         id: 'steam',
         name: 'Steam',
-        hint: "The machine's steam. The steam page's timer, mugs and adjust buttons are under Skin > Steam.",
+        hint: "the machine's steam. The steam page's timer, mugs and adjust buttons are under Skin > Steam.",
         content: fields(STEAM),
       },
       {
         id: 'hotwater',
         name: 'Hot Water',
-        hint: "The machine's hot water. The hot water page's ratios are under Skin > Hot water.",
+        hint: "the machine's hot water. The hot water page's ratios are under Skin > Hot water.",
         content: fields(HOT_WATER),
       },
       { id: 'watertank', name: 'Water Tank', content: view({ kind: 'tank-unit' }, WATER_TANK, true) },
@@ -104,7 +104,7 @@ export const SETTINGS_TREE: Category[] = [
       {
         id: 'machineadvancedsettings',
         name: 'Machine Advanced Settings',
-        hint: 'Before espresso starts.',
+        hint: 'before espresso starts.',
         content: fields(MACHINE_ADVANCED, ['fast-start']),
       },
     ],
@@ -131,7 +131,7 @@ export const SETTINGS_TREE: Category[] = [
       {
         id: 'defaultloadsettings',
         name: 'Default load settings',
-        hint: "Fan, idle temperature, heater flows and time-out, refill kit, flow estimation and steam purge back to the factory's.",
+        hint: "fan, idle temperature, heater flows and time-out, refill kit, flow estimation and steam purge back to the factory's.",
         content: fields([], ['reset']),
       },
       { id: 'refillkit', name: 'Refill Kit', content: fields(REFILL_KIT) },
@@ -140,13 +140,13 @@ export const SETTINGS_TREE: Category[] = [
       {
         id: 'sensors',
         name: 'Sensor Calibration',
-        hint: "Corrections of the machine's temperature, pressure and flow sensors against your own instrument.",
+        hint: "corrections of the machine's temperature, pressure and flow sensors against your own instrument.",
         content: view({ kind: 'sensors' }),
       },
       {
         id: 'loadcell',
         name: 'Load Cells',
-        hint: "The Bengle's integrated scale: find the zero, then latch a known mass on each load cell.",
+        hint: "the Bengle's integrated scale: find the zero, then latch a known mass on each load cell.",
         bengle: true,
         content: view({ kind: 'bengle', part: 'load-cells' }),
       },
@@ -162,7 +162,7 @@ export const SETTINGS_TREE: Category[] = [
       {
         id: 'ledstrip',
         name: 'Lighting',
-        hint: 'The colours of the strips while the machine is awake and while it sleeps.',
+        hint: 'the colours of the strips while the machine is awake and while it sleeps.',
         bengle: true,
         content: view({ kind: 'bengle', part: 'lighting' }),
       },
@@ -187,13 +187,13 @@ export const SETTINGS_TREE: Category[] = [
       {
         id: 'skin-steam',
         name: 'Steam',
-        hint: "What the steam page calculates with. The machine's steam temperature and flow: Quick Adjustments > Steam.",
+        hint: "what the steam page calculates with. The machine's steam temperature and flow: Quick Adjustments > Steam.",
         content: { kind: 'skin', part: 'steam' },
       },
       {
         id: 'skin-hot-water',
         name: 'Hot water',
-        hint: "The hot water page's ratios. The machine's hot water values: Quick Adjustments > Hot Water.",
+        hint: "the hot water page's ratios. The machine's hot water values: Quick Adjustments > Hot Water.",
         content: { kind: 'skin', part: 'hot-water' },
       },
       { id: 'skin-profile', name: 'Profile', content: { kind: 'skin', part: 'profile' } },
@@ -201,7 +201,7 @@ export const SETTINGS_TREE: Category[] = [
       {
         id: 'skin-display',
         name: 'Display Size',
-        hint: 'The size of everything on the screen, and the width of the curves of every graph.',
+        hint: 'the size of everything on the screen, and the width of the curves of every graph.',
         content: { kind: 'skin', part: 'display' },
       },
       {
@@ -237,7 +237,7 @@ export const SETTINGS_TREE: Category[] = [
       {
         id: 'presence',
         name: 'Presence Detection',
-        hint: 'Sleep and wake the machine by use and by schedule.',
+        hint: 'sleep and wake the machine by use and by schedule.',
         content: view({ kind: 'presence' }, PRESENCE, true),
       },
     ],
@@ -257,7 +257,7 @@ export const SETTINGS_TREE: Category[] = [
     name: 'User Manual',
     subcategories: [
       { id: 'quickstart', name: 'Quick Start Guide', content: view({ kind: 'help', part: 'manual' }) },
-      { id: 'feedback', name: 'Send Feedback', hint: 'To Decent, through Decaid.', content: view({ kind: 'help', part: 'feedback' }) },
+      { id: 'feedback', name: 'Send Feedback', hint: 'to Decent, through Decaid.', content: view({ kind: 'help', part: 'feedback' }) },
     ],
   },
 ];

@@ -150,7 +150,7 @@
 <div class="plugins" data-testid="plugins">
   <div class="row">
     <div class="about">
-      <strong>Check for plugin updates</strong>
+      <strong>check for plugin updates</strong>
       <small>Decaid checks every plugin installed from GitHub; one that asks for more permissions waits for approval.</small>
       {#if checked}<small data-testid="plugins-checked">{checked}</small>{/if}
     </div>
@@ -184,7 +184,7 @@
 
       <div class="row">
         <div class="about">
-          <strong>Enabled</strong>
+          <strong>enabled</strong>
           {#if failed[plugin.id]}<small class="warn" data-testid="plugin-error-{plugin.id}">{failed[plugin.id]}</small>{/if}
         </div>
         <button
@@ -201,8 +201,8 @@
       {#if plugin.pendingUpdate}
         <div class="row">
           <div class="about">
-            <strong>Update {plugin.pendingUpdate.version ?? ''}</strong>
-            <small>Asks for: {(plugin.pendingUpdate.addedPermissions ?? []).join(', ') || 'more permissions'}</small>
+            <strong>update {plugin.pendingUpdate.version ?? ''}</strong>
+            <small>asks for: {(plugin.pendingUpdate.addedPermissions ?? []).join(', ') || 'more permissions'}</small>
           </div>
           <button class="action" data-testid="plugin-approve-{plugin.id}" disabled={!!busy[plugin.id]} onclick={() => approve(plugin)}
             >approve</button
@@ -216,8 +216,8 @@
         {@const read = stored[plugin.id] !== undefined}
         <div class="row" class:busy={busy[at]} data-testid="plugin-row-{plugin.id}-{control.key}">
           <div class="about">
-            <strong>{control.label}</strong>
-            {#if control.description}<small>{control.description}</small>{/if}
+            <strong class="name">{control.label}</strong>
+            {#if control.description}<small class="name">{control.description}</small>{/if}
             {#if read && !isStored(control, stored[plugin.id]) && control.kind !== 'secure'}<small>default</small>{/if}
             {#if failed[at]}<small class="warn" data-testid="plugin-error-{plugin.id}-{control.key}">{failed[at]}</small>{/if}
           </div>

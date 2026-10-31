@@ -142,7 +142,7 @@ test('the tank unit is under Quick Adjustments > Water Tank, shows the state lin
   await openTank(page);
   const row = page.getByTestId('settings-section-watertank').getByTestId('row-tank-unit');
   await expect(row).toContainText(
-    "The water in the tank on the state line: in ml, or in mm as the machine measures it. This one is the skin's, not the machine's.",
+    "the water in the tank on the state line: in ml, or in mm as the machine measures it. This one is the skin's, not the machine's.",
   );
   await expect(page.getByTestId('setting-tank-unit-ml')).toHaveAttribute('aria-pressed', 'true');
   await page.getByTestId('setting-tank-unit-mm').click();
