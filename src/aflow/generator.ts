@@ -2,7 +2,7 @@ import * as C from './constants';
 import type { AFlowParams, FlowStep, GenerateOptions, PressureStep, Profile, ProfileStep, ResolvedParams, StepExit } from './types';
 
 // The plugin's round_to_one_digits; it also keeps 3 * 0.1 from becoming 0.30000000000000004.
-function round1(value: number): number {
+export function round1(value: number): number {
   return Math.round(value * 10) / 10;
 }
 

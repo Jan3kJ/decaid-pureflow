@@ -5,7 +5,7 @@
 // it is now; a marker in the skin would not know.
 import { DEFAULT_PROFILES, serializeParams, type AFlowParams } from '../aflow';
 import type { DecaidClient, Profile, ProfileRecord } from '../api';
-import { readParams, readRecord, sameSteps } from './storage';
+import { readParams, readRecord, sameContent } from './storage';
 
 /** The workflow's profile, when it holds edits that no profile has stored. */
 export interface Unsaved {
@@ -16,7 +16,6 @@ export interface Unsaved {
 }
 
 /** What a record's id is made of: its steps and its target weight. */
-const sameContent = (a: Profile, b: Profile) => sameSteps(a.steps, b.steps) && (a.target_weight ?? 0) === (b.target_weight ?? 0);
 
 /**
  * The unsaved edits on the machine, or null. `records` must be listed with `includeHidden`.

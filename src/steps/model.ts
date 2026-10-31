@@ -160,6 +160,12 @@ export const VALUE_LABEL: Record<StepValue, string> = {
 
 const isPressure = (step: ProfileStep) => step.pump === 'pressure';
 
+/** A step's limit on the quantity it does not drive, or null for none (`limiter` null or 0). */
+export function stepLimit(step: ProfileStep): number | null {
+  const value = num(step.limiter?.value);
+  return value > 0 ? value : null;
+}
+
 /** The range of a value of this step; null for the exit of a step without one. */
 export function limitOf(step: ProfileStep, value: StepValue): Limit | null {
   switch (value) {

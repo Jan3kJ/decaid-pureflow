@@ -22,7 +22,7 @@
 // A step's limit (`limiter`: a flow step's pressure, a pressure step's flow) is a series of its
 // own, the limit's value across the step and null where a step has none.
 import type { Profile, ProfileStep, StepExit } from '../api';
-import { num } from './model';
+import { num, stepLimit } from './model';
 
 export interface StepSpan {
   /** the step's place in the profile */
@@ -74,16 +74,10 @@ export interface CurveOptions {
   lastStepSeconds?: number;
 }
 
-/** A step's limit, or null for none (`limiter` null or 0). */
-function limitOf(step: ProfileStep): number | null {
-  const value = num(step.limiter?.value);
-  return value > 0 ? value : null;
-}
-
 /** Where a step leaves the quantity of the pump it does not drive: its exit on it, else its limit, else 0. */
 function leftAt(step: ProfileStep, quantity: StepExit['type']): number {
   if (step.exit?.type === quantity) return num(step.exit.value);
-  return limitOf(step) ?? 0;
+  return stepLimit(step) ?? 0;
 }
 
 /** The targets of a profile over time, step after step; a step of 0 s is left out. */
@@ -108,7 +102,7 @@ export function stepCurve(profile: Pick<Profile, 'steps'>, options: CurveOptions
     // A ramp cut short ends where it is at the cut.
     const reached = (from: number, target: number) =>
       step.transition === 'smooth' ? from + ((target - from) * shown) / seconds : target;
-    const limit = limitOf(step);
+    const limit = stepLimit(step);
     if (step.pump === 'pressure') {
       const target = num(step.pressure);
       pushChannel(t, pressure, start, end, prevPressure, reached(prevPressure, target), step.transition);

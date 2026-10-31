@@ -31,6 +31,10 @@ function canonical(value: unknown): unknown {
   return sorted;
 }
 
+/** The same steps and target weight. */
+export const sameContent = (a: Profile, b: Profile) =>
+  sameSteps(a.steps, b.steps) && (a.target_weight ?? 0) === (b.target_weight ?? 0);
+
 /** The same steps, whatever the order of their keys. */
 export function sameSteps(a: unknown, b: unknown): boolean {
   return JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));

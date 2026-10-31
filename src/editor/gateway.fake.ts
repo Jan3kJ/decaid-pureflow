@@ -2,7 +2,7 @@
 // 0.8.8 does on the rig. A record's id comes from its steps and its
 // target weight alone, so a POST with steps that exist answers with the existing record.
 import { DecaidClient, type Profile, type ProfileRecord, type ProfileVisibility } from '../api';
-import { sameSteps } from './storage';
+import { sameContent } from './storage';
 
 /** A request's body, with the fields the profile requests send; a GET has none. */
 export interface Body {
@@ -23,7 +23,6 @@ export function fakeGateway(initial: ProfileRecord[] = []) {
   const calls: Call[] = [];
   let made = 0;
 
-  const sameContent = (a: Profile, b: Profile) => sameSteps(a.steps, b.steps) && (a.target_weight ?? 0) === (b.target_weight ?? 0);
   const json = (value: unknown, status = 200) => new Response(JSON.stringify(value), { status });
 
   function make(profile: Profile, over: Partial<ProfileRecord> = {}): ProfileRecord {

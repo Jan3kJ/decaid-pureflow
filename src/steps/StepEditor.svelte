@@ -17,7 +17,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   import NameDialog from '../editor/NameDialog.svelte';
   import NumberPad from '../editor/NumberPad.svelte';
   import { storeAndLoad, type Stored } from '../editor/save';
-  import { sameSteps, stepEditorReason } from '../editor/storage';
+  import { sameContent, stepEditorReason } from '../editor/storage';
   import type { Skin } from '../shell/skin.svelte';
   import {
     VALUE_LABEL,
@@ -84,7 +84,6 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   const canSave = $derived(canSaveOver(record) && dirty && profile.steps.length > 0 && !titleProblem);
 
   /** What a record's id is made of: the steps and the target weight. */
-  const sameContent = (a: Profile, b: Profile) => sameSteps(a.steps, b.steps) && (a.target_weight ?? 0) === (b.target_weight ?? 0);
 
   /** The visible record of a title, the one with these steps first. */
   function recordOf(of: Profile): ProfileRecord | null {

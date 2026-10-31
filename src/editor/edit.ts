@@ -1,7 +1,7 @@
 // What an edit does to the parameters, beyond writing one number. Pure: parameters in, new
 // parameters out. The two ways to change a value differ only for the temperatures: detail
 // mode sets one phase's temperature, a drag on the graph moves a group of phases together.
-import { hasSecondFill, paramRanges, resolveParams, type AFlowParams, type FollowField, type NumberField } from '../aflow';
+import { hasSecondFill, round1, paramRanges, resolveParams, type AFlowParams, type FollowField, type NumberField } from '../aflow';
 import { PAUSE_SECONDS } from '../aflow/constants';
 import type { EditField } from './curve';
 
@@ -20,10 +20,6 @@ const FOLLOWED_BY: Partial<Record<EditField, FollowField>> = {
   infuseTemperature: 'secondFillTemperature',
   pourTemperature: 'rampTemperature',
 };
-
-function round1(value: number): number {
-  return Math.round(value * 10) / 10;
-}
 
 /**
  * Detail mode: sets one value. A temperature that followed the changed one keeps the value

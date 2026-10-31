@@ -12,9 +12,9 @@
 // flow over or under, its weight, its volume) or at its seconds; the shot ends at the stop
 // weight, else with its last step. The weight is the water pushed less what the puck keeps.
 // The temperature starts off the first step's target and follows each step's target with a lag.
-import type { Profile, ProfileStep } from '../api';
+import type { Profile } from '../api';
 import type { StepSpan } from './curve';
-import { num } from './model';
+import { num, stepLimit } from './model';
 import { PUCK } from './puck';
 
 /** The constants of one typical puck, fitted to the export by `scripts/shot-model-fit.mjs`. */
@@ -65,12 +65,6 @@ const MAX_SECONDS = 180;
 /** bar per ml/s, the least resistance the model takes, so a pressure step's flow stays finite */
 const MIN_RESISTANCE = 0.05;
 
-/** A step's limit on the quantity it does not drive, or null for none. */
-function limitOf(step: ProfileStep): number | null {
-  const value = num(step.limiter?.value);
-  return value > 0 ? value : null;
-}
-
 /** The modelled shot of a profile with the puck's constants. */
 export function predictShot(profile: Pick<Profile, 'steps' | 'target_weight'>, puck: Puck = PUCK): PredictedShot {
   const t = [0];
@@ -98,7 +92,7 @@ export function predictShot(profile: Pick<Profile, 'steps' | 'target_weight'>, p
     const goal = drivesFlow ? num(step.flow) : num(step.pressure);
     const from = drivesFlow ? flow : pressure;
     const smooth = step.transition === 'smooth';
-    const limit = limitOf(step);
+    const limit = stepLimit(step);
     const exit = step.exit;
     const exitValue = num(exit?.value);
     const exitWeight = num(step.weight);

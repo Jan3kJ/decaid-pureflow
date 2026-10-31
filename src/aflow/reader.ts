@@ -14,7 +14,7 @@
 // Fill (the setting "first-step workaround" writes it again), ramp down (its time goes to the
 // ramp up), a Pause without its 2nd Fill, and an infuse volume other than the 100 ml every step has.
 import * as C from './constants';
-import { generateSteps } from './generator';
+import { generateSteps, round1 } from './generator';
 import type { AFlowParams, ProfileStep } from './types';
 import { validateParams, WIDEST_MACHINE_LIMITS } from './validate';
 
@@ -52,10 +52,6 @@ type Slot = keyof typeof C.STEP_NAME;
 /** The steps every A-Flow profile has; the others may be missing or 0 s. */
 const REQUIRED: readonly Slot[] = ['fill', 'infuse', 'rampUp', 'pouring'];
 const ORDER = Object.keys(C.STEP_NAME) as Slot[];
-
-function round1(value: number): number {
-  return Math.round(value * 10) / 10;
-}
 
 /** The slot of each step, by name and in order, or null when the names are not A-Flow's. */
 function slotsOf(names: readonly string[]): Slot[] | null {
