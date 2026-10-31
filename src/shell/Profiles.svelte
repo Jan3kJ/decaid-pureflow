@@ -374,12 +374,10 @@
       <div class="preview" data-testid="profile-preview">
         <StepPreview {profile} bare estimate lastStepSeconds={previewLastStepSeconds(selected)} />
       </div>
-      <p class="caption" data-testid="profile-caption">estimate from the steps, a real shot differs with the coffee</p>
       <!-- The notes without the A-Flow line the skin writes, then for an A-Flow profile the text made from its values. -->
       <p class="notes" class:more data-more={more} data-testid="profile-description" bind:this={notesEl} onscroll={checkMore}>
         {description}
       </p>
-      <p class="aflow">{dose === undefined ? '' : 'A-Flow 3.0: once it is loaded, the editor opens on it.'}</p>
       <!-- Edit loads too and opens the profile's editor; load goes back to where the picker was opened from. -->
       <div class="actions">
         <button class="edit" data-testid="edit-profile" disabled={busy} onclick={() => load(selected, 'edit')}>edit</button>
@@ -661,22 +659,6 @@
     display: flex;
   }
 
-  .caption,
-  .aflow {
-    flex: none;
-    min-height: 1lh;
-    color: var(--dim);
-    font-size: var(--text-label);
-  }
-
-  /* The A-Flow line is cut at its end; the caption is one sentence and never cut: a font wider
-     than the tablet's gives it a second line, the same for every profile. */
-  .aflow {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
   .notes {
     flex: 1 0.001 3lh;
     min-height: 0;
@@ -697,6 +679,8 @@
 
   .actions {
     flex: none;
+    /* one spacing token closer to the description than the panel's gap */
+    margin-top: calc(var(--space-1) - var(--space-2));
     display: flex;
     gap: var(--space-2);
   }

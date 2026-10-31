@@ -3,7 +3,7 @@ import { mockGateway, profile, record } from './mock-gateway';
 
 // The picker's graph keeps its size: one square box at the panel's width for
 // every profile, the description the buffer under it that scrolls; title, author, the values,
-// the graph, the caption line and load stay where they are while the list is paged through. On
+// the graph and load stay where they are while the list is paged through. On
 // a lower display the graph gives way, the same for every profile.
 
 const LONG = Array.from(
@@ -36,7 +36,6 @@ async function layout(page: Page, title: string) {
     author: await box('[data-testid="profile-author"]'),
     values: await box('dl'),
     graph: await box('[data-testid="profile-preview"]'),
-    caption: await box('[data-testid="profile-caption"]'),
     edit: await box('[data-testid="edit-profile"]'),
     load: await box('[data-testid="load-profile"]'),
   };

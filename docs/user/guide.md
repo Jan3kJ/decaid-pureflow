@@ -40,8 +40,8 @@ Tap the profile's name on home to open the picker. Tap a profile to see it; **lo
 to the machine. **edit** beside it sends it to the machine too and opens it in its editor.
 
 The graph shows an **estimate** of the shot: the flow, pressure and temperature a shot of this
-profile would roughly show. The profile's own targets are the dotted lines under it. The line
-under the graph says it plainly: a real shot differs with the coffee.
+profile would roughly show. The profile's own targets are the dotted lines under it. It is
+an estimate from the steps; a real shot differs with the coffee.
 
 ## The A-Flow editor
 
