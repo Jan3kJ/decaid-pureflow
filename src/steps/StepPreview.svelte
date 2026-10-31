@@ -9,10 +9,11 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   // The step editor's curve preview: the targets of the profile's steps,
   // drawn by the skin's one chart, redrawn with every change of the profile. The CARDS tab
   // shows it above the cards, the SCRIPT tab beside the text. The picker's preview (`estimate`)
-  // draws the modelled shot instead, the targets dotted under it (src/steps/estimate.ts).
+  // draws the modelled shot instead, the targets dotted under it (src/steps/estimate.ts). With
+  // `onselect` (the CARDS tab) a tap on the graph picks the step under the finger.
   import type { Profile } from '../api';
   import ShotGraph from '../graph/ShotGraph.svelte';
-  import { stepCurve } from './curve';
+  import { stepAt, stepCurve, type StepSpan } from './curve';
   import { shotEstimate } from './estimate';
 
   interface Props {
@@ -25,13 +26,15 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     mainFrame?: boolean;
     /** the modelled shot is the curves, the targets dotted under them (the picker) */
     estimate?: boolean;
+    /** a tap on the graph chose this step (its index in the profile); without it the graph takes no tap */
+    onselect?: (index: number) => void;
   }
 
-  let { profile, bare = false, lastStepSeconds, mainFrame = false, estimate = false }: Props = $props();
+  let { profile, bare = false, lastStepSeconds, mainFrame = false, estimate = false, onselect }: Props = $props();
 
   // The model runs only for the estimate, once per profile shown.
-  const drawn = $derived.by(() => {
-    if (estimate) return shotEstimate(profile, { lastStepSeconds });
+  const drawn = $derived.by((): ReturnType<typeof shotEstimate> & { steps: StepSpan[] } => {
+    if (estimate) return { ...shotEstimate(profile, { lastStepSeconds }), steps: [] };
     const curve = stepCurve(profile, { lastStepSeconds });
     return {
       t: curve.t,
@@ -45,6 +48,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
       flowLimit: curve.flowLimit,
       borders: curve.steps.slice(1).map((span) => span.start),
       seconds: curve.seconds,
+      steps: curve.steps,
     };
   });
   /** Pressure and flow share one scale, as on every graph of the skin; it reaches a value, target or limit above 12. */
@@ -61,6 +65,12 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
       ) * 4,
     ),
   );
+
+  /** A step only where the curve draws one: a step of no time has no span and is never hit. */
+  function tapped(seconds: number) {
+    const index = stepAt(drawn.steps, seconds);
+    if (index !== null) onselect?.(index);
+  }
 </script>
 
 <div class="preview" class:bare data-testid="step-preview" data-seconds={drawn.seconds} data-main-frame={mainFrame ? '' : undefined}>
@@ -81,6 +91,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     {estimate}
     {bare}
     label={estimate ? 'estimated shot' : 'curve preview'}
+    ontap={onselect ? tapped : undefined}
   />
 </div>
 

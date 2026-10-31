@@ -54,6 +54,8 @@
     borders?: number[];
     /** no ticks, units or times: the picker's small preview of a profile */
     bare?: boolean;
+    /** s, a tap on the plot at this time on its axis (the step editor's cards tab); without it the graph takes no tap */
+    ontap?: (seconds: number) => void;
   }
 
   let {
@@ -77,6 +79,7 @@
     flowLimit,
     borders = [],
     bare = false,
+    ontap,
   }: Props = $props();
 
   /**
@@ -135,6 +138,21 @@
     box.tempBottom -
     ((inBand(value, temperatureRange) - temperatureRange.min) / (temperatureRange.max - temperatureRange.min)) * box.tempH;
 
+  let plot: HTMLDivElement | undefined = $state();
+
+  // A tap is a shortcut for the finger, so it listens on the plot without making it a control.
+  $effect(() => {
+    if (!plot || !ontap) return;
+    const target = plot;
+    const tap = ontap;
+    const listener = (event: MouseEvent) => {
+      const left = event.clientX - target.getBoundingClientRect().left;
+      tap(((left - box.left) / (box.right - box.left)) * seconds);
+    };
+    target.addEventListener('click', listener);
+    return () => target.removeEventListener('click', listener);
+  });
+
   /** One path; a null starts a new stretch. */
   function path(values: readonly (number | null)[] | undefined, y: (value: number) => number): string {
     let d = '';
@@ -152,7 +170,7 @@
 </script>
 
 <div class="graph">
-  <div class="plot" bind:clientWidth={width} bind:clientHeight={height}>
+  <div class="plot" bind:this={plot} bind:clientWidth={width} bind:clientHeight={height}>
     <svg
       {width}
       {height}

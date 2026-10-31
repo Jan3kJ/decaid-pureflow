@@ -133,3 +133,13 @@ export function stepCurve(profile: Pick<Profile, 'steps'>, options: CurveOptions
   }
   return { t, pressure, flow, temperature, pressureLimit, flowLimit, steps, seconds: time };
 }
+
+/**
+ * The step a time on the graph falls in: the profile's index of the span that holds it, the end
+ * of the last span included; null before the first, after the last, and for a step without a span.
+ */
+export function stepAt(spans: readonly StepSpan[], time: number): number | null {
+  const last = spans.at(-1);
+  if (!last || time < spans[0].start || time > last.end) return null;
+  return (spans.find((span) => time < span.end) ?? last).index;
+}

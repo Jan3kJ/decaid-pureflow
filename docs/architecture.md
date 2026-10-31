@@ -105,7 +105,9 @@ can read its steps; a title or a tag does not decide. Every other profile opens 
   pressure or temperature, a dragged border a time, and a tapped chip opens the number pad. Save
   sends the generator's profile with its parameters.
 - **The step editor** (`src/steps/`): the profile's steps as cards. `model.ts` holds pure
-  operations on a v2 profile that keep every field the editor does not show.
+  operations on a v2 profile that keep every field the editor does not show. Above the cards,
+  `StepPreview` draws the targets; a tap on it opens the step under the finger (`stepAt` in
+  `curve.ts`) and centres its card. The picker's and the script tab's previews take no tap.
 
 ## Settings and their backup
 

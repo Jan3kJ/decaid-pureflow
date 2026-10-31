@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Profile, ProfileStep } from '../api';
 import bundled from './fixtures/bundled-profiles.json' with { type: 'json' };
-import { pushChannel, stepCurve } from './curve';
+import { pushChannel, stepAt, stepCurve } from './curve';
 import { insertStepAfter, moveStep, removeStepAt, setPump, setValue } from './model';
 import { DEFAULT_PROFILES } from '../aflow';
 import { buildCurve } from '../editor/curve';
@@ -298,5 +298,25 @@ describe('stepCurve against the steps', () => {
     expect(
       previewLastStepSeconds({ profile: profiles.find((p) => p.title === 'Blooming Espresso')!, metadata: null }),
     ).toBeUndefined();
+  });
+});
+
+describe('stepAt', () => {
+  // Step 2 has no time, so no span: 0-5 s is step 1, 5-15 s step 3, 15-17 s step 4.
+  const spans = stepCurve(profile([step({ seconds: 5 }), step({ seconds: 0 }), step({ seconds: 10 }), step({ seconds: 2 })])).steps;
+
+  it('gives the profile index of the step under a time, a border belonging to the step that starts there', () => {
+    expect(stepAt(spans, 0)).toBe(0);
+    expect(stepAt(spans, 4.9)).toBe(0);
+    expect(stepAt(spans, 5)).toBe(2);
+    expect(stepAt(spans, 14.9)).toBe(2);
+    expect(stepAt(spans, 15)).toBe(3);
+    expect(stepAt(spans, 17)).toBe(3);
+  });
+
+  it('gives nothing outside the steps, and for a profile without spans', () => {
+    expect(stepAt(spans, -0.1)).toBeNull();
+    expect(stepAt(spans, 17.1)).toBeNull();
+    expect(stepAt([], 0)).toBeNull();
   });
 });

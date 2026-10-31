@@ -202,6 +202,52 @@ test('cards have no arrow buttons: a tap selects a card and centres it, the firs
   expect(errors).toEqual([]);
 });
 
+/**
+ * A tap on a graph at a time on its axis: the plot starts 2.8 rem from the left and ends 1.2 rem
+ * before the right (ShotGraph's box), and runs over the profile's seconds; half way down.
+ */
+async function tapGraph(page: Page, seconds: number) {
+  const graph = page.getByTestId('step-preview').getByTestId('shot-graph');
+  const position = await graph.evaluate((svg, at) => {
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+    const { width, height } = svg.getBoundingClientRect();
+    const left = 2.8 * rem;
+    const right = width - 1.2 * rem;
+    return { x: left + (at / Number(svg.dataset.seconds)) * (right - left), y: height / 2 };
+  }, seconds);
+  await graph.click({ position });
+}
+
+test('a tap on the graph of the cards tab opens the step under the finger and centres its card; the script tab takes no tap', async ({
+  page,
+}) => {
+  await withMine(page);
+  await page.goto('/');
+  await page.getByTestId('open-editor').click();
+  await expect(card(page, 0)).toHaveAttribute('data-open', 'true');
+  await centred(page, 'start');
+
+  // Blooming Espresso: 2 + 23 + 30 + 5 + 20 + 1 s, so the third step runs from 25 to 55 s.
+  await tapGraph(page, 40);
+  await expect(card(page, 2)).toHaveAttribute('data-open', 'true');
+  await expect(card(page, 0)).toHaveAttribute('data-open', 'false');
+  await centred(page);
+  // The fifth step, 60 to 80 s, then the first again.
+  await tapGraph(page, 70);
+  await expect(card(page, 4)).toHaveAttribute('data-open', 'true');
+  await centred(page, 'near');
+  await tapGraph(page, 1);
+  await expect(card(page, 0)).toHaveAttribute('data-open', 'true');
+  await centred(page, 'start');
+
+  // The script tab's graph is read-only: the open step stays the first.
+  await page.getByTestId('tab-script').click();
+  await tapGraph(page, 40);
+  await page.getByTestId('tab-cards').click();
+  await expect(card(page, 0)).toHaveAttribute('data-open', 'true');
+  expect(errors).toEqual([]);
+});
+
 test('an A-Flow 3.0 profile opens in the A-Flow editor, also from the picker of the step editor', async ({ page }) => {
   const gateway = (await withMine(page)).withDefaults();
   await page.goto('/');
