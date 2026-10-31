@@ -110,26 +110,30 @@
     <!-- The profile and bean for the next shot, at their place for the whole shot but off while
          it runs, so the values under them do not move when it starts. -->
     <NextShot {skin} off={running} />
-    <div class="big">
+    <!-- Each row: the caption on the left, the number and its unit on the right; the units have one
+         width, so every number ends on one edge. -->
+    <div class="row big">
       <small data-testid="shot-timer-label">{finished ? 'time, finished' : 'time'}</small>
       <b data-testid="shot-timer">{value(shown.seconds)}<i>s</i></b>
     </div>
-    <div class="big weight">
-      <small>weight{target ? `, stops at ${+target.toFixed(1)} g` : ''}</small>
+    <div class="row big weight">
+      <small data-testid="shot-weight-label"
+        ><span>weight</span>{#if target}<span data-testid="shot-stops-at">stops at {+target.toFixed(1)} g</span>{/if}</small
+      >
       <b data-testid="shot-weight">{gramsOf(shown.weight, '')}<i>g</i></b>
     </div>
     <dl>
-      <div class="pressure">
+      <div class="row pressure">
         <dt>pressure</dt>
-        <dd data-testid="shot-pressure">{value(snapshot?.pressure)} <i>bar</i></dd>
+        <dd data-testid="shot-pressure">{value(snapshot?.pressure)}<i>bar</i></dd>
       </div>
-      <div class="flow">
+      <div class="row flow">
         <dt>flow</dt>
-        <dd data-testid="shot-flow">{value(snapshot?.flow)} <i>ml/s</i></dd>
+        <dd data-testid="shot-flow">{value(snapshot?.flow)}<i>ml/s</i></dd>
       </div>
-      <div class="temperature">
+      <div class="row temperature">
         <dt>temperature</dt>
-        <dd data-testid="shot-temperature">{value(snapshot?.groupTemperature)} <i>°C</i></dd>
+        <dd data-testid="shot-temperature">{value(snapshot?.groupTemperature)}<i>°C</i></dd>
       </div>
     </dl>
     {#if skin.notice}
@@ -286,20 +290,38 @@
     font-size: var(--text-label);
   }
 
+  /* A caption of two parts takes two lines, its last on the number's baseline: the row keeps the
+     number's height, so no number moves when the caption changes. */
+  .row {
+    display: flex;
+    align-items: last baseline;
+    justify-content: space-between;
+    gap: var(--space-1);
+  }
+
+  .row > small,
+  .row > dt {
+    min-width: 0;
+  }
+
+  small span {
+    display: block;
+  }
+
+  /* the unit column: one width in every row, the unit at its left */
   i {
+    display: inline-block;
+    width: 2.4rem;
+    margin-left: var(--space-1);
     font-style: normal;
     font-size: var(--text-title);
     font-weight: 400;
     color: var(--dim);
-    margin-left: 0.2em;
-  }
-
-  .big {
-    display: flex;
-    flex-direction: column;
+    text-align: left;
   }
 
   .big b {
+    flex: none;
     font-size: var(--text-big);
     font-weight: 600;
     line-height: 1.1;
@@ -317,13 +339,8 @@
     gap: var(--space-2);
   }
 
-  dl div {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-  }
-
   dd {
+    flex: none;
     margin: 0;
     font-size: var(--text-title);
     font-weight: 600;

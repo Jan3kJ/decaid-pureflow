@@ -218,3 +218,70 @@ for (const [size, factor] of [
     expect(errors).toEqual([]);
   });
 }
+
+const VALUES = ['shot-timer', 'shot-weight', 'shot-pressure', 'shot-flow', 'shot-temperature'];
+const CAPTIONS = ['shot-timer-label', 'shot-weight-label', 'shot-pressure', 'shot-flow', 'shot-temperature'];
+
+/** each value's number, unit and caption box, and the value's top */
+const rows = (page: Page) =>
+  Promise.all(
+    VALUES.map(async (id, at) => {
+      const value = page.getByTestId(id);
+      const caption = CAPTIONS[at].endsWith('label') ? page.getByTestId(CAPTIONS[at]) : value.locator('xpath=preceding-sibling::dt');
+      return {
+        value: (await value.boundingBox())!,
+        unit: (await value.locator('i').boundingBox())!,
+        caption: (await caption.boundingBox())!,
+      };
+    }),
+  );
+
+test("the numbers are aligned as on the steam page: caption left, number and unit right, 'stops at' on a second line", async ({
+  page,
+}) => {
+  const gateway = await mockGateway(page);
+  await page.goto('/');
+  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await gateway.replay(page, 0, 0.6);
+  await expect(page.getByTestId('home-shot')).toHaveAttribute('data-shot', 'running');
+  const area = await box(page, 'shot-column');
+  const shown = await rows(page);
+  for (const { value, unit, caption } of shown) {
+    // The caption at the column's left, the value at its right, the unit at the value's end.
+    expect(caption.x).toBeCloseTo(area.x, 0);
+    expect(value.x + value.width).toBeCloseTo(area.x + area.width, 0);
+    expect(unit.x + unit.width).toBeCloseTo(value.x + value.width, 0);
+    expect(caption.x + caption.width).toBeLessThanOrEqual(value.x);
+    // Not centred like the steam timer: the caption beside the number, not over it.
+    expect(caption.y + caption.height).toBeGreaterThan(value.y);
+  }
+  // One unit column: every unit starts on one edge, so every number ends on one edge.
+  for (const { unit } of shown) expect(unit.x).toBeCloseTo(shown[0].unit.x, 0);
+
+  // A long caption takes two lines, 'weight' over 'stops at 36 g', beside its number.
+  const label = page.getByTestId('shot-weight-label');
+  await expect(label.locator('span')).toHaveText(['weight', 'stops at 36 g']);
+  const [first, second] = await Promise.all([0, 1].map(async (at) => (await label.locator('span').nth(at).boundingBox())!));
+  expect(second.y).toBeGreaterThanOrEqual(first.y + first.height - 1);
+  expect(second.x).toBeCloseTo(first.x, 0);
+  const weight = shown[1].value;
+  expect(first.y).toBeGreaterThanOrEqual(weight.y);
+  expect(second.y + second.height).toBeLessThanOrEqual(weight.y + weight.height);
+  await page.screenshot({ path: 'docs/product/home-shot-numbers.png' });
+  expect(errors).toEqual([]);
+});
+
+test('no number moves when the caption has one line or two', async ({ page }) => {
+  const tops = async (target: number) => {
+    const gateway = await mockGateway(page);
+    gateway.workflow.context = { ...gateway.workflow.context, targetYield: target };
+    await page.goto('/');
+    await expect(page.getByTestId('status-title')).toHaveText('Idle');
+    await expect(page.getByTestId('shot-stops-at')).toHaveCount(target ? 1 : 0);
+    return (await rows(page)).map(({ value }) => value);
+  };
+  const two = await tops(36);
+  const one = await tops(0);
+  expect(one).toEqual(two);
+  expect(errors).toEqual([]);
+});
