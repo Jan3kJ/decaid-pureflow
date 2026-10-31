@@ -52,7 +52,7 @@
 
   h2 {
     margin: 0;
-    min-height: 3rem;
+    min-height: var(--control);
     display: flex;
     align-items: center;
     font-size: var(--text-body);

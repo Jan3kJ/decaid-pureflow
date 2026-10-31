@@ -17,8 +17,73 @@
   /* The way back to home, light blue: lighter and paler than --flow
      (HSL 200° 72% 78% against 211° 100% 65%, a CIELAB distance of 40), so no curve's colour. */
   --accent: #9fd4f0;
-  /* the corners of the graph's frame, and of every frame that lies beside it */
+  /*
+   * One token per meaning, not per value: a component takes the token of what its part is, so
+   * that a change of one kind (a dialog's corner) leaves the others (a button's) as they are.
+   */
+  /* Corners. A frame or a control: the graph's frame, a button, a field, a row, a menu. */
   --radius: 0.9rem;
+  /* a dialog, a pad or a sheet over the page */
+  --radius-dialog: 1.2rem;
+  /* a card or panel that holds controls: a step's card, the step list, the editor's plot */
+  --radius-card: 1rem;
+  /* a control inside a card: a step's name, its actions */
+  --radius-inner: 0.8rem;
+  /* a chip on the profile graph */
+  --radius-graph: 1.4rem;
+  /* a white note over a page: the graph's tip, the button of a refusal */
+  --radius-note: 0.7rem;
+  /* a small field within a line: a value of the state line, a word of the script, the notes */
+  --radius-small: 0.6rem;
+  /* a badge as high as the number beside it */
+  --radius-badge: 0.4rem;
+  /* round ends at any height: a chip, a one-line badge, a bar, a line's end */
+  --radius-pill: 999px;
+  /* a lever's track: half the lever's height */
+  --radius-lever: 1.2rem;
+  /* a line's sample in a legend: half its thickness */
+  --radius-line: 0.12rem;
+  /* a circle, or an ellipse in a box that is not square: a dot, a lever's knob, a slider's thumb */
+  --radius-round: 50%;
+  /* no corner: a backdrop that is a button */
+  --radius-none: 0;
+  /*
+   * Heights of a control, each a finger's target. The least, the one e2e/touch-targets.spec.ts
+   * checks: a chip, a button in a row, a slider.
+   */
+  --control: 3rem;
+  /* a row of a list or a setting, a field to type in */
+  --control-tall: 3.2rem;
+  /* a page's or dialog's own button, a value to tap, the page header, a day of the calendar */
+  --control-big: 3.5rem;
+  /* Over the page. A dialog, the menu or a notice lifted off it. */
+  --shadow-dialog: 0 0.6rem 2.4rem rgb(0 0 0 / 70%);
+  /* a sheet sliding in from the left */
+  --shadow-sheet: 0.6rem 0 2.4rem rgb(0 0 0 / 60%);
+  /* a chip opened over the graph */
+  --shadow-lifted: 0 0.3rem 1.2rem rgb(0 0 0 / 60%);
+  /* behind a dialog or a sheet: the page dimmed, a tap on it cancels */
+  --scrim: rgb(0 0 0 / 55%);
+  /* behind the menu: the page still readable */
+  --scrim-light: rgb(0 0 0 / 35%);
+  /* Layers, lowest first: which overlay wins. A page sliding in during a swipe. */
+  --layer-cover: 9;
+  /* a dialog and its backdrop, the swipe's handle and the page dots */
+  --layer-dialog: 10;
+  /* a sheet or the menu over its backdrop */
+  --layer-sheet: 11;
+  /* the page a swipe brings over everything */
+  --layer-cover-over: 12;
+  /* a notice that the machine refused an action */
+  --layer-notice: 20;
+  /* the asleep screen over all */
+  --layer-sleep: 30;
+  /* Motion. A lever flips. */
+  --motion-fast: 0.12s;
+  /* a page, a sheet or a row moves into place */
+  --motion: 0.2s;
+  /* a drawing follows a live value from one update to the next */
+  --motion-follow: 0.5s;
   /*
    * One size per kind of text: every text of the skin takes its role's token;
    * `npm run lint` refuses any other size (scripts/font-sizes.mjs). A label is smaller than its

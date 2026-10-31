@@ -183,12 +183,12 @@
   .backdrop {
     position: fixed;
     inset: 0;
-    z-index: 10;
+    z-index: var(--layer-dialog);
     display: flex;
     align-items: flex-start;
     justify-content: center;
     padding-top: 4rem;
-    background: rgb(0 0 0 / 55%);
+    background: var(--scrim);
   }
 
   .dialog {
@@ -200,8 +200,8 @@
     flex-direction: column;
     background: var(--panel);
     border: 1px solid var(--line);
-    border-radius: 1.2rem;
-    box-shadow: 0 0.6rem 2.4rem rgb(0 0 0 / 70%);
+    border-radius: var(--radius-dialog);
+    box-shadow: var(--shadow-dialog);
   }
 
   h2 {
@@ -247,7 +247,7 @@
     color: var(--fg);
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
     touch-action: manipulation;
     user-select: none;
   }
@@ -258,7 +258,7 @@
 
   .row {
     width: 100%;
-    min-height: 3.4rem;
+    min-height: var(--control-tall);
     padding: 0.3rem 0.9rem;
     display: flex;
     flex-direction: column;
@@ -297,14 +297,14 @@
   input {
     flex: 1;
     min-width: 0;
-    min-height: 3.2rem;
+    min-height: var(--control-tall);
     box-sizing: border-box;
     padding: 0 0.9rem;
     font: inherit;
     color: var(--fg);
     background: var(--bg);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
     outline: none;
   }
 
@@ -323,13 +323,13 @@
 
   .step {
     width: 3.6rem;
-    height: 3.6rem;
+    height: var(--control-big);
     font-size: var(--text-title);
   }
 
   .value {
     min-width: 6rem;
-    height: 3.6rem;
+    height: var(--control-big);
     font-size: var(--text-value);
     font-variant-numeric: tabular-nums;
   }
@@ -356,8 +356,8 @@
   }
 
   .actions button {
-    min-height: 3.4rem;
-    padding: 0 1.2rem;
+    min-height: var(--control-big);
+    padding: 0 var(--space-3);
   }
 
   .actions .link {

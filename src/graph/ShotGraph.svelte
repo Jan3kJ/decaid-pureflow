@@ -432,7 +432,7 @@
     width: 1.6rem;
     height: 0;
     border-top: 0.2rem solid var(--dim);
-    border-radius: 0.1rem;
+    border-radius: var(--radius-pill);
   }
 
   .legend i.flow {

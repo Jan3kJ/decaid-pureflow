@@ -91,7 +91,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     overflow-y: auto;
     background: var(--panel);
     border: 1px solid var(--line);
-    border-radius: 1rem;
+    border-radius: var(--radius-card);
   }
 
   .step {
@@ -142,7 +142,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     color: var(--tone);
     background: none;
     border: 1px solid transparent;
-    border-radius: 0.6rem;
+    border-radius: var(--radius-small);
     touch-action: manipulation;
     user-select: none;
     white-space: nowrap;

@@ -233,11 +233,11 @@
   .backdrop {
     position: fixed;
     inset: 0;
-    z-index: 10;
+    z-index: var(--layer-dialog);
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgb(0 0 0 / 55%);
+    background: var(--scrim);
   }
 
   .pad {
@@ -250,8 +250,8 @@
     gap: var(--space-2);
     background: var(--panel);
     border: 1px solid var(--line);
-    border-radius: 1.2rem;
-    box-shadow: 0 0.6rem 2.4rem rgb(0 0 0 / 70%);
+    border-radius: var(--radius-dialog);
+    box-shadow: var(--shadow-dialog);
   }
 
   .head,
@@ -267,7 +267,7 @@
   }
 
   button {
-    min-height: 3.5rem;
+    min-height: var(--control-big);
     font: inherit;
     font-size: var(--text-value);
     color: var(--fg);
@@ -283,7 +283,7 @@
   }
 
   .close {
-    min-height: 3rem;
+    min-height: var(--control);
     width: 3rem;
     font-size: var(--text-title);
     background: none;
@@ -292,7 +292,7 @@
   }
 
   .arrow {
-    width: 3.5rem;
+    width: var(--control-big);
     font-size: var(--text-title);
   }
 
@@ -311,14 +311,14 @@
   .weekdays,
   .grid {
     display: grid;
-    grid-template-columns: repeat(7, 3.5rem);
+    grid-template-columns: repeat(7, var(--control-big));
     gap: var(--space-1);
   }
 
   /* Six weeks of room for every month, so the dialog keeps its height and a drag slides by one
      month's height; the strip holds the month before, the shown one and the one after. */
   .viewport {
-    --month: calc(6 * 3.5rem + 6 * 0.4rem);
+    --month: calc(6 * var(--control-big) + 6 * 0.4rem);
     /* a pixel short of the month, so no rounding shows the edge of the next one's first row */
     height: calc(var(--month) - 1px);
     overflow: hidden;
@@ -333,7 +333,7 @@
     height: var(--month);
     box-sizing: border-box;
     padding-bottom: var(--space-1);
-    grid-template-rows: repeat(6, 3.5rem);
+    grid-template-rows: repeat(6, var(--control-big));
     align-content: start;
   }
 
@@ -352,8 +352,8 @@
     background: var(--raised);
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    width: 3.5rem;
-    height: 3.5rem;
+    width: var(--control-big);
+    height: var(--control-big);
     padding: 0;
     font-variant-numeric: tabular-nums;
   }

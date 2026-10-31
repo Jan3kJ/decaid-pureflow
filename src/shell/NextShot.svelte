@@ -73,7 +73,7 @@
     color: var(--fg);
     border: 1px solid var(--line);
     background: var(--panel);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
     touch-action: manipulation;
     user-select: none;
   }
@@ -87,7 +87,7 @@
     display: flex;
     min-width: 0;
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
     background: var(--panel);
   }
 

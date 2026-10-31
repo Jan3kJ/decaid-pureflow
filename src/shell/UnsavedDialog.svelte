@@ -35,11 +35,11 @@
   .backdrop {
     position: fixed;
     inset: 0;
-    z-index: 10;
+    z-index: var(--layer-dialog);
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgb(0 0 0 / 55%);
+    background: var(--scrim);
   }
 
   .dialog {
@@ -51,8 +51,8 @@
     gap: var(--space-2);
     background: var(--panel);
     border: 1px solid var(--line);
-    border-radius: 1.2rem;
-    box-shadow: 0 0.6rem 2.4rem rgb(0 0 0 / 70%);
+    border-radius: var(--radius-dialog);
+    box-shadow: var(--shadow-dialog);
   }
 
   p {
@@ -79,13 +79,13 @@
 
   button {
     flex: 1;
-    min-height: 3.5rem;
+    min-height: var(--control-big);
     font: inherit;
     font-size: var(--text-body);
     color: var(--fg);
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
     touch-action: manipulation;
   }
 </style>

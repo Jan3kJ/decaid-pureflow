@@ -78,11 +78,11 @@
   .backdrop {
     position: fixed;
     inset: 0;
-    z-index: 10;
+    z-index: var(--layer-dialog);
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgb(0 0 0 / 55%);
+    background: var(--scrim);
   }
 
   .dialog {
@@ -91,8 +91,8 @@
     padding: var(--space-1) var(--space-3) var(--space-3);
     background: var(--panel);
     border: 1px solid var(--line);
-    border-radius: 1.2rem;
-    box-shadow: 0 0.6rem 2.4rem rgb(0 0 0 / 70%);
+    border-radius: var(--radius-dialog);
+    box-shadow: var(--shadow-dialog);
   }
 
   h2 {
@@ -109,7 +109,7 @@
   .field {
     width: 100%;
     box-sizing: border-box;
-    min-height: 3rem;
+    min-height: var(--control);
     margin-top: var(--space-1);
     padding: 0 1rem;
     font: inherit;
@@ -117,7 +117,7 @@
     color: var(--fg);
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
   }
 
   /* The reason's line holds its place, so the buttons do not move when it appears. */
@@ -144,11 +144,11 @@
 
   .action {
     flex: none;
-    min-height: 3rem;
+    min-height: var(--control);
     padding: 0 1rem;
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
   }
 
   .action.primary {

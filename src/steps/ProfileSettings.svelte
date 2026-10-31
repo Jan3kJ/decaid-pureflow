@@ -112,7 +112,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     padding: 1rem var(--space-3);
     background: var(--panel);
     border: 1px solid var(--line);
-    border-radius: 1rem;
+    border-radius: var(--radius-card);
   }
 
   .texts,
@@ -142,14 +142,14 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   .text {
     box-sizing: border-box;
     width: 100%;
-    min-height: 3rem;
+    min-height: var(--control);
     padding: var(--space-2) 0.8rem;
     font: inherit;
     font-size: var(--text-body);
     color: var(--fg);
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 0.8rem;
+    border-radius: var(--radius-inner);
   }
 
   textarea.text {

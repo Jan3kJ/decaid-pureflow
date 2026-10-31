@@ -35,7 +35,7 @@
     align-items: center;
     gap: var(--space-3);
     /* as tall as the menu button, so the state line sits at the same height on every page */
-    min-height: 3.5rem;
+    min-height: var(--control-big);
   }
 
   .page-header > :global(.state) {

@@ -365,14 +365,14 @@
   }
 
   .category {
-    min-height: 3.2rem;
+    min-height: var(--control-tall);
     padding: 0 0.9rem;
     text-align: left;
     font-size: var(--text-body);
     font-weight: 600;
     background: var(--panel);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
   }
 
   .number {
@@ -380,7 +380,7 @@
   }
 
   .sub {
-    min-height: 3rem;
+    min-height: var(--control);
     margin-left: 1rem;
     padding: 0 0.8rem;
     text-align: left;
@@ -404,7 +404,7 @@
   section {
     padding: var(--space-1) var(--space-3) var(--space-2);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
     background: var(--panel);
     scroll-margin-top: 0.6rem;
   }
@@ -453,11 +453,11 @@
 
   .action {
     flex: none;
-    min-height: 3rem;
+    min-height: var(--control);
     padding: 0 1rem;
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
   }
 
   .action:disabled {

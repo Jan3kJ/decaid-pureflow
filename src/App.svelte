@@ -390,16 +390,16 @@
 
   .page.settling,
   .cover.settling {
-    transition: transform 220ms ease-out;
+    transition: transform var(--motion) ease-out;
   }
 
   .cover {
     position: absolute;
-    z-index: 9;
+    z-index: var(--layer-cover);
   }
 
   .cover.over {
-    z-index: 12;
+    z-index: var(--layer-cover-over);
   }
 
   .screen {
@@ -429,7 +429,7 @@
     left: 0;
     top: 50%;
     /* over the ring of hot water and flush, under the menu */
-    z-index: 10;
+    z-index: var(--layer-dialog);
     width: 2.6rem;
     height: 8rem;
     transform: translateY(-50%);
@@ -441,7 +441,7 @@
     top: 1.5rem;
     bottom: 1.5rem;
     width: 0.35rem;
-    border-radius: 0.2rem;
+    border-radius: var(--radius-pill);
     background: var(--dim);
   }
 
@@ -454,14 +454,14 @@
     position: absolute;
     left: 50%;
     bottom: 0;
-    z-index: 10;
+    z-index: var(--layer-dialog);
     display: flex;
     transform: translateX(-50%);
   }
 
   .dots button {
     width: 3.5rem;
-    height: 3rem;
+    height: var(--control);
     display: grid;
     place-items: center;
   }
@@ -469,7 +469,7 @@
   .dots span {
     width: 0.6rem;
     height: 0.6rem;
-    border-radius: 50%;
+    border-radius: var(--radius-round);
     background: var(--line);
   }
 
@@ -482,7 +482,7 @@
     left: 50%;
     bottom: 1rem;
     transform: translateX(-50%);
-    z-index: 20;
+    z-index: var(--layer-notice);
     max-width: 90%;
     box-sizing: border-box;
     padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
@@ -492,8 +492,8 @@
     color: var(--warn);
     background: var(--raised);
     border: 1px solid var(--warn);
-    border-radius: 0.9rem;
-    box-shadow: 0 0.6rem 2.4rem rgb(0 0 0 / 70%);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-dialog);
   }
 
   .restored {
@@ -510,7 +510,7 @@
 
   .refused button {
     flex: none;
-    min-height: 3.4rem;
+    min-height: var(--control-big);
     padding: 0 1.6rem;
     font: inherit;
     font-size: var(--text-body);
@@ -518,14 +518,14 @@
     color: var(--bg);
     background: var(--fg);
     border: 0;
-    border-radius: 0.7rem;
+    border-radius: var(--radius-note);
     touch-action: manipulation;
   }
 
   .asleep {
     position: fixed;
     inset: 0;
-    z-index: 30;
+    z-index: var(--layer-sleep);
     width: 100%;
     display: flex;
     flex-direction: column;

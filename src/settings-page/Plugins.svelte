@@ -317,7 +317,7 @@
     margin: var(--space-2) 0 var(--space-1);
     padding: var(--space-1) 1rem var(--space-1);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
     background: var(--bg);
   }
 
@@ -339,7 +339,7 @@
     margin-left: auto;
     padding: 0.15rem var(--space-2);
     border: 1px solid var(--line);
-    border-radius: 1rem;
+    border-radius: var(--radius-pill);
     color: var(--dim);
     font-size: var(--text-label);
   }
@@ -407,21 +407,21 @@
 
   .action {
     flex: none;
-    min-height: 3rem;
+    min-height: var(--control);
     padding: 0 1rem;
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
   }
 
   .value {
     flex: none;
     min-width: 8rem;
-    min-height: 3.6rem;
+    min-height: var(--control-big);
     padding: 0 0.8rem;
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
   }
 
   .value b {
@@ -433,12 +433,12 @@
   input {
     flex: none;
     width: 16rem;
-    min-height: 3.2rem;
+    min-height: var(--control-tall);
     box-sizing: border-box;
     padding: 0 0.8rem;
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
   }
 
   .choices {
@@ -451,16 +451,16 @@
   }
 
   .chip {
-    min-height: 3rem;
+    min-height: var(--control);
     padding: 0 0.9rem;
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 1.5rem;
+    border-radius: var(--radius-pill);
   }
 
   .lever-button {
     flex: none;
-    min-height: 3.6rem;
+    min-height: var(--control-big);
     padding: 0;
     background: none;
     border: 0;
@@ -472,7 +472,7 @@
     height: 2.4rem;
     padding: var(--space-1);
     box-sizing: border-box;
-    border-radius: 1.2rem;
+    border-radius: var(--radius-lever);
     background: var(--raised);
     border: 1px solid var(--line);
   }
@@ -481,9 +481,9 @@
     display: block;
     width: 1.8rem;
     height: 100%;
-    border-radius: 50%;
+    border-radius: var(--radius-round);
     background: var(--dim);
-    transition: transform 0.12s;
+    transition: transform var(--motion-fast);
   }
 
   [aria-checked='true'] .lever {

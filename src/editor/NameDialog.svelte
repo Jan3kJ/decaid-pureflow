@@ -57,13 +57,13 @@
   .backdrop {
     position: fixed;
     inset: 0;
-    z-index: 10;
+    z-index: var(--layer-dialog);
     display: flex;
     /* Near the top: the system keyboard covers the lower half of a tablet. */
     align-items: flex-start;
     justify-content: center;
     padding-top: 5rem;
-    background: rgb(0 0 0 / 55%);
+    background: var(--scrim);
   }
 
   .dialog {
@@ -72,8 +72,8 @@
     padding: var(--space-3);
     background: var(--panel);
     border: 1px solid var(--line);
-    border-radius: 1.2rem;
-    box-shadow: 0 0.6rem 2.4rem rgb(0 0 0 / 70%);
+    border-radius: var(--radius-dialog);
+    box-shadow: var(--shadow-dialog);
   }
 
   form {
@@ -88,7 +88,7 @@
   }
 
   input {
-    min-height: 3.5rem;
+    min-height: var(--control-big);
     box-sizing: border-box;
     padding: 0 0.9rem;
     font: inherit;
@@ -96,7 +96,7 @@
     color: var(--fg);
     background: var(--bg);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
     outline: none;
   }
 
@@ -119,13 +119,13 @@
 
   button {
     flex: 1;
-    min-height: 3.5rem;
+    min-height: var(--control-big);
     font: inherit;
     font-size: var(--text-body);
     color: var(--fg);
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
     touch-action: manipulation;
   }
 

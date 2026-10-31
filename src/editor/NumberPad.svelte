@@ -97,11 +97,11 @@
   .backdrop {
     position: fixed;
     inset: 0;
-    z-index: 10;
+    z-index: var(--layer-dialog);
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgb(0 0 0 / 55%);
+    background: var(--scrim);
   }
 
   .pad {
@@ -114,8 +114,8 @@
     gap: var(--space-2);
     background: var(--panel);
     border: 1px solid var(--line);
-    border-radius: 1.2rem;
-    box-shadow: 0 0.6rem 2.4rem rgb(0 0 0 / 70%);
+    border-radius: var(--radius-dialog);
+    box-shadow: var(--shadow-dialog);
   }
 
   .head {
@@ -134,11 +134,11 @@
     align-items: baseline;
     justify-content: flex-end;
     gap: var(--space-2);
-    min-height: 3.6rem;
+    min-height: var(--control-big);
     padding: 0 0.9rem;
     background: var(--bg);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
     font-size: var(--text-large);
     font-weight: 600;
     line-height: 3.6rem;
@@ -183,7 +183,7 @@
     color: var(--fg);
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
     touch-action: manipulation;
     user-select: none;
   }
@@ -197,7 +197,7 @@
   }
 
   .close {
-    min-height: 3rem;
+    min-height: var(--control);
     width: 3rem;
     background: none;
     border: 0;

@@ -137,10 +137,10 @@
   }
 
   .seg {
-    min-height: 3rem;
+    min-height: var(--control);
     min-width: 6rem;
     padding: 0 1.1rem;
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
     font-size: var(--text-body);
   }
 

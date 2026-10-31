@@ -257,3 +257,7 @@ cannot be set.
 - Nothing private in a file: no local path, e-mail address, real device address or token.
 - Every layout is relative to the viewport, and every font size is one of the six type-role
   tokens. Blue is flow, green pressure, red temperature, yellow weight.
+- A corner, a control's height, a dialog's shadow, a backdrop, a layer and a motion take a token of
+  `src/app.css` (`--radius*`, `--control*`, `--shadow-*`, `--scrim*`, `--layer-*`, `--motion*`),
+  one per meaning, not per value: a dialog's corner and a button's are two tokens even where
+  their values meet.

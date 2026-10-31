@@ -176,7 +176,7 @@
     text-align: left;
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
   }
 
   .skin:disabled:not([aria-pressed='true']) {
@@ -201,7 +201,7 @@
     letter-spacing: 0.08em;
     text-transform: uppercase;
     border: 1px solid currentColor;
-    border-radius: 1rem;
+    border-radius: var(--radius-pill);
   }
 
   small {
@@ -244,11 +244,11 @@
 
   .action {
     flex: none;
-    min-height: 3rem;
+    min-height: var(--control);
     padding: 0 1rem;
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
   }
 
   .action:disabled {

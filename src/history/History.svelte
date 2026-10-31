@@ -153,15 +153,15 @@
   .outside {
     position: absolute;
     inset: 0;
-    z-index: 10;
+    z-index: var(--layer-dialog);
     border: 0;
-    background: rgb(0 0 0 / 55%);
+    background: var(--scrim);
   }
 
   aside {
     position: absolute;
     inset: 0 auto 0 0;
-    z-index: 11;
+    z-index: var(--layer-sheet);
     width: 34%;
     min-width: 24rem;
     max-width: 90%;
@@ -172,8 +172,8 @@
     gap: var(--space-2);
     background: var(--panel);
     border-right: 1px solid var(--line);
-    box-shadow: 0.6rem 0 2.4rem rgb(0 0 0 / 60%);
-    animation: slide 0.16s ease-out;
+    box-shadow: var(--shadow-sheet);
+    animation: slide var(--motion) ease-out;
   }
 
   @keyframes slide {
@@ -219,7 +219,7 @@
     gap: var(--space-1);
     text-align: left;
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
     background: var(--raised);
   }
 
@@ -263,13 +263,13 @@
   .filter button {
     flex: 1 1 0;
     min-width: 0;
-    min-height: 3rem;
+    min-height: var(--control);
     padding: 0 0.9rem;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     border: 1px solid var(--line);
-    border-radius: 1.5rem;
+    border-radius: var(--radius-pill);
     background: var(--raised);
   }
 
@@ -279,7 +279,7 @@
 
   .option {
     width: 100%;
-    min-height: 3.6rem;
+    min-height: var(--control-big);
     padding: 0.5rem 1rem;
     display: flex;
     justify-content: space-between;
@@ -287,7 +287,7 @@
     gap: var(--space-3);
     text-align: left;
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
     background: var(--raised);
   }
 
@@ -313,9 +313,9 @@
 
   .retry {
     flex: none;
-    min-height: 3.2rem;
+    min-height: var(--control-tall);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
     background: var(--raised);
   }
 </style>

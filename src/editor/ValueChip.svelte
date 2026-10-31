@@ -155,7 +155,7 @@
     align-items: stretch;
     background: var(--panel);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
     overflow: hidden;
     touch-action: none;
     user-select: none;
@@ -201,7 +201,7 @@
   .step {
     width: 4rem;
     min-width: 3rem;
-    min-height: 3.6rem;
+    min-height: var(--control-big);
     background: var(--raised);
     border: 0;
     color: var(--fg);
@@ -215,14 +215,14 @@
   }
 
   .compact {
-    border-radius: 1.4rem;
+    border-radius: var(--radius-graph);
     background: var(--raised);
   }
 
   .compact .body {
     flex-direction: row;
     gap: var(--space-1);
-    min-height: 3rem;
+    min-height: var(--control);
     padding: 0 0.9rem;
   }
 
@@ -232,7 +232,7 @@
 
   .compact .step {
     width: 3.5rem;
-    min-height: 3.5rem;
+    min-height: var(--control-big);
   }
 
   .compact.dragging {
@@ -240,6 +240,6 @@
   }
 
   .compact.open {
-    box-shadow: 0 0.3rem 1.2rem rgb(0 0 0 / 60%);
+    box-shadow: var(--shadow-lifted);
   }
 </style>

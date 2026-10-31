@@ -194,7 +194,7 @@
     color: var(--fg);
     border: 1px solid var(--line);
     background: var(--panel);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
     touch-action: manipulation;
     user-select: none;
   }
@@ -221,7 +221,7 @@
     column-gap: var(--space-3);
     padding: var(--space-1) 1.4rem;
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
     background: var(--panel);
   }
 
@@ -233,7 +233,7 @@
 
   .value {
     min-width: 9rem;
-    min-height: 3.5rem;
+    min-height: var(--control-big);
     padding: 0 0.8rem;
     border-color: transparent;
     background: none;
@@ -252,7 +252,7 @@
     --tint: var(--fg);
     grid-column: 1 / -1;
     width: 100%;
-    height: 3rem;
+    height: var(--control);
     margin: 0;
     background: none;
     appearance: none;
@@ -266,13 +266,13 @@
 
   input[type='range']::-webkit-slider-runnable-track {
     height: 0.5rem;
-    border-radius: 0.25rem;
+    border-radius: var(--radius-pill);
     background: var(--line);
   }
 
   input[type='range']::-moz-range-track {
     height: 0.5rem;
-    border-radius: 0.25rem;
+    border-radius: var(--radius-pill);
     background: var(--line);
   }
 
@@ -282,7 +282,7 @@
     height: 2.4rem;
     margin-top: -0.95rem;
     border: 0;
-    border-radius: 50%;
+    border-radius: var(--radius-round);
     background: var(--tint);
   }
 
@@ -290,7 +290,7 @@
     width: 2.4rem;
     height: 2.4rem;
     border: 0;
-    border-radius: 50%;
+    border-radius: var(--radius-round);
     background: var(--tint);
   }
 
@@ -353,7 +353,7 @@
 
   /* the tare: the whole row a button, a finger's target */
   button.line {
-    min-height: 3.5rem;
+    min-height: var(--control-big);
     align-content: center;
     border-color: var(--line);
   }

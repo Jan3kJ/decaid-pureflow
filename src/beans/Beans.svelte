@@ -281,14 +281,14 @@
   }
 
   .kind {
-    min-height: 3.2rem;
+    min-height: var(--control-tall);
     padding: 0 0.9rem;
     text-align: left;
     font-size: var(--text-body);
     font-weight: 600;
     background: var(--panel);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
   }
 
   .list {
@@ -320,7 +320,7 @@
   input {
     flex: 1;
     min-width: 0;
-    min-height: 3.2rem;
+    min-height: var(--control-tall);
     box-sizing: border-box;
     padding: 0 0.9rem;
     font: inherit;
@@ -328,7 +328,7 @@
     color: var(--fg);
     background: var(--bg);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
     outline: none;
   }
 
@@ -338,12 +338,12 @@
 
   .toggle {
     flex: none;
-    min-height: 3.2rem;
+    min-height: var(--control-tall);
     padding: 0 0.9rem;
     font-size: var(--text-label);
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
   }
 
   ul {
@@ -359,7 +359,7 @@
 
   .row {
     width: 100%;
-    min-height: 3.6rem;
+    min-height: var(--control-big);
     padding: 0.4rem 0.9rem;
     display: flex;
     flex-direction: column;
@@ -367,7 +367,7 @@
     text-align: left;
     background: var(--panel);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
   }
 
   .row strong {
@@ -406,7 +406,7 @@
     overflow-y: auto;
     padding: 0.8rem var(--space-3) var(--space-3);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
     background: var(--panel);
   }
 

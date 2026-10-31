@@ -52,7 +52,7 @@
     justify-content: center;
     padding: 1rem 2rem;
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
     background: var(--panel);
   }
 
@@ -86,14 +86,14 @@
 
   .done {
     stroke: var(--fg);
-    transition: stroke-dasharray 0.5s linear;
+    transition: stroke-dasharray var(--motion-follow) linear;
   }
 
   /* Dark inside, so that the values keep their colours; stop itself is the temperature red. */
   .stop {
     width: 82%;
     aspect-ratio: 1;
-    border-radius: 50%;
+    border-radius: var(--radius-round);
     display: flex;
     flex-direction: column;
     align-items: center;

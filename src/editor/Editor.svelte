@@ -383,13 +383,13 @@
     flex: 1;
     min-height: 0;
     background: var(--panel);
-    border-radius: 1rem;
+    border-radius: var(--radius-card);
   }
 
   .steps {
     grid-area: steps;
     background: var(--panel);
-    border-radius: 1rem;
+    border-radius: var(--radius-card);
     padding: var(--space-1) var(--space-1);
   }
 </style>

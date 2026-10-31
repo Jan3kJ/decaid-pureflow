@@ -406,10 +406,10 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   }
 
   .seg {
-    min-height: 3rem;
+    min-height: var(--control);
     min-width: 6rem;
     padding: 0 1.1rem;
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
     font-size: var(--text-body);
   }
 
@@ -456,7 +456,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     margin: 0;
     padding: var(--space-2) 0.9rem;
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
     background: var(--raised);
     color: var(--dim);
     font-size: var(--text-label);
@@ -485,18 +485,18 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
 
   .add {
     min-width: 13.5rem;
-    border-radius: 1rem;
+    border-radius: var(--radius-card);
     font-size: var(--text-body);
   }
 
   .backdrop {
     position: fixed;
     inset: 0;
-    z-index: 10;
+    z-index: var(--layer-dialog);
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgb(0 0 0 / 60%);
+    background: var(--scrim);
   }
 
   .dialog {
@@ -504,7 +504,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     padding: 1.4rem 1.6rem;
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 1.2rem;
+    border-radius: var(--radius-dialog);
   }
 
   .dialog p {
@@ -529,8 +529,8 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
 
   .actions button {
     flex: 1;
-    min-height: 3.4rem;
-    border-radius: 0.8rem;
+    min-height: var(--control-big);
+    border-radius: var(--radius-inner);
     font-size: var(--text-body);
   }
 </style>

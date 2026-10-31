@@ -112,11 +112,11 @@
     display: flex;
     align-items: center;
     gap: var(--space-1);
-    min-height: 3rem;
+    min-height: var(--control);
     padding: 0 0.9rem;
     background: var(--panel);
     border: 1px dashed var(--dim);
-    border-radius: 1.4rem;
+    border-radius: var(--radius-graph);
     color: var(--dim);
     font: inherit;
     font-size: var(--text-label);

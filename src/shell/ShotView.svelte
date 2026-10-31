@@ -181,7 +181,7 @@
     align-items: center;
     justify-content: space-between;
     gap: var(--space-3);
-    min-height: 3.2rem;
+    min-height: var(--control-tall);
     color: var(--dim);
     font-size: var(--text-body);
   }
@@ -202,14 +202,14 @@
   .chip {
     flex: none;
     min-width: 7rem;
-    min-height: 3.2rem;
+    min-height: var(--control-tall);
     padding: 0 1rem;
     font: inherit;
     font-size: var(--text-body);
     color: var(--fg);
     border: 1px solid var(--line);
     background: var(--panel);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
     touch-action: manipulation;
     user-select: none;
   }
@@ -378,7 +378,7 @@
   .stop {
     margin-top: auto;
     flex: 0 1 7rem;
-    min-height: 3.5rem;
+    min-height: var(--control-big);
     font: inherit;
     font-size: var(--text-large);
     font-weight: 600;

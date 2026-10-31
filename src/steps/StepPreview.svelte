@@ -103,7 +103,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     min-height: 20vh;
     background: var(--panel);
     border: 1px solid var(--line);
-    border-radius: 1rem;
+    border-radius: var(--radius-card);
     overflow: hidden;
   }
 

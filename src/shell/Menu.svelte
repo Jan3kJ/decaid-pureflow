@@ -112,7 +112,7 @@
     color: var(--fg);
     border: 1px solid var(--line);
     background: var(--panel);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
     touch-action: manipulation;
     user-select: none;
   }
@@ -120,7 +120,7 @@
   .corner {
     flex: none;
     width: 3.5rem;
-    height: 3.5rem;
+    height: var(--control-big);
     display: grid;
     place-items: center;
     padding: 0;
@@ -139,10 +139,10 @@
   .backdrop {
     position: fixed;
     inset: 0;
-    z-index: 10;
+    z-index: var(--layer-dialog);
     border: 0;
-    border-radius: 0;
-    background: rgb(0 0 0 / 35%);
+    border-radius: var(--radius-none);
+    background: var(--scrim-light);
   }
 
   .menu {
@@ -150,7 +150,7 @@
     /* under the corner button, at the pages' left padding */
     top: 4.6rem;
     left: 1.2rem;
-    z-index: 11;
+    z-index: var(--layer-sheet);
     min-width: 14rem;
     margin: 0;
     padding: var(--space-1);
@@ -160,14 +160,14 @@
     gap: var(--space-1);
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
-    box-shadow: 0 0.6rem 2.4rem rgb(0 0 0 / 70%);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-dialog);
   }
 
   .menu button {
     width: 100%;
-    min-height: 3.8rem;
-    padding: 0 1.2rem;
+    min-height: var(--control-big);
+    padding: 0 var(--space-3);
     text-align: left;
     font-size: var(--text-value);
     border: 0;

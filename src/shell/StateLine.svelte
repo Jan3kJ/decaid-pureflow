@@ -70,7 +70,7 @@
     align-self: center;
     width: 0.7rem;
     height: 0.7rem;
-    border-radius: 50%;
+    border-radius: var(--radius-round);
     background: var(--dim);
   }
   .ok .dot {
@@ -125,7 +125,7 @@
     color: inherit;
     background: none;
     border: 0;
-    border-radius: 0.6rem;
+    border-radius: var(--radius-small);
     touch-action: manipulation;
     user-select: none;
   }

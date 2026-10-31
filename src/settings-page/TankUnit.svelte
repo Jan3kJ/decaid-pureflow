@@ -65,7 +65,7 @@
   }
 
   .chip {
-    min-height: 3rem;
+    min-height: var(--control);
     padding: 0 0.9rem;
     font: inherit;
     color: var(--fg);
@@ -73,6 +73,6 @@
     user-select: none;
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 1.5rem;
+    border-radius: var(--radius-pill);
   }
 </style>

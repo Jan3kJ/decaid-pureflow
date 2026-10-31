@@ -277,7 +277,7 @@
     align-items: center;
     justify-content: space-between;
     gap: var(--space-3);
-    min-height: 3.2rem;
+    min-height: var(--control-tall);
     padding: var(--space-1) 0;
     border-top: 1px solid var(--line);
   }
@@ -341,11 +341,11 @@
   .action,
   .value {
     flex: none;
-    min-height: 3rem;
+    min-height: var(--control);
     padding: 0 1rem;
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
   }
 
   .primary {
@@ -354,16 +354,16 @@
 
   input[type='color'] {
     width: 5rem;
-    height: 3rem;
+    height: var(--control);
     padding: 0.2rem;
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
   }
 
   .lever-button {
     flex: none;
-    min-height: 3.6rem;
+    min-height: var(--control-big);
     padding: 0;
     background: none;
     border: 0;
@@ -375,7 +375,7 @@
     height: 2.4rem;
     padding: var(--space-1);
     box-sizing: border-box;
-    border-radius: 1.2rem;
+    border-radius: var(--radius-lever);
     background: var(--raised);
     border: 1px solid var(--line);
   }
@@ -384,9 +384,9 @@
     display: block;
     width: 1.8rem;
     height: 100%;
-    border-radius: 50%;
+    border-radius: var(--radius-round);
     background: var(--dim);
-    transition: transform 0.12s;
+    transition: transform var(--motion-fast);
   }
 
   [aria-checked='true'] .lever {

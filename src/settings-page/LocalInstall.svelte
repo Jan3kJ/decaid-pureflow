@@ -222,14 +222,14 @@
     flex: 1;
     min-width: 0;
     box-sizing: border-box;
-    min-height: 3rem;
+    min-height: var(--control);
     padding: 0 1rem;
     font: inherit;
     font-size: var(--text-body);
     color: var(--fg);
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
   }
 
   button {
@@ -241,11 +241,11 @@
 
   .action {
     flex: none;
-    min-height: 3rem;
+    min-height: var(--control);
     padding: 0 1rem;
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
   }
 
   .action:disabled,
@@ -271,7 +271,7 @@
     text-align: left;
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
   }
 
   .name {
@@ -298,7 +298,7 @@
     letter-spacing: 0.08em;
     text-transform: uppercase;
     border: 1px solid currentColor;
-    border-radius: 1rem;
+    border-radius: var(--radius-pill);
   }
 
   .chips {
@@ -309,11 +309,11 @@
   }
 
   .chip {
-    min-height: 3rem;
+    min-height: var(--control);
     padding: 0 0.9rem;
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 1.5rem;
+    border-radius: var(--radius-pill);
   }
 
   p {

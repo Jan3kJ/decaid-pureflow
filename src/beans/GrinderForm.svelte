@@ -144,7 +144,7 @@
   }
 
   input {
-    min-height: 3.2rem;
+    min-height: var(--control-tall);
     box-sizing: border-box;
     padding: 0 0.9rem;
     font: inherit;
@@ -153,7 +153,7 @@
     color-scheme: dark;
     background: var(--bg);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
     outline: none;
   }
 
@@ -172,14 +172,14 @@
   }
 
   button {
-    min-height: 3.4rem;
-    padding: 0 1.2rem;
+    min-height: var(--control-big);
+    padding: 0 var(--space-3);
     font: inherit;
     font-size: var(--text-body);
     color: var(--fg);
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
     touch-action: manipulation;
     user-select: none;
   }

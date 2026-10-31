@@ -354,7 +354,7 @@
     padding: 0.5rem 0.9rem;
     background: var(--fg);
     color: var(--bg);
-    border-radius: 0.7rem;
+    border-radius: var(--radius-note);
     font-size: var(--text-label);
     white-space: nowrap;
     pointer-events: none;

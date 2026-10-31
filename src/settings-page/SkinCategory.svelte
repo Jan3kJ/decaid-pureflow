@@ -510,7 +510,7 @@
   section {
     padding: var(--space-1) var(--space-3) var(--space-2);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
     background: var(--panel);
     scroll-margin-top: 0.6rem;
   }
@@ -581,7 +581,7 @@
     gap: var(--space-1);
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
   }
 
   .value b {
@@ -634,11 +634,11 @@
 
   .retry {
     flex: none;
-    min-height: 3rem;
+    min-height: var(--control);
     padding: 0 1rem;
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
   }
 
   .retry.primary {
@@ -658,11 +658,11 @@
   .backdrop {
     position: fixed;
     inset: 0;
-    z-index: 10;
+    z-index: var(--layer-dialog);
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgb(0 0 0 / 55%);
+    background: var(--scrim);
   }
 
   .dialog {
@@ -674,8 +674,8 @@
     flex-direction: column;
     background: var(--panel);
     border: 1px solid var(--line);
-    border-radius: 1.2rem;
-    box-shadow: 0 0.6rem 2.4rem rgb(0 0 0 / 70%);
+    border-radius: var(--radius-dialog);
+    box-shadow: var(--shadow-dialog);
   }
 
   .dialog p {
@@ -696,13 +696,13 @@
 
   .choice {
     width: 100%;
-    min-height: 3.4rem;
+    min-height: var(--control-big);
     padding: 0 1rem;
     text-align: left;
     font-size: var(--text-body);
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
   }
 
   .chips {
@@ -712,11 +712,11 @@
   }
 
   .chip {
-    min-height: 3rem;
+    min-height: var(--control);
     padding: 0 0.9rem;
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 1.5rem;
+    border-radius: var(--radius-pill);
   }
 
   .switch {
@@ -734,7 +734,7 @@
     height: 2.4rem;
     padding: var(--space-1);
     box-sizing: border-box;
-    border-radius: 1.2rem;
+    border-radius: var(--radius-lever);
     background: var(--raised);
     border: 1px solid var(--line);
   }
@@ -743,9 +743,9 @@
     display: block;
     width: 1.8rem;
     height: 100%;
-    border-radius: 50%;
+    border-radius: var(--radius-round);
     background: var(--dim);
-    transition: transform 0.12s;
+    transition: transform var(--motion-fast);
   }
 
   [aria-checked='true'] .lever {

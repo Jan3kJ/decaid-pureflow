@@ -28,7 +28,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
 <style>
   .cycle {
     --tone: var(--fg);
-    min-height: 3.6rem;
+    min-height: var(--control-big);
     min-width: 0;
     padding: 0.3rem 0.8rem;
     display: flex;
@@ -40,7 +40,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     color: var(--fg);
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
     touch-action: manipulation;
     user-select: none;
     white-space: nowrap;

@@ -439,7 +439,7 @@
     color: var(--fg);
     border: 1px solid var(--line);
     background: var(--panel);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
     touch-action: manipulation;
     user-select: none;
   }
@@ -451,14 +451,14 @@
     gap: var(--space-3);
     padding: var(--space-2) var(--space-2) var(--space-2) 1rem;
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
     background: var(--raised);
     color: var(--dim);
   }
 
   .offer button {
     flex: none;
-    min-height: 3rem;
+    min-height: var(--control);
     min-width: 7rem;
     padding: 0 1rem;
     font-size: var(--text-body);
@@ -470,14 +470,14 @@
 
   .filter {
     flex: none;
-    min-height: 3rem;
+    min-height: var(--control);
     padding: 0 1rem;
     font: inherit;
     font-size: var(--text-body);
     color: var(--fg);
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
     box-sizing: border-box;
     width: 100%;
   }
@@ -535,9 +535,9 @@
   .item {
     position: relative;
     touch-action: pan-y;
-    transition: width 0.2s ease;
+    transition: width var(--motion) ease;
     width: 100%;
-    min-height: 3.4rem;
+    min-height: var(--control-tall);
     padding: 0 1rem;
     display: flex;
     align-items: center;
@@ -572,7 +572,7 @@
     flex: none;
     padding: 0.15rem var(--space-2);
     border: 1px solid currentColor;
-    border-radius: 1rem;
+    border-radius: var(--radius-pill);
     font-size: var(--text-label);
     font-weight: 400;
     opacity: 0.75;
@@ -596,7 +596,7 @@
     gap: var(--space-2);
     padding: var(--space-3);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
     background: var(--panel);
   }
 
@@ -669,7 +669,7 @@
     scrollbar-width: thin;
     padding: var(--space-1) var(--space-2);
     border: 1px solid var(--line);
-    border-radius: 0.6rem;
+    border-radius: var(--radius-small);
   }
 
   .notes.more {
@@ -688,7 +688,7 @@
   .load {
     flex: 1 1 0;
     min-width: 0;
-    min-height: 3.4rem;
+    min-height: var(--control-big);
     font-size: var(--text-body);
     font-weight: 600;
   }

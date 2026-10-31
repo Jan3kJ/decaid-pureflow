@@ -247,11 +247,11 @@
   .action {
     flex: none;
     min-width: 8rem;
-    min-height: 3.6rem;
+    min-height: var(--control-big);
     padding: 0 1rem;
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
   }
 
   .action.primary {
@@ -290,7 +290,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 50%;
+    border-radius: var(--radius-round);
     border: 1px solid var(--line);
     color: var(--dim);
     font-weight: 600;

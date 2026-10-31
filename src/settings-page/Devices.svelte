@@ -273,7 +273,7 @@
     flex: none;
     width: 0.8rem;
     height: 0.8rem;
-    border-radius: 50%;
+    border-radius: var(--radius-round);
     background: var(--line);
   }
 
@@ -323,11 +323,11 @@
   .action {
     flex: none;
     min-width: 7.5rem;
-    min-height: 3.2rem;
+    min-height: var(--control-tall);
     padding: 0 0.9rem;
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
   }
 
   .action.danger {
@@ -337,7 +337,7 @@
 
   .lever-button {
     flex: none;
-    min-height: 3.2rem;
+    min-height: var(--control-tall);
     padding: 0;
     display: flex;
     flex-direction: column;
@@ -353,7 +353,7 @@
     height: 1.9rem;
     padding: var(--space-1);
     box-sizing: border-box;
-    border-radius: 1rem;
+    border-radius: var(--radius-lever);
     background: var(--raised);
     border: 1px solid var(--line);
   }
@@ -362,9 +362,9 @@
     display: block;
     width: 1.4rem;
     height: 100%;
-    border-radius: 50%;
+    border-radius: var(--radius-round);
     background: var(--dim);
-    transition: transform 0.12s;
+    transition: transform var(--motion-fast);
   }
 
   [aria-checked='true'] .lever {
@@ -385,11 +385,11 @@
 
   input {
     width: 16rem;
-    min-height: 3.2rem;
+    min-height: var(--control-tall);
     box-sizing: border-box;
     padding: 0 0.8rem;
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
   }
 </style>

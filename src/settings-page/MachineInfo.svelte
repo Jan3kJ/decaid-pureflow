@@ -120,7 +120,7 @@
     align-items: center;
     justify-content: space-between;
     gap: var(--space-3);
-    min-height: 3.2rem;
+    min-height: var(--control-tall);
     padding: var(--space-1) 0;
     border-top: 1px solid var(--line);
   }
@@ -161,10 +161,10 @@
 
   .action {
     flex: none;
-    min-height: 3rem;
+    min-height: var(--control);
     padding: 0 1rem;
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
   }
 </style>

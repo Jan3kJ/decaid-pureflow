@@ -195,7 +195,7 @@
     grid-area: plot;
     min-height: 0;
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
     background: var(--panel);
   }
 
@@ -212,7 +212,7 @@
     color: var(--fg);
     border: 1px solid var(--line);
     background: var(--panel);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
     touch-action: manipulation;
     user-select: none;
   }
@@ -220,7 +220,7 @@
   /* no taller than the header (PageHeader's 3.5rem), so the column under it does not move */
   .heater-on {
     flex: none;
-    min-height: 3.5rem;
+    min-height: var(--control-big);
     padding: 0 1.4rem;
     white-space: nowrap;
     font-size: var(--text-value);
@@ -234,7 +234,7 @@
   }
 
   .adjust .chip {
-    min-height: 3.4rem;
+    min-height: var(--control-tall);
     font-size: var(--text-value);
   }
 
@@ -293,7 +293,7 @@
 
   /* the tare: the whole row a button, a finger's target */
   button.line {
-    min-height: 3.5rem;
+    min-height: var(--control-big);
     align-content: center;
     border-color: var(--line);
   }
@@ -323,7 +323,7 @@
     place-items: center;
     padding: 0 var(--space-1);
     border: 1px solid var(--line);
-    border-radius: 0.4rem;
+    border-radius: var(--radius-badge);
     color: var(--fg);
     font-size: var(--text-title);
     font-weight: 600;

@@ -112,11 +112,11 @@
   .backdrop {
     position: fixed;
     inset: 0;
-    z-index: 10;
+    z-index: var(--layer-dialog);
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgb(0 0 0 / 55%);
+    background: var(--scrim);
   }
 
   .pad {
@@ -130,8 +130,8 @@
     gap: var(--space-2);
     background: var(--panel);
     border: 1px solid var(--line);
-    border-radius: 1.2rem;
-    box-shadow: 0 0.6rem 2.4rem rgb(0 0 0 / 70%);
+    border-radius: var(--radius-dialog);
+    box-shadow: var(--shadow-dialog);
   }
 
   .head {
@@ -178,8 +178,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 3.5rem;
-    padding: 0 1.2rem;
+    min-height: var(--control-big);
+    padding: 0 var(--space-3);
     font: inherit;
     font-size: var(--text-body);
     color: var(--fg);
@@ -203,7 +203,7 @@
   }
 
   .close {
-    min-height: 3rem;
+    min-height: var(--control);
     width: 3rem;
     padding: 0;
     font-size: var(--text-title);

@@ -276,7 +276,7 @@
     display: flex;
     align-items: center;
     gap: var(--space-3);
-    min-height: 3.4rem;
+    min-height: var(--control-tall);
     padding: var(--space-1) 0;
   }
 
@@ -327,11 +327,11 @@
 
   .action {
     flex: none;
-    min-height: 3rem;
+    min-height: var(--control);
     padding: 0 1rem;
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
   }
 
   .primary {
@@ -344,11 +344,11 @@
   .value {
     flex: none;
     min-width: 9rem;
-    min-height: 3rem;
+    min-height: var(--control);
     padding: 0 0.8rem;
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 0.9rem;
+    border-radius: var(--radius);
   }
 
   .value small {

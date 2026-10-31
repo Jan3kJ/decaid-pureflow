@@ -52,10 +52,10 @@
   }
 
   .toggle {
-    min-height: 3rem;
+    min-height: var(--control);
     min-width: 9rem;
-    padding: 0 1.2rem;
-    border-radius: 1.5rem;
+    padding: 0 var(--space-3);
+    border-radius: var(--radius-pill);
     font-size: var(--text-body);
     display: flex;
     align-items: center;
@@ -67,7 +67,7 @@
   .lamp {
     width: 0.8rem;
     height: 0.8rem;
-    border-radius: 50%;
+    border-radius: var(--radius-round);
     border: 2px solid var(--dim);
   }
 
@@ -122,7 +122,7 @@
     width: 1.1rem;
     height: 0.24rem;
     margin-right: var(--space-1);
-    border-radius: 0.12rem;
+    border-radius: var(--radius-line);
     vertical-align: middle;
     background: var(--tone);
   }

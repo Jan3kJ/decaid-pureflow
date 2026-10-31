@@ -222,7 +222,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     color: var(--fg);
     background: var(--panel);
     border: 1px solid var(--line);
-    border-radius: 1rem;
+    border-radius: var(--radius-card);
   }
 
   .card.warn {
@@ -263,7 +263,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     height: 2rem;
     display: grid;
     place-items: center;
-    border-radius: 50%;
+    border-radius: var(--radius-round);
     background: var(--raised);
     font-weight: 600;
   }
@@ -308,7 +308,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   .name {
     flex: 1;
     min-width: 0;
-    min-height: 3rem;
+    min-height: var(--control);
     padding: 0 0.8rem;
     font: inherit;
     font-size: var(--text-body);
@@ -316,7 +316,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     color: var(--fg);
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 0.8rem;
+    border-radius: var(--radius-inner);
   }
 
   .rows {
@@ -359,18 +359,18 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   }
 
   .act {
-    min-height: 3rem;
+    min-height: var(--control);
     font: inherit;
     color: var(--fg);
     background: var(--raised);
     border: 1px solid var(--line);
-    border-radius: 0.8rem;
+    border-radius: var(--radius-inner);
     touch-action: manipulation;
     user-select: none;
   }
 
   .act {
-    padding: 0 1.2rem;
+    padding: 0 var(--space-3);
   }
 
   .moves {
