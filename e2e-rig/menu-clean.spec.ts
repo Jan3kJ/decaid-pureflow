@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
-import type { MachineSnapshot, WaterLevels } from '../src/api';
+import type { MachineSnapshot } from '../src/api';
 import { mmToMl } from '../src/settings-page/water-tank';
+import { waterLevels } from './gateway';
 import { IDLE } from './idle';
 
 // The menu's clean against the rig: home's menu opens
@@ -27,22 +28,6 @@ async function api<T = unknown>(method: string, path: string, body?: unknown): P
 
 const machineState = async (): Promise<string> => (await api<MachineSnapshot>('GET', '/api/v1/machine/state')).state.state;
 
-/** The tank, from the first frame of `/ws/v1/machine/waterLevels`. */
-function waterLevels(): Promise<WaterLevels> {
-  return new Promise((resolve, reject) => {
-    const socket = new WebSocket(`${GATEWAY.replace('http', 'ws')}/ws/v1/machine/waterLevels`);
-    const timer = setTimeout(() => {
-      socket.close();
-      reject(new Error('no frame from /ws/v1/machine/waterLevels in 10 s'));
-    }, 10_000);
-    socket.onmessage = (event) => {
-      clearTimeout(timer);
-      socket.close();
-      resolve(JSON.parse(String(event.data)) as WaterLevels);
-    };
-  });
-}
-
 let gatewayUp = false;
 
 test.beforeAll(async () => {
@@ -58,7 +43,7 @@ test("home menu: clean opens Maintenance's clean with the rig's water in ml and 
 
   const stateBefore = await machineState();
   const backupBefore = await api('GET', BACKUP);
-  const levels = await waterLevels();
+  const levels = await waterLevels(GATEWAY);
 
   try {
     await page.goto('/');
@@ -67,11 +52,11 @@ test("home menu: clean opens Maintenance's clean with the rig's water in ml and 
     await page.getByTestId('open-clean').click();
     await expect(page.getByTestId('settings-content')).toHaveAttribute('data-category', 'maintenance');
     await expect(page.getByTestId('maintenance-clean')).toBeInViewport();
-    await expect(page.getByTestId('maintenance-water-clean')).toHaveText(`Water tank: ${mmToMl(levels.currentLevel)} ml`, {
+    await expect(page.getByTestId('maintenance-water-clean')).toHaveText(`water tank: ${mmToMl(levels.currentLevel)} ml`, {
       timeout: 15_000,
     });
     await expect(page.getByTestId('maintenance-water-low-clean')).toHaveCount(mmToMl(levels.currentLevel) < 350 ? 1 : 0);
-    await expect(page.getByTestId('maintenance-drip-tray-clean')).toHaveText('Empty the drip tray before starting.');
+    await expect(page.getByTestId('maintenance-drip-tray-clean')).toHaveText('empty the drip tray before starting.');
     await expect(page.getByTestId('maintenance-start-clean')).toBeEnabled();
     await page.screenshot({ path: 'e2e-rig/.results/menu-clean-rig.png' });
   } finally {

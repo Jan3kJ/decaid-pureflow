@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import type { MachineSnapshot, DecaidSettings, MachineSettings, AdvancedSettings } from '../src/api';
-import type { RigWorkflow } from './gateway';
+import { waterLevels, type RigWorkflow } from './gateway';
 import { IDLE } from './idle';
 
 // The ported settings page against the rig: Decaid's
@@ -8,7 +8,8 @@ import { IDLE } from './idle';
 // flow and duration reach the workflow and the machine. The test records
 // every value it changes before it starts, puts each back and checks them afterwards, and puts
 // back Streamline's remembered values and the skin's KV backup as it found
-// them. Without a gateway: e2e/settings-page.spec.ts.
+// them. The water level alert is written in whole mm; the simulated DE1 does not keep it.
+// Without a gateway: e2e/settings-page.spec.ts.
 
 const GATEWAY = 'http://localhost:8080';
 const BACKUP = '/api/v1/store/pureflow/settings-backup';
@@ -151,4 +152,42 @@ test('settings changed through the page are read back from the gateway, and rest
   const after = await snapshot();
   console.log('after', JSON.stringify(after));
   expect(after).toEqual(before);
+});
+
+test('the water level alert writes a typed 8 and 69 as they are, and is put back', async ({ page }) => {
+  test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
+  const before = (await waterLevels(GATEWAY)).refillLevel;
+  console.log('refillLevel before', before);
+  const written: { body: unknown; status: number | undefined }[] = [];
+  page.on('requestfinished', async (request) => {
+    if (request.method() !== 'POST' || !request.url().endsWith('/api/v1/machine/waterLevels')) return;
+    written.push({ body: request.postDataJSON(), status: (await request.response())?.status() });
+  });
+
+  try {
+    await page.goto('/');
+    await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 15_000 });
+    await page.getByTestId('menu').click();
+    await page.getByTestId('open-settings').click();
+    await page.getByTestId('settings-category-quickadjustments').click();
+    const shown = page.getByTestId('setting-water-alert').locator('b');
+    await expect(shown).toHaveText(new RegExp(`^${before}mm, about \\d+ ml$`));
+
+    await type(page, 'setting-water-alert', '8');
+    await expect.poll(() => written.length).toBe(1);
+    await type(page, 'setting-water-alert', '69');
+    await expect.poll(() => written.length).toBe(2);
+    // Decaid takes both; the page shows the level the machine sends back, which the simulation
+    // leaves where it was.
+    expect(written).toEqual([
+      { body: { refillLevel: 8 }, status: 202 },
+      { body: { refillLevel: 69 }, status: 202 },
+    ]);
+    const after = (await waterLevels(GATEWAY)).refillLevel;
+    console.log('refillLevel after 8 and 69', after);
+    await expect(shown).toHaveText(new RegExp(`^${after}mm, about \\d+ ml$`));
+  } finally {
+    await api('POST', '/api/v1/machine/waterLevels', { refillLevel: before });
+  }
+  expect((await waterLevels(GATEWAY)).refillLevel).toBe(before);
 });

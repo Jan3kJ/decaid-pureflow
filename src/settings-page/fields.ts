@@ -222,13 +222,14 @@ export const WATER_TANK: Field[] = [
   number({
     id: 'water-alert',
     label: 'water level alert',
-    hint: 'the tank level at which the machine asks for water, in steps of 5 mm. Default 15.',
+    hint: 'the tank level at which the machine asks for water, in whole mm, 0 to 69. Default 15.',
     source: 'waterLevels',
     key: 'refillLevel',
     unit: 'mm',
+    // Every whole mm up to 69; from 67 mm up the tank is full (`tankMl`).
     min: 0,
-    max: 30,
-    step: 5,
+    max: 69,
+    step: 1,
     places: 0,
     note: (mm) => `about ${shownTankMl(mm)} ml`,
   }),

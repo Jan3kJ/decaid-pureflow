@@ -139,18 +139,24 @@ test('a typed number is written with its key alone, and the page shows what the 
   expect(writes('POST', '/api/v1/machine/settings')).toEqual([{ tankTemp: 30 }]);
   await expect(shown(page, 'tank-temperature')).toHaveText('20°C');
 
-  // The water alert says its ml after the mm: 5 mm is 124 ml, 15 mm 398 ml, each about.
+  // The water alert says its ml after the mm: 5 mm is 124 ml, 15 mm 398 ml, each about. It takes
+  // every whole mm from 0 to 69, so a typed 8 stays 8; 68 and 69 are the full tank, as 67.
   await expect(shown(page, 'water-alert')).toHaveText('5mm, about 120 ml');
+  await expect(page.getByTestId('row-water-alert')).toContainText('in whole mm, 0 to 69. Default 15.');
+  await type(page, 'setting-water-alert', '8');
+  await expect(shown(page, 'water-alert')).toHaveText('8mm, about 210 ml');
+  await type(page, 'setting-water-alert', '69');
+  await expect(shown(page, 'water-alert')).toHaveText('69mm, about 2060 ml');
   await type(page, 'setting-water-alert', '15');
   await expect(shown(page, 'water-alert')).toHaveText('15mm, about 400 ml');
-  expect(writes('POST', '/api/v1/machine/waterLevels')).toEqual([{ refillLevel: 15 }]);
+  expect(writes('POST', '/api/v1/machine/waterLevels')).toEqual([{ refillLevel: 8 }, { refillLevel: 69 }, { refillLevel: 15 }]);
   // Below them the skin's own tank unit: saved in the skin, nothing to the machine.
   const tank = page.getByTestId('settings-section-watertank');
   await expect(tank.locator('[data-testid^="row-"]')).toHaveText([/tank temperature/, /water level alert/, /tank unit/]);
   await tank.getByTestId('setting-tank-unit-mm').click();
   await expect(tank.getByTestId('setting-tank-unit-mm')).toHaveAttribute('aria-pressed', 'true');
   expect(writes('POST', '/api/v1/machine/settings')).toEqual([{ tankTemp: 30 }]);
-  expect(writes('POST', '/api/v1/machine/waterLevels')).toEqual([{ refillLevel: 15 }]);
+  expect(writes('POST', '/api/v1/machine/waterLevels')).toEqual([{ refillLevel: 8 }, { refillLevel: 69 }, { refillLevel: 15 }]);
 
   // A workflow value: only its key in steamSettings, and the skin's workflow follows.
   await type(page, 'setting-steam-flow', '1.4');

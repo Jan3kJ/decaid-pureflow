@@ -33,7 +33,7 @@ describe('the fields of the settings page', () => {
     ['hot-water-flow', 'workflow.hotWaterData', 'flow', 0.1, 8, 0.1],
     ['hot-water-flow-multiplier', 'decaid', 'hotWaterFlowMultiplier', 0, 2, 0.05],
     ['tank-temperature', 'machine', 'tankTemp', 10, 40, 1],
-    ['water-alert', 'waterLevels', 'refillLevel', 0, 30, 5],
+    ['water-alert', 'waterLevels', 'refillLevel', 0, 69, 1],
     ['flush-flow', 'workflow.rinseData', 'flow', 1, 8, 0.1],
     ['flush-duration', 'workflow.rinseData', 'duration', 1, 120, 1],
     ['heater-idle-temperature', 'advanced', 'heaterIdleTemp', 0, 99, 1],
@@ -121,6 +121,8 @@ describe('water alert', () => {
     const field = numberField('water-alert');
     expect(field.unit).toBe('mm');
     expect(field.note?.(15)).toBe('about 400 ml');
+    expect(field.note?.(8)).toBe('about 210 ml');
+    expect(field.note?.(69)).toBe('about 2060 ml');
     expect(field.note?.(0)).toBe('about 0 ml');
     expect(numberField('tank-temperature').note).toBeUndefined();
   });
@@ -130,8 +132,11 @@ describe('heldNumber', () => {
   it('rounds to the step and holds the range', () => {
     expect(heldNumber(numberField('volume-flow-multiplier'), 0.33)).toBe(0.35);
     expect(heldNumber(numberField('volume-flow-multiplier'), 0.32)).toBe(0.3);
-    expect(heldNumber(numberField('water-alert'), 12)).toBe(10);
-    expect(heldNumber(numberField('water-alert'), 13)).toBe(15);
+    expect(heldNumber(numberField('water-alert'), 8)).toBe(8);
+    expect(heldNumber(numberField('water-alert'), 0)).toBe(0);
+    expect(heldNumber(numberField('water-alert'), 69)).toBe(69);
+    expect(heldNumber(numberField('water-alert'), 70)).toBe(69);
+    expect(heldNumber(numberField('water-alert'), 8.4)).toBe(8);
     expect(heldNumber(numberField('fan-threshold'), 80)).toBe(50);
     expect(heldNumber(numberField('flush-flow'), 4.25)).toBe(4.3);
   });
