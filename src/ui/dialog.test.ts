@@ -32,6 +32,7 @@ describe('Dialog', () => {
       'settings-page/Confirm',
       'settings-page/SkinCategory',
       'shell/DatePicker',
+      'shell/NoScaleDialog',
       'shell/UnsavedDialog',
       'steps/StepEditor',
     ]) {

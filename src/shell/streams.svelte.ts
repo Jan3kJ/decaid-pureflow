@@ -1,5 +1,5 @@
 // The skin's streams from the gateway: the machine's snapshot, its settings and water levels,
-// the scale and the devices, the link they make, and the scale's retry rounds. A
+// the shot's feed, the scale and the devices, the link they make, and the scale's retry rounds. A
 // part of `Skin`, which hands its stream fields to it and gets the frames that change the
 // workflow, the shot and the screen (`StreamHandlers`).
 import {
@@ -8,7 +8,9 @@ import {
   isScaleStatus,
   machineShotSettingsStream,
   machineSnapshotStream,
+  machineShotStateStream,
   machineWaterLevelsStream,
+  readShotState,
   scaleSnapshotStream,
   type DecaidClient,
   type DevicesState,
@@ -16,6 +18,7 @@ import {
   type MachineState,
   type ScaleFrame,
   type ShotSettings,
+  type ShotStateFrame,
   type SnapshotStream,
   type StreamErrorFrame,
   type StreamState,
@@ -36,6 +39,8 @@ export interface StreamHandlers {
   onMachineFrame(frame: MachineSnapshot): void;
   /** a weight of the scale, in g, read at `at` (ms, the frame's timestamp; NaN without one) */
   onWeight(weight: number, at: number): void;
+  /** a frame of the shot's feed, read with `readShotState` */
+  onShotState(frame: ShotStateFrame): void;
 }
 
 export class Streams {
@@ -79,6 +84,8 @@ export class Streams {
   private machine: SnapshotStream<MachineSnapshot> | undefined;
   private machineSettings: SnapshotStream<ShotSettings> | undefined;
   private waterLevels: SnapshotStream<WaterLevels> | undefined;
+  /** `/ws/v1/machine/shotState`: Decaid's shot sequencer; its frames go to `onShotState` */
+  private shotState: SnapshotStream<unknown> | undefined;
   private scale: SnapshotStream<ScaleFrame> | undefined;
   /** `/ws/v1/devices`, read only for whether Decaid scans: no round scans while it does */
   private devices: SnapshotStream<DevicesState> | undefined;
@@ -135,6 +142,7 @@ export class Streams {
           // The settings' stream ends with an error frame while no machine is connected.
           this.machineSettings?.connect();
           this.waterLevels?.connect();
+          this.shotState?.connect();
         } else {
           // What the machine did while the stream was closed is not known.
           this.state = undefined;
@@ -158,6 +166,14 @@ export class Streams {
         if (state !== 'open') this.water = null;
       },
       onFrame: (frame) => (this.water = frame),
+    }).connect();
+    // Without a sequencer (gateway mode 'full') the feed only idles, so its failure is silent too.
+    this.shotState = machineShotStateStream({
+      baseUrl: this.baseUrl,
+      onFrame: (raw) => {
+        const frame = readShotState(raw);
+        if (frame) this.handlers.onShotState(frame);
+      },
     }).connect();
     this.scale = scaleSnapshotStream({
       baseUrl: this.baseUrl,
@@ -183,6 +199,7 @@ export class Streams {
       this.machine?.close();
       this.machineSettings?.close();
       this.waterLevels?.close();
+      this.shotState?.close();
       this.scale?.close();
       this.devices?.close();
       this.scaleRetry.stop();
@@ -231,6 +248,7 @@ export class Streams {
     this.machine?.connect();
     this.machineSettings?.connect();
     this.waterLevels?.connect();
+    this.shotState?.connect();
     this.scale?.connect();
     this.devices?.connect();
   }

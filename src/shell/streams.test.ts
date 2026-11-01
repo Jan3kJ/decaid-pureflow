@@ -38,6 +38,7 @@ function streams() {
     onOpen: () => undefined,
     onMachineFrame: () => undefined,
     onWeight: (weight) => weights.push(weight),
+    onShotState: () => undefined,
   });
   return { streams: made, weights };
 }

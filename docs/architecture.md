@@ -32,10 +32,18 @@ its own port.
   parameters, so it runs in the browser, in Node and in tests.
 - **WebSocket streams** (`src/api/stream.ts`): `/ws/v1/machine/snapshot` (about 10 frames a second
   in a shot, 2 while idle), `/ws/v1/scale/snapshot` (about 5 a second), and
-  `/ws/v1/machine/shotSettings`, `/ws/v1/machine/waterLevels` and `/ws/v1/devices`. One class
-  serves them all. It keeps the latest frame and reconnects after a close with a delay that
+  `/ws/v1/machine/shotSettings`, `/ws/v1/machine/waterLevels`, `/ws/v1/machine/shotState` and
+  `/ws/v1/devices`. One class serves them all. It keeps the latest frame and reconnects after a close with a delay that
   doubles from 1 s to at most 30 s. A frame never makes it reconnect: when the gateway sends an
   error frame and closes the socket, the stream stops in the state `failed`.
+- **The shot's feed** `/ws/v1/machine/shotState`: Decaid's shot sequencer, its phase and why it
+  advanced, stopped or refused a shot. `readShotState` in `src/api/shot-state.ts` is the one
+  reader of its frames (event, shotId, state, scaleConnected, scaleLost, machineHasAutonomousSAW,
+  decision with kind, reason, details and data); a part that uses the feed reads it through
+  `readShotState`. Without a sequencer (gateway mode `full`) the feed only idles. Its first use is
+  the popup for a shot stopped for want of a scale (`src/shell/no-scale.svelte.ts`): the abort for
+  `noScale`, the REST answer `block_no_scale` and, without a sequencer, an espresso under 3 s
+  without a scale and with `blockOnNoScale` on open it, once for one blocked start.
 
 Rules every skin keeps (from Decaid's `doc/Skins.md`):
 

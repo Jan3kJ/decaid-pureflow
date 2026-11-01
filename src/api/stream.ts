@@ -1,6 +1,7 @@
 // The gateway's snapshot streams. One class for both: it parses the frames, keeps the latest
 // one and the connection state, and reconnects with a growing delay after the socket closed.
 // The WebSocket constructor and the timer are parameters, so tests need no network.
+import { MACHINE_SHOT_STATE_PATH } from './shot-state';
 import type { DevicesState, MachineSnapshot, ScaleFrame, ShotSettings, WaterLevels } from './types';
 
 export const MACHINE_SNAPSHOT_PATH = '/ws/v1/machine/snapshot';
@@ -277,6 +278,14 @@ export function machineWaterLevelsStream(options: StreamFactoryOptions<WaterLeve
  */
 export function devicesStream(options: StreamFactoryOptions<DevicesState> = {}): SnapshotStream<DevicesState> {
   return create(DEVICES_PATH, options);
+}
+
+/**
+ * `/ws/v1/machine/shotState`: Decaid's shot sequencer, its phase and its decisions, one frame
+ * when the socket opens. A frame is read with `readShotState`; it stays `unknown` until then.
+ */
+export function machineShotStateStream(options: StreamFactoryOptions<unknown> = {}): SnapshotStream<unknown> {
+  return create(MACHINE_SHOT_STATE_PATH, options);
 }
 
 function create<Frame>(path: string, options: StreamFactoryOptions<Frame>): SnapshotStream<Frame> {

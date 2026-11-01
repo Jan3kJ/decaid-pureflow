@@ -123,6 +123,14 @@ export function isTareBlocked(error: unknown): error is TareBlockedError {
   return error instanceof TareBlockedError;
 }
 
+/**
+ * `PUT /api/v1/machine/state/espresso` answered 400 `block_no_scale`: Decaid's setting
+ * 'scale required' (`blockOnNoScale`) is on and no scale is connected.
+ */
+export function isNoScaleBlock(error: unknown): error is DecaidApiError {
+  return error instanceof DecaidApiError && error.type === 'block_no_scale';
+}
+
 export class DecaidClient {
   readonly baseUrl: string;
   private readonly fetchFn: FetchLike;

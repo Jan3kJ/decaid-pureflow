@@ -32,6 +32,7 @@
     type Page,
     type Point,
   } from './shell/swipe';
+  import NoScaleDialog from './shell/NoScaleDialog.svelte';
   import UnsavedDialog from './shell/UnsavedDialog.svelte';
   import { coverOf, MAIN_FRAME, type Rect } from './shell/cover';
   import Water from './shell/Water.svelte';
@@ -341,6 +342,11 @@
 <!-- Unsaved edits on the machine: asked before any load of the skin. -->
 {#if skin.unsaved}
   <UnsavedDialog unsaved={skin.unsaved} onanswer={(answer: LoadAnswer) => skin.answerLoad(answer)} />
+{/if}
+
+<!-- Decaid stopped a shot for want of a scale: on every screen, once for one blocked start. -->
+{#if skin.noScaleOpen}
+  <NoScaleDialog onfind={() => skin.findScale()} onclose={() => skin.closeNoScale()} />
 {/if}
 
 <!-- A stream the gateway closed with an error is tried again for 30 s by itself, then waits for this button. -->

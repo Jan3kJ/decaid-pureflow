@@ -2,7 +2,8 @@
 // One object, made once by App.svelte; the screens read it and call its actions. It hands the
 // work to its parts: the streams (streams.svelte.ts), the settings and their backup
 // (settings-store.svelte.ts), steam (steam-control.svelte.ts), the history and its restore
-// (recall.svelte.ts), the warning before a load (load-warning.svelte.ts), the screen's
+// (recall.svelte.ts), the warning before a load (load-warning.svelte.ts), the popup for a shot
+// stopped for want of a scale (no-scale.svelte.ts), the screen's
 // brightness in sleep (dimmer.ts), who asked for a sleep (sleep.ts) and the bean and grinder
 // catalogue (src/beans/catalogue.svelte.ts).
 import { Catalogue } from '../beans/catalogue.svelte';
@@ -28,6 +29,7 @@ import {
   type Status,
 } from './machine';
 import { followMachine, loadScreen, saveScreen, type Screen } from './nav';
+import { NoScale } from './no-scale.svelte';
 import { isPage } from './swipe';
 import { doseToSet } from './profiles';
 import { Recall, type Recalled } from './recall.svelte';
@@ -80,6 +82,7 @@ export class Skin {
   private readonly steamer: SteamControl;
   private readonly recall: Recall;
   private readonly warning: LoadWarning;
+  private readonly noScale: NoScale;
   private readonly dimmer: Dimmer;
   private readonly heartbeat: Heartbeat;
   /** who asked for the machine's sleep (`followSleep`) */
@@ -122,6 +125,16 @@ export class Skin {
     this.steamer = new SteamControl(this);
     this.recall = new Recall(this);
     this.warning = new LoadWarning(this.client);
+    this.noScale = new NoScale({
+      scaleConnected: () => this.scaleLink === 'connected',
+      blockOnNoScale: async () => {
+        try {
+          return (await this.client.getSettings()).blockOnNoScale === true;
+        } catch {
+          return false;
+        }
+      },
+    });
     this.dimmer = new Dimmer(this.client);
     this.heartbeat = new Heartbeat(this.client);
     this.streams = new Streams(baseUrl, this.client, {
@@ -135,6 +148,7 @@ export class Skin {
       },
       onMachineFrame: (frame) => this.onMachineFrame(frame),
       onWeight: (weight, at) => (this.shot = settleWeight(this.shot, weight, at)),
+      onShotState: (frame) => this.noScale.frame(frame),
     });
   }
 
@@ -264,6 +278,18 @@ export class Skin {
     return this.recall.expectedSeconds;
   }
 
+  // --- the shot stopped for want of a scale (no-scale.svelte.ts) ---
+
+  /** the popup that Decaid stopped a shot for want of a scale is open */
+  get noScaleOpen(): boolean {
+    return this.noScale.open;
+  }
+
+  /** The popup's 'close', Escape and a tap beside it. */
+  closeNoScale(): void {
+    this.noScale.close();
+  }
+
   // --- the warning before a load (load-warning.svelte.ts) ---
 
   /** the unsaved edits the warning before a load asks about, while it is open */
@@ -309,6 +335,7 @@ export class Skin {
     if (this.shot && !this.shot.ended) this.recall.recalled = null;
     if (running && this.shot?.ended) this.recall.shotEnded(this.shot);
     this.steamer.frame(frame);
+    this.noScale.machine(frame, before);
     this.waterRun = recordWaterFrame(this.waterRun, frame);
     if (next !== this.screen) this.go(next);
     this.sleepMark = followSleep(this.sleepMark, before, state);
@@ -518,7 +545,7 @@ export class Skin {
     try {
       await this.client.requestMachineState(state);
     } catch (error) {
-      this.notice = `${failure}: ${errorMessage(error)}`;
+      if (!this.noScale.refused(error)) this.notice = `${failure}: ${errorMessage(error)}`;
     }
   }
 }

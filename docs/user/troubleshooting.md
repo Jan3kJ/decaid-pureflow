@@ -24,6 +24,13 @@ does not find it, wake the scale and connect it under **Settings > 2. Connection
 Without a scale there is no stop at weight, and the steam timer has no mug and milk to count
 from.
 
+With **scale required** on (**Settings > 2. Connections**), Decaid stops every shot at once while
+no scale is connected, and the skin says so in a popup: 'The shot was stopped: no scale is
+connected. 'scale required' is on in Settings > Connections, so the machine stops every shot
+without a scale. Check that the scale is on and in range, then start again.' **look for the
+scale** looks for it as the warning does; **close** closes the popup. Turn the scale on, or
+turn **scale required** off to pull a shot without one.
+
 ## The steam timer
 
 - **set timer** is grey: no milk is on the scale yet. Put the mug with milk on it, or use one

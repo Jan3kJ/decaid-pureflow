@@ -539,6 +539,7 @@ export class MockGateway {
   private readonly settingsSockets = new Set<WebSocketRoute>();
   private readonly waterSockets = new Set<WebSocketRoute>();
   private readonly deviceSockets = new Set<WebSocketRoute>();
+  private readonly shotStateSockets = new Set<WebSocketRoute>();
   /**
    * The machine's substate, where a test sets one: a real DE1 stays in state steam after the
    * steam, in `pouringDone`, `puffing` or `pausedSteam`. Else the rig's.
@@ -570,6 +571,10 @@ export class MockGateway {
     await page.routeWebSocket(/:8080\/ws\/v1\/devices/, (ws) => {
       // The whole list when the socket opens, then at every change.
       if (this.open(ws, this.deviceSockets)) ws.send(JSON.stringify(this.devicesFrame()));
+    });
+    await page.routeWebSocket(/:8080\/ws\/v1\/machine\/shotState/, (ws) => {
+      // The feed sends its latest frame when the socket opens: between shots, the idle one.
+      if (this.open(ws, this.shotStateSockets)) ws.send(JSON.stringify(shotStateFrame()));
     });
     await page.routeWebSocket(/:8080\/ws\/v1\/scale\/snapshot/, (ws) => {
       // The first frame is a status frame without a weight.
@@ -719,6 +724,36 @@ export class MockGateway {
     this.sendScale({ status: connected ? 'connected' : 'disconnected' });
   }
 
+  /** A frame of `/ws/v1/machine/shotState`, Decaid's shot sequencer: `shotStateFrame` with `change`. */
+  sendShotState(change: Json = {}): void {
+    for (const ws of this.shotStateSockets) ws.send(JSON.stringify(shotStateFrame(change)));
+  }
+
+  /**
+   * A start at the machine's button while Decaid's setting 'scale required' is on and no scale is
+   * connected, as the rig showed it: the machine enters espresso, the sequencer sends its abort
+   * for 'noScale' and its idle frame, and the machine is idle 0.1 s later. Without a sequencer
+   * (`feed` false, gateway mode 'full') only the short espresso is seen.
+   */
+  blockedStart(feed = true): void {
+    const now = Date.now();
+    this.sendMachine({ ...this.frame(now - 100), state: { state: 'espresso', substate: 'preparingForShot' } });
+    if (feed) {
+      const shotId = `blocked-${now}`;
+      this.sendShotState({
+        event: 'decision',
+        shotId,
+        machineState: 'espresso',
+        machineSubstate: 'preparingForShot',
+        profileFrame: 0,
+        decision: { kind: 'abort', reason: 'noScale', details: 'No scale connected, blocking shot', data: null },
+      });
+      this.sendShotState({ machineState: 'espresso', machineSubstate: 'preparingForShot' });
+    }
+    this.state = 'idle';
+    this.sendMachine(this.frame(now));
+  }
+
   /**
    * The machine has steamed for `seconds`: its frames of that time, sent at once, with the
    * curve of a real machine (the simulated one has none). It goes on steaming;
@@ -824,7 +859,14 @@ export class MockGateway {
 
   /** The gateway drops every socket, as when the machine sleeps or the tablet's network goes; the skin opens them again. */
   dropStreams(): void {
-    for (const sockets of [this.machineSockets, this.scaleSockets, this.settingsSockets, this.waterSockets, this.deviceSockets]) {
+    for (const sockets of [
+      this.machineSockets,
+      this.scaleSockets,
+      this.settingsSockets,
+      this.waterSockets,
+      this.deviceSockets,
+      this.shotStateSockets,
+    ]) {
       for (const ws of sockets) void ws.close();
     }
   }
@@ -876,6 +918,10 @@ export class MockGateway {
       // The state itself changes when the test replays the shot or lets it end; only sleep
       // and the wake from it are the mock's own.
       const asked = path.split('/').pop()!;
+      if (asked === 'espresso' && this.decaidSettings.blockOnNoScale === true && !this.scaleConnected) {
+        // As Decaid answers it (de1handler.dart; seen on the rig).
+        return json({ details: 'No scale detected, blocking espresso request', type: 'block_no_scale' }, 400);
+      }
       // The maintenance states are entered and left at once, as the simulated DE1 does.
       const own = ['sleeping', 'cleaning', 'descaling', 'airPurge'];
       if (own.includes(asked) || own.includes(this.state)) this.state = asked as MachineState;
@@ -1351,6 +1397,27 @@ export class MockGateway {
     if (kind === 'grinders' && id && method === 'PUT') return changed(this.grinders, id, 'Grinder not found');
     return null;
   }
+}
+
+/**
+ * A frame of `/ws/v1/machine/shotState` as Decaid writes it: by default the idle frame it sends
+ * between shots, with no decision.
+ */
+export function shotStateFrame(change: Json = {}): Json {
+  return {
+    event: 'state',
+    timestamp: new Date().toISOString().replace('Z', '000'),
+    shotId: null,
+    state: 'idle',
+    machineState: null,
+    machineSubstate: null,
+    profileFrame: null,
+    scaleConnected: false,
+    scaleLost: false,
+    machineHasAutonomousSAW: false,
+    decision: null,
+    ...change,
+  };
 }
 
 export function mockGateway(page: Page, options: MockOptions = {}): Promise<MockGateway> {
