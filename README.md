@@ -1,5 +1,7 @@
 # pureflow
 
+[![CI](https://github.com/Jan3kJ/decaid-pureflow/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Jan3kJ/decaid-pureflow/actions/workflows/ci.yml)
+
 An unofficial skin for [Decaid](https://github.com/decentespresso/decaid), Decent's app for the
 DE1 espresso machine. It replaces Decaid's default skin, Streamline, with a calm dark screen for
 an Android tablet in landscape, and it is built around an editor for A-Flow 3.0 profiles. It is
@@ -38,8 +40,9 @@ the stop at weight need one.
 
 ## State
 
-pureflow is a beta. The version is 0.8.0; it is set in `package.json` and
-`public/manifest.json`, and a test keeps the two equal.
+pureflow is a beta. Each version, with its changes and ZIPs, is on the
+[releases page](https://github.com/Jan3kJ/decaid-pureflow/releases); install the newest one.
+The badge above is the state of CI on `main`: green when its checks pass, red when one fails.
 
 ## Development
 
