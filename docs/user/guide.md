@@ -103,7 +103,7 @@ the choice then moves to the other field. Nothing is filled in until you tap.
 
 Steam is started at the machine. The steam page sets its timer from the milk's weight.
 
-![The steam page while steaming](img/steam.png)
+![The steam page after a steam: the graph of the last steam, the timer, the scale, mug and milk](img/steam.png)
 
 Put the mug with milk on the scale. The skin tells which mug it is (**s**, **m** or **l**, by
 its weight) and how much milk is in it. **set timer** sends the time to the machine. Use the
