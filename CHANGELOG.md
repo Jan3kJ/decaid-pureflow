@@ -4,6 +4,41 @@ What changed in each version of pureflow, newest first. From 0.7.0 on a section 
 the release script (`npm run release`) from the commits' `Changelog:` lines; the sections up to
 0.6.1 summarise the hand-over builds that came before it.
 
+## 0.10.0 - 2026-11-01
+
+### Added
+
+- In the step editor's cards tab a tap on the graph opens the step under the finger and centres its card, as a tap on the card does. (Z55)
+- A build can be installed on the tablet from a server on the PC before it is published: Settings > Skin > Backup and version > developer options shows Skin > Developer, which lists the server's ZIPs and has Decaid install one. (Z46)
+- After 'check for skin updates' Settings > Skin > Active Skin says when Decaid holds another pureflow than the screen runs, and 'reload' loads it. (Z66)
+- When Decaid stops a shot because 'scale required' is on and no scale is connected, a popup says so, with 'look for the scale' and 'close'. (Z71)
+- After a shot, home says under its time and weight why it stopped: 'stopped at the target weight', 'stopped at the target volume', 'stopped by hand' or 'ended by the machine'. (Z72)
+- When the scale drops during a shot with a target weight, a notice says to stop it by hand; when a shot ends abnormally, a popup says why. (Z73)
+- Settings > Skin > Skin version picks the flavour, small or with the bean bag reading, lists pureflow's releases from GitHub on a tap, newest first, and has Decaid install the chosen one, then 'reload' loads it. (Z67)
+
+### Changed
+
+- Each release also carries the ZIPs as pureflow.zip and pureflow-ocr.zip, so Decaid's asset field can name one for good. (Z65)
+- A selected chip or button has dark numbers, units and small lines on its white fill, so the hot water ratio chips read well. (Z49)
+- Every label and hint in Settings starts lower case, titles keep their capital. (Z48)
+- The picker's panel has more room for the description: no estimate caption and no A-Flow line, a smaller gap to edit and load. (Z50)
+- In the profile picker rename sits beside delete at a row's right end, and a swipe to the right on a closed row goes back. (Z52)
+- Home's time, weight and values read as on the steam page: caption at the left, number and unit at the right, 'stops at' on a second line under 'weight'. (Z53)
+- On the steam page the captions scale, mug and milk sit centred beside their numbers, and the mug's size badge is as large as the number with its frame. (Z54)
+- Settings > Quick Adjustments > Flush shows flow and duration only; the flush temperature had no effect, the water is at the group's temperature from the loaded profile. (Z64)
+- Rows, fields and buttons come in three heights, so settings rows sit a little lower and dialog and form buttons a little taller. (Z56)
+- A shot of 0 g or none shows a dash on home as on hot water, and hot water's ratio buttons are then grayed out and do nothing. (Z70)
+- A shot picked from the history no longer shows the 'last shot with' row and its 'dismiss' over the graph; the graph starts right under the header and stays until the next shot. (Z68)
+- The water level alert takes every whole mm from 0 to 69, so a typed 8 stays 8 instead of becoming 10. (Z69)
+- Home's menu lines are one height, so the steam heater's text no longer sits at the top of its button; a two-finger swipe down on hot water, home or steam does 'Machine and app sleep'.
+
+### Fixed
+
+- Hot water shows the same last shot weight as home. (Z47)
+- In the picker a pressure ramp's dotted target falls at the step's own pace, so the estimate of Advanced spring lever follows its target a second behind. (Z51)
+
+Checks: npm ci, npm run verify and npm run e2e passed; rig suite: not run.
+
 ## 0.9.0 - 2026-10-30
 
 ### Added
