@@ -6,6 +6,7 @@
   import { homeShot } from './home-shot';
   import NextShot from './NextShot.svelte';
   import { phaseTable, type PhaseRow } from './phases';
+  import { shotWeightText } from './shot';
   import type { Skin } from './skin.svelte';
 
   interface Props {
@@ -120,7 +121,9 @@
       <small data-testid="shot-weight-label"
         ><span>weight</span>{#if target}<span data-testid="shot-stops-at">stops at {+target.toFixed(1)} g</span>{/if}</small
       >
-      <b class="big-number" data-testid="shot-weight">{gramsOf(shown.weight, '')}<i>g</i></b>
+      <b class="big-number" data-testid="shot-weight"
+        >{shown.kind === 'running' ? gramsOf(shown.weight, '') : shotWeightText(shown.weight)}<i>g</i></b
+      >
     </div>
     <dl>
       <div class="row pressure">

@@ -117,7 +117,7 @@ It shows the time and has the **stop** button. The rest of the screen stays.
 ## Hot water
 
 Hot water is started at the machine. With a scale it stops at the weight; without one at the
-volume or the time. The ratio buttons set the weight from the last shot, for example 1:2.
+volume or the time. The ratio buttons set the weight from the last shot, for example 1:2; without a weighed last shot (none, or 0 g) they are grayed out and do nothing.
 
 ## The settings that matter
 

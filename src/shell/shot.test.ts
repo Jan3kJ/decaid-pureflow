@@ -10,10 +10,12 @@ import {
   recordFrame,
   runningStep,
   settleWeight,
+  shotWeightText,
   shotOver,
   shotSeconds,
   shotWeight,
   waterMoves,
+  weighedGrams,
   type Shot,
 } from './shot';
 
@@ -384,5 +386,15 @@ describe('runningStep', () => {
     expect(runningStep(running(), frame('steam', '01'), steps)).toBeNull();
     expect(runningStep(running(), frame('hotWater', '01'), steps)).toBeNull();
     expect(runningStep(running(), null, steps)).toBeNull();
+  });
+});
+
+describe('shotWeightText', () => {
+  it('shows the dash for 0 g or less, or none, else the number', () => {
+    for (const weight of [0, -0.4, null, undefined, Number.NaN]) expect(shotWeightText(weight)).toBe('–');
+    expect(shotWeightText(36.04)).toBe('36.0');
+    expect(shotWeightText(0.04)).toBe('0.0');
+    expect(weighedGrams(0)).toBeNull();
+    expect(weighedGrams(12)).toBe(12);
   });
 });

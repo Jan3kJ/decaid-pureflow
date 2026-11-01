@@ -1,6 +1,7 @@
 // Snapshot frames in, the series of a shot graph out: plain arrays, one value per machine
 // frame. Pure: no clock, no network. Time comes from the frames' own timestamps.
 import type { MachineSnapshot } from '../api';
+import { gramsOf } from '../display';
 import { phaseSample, type PhaseSample } from './phases';
 
 /** What the graph draws. Every array is as long as `t`. */
@@ -262,6 +263,17 @@ export function shotWeight(shot: Shot | null): number | null {
 export function lastShotWeight(shot: Shot | null, record: ShotSeries | null): number | null {
   if (shot) return shot.finalWeight ?? shotWeight(shot);
   return record ? seriesWeight(record) : null;
+}
+
+/** The shot weight worth showing and calculating with: above 0 g, else null (a shot without a weight). */
+export function weighedGrams(weight: number | null | undefined): number | null {
+  return typeof weight === 'number' && Number.isFinite(weight) && weight > 0 ? weight : null;
+}
+
+/** A finished or recalled shot's weight as home and hot water show it: the number, or the dash for 0 g or less or none. */
+export function shotWeightText(weight: number | null | undefined): string {
+  const grams = weighedGrams(weight);
+  return grams === null ? '–' : gramsOf(grams, '');
 }
 
 /** The latest weight in a series, null when it has none. */

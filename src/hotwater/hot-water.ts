@@ -9,7 +9,7 @@
 import type { DecaidClient, HotWaterData, ShotRecord, ShotRecordSummary, Workflow } from '../api';
 import { seriesOf } from '../history/entries';
 import type { ScaleLink } from '../shell/machine';
-import { lastShotWeight, type Shot } from '../shell/shot';
+import { lastShotWeight, weighedGrams, type Shot } from '../shell/shot';
 
 /** One value of the page: where it is in `hotWaterData`, and what the number pad allows. */
 export interface HotWaterField {
@@ -102,7 +102,7 @@ export async function lastShotGrams(shot: Shot | null, source: LastShotSource): 
     const latest = await source.newest();
     grams = latest ? lastShotWeight(null, seriesOf(await source.record(latest.id))) : null;
   }
-  return grams !== null && Number.isFinite(grams) && grams > 0 ? grams : null;
+  return weighedGrams(grams);
 }
 
 /**

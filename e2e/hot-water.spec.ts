@@ -149,12 +149,13 @@ test('a ratio favourite with a last shot of 40 g sets 80 g for 1:2; the tare but
   expect(errors).toEqual([]);
 });
 
-test('the favourites come from the settings; without a last shot or a scale nothing is offered', async ({ page }) => {
+test('the favourites come from the settings; without a last shot or a scale they are off', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
   await toPage(page, 'hot-water');
   await expect(page.getByTestId('hot-water-last-shot')).toHaveText('–');
-  await expect(page.getByTestId('hot-water-ratio')).toHaveCount(0);
+  await expect(page.getByTestId('hot-water-ratio')).toHaveCount(3);
+  for (const chip of await page.getByTestId('hot-water-ratio').all()) await expect(chip).toBeDisabled();
 
   // The settings' category Hot water.
   await back(page);
@@ -190,7 +191,7 @@ test('the favourites come from the settings; without a last shot or a scale noth
   expect(errors).toEqual([]);
 });
 
-test('stop at weight in g with a scale, stop at volume in ml without one; no favourites without a weighed shot', async ({ page }) => {
+test('stop at weight in g with a scale, stop at volume in ml without one; favourites off without a weighed shot', async ({ page }) => {
   const gateway = await mockGateway(page);
   gateway.connectScale(false);
   // The last shot was pulled without a scale: it has no weight.
@@ -204,7 +205,8 @@ test('stop at weight in g with a scale, stop at volume in ml without one; no fav
   await expect(page.getByTestId('hot-water-weight')).toContainText('50ml');
   await expect(page.getByRole('slider', { name: 'stop at volume' })).toHaveAttribute('max', '500');
   await expect(page.getByTestId('hot-water-last-shot')).toHaveText('–');
-  await expect(page.getByTestId('hot-water-ratio')).toHaveCount(0);
+  await expect(page.getByTestId('hot-water-ratio')).toHaveCount(3);
+  for (const chip of await page.getByTestId('hot-water-ratio').all()) await expect(chip).toBeDisabled();
 
   // The number pad in ml writes the same field, the number as it is.
   await page.getByTestId('hot-water-weight').click();
@@ -341,4 +343,22 @@ test('the last shot is the same weight on home and on hot water, whatever the an
   await expect(page.getByTestId('hot-water-last-shot')).toHaveText('44.6 g');
   // The ratio chips follow it: 44.6 g times 2 is 89 g.
   await expect(page.getByTestId('hot-water-ratio').first()).toHaveText('1:2 89 g');
+});
+
+test('a shot of 0 g shows a dash on home and on hot water, whose ratio chips are off and write nothing (acceptance 169)', async ({
+  page,
+}) => {
+  const gateway = await mockGateway(page);
+  shotOf(gateway, 0);
+  await page.goto('/');
+  await expect(page.getByTestId('shot-weight')).toHaveText('–g');
+  await toPage(page, 'hot-water');
+  await expect(page.getByTestId('hot-water-last-shot')).toHaveText('–');
+  const ratios = page.getByTestId('hot-water-ratio');
+  await expect(ratios).toHaveCount(3);
+  for (const chip of await ratios.all()) await expect(chip).toBeDisabled();
+  await expect(ratios.first()).toHaveCSS('opacity', '0.4');
+  const writes = gateway.calls('PUT', '/api/v1/workflow').length;
+  await ratios.first().click({ force: true });
+  expect(gateway.calls('PUT', '/api/v1/workflow')).toHaveLength(writes);
 });

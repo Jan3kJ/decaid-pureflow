@@ -6,6 +6,7 @@
   import SidePage from '../ui/SidePage.svelte';
   import ValueLine from '../ui/ValueLine.svelte';
   import type { Skin } from '../shell/skin.svelte';
+  import { shotWeightText } from '../shell/shot';
   import { shownRun } from '../shell/water';
   import {
     fieldStep,
@@ -109,30 +110,28 @@
   <ValueLine
     baseline
     label="last shot"
-    value={lastShot === null ? null : gramsOf(lastShot, '')}
+    value={shotWeightText(lastShot)}
+    unit={lastShot === null ? '' : 'g'}
     tone="weight"
     testid="hot-water-last-shot"
   />
 
-  <!-- The ratio favourites of the settings: the last shot times the ratio is the stop; only with a weighed last shot. -->
-  {#if lastShot !== null}
-    {@const shot = lastShot}
-    <div class="ratios">
-      {#each skin.settings.hotWater.ratios as ratio, i (i)}
-        {@const amount = ratioWeight(shot, ratio)}
-        <button
-          class="chip select-fill"
-          aria-pressed={amount === values?.volume}
-          data-testid="hot-water-ratio"
-          disabled={!values}
-          onclick={() => skin.setHotWater(stopField, amount)}
-        >
-          {ratioLabel(ratio)}
-          <small>{amount} {stopField.unit}</small>
-        </button>
-      {/each}
-    </div>
-  {/if}
+  <!-- The ratio favourites of the settings: the last shot times the ratio is the stop; without a weighed last shot they are off, as the profile picker is while a shot pours. -->
+  <div class="ratios">
+    {#each skin.settings.hotWater.ratios as ratio, i (i)}
+      {@const amount = lastShot === null ? null : ratioWeight(lastShot, ratio)}
+      <button
+        class="chip select-fill"
+        aria-pressed={amount !== null && amount === values?.volume}
+        data-testid="hot-water-ratio"
+        disabled={!values || amount === null}
+        onclick={() => amount !== null && skin.setHotWater(stopField, amount)}
+      >
+        {ratioLabel(ratio)}
+        <small>{amount === null ? '–' : `${amount} ${stopField.unit}`}</small>
+      </button>
+    {/each}
+  </div>
 
   <!-- The scale's row is the one tare of the skin (Skin.tare), live for an empty cup and
          off while water runs; without a scale it looks for the scale. -->
@@ -334,6 +333,10 @@
   .chip small {
     font-weight: 400;
     color: var(--weight);
+  }
+
+  .chip:disabled {
+    opacity: 0.4;
   }
 
   .chip:disabled small {
