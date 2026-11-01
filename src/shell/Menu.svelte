@@ -177,7 +177,7 @@
   /* an entry with a state reads as a setting: the name, and its value at the right end */
   .menu button:has(.state) {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
     gap: var(--space-3);
   }

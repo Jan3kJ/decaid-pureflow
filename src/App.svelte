@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte';
+  import { SvelteMap } from 'svelte/reactivity';
   import Beans from './beans/Beans.svelte';
   import Editor from './editor/Editor.svelte';
   import { editorFor } from './editor/route';
@@ -32,6 +33,7 @@
     type Page,
     type Point,
   } from './shell/swipe';
+  import { twoFingerDown, type Finger } from './shell/two-finger';
   import NoScaleDialog from './shell/NoScaleDialog.svelte';
   import AbnormalEndDialog from './shell/AbnormalEndDialog.svelte';
   import UnsavedDialog from './shell/UnsavedDialog.svelte';
@@ -41,6 +43,18 @@
 
   const skin = new Skin();
   onMount(() => skin.connect());
+  // Two fingers down: the browser takes no pan from them, so the pointers go on to the two-finger swipe.
+  onMount(() => {
+    const hold = (event: TouchEvent) => {
+      if (event.touches.length > 1 && event.cancelable) event.preventDefault();
+    };
+    main.addEventListener('touchstart', hold, { passive: false });
+    main.addEventListener('touchmove', hold, { passive: false });
+    return () => {
+      main.removeEventListener('touchstart', hold);
+      main.removeEventListener('touchmove', hold);
+    };
+  });
   $effect(() => applyDisplay(skin.settings));
 
   // One horizontal gesture for the pages, the way back and the shot history (src/shell/swipe.ts):
@@ -159,8 +173,46 @@
     };
   });
 
+  /** The fingers on the screen, for the two-finger swipe down (src/shell/two-finger.ts). */
+  const fingers = new SvelteMap<number, Finger & { time: number }>();
+  let slept = false;
+
+  function trackFinger(event: PointerEvent) {
+    fingers.set(event.pointerId, {
+      start: { x: event.clientX, y: event.clientY },
+      now: { x: event.clientX, y: event.clientY },
+      time: event.timeStamp,
+    });
+    if (fingers.size > 1) {
+      // A second finger: the first one's drag is no page's swipe any more.
+      swipe = closer = null;
+      dx = 0;
+      incoming = null;
+    }
+  }
+
+  /** Two fingers swiped down on one of the three pages: machine and app sleep. */
+  function checkTwoFingers(event: PointerEvent) {
+    const finger = fingers.get(event.pointerId);
+    if (!finger) return;
+    finger.now = { x: event.clientX, y: event.clientY };
+    if (slept || held || fingers.size !== 2 || !isPage(skin.screen) || !skin.canSleep || skin.machineAsleep) return;
+    const [a, b] = [...fingers.values()];
+    if (a && b && twoFingerDown(a, b, Math.abs(a.time - b.time), innerHeight)) {
+      slept = true;
+      void skin.sleepApp();
+    }
+  }
+
+  function releaseFinger(event: PointerEvent) {
+    fingers.delete(event.pointerId);
+    if (fingers.size === 0) slept = false;
+  }
+
   function onpointerdown(event: PointerEvent) {
     skin.touched();
+    trackFinger(event);
+    if (fingers.size > 1) return;
     swipe = closer = null;
     if (settling || held) return;
     // The ring is not a place a swipe starts from, so a finger on it never leaves the screen.
@@ -190,6 +242,8 @@
   }
 
   function onpointermove(event: PointerEvent) {
+    checkTwoFingers(event);
+    if (fingers.size > 1) return;
     const now = { x: event.clientX, y: event.clientY };
     if (closer && event.pointerId === closer.id) {
       const gesture = closing(closer, now, innerWidth);
@@ -221,6 +275,7 @@
   }
 
   function endSwipe(event: PointerEvent) {
+    releaseFinger(event);
     if (closer && event.pointerId === closer.id) closer = null;
     if (!swipe || event.pointerId !== swipe.id) return;
     const { page, dx: moved, velocity } = swipe;
