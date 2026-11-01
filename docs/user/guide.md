@@ -34,7 +34,9 @@ Start a shot at the machine. Home draws it live: blue is flow, green pressure, r
 yellow the weight. While it runs the header names the running step. The right column holds the
 time, the weight and the live values, each caption on the left and its number on the right; under
 **weight** it says where the shot stops. After the shot the column reads **time, finished** and
-keeps the shot until the next one starts.
+keeps the shot until the next one starts. A line under the weight says why it stopped, as Decaid
+saw it: **stopped at the target weight**, **stopped at the target volume**, **stopped by hand** or
+**ended by the machine**. A shot from the history has no such line.
 
 A tap on the scale's weight in the top line tares the scale.
 

@@ -550,6 +550,9 @@ export class MockGateway {
   private replaying = false;
   /** the frame a machine in the middle of a shot repeats */
   private held: MachineSnapshot | undefined;
+  /** the sequencer's id of the shot a replay from its start began; null before the first */
+  shotId: string | null = null;
+  private shotsStarted = 0;
   private heartbeat: ReturnType<typeof setInterval> | undefined;
 
   constructor(options: MockOptions = {}) {
@@ -730,6 +733,17 @@ export class MockGateway {
   }
 
   /**
+   * The sequencer's stop of the replayed shot, as the rig sent it: its decision of `kind` for
+   * `reason` (the rig sent targetWeight, apiStop and machineEnded; never targetVolume or
+   * appStop), then its state frame. `shotId` names another shot.
+   */
+  sendStop(reason: string, kind = 'stop', shotId = this.shotId): void {
+    const decision = { kind, reason, details: null, data: null };
+    this.sendShotState({ event: 'decision', shotId, state: 'stopping', machineState: 'espresso', decision });
+    this.sendShotState({ shotId, state: 'stopping', machineState: 'espresso' });
+  }
+
+  /**
    * A start at the machine's button while Decaid's setting 'scale required' is on and no scale is
    * connected, as the rig showed it: the machine enters espresso, the sequencer sends its abort
    * for 'noScale' and its idle frame, and the machine is idle 0.1 s later. Without a sequencer
@@ -840,6 +854,7 @@ export class MockGateway {
    */
   async replay(page: Page, from = 0, to = 1, options: ReplayOptions = {}): Promise<void> {
     this.replaying = true;
+    if (from === 0) this.shotId = `mock-shot-${++this.shotsStarted}`;
     const all = shotEvents(options);
     const events = all.slice(Math.round(from * all.length), Math.round(to * all.length));
     for (const [i, event] of events.entries()) {
@@ -922,6 +937,8 @@ export class MockGateway {
         // As Decaid answers it (de1handler.dart; seen on the rig).
         return json({ details: 'No scale detected, blocking espresso request', type: 'block_no_scale' }, 400);
       }
+      // A stop in the middle of a shot: the sequencer says why, as on the rig.
+      if (asked === 'idle' && this.held) this.sendStop('apiStop');
       // The maintenance states are entered and left at once, as the simulated DE1 does.
       const own = ['sleeping', 'cleaning', 'descaling', 'airPurge'];
       if (own.includes(asked) || own.includes(this.state)) this.state = asked as MachineState;

@@ -3,8 +3,8 @@
 // work to its parts: the streams (streams.svelte.ts), the settings and their backup
 // (settings-store.svelte.ts), steam (steam-control.svelte.ts), the history and its restore
 // (recall.svelte.ts), the warning before a load (load-warning.svelte.ts), the popup for a shot
-// stopped for want of a scale (no-scale.svelte.ts), the screen's
-// brightness in sleep (dimmer.ts), who asked for a sleep (sleep.ts) and the bean and grinder
+// stopped for want of a scale (no-scale.svelte.ts), why the shot stopped (stop-reason.ts), the
+// screen's brightness in sleep (dimmer.ts), who asked for a sleep (sleep.ts) and the bean and grinder
 // catalogue (src/beans/catalogue.svelte.ts).
 import { Catalogue } from '../beans/catalogue.svelte';
 import { DecaidClient, isTareBlocked, type MachineSnapshot, type RequestedMachineState, type Workflow } from '../api';
@@ -37,6 +37,7 @@ import { SettingsStore } from './settings-store.svelte';
 import { AWAKE, askSleep, followSleep, type SleepMark } from './sleep';
 import { recordFrame, runningStep, settleWeight, type Shot } from './shot';
 import { SteamControl } from './steam-control.svelte';
+import { markStop, stopLine, type StopMark } from './stop-reason';
 import { Streams } from './streams.svelte';
 import { recordWaterFrame, type WaterRun } from './water';
 import { writeHotWater, type HotWaterField } from '../hotwater/hot-water';
@@ -87,6 +88,8 @@ export class Skin {
   private readonly heartbeat: Heartbeat;
   /** who asked for the machine's sleep (`followSleep`) */
   private sleepMark: SleepMark = $state.raw(AWAKE);
+  /** why the sequencer stopped the skin's shot (`markStop`) */
+  private stopMark: StopMark | null = $state.raw(null);
 
   /** the last `heaterWord` of each heater; plain, since only `statusFor` reads and writes it */
   private readonly heaters: Record<HeatTarget, HeaterWord | null> = { group: null, steam: null };
@@ -148,7 +151,10 @@ export class Skin {
       },
       onMachineFrame: (frame) => this.onMachineFrame(frame),
       onWeight: (weight, at) => (this.shot = settleWeight(this.shot, weight, at)),
-      onShotState: (frame) => this.noScale.frame(frame),
+      onShotState: (frame) => {
+        this.noScale.frame(frame);
+        this.stopMark = markStop(this.stopMark, frame, this.shot);
+      },
     });
   }
 
@@ -290,6 +296,11 @@ export class Skin {
     this.noScale.close();
   }
 
+  /** why the finished shot stopped, in home's words; null while it runs, for the history's shots and without a word from Decaid */
+  get stopLine(): string | null {
+    return stopLine(this.stopMark, this.shot);
+  }
+
   // --- the warning before a load (load-warning.svelte.ts) ---
 
   /** the unsaved edits the warning before a load asks about, while it is open */
@@ -332,6 +343,8 @@ export class Skin {
     if (state === 'espresso' && before !== 'espresso') this.historyOpen = false;
     const running = this.shot !== null && !this.shot.ended;
     this.shot = recordFrame(this.shot, frame, this.weight, this.streams.weightFlow);
+    // A new shot: the last one's reason goes with it.
+    if (this.shot && !this.shot.ended && !running) this.stopMark = null;
     if (this.shot && !this.shot.ended) this.recall.recalled = null;
     if (running && this.shot?.ended) this.recall.shotEnded(this.shot);
     this.steamer.frame(frame);

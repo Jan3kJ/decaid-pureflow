@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isNoScaleAbort, readShotState } from './shot-state';
+import { isNoScaleAbort, readShotState, stopReason } from './shot-state';
 import { machineShotStateStream } from './stream';
 
 // The reader of a frame of `/ws/v1/machine/shotState`: the frames are Decaid's own, as the rig
@@ -132,5 +132,63 @@ describe('a frame of the shot feed', () => {
 
   it("is read from the gateway's /ws/v1/machine/shotState", () => {
     expect(machineShotStateStream({ baseUrl: 'http://rig:8080' }).url).toBe('ws://rig:8080/ws/v1/machine/shotState');
+  });
+});
+
+// The rig's stop frames (Decaid 0.8.8, simulated DE1 and scale): at the target weight, by a
+// REST request for idle (the skin's stop) and at the profile's end.
+const RIG_STOP = {
+  event: 'decision',
+  timestamp: '2026-11-01T07:53:17.366012',
+  shotId: '91d87121-95d8-4800-ae4b-aa58741f595f',
+  state: 'stopping',
+  machineState: 'espresso',
+  machineSubstate: 'pouring',
+  profileFrame: 5,
+  scaleConnected: true,
+  scaleLost: false,
+  machineHasAutonomousSAW: false,
+  decision: {
+    kind: 'stop',
+    reason: 'targetWeight',
+    details: 'Target weight 10.0g reached (projected: 10.219314975360128). Stopping shot.',
+    data: { targetYield: 10, projectedWeight: 10.219314975360128 },
+  },
+};
+
+describe('why a shot stopped', () => {
+  it("reads the rig's stops: at the target weight, by hand and by the machine", () => {
+    expect(stopReason(readShotState(RIG_STOP))).toBe('targetWeight');
+    const byHand = { ...RIG_STOP, machineState: 'idle', machineSubstate: 'idle', profileFrame: 0 };
+    const hand = { kind: 'stop', reason: 'apiStop', details: 'Shot stopped via REST API request', data: null };
+    expect(stopReason(readShotState({ ...byHand, decision: hand }))).toBe('apiStop');
+    const ended = { kind: 'stop', reason: 'machineEnded', details: 'Machine reported shot end (pouringDone)', data: null };
+    expect(stopReason(readShotState({ ...RIG_STOP, machineSubstate: 'pouringDone', decision: ended }))).toBe('machineEnded');
+  });
+
+  it('reads every reason home names, from a stop and from an abort', () => {
+    for (const reason of ['targetWeight', 'targetVolume', 'apiStop', 'appStop', 'machineEnded']) {
+      expect(stopReason(readShotState(decided('stop', reason))), `stop ${reason}`).toBe(reason);
+      expect(stopReason(readShotState(decided('abort', reason))), `abort ${reason}`).toBe(reason);
+    }
+  });
+
+  it('is none for the abort for want of a scale, the other reasons and kinds, and a frame without a decision', () => {
+    expect(stopReason(readShotState(NO_SCALE))).toBeNull();
+    for (const [kind, reason] of [
+      ['advance', 'profileAdvance'],
+      ['advance', 'profileSkip'],
+      ['finalize', 'stoppingBackstop'],
+      ['stop', 'stoppingBackstop'],
+      ['abort', 'error'],
+      ['terminal', 'disconnected'],
+      ['finalize', 'machineEnded'],
+      ['advance', 'targetWeight'],
+      ['stop', 'somethingNew'],
+    ]) {
+      expect(stopReason(readShotState(decided(kind, reason))), `${kind} ${reason}`).toBeNull();
+    }
+    expect(stopReason(readShotState(IDLE))).toBeNull();
+    expect(stopReason(null)).toBeNull();
   });
 });

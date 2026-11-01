@@ -43,7 +43,11 @@ its own port.
   `readShotState`. Without a sequencer (gateway mode `full`) the feed only idles. Its first use is
   the popup for a shot stopped for want of a scale (`src/shell/no-scale.svelte.ts`): the abort for
   `noScale`, the REST answer `block_no_scale` and, without a sequencer, an espresso under 3 s
-  without a scale and with `blockOnNoScale` on open it, once for one blocked start.
+  without a scale and with `blockOnNoScale` on open it, once for one blocked start. Its second
+  use is why the finished shot stopped (`stopReason`, `src/shell/stop-reason.ts`): a decision of
+  kind stop or abort for targetWeight, targetVolume, apiStop, appStop or machineEnded gives one
+  line under home's time and weight, kept for the skin's own shot it came in and dropped when the
+  next shot starts; a shot from the history has none.
 
 Rules every skin keeps (from Decaid's `doc/Skins.md`):
 

@@ -109,6 +109,9 @@
         >{shown.kind === 'running' ? gramsOf(shown.weight, '') : shotWeightText(shown.weight)}<i>g</i></b
       >
     </div>
+    <!-- Why the finished shot stopped, as Decaid's sequencer said it (stop-reason.ts). The line
+         keeps its height when empty, so the values under it do not move when a shot starts. -->
+    <p class="hint stop-reason" data-testid="stop-reason">{finished ? (skin.stopLine ?? '') : ''}</p>
     <dl>
       <div class="row pressure">
         <dt>pressure</dt>
@@ -269,6 +272,10 @@
 
   .big.weight b {
     color: var(--weight);
+  }
+
+  .stop-reason {
+    min-height: 1lh;
   }
 
   dl {

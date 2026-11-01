@@ -83,6 +83,24 @@ export function isNoScaleAbort(frame: ShotStateFrame | null): boolean {
   return frame?.decision?.kind === 'abort' && frame.decision.reason === 'noScale';
 }
 
+/** The reasons a shot stopped that home names (`stopReason`). */
+export type StopReason = 'targetWeight' | 'targetVolume' | 'apiStop' | 'appStop' | 'machineEnded';
+
+const STOP_REASONS: readonly string[] = ['targetWeight', 'targetVolume', 'apiStop', 'appStop', 'machineEnded'];
+
+/**
+ * Why the sequencer stopped the frame's shot: the reason of a decision of kind stop or abort,
+ * when it is one home names; null for any other frame. A shot refused for want of a scale has
+ * its popup instead. The rig's frame for a stop at the target weight:
+ * {"event":"decision","shotId":"…","state":"stopping",…,
+ *  "decision":{"kind":"stop","reason":"targetWeight","details":"Target weight 10.0g reached …","data":{…}}}
+ */
+export function stopReason(frame: ShotStateFrame | null): StopReason | null {
+  const decision = frame?.decision;
+  if (!decision || (decision.kind !== 'stop' && decision.kind !== 'abort')) return null;
+  return STOP_REASONS.includes(decision.reason) ? (decision.reason as StopReason) : null;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
