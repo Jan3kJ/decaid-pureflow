@@ -10,5 +10,13 @@
   "3aca962": "internal",
   "9ee0c40": "internal",
   "47abe65": "internal",
-  "2ee3bc2": "internal"
+  "2ee3bc2": "internal",
+  "ae55771": "internal",
+  "f0b00ca": "internal",
+  "504c308": "internal",
+  "d6fc1ce": "internal",
+  "afe4ab2": {
+    "kind": "changed",
+    "text": "Home's menu lines are one height, so the steam heater's text no longer sits at the top of its button; a two-finger swipe down on hot water, home or steam does 'Machine and app sleep'"
+  }
 }
