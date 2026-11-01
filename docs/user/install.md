@@ -33,6 +33,26 @@ file. If you leave the field empty, Decaid takes the first asset of the release,
 ZIP (`-ocr` sorts before `.zip`), about 6 MB larger than the base one. The versioned ZIPs,
 `pureflow-<version>.zip` and `pureflow-<version>-ocr.zip`, hold the same files.
 
+## Choose the version in the skin
+
+Once pureflow runs, it can install another release or the other flavour itself:
+**Settings > 6. Skin > Skin version**.
+
+1. Pick the flavour: **small**, or **with the bean bag reading** (about 6 MB larger).
+2. Tap **list**. Only then does the skin ask GitHub for pureflow's releases; it asks no other
+   service. The newest is marked **latest**, the one this screen runs **running**. Without a
+   network the page says that GitHub could not be reached; GitHub answers about 60 lists an hour
+   per network.
+3. Tap a release and **install**. Decaid downloads the ZIP and installs it over pureflow, with your
+   settings kept. The latest is installed from the GitHub release under `pureflow.zip` or
+   `pureflow-ocr.zip`, so Decaid's check for updates installs the next releases. An older release
+   is installed from its own ZIP, `pureflow-<version>.zip` or `pureflow-<version>-ocr.zip`; the
+   check for updates then keeps that version until you install the latest here again.
+4. Tap **reload**: the screen loads the installed version.
+
+A release from before the fixed names (0.9.0 and older) is installed from its own ZIP, also when
+it is the latest.
+
 ## What you see after
 
 Decaid lists the skin as **pureflow** with its version. The skin opens on home:

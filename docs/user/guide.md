@@ -137,6 +137,9 @@ and the machine's.
 - **Display Size**: the size of everything on screen and the line width.
 - **Active Skin**: Decaid's skins; a tap on another one switches to it. **check** has Decaid look
   for newer versions; when it holds another pureflow than this screen runs, **reload** loads it.
+- **Skin version**: the flavour, **small** or **with the bean bag reading**, and **list**, which
+  asks GitHub for pureflow's releases; a tap on one has Decaid install it, then **reload** loads
+  it. See [install](install.md#choose-the-version-in-the-skin).
 - **Backup and version**: the backup in Decaid and the skin's version.
 
 One of the skin's settings sits with the machine's: **tank unit**, under **1. Quick

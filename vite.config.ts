@@ -79,7 +79,12 @@ export default defineConfig(({ mode }) => {
   const ocr = mode === 'ocr';
   const flavour = FLAVOURS[ocr ? 1 : 0];
   // The skin's id, name and version, read here: a file of public/ is not imported from the code.
-  const manifest = JSON.parse(readFileSync('public/manifest.json', 'utf8')) as { id: string; name: string; version: string };
+  const manifest = JSON.parse(readFileSync('public/manifest.json', 'utf8')) as {
+    id: string;
+    name: string;
+    version: string;
+    repository: string;
+  };
   return {
     // Relative asset paths, so the build works from any path the gateway serves it on.
     base: './',
@@ -89,6 +94,7 @@ export default defineConfig(({ mode }) => {
       __PRODUCT_ID__: JSON.stringify(manifest.id),
       __PRODUCT_NAME__: JSON.stringify(manifest.name),
       __PRODUCT_VERSION__: JSON.stringify(manifest.version),
+      __PRODUCT_REPO__: JSON.stringify(new URL(manifest.repository).pathname.replace(/^\/|\.git$/g, '')),
     },
     // The reader runs ONNX Runtime on the CPU only: its WASM build, without the WebGPU one.
     resolve: ocr ? { alias: [{ find: /^onnxruntime-web$/, replacement: 'onnxruntime-web/wasm' }] } : {},

@@ -4,3 +4,5 @@ declare const __OCR__: boolean;
 declare const __PRODUCT_ID__: string;
 declare const __PRODUCT_NAME__: string;
 declare const __PRODUCT_VERSION__: string;
+/** The skin's GitHub repository as owner/name, from the manifest's repository URL. */
+declare const __PRODUCT_REPO__: string;

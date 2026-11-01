@@ -460,6 +460,11 @@ export class MockGateway {
    * id; another URL fails as Decaid's download of a missing file does on the rig.
    */
   installable: Record<string, { id: string; name: string; version: string }> = {};
+  /**
+   * What `POST /api/v1/webui/skins/install/github-release` installs from each asset name of the
+   * newest release; another name fails as the rig answers an asset the release does not have.
+   */
+  releaseInstallable: Record<string, { id: string; name: string; version: string }> = {};
   /** `GET /api/v1/machine/firmware`, as on the rig */
   firmware: Json = {
     artifacts: [
@@ -1220,6 +1225,21 @@ export class MockGateway {
         };
         this.skins = [...this.skins.filter((skin) => skin.id !== zip.id), installed];
         return json({ success: true, message: 'Skin installed successfully from URL', url });
+      }
+      if (path === '/api/v1/webui/skins/install/github-release' && method === 'POST') {
+        const repo = body.repo as string;
+        const zip = this.releaseInstallable[body.asset as string];
+        if (!zip) return json({ error: `Exception: Asset not found: ${body.asset as string}` }, 500);
+        const before = skinOf(zip.id);
+        const installed = {
+          ...zip,
+          path: `/web-ui/${zip.id}`,
+          isBundled: false,
+          port: before?.port ?? 27920,
+          reaMetadata: { sourceUrl: `github_release:${repo}@v${zip.version}` },
+        };
+        this.skins = [...this.skins.filter((skin) => skin.id !== zip.id), installed];
+        return json({ success: true, message: 'Skin installed successfully from GitHub release', repo });
       }
       if (path === '/api/v1/webui/server/stop' && method === 'POST') {
         this.serving = null;

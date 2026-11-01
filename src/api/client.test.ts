@@ -513,6 +513,14 @@ describe('skin install from a URL', () => {
     const { client } = clientWith({ status: 500, body: { error: 'Exception: Failed to download: 404' } });
     await expect(client.installSkinFromUrl('http://pc:24810/nope.zip')).rejects.toThrow('500 Exception: Failed to download: 404');
   });
+
+  it("posts the repository and the asset to Decaid's install from a GitHub release", async () => {
+    const { client, calls } = clientWith({ status: 200, body: { success: true } });
+    await client.installSkinFromGitHubRelease('owner/skin', 'pureflow.zip');
+    expect(calls.map((call) => [call.method, call.url, call.body])).toEqual([
+      ['POST', 'http://localhost:8080/api/v1/webui/skins/install/github-release', { repo: 'owner/skin', asset: 'pureflow.zip' }],
+    ]);
+  });
 });
 
 describe('errors', () => {

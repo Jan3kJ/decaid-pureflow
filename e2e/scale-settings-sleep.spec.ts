@@ -178,6 +178,7 @@ test('settings: the defaults, typed values and both switches survive a reload', 
     'Shot graph',
     'Display Size',
     'Active Skin',
+    'Skin version',
     'Backup and version',
   ]);
   await expect(page.getByTestId('settings-start').locator('b')).toHaveText(['floral', 'light', 'medium', 'dark', '46mm']);

@@ -45,6 +45,7 @@ describe('the settings tree', () => {
       'Shot graph',
       'Display Size',
       'Active Skin',
+      'Skin version',
       'Backup and version',
       'Developer',
     ]);

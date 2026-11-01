@@ -26,6 +26,7 @@
   import { importQuestion, importReport, planImport, runImport, type ImportPlan } from '../editor/import';
   import Confirm from './Confirm.svelte';
   import Skins from './Skins.svelte';
+  import Versions from './Versions.svelte';
   import SettingsRow from './SettingsRow.svelte';
   import LocalInstall from './LocalInstall.svelte';
   import { saveDeveloper } from './local-install';
@@ -348,6 +349,12 @@
   <h2>{SUB['skin-active'].name}</h2>
   <p class="hint">{SUB['skin-active'].hint}</p>
   <Skins {skin} />
+</section>
+
+<section id="sub-skin-version" data-testid="settings-versions">
+  <h2>{SUB['skin-version'].name}</h2>
+  <p class="hint">{SUB['skin-version'].hint}</p>
+  <Versions {skin} />
 </section>
 
 <!-- The backup in Decaid's KV store, and the skin's name and version. -->

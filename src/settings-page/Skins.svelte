@@ -9,7 +9,8 @@
   // Skin > Active Skin: Decaid's installed skins, the default one marked. A tap
   // on another asks, since the switch leaves this skin, then makes it Decaid's default, starts
   // Decaid's skin server again and opens the port it serves on (src/settings-page/skins.ts).
-  // 'Check for skin updates' has Decaid look for newer versions; the skin asks no outside service.
+  // 'Check for skin updates' has Decaid look for newer versions; Decaid, not the skin, asks
+  // the skins' sources (only Skin > Skin version asks GitHub, for its list of releases).
   // When Decaid serves this skin at another version than this page runs, 'reload' loads the page
   // again: Decaid serves the new files on the same port at once and sends them with no-store.
   import { onMount } from 'svelte';

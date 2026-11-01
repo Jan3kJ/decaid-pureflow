@@ -668,6 +668,15 @@ export class DecaidClient {
     await this.request('POST', '/api/v1/webui/skins/install/url', { url });
   }
 
+  /**
+   * Decaid installs the asset `asset` of the newest release of the GitHub repository `repo`
+   * (owner/name) over a skin with the same manifest id; its update check follows that repository's
+   * releases with the same asset name.
+   */
+  async installSkinFromGitHubRelease(repo: string, asset: string): Promise<void> {
+    await this.request('POST', '/api/v1/webui/skins/install/github-release', { repo, asset });
+  }
+
   async stopWebUiServer(): Promise<void> {
     await this.request('POST', '/api/v1/webui/server/stop');
   }

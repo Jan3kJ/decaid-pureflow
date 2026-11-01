@@ -221,6 +221,17 @@ the default at another version, it offers 'reload' (`installedOther` in
 installed them, with `Cache-Control: no-store`, so the reload is `location.reload()` and the skin
 server is not started again.
 
+Settings > Skin > Skin version (`Versions.svelte`, `src/settings-page/releases.ts`) is the one
+place the skin asks a service other than Decaid: on 'list', and only then, it reads the public
+releases of the repository in the manifest (`PRODUCT_REPO`) from
+`https://api.github.com/repos/<owner>/<name>/releases`, without a token, drafts and pre-releases
+left out, newest first. The newest release is installed through Decaid's
+`POST /api/v1/webui/skins/install/github-release` with the fixed asset name (`pureflow.zip` or
+`pureflow-ocr.zip`), so Decaid's update check follows the next releases; an older release, or a
+newest one from before the fixed names, through `POST /api/v1/webui/skins/install/url` with the
+versioned ZIP's download URL, which the update check then keeps. After the install, when this skin
+is Decaid's default, the page offers the same 'reload'.
+
 `--dry-run` runs the checks and prints what it would write. `--local` stops after the tag and
 never calls GitHub. `--resume` continues at the publish step when the tag exists.
 
@@ -269,7 +280,8 @@ cannot be set.
   blocks a change.
 - Only free, open-source packages that need no account. No new runtime dependency without asking
   first in an issue.
-- No external service beyond GitHub and Decaid's local gateway.
+- No external service beyond GitHub and Decaid's local gateway; the running skin asks GitHub
+  only for its list of releases, on a tap under Settings > Skin > Skin version.
 - The skin never uses ports 3000, 4001 or 8080; the dev server uses 24800, `npm run serve-release` 24810.
 - Nothing private in a file: no local path, e-mail address, real device address or token.
 - Every layout is relative to the viewport, and every font size is one of the six type-role
