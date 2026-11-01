@@ -17,6 +17,8 @@ the stop at weight need one.
   bean buttons sit on the right.
 - **Three pages in a row**: hot water, home and steam, swiped sideways. A swipe from the left
   edge of home opens the shot history; a swipe from left to right goes back everywhere else.
+  Some things are hidden, such as the history and the way back: the [guide](docs/user/guide.md)
+  lists them. On a PC, drag with the mouse instead of swiping.
 - **The A-Flow 3.0 editor.** The graph is the editor: drag a line to change a flow, pressure or
   temperature, drag a border to change a time, tap a chip to type a value. Older A-Flow profiles
   open in it too. Any other profile opens in a step editor.

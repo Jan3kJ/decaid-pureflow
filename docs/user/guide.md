@@ -9,7 +9,9 @@ Checked against pureflow 0.6.1.
 ## Pages, the corner menu and the swipe back
 
 The skin has three pages in a row: **hot water**, **home** and **steam**. Swipe sideways to
-move between them; the dots at the bottom show where you are.
+move between them; the dots at the bottom show where you are. On a touch screen, put a finger
+on the screen and move it. With a mouse on a PC, press the button, hold it and drag the same way.
+It feels less natural there, but it works.
 
 ![Home sliding off to the left while the steam page comes in from the right](img/swipe-row.png)
 
