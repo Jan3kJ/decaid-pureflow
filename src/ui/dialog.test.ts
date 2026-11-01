@@ -31,6 +31,7 @@ describe('Dialog', () => {
       'editor/NumberPad',
       'settings-page/Confirm',
       'settings-page/SkinCategory',
+      'shell/AbnormalEndDialog',
       'shell/DatePicker',
       'shell/NoScaleDialog',
       'shell/UnsavedDialog',

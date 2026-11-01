@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isNoScaleAbort, readShotState, stopReason } from './shot-state';
+import { abnormalEnd, isNoScaleAbort, readShotState, scaleLostWhilePouring, stopReason } from './shot-state';
 import { machineShotStateStream } from './stream';
 
 // The reader of a frame of `/ws/v1/machine/shotState`: the frames are Decaid's own, as the rig
@@ -190,5 +190,82 @@ describe('why a shot stopped', () => {
     }
     expect(stopReason(readShotState(IDLE))).toBeNull();
     expect(stopReason(null)).toBeNull();
+  });
+});
+
+// The rig's frames: the scale taken away mid-shot (its next frame, a step's advance, says it), and
+// the machine's connection cut mid-shot.
+const RIG_SCALE_LOST = {
+  ...NO_SCALE,
+  shotId: '00b3eb98-8051-4048-b043-477725ecf427',
+  state: 'pouring',
+  machineState: 'espresso',
+  machineSubstate: 'preparingForShot',
+  profileFrame: 5,
+  scaleConnected: false,
+  scaleLost: true,
+  decision: {
+    kind: 'advance',
+    reason: 'profileAdvance',
+    details: 'Firmware advanced from frame 4 to 5',
+    data: { fromFrame: 4, toFrame: 5 },
+  },
+};
+
+const RIG_CUT = {
+  ...NO_SCALE,
+  event: 'terminal',
+  shotId: '68469d1a-70c5-499d-bc26-48b8600a5564',
+  state: 'pouring',
+  machineSubstate: 'pouring',
+  profileFrame: 2,
+  scaleConnected: true,
+  decision: { kind: 'terminal', reason: 'disconnected', details: 'Shot tracking torn down mid-shot', data: null },
+};
+
+describe('the scale lost while the shot pours', () => {
+  it("reads the rig's frame after the scale was taken away", () => {
+    expect(scaleLostWhilePouring(readShotState(RIG_SCALE_LOST))).toBe(true);
+  });
+
+  it('is none before the loss, outside the pour, on a Bengle, or without a frame', () => {
+    expect(scaleLostWhilePouring(readShotState({ ...RIG_SCALE_LOST, scaleLost: false }))).toBe(false);
+    for (const state of ['preheating', 'stopping', 'finished', 'idle']) {
+      expect(scaleLostWhilePouring(readShotState({ ...RIG_SCALE_LOST, state })), state).toBe(false);
+    }
+    expect(scaleLostWhilePouring(readShotState({ ...RIG_SCALE_LOST, machineHasAutonomousSAW: true }))).toBe(false);
+    expect(scaleLostWhilePouring(null)).toBe(false);
+  });
+});
+
+describe('an abnormal end', () => {
+  it("reads the rig's frame for the machine's connection cut, with Decaid's words", () => {
+    expect(abnormalEnd(readShotState(RIG_CUT))).toEqual({ reason: 'disconnected', details: 'Shot tracking torn down mid-shot' });
+  });
+
+  it('reads an error, a terminal decision on another event, and a reason it does not know as an error', () => {
+    expect(abnormalEnd(readShotState({ ...decided('terminal', 'error'), event: 'terminal' }))).toEqual({
+      reason: 'error',
+      details: null,
+    });
+    expect(abnormalEnd(readShotState(decided('terminal', 'disconnected')))).toEqual({ reason: 'disconnected', details: null });
+    expect(abnormalEnd(readShotState({ ...decided('terminal', 'somethingNew'), event: 'terminal' }))).toMatchObject({
+      reason: 'error',
+    });
+    expect(abnormalEnd(readShotState({ ...IDLE, event: 'terminal' }))).toEqual({ reason: 'error', details: null });
+  });
+
+  it('is none for a stop, an abort, an advance, the backstop, a state frame or no frame', () => {
+    for (const [kind, reason] of [
+      ['stop', 'apiStop'],
+      ['abort', 'noScale'],
+      ['abort', 'error'],
+      ['advance', 'profileAdvance'],
+      ['finalize', 'stoppingBackstop'],
+    ]) {
+      expect(abnormalEnd(readShotState(decided(kind, reason))), `${kind} ${reason}`).toBeNull();
+    }
+    expect(abnormalEnd(readShotState(IDLE))).toBeNull();
+    expect(abnormalEnd(null)).toBeNull();
   });
 });

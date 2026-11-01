@@ -101,6 +101,37 @@ export function stopReason(frame: ShotStateFrame | null): StopReason | null {
   return STOP_REASONS.includes(decision.reason) ? (decision.reason as StopReason) : null;
 }
 
+/**
+ * The scale dropped while the frame's shot pours, on a machine that stops at the weight only
+ * by the scale (not a Bengle): Decaid's stop at the weight is off for the rest of the shot,
+ * even when the scale comes back. The feed sends no frame of its own for it: on the rig the
+ * next frame of the shot, a step's advance, was the first to say `scaleLost`. Whether the shot
+ * has a target weight is the workflow's, not the frame's.
+ */
+export function scaleLostWhilePouring(frame: ShotStateFrame | null): boolean {
+  return frame !== null && frame.scaleLost && frame.state === 'pouring' && !frame.machineHasAutonomousSAW;
+}
+
+/** How a shot ended abnormally: Decaid lost the machine (`disconnected`), or something else went wrong (`error`). */
+export interface AbnormalEnd {
+  reason: 'disconnected' | 'error';
+  /** Decaid's own words for it; null without */
+  details: string | null;
+}
+
+/**
+ * The frame ends its shot abnormally: an event 'terminal', or a decision of kind 'terminal'.
+ * Its reason is `disconnected` or `error`; any other reason a newer Decaid sends reads as an
+ * error. Null for any other frame. The rig's frame for the machine's connection cut mid-shot:
+ * {"event":"terminal","shotId":"…","state":"pouring",…,
+ *  "decision":{"kind":"terminal","reason":"disconnected","details":"Shot tracking torn down mid-shot","data":null}}
+ */
+export function abnormalEnd(frame: ShotStateFrame | null): AbnormalEnd | null {
+  if (frame === null || (frame.event !== 'terminal' && frame.decision?.kind !== 'terminal')) return null;
+  const reason = frame.decision?.reason === 'disconnected' ? 'disconnected' : 'error';
+  return { reason, details: frame.decision?.details ?? null };
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

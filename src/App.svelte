@@ -33,6 +33,7 @@
     type Point,
   } from './shell/swipe';
   import NoScaleDialog from './shell/NoScaleDialog.svelte';
+  import AbnormalEndDialog from './shell/AbnormalEndDialog.svelte';
   import UnsavedDialog from './shell/UnsavedDialog.svelte';
   import { coverOf, MAIN_FRAME, type Rect } from './shell/cover';
   import Water from './shell/Water.svelte';
@@ -347,6 +348,18 @@
 <!-- Decaid stopped a shot for want of a scale: on every screen, once for one blocked start. -->
 {#if skin.noScaleOpen}
   <NoScaleDialog onfind={() => skin.findScale()} onclose={() => skin.closeNoScale()} />
+{/if}
+
+<!-- The shot ended abnormally: on every screen, once per shot. -->
+{#if skin.abnormalEnd}
+  <AbnormalEndDialog text={skin.abnormalEnd} onclose={() => skin.closeAbnormalEnd()} />
+{/if}
+
+<!-- The scale was lost during a shot with a target weight: on every screen until the shot ends. -->
+{#if skin.scaleLostNotice && !skin.refused}
+  <div class="refused scale-lost" role="alert" data-testid="scale-lost">
+    <span>{skin.scaleLostNotice}</span>
+  </div>
 {/if}
 
 <!-- A stream the gateway closed with an error is tried again for 30 s by itself, then waits for this button. -->

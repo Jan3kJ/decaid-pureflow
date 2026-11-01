@@ -31,6 +31,19 @@ without a scale. Check that the scale is on and in range, then start again.' **l
 scale** looks for it as the warning does; **close** closes the popup. Turn the scale on, or
 turn **scale required** off to pull a shot without one.
 
+If the scale drops while a shot with a target weight pours, the machine no longer stops at the
+weight for the rest of that shot, even when the scale comes back. A notice says so on every
+screen until the shot ends: 'The scale was lost: stop at weight is off for the rest of this shot.
+Stop it by hand.' Watch the weight and tap **stop** yourself.
+
+## A shot that ended abnormally
+
+When Decaid loses the machine during a shot, or its tracking of the shot fails, the shot's graph
+ends there and a popup says 'The shot ended abnormally:' with Decaid's own words for it (or 'the
+machine's connection was lost' when it gives none). **close** closes it; the shot is kept as far
+as it ran. Check the machine's connection under **Settings > 2. Connections > 1. Machine** before
+the next shot.
+
 ## The steam timer
 
 - **set timer** is grey: no milk is on the scale yet. Put the mug with milk on it, or use one

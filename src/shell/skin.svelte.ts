@@ -4,8 +4,9 @@
 // (settings-store.svelte.ts), steam (steam-control.svelte.ts), the history and its restore
 // (recall.svelte.ts), the warning before a load (load-warning.svelte.ts), the popup for a shot
 // stopped for want of a scale (no-scale.svelte.ts), why the shot stopped (stop-reason.ts), the
-// screen's brightness in sleep (dimmer.ts), who asked for a sleep (sleep.ts) and the bean and grinder
-// catalogue (src/beans/catalogue.svelte.ts).
+// warnings of a lost scale and an abnormal end (shot-warnings.svelte.ts), the screen's brightness
+// in sleep (dimmer.ts), who asked for a sleep (sleep.ts) and the bean and grinder catalogue
+// (src/beans/catalogue.svelte.ts).
 import { Catalogue } from '../beans/catalogue.svelte';
 import { DecaidClient, isTareBlocked, type MachineSnapshot, type RequestedMachineState, type Workflow } from '../api';
 import type { HistoryEntry, HistoryFilter } from '../history/entries';
@@ -36,6 +37,7 @@ import { Recall, type Recalled } from './recall.svelte';
 import { SettingsStore } from './settings-store.svelte';
 import { AWAKE, askSleep, followSleep, type SleepMark } from './sleep';
 import { recordFrame, runningStep, settleWeight, type Shot } from './shot';
+import { SCALE_LOST_NOTICE, ShotWarnings } from './shot-warnings.svelte';
 import { SteamControl } from './steam-control.svelte';
 import { markStop, stopLine, type StopMark } from './stop-reason';
 import { Streams } from './streams.svelte';
@@ -84,6 +86,7 @@ export class Skin {
   private readonly recall: Recall;
   private readonly warning: LoadWarning;
   private readonly noScale: NoScale;
+  private readonly warnings = new ShotWarnings();
   private readonly dimmer: Dimmer;
   private readonly heartbeat: Heartbeat;
   /** who asked for the machine's sleep (`followSleep`) */
@@ -154,6 +157,7 @@ export class Skin {
       onShotState: (frame) => {
         this.noScale.frame(frame);
         this.stopMark = markStop(this.stopMark, frame, this.shot);
+        this.warnings.frame(frame, this.workflow?.context?.targetYield);
       },
     });
   }
@@ -301,6 +305,23 @@ export class Skin {
     return stopLine(this.stopMark, this.shot);
   }
 
+  // --- the warnings during a shot (shot-warnings.svelte.ts) ---
+
+  /** the notice that the scale was lost during the shot, while it is shown */
+  get scaleLostNotice(): string | null {
+    return this.warnings.scaleLost ? SCALE_LOST_NOTICE : null;
+  }
+
+  /** the popup's sentence for a shot that ended abnormally, while it is open */
+  get abnormalEnd(): string | null {
+    return this.warnings.abnormal;
+  }
+
+  /** The abnormal end's 'close', Escape and a tap beside it. */
+  closeAbnormalEnd(): void {
+    this.warnings.closeAbnormal();
+  }
+
   // --- the warning before a load (load-warning.svelte.ts) ---
 
   /** the unsaved edits the warning before a load asks about, while it is open */
@@ -346,7 +367,10 @@ export class Skin {
     // A new shot: the last one's reason goes with it.
     if (this.shot && !this.shot.ended && !running) this.stopMark = null;
     if (this.shot && !this.shot.ended) this.recall.recalled = null;
-    if (running && this.shot?.ended) this.recall.shotEnded(this.shot);
+    if (running && this.shot?.ended) {
+      this.recall.shotEnded(this.shot);
+      this.warnings.shotEnded();
+    }
     this.steamer.frame(frame);
     this.noScale.machine(frame, before);
     this.waterRun = recordWaterFrame(this.waterRun, frame);

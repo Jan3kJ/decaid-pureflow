@@ -47,7 +47,11 @@ its own port.
   use is why the finished shot stopped (`stopReason`, `src/shell/stop-reason.ts`): a decision of
   kind stop or abort for targetWeight, targetVolume, apiStop, appStop or machineEnded gives one
   line under home's time and weight, kept for the skin's own shot it came in and dropped when the
-  next shot starts; a shot from the history has none.
+  next shot starts; a shot from the history has none. Its third use is the warnings during a
+  shot (`src/shell/shot-warnings.svelte.ts`): a frame that says `scaleLost` while a shot with a
+  target weight pours (`scaleLostWhilePouring`, the workflow's target yield over 0, not a Bengle)
+  gives a notice on every screen until the shot ends, and a terminal frame (`abnormalEnd`,
+  reason `disconnected` or `error`) a popup with Decaid's details; each once per shot.
 
 Rules every skin keeps (from Decaid's `doc/Skins.md`):
 

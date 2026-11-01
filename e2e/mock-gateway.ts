@@ -744,6 +744,43 @@ export class MockGateway {
   }
 
   /**
+   * The scale taken away while the replayed shot pours, as the rig showed it: no frame of its
+   * own, the next frame of the shot (a step's advance) is the first to say `scaleLost`, and every
+   * later one does, the scale back or not. `saw` is a Bengle's own stop at the weight.
+   */
+  sendScaleLost(saw = false, shotId = this.shotId): void {
+    const decision = { kind: 'advance', reason: 'profileAdvance', details: 'Firmware advanced from frame 4 to 5', data: null };
+    this.sendShotState({
+      event: 'decision',
+      shotId,
+      state: 'pouring',
+      machineState: 'espresso',
+      machineSubstate: 'pouring',
+      scaleLost: true,
+      machineHasAutonomousSAW: saw,
+      decision,
+    });
+  }
+
+  /**
+   * The sequencer's abnormal end of the replayed shot, then its idle frame. The rig sent
+   * `disconnected` with its details for the machine's connection cut mid-shot; `error` was not
+   * seen there.
+   */
+  sendTerminal(reason: string, details: string | null = null, shotId = this.shotId): void {
+    const decision = { kind: 'terminal', reason, details, data: null };
+    this.sendShotState({
+      event: 'terminal',
+      shotId,
+      state: 'pouring',
+      machineState: 'espresso',
+      machineSubstate: 'pouring',
+      decision,
+    });
+    this.sendShotState({ machineState: 'espresso', machineSubstate: 'pouring' });
+  }
+
+  /**
    * A start at the machine's button while Decaid's setting 'scale required' is on and no scale is
    * connected, as the rig showed it: the machine enters espresso, the sequencer sends its abort
    * for 'noScale' and its idle frame, and the machine is idle 0.1 s later. Without a sequencer
