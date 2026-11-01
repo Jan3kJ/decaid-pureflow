@@ -145,8 +145,10 @@ test('the history: shots with another profile or bean are entries, a tap restore
     await expect(page.getByTestId('history')).toHaveCount(0);
     await expect(page.getByTestId('history-graph')).toBeVisible();
     await expect(page.getByTestId('profile-name')).toHaveText(titleLines(PROFILE_A).name);
-    await expect(page.getByTestId('recalled-bean')).toHaveText(`${ROASTER} · ${BEAN_A}`);
-    await expect(page.getByTestId('recalled-grinder')).toHaveText('grinder 4.8');
+    await expect(page.getByTestId('next-bean')).toHaveText(BEAN_A);
+    await expect(page.getByTestId('next-bean-caption')).toHaveText(ROASTER);
+    await expect(page.getByTestId('next-setting')).toHaveText('4.8');
+    await expect(page.getByTestId('shot-caption')).toHaveCount(0);
     let workflow = await api<RigWorkflow>('GET', '/api/v1/workflow');
     expect(workflow.profile).toEqual(shotA.workflow!.profile);
     expect(workflow.context.coffeeName).toBe(BEAN_A);

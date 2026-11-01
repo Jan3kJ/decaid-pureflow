@@ -2,7 +2,6 @@
   import type { Snippet } from 'svelte';
   import { gramsOf } from '../display';
   import ShotGraph from '../graph/ShotGraph.svelte';
-  import { beanLabel } from '../history/entries';
   import { homeShot } from './home-shot';
   import NextShot from './NextShot.svelte';
   import { phaseTable, type PhaseRow } from './phases';
@@ -24,7 +23,7 @@
   const shown = $derived(homeShot(skin.shot, skin.recalled?.series ?? null, skin.weight, skin.newestShot));
   const running = $derived(shown.kind === 'running');
   const finished = $derived(shown.kind === 'finished');
-  const recalled = $derived(shown.kind === 'recalled' ? skin.recalled : null);
+  const recalled = $derived(shown.kind === 'recalled');
   const snapshot = $derived(skin.link === 'machine' ? skin.snapshot : null);
   const target = $derived(skin.workflow?.context?.targetYield || null);
   // Streamline's table of the shot (phases.ts), once it is over and the setting shows it.
@@ -52,29 +51,14 @@
   const cell = (row: Partial<PhaseRow> | null, key: keyof PhaseRow) => row?.[key] ?? '';
 </script>
 
-<div class="shot" class:values={table !== null} class:caption={recalled !== null} data-testid="home-shot" data-shot={shown.kind}>
+<div class="shot" class:values={table !== null} data-testid="home-shot" data-shot={shown.kind}>
   <div class="top">{@render top?.()}</div>
-  <!-- No strip over the graph: the step is in the state line, the finished shot's time
-       and weight in the column. A recalled history entry keeps its caption and 'dismiss'. -->
-  {#if recalled}
-    {@const entry = recalled.entry}
-    <header data-testid="shot-caption">
-      <span class="recalled truncate" data-testid="recalled">
-        last shot with
-        <strong data-testid="recalled-profile">{entry.profileTitle}</strong>
-        <strong data-testid="recalled-bean">{beanLabel(entry.bean)}</strong>
-        {#if entry.grinderSetting}
-          <strong data-testid="recalled-grinder">grinder {entry.grinderSetting}</strong>
-        {/if}
-      </span>
-      <button class="chip" data-testid="dismiss-recalled" onclick={() => skin.dismissRecalled()}>dismiss</button>
-    </header>
-  {/if}
-
+  <!-- No strip and no caption over the graph: the step is in the state line, the shot's time
+       and weight and a recalled entry's profile, bean and grinder in the column. -->
   <div class="plot" data-testid={PLOT[shown.kind]} data-main-frame>
     <ShotGraph
       {...shown.series}
-      fit={finished || recalled !== null}
+      fit={finished || recalled}
       minSeconds={skin.expectedSeconds}
       legend={skin.settings.showGraphLegend}
       label={LABEL[shown.kind]}
@@ -162,12 +146,7 @@
     gap: var(--space-2) var(--space-3);
   }
 
-  /* The caption's and the table's rows only when they are drawn: else the graph takes their height. */
-  .shot.caption {
-    grid-template-rows: auto auto minmax(0, 1fr);
-    grid-template-areas: 'top side' 'header side' 'plot side';
-  }
-
+  /* The table's row only when it is drawn: else the graph takes its height. */
   .shot.values {
     grid-template-rows: auto minmax(0, 1fr) auto;
     grid-template-areas: 'top side' 'plot side' 'table side';
@@ -176,37 +155,6 @@
   .top {
     grid-area: top;
     min-width: 0;
-  }
-
-  header {
-    grid-area: header;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3);
-    min-height: var(--control-tall);
-    color: var(--dim);
-    font-size: var(--text-body);
-  }
-
-  header > span {
-    min-width: 0;
-  }
-
-  header strong {
-    margin-left: 0.8rem;
-    color: var(--fg);
-    font-size: var(--text-body);
-  }
-
-  .chip {
-    flex: none;
-    min-width: 7rem;
-    min-height: var(--control-tall);
-    padding: 0 1rem;
-    font-size: var(--text-body);
-    background: var(--panel);
-    border-radius: var(--radius);
   }
 
   .plot {

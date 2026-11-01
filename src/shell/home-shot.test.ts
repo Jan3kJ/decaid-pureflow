@@ -92,7 +92,7 @@ describe('homeShot', () => {
     const kept = shot(true, { finalWeight: 36.4, weightFixed: true });
     expect(homeShot(kept, null, 640)).toMatchObject({ kind: 'finished', weight: 36.4 });
     expect(homeShot(kept, series([0, 28], [0, 40.2]), 640)).toMatchObject({ kind: 'recalled', weight: 40.2 });
-    // The entry is dismissed: the shot is back with its weight.
+    // Without the entry the shot has its own weight again.
     expect(homeShot(kept, null, 700)).toMatchObject({ kind: 'finished', weight: 36.4 });
   });
 

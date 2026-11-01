@@ -260,6 +260,7 @@ test('a shot started at the machine: home shows it by itself with a live graph a
   await expect(page.getByTestId('shot-phases')).toBeVisible();
   await expect(page.getByTestId('shot-plot')).toHaveCount(0);
   await expect(page.getByTestId('dismiss-shot')).toHaveCount(0);
+  await expect(page.getByTestId('dismiss-recalled')).toHaveCount(0);
   await expect(page.getByTestId('last-shot')).toBeVisible();
   await expect(page.getByTestId('profile-name')).toHaveText('default-medium');
   // Every espresso frame from the first one with water is a point; the mock repeated its latest

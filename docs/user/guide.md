@@ -20,7 +20,8 @@ move between them; the dots at the bottom show where you are.
   water page: home lies to its right, so you swipe from right to left.
 - On home, a swipe that starts at the left edge opens the **shot history** instead. It has one
   entry per profile and bean. Tap an entry to load its profile, bean and grinder setting for the
-  next shot; the graph of its last shot shows on home. Swipe to the left, or tap the handle, to close it.
+  next shot; the graph of its last shot shows on home, with its time and weight in the right
+  column, until the next shot starts. Swipe to the left, or tap the handle, to close it.
 
 ![The shot history over home](img/history.png)
 

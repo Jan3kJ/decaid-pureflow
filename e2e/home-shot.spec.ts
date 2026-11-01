@@ -5,8 +5,8 @@ import { back, toPage } from './touch';
 // Home is the shot screen: one graph and a right column
 // of a fixed width in three states. Idle before a shot: the empty graph, the target yield and
 // '–'. A shot runs: live curves and values, and stop. After it: the shot with Streamline's
-// per-phase table stays until the next one starts. A recalled history entry has its caption
-// and its dismiss chip.
+// per-phase table stays until the next one starts. A recalled history entry shows its graph,
+// time and weight with no caption row and no dismiss: the column names its profile and bean.
 
 const errors: string[] = [];
 
@@ -173,33 +173,49 @@ test('the next shot replaces the finished one, also from another screen', async 
   expect(errors).toEqual([]);
 });
 
-test('a recalled history entry lies over the finished shot with its caption and its dismiss chip', async ({ page }) => {
+test('a recalled history entry lies over the finished shot without a caption row or a dismiss chip, until the next shot', async ({
+  page,
+}) => {
   const gateway = await mockGateway(page);
   const light = profile('A-Flow / default-light', 48, 9);
   gateway.addShot('shot-1', '2026-10-12T08:00:00.000000', light, {
     coffeeName: 'Red Brick',
     coffeeRoaster: 'Square Mile',
     targetYield: 48,
+    grinderSetting: '4.8',
   });
   await home(page);
   await gateway.replay(page, 0, 1);
   await expect(page.getByTestId('last-shot')).toBeVisible();
+  // The graph's top with no entry recalled: under the header.
+  const top = (await box(page, 'last-shot')).y;
 
   await page.getByTestId('history-handle').tap();
   await page.getByTestId('history-entry').first().tap();
   await expect(page.getByTestId('history-graph')).toBeVisible();
   await expect(page.getByTestId('home-shot')).toHaveAttribute('data-shot', 'recalled');
-  await expect(page.getByTestId('recalled')).toContainText('last shot with');
-  await expect(page.getByTestId('recalled-profile')).toHaveText('A-Flow / default-light');
-  await expect(page.getByTestId('dismiss-recalled')).toBeVisible();
+  // No row over the graph: the column names the entry's profile, bean and grinder setting.
+  for (const id of ['shot-caption', 'recalled', 'recalled-profile', 'dismiss-recalled']) {
+    await expect(page.getByTestId(id)).toHaveCount(0);
+  }
+  await expect(page.getByTestId('home-shot')).not.toContainText('last shot with');
+  await expect(page.getByTestId('home-shot').getByRole('button', { name: 'dismiss' })).toHaveCount(0);
+  await expect(page.getByTestId('profile-name')).toHaveText('default-light');
+  await expect(page.getByTestId('next-bean')).toHaveText('Red Brick');
+  await expect(page.getByTestId('next-setting')).toHaveText('4.8');
+  expect(Math.abs((await box(page, 'history-graph')).y - top)).toBeLessThan(1);
   await expect(page.getByTestId('shot-phases')).toHaveCount(0);
   await expect(page.getByTestId('stop')).toHaveCount(0);
   expect(await number(page, 'shot-timer')).toBeGreaterThan(20);
+  expect(await number(page, 'shot-weight')).toBeGreaterThan(0);
 
-  // Dismissed: the machine's finished shot is back.
-  await page.getByTestId('dismiss-recalled').tap();
+  // The next shot replaces the entry's graph.
+  await gateway.replay(page, 0, 0.3);
+  await expect(page.getByTestId('shot-plot')).toBeVisible();
   await expect(page.getByTestId('history-graph')).toHaveCount(0);
+  await gateway.replay(page, 0.3, 1);
   await expect(page.getByTestId('last-shot')).toBeVisible();
+  await expect(page.getByTestId('history-graph')).toHaveCount(0);
   await expect(page.getByTestId('shot-phases')).toBeVisible();
   expect(errors).toEqual([]);
 });

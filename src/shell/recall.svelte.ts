@@ -36,7 +36,7 @@ export class Recall {
   historyOpen = $state(false);
   /** the history's filter by bean and grinder; it lasts for the session */
   historyFilter: HistoryFilter = $state.raw(NO_FILTER);
-  /** the history entry that was restored, until it is dismissed or a shot starts */
+  /** the history entry that was restored, until a shot starts */
   recalled: Recalled | null = $state.raw(null);
   /** the newest shot record's graph, read from Decaid for home while it has no shot of its own (`showNewest`) */
   newest: ShotSeries | null = $state.raw(null);

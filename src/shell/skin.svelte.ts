@@ -265,7 +265,7 @@ export class Skin {
   set historyFilter(filter: HistoryFilter) {
     this.recall.historyFilter = filter;
   }
-  /** the history entry that was restored, until it is dismissed or a shot starts */
+  /** the history entry that was restored, until a shot starts */
   get recalled(): Recalled | null {
     return this.recall.recalled;
   }
@@ -532,12 +532,6 @@ export class Skin {
   openSaveAs(): void {
     this.saveAsNext = true;
     this.go('editor');
-  }
-
-  /** The recalled entry's dismiss chip: the kept shot is back, else the newest shot record. */
-  dismissRecalled(): void {
-    this.recall.recalled = null;
-    void this.recall.showNewest();
   }
 
   private async request(state: RequestedMachineState, failure: string): Promise<void> {

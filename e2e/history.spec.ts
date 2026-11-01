@@ -177,9 +177,9 @@ test('tapping an entry closes the overlay, restores profile, bean and grinder se
   // The stop weight is not on home: the workflow holds it.
   expect(gateway.workflow.context.targetYield).toBe(48);
   await expect(page.getByTestId('history-graph')).toBeVisible();
-  await expect(page.getByTestId('recalled-profile')).toHaveText('A-Flow / default-light');
-  await expect(page.getByTestId('recalled-bean')).toHaveText('Square Mile · Red Brick');
-  await expect(page.getByTestId('recalled-grinder')).toHaveText('grinder 4.8');
+  await expect(page.getByTestId('next-bean')).toHaveText('Red Brick');
+  await expect(page.getByTestId('next-setting')).toHaveText('4.8');
+  await expect(page.getByTestId('shot-caption')).toHaveCount(0);
   // The entry's latest shot is read for its graph; the restored profile's newest shot (shot-3,
   // another bean) may be read for the next shot's time axis, and home's newest shot
   // (shot-4) at the start, nothing else.
@@ -222,8 +222,8 @@ test('tapping an entry closes the overlay, restores profile, bean and grinder se
   // An entry without a bean and a grinder setting clears both in the workflow.
   await page.getByTestId('history-entry').filter({ hasText: 'Best practice' }).tap();
   await expect(page.getByTestId('history')).toHaveCount(0);
-  await expect(page.getByTestId('recalled-bean')).toHaveText('no bean');
-  await expect(page.getByTestId('recalled-grinder')).toHaveCount(0);
+  await expect(page.getByTestId('next-bean')).toHaveText('no bean');
+  await expect(page.getByTestId('next-setting')).toHaveCount(0);
   expect(written(gateway)[1]).toEqual({
     profile: BEST,
     context: {
@@ -238,9 +238,8 @@ test('tapping an entry closes the overlay, restores profile, bean and grinder se
   });
   expect(gateway.workflow.context).toEqual({ targetDoseWeight: 18, targetYield: 40 });
   await expect(page.getByTestId('profile-name')).toHaveText('Best practice');
-
-  await page.getByTestId('dismiss-recalled').tap();
-  await expect(page.getByTestId('history-graph')).toHaveCount(0);
+  // No dismiss: the entry's graph stays until the next shot.
+  await expect(page.getByTestId('history-graph')).toBeVisible();
   expect(errors).toEqual([]);
 });
 
