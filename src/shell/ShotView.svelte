@@ -236,11 +236,11 @@
     font-size: var(--text-label);
   }
 
-  /* A caption of two parts takes two lines, its last on the number's baseline: the row keeps the
+  /* The caption, its two lines as one block, is centred on the row's middle: the row keeps the
      number's height, so no number moves when the caption changes. */
   .row {
     display: flex;
-    align-items: last baseline;
+    align-items: center;
     justify-content: space-between;
     gap: var(--space-1);
   }

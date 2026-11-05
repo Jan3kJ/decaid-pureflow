@@ -285,3 +285,33 @@ test('no number moves when the caption has one line or two', async ({ page }) =>
   expect(one).toEqual(two);
   expect(errors).toEqual([]);
 });
+
+test('the caption is centred on the middle of its row, running and finished, and no row moves', async ({ page }) => {
+  const gateway = await mockGateway(page);
+  await page.goto('/');
+  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  const measure = async () =>
+    Promise.all(
+      VALUES.map(async (id, at) => {
+        const value = page.getByTestId(id);
+        const caption = CAPTIONS[at].endsWith('label') ? page.getByTestId(CAPTIONS[at]) : value.locator('xpath=preceding-sibling::dt');
+        const row = (await value.locator('xpath=..').boundingBox())!;
+        const text = (await caption.boundingBox())!;
+        return { row, middle: text.y + text.height / 2 - (row.y + row.height / 2) };
+      }),
+    );
+  const check = async (kind: string) => {
+    await expect(page.getByTestId('home-shot')).toHaveAttribute('data-shot', kind);
+    const shown = await measure();
+    for (const { middle } of shown) expect(Math.abs(middle)).toBeLessThanOrEqual(1);
+    return shown.map(({ row }) => row);
+  };
+  await gateway.replay(page, 0, 0.6);
+  const running = await check('running');
+  await page.screenshot({ path: 'test-results/captions-running.png' });
+  await gateway.replay(page, 0.6, 1);
+  const finished = await check('finished');
+  await page.screenshot({ path: 'test-results/captions-finished.png' });
+  expect(finished).toEqual(running);
+  expect(errors).toEqual([]);
+});
