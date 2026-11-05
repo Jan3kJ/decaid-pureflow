@@ -53,3 +53,10 @@ export async function fileToPhoto(file: Blob): Promise<string> {
     bitmap.close();
   }
 }
+
+/** The thumbnail's frame for a photo of this size: its own shape, so the whole photo shows. A square one is landscape. */
+export function photoFrame(width: number, height: number): { portrait: boolean; ratio: number } {
+  const w = Math.max(1, width);
+  const h = Math.max(1, height);
+  return { portrait: h > w, ratio: w / h };
+}

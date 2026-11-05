@@ -13,6 +13,7 @@
   import Form from './Form.svelte';
   import { beanForm, beanTitle, dateOf, validBean, type BeanForm } from './catalogue';
   import { bagFields } from './fields';
+  import { photoFrame } from './photo';
   import { readPhoto } from './reading';
 
   interface Props {
@@ -39,6 +40,9 @@
   /** the photo as stored; the form's photo differs after a new one or a removal */
   let storedPhoto: string | null = $state(null);
   let photo: string | null = $state(null);
+  /** the shown photo's size once loaded; the thumbnail takes its shape */
+  let photoSize = $state({ width: 0, height: 0 });
+  const frame = $derived(photoFrame(photoSize.width, photoSize.height));
   const photoChanged = $derived(photo !== storedPhoto);
   const changed = $derived(photoChanged || JSON.stringify(form) !== JSON.stringify(beanForm(bean, batch)));
   const valid = $derived(validBean(form));
@@ -107,7 +111,15 @@
 <Form kind="bean" title={bean ? beanTitle(bean) : 'Add a bean'} archived={bean?.archived ?? false} onsubmit={submit}>
   <div class="photo">
     {#if photo}
-      <img src={photo} alt="the bag" data-testid="bean-photo" />
+      <img
+        src={photo}
+        alt="the bag"
+        data-testid="bean-photo"
+        class:portrait={frame.portrait}
+        style:aspect-ratio={frame.ratio}
+        bind:naturalWidth={photoSize.width}
+        bind:naturalHeight={photoSize.height}
+      />
     {/if}
     <div class="photo-tools">
       <div class="photo-buttons">
@@ -244,11 +256,15 @@
   }
 
   .photo img {
-    height: 6.5rem;
-    max-width: 9rem;
-    object-fit: cover;
+    width: 9rem;
+    object-fit: contain;
     border: 1px solid var(--line);
     border-radius: var(--radius);
+  }
+
+  .photo img.portrait {
+    width: auto;
+    height: 10rem;
   }
 
   .photo-tools {

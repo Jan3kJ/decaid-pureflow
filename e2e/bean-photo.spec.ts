@@ -200,3 +200,55 @@ test('without getUserMedia the file input stands in, for the first photo and a n
   await expect(page.getByTestId('camera')).toHaveCount(0);
   await expect(page.getByTestId('bean-photo')).toHaveAttribute('src', first ?? '');
 });
+
+/** A picture of the given size, as PNG bytes. */
+const picture = async (page: Page, width: number, height: number) =>
+  Buffer.from(
+    await page.evaluate(
+      async ([w, h]) => {
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const context = canvas.getContext('2d')!;
+        context.fillStyle = '#c33';
+        context.fillRect(0, 0, w, h);
+        const blob = await new Promise<Blob>((done) => canvas.toBlob((b) => done(b!), 'image/png'));
+        return Array.from(new Uint8Array(await blob.arrayBuffer()));
+      },
+      [width, height],
+    ),
+  );
+
+test('the thumbnail shows the whole photo in its own shape, a portrait photo upright and a landscape one wide', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'mediaDevices', { value: undefined });
+  });
+  await openBeans(page);
+  const thumbnail = page.getByTestId('bean-photo');
+  const shape = async () => {
+    await expect(thumbnail).toBeVisible();
+    await thumbnail.evaluate((image: HTMLImageElement) => image.decode());
+    const box = (await thumbnail.boundingBox())!;
+    return { box, ratio: box.width / box.height };
+  };
+
+  await page.getByTestId('bean-photo-take').click();
+  await page
+    .getByTestId('camera-file')
+    .setInputFiles({ name: 'tall.png', mimeType: 'image/png', buffer: await picture(page, 600, 800) });
+  await expect(page.getByTestId('camera')).toHaveCount(0);
+  await expect(thumbnail).toHaveClass(/portrait/);
+  let result = await shape();
+  expect(result.ratio).toBeCloseTo(0.75, 1);
+  expect(result.box.height).toBeGreaterThan(result.box.width);
+  const portraitHeight = result.box.height;
+
+  await page.getByTestId('bean-photo-take').click();
+  await page.getByTestId('camera-file').setInputFiles({ name: 'bag.png', mimeType: 'image/png', buffer: BAG });
+  await expect(page.getByTestId('camera')).toHaveCount(0);
+  await expect(thumbnail).not.toHaveClass(/portrait/);
+  result = await shape();
+  expect(result.ratio).toBeCloseTo(640 / 400, 1);
+  expect(result.box.width).toBeGreaterThan(result.box.height);
+  expect(result.box.height).toBeLessThan(portraitHeight);
+});

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isPhoto, orphanPhotoKeys, photoKey, photoSize } from './photo';
+import { isPhoto, orphanPhotoKeys, photoFrame, photoKey, photoSize } from './photo';
 
 describe('photoSize', () => {
   it('scales the longest side down to 1024 px and keeps the shape', () => {
@@ -9,6 +9,18 @@ describe('photoSize', () => {
 
   it('leaves a smaller picture as it is', () => {
     expect(photoSize(640, 400)).toEqual({ width: 640, height: 400 });
+  });
+});
+
+describe('photoFrame', () => {
+  it('gives a portrait photo a portrait frame and a landscape one a landscape frame', () => {
+    expect(photoFrame(768, 1024)).toEqual({ portrait: true, ratio: 0.75 });
+    expect(photoFrame(1024, 576)).toEqual({ portrait: false, ratio: 1024 / 576 });
+  });
+
+  it('gives a square photo a landscape frame and survives a size of zero', () => {
+    expect(photoFrame(500, 500)).toEqual({ portrait: false, ratio: 1 });
+    expect(photoFrame(0, 0)).toEqual({ portrait: false, ratio: 1 });
   });
 });
 
