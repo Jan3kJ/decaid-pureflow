@@ -38,7 +38,6 @@
   /* a small field within a line: a value of the state line, a word of the script, the notes */
   --radius-small: 0.6rem;
   /* a badge as high as the number beside it */
-  --radius-badge: 0.4rem;
   /* round ends at any height: a chip, a one-line badge, a bar, a line's end */
   --radius-pill: 999px;
   /* a lever's track: half the lever's height */

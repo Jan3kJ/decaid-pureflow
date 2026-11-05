@@ -242,7 +242,7 @@
     font-size: var(--text-label);
   }
 
-  /* as high as the number's frame: the number's size and line height, the border inside it */
+  /* a plain letter, as high as the number's line so the row keeps its height */
   .badge {
     box-sizing: border-box;
     height: calc(var(--number-line) * 1em);
@@ -250,8 +250,6 @@
     display: grid;
     place-items: center;
     padding: 0 var(--space-1);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-badge);
     color: var(--fg);
     font-size: var(--text-title);
     font-weight: 600;

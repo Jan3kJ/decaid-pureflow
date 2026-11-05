@@ -521,7 +521,7 @@ test("the steam page's scale row is the tare: one button over the row, off while
   expect(errors).toEqual([]);
 });
 
-test('the scale, mug and milk numbers end on one right edge, their units in one column, the mug size a badge in its label', async ({
+test('the scale, mug and milk numbers end on one right edge, their units in one column, the mug size a plain letter in its label', async ({
   page,
 }) => {
   const gateway = await mockGateway(page);
@@ -560,6 +560,21 @@ test('the scale, mug and milk numbers end on one right edge, their units in one 
   // The badge is as high as the number's frame, its letter as large as the number.
   expect(Math.abs(badge.height - numbers[1].height)).toBeLessThanOrEqual(1);
   expect(await page.getByTestId('steam-mug').evaluate((element) => getComputedStyle(element).fontSize)).toBe(looks[1][0]);
+  // A plain letter: no frame, no background; the row is as high as 'milk' (the 'scale' row is a finger-high button).
+  const frame = await page.getByTestId('steam-mug').evaluate((element) => {
+    const style = getComputedStyle(element);
+    return [
+      style.borderTopWidth,
+      style.borderRightWidth,
+      style.borderBottomWidth,
+      style.borderLeftWidth,
+      style.backgroundColor,
+      style.borderRadius,
+    ];
+  });
+  expect(frame).toEqual(['0px', '0px', '0px', '0px', 'rgba(0, 0, 0, 0)', '0px']);
+  const rows = await Promise.all(ids.map((id) => page.getByTestId(id).locator('xpath=..').boundingBox()));
+  expect(Math.abs(rows[1]!.height - rows[2]!.height)).toBeLessThanOrEqual(1);
   // Each caption is centred vertically against its number.
   const keys = await Promise.all(ids.map((id) => page.getByTestId(id).locator('xpath=preceding-sibling::span[1]').boundingBox()));
   keys.forEach((key, i) => {
