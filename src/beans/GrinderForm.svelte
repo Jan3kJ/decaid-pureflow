@@ -53,14 +53,14 @@
     <div class="choice" role="group" aria-label="setting type">
       <button
         type="button"
-        class="form-button select-fill"
+        class="form-button select-outline"
         aria-pressed={form.settingType === 'numeric'}
         data-testid="grinder-numeric"
         onclick={() => (form.settingType = 'numeric')}>numbers</button
       >
       <button
         type="button"
-        class="form-button select-fill"
+        class="form-button select-outline"
         aria-pressed={form.settingType === 'preset'}
         data-testid="grinder-preset"
         onclick={() => (form.settingType = 'preset')}>named positions</button

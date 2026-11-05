@@ -121,7 +121,7 @@
     {#each skin.settings.hotWater.ratios as ratio, i (i)}
       {@const amount = lastShot === null ? null : ratioWeight(lastShot, ratio)}
       <button
-        class="chip select-fill"
+        class="chip select-outline"
         aria-pressed={amount !== null && amount === values?.volume}
         data-testid="hot-water-ratio"
         disabled={!values || amount === null}

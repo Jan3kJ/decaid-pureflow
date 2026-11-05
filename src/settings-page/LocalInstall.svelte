@@ -160,7 +160,7 @@
   </div>
   <div class="chips">
     {#each names as name (name)}
-      <button class="chip select-fill" aria-pressed={typed === name} data-testid="local-name-chip" onclick={() => (typed = name)}
+      <button class="chip select-outline" aria-pressed={typed === name} data-testid="local-name-chip" onclick={() => (typed = name)}
         >{name}</button
       >
     {/each}

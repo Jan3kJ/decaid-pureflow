@@ -466,8 +466,8 @@ test('the filter by bean and grinder: the catalogue names the entries, a choice 
 });
 
 // The three filter chips are equal in width, also with a long
-// bean's name, and the chosen one is the selected look's white fill.
-test("the filter's three chips are one width, the chosen one the white fill", async ({ page }) => {
+// bean's name, and the chosen one is the selected look: a white frame on the raised background.
+test("the filter's three chips are one width, the chosen one the white frame", async ({ page }) => {
   const gateway = await mockGateway(page);
   const at = '2026-10-20T10:00:00.000';
   gateway.beans = [
@@ -491,7 +491,7 @@ test("the filter's three chips are one width, the chosen one the white fill", as
 
   const chips = [page.getByTestId('filter-all'), page.getByTestId('filter-bean'), page.getByTestId('filter-grinder')];
   const widths = () => Promise.all(chips.map(async (chip) => Math.round((await chip.boundingBox())!.width)));
-  const fills = () =>
+  const framed = () =>
     Promise.all(
       chips.map((chip) =>
         chip.evaluate((element) => {
@@ -501,7 +501,7 @@ test("the filter's three chips are one width, the chosen one the white fill", as
           document.body.append(probe);
           const fg = getComputedStyle(probe).color;
           probe.remove();
-          return style.backgroundColor === fg && style.borderTopColor === fg;
+          return style.borderTopColor === fg;
         }),
       ),
     );
@@ -511,7 +511,7 @@ test("the filter's three chips are one width, the chosen one the white fill", as
   expect(bean).toBe(all);
   expect(grinder).toBe(all);
   await expect(chips[0]).toHaveAttribute('aria-pressed', 'true');
-  expect(await fills()).toEqual([true, false, false]);
+  expect(await framed()).toEqual([true, false, false]);
 
   // A long bean's name is cut at its end; the chips keep their width.
   await chips[1].tap();
@@ -519,7 +519,7 @@ test("the filter's three chips are one width, the chosen one the white fill", as
   await expect(chips[1]).toHaveText('Square Mile · Red Brick Espresso Seasonal Blend');
   await expect(chips[1]).toHaveAttribute('aria-pressed', 'true');
   expect(await widths()).toEqual([all, all, all]);
-  expect(await fills()).toEqual([false, true, false]);
+  expect(await framed()).toEqual([false, true, false]);
   await page.screenshot({ path: 'e2e/.results/history-chips.png' });
   expect(gateway.writes()).toEqual([]);
   expect(errors).toEqual([]);

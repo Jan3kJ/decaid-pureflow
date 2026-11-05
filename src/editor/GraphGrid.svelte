@@ -140,6 +140,6 @@
 
   .column.selected {
     fill: var(--raised);
-    stroke: var(--line);
+    stroke: var(--fg);
   }
 </style>

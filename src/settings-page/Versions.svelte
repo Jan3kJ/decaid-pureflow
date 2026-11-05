@@ -78,7 +78,7 @@
   <div class="chips">
     {#each FLAVOURS as entry (entry.id)}
       <button
-        class="chip select-fill"
+        class="chip select-outline"
         aria-pressed={flavour === entry.id}
         disabled={busy}
         data-testid="version-flavour-{entry.id}"

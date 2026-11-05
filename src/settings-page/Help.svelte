@@ -73,7 +73,7 @@
     <div class="choices">
       {#each FEEDBACK_TYPES as option (option.value)}
         <button
-          class="chip select-fill"
+          class="chip select-outline"
           aria-pressed={type === option.value}
           data-testid="feedback-type-{option.value}"
           onclick={() => (type = option.value)}>{option.label}<small>{option.hint}</small></button

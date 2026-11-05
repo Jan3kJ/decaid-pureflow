@@ -298,7 +298,7 @@ cannot be set.
   `.hint`, `.notice` (`.notice.info` in the plain colour), `.truncate` (one line with an ellipsis),
   `.visually-hidden`, `.big-number` (a page's timer or weight), `.seg` (a button of an editor's
   header, `.seg.save` raised) and `.form-button` (a button of the bean's and grinder's form), beside
-  `.warning`, `.danger` and the two selected looks `.select-fill` and `.select-outline`. A
-  component adds to a class (a width, a taller height) or makes a variant of it; it does not
+  `.warning`, `.danger` and the one selected look `.select-outline` (the white frame on the raised
+  background, the words as they are). A component adds to a class (a width, a taller height) or makes a variant of it; it does not
   write the look again, which `src/ui/controls.test.ts` checks; it also checks that steam and
   hot water, the two editors and the two catalogue forms do not write their shared parts again.

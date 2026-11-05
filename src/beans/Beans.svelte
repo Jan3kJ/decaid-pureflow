@@ -106,7 +106,7 @@
   <nav class="kinds" aria-label="beans or grinders">
     {#each KINDS as entry (entry.id)}
       <button
-        class="kind select-fill"
+        class="kind select-outline"
         aria-current={entry.id === kind}
         data-testid="beans-kind-{entry.id}"
         onclick={() => choose(entry.id)}
@@ -131,7 +131,7 @@
         />
       </label>
       <button
-        class="toggle select-fill"
+        class="toggle select-outline"
         aria-pressed={showArchived}
         data-testid="beans-show-archived"
         onclick={() => (showArchived = !showArchived)}

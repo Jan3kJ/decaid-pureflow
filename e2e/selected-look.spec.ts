@@ -2,11 +2,10 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import { MEASUREMENTS, mockGateway, profile } from './mock-gateway';
 import { toPage } from './touch';
 
-// One selected look per kind, against a mocked gateway: a choice
-// of one among a few (a chip, a mode, a tab, history's 'all') is the white fill, the values, units
-// and small lines inside it dark too; the row whose
-// detail is shown beside its list (the picker, the bean and grinder lists, the settings'
-// categories) is the white outline on the raised background.
+// One selected look, against a mocked gateway: whatever is selected, a chip, a mode, a tab or a row
+// of a list, is the profile picker's row: a white frame on the raised background, its words as they
+// are unselected. Left out are the page dots (they say 'page', a dot too small for a frame) and the
+// editor's lamp toggles, which are switches.
 
 const errors: string[] = [];
 
@@ -36,12 +35,44 @@ const colour = (page: Page, value: string) =>
 const look = (locator: Locator) =>
   locator.evaluate((element) => {
     const style = getComputedStyle(element);
-    return { color: style.color, background: style.backgroundColor, border: style.borderTopColor };
+    return { background: style.backgroundColor, border: style.borderTopColor };
   });
 
-async function looks(page: Page) {
-  const [fg, bg, raised] = await Promise.all(['var(--fg)', 'var(--bg)', 'var(--raised)'].map((value) => colour(page, value)));
-  return { fill: { color: bg, background: fg, border: fg }, outline: { background: raised, border: fg } };
+/** The colour and weight of a control's words and of what is inside it. */
+const words = (locator: Locator) =>
+  locator.evaluate((element) =>
+    [element, ...element.querySelectorAll('*')].map((part) => {
+      const style = getComputedStyle(part);
+      return { color: style.color, weight: style.fontWeight };
+    }),
+  );
+
+async function outline(page: Page) {
+  const [border, background] = await Promise.all(['var(--fg)', 'var(--raised)'].map((value) => colour(page, value)));
+  return { background, border };
+}
+
+/** Every selected control on the screen: none may differ from the picker's row. */
+async function expectOneLook(page: Page, least: number) {
+  const wanted = await outline(page);
+  const found = await page.evaluate(() =>
+    [...document.querySelectorAll('[aria-pressed="true"], [aria-current="true"]')]
+      .filter((element) => !element.matches('[data-testid^="toggle-"]'))
+      .map((element) => {
+        const style = getComputedStyle(element);
+        return {
+          control: element.getAttribute('data-testid'),
+          background: style.backgroundColor,
+          border: style.borderTopColor,
+          width: style.borderTopWidth,
+        };
+      }),
+  );
+  expect(found.length).toBeGreaterThanOrEqual(least);
+  for (const { control, background, border, width } of found) {
+    expect({ control, background, border }).toEqual({ control, ...wanted });
+    expect(parseFloat(width), `${control}'s frame`).toBeGreaterThan(0);
+  }
 }
 
 async function open(page: Page, screen: string) {
@@ -51,57 +82,7 @@ async function open(page: Page, screen: string) {
   await expect(page.getByTestId(`screen-${screen}`)).toBeVisible();
 }
 
-test("a selected chip, mode, tab and history's 'all' are the white fill", async ({ page }) => {
-  await mockGateway(page);
-  await page.goto('/');
-  const { fill } = await looks(page);
-
-  await toPage(page, 'steam');
-  const chip = page.getByTestId('steam-favourite').and(page.locator('[aria-pressed="true"]'));
-  await expect(chip).toHaveCount(1);
-  expect(await look(chip)).toEqual(fill);
-  await page.screenshot({ path: 'e2e/.results/selected-steam.png' });
-
-  await open(page, 'beans');
-  const tab = page.getByTestId('beans-kind-beans');
-  await expect(tab).toHaveAttribute('aria-current', 'true');
-  expect(await look(tab)).toEqual(fill);
-
-  await open(page, 'home');
-  await page.getByTestId('history-handle').tap();
-  const all = page.getByTestId('filter-all');
-  await expect(all).toHaveAttribute('aria-pressed', 'true');
-  expect(await look(all)).toEqual(fill);
-  await expect.poll(async () => (await page.getByTestId('history').boundingBox())?.x).toBe(0);
-  await page.screenshot({ path: 'e2e/.results/selected-history.png' });
-});
-
-test('the row whose detail is shown beside its list is the white outline', async ({ page }) => {
-  await mockGateway(page);
-  await page.goto('/');
-  const { outline } = await looks(page);
-
-  await page.getByTestId('open-profiles').click();
-  await page.getByTestId('profile-item').first().click();
-  const row = page.locator('[data-testid="profile-item"][aria-pressed="true"]');
-  await expect(row).toHaveCount(1);
-  expect(await look(row)).toMatchObject(outline);
-  await page.screenshot({ path: 'e2e/.results/selected-picker.png' });
-
-  await open(page, 'beans');
-  const add = page.getByTestId('beans-add');
-  await expect(add).toHaveAttribute('aria-current', 'true');
-  expect(await look(add)).toMatchObject(outline);
-  await page.screenshot({ path: 'e2e/.results/selected-beans.png' });
-
-  await open(page, 'settings');
-  const category = page.locator('[data-testid^="settings-category-"][aria-current="true"]');
-  await expect(category).toHaveCount(1);
-  expect(await look(category)).toMatchObject(outline);
-  await page.screenshot({ path: 'e2e/.results/selected-settings.png' });
-});
-
-test('inside a selected chip the values, units and small lines are dark too: hot water and steam', async ({ page }) => {
+test("selected on hot water and steam: the picker's look, the words as they are unselected", async ({ page }) => {
   const gateway = await mockGateway(page);
   gateway.addShot('shot-40', '2026-10-17T07:00:00', profile('A-Flow / default-medium', 42, 9), { targetYield: 40 });
   gateway.measurements['shot-40'] = MEASUREMENTS.map((measurement, i, all) => ({
@@ -110,26 +91,131 @@ test('inside a selected chip the values, units and small lines are dark too: hot
   }));
   gateway.putOnScale(212.4);
   await page.goto('/');
-  const { fill } = await looks(page);
-  const inside = (locator: Locator) =>
-    locator.evaluate((element) => [...element.querySelectorAll('*')].map((child) => getComputedStyle(child).color));
 
   await toPage(page, 'hot-water');
-  const ratio = page.getByTestId('hot-water-ratio').first();
+  const [ratio, other] = [page.getByTestId('hot-water-ratio').first(), page.getByTestId('hot-water-ratio').nth(1)];
+  const before = await words(ratio);
   await ratio.click();
   await expect(ratio).toHaveAttribute('aria-pressed', 'true');
+  await expect(other).toHaveAttribute('aria-pressed', 'false');
   await page.screenshot({ path: 'e2e/.results/selected-hot-water.png' });
-  expect(await look(ratio)).toEqual(fill);
-  expect(await inside(ratio)).toEqual([fill.color]);
+  await expectOneLook(page, 1);
+  expect(await words(ratio)).toEqual(before);
+  expect(await words(other)).toEqual(before);
 
   await toPage(page, 'steam');
   const adjust = page.getByTestId('steam-adjust').first();
+  const favourite = page.getByTestId('steam-favourite').first();
+  const plain = await words(page.getByTestId('steam-adjust').nth(1));
   await adjust.click();
   await expect(adjust).toHaveAttribute('aria-pressed', 'true');
-  const favourite = page.getByTestId('steam-favourite').first();
   await favourite.click();
   await expect(favourite).toHaveAttribute('aria-pressed', 'true');
-  await page.screenshot({ path: 'e2e/.results/selected-steam-adjust.png' });
-  expect(await look(adjust)).toEqual(fill);
-  expect(await look(favourite)).toEqual(fill);
+  await page.screenshot({ path: 'e2e/.results/selected-steam.png' });
+  await expectOneLook(page, 2);
+  expect(await words(adjust)).toEqual(plain);
+});
+
+test('selected in the picker, the beans, the settings and the history: the one look', async ({ page }) => {
+  await mockGateway(page);
+  await page.goto('/');
+  const wanted = await outline(page);
+
+  await page.getByTestId('open-profiles').click();
+  await page.getByTestId('profile-item').first().click();
+  const row = page.locator('[data-testid="profile-item"][aria-pressed="true"]');
+  await expect(row).toHaveCount(1);
+  expect(await look(row)).toEqual(wanted);
+  await page.screenshot({ path: 'e2e/.results/selected-picker.png' });
+
+  await open(page, 'beans');
+  await expect(page.getByTestId('beans-kind-beans')).toHaveAttribute('aria-current', 'true');
+  await expect(page.getByTestId('beans-add')).toHaveAttribute('aria-current', 'true');
+  await expectOneLook(page, 2);
+  await page.screenshot({ path: 'e2e/.results/selected-beans.png' });
+
+  await open(page, 'settings');
+  await expect(page.locator('[data-testid^="settings-category-"][aria-current="true"]')).toHaveCount(1);
+  await page.getByTestId('settings-category-quickadjustments').click();
+  await page.getByTestId('settings-sub-watertank').click();
+  await page.getByTestId('setting-tank-unit-mm').click();
+  await expect(page.getByTestId('setting-tank-unit-mm')).toHaveAttribute('aria-pressed', 'true');
+  await expectOneLook(page, 2);
+  await page.screenshot({ path: 'e2e/.results/selected-settings.png' });
+
+  await open(page, 'home');
+  await page.getByTestId('history-handle').tap();
+  const all = page.getByTestId('filter-all');
+  await expect(all).toHaveAttribute('aria-pressed', 'true');
+  await expect.poll(async () => (await page.getByTestId('history').boundingBox())?.x).toBe(0);
+  await expectOneLook(page, 1);
+  await page.screenshot({ path: 'e2e/.results/selected-history.png' });
+});
+
+test('selected in the editor: the modes and the phase column', async ({ page }) => {
+  (await mockGateway(page)).withDefaults('light');
+  await page.addInitScript(() => localStorage.setItem('pureflow.screen', 'editor'));
+  await page.goto('/');
+  await expect(page.getByTestId('graph')).toBeVisible();
+  await expect(page.getByTestId('mode-simple')).toHaveAttribute('aria-pressed', 'true');
+  await expectOneLook(page, 1);
+
+  // The column of the selected phase is the same look, in the drawing's words.
+  await page.getByTestId('mode-detail').click();
+  await expect(page.getByTestId('mode-detail')).toHaveAttribute('aria-pressed', 'true');
+  const column = page.locator('rect.column.selected');
+  await expect(column).toHaveCount(1);
+  const drawn = await column.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { background: style.fill, border: style.stroke };
+  });
+  expect(drawn).toEqual(await outline(page));
+  await page.screenshot({ path: 'e2e/.results/selected-editor-detail.png' });
+});
+
+test('selected in the step editor: the tab', async ({ page }) => {
+  const gateway = await mockGateway(page);
+  gateway.workflow.profile = profile('My blooming', 36, 9);
+  await page.goto('/');
+  await page.getByTestId('open-editor').click();
+  await expect(page.getByTestId('tab-cards')).toHaveAttribute('aria-pressed', 'true');
+  await expectOneLook(page, 1);
+});
+
+test("a mark that is no selection has no white frame: the date picker's today, the history chip whose list is open", async ({
+  page,
+}) => {
+  await mockGateway(page);
+  await page.goto('/');
+  const { border: white } = await outline(page);
+  const grey = await colour(page, 'var(--dim)');
+
+  await open(page, 'beans');
+  await page.getByTestId('bean-roast-date').click();
+  const today = page.locator('button.day.today');
+  await expect(today).toHaveAttribute('aria-pressed', 'false');
+  expect((await look(today)).border).toBe(grey);
+  await page.locator('button.day:not(.today)').first().click();
+  await page.getByTestId('bean-roast-date').click();
+  await expect(page.locator('button.day[aria-pressed="true"]')).toHaveCount(1);
+  await expectOneLook(page, 3);
+  expect((await look(today)).border).toBe(grey);
+  await page.screenshot({ path: 'e2e/.results/selected-date-picker.png' });
+  await page.getByTestId('datepicker-cancel').click();
+
+  await open(page, 'home');
+  await page.getByTestId('history-handle').tap();
+  await expect.poll(async () => (await page.getByTestId('history').boundingBox())?.x).toBe(0);
+  await page.getByTestId('filter-bean').tap();
+  await expect(page.getByTestId('filter-options')).toBeVisible();
+  expect((await look(page.getByTestId('filter-bean'))).border).toBe(grey);
+  expect((await look(page.getByTestId('filter-all'))).border).toBe(white);
+});
+
+test('the main button keeps its white fill', async ({ page }) => {
+  await mockGateway(page);
+  await page.goto('/');
+  await page.getByTestId('open-profiles').click();
+  await page.getByTestId('profile-item').first().click();
+  expect((await look(page.getByTestId('load-profile'))).background).toBe(await colour(page, 'var(--fg)'));
 });

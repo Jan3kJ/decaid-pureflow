@@ -334,7 +334,7 @@
       <div class="chips" data-testid="setting-{item.id}">
         {#each item.choices as choice (choice.value)}
           <button
-            class="chip select-fill"
+            class="chip select-outline"
             aria-pressed={settings[item.key] === choice.value}
             data-testid="setting-{item.id}-{choice.value}"
             onclick={() => skin.setSettings({ [item.key]: choice.value })}>{choice.label}</button
@@ -428,7 +428,7 @@
       <ul>
         <li>
           <button
-            class="choice select-fill"
+            class="choice select-outline"
             aria-pressed={settings.startProfiles[choosing] === null}
             data-testid="start-choice-empty"
             onclick={() => choose(null)}><span class="none">empty</span></button
@@ -437,7 +437,7 @@
         {#each offered as choice (choice.title)}
           <li>
             <button
-              class="choice select-fill"
+              class="choice select-outline"
               aria-pressed={settings.startProfiles[choosing] === choice.title}
               data-testid="start-choice"
               data-title={choice.title}

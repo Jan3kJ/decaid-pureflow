@@ -21,7 +21,7 @@
   <div class="choices" data-testid="setting-tank-unit">
     {#each TANK_UNITS as choice (choice.value)}
       <button
-        class="chip select-fill"
+        class="chip select-outline"
         aria-pressed={skin.settings.tankUnit === choice.value}
         data-testid="setting-tank-unit-{choice.value}"
         onclick={() => skin.setSettings({ tankUnit: choice.value })}>{choice.label}</button

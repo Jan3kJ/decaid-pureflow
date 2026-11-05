@@ -138,14 +138,14 @@
         <div class="choice" role="group" aria-label="a chip goes into">
           <button
             type="button"
-            class="form-button select-fill"
+            class="form-button select-outline"
             aria-pressed={target === 'name'}
             data-testid="bean-chip-to-name"
             onclick={() => (target = 'name')}>name</button
           >
           <button
             type="button"
-            class="form-button select-fill"
+            class="form-button select-outline"
             aria-pressed={target === 'roaster'}
             data-testid="bean-chip-to-roaster"
             onclick={() => (target = 'roaster')}>roaster</button

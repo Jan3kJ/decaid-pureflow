@@ -155,7 +155,7 @@ body {
   border-radius: var(--radius);
 }
 
-/* A choice among a few, beside a setting: the pill. Selected it is `.select-fill`. */
+/* A choice among a few, beside a setting: the pill. Selected it is `.select-outline`. */
 .chip {
   min-height: var(--control);
   padding: 0 0.9rem;
@@ -289,24 +289,11 @@ body {
 }
 
 /*
- * Selected, two looks for every page; a control takes the class of its kind
- * and says it is selected with `aria-pressed` or `aria-current`. `:root` puts them above a
- * component's own rule for the control.
+ * Selected, one look for every page: a chip, a mode, a tab, a row of a list. The white outline on
+ * the raised background; the words keep their colour and weight. A control takes the class and says
+ * it is selected with `aria-pressed` or `aria-current`. `:root` puts it above a component's own
+ * rule for the control. A mark that is not a selection takes no white frame on a raised control.
  */
-/* A choice of one among a few (a chip, a mode, a tab): the white fill. */
-:root .select-fill:is([aria-pressed='true'], [aria-current='true']) {
-  color: var(--bg);
-  background: var(--fg);
-  border-color: var(--fg);
-  font-weight: 600;
-}
-
-/* Inside it the values, units and small lines are the dark text too, whatever colour they have elsewhere. */
-:root .select-fill:is([aria-pressed='true'], [aria-current='true']) * {
-  color: inherit;
-}
-
-/* The row whose detail is shown beside its list: the white outline. */
 :root .select-outline:is([aria-pressed='true'], [aria-current='true']) {
   background: var(--raised);
   border-color: var(--fg);

@@ -103,7 +103,7 @@
     {#each ordered as entry (entry.id)}
       {@const chosen = entry.id === defaultId}
       <button
-        class="skin select-fill"
+        class="skin select-outline"
         aria-pressed={chosen}
         disabled={chosen || busy}
         data-testid="skin-{entry.id}"

@@ -70,7 +70,7 @@
     <div class="choices" data-testid="setting-{field.id}">
       {#each field.options as option (option.value)}
         <button
-          class="chip select-fill"
+          class="chip select-outline"
           aria-pressed={value === option.value}
           disabled={!read || busy}
           data-testid="setting-{field.id}-{option.value}"

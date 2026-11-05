@@ -72,20 +72,20 @@
   {/if}
   <div class="filter" data-testid="history-filter">
     <button
-      class="select-fill truncate"
+      class="select-outline truncate"
       aria-pressed={!filtered}
       data-testid="filter-all"
       onclick={() => ((skin.historyFilter = NO_FILTER), (choosing = null))}>all</button
     >
     <button
-      class="select-fill truncate"
+      class="select-outline truncate"
       aria-pressed={filter.beanId !== null}
       class:open={choosing === 'bean'}
       data-testid="filter-bean"
       onclick={() => (choosing = choosing === 'bean' ? null : 'bean')}>{beanChosen}</button
     >
     <button
-      class="select-fill truncate"
+      class="select-outline truncate"
       aria-pressed={filter.grinderId !== null}
       class:open={choosing === 'grinder'}
       data-testid="filter-grinder"
@@ -96,7 +96,7 @@
     <ul data-testid="filter-options" data-main-frame>
       <li>
         <button
-          class="option select-fill"
+          class="option select-outline"
           aria-pressed={(choosing === 'bean' ? filter.beanId : filter.grinderId) === null}
           data-testid="filter-any"
           onclick={() => choose(null)}>{choosing === 'bean' ? 'any bean' : 'any grinder'}</button
@@ -105,7 +105,7 @@
       {#each options as option (option.id)}
         <li>
           <button
-            class="option select-fill"
+            class="option select-outline"
             aria-pressed={option.id === (choosing === 'bean' ? filter.beanId : filter.grinderId)}
             data-testid="filter-option"
             onclick={() => choose(option.id)}
@@ -256,8 +256,9 @@
     background: var(--raised);
   }
 
+  /* The chip whose list is open: grey, as a white frame says a filter is chosen. */
   .filter .open {
-    border-color: var(--fg);
+    border-color: var(--dim);
   }
 
   .option {

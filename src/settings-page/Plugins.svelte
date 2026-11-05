@@ -244,7 +244,7 @@
             <div class="choices" data-testid="plugin-setting-{plugin.id}-{control.key}">
               {#each control.values as option (option)}
                 <button
-                  class="chip select-fill"
+                  class="chip select-outline"
                   aria-pressed={value === option}
                   disabled={!read || !!busy[at]}
                   data-testid="plugin-setting-{plugin.id}-{control.key}-{option}"

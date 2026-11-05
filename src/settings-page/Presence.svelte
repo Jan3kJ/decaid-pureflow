@@ -134,7 +134,7 @@
         <div class="choices">
           {#each DAYS as day, i (day)}
             <button
-              class="chip select-fill"
+              class="chip select-outline"
               aria-pressed={form.days.includes(i + 1)}
               data-testid="schedule-day-{i + 1}"
               onclick={() => toggleDay(i + 1)}>{day}</button

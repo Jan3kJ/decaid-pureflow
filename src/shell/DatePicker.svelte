@@ -206,7 +206,7 @@
             {#each week as day, d (d)}
               {#if day}
                 <button
-                  class="day select-fill"
+                  class="day select-outline"
                   class:today={day === today}
                   aria-pressed={day === value}
                   data-testid="datepicker-day-{day}"
@@ -337,8 +337,9 @@
     font-variant-numeric: tabular-nums;
   }
 
+  /* Today's ring is grey: a white frame says the day is chosen. */
   .day.today {
-    border: 2px solid var(--fg);
+    border: 2px solid var(--dim);
   }
 
   .actions {
