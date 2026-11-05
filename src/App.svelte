@@ -196,7 +196,7 @@
     const finger = fingers.get(event.pointerId);
     if (!finger) return;
     finger.now = { x: event.clientX, y: event.clientY };
-    if (slept || held || fingers.size !== 2 || !isPage(skin.screen) || !skin.canSleep || skin.machineAsleep) return;
+    if (slept || held || fingers.size !== 2 || !isPage(skin.screen) || skin.appSleep === 'none') return;
     const [a, b] = [...fingers.values()];
     if (a && b && twoFingerDown(a, b, Math.abs(a.time - b.time), innerHeight)) {
       slept = true;

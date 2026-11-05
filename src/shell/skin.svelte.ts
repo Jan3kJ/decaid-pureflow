@@ -36,6 +36,7 @@ import { doseToSet } from './profiles';
 import { Recall, type Recalled } from './recall.svelte';
 import { SettingsStore } from './settings-store.svelte';
 import { AWAKE, askSleep, followSleep, type SleepMark } from './sleep';
+import { appSleepOf } from './two-finger';
 import { recordFrame, runningStep, settleWeight, type Shot } from './shot';
 import { SCALE_LOST_NOTICE, ShotWarnings } from './shot-warnings.svelte';
 import { SteamControl } from './steam-control.svelte';
@@ -115,6 +116,8 @@ export class Skin {
   readonly machineAsleep = $derived(isAsleep(this.link, this.snapshot));
   /** the Asleep screen is shown: the machine sleeps, and not by 'Machine sleep' */
   readonly asleep = $derived(this.machineAsleep && !this.sleepMark.machineOnly);
+  /** what 'Machine and app sleep' does now; see `appSleepOf` */
+  readonly appSleep = $derived(appSleepOf(this.machineAsleep, this.asleep, this.canSleep));
   /** the values of the state line, on home and on the steam page */
   readonly stateValues = $derived(
     stateLine(this.link, this.shown, this.water, this.scaleLink, this.weight, this.scaleLooking, this.settings.tankUnit),
@@ -483,8 +486,15 @@ export class Skin {
     return this.askSleep(true);
   }
 
-  /** The menu's 'Machine and app sleep': the machine sleeps and the app shows the Asleep screen. */
+  /**
+   * The menu's 'Machine and app sleep': the machine sleeps and the app shows the Asleep screen. The
+   * machine already asleep is not asked again.
+   */
   sleepApp(): Promise<void> {
+    if (this.appSleep === 'app') {
+      this.sleepMark = AWAKE;
+      return Promise.resolve();
+    }
     return this.askSleep(false);
   }
 

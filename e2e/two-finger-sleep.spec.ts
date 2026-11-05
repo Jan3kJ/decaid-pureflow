@@ -64,3 +64,35 @@ test('the menu lines are of one height, the steam heater among them', async ({ p
   const other = (await page.getByTestId('open-clean').locator('.label').boundingBox())!;
   expect(Math.round(label.y - boxes[3]!.y)).toBe(Math.round(other.y - boxes[2]!.y));
 });
+
+async function machineAsleepAppAwake(page: Page) {
+  const gateway = await home(page);
+  await page.getByTestId('menu').click();
+  await page.getByTestId('machine-sleep').click();
+  await expect(page.getByTestId('status-title')).toHaveText('Asleep');
+  await expect(page.getByTestId('asleep')).toHaveCount(0);
+  expect(sleeps(gateway)).toBe(1);
+  return gateway;
+}
+
+test("with the machine asleep the menu's 'Machine and app sleep' shows the Asleep screen and asks nothing", async ({ page }) => {
+  const gateway = await machineAsleepAppAwake(page);
+  const before = gateway.requests.length;
+  await page.getByTestId('menu').click();
+  await expect(page.getByTestId('wake-machine')).toHaveText('Wake machine');
+  await expect(page.getByTestId('machine-sleep')).toHaveCount(0);
+  await expect(page.getByTestId('app-sleep')).toBeEnabled();
+  await page.getByTestId('app-sleep').click();
+  await expect(page.getByTestId('asleep')).toBeVisible();
+  await page.waitForTimeout(300);
+  expect(gateway.requests.slice(before).filter((r) => r.method !== 'GET' && r.path.startsWith('/api/v1/machine/state'))).toEqual([]);
+});
+
+test('with the machine asleep two fingers swiped down show the Asleep screen and ask nothing', async ({ page }) => {
+  const gateway = await machineAsleepAppAwake(page);
+  const before = gateway.requests.length;
+  await twoFingers(page, 0, 400);
+  await expect(page.getByTestId('asleep')).toBeVisible();
+  await page.waitForTimeout(300);
+  expect(gateway.requests.slice(before).filter((r) => r.method !== 'GET' && r.path.startsWith('/api/v1/machine/state'))).toEqual([]);
+});

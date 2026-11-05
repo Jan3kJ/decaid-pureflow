@@ -60,8 +60,7 @@
     {
       id: 'app-sleep',
       label: () => 'Machine and app sleep',
-      shown: () => !skin.machineAsleep,
-      disabled: () => !skin.canSleep,
+      disabled: () => skin.appSleep === 'none',
       choose: () => void skin.sleepApp(),
     },
     {

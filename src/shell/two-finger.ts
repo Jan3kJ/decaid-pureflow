@@ -23,3 +23,12 @@ function down(finger: Finger, height: number): boolean {
 export function twoFingerDown(a: Finger, b: Finger, apart: number, height: number): boolean {
   return apart <= TWO_WINDOW && down(a, height) && down(b, height);
 }
+
+/** What the menu's 'Machine and app sleep' and the swipe do: ask the machine too, only the app, or nothing. */
+export type AppSleep = 'machine-and-app' | 'app' | 'none';
+
+/** Awake: both. Asleep while the app is awake: the app alone, the machine is not asked again. Running: nothing. */
+export function appSleepOf(machineAsleep: boolean, appAsleep: boolean, canSleep: boolean): AppSleep {
+  if (machineAsleep) return appAsleep ? 'none' : 'app';
+  return canSleep ? 'machine-and-app' : 'none';
+}

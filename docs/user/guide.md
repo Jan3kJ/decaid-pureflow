@@ -152,4 +152,6 @@ Adjustments > Water Tank**, shows the tank on the state line in ml or in mm.
 
 The two sleep entries of the menu differ: **Machine sleep** puts only the DE1 to sleep;
 **Machine and app sleep** also turns the skin dark, with 'touch to wake'. A touch on it wakes
-the machine.
+the machine. While the machine sleeps and the skin is awake, the menu shows **Wake machine** and
+**Machine and app sleep**, which then only turns the skin dark; a two-finger swipe down on hot
+water, home or steam does the same.

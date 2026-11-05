@@ -174,10 +174,10 @@ test("machine sleep: sleeping, the app stays awake and undimmed, 'Wake machine' 
   expect(asked()).toEqual(['PUT /api/v1/machine/state/sleeping']);
   expect(gateway.decaidSettings.keepAwake).toBe(true);
 
-  // The menu offers the wake in the place of the two sleeps.
+  // The menu offers the wake in the place of 'Machine sleep', and the app's sleep stays.
   await openMenu(page);
   await expect(page.getByTestId('machine-sleep')).toHaveCount(0);
-  await expect(page.getByTestId('app-sleep')).toHaveCount(0);
+  await expect(page.getByTestId('app-sleep')).toBeEnabled();
   await expect(page.getByTestId('wake-machine')).toHaveText('Wake machine');
   await page.screenshot({ path: 'docs/product/home-menu-asleep.png' });
   await page.getByTestId('wake-machine').click();
