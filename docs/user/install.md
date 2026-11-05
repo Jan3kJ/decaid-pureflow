@@ -9,12 +9,16 @@ Checked against pureflow 0.6.1.
 
 ## Install the ZIP
 
-1. Get the skin's ZIP, `pureflow-<version>.zip`, from the
+1. Get the skin's ZIP, `pureflow.zip`, from the
    [releases](https://github.com/Jan3kJ/decaid-pureflow/releases), and copy it to the tablet,
    for example into `Download`.
 2. In Decaid, open the skin installer and choose the ZIP file. Decent describes this in
    [Decaid's skin page](https://github.com/decentespresso/decaid/blob/v0.8.8/doc/Skins.md).
 3. Pick the ZIP. Decaid unpacks it, makes it the default skin and opens it.
+
+The file's name does not carry the version, so a second download may overwrite the first or need
+renaming by hand. The version of an installed file is under **Settings > 6. Skin > Backup and
+version**.
 
 ## Install by URL
 
@@ -30,8 +34,9 @@ Decaid's install from a GitHub release has an **asset** field. Type `pureflow.zi
 skin, or `pureflow-ocr.zip` for the skin that also reads the bean bag. Every release carries both
 names, so the field stays the same from version to version and the check for updates finds the newer
 file. If you leave the field empty, Decaid takes the first asset of the release, which is the ocr
-ZIP (`-ocr` sorts before `.zip`), about 6 MB larger than the base one. The versioned ZIPs,
-`pureflow-<version>.zip` and `pureflow-<version>-ocr.zip`, hold the same files.
+ZIP (`-ocr` sorts before `.zip`), about 6 MB larger than the base one. The file name does not
+carry the version; the release's page does. Releases up to 0.10.0 also carry
+`pureflow-<version>.zip` and `pureflow-<version>-ocr.zip`, with the same files.
 
 ## Choose the version in the skin
 
@@ -46,12 +51,12 @@ Once pureflow runs, it can install another release or the other flavour itself:
 3. Tap a release and **install**. Decaid downloads the ZIP and installs it over pureflow, with your
    settings kept. The latest is installed from the GitHub release under `pureflow.zip` or
    `pureflow-ocr.zip`, so Decaid's check for updates installs the next releases. An older release
-   is installed from its own ZIP, `pureflow-<version>.zip` or `pureflow-<version>-ocr.zip`; the
-   check for updates then keeps that version until you install the latest here again.
+   is installed from the same name in that release; the check for updates then keeps that
+   version until you install the latest here again.
 4. Tap **reload**: the screen loads the installed version.
 
-A release from before the fixed names (0.9.0 and older) is installed from its own ZIP, also when
-it is the latest.
+A release from before the fixed names (0.9.0 and older) is installed from its own ZIP,
+`pureflow-<version>.zip` or `pureflow-<version>-ocr.zip`, also when it is the latest.
 
 ## What you see after
 

@@ -22,7 +22,7 @@ const GATEWAY = 'http://localhost:8080';
 const BACKUP = '/api/v1/store/pureflow/settings-backup';
 const TARGET = 'insight';
 const VERSION = (JSON.parse(readFileSync('public/manifest.json', 'utf8')) as { version: string }).version;
-const ZIP = join('release', `pureflow-${VERSION}.zip`);
+const ZIP = join('release', 'pureflow.zip');
 /** The port the ZIPs are served on here, beside serve-release's 24810. */
 const ZIP_PORT = 24811;
 

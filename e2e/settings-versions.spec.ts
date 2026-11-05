@@ -4,8 +4,8 @@ import { mockGateway, type MockGateway } from './mock-gateway';
 
 // Skin > Skin version against the mocked gateway and a mocked list of GitHub's releases: the
 // page asks GitHub only on 'list', shows the releases newest first, installs the latest through
-// Decaid's install from a GitHub release under the fixed name and an older one from its versioned
-// ZIP's URL, then offers 'reload'; when GitHub cannot be reached it says so and writes nothing.
+// Decaid's install from a GitHub release under the fixed name, an older one from its fixed name's
+// URL and one from before the fixed names from its versioned ZIP's URL, then offers 'reload'; when GitHub cannot be reached it says so and writes nothing.
 
 const MANIFEST = JSON.parse(readFileSync('public/manifest.json', 'utf8')) as { version: string; repository: string };
 const VERSION = MANIFEST.version;
@@ -17,7 +17,7 @@ const asset = (tag: string, name: string) => ({
   browser_download_url: `https://github.com/${REPO}/releases/download/${tag}/${name}`,
 });
 
-/** The latest with the fixed names, the running version, and an old one without the ocr ZIP. */
+/** The latest and an older one with the fixed names only, the running version, and an old one without the ocr ZIP. */
 const LIST = [
   {
     tag_name: `v${VERSION}`,
@@ -31,9 +31,14 @@ const LIST = [
     published_at: '2026-12-01T10:00:00Z',
     draft: false,
     prerelease: false,
-    assets: ['pureflow-99.0.0.zip', 'pureflow-99.0.0-ocr.zip', 'pureflow.zip', 'pureflow-ocr.zip'].map((name) =>
-      asset('v99.0.0', name),
-    ),
+    assets: ['pureflow.zip', 'pureflow-ocr.zip'].map((name) => asset('v99.0.0', name)),
+  },
+  {
+    tag_name: 'v98.0.0',
+    published_at: '2026-11-15T10:00:00Z',
+    draft: false,
+    prerelease: false,
+    assets: ['pureflow.zip', 'pureflow-ocr.zip'].map((name) => asset('v98.0.0', name)),
   },
   {
     tag_name: 'v0.1.0',
@@ -100,7 +105,12 @@ test('lists the releases only on list, installs the latest and an older one thro
 
   await page.getByTestId('versions-list').click();
   const releases = page.getByTestId('versions').locator('button');
-  await expect(releases).toHaveText([/^99\.0\.0\s*latest/, new RegExp(`^${VERSION.replace(/\./g, '\\.')}\\s*running`), /^0\.1\.0/]);
+  await expect(releases).toHaveText([
+    /^99\.0\.0\s*latest/,
+    /^98\.0\.0/,
+    new RegExp(`^${VERSION.replace(/\./g, '\\.')}\\s*running`),
+    /^0\.1\.0/,
+  ]);
   expect(asked).toEqual([RELEASES]);
   await expect(page.getByTestId('version-99.0.0')).toContainText('pureflow.zip');
   await expect(page.getByTestId(`version-${VERSION}`)).toContainText(`pureflow-${VERSION}.zip`);
@@ -124,7 +134,16 @@ test('lists the releases only on list, installs the latest and an older one thro
   });
   expect(gateway.skins.find((skin) => skin.id === 'pureflow')?.version).toBe('99.0.0');
 
-  // An older one, from its versioned ZIP's URL.
+  // An older one, from the URL of the fixed name in that release.
+  const older = `https://github.com/${REPO}/releases/download/v98.0.0/pureflow-ocr.zip`;
+  gateway.installable = { [older]: { id: 'pureflow', name: 'pureflow', version: '98.0.0' } };
+  await page.getByTestId('version-98.0.0').click();
+  await expect(page.getByTestId('settings-confirm')).toContainText('keeps this version');
+  await page.getByTestId('settings-confirm-ok').click();
+  await expect(page.getByTestId('versions-said')).toHaveText('Installed pureflow 98.0.0, with the bean bag reading.');
+  expect(gateway.calls('POST', '/api/v1/webui/skins/install/url')[0].body).toEqual({ url: older });
+
+  // One from before the fixed names, from its versioned ZIP's URL.
   await page.getByTestId('version-flavour-base').click();
   const url = `https://github.com/${REPO}/releases/download/v0.1.0/pureflow-0.1.0.zip`;
   gateway.installable = { [url]: { id: 'pureflow', name: 'pureflow', version: '0.1.0' } };
@@ -132,7 +151,7 @@ test('lists the releases only on list, installs the latest and an older one thro
   await expect(page.getByTestId('settings-confirm')).toContainText('keeps this version');
   await page.getByTestId('settings-confirm-ok').click();
   await expect(page.getByTestId('versions-said')).toHaveText('Installed pureflow 0.1.0, small.');
-  expect(gateway.calls('POST', '/api/v1/webui/skins/install/url')[0].body).toEqual({ url });
+  expect(gateway.calls('POST', '/api/v1/webui/skins/install/url')[1].body).toEqual({ url });
   // Decaid's skin server was not touched: it serves the new files on the same port.
   expect(gateway.writes().filter((request) => request.path.startsWith('/api/v1/webui/server'))).toEqual([]);
   expect(asked).toEqual([RELEASES]);

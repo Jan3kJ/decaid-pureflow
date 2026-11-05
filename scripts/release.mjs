@@ -1,8 +1,8 @@
 // `npm run release`: the only way a release is made, run in the product repository.
 // In order: the checks before anything, the history from the commits' `Changelog:` trailers since
 // the last tag, the version (behind a yes), every check, the files (versions, CHANGELOG.md, the two
-// ZIPs, base and ocr, and release/SHA256SUMS.txt with a line for each), the local commit and tag,
-// and the publish step behind a second yes.
+// ZIPs, pureflow.zip and pureflow-ocr.zip, and release/SHA256SUMS.txt with a line for each), the
+// local commit and tag, and the publish step behind a second yes.
 //
 //   npm run release -- [--dry-run] [--local] [--resume] [--no-rig] [--publish]
 //                      [--bump major|minor|patch] [--version X.Y.Z]
@@ -13,7 +13,7 @@
 // PUREFLOW_RIG_URL names the gateway the rig is looked for at (default http://localhost:8080).
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { copyFileSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createInterface } from 'node:readline';
@@ -23,7 +23,6 @@ import {
   assetUrl,
   changelogSection,
   checksLine,
-  fixedZips,
   chooseVersion,
   classify,
   insertSection,
@@ -246,12 +245,15 @@ export async function release(argv, root, io = {}) {
 
   // 5. The files.
   const versionFiles = ['package.json', 'package-lock.json', 'public/manifest.json'];
-  const zips = releaseZips(JSON.parse(read('public/manifest.json')).id, version);
+  const zips = releaseZips(JSON.parse(read('public/manifest.json')).id);
   if (options.dryRun) {
     log(
       `\n5. Would write ${version} into ${versionFiles.join(', ')}, the section above into CHANGELOG.md, run npm run zip for ${zips.map((name) => `release/${name}`).join(' and ')} and write release/SHA256SUMS.txt with a line for each:`,
     );
     for (const name of zips) log(`   <sha-256>  ${name}`);
+    log(
+      `Would upload ${[...zips, 'SHA256SUMS.txt'].join(', ')} to the release ${tag}, download ${zips.join(' and ')} again and compare each with its local file byte for byte.`,
+    );
     log('\nDry run: nothing has been changed.');
     printLeft();
     return version;
@@ -291,12 +293,17 @@ export async function release(argv, root, io = {}) {
     if (sh('git', 'rev-parse', '--verify', '-q', `refs/tags/${t}`).status !== 0) {
       throw new Stop(`no tag ${t} to publish`, 'npm run release (without --resume)');
     }
-    const names = releaseZips(JSON.parse(read('public/manifest.json')).id, v);
-    const fixed = fixedZips(JSON.parse(read('public/manifest.json')).id);
+    const names = releaseZips(JSON.parse(read('public/manifest.json')).id);
     const files = names.map((name) => join(root, 'release', name));
     const sumsFile = join(root, 'release', 'SHA256SUMS.txt');
-    if (files.some((file) => !existsSync(file))) {
+    // The names carry no version, so the ZIPs of an earlier release can lie here under the same names.
+    const versionOf = io.zipVersion ?? zipVersion;
+    const current = async () =>
+      (await Promise.all(files.map((file) => (existsSync(file) ? versionOf(file) : undefined)))).every((found) => found === v);
+    if (!(await current())) {
       if (!step('npm', 'run', 'zip')) throw new Stop('npm run zip failed', 'npm run zip');
+      if (!(await current()))
+        throw new Stop(`the ZIPs of release/ are not version ${v}`, `git switch --detach ${t}, then npm run zip`);
       writeFileSync(sumsFile, sums(names));
     }
     if (!existsSync(sumsFile) || readFileSync(sumsFile, 'utf8') !== sums(names)) {
@@ -305,15 +312,10 @@ export async function release(argv, root, io = {}) {
         'npm run zip, then npm run release -- --resume',
       );
     }
-    // Each ZIP is built once and carried a second time under its fixed name, byte for byte.
-    const fixedFiles = fixed.map((name) => join(root, 'release', name));
-    fixedFiles.forEach((file, index) => copyFileSync(files[index], file));
-    const uploads = [...files, ...fixedFiles];
-    const downloads = [...names, ...fixed];
     const body = sectionOf(read('CHANGELOG.md'), v);
     if (body === undefined) throw new Stop(`CHANGELOG.md has no section ${v}`, 'git show HEAD:CHANGELOG.md');
     // The notes say which ZIP is which; CHANGELOG.md keeps the entries only.
-    const notes = `${body}\n${zipsNote(names, readFileSync(files[1]).length, fixed)}`;
+    const notes = `pureflow ${v}\n\n${body}\n${zipsNote(names, readFileSync(files[1]).length)}`;
     const where = options.publish ? 'a public release' : 'a draft release';
     if (!(await yes(`Publish ${v}: push main and ${t} to origin and create ${where} on GitHub?`))) {
       log(`Not published. ${t} is local; later: npm run release -- --resume`);
@@ -327,13 +329,13 @@ export async function release(argv, root, io = {}) {
       writeFileSync(notesFile, notes);
       const exists = sh('gh', 'release', 'view', t).status === 0;
       const uploaded = exists
-        ? step('gh', 'release', 'upload', t, ...uploads, sumsFile, '--clobber')
+        ? step('gh', 'release', 'upload', t, ...files, sumsFile, '--clobber')
         : step(
             'gh',
             'release',
             'create',
             t,
-            ...uploads,
+            ...files,
             sumsFile,
             '--title',
             `pureflow ${v}`,
@@ -343,25 +345,25 @@ export async function release(argv, root, io = {}) {
           );
       if (!uploaded) throw new Stop('the GitHub release failed', 'npm run release -- --resume');
       const download = join(scratch, 'download');
-      const patterns = downloads.flatMap((name) => ['--pattern', name]);
+      const patterns = names.flatMap((name) => ['--pattern', name]);
       if (!step('gh', 'release', 'download', t, ...patterns, '--dir', download)) {
         throw new Stop('the download of the assets failed', 'npm run release -- --resume');
       }
-      downloads.forEach((name, index) => {
+      names.forEach((name, index) => {
         const downloaded = join(download, name);
-        if (!existsSync(downloaded) || sha256(downloaded) !== sha256(uploads[index])) {
+        if (!existsSync(downloaded) || !readFileSync(downloaded).equals(readFileSync(files[index]))) {
           throw new Stop(`the downloaded ${name} differs from release/${name}`, 'npm run release -- --resume');
         }
       });
     } finally {
       rmSync(scratch, { recursive: true, force: true });
     }
-    log(`\nPublished ${where}; each downloaded asset has the SHA-256 of its local ZIP.`);
+    log(`\nPublished ${where}; each downloaded ZIP is byte for byte its local file.`);
     const repository = JSON.parse(read('package.json')).repository;
-    for (const name of downloads) {
+    for (const name of names) {
       log(`The URL of ${name} for Decaid's skin selector: ${assetUrl(repository, t, name)}`);
+      log(`The URL of the latest ${name}: ${latestAssetUrl(repository, name)}`);
     }
-    for (const name of fixed) log(`The URL of the latest ${name}: ${latestAssetUrl(repository, name)}`);
     printLeft();
     return v;
   }
@@ -369,6 +371,17 @@ export async function release(argv, root, io = {}) {
   function printLeft() {
     log('\nNot in the script, still to do:');
     for (const item of NOT_IN_SCRIPT) log(`- ${item}`);
+  }
+}
+
+/** The version in a ZIP's manifest, or undefined when it cannot be read. Imported here: the script starts before npm ci. */
+export async function zipVersion(path) {
+  const { unzipSync, strFromU8 } = await import('fflate');
+  try {
+    const files = unzipSync(readFileSync(path), { filter: (file) => file.name === 'manifest.json' });
+    return JSON.parse(strFromU8(files['manifest.json'])).version;
+  } catch {
+    return undefined;
   }
 }
 

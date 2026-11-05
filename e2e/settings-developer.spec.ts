@@ -10,7 +10,7 @@ import { mockGateway, type MockGateway } from './mock-gateway';
 
 const VERSION = (JSON.parse(readFileSync('public/manifest.json', 'utf8')) as { version: string }).version;
 const SERVER = 'http://192.168.1.20:24810';
-const NEXT = 'pureflow-9.9.9.zip';
+const NEXT = 'pureflow.zip';
 
 const errors: string[] = [];
 let gateway: MockGateway;
@@ -45,8 +45,8 @@ async function serveRelease(page: Page) {
       headers: { 'Access-Control-Allow-Origin': '*' },
       body: JSON.stringify([
         { name: NEXT, size: 150_000, modified: '2026-11-02T09:00:00.000Z', sha256: null },
-        { name: `pureflow-${VERSION}-ocr.zip`, size: 13_504_278, modified: '2026-10-31T15:00:32.563Z', sha256: null },
-        { name: `pureflow-${VERSION}.zip`, size: 147_483, modified: '2026-10-31T15:00:32.548Z', sha256: null },
+        { name: 'pureflow-ocr.zip', size: 13_504_278, modified: '2026-10-31T15:00:32.563Z', sha256: null },
+        { name: 'pureflow-0.10.0.zip', size: 147_483, modified: '2026-10-31T15:00:32.548Z', sha256: null },
       ]),
     }),
   );
@@ -130,10 +130,9 @@ test('a listed ZIP is installed after the question; Decaid serves it, so the pag
   const zips = page.getByTestId('local-zip');
   await expect(zips).toHaveText([
     new RegExp(`^${NEXT}\\s*150 kB · 2 Nov, \\d\\d:00$`),
-    new RegExp(`pureflow-${VERSION}-ocr\\.zip\\s*13\\.5 MB`),
-    new RegExp(`pureflow-${VERSION}\\.zip\\s*running\\s*147 kB`),
+    /^pureflow-ocr\.zip\s*13\.5 MB/,
+    /^pureflow-0\.10\.0\.zip\s*147 kB/,
   ]);
-  await expect(page.getByTestId('local-running')).toHaveCount(1);
   expect(await page.evaluate(() => localStorage.getItem('pureflow.local-server'))).toBe('192.168.1.20');
   await page.screenshot({ path: 'docs/product/settings-developer-list.png' });
 
@@ -178,8 +177,8 @@ test("a skin Decaid does not serve is installed without a restart; Decaid's erro
   await expect(page.getByTestId('local-said')).toHaveText('Decaid did not install it: Failed to download: 404');
 });
 
-test("a server without CORS, as Python's, offers the typed name, filled with this version's ZIP", async ({ page }) => {
-  gateway.installable[`${SERVER}/pureflow-${VERSION}-ocr.zip`] = { id: 'pureflow', name: 'pureflow', version: VERSION };
+test("a server without CORS, as Python's, offers the typed name, filled with this flavour's ZIP", async ({ page }) => {
+  gateway.installable[`${SERVER}/pureflow-ocr.zip`] = { id: 'pureflow', name: 'pureflow', version: VERSION };
   await servePython(page);
   await developerOn(page);
   await page.getByTestId('local-server').fill('http://192.168.1.20:24810');
@@ -187,15 +186,15 @@ test("a server without CORS, as Python's, offers the typed name, filled with thi
   await expect(page.getByTestId('local-unread')).toContainText("a server without CORS, as Python's, does not allow it");
   await expect(page.getByTestId('local-zips')).toHaveCount(0);
   const name = page.getByTestId('local-name');
-  await expect(name).toHaveValue(`pureflow-${VERSION}.zip`);
-  await expect(page.getByTestId('local-name-chip')).toHaveText([`pureflow-${VERSION}.zip`, `pureflow-${VERSION}-ocr.zip`]);
+  await expect(name).toHaveValue('pureflow.zip');
+  await expect(page.getByTestId('local-name-chip')).toHaveText(['pureflow.zip', 'pureflow-ocr.zip']);
   await page.screenshot({ path: 'docs/product/settings-developer-typed.png' });
 
   await page.getByTestId('local-name-chip').nth(1).click();
-  await expect(name).toHaveValue(`pureflow-${VERSION}-ocr.zip`);
+  await expect(name).toHaveValue('pureflow-ocr.zip');
   await page.getByTestId('local-install').click();
-  await expect(page.getByTestId('settings-confirm')).toContainText(`Install pureflow-${VERSION}-ocr.zip?`);
+  await expect(page.getByTestId('settings-confirm')).toContainText('Install pureflow-ocr.zip?');
   await page.getByTestId('settings-confirm-ok').click();
   await expect(page.getByTestId('local-said')).toHaveText(`Installed pureflow ${VERSION}.`);
-  expect(gateway.calls('POST', '/api/v1/webui/skins/install/url')[0].body).toEqual({ url: `${SERVER}/pureflow-${VERSION}-ocr.zip` });
+  expect(gateway.calls('POST', '/api/v1/webui/skins/install/url')[0].body).toEqual({ url: `${SERVER}/pureflow-ocr.zip` });
 });

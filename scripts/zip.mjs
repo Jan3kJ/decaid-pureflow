@@ -1,6 +1,6 @@
 // Writes the two ZIPs of a release from the two builds, with index.html at each ZIP's root:
-// release/<id>-<version>.zip from dist/ (base) and release/<id>-<version>-ocr.zip from dist-ocr/
-// (ocr). Each is checked before it is written; a problem in either writes neither. With `--check`
+// release/<id>.zip from dist/ (base) and release/<id>-ocr.zip from dist-ocr/ (ocr), over the ZIPs
+// of an earlier run; older files of other names stay. Each is checked before it is written; a problem in either writes neither. With `--check`
 // (npm run verify) both are checked and nothing is written.
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -152,11 +152,11 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const write = !process.argv.includes('--check');
   if (write) mkdirSync(outDir, { recursive: true });
   FLAVOURS.forEach((flavour, index) => {
-    const out = join(outDir, zipName(id, version, flavour));
+    const out = join(outDir, zipName(id, flavour));
     const names = Object.keys(trees[index]);
     if (write) writeFileSync(out, results[index].zip);
-    const what = write ? relative(root, out) : `${zipName(id, version, flavour)} (checked, not written)`;
-    console.log(`${what}: ${names.length} files, ${results[index].zip.length} bytes`);
+    const what = write ? relative(root, out) : `${zipName(id, flavour)} (checked, not written)`;
+    console.log(`${what}: version ${version}, ${names.length} files, ${results[index].zip.length} bytes`);
     for (const name of names.sort()) console.log(`  ${name}  ${trees[index][name].length}`);
   });
 }

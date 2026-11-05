@@ -8,7 +8,7 @@ import { IDLE } from './idle';
 
 // Skin > Developer, 'Install from a local server', against the rig: `npm run serve-release`'s
 // server runs here on its port 24810 over `release/`, the page lists its ZIPs and installs the
-// base ZIP of this version through Decaid, which downloads it from the PC's address; Decaid's
+// base ZIP through Decaid, which downloads it from the PC's address; Decaid's
 // skin list then holds pureflow at this version with the server as its source. The rig serves
 // another skin, so the page opens nothing. The test runs only on a rig without pureflow and
 // removes it again, with the settings backup put back. Without a gateway:
@@ -17,7 +17,7 @@ import { IDLE } from './idle';
 const GATEWAY = 'http://localhost:8080';
 const BACKUP = '/api/v1/store/pureflow/settings-backup';
 const VERSION = (JSON.parse(readFileSync('public/manifest.json', 'utf8')) as { version: string }).version;
-const ZIP = `pureflow-${VERSION}.zip`;
+const ZIP = 'pureflow.zip';
 
 interface ServeRelease {
   PORT: number;
@@ -81,7 +81,6 @@ test("a ZIP of serve-release is installed from the settings and Decaid's skin li
 
     const zip = page.locator(`[data-testid="local-zip"][data-name="${ZIP}"]`);
     await expect(zip).toContainText('kB');
-    await expect(zip.getByTestId('local-running')).toBeVisible();
     await zip.click();
     await page.getByTestId('settings-confirm-ok').click();
     await expect(page.getByTestId('local-said')).toHaveText(`Installed pureflow ${VERSION}.`, { timeout: 30_000 });

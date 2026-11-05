@@ -113,7 +113,7 @@ describe('the install', () => {
     });
   });
 
-  it('installs an older release from its versioned ZIP, and none the release does not have', () => {
+  it('installs a release from before the fixed names from its versioned ZIP, and none the release does not have', () => {
     expect(installOf('pureflow', 'owner/skin', older, 'ocr')).toEqual({
       kind: 'url',
       url: 'https://github.com/owner/skin/releases/download/v0.9.0/pureflow-0.9.0-ocr.zip',
@@ -126,6 +126,39 @@ describe('the install', () => {
     const [only] = readReleases([LIST[0]]);
     expect(only.latest).toBe(true);
     expect(installOf('pureflow', 'owner/skin', only, 'base')).toMatchObject({ kind: 'url', asset: 'pureflow-0.9.0.zip' });
+  });
+
+  it('takes the four kinds of release: newest; older with the fixed name only; older with both; old with the versioned name only', () => {
+    const [newest, fixedOnly, both, versionedOnly] = readReleases([
+      { tag_name: 'v0.12.0', published_at: '2026-12-04T10:00:00Z', assets: [asset('v0.12.0', 'pureflow.zip')] },
+      { tag_name: 'v0.11.0', published_at: '2026-12-03T10:00:00Z', assets: [asset('v0.11.0', 'pureflow.zip')] },
+      {
+        tag_name: 'v0.10.0',
+        published_at: '2026-12-02T10:00:00Z',
+        assets: [asset('v0.10.0', 'pureflow-0.10.0.zip'), asset('v0.10.0', 'pureflow.zip')],
+      },
+      { tag_name: 'v0.9.0', published_at: '2026-12-01T10:00:00Z', assets: [asset('v0.9.0', 'pureflow-0.9.0.zip')] },
+    ]);
+    expect(installOf('pureflow', 'owner/skin', newest, 'base')).toEqual({
+      kind: 'release',
+      repo: 'owner/skin',
+      asset: 'pureflow.zip',
+    });
+    expect(installOf('pureflow', 'owner/skin', fixedOnly, 'base')).toEqual({
+      kind: 'url',
+      url: 'https://github.com/owner/skin/releases/download/v0.11.0/pureflow.zip',
+      asset: 'pureflow.zip',
+    });
+    expect(installOf('pureflow', 'owner/skin', both, 'base')).toEqual({
+      kind: 'url',
+      url: 'https://github.com/owner/skin/releases/download/v0.10.0/pureflow.zip',
+      asset: 'pureflow.zip',
+    });
+    expect(installOf('pureflow', 'owner/skin', versionedOnly, 'base')).toEqual({
+      kind: 'url',
+      url: 'https://github.com/owner/skin/releases/download/v0.9.0/pureflow-0.9.0.zip',
+      asset: 'pureflow-0.9.0.zip',
+    });
   });
 
   it('says what the install replaces and what the update check does after it', () => {

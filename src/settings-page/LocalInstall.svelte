@@ -31,8 +31,8 @@
 
   let { skin }: Props = $props();
 
-  /** the ZIP of the version and flavour now running, and the other flavour's */
-  const names = zipNames(PRODUCT_ID, PRODUCT_VERSION, __OCR__);
+  /** the ZIP of the flavour now running, and the other flavour's */
+  const names = zipNames(PRODUCT_ID, __OCR__);
 
   let address = $state(loadServer());
   /** the server the list was read from */
@@ -122,10 +122,7 @@
     <div class="zips" data-testid="local-zips">
       {#each listing.zips as zip (zip.name)}
         <button class="zip" disabled={busy} data-testid="local-zip" data-name={zip.name} onclick={() => (asking = zip.name)}>
-          <span class="name">
-            <b class="truncate">{zip.name}</b>
-            {#if zip.name === names[0]}<span class="badge" data-testid="local-running">running</span>{/if}
-          </span>
+          <b class="truncate">{zip.name}</b>
           {#if zip.size !== undefined || zip.modified}
             <small>
               {zip.size !== undefined ? sizeText(zip.size) : ''}{zip.size !== undefined && zip.modified ? ' · ' : ''}{zip.modified
@@ -235,28 +232,10 @@
     border-radius: var(--radius);
   }
 
-  .name {
+  .zip b {
     max-width: 100%;
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-  }
-
-  .name b {
-    min-width: 0;
     font-size: var(--text-body);
     font-weight: 600;
-  }
-
-  .badge {
-    flex: none;
-    padding: 0.1rem var(--space-2);
-    font-size: var(--text-label);
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    border: 1px solid currentColor;
-    border-radius: var(--radius-pill);
   }
 
   .chips {

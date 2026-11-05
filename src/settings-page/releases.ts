@@ -2,8 +2,8 @@
 // Decaid installs one flavour of one of them. GitHub is asked only when the list is asked for, as
 // the one outside service the skin talks to. The latest release is installed through Decaid's
 // install from a GitHub release with the fixed asset name, so Decaid's update check follows the
-// next release; an older one, or a release from before the fixed names, from its versioned ZIP's
-// URL, which the update check then keeps.
+// next release; an older one from the URL of its fixed name, and a release from before the fixed
+// names from its versioned ZIP's URL, which the update check then keeps.
 import { errorMessage } from '../error-message';
 import { zipNames } from './local-install';
 
@@ -74,12 +74,12 @@ export async function fetchReleases(repo: string, fetchFn: Fetch = fetch): Promi
 
 /** The fixed name every release since the fixed names carries for a flavour: 'pureflow.zip'. */
 export function fixedName(id: string, flavour: Flavour): string {
-  return flavour === 'ocr' ? `${id}-ocr.zip` : `${id}.zip`;
+  return zipNames(id, flavour === 'ocr')[0];
 }
 
-/** The versioned name of a flavour's ZIP: 'pureflow-0.8.0-ocr.zip'. */
+/** The name a flavour's ZIP had up to 0.10.0: 'pureflow-0.8.0-ocr.zip'. */
 export function versionedName(id: string, version: string, flavour: Flavour): string {
-  return zipNames(id, version, flavour === 'ocr')[0];
+  return `${id}-${version}${flavour === 'ocr' ? '-ocr' : ''}.zip`;
 }
 
 export type Install = { kind: 'release'; repo: string; asset: string } | { kind: 'url'; url: string; asset: string };
@@ -87,7 +87,8 @@ export type Install = { kind: 'release'; repo: string; asset: string } | { kind:
 /** How Decaid installs a flavour of a release, or null when the release has no ZIP of it. */
 export function installOf(id: string, repo: string, release: Release, flavour: Flavour): Install | null {
   const fixed = fixedName(id, flavour);
-  if (release.latest && release.assets[fixed]) return { kind: 'release', repo, asset: fixed };
+  const fixedUrl = release.assets[fixed];
+  if (fixedUrl) return release.latest ? { kind: 'release', repo, asset: fixed } : { kind: 'url', url: fixedUrl, asset: fixed };
   const versioned = versionedName(id, release.version, flavour);
   const url = release.assets[versioned];
   return url ? { kind: 'url', url, asset: versioned } : null;

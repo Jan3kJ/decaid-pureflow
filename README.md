@@ -61,7 +61,7 @@ the browser tests.
 | Test | `npm test` | runs the Vitest tests once |
 | Browser tests | `npm run e2e` | the Playwright tests on fixture data and a mocked gateway |
 | Build | `npm run build` | both flavours: the static skin in `dist/`, with `index.html` and `manifest.json` at its root, and the ocr flavour in `dist-ocr/` (`build:base`, `build:ocr` build one) |
-| Zip | `npm run zip` | builds, then writes `release/pureflow-<version>.zip` and `release/pureflow-<version>-ocr.zip`, each with `index.html` at the ZIP's root |
+| Zip | `npm run zip` | builds, then writes `release/pureflow.zip` and `release/pureflow-ocr.zip`, each with `index.html` at the ZIP's root |
 | Publish check | `npm run publish-check` | no local path, personal address or token in the files |
 | All checks | `npm run verify` | check, lint, format, test, build, the checks of both ZIPs, the publish and docs checks and `npm audit`, as CI runs them |
 | Release | `npm run release` | the checks, the changelog from the commits, the version, the two ZIPs, the tag, then the GitHub release after a yes; `--dry-run` and `--local` change less |

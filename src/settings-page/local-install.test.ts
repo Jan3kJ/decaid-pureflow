@@ -128,8 +128,8 @@ describe('the listings', () => {
 
 describe('the words', () => {
   it("names the running version's ZIP first, then the other flavour's", () => {
-    expect(zipNames('pureflow', '0.9.0', false)).toEqual(['pureflow-0.9.0.zip', 'pureflow-0.9.0-ocr.zip']);
-    expect(zipNames('pureflow', '0.9.0', true)).toEqual(['pureflow-0.9.0-ocr.zip', 'pureflow-0.9.0.zip']);
+    expect(zipNames('pureflow', false)).toEqual(['pureflow.zip', 'pureflow-ocr.zip']);
+    expect(zipNames('pureflow', true)).toEqual(['pureflow-ocr.zip', 'pureflow.zip']);
   });
 
   it('shows sizes in kB and MB', () => {

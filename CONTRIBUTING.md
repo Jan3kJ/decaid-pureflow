@@ -59,7 +59,7 @@ reads only published releases.
 
 Python's server works too, `python -m http.server 24810 --directory release`, but it sends no
 CORS header, so the page cannot read its list: the skin then offers the file's name to type,
-filled with this version's ZIP, and Decaid downloads it as before.
+filled with this flavour's ZIP, and Decaid downloads it as before.
 
 Decaid keeps the server's address as the skin's source, so its update check looks there (and
 skips the skin while the server is stopped). Install from GitHub Release to go back. App Store

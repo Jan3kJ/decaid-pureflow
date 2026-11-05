@@ -141,10 +141,10 @@ export async function readListing(base: string, fetchFn: Fetch = fetch): Promise
   }
 }
 
-/** The ZIP names of a version: this flavour's first, then the other's. */
-export function zipNames(id: string, version: string, ocr: boolean): [string, string] {
-  const base = `${id}-${version}.zip`;
-  const withOcr = `${id}-${version}-ocr.zip`;
+/** The names `npm run zip` writes: this flavour's first, then the other's. */
+export function zipNames(id: string, ocr: boolean): [string, string] {
+  const base = `${id}.zip`;
+  const withOcr = `${id}-ocr.zip`;
   return ocr ? [withOcr, base] : [base, withOcr];
 }
 

@@ -7,4 +7,4 @@ export interface Flavour {
 }
 export const FLAVOURS: readonly [Flavour, Flavour];
 export const OCR_DESCRIPTION: string;
-export function zipName(id: string, version: string, flavour: Flavour): string;
+export function zipName(id: string, flavour: Flavour): string;

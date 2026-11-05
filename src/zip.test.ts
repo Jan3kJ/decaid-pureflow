@@ -27,7 +27,7 @@ interface Zip {
 interface Flavours {
   FLAVOURS: Flavour[];
   OCR_DESCRIPTION: string;
-  zipName(id: string, version: string, flavour: Flavour): string;
+  zipName(id: string, flavour: Flavour): string;
 }
 
 const SCRIPTS = join(import.meta.dirname, '..', 'scripts');
@@ -90,10 +90,10 @@ const problems = (files: Record<string, string | Buffer>, flavour: Flavour) =>
   zip.checkTree(written(files), flavour, { models: MODELS }).problems;
 
 describe('zip.mjs: the two ZIPs', () => {
-  it('names them <id>-<version>.zip and <id>-<version>-ocr.zip, from dist/ and dist-ocr/', () => {
-    expect(flavours.FLAVOURS.map((flavour) => [flavour.dist, flavours.zipName('pureflow', '0.9.0', flavour)])).toEqual([
-      ['dist', 'pureflow-0.9.0.zip'],
-      ['dist-ocr', 'pureflow-0.9.0-ocr.zip'],
+  it('names them <id>.zip and <id>-ocr.zip, from dist/ and dist-ocr/', () => {
+    expect(flavours.FLAVOURS.map((flavour) => [flavour.dist, flavours.zipName('pureflow', flavour)])).toEqual([
+      ['dist', 'pureflow.zip'],
+      ['dist-ocr', 'pureflow-ocr.zip'],
     ]);
     expect([base.maxBytes, ocr.maxBytes]).toEqual([1_000_000, 16_000_000]);
     expect(flavours.OCR_DESCRIPTION).toBe(' With bag reading.');

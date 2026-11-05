@@ -218,14 +218,9 @@ export function sumsLine(hex, name) {
   return `${hex}  ${name}\n`;
 }
 
-/** The ZIPs of a release, base first: `<id>-<version>.zip` and `<id>-<version>-ocr.zip`. */
-export function releaseZips(id, version) {
-  return FLAVOURS.map((flavour) => zipName(id, version, flavour));
-}
-
-/** The same ZIPs under names without the version, base first: `<id>.zip` and `<id>-ocr.zip`. */
-export function fixedZips(id) {
-  return FLAVOURS.map((flavour) => zipName(id, undefined, flavour));
+/** The ZIPs of a release, base first: `<id>.zip` and `<id>-ocr.zip`, the same names in every release. */
+export function releaseZips(id) {
+  return FLAVOURS.map((flavour) => zipName(id, flavour));
 }
 
 /** release/SHA256SUMS.txt for { name: hex }, one line a ZIP in the order given. */
@@ -236,14 +231,14 @@ export function sumsText(hashes) {
 }
 
 /**
- * The release notes' paragraphs that say which ZIP is which and which fixed name goes into the
- * asset field of Decaid's install; `ocrBytes` is the ocr ZIP's size.
+ * The release notes' paragraphs that say which ZIP is which, that its name goes into the asset
+ * field of Decaid's install and where a saved file's version is seen; `ocrBytes` is the ocr ZIP's size.
  */
-export function zipsNote([base, ocr], ocrBytes, [fixedBase, fixedOcr]) {
+export function zipsNote([base, ocr], ocrBytes) {
   const megabytes = Math.max(1, Math.round(ocrBytes / 1e6));
   return (
-    `Files: ${base}: the skin; ${ocr}: the skin that also reads the bean bag, about ${megabytes} MB. Take the small one unless the reading is wanted.\n\n` +
-    `${fixedBase} and ${fixedOcr} are the same two files under names without the version. In Decaid's install from a GitHub release, type ${fixedBase} (the skin) or ${fixedOcr} (the skin with the bean bag reading) into the asset field. With the field empty Decaid takes the first asset, which is the ocr ZIP, because '-ocr' sorts before '.zip'.\n`
+    `Files: ${base}: the skin; ${ocr}: the skin that also reads the bean bag, about ${megabytes} MB. Take the small one unless the reading is wanted. In Decaid's install from a GitHub release, type the name into the asset field; with the field empty Decaid takes the first asset, which is the ocr ZIP (\`-ocr\` sorts before \`.zip\`).\n\n` +
+    `A file saved by hand has no version in its name: once it is installed, Settings > Skin > Backup and version shows it.\n`
   );
 }
 

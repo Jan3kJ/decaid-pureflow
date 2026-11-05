@@ -139,7 +139,8 @@ settings survive a new port or a cleared app.
 `npm run build` writes the static skin to `dist/`, with `index.html` and `manifest.json` at its
 root, and the ocr flavour to `dist-ocr/` (below). `npm run zip` builds, checks what Decaid needs of
 a skin's ZIP (`index.html` at the root, relative asset paths, a safe id) and writes
-`release/pureflow-<version>.zip` and `release/pureflow-<version>-ocr.zip`. The version is set in
+`release/pureflow.zip` and `release/pureflow-ocr.zip`. The file names carry no version; it is in
+the release's tag and in the manifest inside the ZIP. The version is set in
 `package.json` and `public/manifest.json`, and `src/manifest.test.ts` keeps the two equal. The
 same ZIP runs in Decaid on Android, Windows, Linux and macOS. How a user installs it is in
 [Install](user/install.md).
@@ -200,8 +201,11 @@ way a release is made. In order, it stops at the first gate that fails:
 6. the files: both versions, the `CHANGELOG.md` section, the two ZIPs and
    `release/SHA256SUMS.txt` with a line for each;
 7. the local commit and the tag;
-8. the push and the GitHub release with both ZIPs, behind a second yes; the release notes say which
-   ZIP is which, and both are downloaded again and compared with the local files.
+8. the push and the GitHub release with `pureflow.zip`, `pureflow-ocr.zip` and `SHA256SUMS.txt`,
+   behind a second yes; the release notes say which ZIP is which, and both are downloaded again and
+   compared with the local files byte for byte. Since the names carry no version, this step first
+   reads the version in each ZIP's manifest and builds again when it is not the tag's. Releases up
+   to 0.10.0 also carry `pureflow-<version>.zip` and `pureflow-<version>-ocr.zip`.
 
 `npm run serve-release` (`scripts/serve-release.mjs`, Node only) serves `release/` on port 24810
 for a test on the tablet before the release is published: `GET /index.json` lists the ZIPs with
@@ -227,9 +231,10 @@ releases of the repository in the manifest (`PRODUCT_REPO`) from
 `https://api.github.com/repos/<owner>/<name>/releases`, without a token, drafts and pre-releases
 left out, newest first. The newest release is installed through Decaid's
 `POST /api/v1/webui/skins/install/github-release` with the fixed asset name (`pureflow.zip` or
-`pureflow-ocr.zip`), so Decaid's update check follows the next releases; an older release, or a
-newest one from before the fixed names, through `POST /api/v1/webui/skins/install/url` with the
-versioned ZIP's download URL, which the update check then keeps. After the install, when this skin
+`pureflow-ocr.zip`), so Decaid's update check follows the next releases; an older release through
+`POST /api/v1/webui/skins/install/url` with the download URL of the fixed name in that release,
+and a release from before the fixed names, also the newest, with its versioned ZIP's URL. The
+update check then keeps that URL's version. After the install, when this skin
 is Decaid's default, the page offers the same 'reload'.
 
 `--dry-run` runs the checks and prints what it would write. `--local` stops after the tag and

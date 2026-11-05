@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { strToU8, zipSync } from 'fflate';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 // scripts/release.mjs and its pure parts, scripts/release-lib.mjs:
@@ -44,10 +45,9 @@ interface Lib {
   withVersion(text: string, version: string): string;
   rigGroups(files: string[]): string[][];
   assetUrl(repository: unknown, tag: string, name: string): string;
-  releaseZips(id: string, version: string): string[];
+  releaseZips(id: string): string[];
   sumsText(hashes: Record<string, string>): string;
-  zipsNote(names: string[], ocrBytes: number, fixed: string[]): string;
-  fixedZips(id: string): string[];
+  zipsNote(names: string[], ocrBytes: number): string;
   latestAssetUrl(repository: unknown, name: string): string;
 }
 interface Result {
@@ -57,6 +57,7 @@ interface Result {
 }
 type Run = (cmd: string, args: string[], options: { cwd: string; inherit?: boolean }) => Result;
 interface Script {
+  zipVersion(path: string): Promise<string | undefined>;
   release(
     argv: string[],
     root: string,
@@ -195,16 +196,17 @@ describe('the release script: pure parts', () => {
   });
 
   it('names the two ZIPs, writes a sums line for each and says in the notes which is which', () => {
-    const zips = lib.releaseZips('pureflow', '0.9.0');
-    expect(zips).toEqual(['pureflow-0.9.0.zip', 'pureflow-0.9.0-ocr.zip']);
+    const zips = lib.releaseZips('pureflow');
+    expect(zips).toEqual(['pureflow.zip', 'pureflow-ocr.zip']);
     expect(lib.sumsText({ [zips[0]]: 'a'.repeat(64), [zips[1]]: 'b'.repeat(64) })).toBe(
-      `${'a'.repeat(64)}  pureflow-0.9.0.zip\n${'b'.repeat(64)}  pureflow-0.9.0-ocr.zip\n`,
+      `${'a'.repeat(64)}  pureflow.zip\n${'b'.repeat(64)}  pureflow-ocr.zip\n`,
     );
-    expect(lib.fixedZips('pureflow')).toEqual(['pureflow.zip', 'pureflow-ocr.zip']);
-    expect(lib.zipsNote(zips, 5_875_656, lib.fixedZips('pureflow'))).toBe(
-      'Files: pureflow-0.9.0.zip: the skin; pureflow-0.9.0-ocr.zip: the skin that also reads the bean bag, about 6 MB. Take the small one unless the reading is wanted.\n\n' +
-        "pureflow.zip and pureflow-ocr.zip are the same two files under names without the version. In Decaid's install from a GitHub release, type pureflow.zip (the skin) or pureflow-ocr.zip (the skin with the bean bag reading) into the asset field. With the field empty Decaid takes the first asset, which is the ocr ZIP, because '-ocr' sorts before '.zip'.\n",
+    const note = lib.zipsNote(zips, 5_875_656);
+    expect(note).toBe(
+      "Files: pureflow.zip: the skin; pureflow-ocr.zip: the skin that also reads the bean bag, about 6 MB. Take the small one unless the reading is wanted. In Decaid's install from a GitHub release, type the name into the asset field; with the field empty Decaid takes the first asset, which is the ocr ZIP (`-ocr` sorts before `.zip`).\n\n" +
+        'A file saved by hand has no version in its name: once it is installed, Settings > Skin > Backup and version shows it.\n',
     );
+    expect(note).not.toContain('names without the version');
     expect(lib.latestAssetUrl({ url: 'git+https://github.com/o/r.git' }, 'pureflow.zip')).toBe(
       'https://github.com/o/r/releases/latest/download/pureflow.zip',
     );
@@ -222,7 +224,7 @@ function writeProduct(root: string, scripts: Record<string, string>) {
     'ok.mjs': '',
     'fail.mjs': 'process.exit(1);\n',
     'zip.mjs':
-      "import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';\nconst { id, version } = JSON.parse(readFileSync('public/manifest.json', 'utf8'));\nmkdirSync('release', { recursive: true });\nwriteFileSync(`release/${id}-${version}.zip`, `zip of ${version}`);\nwriteFileSync(`release/${id}-${version}-ocr.zip`, `ocr zip of ${version}`);\n",
+      "import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';\nconst { id, version } = JSON.parse(readFileSync('public/manifest.json', 'utf8'));\nmkdirSync('release', { recursive: true });\nwriteFileSync(`release/${id}.zip`, `zip of ${version}`);\nwriteFileSync(`release/${id}-ocr.zip`, `ocr zip of ${version}`);\n",
   };
   for (const [path, text] of Object.entries(files)) {
     mkdirSync(dirname(join(root, path)), { recursive: true });
@@ -261,6 +263,8 @@ describe('the release script: the flow, with git, gh and npm replaced', () => {
     rigUp: () => Promise.resolve(false),
     log: () => undefined,
     today: () => '2026-11-12',
+    // The fixture's ZIPs are text that ends in the version.
+    zipVersion: (path: string) => Promise.resolve(readFileSync(path, 'utf8').split(' ').at(-1)),
     ...extra,
   });
 
@@ -274,7 +278,7 @@ describe('the release script: the flow, with git, gh and npm replaced', () => {
     expect(calls).toContain('git tag -a v0.7.0 -m pureflow 0.7.0');
     expect(calls.filter((call) => call.startsWith('git push') || call.startsWith('gh release'))).toEqual([]);
     expect(readFileSync(join(root, 'release', 'SHA256SUMS.txt'), 'utf8')).toMatch(
-      /^[0-9a-f]{64} {2}pureflow-0\.7\.0\.zip\n[0-9a-f]{64} {2}pureflow-0\.7\.0-ocr\.zip\n$/,
+      /^[0-9a-f]{64} {2}pureflow\.zip\n[0-9a-f]{64} {2}pureflow-ocr\.zip\n$/,
     );
   });
 
@@ -296,7 +300,7 @@ describe('the release script: the flow, with git, gh and npm replaced', () => {
       if (args[0] === 'release' && args[1] === 'download') {
         const dir = args[args.indexOf('--dir') + 1];
         mkdirSync(dir, { recursive: true });
-        for (const name of ['pureflow-0.7.0.zip', 'pureflow-0.7.0-ocr.zip', 'pureflow.zip', 'pureflow-ocr.zip']) {
+        for (const name of ['pureflow.zip', 'pureflow-ocr.zip']) {
           writeFileSync(join(dir, name), readFileSync(join(root, 'release', name)));
         }
       }
@@ -313,36 +317,71 @@ describe('the release script: the flow, with git, gh and npm replaced', () => {
     expect(publish).toContain('git push --atomic origin main v0.7.0');
     const created = publish.find((call) => call.startsWith('gh release create')) ?? '';
     expect(created).toMatch(/--draft$/);
-    // The four names and the sums go up, and the four come down again to be compared.
-    expect(created).toMatch(
-      /pureflow-0\.7\.0\.zip .*pureflow-0\.7\.0-ocr\.zip .*pureflow\.zip .*pureflow-ocr\.zip .*SHA256SUMS\.txt --title/,
-    );
+    // The two ZIPs and the sums go up, no versioned ZIP, and the two come down again to be compared.
+    expect(created).toMatch(/release[\\/]pureflow\.zip \S*release[\\/]pureflow-ocr\.zip \S*SHA256SUMS\.txt --title/);
+    expect(publish.join('\n')).not.toMatch(/pureflow-0\.7\.0/);
     expect(publish).toContainEqual(
-      expect.stringMatching(
-        /^gh release download v0\.7\.0 --pattern pureflow-0\.7\.0\.zip --pattern pureflow-0\.7\.0-ocr\.zip --pattern pureflow\.zip --pattern pureflow-ocr\.zip --dir /,
-      ),
+      expect.stringMatching(/^gh release download v0\.7\.0 --pattern pureflow\.zip --pattern pureflow-ocr\.zip --dir /),
     );
-    // The fixed names carry the versioned ZIPs' bytes, and the sums list the versioned ZIPs only.
-    for (const [fixed, versioned] of [
-      ['pureflow.zip', 'pureflow-0.7.0.zip'],
-      ['pureflow-ocr.zip', 'pureflow-0.7.0-ocr.zip'],
-    ]) {
-      expect(readFileSync(join(root, 'release', fixed)).equals(readFileSync(join(root, 'release', versioned)))).toBe(true);
-    }
     expect(readFileSync(join(root, 'release', 'SHA256SUMS.txt'), 'utf8').match(/ {2}\S+/g)).toEqual([
-      '  pureflow-0.7.0.zip',
-      '  pureflow-0.7.0-ocr.zip',
+      '  pureflow.zip',
+      '  pureflow-ocr.zip',
     ]);
     expect(notes[0]).toMatch(
-      /^### Added\n[\s\S]*\nFiles: pureflow-0\.7\.0\.zip: the skin; pureflow-0\.7\.0-ocr\.zip: the skin that also reads the bean bag, about 1 MB\./,
+      /^pureflow 0\.7\.0\n\n### Added\n[\s\S]*\nFiles: pureflow\.zip: the skin; pureflow-ocr\.zip: the skin that also reads the bean bag, about 1 MB\./,
     );
-    expect(notes[0]).toContain(
-      'type pureflow.zip (the skin) or pureflow-ocr.zip (the skin with the bean bag reading) into the asset field',
-    );
-    expect(lines.join('\n')).toContain('https://github.com/o/r/releases/download/v0.7.0/pureflow-0.7.0.zip');
-    expect(lines.join('\n')).toContain('https://github.com/o/r/releases/download/v0.7.0/pureflow-0.7.0-ocr.zip');
+    expect(notes[0]).toContain('type the name into the asset field');
+    expect(lines.join('\n')).toContain('https://github.com/o/r/releases/download/v0.7.0/pureflow.zip');
+    expect(lines.join('\n')).toContain('https://github.com/o/r/releases/download/v0.7.0/pureflow-ocr.zip');
     expect(lines.join('\n')).toContain('https://github.com/o/r/releases/latest/download/pureflow.zip');
     expect(lines.join('\n')).toContain('https://github.com/o/r/releases/latest/download/pureflow-ocr.zip');
+  });
+
+  it('compares the download byte for byte, and a ZIP of another version is built again before it goes up', async () => {
+    root = mkdtempSync(join(tmpdir(), 'release-flow-'));
+    writeProduct(root, OK);
+    const calls: string[] = [];
+    const run = fake(calls);
+    let wrong = false;
+    // The tag 0.7.0 exists and release/ still holds the ZIPs of 0.6.1.
+    const tagged: Run = (cmd, args, options) => {
+      if (cmd === 'git' && args.join(' ') === 'rev-parse --verify -q refs/tags/v0.7.0') return { status: 0, stdout: '', stderr: '' };
+      const result = run(cmd, args, options);
+      if (args[0] === 'release' && args[1] === 'view') return { ...result, status: 1 };
+      if (args[0] === 'release' && args[1] === 'download') {
+        const dir = args[args.indexOf('--dir') + 1];
+        mkdirSync(dir, { recursive: true });
+        for (const name of ['pureflow.zip', 'pureflow-ocr.zip']) {
+          writeFileSync(
+            join(dir, name),
+            wrong && name === 'pureflow-ocr.zip' ? 'other bytes' : readFileSync(join(root, 'release', name)),
+          );
+        }
+      }
+      return result;
+    };
+    spawnSync(process.execPath, ['zip.mjs'], { cwd: root });
+    for (const file of ['package.json', 'public/manifest.json']) {
+      writeFileSync(join(root, file), readFileSync(join(root, file), 'utf8').replace('0.6.1', '0.7.0'));
+    }
+    writeFileSync(join(root, 'CHANGELOG.md'), '# Changelog\n\n## 0.7.0 - 2026-11-12\n\n### Added\n\n- New.\n');
+    expect(await script.release(['--resume'], root, io(calls, [true], { run: tagged }))).toBe('0.7.0');
+    expect(calls).toContain('npm run zip');
+    expect(readFileSync(join(root, 'release', 'pureflow.zip'), 'utf8')).toBe('zip of 0.7.0');
+
+    wrong = true;
+    await expect(script.release(['--resume'], root, io(calls, [true], { run: tagged }))).rejects.toThrow(
+      'the downloaded pureflow-ocr.zip differs from release/pureflow-ocr.zip',
+    );
+  });
+
+  it('reads the version in a real ZIP, and none from a file that is no ZIP', async () => {
+    root = mkdtempSync(join(tmpdir(), 'release-flow-'));
+    const zip = join(root, 'pureflow.zip');
+    writeFileSync(zip, zipSync({ 'manifest.json': strToU8('{"version":"0.7.0"}'), 'index.html': strToU8('x') }));
+    expect(await script.zipVersion(zip)).toBe('0.7.0');
+    writeFileSync(zip, 'not a zip');
+    expect(await script.zipVersion(zip)).toBeUndefined();
   });
 
   it('stops at each check before anything with the line that fixes it', async () => {
@@ -465,8 +504,11 @@ describe('the release script: run in a temporary repository', () => {
     expect(dry.stdout).toContain('3. The version: 0.7.0');
     expect(dry.stdout).toContain('- Move a row to the right to rename it. (Z20)');
     expect(dry.stdout).toContain('Not in the script');
-    expect(dry.stdout).toMatch(/release\/pureflow-0\.7\.0\.zip and release\/pureflow-0\.7\.0-ocr\.zip/);
-    expect(dry.stdout).toMatch(/<sha-256> {2}pureflow-0\.7\.0\.zip\r?\n.*<sha-256> {2}pureflow-0\.7\.0-ocr\.zip\r?\n/);
+    expect(dry.stdout).toMatch(/release\/pureflow\.zip and release\/pureflow-ocr\.zip/);
+    expect(dry.stdout).toMatch(/<sha-256> {2}pureflow\.zip\r?\n.*<sha-256> {2}pureflow-ocr\.zip\r?\n/);
+    expect(dry.stdout).toContain('Would upload pureflow.zip, pureflow-ocr.zip, SHA256SUMS.txt');
+    expect(dry.stdout).toContain('compare each with its local file byte for byte');
+    expect(dry.stdout).not.toMatch(/pureflow-0\.7\.0/);
     expect(state()).toEqual(before);
     expect(existsSync(join(root, 'release'))).toBe(false);
 
@@ -479,7 +521,7 @@ describe('the release script: run in a temporary repository', () => {
       /^# Changelog\n\n## 0\.7\.0 - \d{4}-\d{2}-\d{2}\n\n### Added\n\n- Move a row to the right to rename it\. \(Z20\)\n\nChecks: .*rig suite: not run\.\n\n## 0\.6\.1/,
     );
     expect(readFileSync(join(root, 'release', 'SHA256SUMS.txt'), 'utf8')).toMatch(
-      /^[0-9a-f]{64} {2}pureflow-0\.7\.0\.zip\n[0-9a-f]{64} {2}pureflow-0\.7\.0-ocr\.zip\n$/,
+      /^[0-9a-f]{64} {2}pureflow\.zip\n[0-9a-f]{64} {2}pureflow-ocr\.zip\n$/,
     );
     expect(git('log', '--format=%s', '-1')).toBe('Release 0.7.0');
     expect(git('rev-list', '--count', 'v0.6.1..HEAD')).toBe('2');

@@ -10,5 +10,5 @@ export const FLAVOURS = [
 /** The ocr ZIP's manifest description ends with this; the id and version are the base one's. */
 export const OCR_DESCRIPTION = ' With bag reading.';
 
-/** The ZIP's file name of a flavour: `<id>-<version>.zip`, `<id>-<version>-ocr.zip`; without a version `<id>.zip`, `<id>-ocr.zip`. */
-export const zipName = (id, version, flavour) => `${id}${version === undefined ? '' : `-${version}`}${flavour.suffix}.zip`;
+/** The ZIP's file name of a flavour: `<id>.zip`, `<id>-ocr.zip`. The version is in the tag and in the manifest inside the ZIP. */
+export const zipName = (id, flavour) => `${id}${flavour.suffix}.zip`;
