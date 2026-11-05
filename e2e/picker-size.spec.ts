@@ -85,3 +85,29 @@ test('on a display too low for the square the graph gives way, the same for ever
   expect(field).toBeGreaterThan(2 * rem);
   await page.screenshot({ path: 'docs/product/profile-picker-low.png' });
 });
+
+// The panel has one gap: the space under the description equals the space above it.
+for (const [name, size] of [
+  ['tablet', { width: 1280, height: 800 }],
+  ['phone', { width: 740, height: 360 }],
+] as const) {
+  test(`on the ${name} the gap under the description equals the gap above it`, async ({ page }) => {
+    await page.setViewportSize(size);
+    await setUp(page);
+    for (const title of ['Bare', "80's Espresso"]) {
+      await layout(page, title);
+      const detail = page.getByTestId('profile-detail');
+      const graph = (await page.getByTestId('profile-preview').boundingBox())!;
+      const notes = (await page.getByTestId('profile-description').boundingBox())!;
+      const edit = (await page.getByTestId('edit-profile').boundingBox())!;
+      const above = notes.y - (graph.y + graph.height);
+      const below = edit.y - (notes.y + notes.height);
+      expect(above, title).toBeGreaterThan(0);
+      expect(Math.abs(above - below), `${title}: ${above} vs ${below}`).toBeLessThanOrEqual(1);
+      const lh = await page.getByTestId('profile-description').evaluate((el) => parseFloat(getComputedStyle(el).fontSize) * 1.2);
+      expect(notes.height, title).toBeGreaterThanOrEqual(3 * lh);
+      const scrolls = await detail.evaluate((el) => el.scrollHeight - el.clientHeight);
+      expect(scrolls, title).toBeLessThanOrEqual(1);
+    }
+  });
+}

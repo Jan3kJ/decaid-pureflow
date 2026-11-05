@@ -664,8 +664,6 @@
 
   .actions {
     flex: none;
-    /* one spacing token closer to the description than the panel's gap */
-    margin-top: calc(var(--space-1) - var(--space-2));
     display: flex;
     gap: var(--space-2);
   }
