@@ -109,9 +109,6 @@
         >{shown.kind === 'running' ? gramsOf(shown.weight, '') : shotWeightText(shown.weight)}<i>g</i></b
       >
     </div>
-    <!-- Why the finished shot stopped, as Decaid's sequencer said it (stop-reason.ts). The line
-         keeps its height when empty, so the values under it do not move when a shot starts. -->
-    <p class="hint stop-reason" data-testid="stop-reason">{finished ? (skin.stopLine ?? '') : ''}</p>
     <dl>
       <div class="row pressure">
         <dt>pressure</dt>
@@ -126,6 +123,9 @@
         <dd data-testid="shot-temperature">{value(snapshot?.groupTemperature)}<i>°C</i></dd>
       </div>
     </dl>
+    <!-- Why the finished shot stopped, as Decaid's sequencer said it (stop-reason.ts), under the last
+         of the values. The line keeps its height when empty, so nothing under it moves when a shot starts. -->
+    <p class="hint stop-reason" data-testid="stop-reason">{finished ? (skin.stopLine ?? '') : ''}</p>
     {#if skin.notice}
       <p class="notice" data-testid="notice">{skin.notice}</p>
     {:else if skin.info}

@@ -2,8 +2,8 @@ import { expect, test, type Page } from '@playwright/test';
 import { mockGateway, profile, type MockGateway } from './mock-gateway';
 
 // Why the finished shot stopped, against the mocked gateway: the stop frame of Decaid's shot
-// sequencer on /ws/v1/machine/shotState gives one line in the hint look under the time and
-// weight of home's right column, for the shot it came in; it goes when the next shot starts. The
+// sequencer on /ws/v1/machine/shotState gives one line in the hint look under the temperature row of
+// home's right column, for the shot it came in; it goes when the next shot starts. The
 // other reasons, a shot recalled from the history and the newest record after a reload have none.
 
 const errors: string[] = [];
@@ -43,16 +43,15 @@ for (const [reason, words] of [
   ['appStop', 'stopped by hand'],
   ['machineEnded', 'ended by the machine'],
 ] as const) {
-  test(`a shot the sequencer stopped for ${reason} says '${words}' under its time and weight`, async ({ page }) => {
+  test(`a shot the sequencer stopped for ${reason} says '${words}' under the temperature row`, async ({ page }) => {
     await home(page);
     await shotStoppedFor(page, reason);
     await expect(line(page)).toHaveText(words);
     await expect(line(page)).toHaveClass(/hint/);
-    // Under the weight, over the values, inside the column.
-    const weight = await box(page, 'shot-weight');
+    // Under the temperature row, the last of the values, inside the column.
+    const temperature = await box(page, 'shot-temperature');
     const at = await box(page, 'stop-reason');
-    expect(at.y).toBeGreaterThanOrEqual(weight.y + weight.height - 1);
-    expect(at.y + at.height).toBeLessThanOrEqual((await box(page, 'shot-pressure')).y + 1);
+    expect(at.y).toBeGreaterThanOrEqual(temperature.y + temperature.height - 1);
     const column = await box(page, 'shot-column');
     expect(at.x + at.width).toBeLessThanOrEqual(column.x + column.width + 1);
     await page.screenshot({ path: `docs/product/stop-reason-${reason}.png` });
@@ -64,12 +63,14 @@ test("the skin's stop is 'stopped by hand', and the line is gone when the next s
   await gateway.replay(page, 0, 0.6);
   await expect(line(page)).toHaveText('');
   // The values do not move when the line comes: it keeps its height while empty.
-  const pressure = await box(page, 'shot-pressure');
+  const rows = ['shot-timer', 'shot-weight', 'shot-pressure', 'shot-flow', 'shot-temperature'];
+  const before = await Promise.all(rows.map((id) => box(page, id)));
   await page.getByTestId('stop').click();
   await gateway.replay(page, 0.6, 1);
   await expect(page.getByTestId('home-shot')).toHaveAttribute('data-shot', 'finished');
   await expect(line(page)).toHaveText('stopped by hand');
-  expect((await box(page, 'shot-pressure')).y).toBeCloseTo(pressure.y, 0);
+  const after = await Promise.all(rows.map((id) => box(page, id)));
+  after.forEach((at, i) => expect(at.y).toBeCloseTo(before[i].y, 0));
   await page.screenshot({ path: 'docs/product/stop-reason-apiStop.png' });
 
   // The next shot: no line while it runs, nor after it without a stop frame of its own.
