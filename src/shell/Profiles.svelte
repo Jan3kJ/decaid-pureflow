@@ -278,7 +278,7 @@
       </div>
     {/if}
     <input
-      class="filter"
+      class="filter-field"
       type="search"
       placeholder="filter by name"
       aria-label="filter by name"
@@ -462,24 +462,6 @@
     border-color: var(--fg);
     color: var(--bg);
     font-weight: 600;
-  }
-
-  .filter {
-    flex: none;
-    min-height: var(--control);
-    padding: 0 1rem;
-    font: inherit;
-    font-size: var(--text-body);
-    color: var(--fg);
-    background: var(--raised);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    box-sizing: border-box;
-    width: 100%;
-  }
-
-  .filter::placeholder {
-    color: var(--dim);
   }
 
   ul {

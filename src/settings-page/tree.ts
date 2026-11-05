@@ -31,6 +31,19 @@ import type { ProcedureId } from './maintenance';
 /** A button of a subcategory that is not a setting. */
 export type Action = 'fast-start' | 'reset' | 'dashboard';
 
+export const ACTIONS: Record<Action, { label: string; hint: string; confirm?: string }> = {
+  'fast-start': {
+    label: 'fast start defaults',
+    hint: 'idle temperature 99 °C, warmup flow 2 ml/s, test flow 4 ml/s, time-out 1 s.',
+  },
+  reset: {
+    label: 'reset to defaults',
+    hint: "the machine's settings above come back as the factory set them. The profile and the workflow are not touched.",
+    confirm: "Fan, idle temperature, heater flows and time-out, refill kit, flow estimation and steam purge go back to the factory's.",
+  },
+  dashboard: { label: 'go to dashboard', hint: "leaves the skin for Decaid's own screens." },
+};
+
 /** The skin's own settings (20.6), drawn by `SkinCategory.svelte`. */
 export type SkinPart = 'steam' | 'hot-water' | 'profile' | 'graph' | 'display' | 'skins' | 'versions' | 'backup' | 'developer';
 

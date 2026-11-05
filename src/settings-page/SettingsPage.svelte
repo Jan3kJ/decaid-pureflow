@@ -10,7 +10,7 @@
   // left column with the chosen one's subcategories under it, and the chosen category in a
   // panel that scrolls. A change is written at once and read back (20.11); the skin's own
   // settings are the category Skin.
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import { PRODUCT_NAME, PRODUCT_VERSION } from '../product';
   import type { Skin } from '../shell/skin.svelte';
   import Bengle from './Bengle.svelte';
@@ -43,7 +43,9 @@
     type Values,
   } from './gateway';
   import { isBengle } from './bengle';
-  import { SETTINGS_TREE, loadLocation, saveLocation, visibleSubcategories, type Action, type Subcategory } from './tree';
+  import { ACTIONS, SETTINGS_TREE, loadLocation, saveLocation, visibleSubcategories, type Action, type Subcategory } from './tree';
+  import { filterSettings, type Hit } from './settings-filter';
+  import { isEmptyFilter } from '../filter-words';
   import { errorMessage } from '../error-message';
   import { loadDeveloper } from './local-install';
 
@@ -57,13 +59,19 @@
   const category = $derived(SETTINGS_TREE.find((entry) => entry.id === chosen) ?? SETTINGS_TREE[0]);
   let panel: HTMLElement | undefined = $state();
 
+  /** The filter is not kept: the page opens as it is without one. */
+  let filter = $state('');
+
   function open(id: string) {
+    filter = '';
     chosen = id;
     saveLocation(id);
     panel?.scrollTo({ top: 0 });
   }
 
-  function jump(sub: Subcategory) {
+  async function jump(sub: Subcategory) {
+    filter = '';
+    await tick();
     document.getElementById(`sub-${sub.id}`)?.scrollIntoView({ block: 'start' });
   }
 
@@ -150,23 +158,18 @@
     read = await writeField(skin.client, values, field, id);
   }
 
-  const ACTIONS: Record<Action, { label: string; hint: string; confirm?: string }> = {
-    'fast-start': {
-      label: 'fast start defaults',
-      hint: 'idle temperature 99 °C, warmup flow 2 ml/s, test flow 4 ml/s, time-out 1 s.',
-    },
-    reset: {
-      label: 'reset to defaults',
-      hint: "the machine's settings above come back as the factory set them. The profile and the workflow are not touched.",
-      confirm:
-        "Fan, idle temperature, heater flows and time-out, refill kit, flow estimation and steam purge go back to the factory's.",
-    },
-    dashboard: { label: 'go to dashboard', hint: "leaves the skin for Decaid's own screens." },
-  };
-
   /** Decaid's host function; only inside Decaid's own window */
   const host = (globalThis as { decentApp?: { exitToDashboard?: () => void } }).decentApp;
   const offered = (action: Action) => action !== 'dashboard' || typeof host?.exitToDashboard === 'function';
+
+  const hits = $derived(filterSettings(filter, { bengle, developer, offered }));
+  const skinHits = $derived(new Map(hits.filter((hit) => hit.category.id === 'skin').map((hit) => [hit.sub.id, hit])));
+
+  /** The category of a hit and there its subcategory, on the page without a filter. */
+  function goTo(hit: Hit) {
+    open(hit.category.id);
+    void jump(hit.sub);
+  }
 
   function act(sub: Subcategory, action: Action) {
     const run = () => void perform(sub, action);
@@ -190,10 +193,9 @@
     }
   }
 
-  /** the parts a subcategory reads that failed */
-  const unreadOf = (sub: Subcategory) => {
-    if (sub.content.kind !== 'fields') return [];
-    const parts = new Set(sub.content.fields.map((field) => partOf(field.source)).filter((part) => part !== null));
+  /** the parts these fields read that failed */
+  const unreadOf = (fields: Field[]) => {
+    const parts = new Set(fields.map((field) => partOf(field.source)).filter((part) => part !== null));
     return [...parts].filter((part) => readErrors[part]).map((part) => readErrors[part]!);
   };
 </script>
@@ -206,104 +208,147 @@
     <small class="version" data-testid="skin-version">{PRODUCT_NAME} {PRODUCT_VERSION}</small>
   </header>
 
-  <nav class="tree" aria-label="settings categories">
-    {#each SETTINGS_TREE as entry (entry.id)}
-      <button
-        class="category select-outline"
-        aria-current={entry.id === category.id}
-        data-testid="settings-category-{entry.id}"
-        onclick={() => open(entry.id)}><span class="number">{entry.number}.</span> {entry.name}</button
-      >
-      {#if entry.id === category.id}
-        {#each visibleSubcategories(entry, bengle, developer) as sub (sub.id)}
-          <button class="sub" data-testid="settings-sub-{sub.id}" onclick={() => jump(sub)}>{sub.name}</button>
-        {/each}
-      {/if}
-    {/each}
-  </nav>
+  <div class="side">
+    <input
+      class="filter-field"
+      type="search"
+      placeholder="filter settings"
+      aria-label="filter settings"
+      autocomplete="off"
+      spellcheck="false"
+      data-testid="settings-filter"
+      bind:value={filter}
+      oninput={() => panel?.scrollTo({ top: 0 })}
+    />
+    <nav class="tree" aria-label="settings categories">
+      {#each SETTINGS_TREE as entry (entry.id)}
+        <button
+          class="category select-outline"
+          aria-current={entry.id === category.id}
+          data-testid="settings-category-{entry.id}"
+          onclick={() => open(entry.id)}><span class="number">{entry.number}.</span> {entry.name}</button
+        >
+        {#if entry.id === category.id}
+          {#each visibleSubcategories(entry, bengle, developer) as sub (sub.id)}
+            <button class="sub" data-testid="settings-sub-{sub.id}" onclick={() => jump(sub)}>{sub.name}</button>
+          {/each}
+        {/if}
+      {/each}
+    </nav>
+  </div>
 
   <div class="panel" data-main-frame bind:this={panel} data-testid="settings-content" data-category={category.id}>
-    {#if category.id === 'skin'}
-      <SkinCategory {skin} bind:developer />
+    {#if isEmptyFilter(filter)}
+      {#if category.id === 'skin'}
+        <SkinCategory {skin} bind:developer {heading} />
+      {:else}
+        {#each visibleSubcategories(category, bengle) as sub (sub.id)}
+          {@render subcategory(sub)}
+        {/each}
+      {/if}
+    {:else if hits.length === 0}
+      <p class="none" data-testid="settings-no-match">no setting matches</p>
     {:else}
-      {#each visibleSubcategories(category, bengle) as sub (sub.id)}
-        <section id="sub-{sub.id}" data-testid="settings-section-{sub.id}">
-          <h2>{sub.name}</h2>
-          {#if sub.hint}<p class="hint">{sub.hint}</p>{/if}
-          {#if sub.content.kind === 'fields'}
-            {@const view = sub.content.view}
-            {#snippet shown()}
-              {#if view?.kind === 'devices'}
-                <Devices
-                  {skin}
-                  kind={view.devices}
-                  preferred={read.decaid
-                    ? (read.decaid[view.devices === 'machine' ? 'preferredMachineId' : 'preferredScaleId'] ?? null)
-                    : undefined}
-                  onpreferred={prefer}
-                />
-              {:else if view?.kind === 'maintenance'}
-                <Maintenance {skin} procedure={view.procedure} titled={false} />
-              {:else if view?.kind === 'machine-info' || view?.kind === 'charging'}
-                <MachineInfo {skin} part={view.kind} decaid={read.decaid} />
-              {:else if view?.kind === 'plugins'}
-                <Plugins {skin} />
-              {:else if view?.kind === 'presence'}
-                <Presence
-                  {skin}
-                  schedules={read.presence ? (read.presence.schedules ?? []) : null}
-                  onchanged={() => readAgain('presence')}
-                />
-              {:else if view?.kind === 'firmware' || view?.kind === 'app-update'}
-                <Firmware {skin} part={view.kind === 'firmware' ? 'firmware' : 'app'} />
-              {:else if view?.kind === 'sensors'}
-                <SensorCalibration {skin} />
-              {:else if view?.kind === 'bengle'}
-                <Bengle {skin} part={view.part} />
-              {:else if view?.kind === 'help'}
-                <Help {skin} part={view.part} />
-              {:else if view?.kind === 'tank-unit'}
-                <TankUnit {skin} />
-              {/if}
-            {/snippet}
-            {#each unreadOf(sub) as error (error)}
-              <p class="warn" data-testid="settings-unread">
-                Not read: {error}
-                <button class="action" onclick={readValues} disabled={reading}>read again</button>
-              </p>
-            {/each}
-            {#if !sub.content.below}{@render shown()}{/if}
-            {#each sub.content.fields as field (field.id)}
-              <FieldRow
-                {field}
-                raw={rawValue(values, field)}
-                all={sourceObject(values, field.source)}
-                read={isRead(field)}
-                busy={!!busy[field.id]}
-                error={failed[field.id] ?? null}
-                onwrite={(value) => write(field, value)}
-              />
-            {/each}
-            {#if sub.content.below}{@render shown()}{/if}
-            {#each (sub.content.actions ?? []).filter(offered) as action (action)}
-              <SettingsRow label={ACTIONS[action].label} hint={ACTIONS[action].hint}>
-                {#snippet about()}
-                  {#if done[sub.id]}<small data-testid="settings-done-{action}">{done[sub.id]}</small>{/if}
-                {/snippet}
-                <button
-                  class="action"
-                  data-testid="settings-action-{action}"
-                  disabled={!!busy[action]}
-                  onclick={() => act(sub, action)}>{ACTIONS[action].label}</button
-                >
-              </SettingsRow>
-            {/each}
-          {/if}
-        </section>
+      {#each SETTINGS_TREE as entry (entry.id)}
+        {#if entry.id !== 'skin'}
+          {#each hits.filter((hit) => hit.category === entry) as hit (hit.sub.id)}
+            {@render subcategory(hit.sub, hit)}
+          {/each}
+        {:else if skinHits.size > 0}
+          <SkinCategory {skin} bind:developer {heading} only={skinHits} />
+        {/if}
       {/each}
     {/if}
   </div>
 </div>
+
+{#snippet heading(sub: Subcategory)}
+  {@const hit = hits.find((entry) => entry.sub === sub)}
+  {#if hit}
+    <h2>
+      <button class="where" data-testid="settings-where-{sub.id}" onclick={() => goTo(hit)}>{hit.category.name} > {sub.name}</button>
+    </h2>
+    {#if hit.whole && sub.hint}<p class="hint">{sub.hint}</p>{/if}
+  {:else}
+    <h2>{sub.name}</h2>
+    {#if sub.hint}<p class="hint">{sub.hint}</p>{/if}
+  {/if}
+{/snippet}
+
+<!-- One subcategory: the same rows with a filter as without, those of the hit if there is one. -->
+{#snippet subcategory(sub: Subcategory, hit?: Hit)}
+  <section id="sub-{sub.id}" data-testid="settings-section-{sub.id}">
+    {@render heading(sub)}
+    {#if sub.content.kind === 'fields'}
+      {@const view = sub.content.view}
+      {@const rows = sub.content.fields.filter((field) => !hit || hit.rows.has(field.id))}
+      {@const viewShown = !hit || hit.whole}
+      {#snippet shown()}
+        {#if view?.kind === 'devices'}
+          <Devices
+            {skin}
+            kind={view.devices}
+            preferred={read.decaid
+              ? (read.decaid[view.devices === 'machine' ? 'preferredMachineId' : 'preferredScaleId'] ?? null)
+              : undefined}
+            onpreferred={prefer}
+          />
+        {:else if view?.kind === 'maintenance'}
+          <Maintenance {skin} procedure={view.procedure} titled={false} />
+        {:else if view?.kind === 'machine-info' || view?.kind === 'charging'}
+          <MachineInfo {skin} part={view.kind} decaid={read.decaid} />
+        {:else if view?.kind === 'plugins'}
+          <Plugins {skin} />
+        {:else if view?.kind === 'presence'}
+          <Presence
+            {skin}
+            schedules={read.presence ? (read.presence.schedules ?? []) : null}
+            onchanged={() => readAgain('presence')}
+          />
+        {:else if view?.kind === 'firmware' || view?.kind === 'app-update'}
+          <Firmware {skin} part={view.kind === 'firmware' ? 'firmware' : 'app'} />
+        {:else if view?.kind === 'sensors'}
+          <SensorCalibration {skin} />
+        {:else if view?.kind === 'bengle'}
+          <Bengle {skin} part={view.part} />
+        {:else if view?.kind === 'help'}
+          <Help {skin} part={view.part} />
+        {:else if view?.kind === 'tank-unit'}
+          <TankUnit {skin} />
+        {/if}
+      {/snippet}
+      {#each unreadOf(rows) as error (error)}
+        <p class="warn" data-testid="settings-unread">
+          Not read: {error}
+          <button class="action" onclick={readValues} disabled={reading}>read again</button>
+        </p>
+      {/each}
+      {#if !sub.content.below && viewShown}{@render shown()}{/if}
+      {#each rows as field (field.id)}
+        <FieldRow
+          {field}
+          raw={rawValue(values, field)}
+          all={sourceObject(values, field.source)}
+          read={isRead(field)}
+          busy={!!busy[field.id]}
+          error={failed[field.id] ?? null}
+          onwrite={(value) => write(field, value)}
+        />
+      {/each}
+      {#if sub.content.below && viewShown}{@render shown()}{/if}
+      {#each (sub.content.actions ?? []).filter((action) => offered(action) && (!hit || hit.rows.has(action))) as action (action)}
+        <SettingsRow label={ACTIONS[action].label} hint={ACTIONS[action].hint}>
+          {#snippet about()}
+            {#if done[sub.id]}<small data-testid="settings-done-{action}">{done[sub.id]}</small>{/if}
+          {/snippet}
+          <button class="action" data-testid="settings-action-{action}" disabled={!!busy[action]} onclick={() => act(sub, action)}
+            >{ACTIONS[action].label}</button
+          >
+        </SettingsRow>
+      {/each}
+    {/if}
+  </section>
+{/snippet}
 
 {#if confirming}
   <Confirm title={confirming.title} text={confirming.text} onok={confirming.run} oncancel={() => (confirming = null)} />
@@ -353,7 +398,15 @@
     opacity: 0.7;
   }
 
+  .side {
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
   .tree {
+    flex: 1;
     min-height: 0;
     overflow-y: auto;
     display: flex;
@@ -410,6 +463,22 @@
     margin: var(--space-2) 0 0.1rem;
     font-size: var(--text-title);
     font-weight: 600;
+  }
+
+  /* The name over a filter's hit, to tap for its place. */
+  .where {
+    min-height: var(--control);
+    padding: 0;
+    text-align: left;
+    font-size: var(--text-title);
+    font-weight: 600;
+    background: none;
+    border: 0;
+  }
+
+  .none {
+    margin: 0;
+    color: var(--dim);
   }
 
   .warn {

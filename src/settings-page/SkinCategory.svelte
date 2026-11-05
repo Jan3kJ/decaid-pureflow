@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, type Snippet } from 'svelte';
   import type { ProfileRecord } from '../api';
   import NumberPad from '../editor/NumberPad.svelte';
   import { startChoices, startName } from '../editor/start';
@@ -18,10 +18,24 @@
   } from '../settings';
   import Dialog from '../ui/Dialog.svelte';
   import Lever from '../ui/Lever.svelte';
-  import { PRODUCT_NAME, PRODUCT_VERSION } from '../product';
   import { backupTime } from '../settings-backup';
   import type { Skin } from '../shell/skin.svelte';
-  import { SETTINGS_TREE } from './tree';
+  import type { Hit } from './settings-filter';
+  import {
+    BACKUP_ROW,
+    DEVELOPER_ROW,
+    DISPLAY,
+    EDITOR_DOSE_ROW,
+    GRAPH_SWITCHES,
+    OLD_AFLOW_ROW,
+    RATIOS_ROW,
+    START_ROW,
+    STEAM_ROWS,
+    SWITCHES,
+    VERSION_ROW,
+    type SkinSwitch,
+  } from './skin-rows';
+  import { SETTINGS_TREE, type Subcategory } from './tree';
   import { errorMessage } from '../error-message';
   import { importQuestion, importReport, planImport, runImport, type ImportPlan } from '../editor/import';
   import Confirm from './Confirm.svelte';
@@ -30,15 +44,22 @@
   import SettingsRow from './SettingsRow.svelte';
   import LocalInstall from './LocalInstall.svelte';
   import { saveDeveloper } from './local-install';
-  import { DISPLAY_SIZES, LINE_WIDTHS, signed, type DisplayChoice } from '../display';
+  import { signed } from '../display';
 
   interface Props {
     skin: Skin;
     /** developer options: Skin > Developer shows; kept on this tablet, not in the settings */
     developer: boolean;
+    /** a subcategory's name and hint, as the page draws them */
+    heading: Snippet<[Subcategory]>;
+    /** what the page's filter leaves of this category, by subcategory; all of it without a filter */
+    only?: Map<string, Hit>;
   }
 
-  let { skin, developer = $bindable() }: Props = $props();
+  let { skin, developer = $bindable(), heading, only }: Props = $props();
+
+  const shows = (sub: string) => !only || only.has(sub);
+  const showsRow = (sub: string, row: string) => !only || !!only.get(sub)?.rows.has(row);
 
   function toggleDeveloper() {
     developer = !developer;
@@ -49,66 +70,6 @@
   // the one settings object (src/settings.ts) and so in its KV backup. It keeps the test ids of the
   // settings page it came from.
   const SUB = Object.fromEntries(SETTINGS_TREE.find((category) => category.id === 'skin')!.subcategories.map((sub) => [sub.id, sub]));
-  type Switch = {
-    key: 'firstStepWorkaround' | 'showProfileSteps' | 'showGraphLegend' | 'showShotValues';
-    id: string;
-    title: string;
-    hint: string;
-  };
-  const SWITCHES: Switch[] = [
-    {
-      key: 'firstStepWorkaround',
-      id: 'first-step-workaround',
-      title: 'first-step workaround',
-      hint: 'a profile from the editor starts with a Pre Fill step of 1 s, for a machine that skips the first step.',
-    },
-    {
-      key: 'showProfileSteps',
-      id: 'show-profile-steps',
-      title: 'profile steps',
-      hint: 'the editor has a button that shows the generated steps under the graph. It opens closed.',
-    },
-  ];
-
-  const GRAPH_SWITCHES: Switch[] = [
-    {
-      key: 'showGraphLegend',
-      id: 'show-graph-legend',
-      title: 'legend',
-      hint: 'the shot graph names its curves under it, and what a dashed line is.',
-    },
-    {
-      key: 'showShotValues',
-      id: 'show-shot-values',
-      title: 'shot values',
-      hint: 'after a shot its overlay shows the values of preinfusion, extraction and the whole shot under the graph.',
-    },
-  ];
-
-  /** Skin > Display: Streamline's two sizes, each a factor of the settings object */
-  const DISPLAY: {
-    key: 'displaySize' | 'lineWidth';
-    id: string;
-    title: string;
-    hint: string;
-    choices: DisplayChoice[];
-  }[] = [
-    {
-      key: 'displaySize',
-      id: 'display-size',
-      title: 'display size',
-      hint: 'every text, button and graph of the skin, larger or smaller. Medium fits the screen as designed.',
-      choices: DISPLAY_SIZES,
-    },
-    {
-      key: 'lineWidth',
-      id: 'line-width',
-      title: 'chart line width',
-      hint: 'the curves of the shot graph, the profile previews and the A-Flow editor.',
-      choices: LINE_WIDTHS,
-    },
-  ];
-
   const settings: Settings = $derived(skin.settings);
   /** the value the number pad is open for */
   let typing: SteamField | null = $state.raw(null);
@@ -223,176 +184,189 @@
   }
 </script>
 
-<section id="sub-skin-steam" data-testid="settings-steam">
-  <h2>{SUB['skin-steam'].name}</h2>
-  <p class="hint">{SUB['skin-steam'].hint}</p>
-  {#each STEAM_FIELDS as group (group.title)}
-    <SettingsRow label={group.title} hint={group.hint} spacing="skin">
+{#if shows('skin-steam')}
+  <section id="sub-skin-steam" data-testid="settings-steam">
+    {@render heading(SUB['skin-steam'])}
+    {#each STEAM_FIELDS as group, index (group.title)}
+      {#if showsRow('skin-steam', STEAM_ROWS[index].id)}
+        <SettingsRow label={group.title} hint={group.hint} spacing="skin">
+          <div class="values">
+            {#each group.fields as field (field.id)}
+              <button class="tile" data-testid="setting-{field.id}" onclick={() => (typing = field)}>
+                <small>{field.label}</small>
+                <b>{shown(field)}<i>{field.unit}</i></b>
+              </button>
+            {/each}
+          </div>
+        </SettingsRow>
+      {/if}
+    {/each}
+  </section>
+{/if}
+
+<!-- The hot water page's ratio favourites. -->
+{#if shows('skin-hot-water')}
+  <section id="sub-skin-hot-water" data-testid="settings-hot-water">
+    {@render heading(SUB['skin-hot-water'])}
+    <SettingsRow label={RATIOS_ROW.label} hint={RATIOS_ROW.hint} spacing="skin">
       <div class="values">
-        {#each group.fields as field (field.id)}
-          <button class="tile" data-testid="setting-{field.id}" onclick={() => (typing = field)}>
-            <small>{field.label}</small>
-            <b>{shown(field)}<i>{field.unit}</i></b>
+        {#each settings.hotWater.ratios, index}
+          <button class="tile" data-testid="setting-ratio-{index + 1}" onclick={() => (typingRatio = index)}>
+            <small>{index + 1}</small>
+            <b><i class="lead">1:</i>{shownRatio(index)}</b>
           </button>
         {/each}
       </div>
     </SettingsRow>
-  {/each}
-</section>
+  </section>
+{/if}
 
-<!-- The hot water page's ratio favourites. -->
-<section id="sub-skin-hot-water" data-testid="settings-hot-water">
-  <h2>{SUB['skin-hot-water'].name}</h2>
-  <p class="hint">{SUB['skin-hot-water'].hint}</p>
-  <SettingsRow label="ratios" hint="last shot × ratio is the stop at weight" spacing="skin">
-    <div class="values">
-      {#each settings.hotWater.ratios, index}
-        <button class="tile" data-testid="setting-ratio-{index + 1}" onclick={() => (typingRatio = index)}>
-          <small>{index + 1}</small>
-          <b><i class="lead">1:</i>{shownRatio(index)}</b>
-        </button>
-      {/each}
-    </div>
-  </SettingsRow>
-</section>
+{#if shows('skin-profile')}
+  <section id="sub-skin-profile" data-testid="settings-profile">
+    {@render heading(SUB['skin-profile'])}
+    {#if showsRow('skin-profile', EDITOR_DOSE_ROW.id)}
+      <SettingsRow label={EDITOR_DOSE_ROW.label} hint={EDITOR_DOSE_ROW.hint} spacing="skin">
+        <div class="values">
+          {#each PROFILE_FIELDS as field (field.id)}
+            <button class="tile" data-testid="setting-{field.id}" onclick={() => (typingProfile = field)}>
+              <small>{field.label}</small>
+              <b>{shownProfile(field)}<i>{field.unit}</i></b>
+            </button>
+          {/each}
+        </div>
+      </SettingsRow>
+    {/if}
+    {#each SWITCHES as item (item.key)}
+      {#if showsRow('skin-profile', item.id)}{@render lever(item)}{/if}
+    {/each}
 
-<section id="sub-skin-profile" data-testid="settings-profile">
-  <h2>{SUB['skin-profile'].name}</h2>
-  <!-- The editor's maximum flow and the dose of a shot that has none -->
-  <SettingsRow
-    label="editor and dose"
-    hint="the highest flow the A-Flow editor offers; the dose of a shot that has none"
-    spacing="skin"
-  >
-    <div class="values">
-      {#each PROFILE_FIELDS as field (field.id)}
-        <button class="tile" data-testid="setting-{field.id}" onclick={() => (typingProfile = field)}>
-          <small>{field.label}</small>
-          <b>{shownProfile(field)}<i>{field.unit}</i></b>
-        </button>
-      {/each}
-    </div>
-  </SettingsRow>
-  {#each SWITCHES as item (item.key)}
-    {@render lever(item)}
-  {/each}
+    {#if showsRow('skin-profile', OLD_AFLOW_ROW.id)}
+      <SettingsRow label={OLD_AFLOW_ROW.label} hint={OLD_AFLOW_ROW.hint} spacing="skin">
+        {#snippet about()}
+          {#if imported}<small data-testid="aflow-import-result">{imported}</small>{/if}
+        {/snippet}
+        <button class="retry" data-testid="aflow-import" disabled={importBusy} onclick={findOld}>convert to 3.0</button>
+      </SettingsRow>
+    {/if}
 
-  <SettingsRow
-    label="old A-Flow profiles"
-    hint="converts every older A-Flow profile to A-Flow 3.0, as the editor's save does; Decaid's bundled ones are skipped."
-    spacing="skin"
-  >
-    {#snippet about()}
-      {#if imported}<small data-testid="aflow-import-result">{imported}</small>{/if}
-    {/snippet}
-    <button class="retry" data-testid="aflow-import" disabled={importBusy} onclick={findOld}>convert to 3.0</button>
-  </SettingsRow>
-
-  <div class="start" data-testid="settings-start">
-    <SettingsRow
-      label="start row"
-      hint="the editor's profiles to start from, up to five. A tap on a slot chooses its profile."
-      spacing="skin"
-    >
-      {#if unread}
-        <button class="retry" data-testid="start-retry" onclick={readProfiles}>{unread} try again</button>
-      {/if}
-    </SettingsRow>
-    <div class="slots">
-      {#each settings.startProfiles as title, index (index)}
-        <button
-          class="tile slot"
-          class:missing={title !== null && isMissing(title)}
-          data-testid="start-slot-{index + 1}"
-          onclick={() => (choosing = index)}
-        >
-          <small>{index + 1}</small>
-          {#if title === null}
-            <span class="none">empty</span>
-          {:else}
-            <b class="truncate">{startName(title)}</b>
-            {#if isMissing(title)}<small class="warn" data-testid="start-missing">missing</small>{/if}
+    {#if showsRow('skin-profile', START_ROW.id)}
+      <div class="start" data-testid="settings-start">
+        <SettingsRow label={START_ROW.label} hint={START_ROW.hint} spacing="skin">
+          {#if unread}
+            <button class="retry" data-testid="start-retry" onclick={readProfiles}>{unread} try again</button>
           {/if}
-        </button>
-      {/each}
-    </div>
-  </div>
-</section>
-
-<section id="sub-skin-graph" data-testid="settings-graph">
-  <h2>{SUB['skin-graph'].name}</h2>
-  {#each GRAPH_SWITCHES as item (item.key)}
-    {@render lever(item)}
-  {/each}
-</section>
-
-<section id="sub-skin-display" data-testid="settings-display">
-  <h2>{SUB['skin-display'].name}</h2>
-  <p class="hint">{SUB['skin-display'].hint}</p>
-  {#each DISPLAY as item (item.key)}
-    <SettingsRow label={item.title} hint={item.hint} spacing="skin">
-      <div class="chips" data-testid="setting-{item.id}">
-        {#each item.choices as choice (choice.value)}
-          <button
-            class="chip select-outline"
-            aria-pressed={settings[item.key] === choice.value}
-            data-testid="setting-{item.id}-{choice.value}"
-            onclick={() => skin.setSettings({ [item.key]: choice.value })}>{choice.label}</button
-          >
-        {/each}
+        </SettingsRow>
+        <div class="slots">
+          {#each settings.startProfiles as title, index (index)}
+            <button
+              class="tile slot"
+              class:missing={title !== null && isMissing(title)}
+              data-testid="start-slot-{index + 1}"
+              onclick={() => (choosing = index)}
+            >
+              <small>{index + 1}</small>
+              {#if title === null}
+                <span class="none">empty</span>
+              {:else}
+                <b class="truncate">{startName(title)}</b>
+                {#if isMissing(title)}<small class="warn" data-testid="start-missing">missing</small>{/if}
+              {/if}
+            </button>
+          {/each}
+        </div>
       </div>
-    </SettingsRow>
-  {/each}
-</section>
+    {/if}
+  </section>
+{/if}
 
-<section id="sub-skin-active" data-testid="settings-skins">
-  <h2>{SUB['skin-active'].name}</h2>
-  <p class="hint">{SUB['skin-active'].hint}</p>
-  <Skins {skin} />
-</section>
+{#if shows('skin-graph')}
+  <section id="sub-skin-graph" data-testid="settings-graph">
+    {@render heading(SUB['skin-graph'])}
+    {#each GRAPH_SWITCHES as item (item.key)}
+      {#if showsRow('skin-graph', item.id)}{@render lever(item)}{/if}
+    {/each}
+  </section>
+{/if}
 
-<section id="sub-skin-version" data-testid="settings-versions">
-  <h2>{SUB['skin-version'].name}</h2>
-  <p class="hint">{SUB['skin-version'].hint}</p>
-  <Versions {skin} />
-</section>
+{#if shows('skin-display')}
+  <section id="sub-skin-display" data-testid="settings-display">
+    {@render heading(SUB['skin-display'])}
+    {#each DISPLAY as item (item.key)}
+      {#if showsRow('skin-display', item.id)}
+        <SettingsRow label={item.label} hint={item.hint} spacing="skin">
+          <div class="chips" data-testid="setting-{item.id}">
+            {#each item.choices as choice (choice.value)}
+              <button
+                class="chip select-outline"
+                aria-pressed={settings[item.key] === choice.value}
+                data-testid="setting-{item.id}-{choice.value}"
+                onclick={() => skin.setSettings({ [item.key]: choice.value })}>{choice.label}</button
+              >
+            {/each}
+          </div>
+        </SettingsRow>
+      {/if}
+    {/each}
+  </section>
+{/if}
+
+{#if shows('skin-active')}
+  <section id="sub-skin-active" data-testid="settings-skins">
+    {@render heading(SUB['skin-active'])}
+    <Skins {skin} />
+  </section>
+{/if}
+
+{#if shows('skin-version')}
+  <section id="sub-skin-version" data-testid="settings-versions">
+    {@render heading(SUB['skin-version'])}
+    <Versions {skin} />
+  </section>
+{/if}
 
 <!-- The backup in Decaid's KV store, and the skin's name and version. -->
-<section id="sub-skin-backup" data-testid="settings-backup">
-  <h2>{SUB['skin-backup'].name}</h2>
-  <SettingsRow label="backup" spacing="skin">
-    {#snippet about()}
-      <small data-testid="backup-time">
-        {skin.backupAt ? `in Decaid, ${backupTime(skin.backupAt)}` : 'none yet'}; every change is copied to Decaid
-      </small>
-      {#if skin.backupError}<small class="warn" data-testid="backup-error">{skin.backupError}</small>{/if}
-      {#if restored}<small data-testid="backup-restored">{restored}</small>{/if}
-    {/snippet}
-    <button class="retry" data-testid="backup-restore" onclick={() => ((restored = null), (confirming = true))}
-      >restore from backup</button
-    >
-  </SettingsRow>
-  <SettingsRow label={PRODUCT_NAME} hint="version {PRODUCT_VERSION}" spacing="skin" />
-  <Lever checked={developer} testid="setting-developer" onchange={toggleDeveloper}>
-    <span class="about">
-      <strong>developer options</strong>
-      <small>shows Skin > Developer, to install a build from a server on your PC. Only on this tablet.</small>
-    </span>
-  </Lever>
-</section>
+{#if shows('skin-backup')}
+  <section id="sub-skin-backup" data-testid="settings-backup">
+    {@render heading(SUB['skin-backup'])}
+    {#if showsRow('skin-backup', BACKUP_ROW.id)}
+      <SettingsRow label={BACKUP_ROW.label} spacing="skin">
+        {#snippet about()}
+          <small data-testid="backup-time">
+            {skin.backupAt ? `in Decaid, ${backupTime(skin.backupAt)}` : 'none yet'}; every change is copied to Decaid
+          </small>
+          {#if skin.backupError}<small class="warn" data-testid="backup-error">{skin.backupError}</small>{/if}
+          {#if restored}<small data-testid="backup-restored">{restored}</small>{/if}
+        {/snippet}
+        <button class="retry" data-testid="backup-restore" onclick={() => ((restored = null), (confirming = true))}
+          >restore from backup</button
+        >
+      </SettingsRow>
+    {/if}
+    {#if showsRow('skin-backup', VERSION_ROW.id)}
+      <SettingsRow label={VERSION_ROW.label} hint={VERSION_ROW.hint} spacing="skin" />
+    {/if}
+    {#if showsRow('skin-backup', DEVELOPER_ROW.id)}
+      <Lever checked={developer} testid="setting-developer" onchange={toggleDeveloper}>
+        <span class="about">
+          <strong>{DEVELOPER_ROW.label}</strong>
+          <small>{DEVELOPER_ROW.hint}</small>
+        </span>
+      </Lever>
+    {/if}
+  </section>
+{/if}
 
-{#if developer}
+{#if developer && shows('skin-developer')}
   <section id="sub-skin-developer" data-testid="settings-developer">
-    <h2>{SUB['skin-developer'].name}</h2>
-    <p class="hint">{SUB['skin-developer'].hint}</p>
+    {@render heading(SUB['skin-developer'])}
     <LocalInstall {skin} />
   </section>
 {/if}
 
-{#snippet lever(item: Switch)}
+{#snippet lever(item: SkinSwitch)}
   <Lever checked={settings[item.key]} testid="setting-{item.id}" onchange={(on: boolean) => skin.setSettings({ [item.key]: on })}>
     <span class="about">
-      <strong>{item.title}</strong>
+      <strong>{item.label}</strong>
       <small>{item.hint}</small>
     </span>
   </Lever>
@@ -638,9 +612,5 @@
     flex: none;
     display: flex;
     gap: var(--space-1);
-  }
-
-  .hint {
-    margin-bottom: var(--space-1);
   }
 </style>

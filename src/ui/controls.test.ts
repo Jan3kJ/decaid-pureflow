@@ -51,6 +51,7 @@ const RESET = look(':where(button)');
 const CLASSES = {
   action: look('.action'),
   'big-number': look('.big-number'),
+  'filter-field': look('.filter-field'),
   chip: look('.chip'),
   'form-button': look('.form-button'),
   hint: look('.hint'),

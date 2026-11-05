@@ -164,6 +164,25 @@ body {
   border-radius: var(--radius-pill);
 }
 
+/* The search field over a list: the profile picker's, the settings'. */
+.filter-field {
+  flex: none;
+  width: 100%;
+  min-height: var(--control);
+  padding: 0 1rem;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: var(--text-body);
+  color: var(--fg);
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.filter-field::placeholder {
+  color: var(--dim);
+}
+
 /* The small grey line that explains a setting or a field. */
 .hint {
   margin: 0;

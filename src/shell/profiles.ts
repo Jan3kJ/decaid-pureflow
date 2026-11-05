@@ -5,6 +5,7 @@ import { describeAFlow } from '../aflow/describe';
 import type { DecaidClient, Profile, ProfileRecord, Workflow, WorkflowContextPatch } from '../api';
 import { POUR_SHOWN_SECONDS } from '../editor/curve';
 import { notesText, openParams, paramsMetadata, readParams, sameSteps, workflowProfile } from '../editor/storage';
+import { matchesFilter } from '../filter-words';
 import { FORMER_NAME } from '../former-name';
 import type { Screen } from './nav';
 
@@ -100,10 +101,9 @@ export function sortProfiles(records: readonly ProfileRecord[]): ProfileRecord[]
   return [...records].sort((a, b) => rank(a) - rank(b) || a.profile.title.localeCompare(b.profile.title));
 }
 
-/** The profiles whose title holds the filter, in any case; an empty filter keeps them all. */
+/** The profiles whose title holds every word of the filter; an empty filter keeps them all. */
 export function filterProfiles<T extends { profile: Pick<Profile, 'title'> }>(records: readonly T[], filter: string): T[] {
-  const needle = filter.trim().toLocaleLowerCase();
-  return records.filter((record) => record.profile.title.toLocaleLowerCase().includes(needle));
+  return records.filter((record) => matchesFilter(record.profile.title, filter));
 }
 
 /** The old plugin's stock sentence, whatever its spaces and a full stop: it says nothing of the profile. */

@@ -290,6 +290,11 @@ describe('filterProfiles', () => {
     expect(titles('ht ro')).toEqual(['Light roast']);
   });
 
+  it('needs every word of the filter, in any order', () => {
+    expect(titles('roast light')).toEqual(['Light roast']);
+    expect(titles('light dark')).toEqual([]);
+  });
+
   it('keeps all for an empty filter or spaces, and none for a title nobody has', () => {
     expect(titles('')).toHaveLength(4);
     expect(titles('  ')).toHaveLength(4);

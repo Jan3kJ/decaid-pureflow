@@ -129,6 +129,9 @@ volume or the time. The ratio buttons set the weight from the last shot, for exa
 The skin's own settings are under **Settings > 6. Skin**. The other categories are Decaid's
 and the machine's.
 
+The filter above the categories finds a setting in all of them: type a word or two, change the
+setting right there, or tap the name over it to go to its place.
+
 ![Settings, the Skin category](img/settings-skin.png)
 
 - **Steam**: the weight of each empty mug, the calibration (this many seconds steam this much
