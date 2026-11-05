@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test as base, type Page } from '@playwright/test';
 import { GATEWAY, mockGateway } from './mock-gateway';
 
 // The bag's reading in the ocr build, in Chromium: a photo of a printed bag is read on the page
@@ -9,6 +9,12 @@ import { GATEWAY, mockGateway } from './mock-gateway';
 
 const BAG = readFileSync(new URL('./fixtures/bag.png', import.meta.url));
 const BAG_URL = `data:image/png;base64,${BAG.toString('base64')}`;
+// A bag photographed as the skin stores a photo, its name printed bottom to top.
+const CANDYMAN = readFileSync(new URL('./fixtures/candyman.jpg', import.meta.url));
+const CANDYMAN_URL = `data:image/jpeg;base64,${CANDYMAN.toString('base64')}`;
+
+/** The picture the fake camera shows. */
+const test = base.extend<{ cameraPhoto: string }>({ cameraPhoto: [BAG_URL, { option: true }] });
 
 test.use({
   permissions: ['camera'],
@@ -17,7 +23,7 @@ test.use({
 
 let foreign: string[];
 
-test.beforeEach(async ({ page, baseURL }) => {
+test.beforeEach(async ({ page, baseURL, cameraPhoto }) => {
   foreign = [];
   const allowed = [new URL(baseURL!).host, new URL(GATEWAY).host];
   const check = (url: string) => {
@@ -37,7 +43,7 @@ test.beforeEach(async ({ page, baseURL }) => {
       canvas.getContext('2d')!.drawImage(image, 0, 0);
       return canvas.captureStream(10);
     };
-  }, BAG_URL);
+  }, cameraPhoto);
   await mockGateway(page);
   await page.goto('/');
   await expect(page.getByTestId('status-title')).toHaveText('Idle');
@@ -68,6 +74,8 @@ test('a photo is read into chips; a tap puts a chip in the chosen field', async 
   // The guessed name first, the guessed roaster second; the fields stay empty until a tap.
   await expect(chips.nth(0)).toHaveText('Red Brick');
   await expect(chips.nth(1)).toHaveText(/^Square Mile Coffee Roasters$/i);
+  await expect(chips).toHaveCount(3);
+  await expect(chips.nth(2)).toHaveText('Espresso blend ·350g');
   await expect(page.getByTestId('bean-name')).toHaveValue('');
   await expect(page.getByTestId('bean-roaster')).toHaveValue('');
 
@@ -109,4 +117,28 @@ test('cancel ends the reading: no chips come, the photo stays', async ({ page })
   await page.waitForTimeout(5_000);
   await expect(page.getByTestId('bean-reading')).toHaveCount(0);
   await expect(page.getByTestId('bean-name')).toHaveValue('');
+});
+
+test.describe('a bag with a turned name', () => {
+  test.use({ cameraPhoto: CANDYMAN_URL });
+
+  test('the name printed bottom to top is read and guessed, the upright roaster beside it', async ({ page }) => {
+    await takePhoto(page);
+    const chips = page.getByTestId('bean-chip');
+    await expect(chips.first()).toBeVisible();
+    // The reading's exact text: 'CANDYMAN' and 'ETHIOPIEN - NATURAL' on the bag; 'Mal' is a jar behind it.
+    await expect(chips).toHaveText(['Cdyman', 'Backyard Coffee', 'Mal', 'Giopien-Natural']);
+    await expect(page.getByTestId('bean-name')).toHaveValue('');
+    await chips.nth(0).click();
+    await expect(page.getByTestId('bean-name')).toHaveValue('Cdyman');
+    await chips.nth(1).click();
+    await expect(page.getByTestId('bean-roaster')).toHaveValue('Backyard Coffee');
+
+    // With the reader made, a reading is the three passes alone; the time is logged for the record.
+    await page.getByTestId('bean-photo-remove').click();
+    const started = Date.now();
+    await takePhoto(page);
+    await expect(chips).toHaveText(['Cdyman', 'Backyard Coffee', 'Mal', 'Giopien-Natural']);
+    console.log(`a second reading of the turned bag, photo taken to chips: ${Date.now() - started} ms`);
+  });
 });

@@ -1,14 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { bagFields, titleCase } from './fields';
-import type { BagLine } from './reading';
+import type { BagLine, Turn } from './reading';
 
 // The lines PP-OCRv6 tiny reads on four bags' photos (each scaled to the stored 1024 x 768 px), as
 // src/beans/read.ts gives them in Chromium: text, score (two places) and box (whole pixels), in the
 // detector's order. The last bag was photographed turned on its side and is read as taken.
-const line = (text: string, score: number, x: number, y: number, width: number, height: number): BagLine => ({
+const line = (text: string, score: number, x: number, y: number, width: number, height: number, turn: Turn = 0): BagLine => ({
   text,
   score,
   box: { x, y, width, height },
+  turn,
 });
 
 const ELISABETH = [
@@ -33,12 +34,20 @@ const FEEL_THE_SUN = [
   line('COrFEE ROASTEAS', 0.81, 371, 296, 60, 23),
 ];
 const HONEY_DREAM = [
-  line('Honey Dream', 1, 548, 157, 41, 164),
-  line('COFFEE ROASTERS', 0.97, 620, 154, 24, 135),
-  line('aniko', 1, 640, 148, 52, 143),
-  line('pfirsich', 0.99, 339, 166, 32, 63),
-  line('honigmelone', 1, 360, 165, 30, 97),
-  line('mandel', 1, 381, 166, 26, 59),
+  line('Honey Dream', 1, 548, 157, 41, 164, 270),
+  line('COFFEE ROASTERS', 0.97, 620, 154, 24, 135, 270),
+  line('aniko', 1, 640, 148, 52, 143, 270),
+  line('pfirsich', 0.99, 339, 166, 32, 63, 270),
+  line('honigmelone', 1, 360, 165, 30, 97, 270),
+  line('mandel', 1, 381, 166, 26, 59, 270),
+];
+// The bag with its name printed bottom to top, as the three passes of src/beans/read.ts give it:
+// 'CANDYMAN' reads 'CDYMAN' and 'ETHIOPIEN - NATURAL' reads 'GIOPIEN-NATURAL'; 'mal' is a jar behind the bag.
+const CANDYMAN = [
+  line('backyard coffee', 1, 295, 192, 205, 28),
+  line('CDYMAN', 0.91, 519, 594, 156, 376, 90),
+  line('mal', 0.99, 723, 805, 45, 28),
+  line('GIOPIEN-NATURAL', 0.94, 529, 829, 22, 111, 90),
 ];
 
 describe('bagFields on the four bags', () => {
@@ -62,6 +71,24 @@ describe('bagFields on the four bags', () => {
     const fields = bagFields(lines, ['aniko', 'maldaner']);
     expect(fields).toMatchObject({ name, roaster });
     expect(fields.chips.slice(0, 2)).toEqual([name, roaster]);
+  });
+
+  it('guesses the name from a turned line and the roaster from the upright line beside it', () => {
+    expect(bagFields(CANDYMAN)).toEqual({
+      name: 'Cdyman',
+      roaster: 'Backyard Coffee',
+      chips: ['Cdyman', 'Backyard Coffee', 'Mal', 'Giopien-Natural'],
+    });
+  });
+
+  it('a line printed bottom to top has the next line on its right', () => {
+    // The letters' top points left: the line on the left is above the name, the one on the right below.
+    const lines = [
+      line('Above', 1, 0, 0, 40, 200, 90),
+      line('Sitio Canaa', 1, 50, 0, 60, 300, 90),
+      line('Below', 1, 120, 0, 40, 200, 90),
+    ];
+    expect(bagFields(lines)).toMatchObject({ name: 'Sitio Canaa', roaster: 'Above' });
   });
 
   it('offers no tasting line, country or Coffee Roasters line as a chip', () => {

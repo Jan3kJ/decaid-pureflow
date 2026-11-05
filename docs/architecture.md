@@ -173,12 +173,17 @@ build) with the PP-OCRv6 tiny detector and recogniser from the skin's `ocr/` fol
 Runtime's WASM build (the ocr build aliases `onnxruntime-web` to `onnxruntime-web/wasm`, one
 thread, no proxy: the skin's page is not cross-origin isolated) and OpenCV.js. The SDK's own
 worker is left out of the build (`noOcrWorker` in `vite.config.ts`). The stored photo is drawn
-on a canvas and read upright; when nothing is read it is turned by 270 degrees and read again.
-Nothing is fetched from another host. `src/beans/fields.ts` (pure) orders the lines as chips:
+on a canvas and read three times: upright and turned by 90 and 270 degrees clockwise, since the
+reader expects upright lines and turns a tall one by 270 degrees itself, which suits only text
+running top to bottom. `src/beans/turns.ts` (pure) maps each line's box back to the photo's pixels,
+gives it its turn (how its letters stand on the photo) and keeps one line per place, the one read
+best, a whole line over a piece of it. Nothing is fetched from another host.
+`src/beans/fields.ts` (pure) orders the lines as chips:
 the guessed name first (the tallest line by its letters' height, leaving out a small line right
 under a taller one, tasting lines and countries), the guessed roaster second (a roaster of the
-catalogue, else the line next to a 'Coffee Roasters' line, else the line right above the name,
-else right below), title case for lines in capitals or small letters. The bean form shows
+catalogue, else the line next to a 'Coffee Roasters' line, else beside a turned name the first
+upright line, else the line right above the name, else right below), title case for lines in
+capitals or small letters. The bean form shows
 'Reading the bag' with **cancel**, then the chips under the photo with the choice **name** or
 **roaster**; a tap puts the chip in the chosen field and moves the choice to the other one.
 Nothing is filled in by itself. `NOTICE`'s copy in the ocr ZIP names the models and the bundled

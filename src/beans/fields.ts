@@ -4,7 +4,7 @@
 import type { BagLine } from './reading';
 
 /** Lines read less surely than this are left out. */
-const MIN_SCORE = 0.5;
+export const MIN_SCORE = 0.5;
 /** A line right after a taller one and smaller than this share of its height is that line's descriptor. */
 const DESCRIPTOR_SHARE = 0.75;
 /** A roaster's word: 'Coffee Roasters' printed under or beside the roaster's own name. */
@@ -27,8 +27,6 @@ export interface BagFields {
 interface Line extends BagLine {
   /** the height of its letters: the box's short side, so that a turned line counts too */
   size: number;
-  /** a line turned on its side: its top points to the right of the photo */
-  turned: boolean;
 }
 
 /** Letters and digits only, in lower case: what two spellings are compared by. */
@@ -60,20 +58,25 @@ export function titleCase(text: string): string {
   return text.toLowerCase().replace(/(^|[\s\-/&'])(\p{L})/gu, (_, before: string, letter: string) => before + letter.toUpperCase());
 }
 
-/** Where a line starts and ends across its letters (y for an upright line, x from the right for a turned one), and along them. */
-function across(line: Line): [number, number] {
-  const { x, y, width, height } = line.box;
-  return line.turned ? [-(x + width), -x] : [y, y + height];
+/** Where a line starts and ends across its letters, from their top to their foot, on the photo stood as the line's turn says. */
+function across({ box: { x, y, width, height }, turn }: Line): [number, number] {
+  if (turn === 90) return [x, x + width];
+  if (turn === 180) return [-(y + height), -y];
+  if (turn === 270) return [-(x + width), -x];
+  return [y, y + height];
 }
 
-function along(line: Line): [number, number] {
-  const { x, y, width, height } = line.box;
-  return line.turned ? [y, y + height] : [x, x + width];
+/** Where a line starts and ends along its letters, from the first to the last. */
+function along({ box: { x, y, width, height }, turn }: Line): [number, number] {
+  if (turn === 90) return [-(y + height), -y];
+  if (turn === 180) return [-(x + width), -x];
+  if (turn === 270) return [y, y + height];
+  return [x, x + width];
 }
 
 /** The gap from `first` to `next` across the letters, when `next` follows it and they share some of their length. */
 function gap(first: Line, next: Line): number | null {
-  if (first === next || first.turned !== next.turned) return null;
+  if (first === next || first.turn !== next.turn) return null;
   const [a0, a1] = along(first);
   const [b0, b1] = along(next);
   if (a1 <= b0 || b1 <= a0) return null;
@@ -98,7 +101,8 @@ function neighbour(line: Line, lines: readonly Line[], after?: boolean): Line | 
 
 /**
  * The guessed name and roaster of a bag and its lines as chips. The roaster is a line that reads as
- * a roaster of the catalogue, else the line next to a 'Coffee Roasters' line, else the line right
+ * a roaster of the catalogue, else the line next to a 'Coffee Roasters' line; beside a turned name,
+ * where the small lines next to it say the origin, the first upright line; else the line right
  * above the name, else the one right below it. The name is the tallest other line, leaving out a
  * small line right under a taller one, tasting lines and countries. The chips leave out the
  * 'Coffee Roasters' lines, tasting lines and countries; every chip is in title case.
@@ -106,11 +110,7 @@ function neighbour(line: Line, lines: readonly Line[], after?: boolean): Line | 
 export function bagFields(read: readonly BagLine[], roasters: readonly string[] = [], countries: readonly string[] = []): BagFields {
   const lines: Line[] = read
     .filter((line) => line.score >= MIN_SCORE && (line.text.match(/\p{L}/gu) ?? []).length >= 2)
-    .map((line) => ({
-      ...line,
-      size: Math.min(line.box.width, line.box.height),
-      turned: line.box.height > line.box.width * 1.5 && line.text.length > 2,
-    }));
+    .map((line) => ({ ...line, size: Math.min(line.box.width, line.box.height) }));
   const places = [...COUNTRIES, ...countries];
   const roasterWords = new Set(lines.filter((line) => ROASTER_WORDS.some((word) => reads(line.text, word))));
   const offered = lines.filter(
@@ -129,6 +129,7 @@ export function bagFields(read: readonly BagLine[], roasters: readonly string[] 
   for (const words of roasterWords) roaster ??= neighbour(words, offered);
   const names = offered.filter((line) => line !== roaster && !descriptors.has(line));
   const name = names.reduce<Line | undefined>((top, line) => (!top || line.size > top.size ? line : top), undefined);
+  if (name && !roaster && name.turn !== 0) roaster = offered.find((line) => line.turn === 0);
   if (name && !roaster) {
     const others = offered.filter((line) => line !== name);
     roaster =
