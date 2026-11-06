@@ -14,8 +14,8 @@
    * steam heater and machine sleep are the shortcuts; machine sleep puts only the
    * machine to sleep and keeps the app awake, machine and app sleep shows the Asleep screen too;
    * while the machine sleeps, wake machine stands in their place. Beans and grinders
-   * opens the catalogue. Clean opens the settings page on Maintenance, whose
-   * first procedure is the clean.
+   * opens the catalogue. Clean opens the settings page on Maintenance, which
+   * starts with the two cleans.
    */
   interface Entry {
     id: string;

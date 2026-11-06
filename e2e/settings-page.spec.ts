@@ -79,7 +79,7 @@ test("each category opens in Streamline's order and the page fits 1280 x 800 wit
     bluetooth: ['ble_machine', 'ble_scale'],
     calibration: ['defaultloadsettings', 'refillkit', 'voltage', 'fan', 'sensors'],
     machine: ['usbchargermode', 'machineinfo'],
-    maintenance: ['machinecleaning', 'machinedescaling', 'transportmode'],
+    maintenance: ['detergentclean', 'machinecleaning', 'machinedescaling', 'transportmode'],
     extensions: ['extention2'],
     miscellaneous: ['reasettings', 'brightness', 'wakelock', 'presence'],
     updates: ['firmwareupdate', 'appupdate'],

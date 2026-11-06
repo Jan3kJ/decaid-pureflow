@@ -2,7 +2,8 @@
 // One object, made once by App.svelte; the screens read it and call its actions. It hands the
 // work to its parts: the streams (streams.svelte.ts), the settings and their backup
 // (settings-store.svelte.ts), steam (steam-control.svelte.ts), the history and its restore
-// (recall.svelte.ts), the warning before a load (load-warning.svelte.ts), the popup for a shot
+// (recall.svelte.ts), the warning before a load (load-warning.svelte.ts), the clean with detergent
+// (src/settings-page/detergent-clean.svelte.ts), the popup for a shot
 // stopped for want of a scale (no-scale.svelte.ts), why the shot stopped (stop-reason.ts), the
 // warnings of a lost scale and an abnormal end (shot-warnings.svelte.ts), the screen's brightness
 // in sleep (dimmer.ts), who asked for a sleep (sleep.ts) and the bean and grinder catalogue
@@ -44,6 +45,7 @@ import { markStop, stopLine, type StopMark } from './stop-reason';
 import { Streams } from './streams.svelte';
 import { recordWaterFrame, type WaterRun } from './water';
 import { writeHotWater, type HotWaterField } from '../hotwater/hot-water';
+import { DetergentClean } from '../settings-page/detergent-clean.svelte';
 import { errorMessage } from '../error-message';
 
 export class Skin {
@@ -53,6 +55,8 @@ export class Skin {
   readonly shots: ShotCache;
   /** Decaid's beans and grinders, and the pick for the next shot */
   readonly catalogue: Catalogue;
+  /** the settings page's clean with detergent, which goes on when the page is left */
+  readonly detergent: DetergentClean;
 
   screen: Screen = $state(loadScreen());
   workflow: Workflow | null = $state.raw(null);
@@ -130,6 +134,7 @@ export class Skin {
     this.client = new DecaidClient({ baseUrl });
     this.shots = new ShotCache(this.client);
     this.catalogue = new Catalogue(this);
+    this.detergent = new DetergentClean(this);
     this.store = new SettingsStore(this.client);
     this.steamer = new SteamControl(this);
     this.recall = new Recall(this);
@@ -362,7 +367,8 @@ export class Skin {
   private onMachineFrame(frame: MachineSnapshot): void {
     const before = this.streams.machineFrame(frame);
     const state = frame.state.state;
-    const next = followMachine(this.screen, before, state);
+    this.detergent.frame(frame);
+    const next = this.detergent.holdsScreen(this.screen) ? this.screen : followMachine(this.screen, before, state);
     // A shot starts: home shows it, over the history too.
     if (state === 'espresso' && before !== 'espresso') this.historyOpen = false;
     const running = this.shot !== null && !this.shot.ended;

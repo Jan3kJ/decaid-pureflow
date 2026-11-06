@@ -20,6 +20,7 @@
   import Firmware from './Firmware.svelte';
   import Help from './Help.svelte';
   import MachineInfo from './MachineInfo.svelte';
+  import DetergentClean from './DetergentClean.svelte';
   import Maintenance from './Maintenance.svelte';
   import Plugins from './Plugins.svelte';
   import Presence from './Presence.svelte';
@@ -295,6 +296,8 @@
           />
         {:else if view?.kind === 'maintenance'}
           <Maintenance {skin} procedure={view.procedure} titled={false} />
+        {:else if view?.kind === 'detergent-clean'}
+          <DetergentClean {skin} />
         {:else if view?.kind === 'machine-info' || view?.kind === 'charging'}
           <MachineInfo {skin} part={view.kind} decaid={read.decaid} />
         {:else if view?.kind === 'plugins'}

@@ -143,10 +143,12 @@ export const joined = (state: MachineState | null, procedure: Procedure, now: nu
 
 export type Tone = 'info' | 'progress' | 'success' | 'error';
 
+export const LOST_CONTACT = 'Lost contact with the machine. Reconnecting…';
+
 /** The line under the steps; null while nothing runs. */
 export function caption(progress: Progress, procedure: Procedure): { text: string; tone: Tone } | null {
   if (progress.phase === 'idle') return null;
-  if (progress.stale && isActive(progress)) return { text: 'Lost contact with the machine. Reconnecting…', tone: 'error' };
+  if (progress.stale && isActive(progress)) return { text: LOST_CONTACT, tone: 'error' };
   switch (progress.phase) {
     case 'waiting':
       return { text: 'Starting', tone: 'info' };

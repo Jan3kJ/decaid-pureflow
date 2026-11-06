@@ -37,7 +37,7 @@ describe('the settings tree', () => {
     ]);
     expect(names('bluetooth')).toEqual(['1. Machine', '2. Scale']);
     expect(names('machine')).toEqual(['USB', 'Cup Warmer', 'Lighting', 'Machine Information']);
-    expect(names('maintenance')).toEqual(['Clean', 'Machine Descaling', 'Transport Mode']);
+    expect(names('maintenance')).toEqual(['Clean with detergent', 'Clean', 'Machine Descaling', 'Transport Mode']);
     expect(names('skin')).toEqual([
       'Steam',
       'Hot water',
@@ -85,6 +85,7 @@ describe('the settings tree', () => {
       ble_scale: { kind: 'devices', devices: 'scale' },
       usbchargermode: { kind: 'charging' },
       machineinfo: { kind: 'machine-info' },
+      detergentclean: { kind: 'detergent-clean' },
       machinecleaning: { kind: 'maintenance', procedure: 'clean' },
       machinedescaling: { kind: 'maintenance', procedure: 'descale' },
       transportmode: { kind: 'maintenance', procedure: 'transport' },

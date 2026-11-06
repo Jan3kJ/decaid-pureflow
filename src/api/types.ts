@@ -55,9 +55,9 @@ export interface WaterLevels {
 
 /**
  * The states the skin asks for. Sleep is `sleeping`; the settings page's maintenance
- * asks for `cleaning`, `descaling` and `airPurge`.
+ * asks for `cleaning`, `descaling` and `airPurge`, and the clean with detergent for `flush`.
  */
-export type RequestedMachineState = 'idle' | 'espresso' | 'steam' | 'sleeping' | 'cleaning' | 'descaling' | 'airPurge';
+export type RequestedMachineState = 'idle' | 'espresso' | 'steam' | 'sleeping' | 'cleaning' | 'descaling' | 'airPurge' | 'flush';
 
 /**
  * A frame of `/ws/v1/machine/snapshot` and the answer of `GET /api/v1/machine/state`.

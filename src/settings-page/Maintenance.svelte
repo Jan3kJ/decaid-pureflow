@@ -12,6 +12,7 @@
   import { onDestroy, onMount } from 'svelte';
   import type { Skin } from '../shell/skin.svelte';
   import Confirm from './Confirm.svelte';
+  import ProcedureSteps from './ProcedureSteps.svelte';
   import SettingsRow from './SettingsRow.svelte';
   import {
     IDLE,
@@ -186,17 +187,7 @@
   </SettingsRow>
 
   {#if line}
-    <div class="progress" role="status" aria-live="polite">
-      <ol class="steps">
-        {#each procedure.milestones as label, i (label)}
-          <li class:done={i < progress.milestone} class:now={i === progress.milestone}>
-            <span class="dot">{i < progress.milestone ? '✓' : i + 1}</span>
-            <small>{label}</small>
-          </li>
-        {/each}
-      </ol>
-      <p class="caption {line.tone}" data-testid="maintenance-caption-{procedure.id}">{line.text}</p>
-    </div>
+    <ProcedureSteps id={procedure.id} milestones={procedure.milestones} milestone={progress.milestone} {line} />
   {/if}
   {#if message}<p class="warn" data-testid="maintenance-message-{procedure.id}">{message}</p>{/if}
 </div>
@@ -220,64 +211,6 @@
     min-height: var(--control-big);
   }
 
-  .progress {
-    padding: var(--space-1) 0 var(--space-2);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-1);
-  }
-
-  .steps {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    display: flex;
-    gap: var(--space-3);
-  }
-
-  li {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-1);
-  }
-
-  .dot {
-    width: 2.4rem;
-    height: 2.4rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: var(--radius-round);
-    border: 1px solid var(--line);
-    color: var(--dim);
-    font-weight: 600;
-  }
-
-  .done .dot,
-  .now .dot {
-    background: var(--fg);
-    border-color: var(--fg);
-    color: var(--bg);
-  }
-
-  .now small {
-    color: var(--fg);
-  }
-
-  .caption {
-    margin: 0;
-    font-size: var(--text-body);
-    color: var(--dim);
-  }
-
-  .caption.success {
-    color: var(--fg);
-    font-weight: 600;
-  }
-
-  .caption.error,
   .warn,
   small.low {
     color: var(--temperature);

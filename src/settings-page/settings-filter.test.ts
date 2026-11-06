@@ -40,7 +40,8 @@ describe('the settings filter', () => {
     expect(subs('plugins')).toEqual(['extention2']);
     expect(filterSettings('plugins', SHOWN)[0].whole).toBe(true);
     expect(subs('visualizer')).toEqual([]);
-    expect(subs('maintenance clean')).toEqual(['machinecleaning']);
+    expect(subs('maintenance clean')).toEqual(['detergentclean', 'machinecleaning']);
+    expect(subs('detergent')).toEqual(['detergentclean']);
     expect(subs('active skin')).toEqual(['skin-active']);
   });
 

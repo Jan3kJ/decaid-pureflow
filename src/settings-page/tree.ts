@@ -49,7 +49,8 @@ export type SkinPart = 'steam' | 'hot-water' | 'profile' | 'graph' | 'display' |
 
 /**
  * A part of a subcategory that is not a list of fields: the device lists (`Devices.svelte`), a
- * maintenance procedure (`Maintenance.svelte`), the machine's information and the charging
+ * maintenance procedure (`Maintenance.svelte`), the clean with detergent
+ * (`DetergentClean.svelte`), the machine's information and the charging
  * status (`MachineInfo.svelte`); the plugin cards (`Plugins.svelte`), the wake schedules
  * (`Presence.svelte`), the firmware and Decaid's update (`Firmware.svelte`), the sensors'
  * calibration (`SensorCalibration.svelte`); the skin's own tank unit beside the machine's
@@ -58,6 +59,7 @@ export type SkinPart = 'steam' | 'hot-water' | 'profile' | 'graph' | 'display' |
 export type View =
   | { kind: 'devices'; devices: DeviceKind }
   | { kind: 'maintenance'; procedure: ProcedureId }
+  | { kind: 'detergent-clean' }
   | { kind: 'machine-info' }
   | { kind: 'charging' }
   | { kind: 'plugins' }
@@ -189,6 +191,7 @@ export const SETTINGS_TREE: Category[] = [
     number: 5,
     name: 'Maintenance',
     subcategories: [
+      { id: 'detergentclean', name: 'Clean with detergent', content: view({ kind: 'detergent-clean' }) },
       { id: 'machinecleaning', name: 'Clean', content: view({ kind: 'maintenance', procedure: 'clean' }) },
       { id: 'machinedescaling', name: 'Machine Descaling', content: view({ kind: 'maintenance', procedure: 'descale' }) },
       { id: 'transportmode', name: 'Transport Mode', content: view({ kind: 'maintenance', procedure: 'transport' }) },
