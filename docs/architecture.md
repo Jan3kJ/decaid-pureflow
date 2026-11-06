@@ -126,6 +126,21 @@ can read its steps; a title or a tag does not decide. Every other profile opens 
   `StepPreview` draws the targets; a tap on it opens the step under the finger (`stepAt` in
   `curve.ts`) and centres its card. The picker's and the script tab's previews take no tap.
 
+## Maintenance
+
+`src/settings-page/maintenance.ts` holds the machine's own procedures: clean, descale and transport
+mode. A request hands the cycle to the firmware, and `Maintenance.svelte` watches the state and
+substate. **Clean with detergent** is guided by the skin: `detergent.ts` (pure, frames in, state
+out), `detergent-clean.svelte.ts` (a part of `Skin`, its requests) and `DetergentClean.svelte` (the
+card; its steps are `ProcedureSteps.svelte`, as the other procedures'). The state lives in the skin, so the run goes on when the page is left, and a copy lies in
+`localStorage` under `pureflow.detergent-clean` with the earlier profile, target weight and dose, so a
+reload loses neither. While the card waits for the run the skin stays on the settings page instead
+of opening home. A run counts as ended when it has reached the profile's last step (each of its
+steps ends at its time), and anything earlier as stopped. The earlier profile goes back as the
+workflow held it, unless another profile was loaded meanwhile, and not within 5 s of a run's end:
+Decaid decides on a shot record after the run, by the workflow's profile at that moment, and keeps
+none for a cleaning profile.
+
 ## Settings and their backup
 
 The skin's own settings are one object under one `localStorage` key, `pureflow.settings`

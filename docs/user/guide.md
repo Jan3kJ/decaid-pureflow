@@ -124,6 +124,17 @@ It shows the time and has the **stop** button. The rest of the screen stays.
 Hot water is started at the machine. With a scale it stops at the weight; without one at the
 volume or the time. The ratio buttons set the weight from the last shot, for example 1:2; without a weighed last shot (none, or 0 g) they are grayed out and do nothing.
 
+## Cleaning with detergent
+
+Settings > Maintenance > **Clean with detergent** leads you through three steps. Put a blind
+basket with 3 g of detergent in the portafilter, lock it in and tap **start**, then **load**: the skin
+loads the profile Cleaning/Forward Flush x5, and you start it at the machine (a machine without
+this profile says 'the profile is not on this machine' and nothing is loaded). The card follows the run;
+stopped at the machine, it stays at this step. Next, take the portafilter out and **flush** for
+10 s. Last comes the machine's cleaning cycle, the same as **Clean**: **clean** starts it, **finish**
+leaves it out. At the end, or on **cancel**, your earlier profile comes back with its target weight
+and dose, unsaved changes included.
+
 ## The settings that matter
 
 The skin's own settings are under **Settings > 6. Skin**. The other categories are Decaid's

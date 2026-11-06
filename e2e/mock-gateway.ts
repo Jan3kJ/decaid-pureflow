@@ -616,6 +616,21 @@ export class MockGateway {
     return this;
   }
 
+  /** The profile of the clean with detergent is stored, as Decaid bundles it. */
+  withDetergentProfile(): this {
+    const bundled = JSON.parse(readFileSync('src/steps/fixtures/bundled-profiles.json', 'utf8')) as Profile[];
+    const body = bundled.find((candidate) => candidate.title === 'Cleaning/Forward Flush x5')!;
+    this.profiles.push(record('profile:detergent', body, { source: 'bundled' }));
+    return this;
+  }
+
+  /** The machine runs a profile, at its step `step`, as a run started at the machine. `waterEnded` ends it. */
+  runAtStep(step: number): void {
+    this.state = 'espresso';
+    this.held = { ...this.frame(), state: { state: 'espresso', substate: 'pouring' }, profileFrame: step };
+    this.sendMachine(this.held);
+  }
+
   /** The reads of the shot list. */
   historyListCalls() {
     return this.calls('GET', '/api/v1/shots');
