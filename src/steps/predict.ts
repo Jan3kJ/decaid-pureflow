@@ -8,7 +8,10 @@
 // value to a wet one as water goes through: R = r1 + (r0 - r1) e^(-V / v0), V counted once the
 // headspace above the puck is full (the export's fills run at the dry R until then). A flow step's
 // pressure is R x flow, a pressure step's flow is pressure / R, and the step's limiter caps
-// the quantity it does not drive. A step ends when its exit holds in the model (pressure or
+// the quantity it does not drive. While the driven quantity falls (its target below it), the other
+// never rises above its last sample: the pump has stopped pushing, so a resistance that still grows
+// as the puck wets does not raise the pressure; it follows R x flow (or pressure / R) only downwards,
+// with the lag of the driven quantity it is made from. A step ends when its exit holds in the model (pressure or
 // flow over or under, its weight, its volume) or at its seconds; the shot ends at the stop
 // weight, else with its last step. The weight is the water pushed less what the puck keeps.
 // The temperature starts off the first step's target and follows each step's target with a lag.
@@ -108,19 +111,21 @@ export function predictShot(profile: Pick<Profile, 'steps' | 'target_weight'>, p
       const resistance = Math.max(MIN_RESISTANCE, puck.r1 + (puck.r0 - puck.r1) * Math.exp(-wetting / puck.v0));
       if (drivesFlow) {
         let wanted = Math.min(target, MAX_FLOW);
+        const falling = wanted < flow;
         if (limit !== null && wanted * resistance > limit) wanted = limit / resistance;
         flow += (wanted - flow) * flowGain;
-        pressure = flow * resistance;
+        pressure = falling ? Math.min(pressure, flow * resistance) : flow * resistance;
         if (limit !== null && pressure > limit) {
           pressure = limit;
           flow = limit / resistance;
         }
       } else {
         let wanted = target;
+        const falling = wanted < pressure;
         const flowCap = Math.min(limit ?? MAX_FLOW, MAX_FLOW);
         if (wanted / resistance > flowCap) wanted = flowCap * resistance;
         pressure += (wanted - pressure) * pressureGain;
-        flow = pressure / resistance;
+        flow = falling ? Math.min(flow, pressure / resistance) : pressure / resistance;
         if (flow > flowCap) {
           flow = flowCap;
           pressure = flowCap * resistance;

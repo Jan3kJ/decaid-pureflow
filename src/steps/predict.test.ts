@@ -96,6 +96,49 @@ describe('predictShot', () => {
     expect(Math.abs(last - 88)).toBeLessThan(Math.abs(shot.temperature[100] - 88));
   });
 
+  it('never raises the pressure in the Soak of Baseline, Medium Contact, 6 Bar', () => {
+    const profile = profiles.find((entry) => entry.title === 'Baseline • Medium Contact • 6 Bar')!;
+    const shot = predictShot(profile);
+    const soak = shot.steps.find((span) => span.index === 1)!;
+    const first = Math.round(soak.start / PREDICT_STEP);
+    const pressures = shot.pressure.slice(first, Math.round(soak.end / PREDICT_STEP) + 1);
+    // the wetting puck's resistance still climbs under the falling flow, which drew a peak of 9.4 bar
+    expect(Math.max(...pressures)).toBeLessThanOrEqual(shot.pressure[first] + 1e-9);
+    // the flow is as it was: it falls towards 0 and the step ends under 2 bar
+    expect(shot.flow.slice(first + 1, first + pressures.length).every((flow, i) => flow < shot.flow[first + i])).toBe(true);
+    expect(soak.end).toBeCloseTo(8.3);
+  });
+
+  it('never raises the other quantity while the driven one falls', () => {
+    const fill = flowStep(8, 15, { exit: { type: 'pressure', condition: 'over', value: 3 } });
+    // a puck whose resistance falls as the water goes through, so pressure / R would rise
+    const eroding: Puck = { ...PUCK, r0: 4, r1: 1, headspace: 0 };
+    for (const [shot, other] of [
+      [predictShot({ steps: [fill, flowStep(1, 10)], target_weight: 0 }), 'pressure'],
+      [predictShot({ steps: [fill, flowStep(4, 10, { transition: 'smooth' })], target_weight: 0 }), 'pressure'],
+      [predictShot({ steps: [pressureStep(9, 3), pressureStep(4, 10)], target_weight: 0 }, eroding), 'flow'],
+      [predictShot({ steps: [pressureStep(9, 3), pressureStep(2, 10, { transition: 'smooth' })], target_weight: 0 }, eroding), 'flow'],
+    ] as const) {
+      const span = shot.steps[1];
+      const series = shot[other];
+      for (let i = Math.round(span.start / PREDICT_STEP) + 1; i <= Math.round(span.end / PREDICT_STEP); i += 1) {
+        expect(series[i], `${other} at ${shot.t[i]} s`).toBeLessThanOrEqual(series[i - 1] + 1e-9);
+      }
+    }
+  });
+
+  it('keeps the other quantity on the resistance where the driven one rises or is held', () => {
+    const steps = [flowStep(1, 10), flowStep(2, 10), pressureStep(9, 10), pressureStep(9, 10)];
+    const shot = predictShot({ steps, target_weight: 0 });
+    let volume = 0;
+    for (let i = 1; i < shot.t.length; i += 1) {
+      const wetting = Math.max(0, volume - PUCK.headspace);
+      const resistance = PUCK.r1 + (PUCK.r0 - PUCK.r1) * Math.exp(-wetting / PUCK.v0);
+      expect(shot.pressure[i], `${shot.t[i]} s`).toBeCloseTo(shot.flow[i] * resistance, 9);
+      volume += shot.flow[i] * PREDICT_STEP;
+    }
+  });
+
   it('takes another puck', () => {
     const steps = [flowStep(2, 30)];
     const firm: Puck = { ...PUCK, r0: 4, r1: 4 };
@@ -156,7 +199,7 @@ describe('the check', () => {
     const result = checkShots(shots);
     expect(result.mae.flow.model).toBeCloseTo(0.635, 3);
     expect(result.mae.flow.target).toBeCloseTo(4.815, 3);
-    expect(result.mae.pressure.model).toBeCloseTo(0.939, 3);
+    expect(result.mae.pressure.model).toBeCloseTo(0.938, 3);
     expect(result.mae.pressure.target).toBeCloseTo(1.6865, 3);
     expect(result.mae.temperature.model).toBeCloseTo(1.339, 3);
     expect(result.mae.temperature.target).toBeCloseTo(1.175, 3);
