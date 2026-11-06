@@ -69,7 +69,7 @@ test.afterAll(async () => {
   if (created) await api('DELETE', `/api/v1/profiles/${encodeURIComponent(created)}/purge`);
 });
 
-test('a profile moved to the right and renamed keeps its id and metadata under the new title', async ({ page }) => {
+test('a profile swiped to the left and renamed keeps its id and metadata under the new title', async ({ page }) => {
   test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
   test.setTimeout(120_000);
   const allBefore = await count('?includeHidden=true');
@@ -85,8 +85,9 @@ test('a profile moved to the right and renamed keeps its id and metadata under t
   const item = (title: string) => page.getByTestId('profile-item').filter({ hasText: title });
   await expect(item(TITLE)).toHaveCount(1, { timeout: 15_000 });
   const box = (await item(TITLE).boundingBox())!;
-  const from = { x: box.x + 60, y: box.y + box.height / 2 };
-  await swipe(page, from, { x: from.x + 200, y: from.y + 4 });
+  // A swipe to the left reveals rename beside delete; a swipe to the right closes it.
+  const from = { x: box.x + box.width - 60, y: box.y + box.height / 2 };
+  await swipe(page, from, { x: from.x - 200, y: from.y + 4 });
   await page.getByTestId('profile-rename').click();
   await expect(page.getByTestId('settings-confirm-field')).toHaveValue(TITLE);
   await page.getByTestId('settings-confirm-field').fill(RENAMED);

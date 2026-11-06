@@ -9,6 +9,8 @@ export default defineConfig({
   ...base,
   testDir: 'e2e-rig',
   outputDir: 'e2e-rig/.results',
+  // Wakes a machine that slept between the mocked suite and these specs.
+  globalSetup: './e2e-rig/global-setup.ts',
   // The simulated shot of the test takes about 100 s.
   timeout: 300_000,
 });

@@ -122,7 +122,7 @@ test('the card loads the profile and follows the run; stopped, it is back at its
     expect((await workflow()).profile.title).toBe(TITLE);
 
     await page.getByTestId('maintenance-cancel-detergent').click();
-    await expect(page.getByTestId('maintenance-start-detergent')).toBeVisible();
+    await expect(page.getByTestId('maintenance-start-detergent')).toBeVisible({ timeout: 15_000 });
     await expectRestored(before);
   });
 });
