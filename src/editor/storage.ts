@@ -146,7 +146,7 @@ export function openRecord(record: Pick<ProfileRecord, 'profile' | 'metadata'>):
   return openParams(record.profile, record.metadata);
 }
 
-/** Why an A-Flow profile opens in the step editor, for its status line; null for any other profile. */
+/** Why an A-Flow profile opens in the step editor, for its message; null for any other profile. */
 export function stepEditorReason(profile: Pick<Profile, 'notes' | 'steps' | 'target_weight'>): string | null {
   if (openParams(profile)) return null;
   if (storedParams(profile)) return 'The steps of this A-Flow 3.0 profile were changed elsewhere, so it opens in the step editor.';

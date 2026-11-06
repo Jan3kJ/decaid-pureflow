@@ -11,6 +11,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   // shows it above the cards, the SCRIPT tab beside the text. The picker's preview (`estimate`)
   // draws the modelled shot instead, the targets dotted under it (src/steps/estimate.ts). With
   // `onselect` (the CARDS tab) a tap on the graph picks the step under the finger.
+  import type { Snippet } from 'svelte';
   import type { Profile } from '../api';
   import ShotGraph from '../graph/ShotGraph.svelte';
   import { stepAt, stepCurve, type StepSpan } from './curve';
@@ -28,9 +29,11 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     estimate?: boolean;
     /** a tap on the graph chose this step (its index in the profile); without it the graph takes no tap */
     onselect?: (index: number) => void;
+    /** drawn over the top of the frame (a message) */
+    children?: Snippet;
   }
 
-  let { profile, bare = false, lastStepSeconds, mainFrame = false, estimate = false, onselect }: Props = $props();
+  let { profile, bare = false, lastStepSeconds, mainFrame = false, estimate = false, onselect, children }: Props = $props();
 
   // The model runs only for the estimate, once per profile shown.
   const drawn = $derived.by((): ReturnType<typeof shotEstimate> & { steps: StepSpan[] } => {
@@ -93,6 +96,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     label={estimate ? 'estimated shot' : 'curve preview'}
     ontap={onselect ? tapped : undefined}
   />
+  {@render children?.()}
 </div>
 
 <style>

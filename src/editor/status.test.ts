@@ -2,11 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULT_PROFILES, generateProfile } from '../aflow';
 import { NOTICE_MS, convertedNotice, exitText, noticeLasts } from './status';
 
-describe("the A-Flow editor's status line", () => {
-  it('lets a result go after 4 s and keeps a failure', () => {
-    expect(NOTICE_MS).toBe(4000);
-    expect(noticeLasts({ tone: 'info', text: 'Saved “mine” and loaded.' })).toBe(4000);
-    expect(noticeLasts({ tone: 'warn', text: 'The profile was not saved: 500' })).toBeNull();
+describe("the editor's message", () => {
+  it('lets every message go after 10 s, a failure too', () => {
+    expect(NOTICE_MS).toBe(10000);
+    expect(noticeLasts()).toBe(10000);
   });
 });
 
@@ -42,10 +41,10 @@ describe('the line an older A-Flow profile opens with', () => {
     expect(convertedNotice(['preFill', 'pause', 'infuseVolume'], false).text).toContain(
       'Pre Fill, the Pause without a 2nd fill and the infuse volume',
     );
-    expect(noticeLasts(convertedNotice(['rampDown'], false))).toBeNull();
+    expect(noticeLasts()).toBe(NOTICE_MS);
   });
 
-  it('with nothing dropped, only that save converts it, for 4 s', () => {
+  it('with nothing dropped, only that save converts it, for 10 s', () => {
     expect(convertedNotice([], false)).toEqual({ tone: 'info', text: 'An older A-Flow profile: ‘save’ stores it as A-Flow 3.0.' });
     expect(convertedNotice(['preFill'], true).tone).toBe('info');
   });

@@ -4,8 +4,7 @@ import light from '../src/aflow/defaults/default-light.json' with { type: 'json'
 
 // The A-Flow editor's steps panel and save feedback: the
 // stop weight stands in the flow step's exit, 'save' on a default hints at 'save as', and what a
-// save answered stands in one line under the start row: a result goes after 4 s, a failure stays
-// until the next action, and the graph does not move for either.
+// save answered stands over the top of the graph for 10 s, a failure too, and the graph does not move.
 
 const errors: string[] = [];
 
@@ -17,7 +16,7 @@ test.beforeEach(({ page }) => {
   page.on('pageerror', (error) => errors.push(error.message));
 });
 
-/** `timed`: the page's clock is a fake one, so that `fastForward` runs the 4 s of a notice at once. */
+/** `timed`: the page's clock is a fake one, so that `fastForward` runs the 10 s of a notice at once. */
 async function openEditor(page: Page, timed = false) {
   if (timed) await page.clock.install();
   await page.addInitScript(() => localStorage.setItem('pureflow.screen', 'editor'));
@@ -43,7 +42,7 @@ test("the profile steps have no 'shot stops at' line; the flow step's exit holds
   expect(errors).toEqual([]);
 });
 
-test("'save' on a default hints at 'save as' under the start row, and the hint goes after 4 s", async ({ page }) => {
+test("'save' on a default hints at 'save as' over the graph, and the hint goes after 10 s", async ({ page }) => {
   const gateway = (await mockGateway(page)).withDefaults('light');
   await openEditor(page, true);
   await expect(page.getByTestId('editor-profile')).toHaveText('light');
@@ -52,23 +51,22 @@ test("'save' on a default hints at 'save as' under the start row, and the hint g
   await expect(page.getByTestId('save')).toBeEnabled();
   await page.getByTestId('save').click();
   await expect(notice(page)).toContainText('save as');
-  // The line stands under the start row, above the graph, and the graph did not move.
-  const row = (await page.getByTestId('start-row').boundingBox())!;
+  // The message stands over the top of the graph, and the graph did not move.
   const line = (await notice(page).boundingBox())!;
-  expect(line.y).toBeGreaterThanOrEqual(row.y + row.height);
-  expect(line.y + line.height).toBeLessThanOrEqual(before.y);
+  expect(line.y).toBeGreaterThanOrEqual(before.y);
+  expect(line.y).toBeLessThan(before.y + before.height / 2);
   expect(await graphBox(page)).toEqual(before);
   // A default is not saved over: nothing was stored or loaded.
   expect(gateway.calls('POST', '/api/v1/profiles')).toHaveLength(0);
   expect(gateway.calls('PUT', '/api/v1/workflow')).toHaveLength(0);
 
-  await page.clock.fastForward(4_500);
+  await page.clock.fastForward(10_500);
   await expect(notice(page)).toHaveCount(0);
   expect(await graphBox(page)).toEqual(before);
   expect(errors).toEqual([]);
 });
 
-test('a save shows its result for 4 s; a failure stays until the next action', async ({ page }) => {
+test('a save shows its result for 10 s, a failure too', async ({ page }) => {
   (await mockGateway(page)).withDefaults('light');
   await openEditor(page, true);
   const before = await graphBox(page);
@@ -80,7 +78,7 @@ test('a save shows its result for 4 s; a failure stays until the next action', a
   await expect(notice(page)).toHaveText('Saved as “morning light” and loaded.');
   expect(await graphBox(page)).toEqual(before);
   await page.screenshot({ path: 'docs/product/editor-save-feedback.png' });
-  await page.clock.fastForward(4_500);
+  await page.clock.fastForward(10_500);
   await expect(notice(page)).toHaveCount(0);
 
   // The same values under another name: Decaid keeps one profile for each set of steps.
@@ -91,8 +89,15 @@ test('a save shows its result for 4 s; a failure stays until the next action', a
   expect(await graphBox(page)).toEqual(before);
   await page.clock.fastForward(5_000);
   await expect(notice(page)).toContainText('The profile was not saved');
+  await page.clock.fastForward(5_500);
+  await expect(notice(page)).toHaveCount(0);
+  expect(await graphBox(page)).toEqual(before);
 
-  // The next action clears it: here a profile of the start row.
+  // The next action replaces it: here a profile of the start row.
+  await page.getByTestId('save-as').click();
+  await page.getByTestId('save-name').fill('evening');
+  await page.getByTestId('save-confirm').click();
+  await expect(notice(page)).toContainText('The profile was not saved');
   await page.getByTestId('start-light').click();
   await expect(page.getByTestId('editor-profile')).toHaveText('light');
   await expect(notice(page)).toHaveCount(0);

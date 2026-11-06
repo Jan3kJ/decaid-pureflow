@@ -1,20 +1,17 @@
 import type { Dropped, ProfileStep } from '../aflow';
 
-/** A line of the editor's status line. */
+/** A message over the editor's graph (or the step editor's curve preview). */
 export interface Notice {
   tone: 'info' | 'warn';
   text: string;
 }
 
-/** how long a result stands in the status line */
-export const NOTICE_MS = 4000;
+/** how long a message stands over the graph, a failure too: one that stayed would cover the curve for good */
+export const NOTICE_MS = 10000;
 
-/**
- * How long a notice stands, in milliseconds: a result goes after 4 s, a failure stays until
- * the next action.
- */
-export function noticeLasts(notice: Notice): number | null {
-  return notice.tone === 'info' ? NOTICE_MS : null;
+/** How long a notice stands, in milliseconds: a result and a failure alike. */
+export function noticeLasts(): number {
+  return NOTICE_MS;
 }
 
 /** 'save' on a default: a default is saved under a new name. */

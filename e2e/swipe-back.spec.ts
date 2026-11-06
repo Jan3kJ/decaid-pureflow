@@ -246,7 +246,7 @@ test("a swipe to the right goes back from the A-Flow editor's header, cards, sta
   (await mockGateway(page)).withDefaults('light');
   const editor = () => page.getByTestId('open-editor').click();
   await openEditor(page);
-  await swipeRight(page, await inside(page, 'editor-status'));
+  await swipeRight(page, await inside(page, 'editor-profile'));
   await expect(shown(page, 'home'), "a swipe from the editor's header goes back").toBeVisible();
 
   // The start row: the page's while it fits, its own scroll while it overflows.

@@ -15,10 +15,12 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   import { onMount, tick } from 'svelte';
   import type { Profile, ProfileRecord } from '../api';
   import NameDialog from '../editor/NameDialog.svelte';
+  import NoticeOverlay from '../editor/NoticeOverlay.svelte';
   import NumberPad from '../editor/NumberPad.svelte';
   import ProfileName from '../editor/ProfileName.svelte';
   import { storeAndLoad, type Stored } from '../editor/save';
   import { sameContent, stepEditorReason } from '../editor/storage';
+  import { noticeLasts, type Notice } from '../editor/status';
   import type { Skin } from '../shell/skin.svelte';
   import {
     VALUE_LABEL,
@@ -71,7 +73,17 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   let deleting: number | null = $state(null);
   let naming = $state(false);
   let busy = $state(false);
-  let notice: { tone: 'info' | 'warn'; text: string } | null = $state(null);
+  let notice: Notice | null = $state(null);
+
+  // Each notice is timed from when it is shown; the next action replaces it.
+  $effect(() => {
+    const shown = notice;
+    if (!shown) return;
+    const timer = setTimeout(() => {
+      if (notice === shown) notice = null;
+    }, noticeLasts());
+    return () => clearTimeout(timer);
+  });
   let row: HTMLDivElement | undefined = $state();
   let tab: 'cards' | 'settings' | 'script' = $state('cards');
 
@@ -271,8 +283,9 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     </div>
   </header>
 
-  {#if notice}
-    <p class="notice {notice.tone}" class:warning={notice.tone === 'warn'} data-testid="editor-notice">{notice.text}</p>
+  {#if tab !== 'cards'}
+    <!-- No preview on this tab: the message hangs from the top of the content, taking no room. -->
+    <div class="anchor"><NoticeOverlay {notice} onclose={() => (notice = null)} /></div>
   {/if}
 
   {#if tab === 'settings'}
@@ -281,7 +294,9 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     <ScriptTab {profile} disabled={busy} onedit={edit} ontype={(index: number, value: StepValue) => (typing = { index, value })} />
   {:else}
     <!-- The curve preview: the targets of the steps, redrawn with every edit; a tap opens the step under the finger. -->
-    <StepPreview {profile} mainFrame onselect={(index: number) => (openIndex = index)} />
+    <StepPreview {profile} mainFrame onselect={(index: number) => (openIndex = index)}>
+      <NoticeOverlay {notice} onclose={() => (notice = null)} />
+    </StepPreview>
 
     <div class="cards" bind:this={row} data-testid="step-cards" data-main-frame use:sideways>
       {#each profile.steps as step, index (index)}
@@ -390,16 +405,10 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     background: var(--panel);
   }
 
-  .notice {
-    padding: var(--space-2) 0.9rem;
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    background: var(--raised);
-    color: var(--dim);
-  }
-
-  .notice.warn {
-    color: var(--warn);
+  .anchor {
+    position: relative;
+    height: 0;
+    margin-bottom: calc(-1 * var(--space-2));
   }
 
   /* A row of cards that scrolls sideways, one open at a time and centred, as high as the open card. */

@@ -24,6 +24,7 @@
   import { changed, loadOnLeave, saveAs, saveEdit, storeAndLoad, titleOf, type Stored } from './save';
   import { afterSecondFillToggle, keepSelection } from './selection';
   import { startRow } from './start';
+  import NoticeOverlay from './NoticeOverlay.svelte';
   import { DEFAULT_SAVE_HINT, convertedNotice, noticeLasts, type Notice } from './status';
   import StepList from './StepList.svelte';
   import { openParams, readRecord } from './storage';
@@ -50,7 +51,7 @@
   let selected: PhaseId = $state('fill');
   let naming = $state(false);
   let busy = $state(false);
-  /** the status line under the start row: a result goes after 4 s, a failure stays */
+  /** the message over the top of the graph: it goes after NOTICE_MS, or by a tap */
   let notice: Notice | null = $state(null);
   /** the value the number pad is open for */
   let typing: EditField | null = $state(null);
@@ -161,11 +162,10 @@
   // Each notice is timed from when it is shown; the next action replaces it.
   $effect(() => {
     const shown = notice;
-    const lasts = shown && noticeLasts(shown);
-    if (!lasts) return;
+    if (!shown) return;
     const timer = setTimeout(() => {
       if (notice === shown) notice = null;
-    }, lasts);
+    }, noticeLasts());
     return () => clearTimeout(timer);
   });
 
@@ -264,20 +264,11 @@
     onmode={(next: 'simple' | 'detail') => (mode = next)}
   />
 
-  <!-- One line under the start row for what a save or a load answered; it keeps its height
-       while it is empty, so the graph does not move. -->
-  <div class="status" role="status" data-testid="editor-status">
-    {#if notice}
-      <p class="notice truncate {notice.tone}" class:warning={notice.tone === 'warn'} data-testid="editor-notice" title={notice.text}>
-        {notice.text}
-      </p>
-    {/if}
-  </div>
-
   <section class="stage" data-main-frame>
     <!-- No phase buttons: in detail mode a tap on a step of the graph selects it. -->
     <div class="plot">
       <Graph {params} {limits} {mode} {selected} ondrag={drag} onedit={edit} onselect={(id: PhaseId) => (selected = id)} />
+      <NoticeOverlay {notice} onclose={() => (notice = null)} />
     </div>
   </section>
 
@@ -337,33 +328,15 @@
     padding: var(--space-2) 1rem;
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto auto minmax(0, 1fr) auto auto;
-    grid-template-areas: 'header' 'status' 'stage' 'footer' 'steps';
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    grid-template-areas: 'header' 'stage' 'footer' 'steps';
     gap: var(--space-2) var(--space-3);
   }
 
   /* The panel runs down to the bottom edge: a phase has up to six values and the dose. */
   .editor.detail {
     grid-template-columns: minmax(0, 1fr) 19rem;
-    grid-template-areas: 'header header' 'status panel' 'stage panel' 'footer panel' 'steps panel';
-  }
-
-  /* One line: what the editor is on, and what a save or a load answered. */
-  .status {
-    grid-area: status;
-    height: 1.5rem;
-    min-width: 0;
-    display: flex;
-    align-items: center;
-  }
-
-  .notice {
-    padding: 0 var(--space-1);
-    color: var(--fg);
-  }
-
-  .notice.warn {
-    color: var(--warn);
+    grid-template-areas: 'header header' 'stage panel' 'footer panel' 'steps panel';
   }
 
   .stage {
@@ -375,6 +348,7 @@
   }
 
   .plot {
+    position: relative;
     flex: 1;
     min-height: 0;
     background: var(--panel);

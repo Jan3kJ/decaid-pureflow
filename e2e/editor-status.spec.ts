@@ -5,8 +5,8 @@ import { DEFAULT_SAVE_HINT } from '../src/editor/status';
 import { mockGateway, record } from './mock-gateway';
 import { back } from './touch';
 
-// The A-Flow editor's status line and spacing: every notice stands
-// in the one line under the start row and nowhere else, and the header with the name, the start
+// The A-Flow editor's message and spacing: every notice stands
+// over the top of the graph and nowhere else, and the header with the name, the start
 // row, save, save as and the mode switch is one row at 1280 x 800 with room between the buttons.
 
 const errors: string[] = [];
@@ -31,18 +31,16 @@ async function openEditor(page: Page) {
 
 const box = async (page: Page, id: string) => (await page.getByTestId(id).boundingBox())!;
 
-/** The text stands once on the editor's screen, in the status line under the start row, above the graph. */
+/** The text stands once on the editor's screen, in the message over the top of the graph. */
 async function inStatusLine(page: Page, text: string | RegExp) {
   await expect(page.getByTestId('editor-notice')).toHaveText(text);
   await expect(page.getByTestId('screen-editor').getByText(text)).toHaveCount(1);
   await expect(page.getByTestId('editor-status').getByText(text)).toHaveCount(1);
-  const row = await box(page, 'start-row');
   const line = await box(page, 'editor-notice');
-  const status = await box(page, 'editor-status');
-  expect(line.y).toBeGreaterThanOrEqual(status.y);
-  expect(line.y + line.height).toBeLessThanOrEqual(status.y + status.height + 0.5);
-  expect(status.y).toBeGreaterThanOrEqual(row.y + row.height);
-  expect(status.y + status.height).toBeLessThanOrEqual((await box(page, 'graph')).y);
+  const graph = await box(page, 'graph');
+  expect(line.y).toBeGreaterThanOrEqual(graph.y);
+  expect(line.y + line.height).toBeLessThanOrEqual(graph.y + graph.height);
+  expect(line.x + line.width).toBeLessThanOrEqual(graph.x + graph.width);
 }
 
 const HEADER = ['editor-profile', 'start-row', 'save', 'save-as', 'mode-simple', 'mode-detail'];
