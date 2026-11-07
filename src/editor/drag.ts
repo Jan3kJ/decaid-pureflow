@@ -1,7 +1,7 @@
 // A drag on the editor's graph: what a finger took hold of, and the value under it as it
 // moves. Pure: the drag and the finger in, the value out (the caller snaps it).
 import type { ResolvedParams } from '../aflow';
-import { borderTarget, dragTarget, weightTarget, type Border, type EditField, type Hit, type LineId } from './curve';
+import { borderTarget, dragPixels, dragTarget, weightTarget, type Border, type EditField, type Hit, type LineId } from './curve';
 
 export interface Drag {
   /** the value the drag changes */
@@ -25,6 +25,8 @@ export interface Drag {
    * under a drag, and the value keeps following the finger at the same pace
    */
   valuePerPixel: number;
+  /** the drawn height of the line's plot in pixels, which the gain of a drag is measured in */
+  plotHeight: number;
   /** how far the value moves per unit the line under the finger moves (curve.ts, Level) */
   gain: number;
   x: number;
@@ -42,6 +44,7 @@ export interface Finger {
 export interface PerPixel {
   seconds: (border: Border) => number;
   value: (line: LineId) => number;
+  height: (line: LineId) => number;
 }
 
 /** The drag a finger starts on a line or a border. */
@@ -61,6 +64,7 @@ export function startDrag(hit: Hit, finger: Finger, resolved: ResolvedParams, pe
     startValue: hit.kind === 'border' ? hit.border.start : resolved[field],
     secondsPerPixel: hit.kind === 'border' ? perPixel.seconds(hit.border) : 0,
     valuePerPixel: hit.kind === 'level' ? perPixel.value(hit.level.line) : 0,
+    plotHeight: hit.kind === 'level' ? perPixel.height(hit.level.line) : 0,
     gain: hit.kind === 'level' ? hit.level.gain : 1,
     x: finger.x,
     y: finger.y,
@@ -84,6 +88,7 @@ export function startWeightDrag(border: Border, finger: Finger, dx: number, weig
     startValue: weight,
     secondsPerPixel,
     valuePerPixel: 0,
+    plotHeight: 0,
     gain: 1,
     x: finger.x,
     y: finger.y,
@@ -93,7 +98,7 @@ export function startWeightDrag(border: Border, finger: Finger, dx: number, weig
 /** The value under the finger at (x, y), before it is snapped. */
 export function dragged(drag: Drag, x: number, y: number): number {
   const seconds = (x - drag.startX) * drag.secondsPerPixel;
-  if (drag.line) return dragTarget(drag, drag.startValue, (drag.startY - y) * drag.valuePerPixel);
+  if (drag.line) return dragTarget(drag, drag.startValue, dragPixels(drag.startY - y, drag.plotHeight) * drag.valuePerPixel);
   if (drag.field === 'infuseWeight') return weightTarget(drag.startValue, seconds);
   return borderTarget(drag.border!, drag.time, drag.startValue + seconds);
 }

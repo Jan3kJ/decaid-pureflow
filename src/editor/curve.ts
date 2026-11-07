@@ -268,6 +268,36 @@ export function timeAxis(p: AFlowParams): TimeAxis {
 }
 
 /**
+ * A drag of a level line starts slow, so that a small change (a flow of 0.1 ml/s) can be set:
+ * over the first `FINE_ZONE` of the plot's height a pixel counts at most `FINE_GAIN` of its
+ * linear value; the gain then rises smoothly to `FAST_GAIN`, reached at `RAMP_END` and kept,
+ * which makes up for the slow start so a line still reaches the ends of its range in one drag.
+ */
+export const FINE_ZONE = 0.1;
+export const RAMP_END = 0.3;
+export const FINE_GAIN = 0.25;
+export const FAST_GAIN = 2;
+
+/**
+ * How many linear pixels a finger `distance` pixels from where the drag began is worth, on a
+ * plot `height` pixels high: the integral of the gain over the distance, so the value is
+ * continuous, rises with the distance, is odd about the start and is the start at distance 0.
+ */
+export function dragPixels(distance: number, height: number): number {
+  const t = Math.abs(distance) / height;
+  const ramp = RAMP_END - FINE_ZONE;
+  let linear: number;
+  if (t <= FINE_ZONE) linear = FINE_GAIN * t;
+  else {
+    const u = Math.min(t - FINE_ZONE, ramp) / ramp;
+    // the gain is FINE_GAIN + (FAST_GAIN - FINE_GAIN) * (3u² - 2u³), its integral:
+    linear = FINE_GAIN * FINE_ZONE + ramp * (FINE_GAIN * u + (FAST_GAIN - FINE_GAIN) * (u ** 3 - u ** 4 / 2));
+    if (t > RAMP_END) linear += (t - RAMP_END) * FAST_GAIN;
+  }
+  return Math.sign(distance) * linear * height;
+}
+
+/**
  * The value a drag of a level line sets: where it began, moved by the rise of the finger in
  * the line's unit. Not yet brought into the value's range (fields.ts, snap).
  */

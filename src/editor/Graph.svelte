@@ -97,6 +97,7 @@
     drag = startDrag(hit, finger, resolved, {
       seconds: (border) => secondsPerPixel(border.secondsPerUnit, box),
       value: (line) => valuePerPixel(line, box, temperature, yMax),
+      height: (line) => (line === 'temperature' ? box.tempH : box.mainH),
     });
   }
 

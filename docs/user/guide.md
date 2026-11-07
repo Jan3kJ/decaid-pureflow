@@ -73,7 +73,7 @@ The graph is the editor. It has four phases, left to right:
 - **flow**: the pour, at a flow that rises (**flow up**) or falls (**flow down**), until the
   weight on the chip **stop at**.
 
-In **simple** mode, drag a line up or down to change a flow, pressure or temperature. Drag a
+In **simple** mode, drag a line up or down to change a flow, pressure or temperature; the line moves slowly at first, so a small change is easy, and faster the farther you drag. Drag a
 dashed border sideways to change a time. Tap a chip to type its value. **2nd fill** adds a second
 fill and a pause after infuse. **detail** shows every value of the selected phase.
 

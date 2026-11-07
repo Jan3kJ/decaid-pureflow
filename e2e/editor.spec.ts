@@ -582,9 +582,9 @@ test('the temperature axis is 80 to 100 °C and widens for a temperature outside
     return (low.y - high.y) / (high.value - low.value);
   };
 
-  // A drag of the flow temperature from 95 °C down past the lane's lower edge, to about 75 °C.
+  // A drag of the flow temperature from 95 °C down past the lane's lower edge, to about 75 °C (the drag's pace is 2 past 30 % of the lane, so 13.5 °C of distance are 20 °C).
   await expect(page.getByTestId('value-pourTemperature')).toHaveText('95 °C');
-  await dragBy(page, await middleOf(page, 'pourTemperature'), 0, 20 * (await pixelsPerDegree()));
+  await dragBy(page, await middleOf(page, 'pourTemperature'), 0, 13.5 * (await pixelsPerDegree()));
   await expect(page.getByTestId('popup')).toContainText('flow temperature');
   await page.mouse.up();
   const low = await number(page, 'value-pourTemperature');

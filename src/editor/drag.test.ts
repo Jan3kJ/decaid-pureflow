@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_MACHINE_LIMITS, DEFAULT_PROFILES, resolveParams } from '../aflow';
-import { borderTarget, buildCurve, dragTarget, weightTarget } from './curve';
+import { borderTarget, buildCurve, dragPixels, dragTarget, weightTarget } from './curve';
 import { dragged, lifted, startDrag, startWeightDrag } from './drag';
 
 const params = DEFAULT_PROFILES[1].params;
 const resolved = resolveParams(params);
 const curve = buildCurve(params, DEFAULT_MACHINE_LIMITS, 'detail');
-const perPixel = { seconds: () => 0.1, value: () => 0.02 };
+const perPixel = { seconds: () => 0.1, value: () => 0.02, height: () => 200 };
 const finger = { x: 300, y: 200, pointer: 7 };
 
 describe('a drag on the graph', () => {
@@ -22,9 +22,10 @@ describe('a drag on the graph', () => {
       startValue: resolved[level.drags],
       secondsPerPixel: 0,
       valuePerPixel: 0.02,
+      plotHeight: 200,
       gain: level.gain,
     });
-    expect(dragged(drag, 300, 150)).toBeCloseTo(dragTarget(drag, drag.startValue, 50 * 0.02));
+    expect(dragged(drag, 300, 150)).toBeCloseTo(dragTarget(drag, drag.startValue, dragPixels(50, 200) * 0.02));
     expect(dragged(drag, 900, 200)).toBe(drag.startValue);
   });
 
@@ -38,6 +39,7 @@ describe('a drag on the graph', () => {
       startValue: border.start,
       secondsPerPixel: 0.1,
       valuePerPixel: 0,
+      plotHeight: 0,
       gain: 1,
     });
     expect(dragged(drag, 340, 0)).toBeCloseTo(borderTarget(border, drag.time, border.start + 4));
@@ -69,5 +71,28 @@ describe('a finger that lifts or is cancelled', () => {
     expect(last).not.toBe(drag.startValue);
     expect(lifted(drag, 8)).toBe(drag);
     expect(lifted(null, finger.pointer)).toBeNull();
+  });
+});
+
+describe('the dynamic pace of a line drag', () => {
+  const height = 300;
+  it('counts at most a quarter of the linear amount over the first 10 % of the height', () => {
+    for (let d = 1; d <= 30; d++) expect(dragPixels(d, height)).toBeLessThanOrEqual(0.25 * d + 1e-9);
+  });
+  it('is continuous and rises', () => {
+    let last = 0;
+    for (let d = 0.5; d <= 600; d += 0.5) {
+      const now = dragPixels(d, height);
+      expect(now).toBeGreaterThan(last);
+      expect(now - last).toBeLessThan(2 * 0.5 + 1e-9);
+      last = now;
+    }
+  });
+  it('is symmetric and gives the start at the start', () => {
+    expect(dragPixels(0, height)).toBe(0);
+    for (const d of [3, 40, 120, 250]) expect(dragPixels(-d, height)).toBe(-dragPixels(d, height));
+  });
+  it('is at least the linear amount past 30 % of the height, so a full drag reaches the end', () => {
+    for (let d = 0.35 * height; d <= 2 * height; d += 5) expect(dragPixels(d, height)).toBeGreaterThanOrEqual(d);
   });
 });
