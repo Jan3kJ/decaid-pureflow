@@ -54,7 +54,8 @@ export type SkinPart = 'steam' | 'hot-water' | 'profile' | 'graph' | 'display' |
  * status (`MachineInfo.svelte`); the plugin cards (`Plugins.svelte`), the wake schedules
  * (`Presence.svelte`), the firmware and Decaid's update (`Firmware.svelte`), the sensors'
  * calibration (`SensorCalibration.svelte`); the skin's own tank unit beside the machine's
- * tank settings (`TankUnit.svelte`). Drawn above the subcategory's fields, or below them.
+ * tank settings (`TankUnit.svelte`) and the guided fill of the user's tank table
+ * (`TankCalibration.svelte`). Drawn above the subcategory's fields, or below them.
  */
 export type View =
   | { kind: 'devices'; devices: DeviceKind }
@@ -68,6 +69,7 @@ export type View =
   | { kind: 'app-update' }
   | { kind: 'sensors' }
   | { kind: 'tank-unit' }
+  | { kind: 'tank-calibration' }
   | { kind: 'bengle'; part: 'cup-warmer' | 'lighting' | 'load-cells' }
   | { kind: 'help'; part: 'manual' | 'feedback' };
 
@@ -117,6 +119,12 @@ export const SETTINGS_TREE: Category[] = [
         content: fields(HOT_WATER),
       },
       { id: 'watertank', name: 'Water Tank', content: view({ kind: 'tank-unit' }, WATER_TANK, true) },
+      {
+        id: 'tankcalibration',
+        name: 'Tank calibration',
+        hint: "your own tank's ml: fill it 250 ml at a time and the skin keeps the level of each step.",
+        content: view({ kind: 'tank-calibration' }),
+      },
       { id: 'flush', name: 'Flush', content: fields(FLUSH) },
       {
         id: 'machineadvancedsettings',

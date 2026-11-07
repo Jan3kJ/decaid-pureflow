@@ -31,6 +31,7 @@ describe('SettingsRow', () => {
       'SettingsPage',
       'SkinCategory',
       'Skins',
+      'TankCalibration',
       'TankUnit',
     ];
     for (const name of rows) expect(readFileSync(join(DIR, `${name}.svelte`), 'utf8'), name).toContain('<SettingsRow');

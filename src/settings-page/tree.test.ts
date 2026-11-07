@@ -24,6 +24,7 @@ describe('the settings tree', () => {
       'Steam',
       'Hot Water',
       'Water Tank',
+      'Tank calibration',
       'Flush',
       'Machine Advanced Settings',
     ]);
@@ -91,6 +92,7 @@ describe('the settings tree', () => {
       transportmode: { kind: 'maintenance', procedure: 'transport' },
       sensors: { kind: 'sensors' },
       watertank: { kind: 'tank-unit' },
+      tankcalibration: { kind: 'tank-calibration' },
       extention2: { kind: 'plugins' },
       presence: { kind: 'presence' },
       firmwareupdate: { kind: 'firmware' },

@@ -27,6 +27,7 @@
   import SettingsRow from './SettingsRow.svelte';
   import SensorCalibration from './SensorCalibration.svelte';
   import SkinCategory from './SkinCategory.svelte';
+  import TankCalibration from './TankCalibration.svelte';
   import TankUnit from './TankUnit.svelte';
   import { PREFERRED_DEVICES, STEAM_TEMPERATURE, type Field } from './fields';
   import { textOf } from './text';
@@ -318,6 +319,8 @@
           <Help {skin} part={view.part} />
         {:else if view?.kind === 'tank-unit'}
           <TankUnit {skin} />
+        {:else if view?.kind === 'tank-calibration'}
+          <TankCalibration {skin} />
         {/if}
       {/snippet}
       {#each unreadOf(rows) as error (error)}
