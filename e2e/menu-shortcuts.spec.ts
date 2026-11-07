@@ -179,6 +179,15 @@ test("machine sleep: sleeping, the app stays awake and undimmed, 'Wake machine' 
   await expect(page.getByTestId('machine-sleep')).toHaveCount(0);
   await expect(page.getByTestId('app-sleep')).toBeEnabled();
   await expect(page.getByTestId('wake-machine')).toHaveText('Wake machine');
+  // 'Machine and app sleep' stays last.
+  await expect(page.getByRole('menuitem')).toHaveText([
+    'Settings',
+    /^Beans and grinders/,
+    /^Clean/,
+    /^Steam heater/,
+    'Wake machine',
+    'Machine and app sleep',
+  ]);
   await page.screenshot({ path: 'docs/product/home-menu-asleep.png' });
   await page.getByTestId('wake-machine').click();
   await expect.poll(asked).toEqual(['PUT /api/v1/machine/state/sleeping', 'PUT /api/v1/machine/state/idle']);

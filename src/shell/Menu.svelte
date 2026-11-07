@@ -13,7 +13,7 @@
    * steam: what is rarely used. A list, so that an entry is one more line here. The
    * steam heater and machine sleep are the shortcuts; machine sleep puts only the
    * machine to sleep and keeps the app awake, machine and app sleep shows the Asleep screen too;
-   * while the machine sleeps, wake machine stands in their place. Beans and grinders
+   * while the machine sleeps, wake machine stands in their place, before machine and app sleep, which is last. Beans and grinders
    * opens the catalogue. Clean opens the settings page on Maintenance, which
    * starts with the two cleans.
    */
@@ -58,16 +58,16 @@
       choose: () => void skin.sleep(),
     },
     {
-      id: 'app-sleep',
-      label: () => 'Machine and app sleep',
-      disabled: () => skin.appSleep === 'none',
-      choose: () => void skin.sleepApp(),
-    },
-    {
       id: 'wake-machine',
       label: () => 'Wake machine',
       shown: () => skin.machineAsleep,
       choose: () => void skin.wake(),
+    },
+    {
+      id: 'app-sleep',
+      label: () => 'Machine and app sleep',
+      disabled: () => skin.appSleep === 'none',
+      choose: () => void skin.sleepApp(),
     },
   ];
   let menuOpen = $state(false);
