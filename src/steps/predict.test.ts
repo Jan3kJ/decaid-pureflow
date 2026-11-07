@@ -258,7 +258,7 @@ describe('the check', () => {
     // below the targets) and the temperature and fails the length (64 percent)
     expect(shots).toHaveLength(10);
     const result = checkShots(shots);
-    expect(result.mae.flow.model).toBeCloseTo(0.686, 3);
+    expect(result.mae.flow.model).toBeCloseTo(0.7, 3);
     expect(result.mae.flow.target).toBeCloseTo(4.815, 3);
     expect(result.mae.pressure.model).toBeCloseTo(0.841, 3);
     expect(result.mae.pressure.target).toBeCloseTo(1.6865, 3);

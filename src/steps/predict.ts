@@ -160,15 +160,16 @@ export function predictShot(profile: Pick<Profile, 'steps' | 'target_weight'>, p
           flow = Math.min(flow, Math.max(through, flow - FLOW_FALL * PREDICT_STEP, flow + (through - flow) * flowGain));
         } else {
           pressure += (wanted - pressure) * pressureGain;
-          const through = pressure / resistance;
-          // a flow a release left above pressure / R comes down to it through its lag
-          flow =
-            onResistance || through >= flow
-              ? through
-              : Math.max(through, flow - FLOW_FALL * PREDICT_STEP, flow + (through - flow) * flowGain);
-          if (flow > flowCap) {
-            flow = flowCap;
-            pressure = flowCap * resistance;
+          if (onResistance || pressure / resistance >= flow) {
+            flow = pressure / resistance;
+            if (flow > flowCap) {
+              flow = flowCap;
+              pressure = flowCap * resistance;
+            }
+          } else {
+            // a flow a release left above pressure / R (or the limit) comes down to it through its lag
+            const through = Math.min(pressure / resistance, flowCap);
+            flow = Math.max(through, flow - FLOW_FALL * PREDICT_STEP, flow + (through - flow) * flowGain);
           }
         }
       }
