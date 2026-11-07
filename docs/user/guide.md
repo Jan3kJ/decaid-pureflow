@@ -135,6 +135,27 @@ stopped at the machine, it stays at this step. Next, take the portafilter out an
 leaves it out. At the end, or on **cancel**, your earlier profile comes back with its target weight
 and dose, unsaved changes included.
 
+## Your own tank table
+
+The tank's level is measured in mm, and the skin turns it into ml with Decent's table. If the ml
+look wrong for your tank, Settings > 1. Quick Adjustments > **Tank calibration** makes your own
+table:
+
+1. Set a refill kit to 'force off' first, then empty the tank. If the level looked low before,
+   lift the uptake assembly out of the water for 5 to 10 s and put it back.
+2. Keep the machine level. When **now** says 'steady', tap **next**: that is the empty tank.
+3. Pour 250 ml, slowly, weighed on a scale (1 g = 1 ml), wait for 'steady' and tap **next**.
+   Repeat. A step that raised the level less than 3 mm or more than 15 mm is refused: let the
+   water settle, or check the amount.
+4. From 1000 ml **done** saves the table; going on to the full tank is not needed. **start
+   again** drops the steps; leaving the page keeps the table saved before.
+
+**using** says which table is in force; **back to decent's table** removes yours. The state line,
+the water alert's note and the clean's check of 350 ml then follow your table. The machine still
+works in mm: the water alert and its refill warning do not change. The sensor reads to about a mm,
+which is about 30 ml, so expect no better than that. The table belongs to this tank: it is not in
+the settings backup, and a new tank or moved tubes mean **start again**.
+
 ## The settings that matter
 
 The skin's own settings are under **Settings > 6. Skin**. The other categories are Decaid's

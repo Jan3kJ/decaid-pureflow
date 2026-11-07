@@ -79,12 +79,13 @@
   <SettingsRow
     label="using"
     hint="the table the skin turns the level into ml with: on the state line, in the water alert's note and for the clean. The machine and its water alert still work in mm."
-    end
   >
-    <b data-testid="tank-calibration-using">{usingText(saved)}</b>
-    {#if saved.length > 0}
-      <button class="action" data-testid="tank-calibration-back" onclick={backToTable}>back to decent's table</button>
-    {/if}
+    <div class="controls">
+      <b class="using" data-testid="tank-calibration-using">{usingText(saved)}</b>
+      {#if saved.length > 0}
+        <button class="action" data-testid="tank-calibration-back" onclick={backToTable}>back to decent's table</button>
+      {/if}
+    </div>
   </SettingsRow>
 
   <SettingsRow
@@ -95,23 +96,24 @@
   <SettingsRow
     label="now"
     hint={next === null ? 'the tank is full: tap done.' : next === 0 ? 'the tank empty.' : `pour until ${next} ml in all.`}
-    end
   >
     {#snippet about()}
       <small data-testid="tank-calibration-steady"
         >{level === null ? 'no level from the machine' : steady ? 'steady' : 'settling'}</small
       >
     {/snippet}
-    <b data-testid="tank-calibration-level">{level === null ? '–' : `${level.currentLevel.toFixed(1)} mm`}</b>
-    {#if next !== null}
-      <button class="action primary" disabled={!steady} data-testid="tank-calibration-next" onclick={take}>next</button>
-    {/if}
-    {#if canFinish(rows)}
-      <button class="action" data-testid="tank-calibration-done" onclick={done}>done</button>
-    {/if}
-    {#if rows.length > 0}
-      <button class="action" data-testid="tank-calibration-again" onclick={startAgain}>start again</button>
-    {/if}
+    <div class="controls">
+      <b data-testid="tank-calibration-level">{level === null ? '–' : `${level.currentLevel.toFixed(1)} mm`}</b>
+      {#if next !== null}
+        <button class="action primary" disabled={!steady} data-testid="tank-calibration-next" onclick={take}>next</button>
+      {/if}
+      {#if canFinish(rows)}
+        <button class="action" data-testid="tank-calibration-done" onclick={done}>done</button>
+      {/if}
+      {#if rows.length > 0}
+        <button class="action" data-testid="tank-calibration-again" onclick={startAgain}>start again</button>
+      {/if}
+    </div>
   </SettingsRow>
 
   {#each rows as row (row.ml)}
@@ -124,8 +126,25 @@
 </div>
 
 <style>
+  /* the value read and the buttons, together at the row's right end */
+  .controls {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .controls b {
+    font-weight: 400;
+    color: var(--dim);
+  }
+
   .action {
     min-width: 8rem;
+  }
+
+  .using {
+    white-space: nowrap;
   }
 
   .notice {

@@ -152,7 +152,15 @@ The skin's own settings are one object under one `localStorage` key, `pureflow.s
 (`src/settings.ts`). The skin holds one copy, the settings page changes it, and every screen
 reads it there. A copy goes to Decaid's KV store as `pureflow/settings-backup`, 1.5 s after the
 last change (`src/settings-backup.ts`). A start without settings reads the backup back, so the
-settings survive a new port or a cleared app.
+settings survive a new port or a cleared app. One field stays on the tablet: the user's tank rows
+(`tankRows`, poured into this machine's tank) are left out of the backup, ignored when the backup
+is compared at the start, and kept when a backup is restored.
+
+The tank's ml come from one function, `tankMl` (`src/shell/tank.ts`): Decent's table by the mm,
+or the user's own rows from Quick Adjustments > Tank calibration (`TankCalibration.svelte`, its
+rules in `src/settings-page/tank-calibration.ts`), a straight line between rows and the table's
+steps above the last and below the first. The state line, the water alert's note and the clean's
+350 ml check read it; everything in mm and the water alert stay the machine's.
 
 ## Build and ZIP
 

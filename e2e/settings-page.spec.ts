@@ -75,7 +75,7 @@ test("each category opens in Streamline's order and the page fits 1280 x 800 wit
     '11. User Manual',
   ]);
   const sections: Record<string, string[]> = {
-    quickadjustments: ['flowmultiplier', 'steam', 'hotwater', 'watertank', 'flush', 'machineadvancedsettings'],
+    quickadjustments: ['flowmultiplier', 'steam', 'hotwater', 'watertank', 'tankcalibration', 'flush', 'machineadvancedsettings'],
     bluetooth: ['ble_machine', 'ble_scale'],
     calibration: ['defaultloadsettings', 'refillkit', 'voltage', 'fan', 'sensors'],
     machine: ['usbchargermode', 'machineinfo'],
