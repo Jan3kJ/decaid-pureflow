@@ -317,6 +317,20 @@ describe('stateLine', () => {
     expect(text(stateLine('machine', frame('idle'), water, 'connected', 0, false, 'mm'))[2]).toBe('tank 35 mm');
   });
 
+  it("says the ml by the user's tank rows, and warns by the mm as before", () => {
+    const rows = [
+      { mm: 0.4, ml: 0 },
+      { mm: 9.8, ml: 250 },
+    ];
+    const low = { currentLevel: 4.9, refillLevel: 5 };
+    // 4.5 / 9.4 x 250 ml
+    expect(text(stateLine('machine', frame('idle'), low, 'connected', 0, false, 'ml', rows))[2]).toBe('tank 120 ml!');
+    expect(text(stateLine('machine', frame('idle'), low, 'connected', 0, false, 'mm', rows))[2]).toBe('tank 5 mm!');
+    expect(text(stateLine('machine', frame('idle'), { currentLevel: 5, refillLevel: 5 }, 'connected', 0, false, 'ml', rows))[2]).toBe(
+      'tank 120 ml',
+    );
+  });
+
   it('warns in place of the weight when the scale is not connected', () => {
     expect(text(stateLine('machine', frame('idle'), water, 'disconnected', null)).at(-1)).toBe('scale not connected, tap to retry!');
     expect(text(stateLine('machine', frame('idle'), water, 'unknown', null)).at(-1)).toBe('scale not connected, tap to retry!');

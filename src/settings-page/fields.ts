@@ -11,6 +11,7 @@ import type { AdvancedSettings, DecaidInfo } from '../api';
 import { HOT_WATER_FIELDS, type HotWaterField } from '../hotwater/hot-water';
 import { STEAM_ON_MAX, STEAM_ON_MIN } from '../shell/steam-heater';
 import { shownTankMl } from '../shell/tank';
+import type { Settings } from '../settings';
 
 /**
  * Where a setting lives. `decaid`: `/api/v1/settings`; `machine`: `/api/v1/machine/settings`;
@@ -53,8 +54,8 @@ export interface NumberField extends Common {
   places: number;
   /** written for a value under `min`: the steam heater's off, 0 */
   off?: number;
-  /** said after the unit: the tank's level in ml too, 'about 400 ml' */
-  note?: (value: number) => string;
+  /** said after the unit, by the skin's settings: the tank's level in ml too, 'about 400 ml' */
+  note?: (value: number, settings?: Settings) => string;
 }
 
 export interface Choice {
@@ -226,12 +227,13 @@ export const WATER_TANK: Field[] = [
     source: 'waterLevels',
     key: 'refillLevel',
     unit: 'mm',
-    // Every whole mm up to 69; from 67 mm up the tank is full (`tankMl`).
+    // Every whole mm up to 69; from 67 mm up the tank is full (`tankMl`). The alert stays in mm,
+    // only its note follows the user's tank rows.
     min: 0,
     max: 69,
     step: 1,
     places: 0,
-    note: (mm) => `about ${shownTankMl(mm)} ml`,
+    note: (mm, settings) => `about ${shownTankMl(mm, settings?.tankRows)} ml`,
   }),
 ];
 

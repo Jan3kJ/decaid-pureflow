@@ -12,6 +12,7 @@
   import SettingsRow from './SettingsRow.svelte';
   import NumberPad from '../editor/NumberPad.svelte';
   import { clock, heldNumber, minutesOf, numberText, padMin, shownValue, type Field } from './fields';
+  import type { Settings } from '../settings';
 
   interface Props {
     field: Field;
@@ -26,9 +27,11 @@
     /** why the last write failed */
     error: string | null;
     onwrite: (value: unknown) => void;
+    /** the skin's settings, for a field's note */
+    settings?: Settings;
   }
 
-  let { field, raw, all, read, busy, error, onwrite }: Props = $props();
+  let { field, raw, all, read, busy, error, onwrite, settings }: Props = $props();
 
   const value = $derived(shownValue(field, raw));
   const known = $derived(value !== undefined && value !== null);
@@ -62,7 +65,7 @@
     <button class="value" data-testid="setting-{field.id}" disabled={!known || busy} onclick={() => (typing = true)}>
       <b
         >{text}{#if field.kind === 'number' && field.unit}<i
-            >{field.unit}{#if field.note && typeof value === 'number'}, {field.note(value)}{/if}</i
+            >{field.unit}{#if field.note && typeof value === 'number'}, {field.note(value, settings)}{/if}</i
           >{/if}</b
       >
     </button>

@@ -2,7 +2,7 @@
 // delivered. Nothing here is assumed: without a fresh frame there is no machine state.
 import type { MachineSnapshot, MachineState, ShotSettings, StreamState, WaterLevels } from '../api';
 import { gramsOf } from '../display';
-import { tankText, type TankUnit } from './tank';
+import { tankText, type TankRow, type TankUnit } from './tank';
 
 /**
  * Whether the gateway answers: not known until the stream opened or failed once. `refused`:
@@ -203,7 +203,8 @@ export interface StateValue {
  * (principle 3), the tank's level only from its stream, the weight only from a connected scale.
  * A value that was not read is '–'. Without a scale the warning says whether the skin is looking
  * for it (`scaleLooking`) or that a tap looks again. The tank is in ml or mm
- * (`tankUnit`); its warning compares the mm with the refill level either way.
+ * (`tankUnit`), the ml by the user's own tank rows when there are any (`tankRows`); its warning
+ * compares the mm with the refill level either way.
  */
 export function stateLine(
   link: Link,
@@ -213,6 +214,7 @@ export function stateLine(
   weight: number | null,
   scaleLooking = false,
   tankUnit: TankUnit = 'ml',
+  tankRows: readonly TankRow[] = [],
 ): StateValue[] {
   const machine = link === 'machine' ? snapshot : null;
   const tank = link === 'machine' ? water : null;
@@ -223,7 +225,7 @@ export function stateLine(
     {
       key: 'tank',
       label: 'tank',
-      value: tank ? tankText(tank.currentLevel, tankUnit) : '–',
+      value: tank ? tankText(tank.currentLevel, tankUnit, tankRows) : '–',
       warn: tank !== null && tank.currentLevel < tank.refillLevel,
     },
     scaleLink === 'connected'

@@ -35,9 +35,18 @@ export interface BackupGateway {
   kvSet(key: string, value: unknown, namespace?: string): Promise<void>;
 }
 
+/**
+ * The settings without what belongs to this tablet's machine: the tank rows were poured into this
+ * tank, so a backup neither holds them nor brings them back.
+ */
+const shared = (settings: Settings): Settings => ({ ...settings, tankRows: [] });
+
 export function backupOf(settings: Settings, version: string, now: Date): Backup {
-  return { savedAt: now.toISOString(), version, settings };
+  return { savedAt: now.toISOString(), version, settings: shared(settings) };
 }
+
+/** The backup's settings as they replace the ones held: this tablet's tank rows stay. */
+export const restoredSettings = (backup: ReadBackup, held: Settings): Settings => ({ ...backup.settings, tankRows: held.tankRows });
 
 /**
  * A stored value as a backup: null when it is none (no key, not an object, no settings in
@@ -58,8 +67,8 @@ export function backupTime(savedAt: string): string {
   return `${time.getFullYear()}-${two(time.getMonth() + 1)}-${two(time.getDate())} ${two(time.getHours())}:${two(time.getMinutes())}`;
 }
 
-/** Two settings hold the same values. */
-export const sameSettings = (a: Settings, b: Settings): boolean => JSON.stringify(a) === JSON.stringify(b);
+/** Two settings hold the same values, as far as a backup holds them. */
+export const sameSettings = (a: Settings, b: Settings): boolean => JSON.stringify(shared(a)) === JSON.stringify(shared(b));
 
 /**
  * What a start does with the backup it read: 'restore' when localStorage held no settings

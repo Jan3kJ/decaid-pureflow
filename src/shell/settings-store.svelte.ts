@@ -3,7 +3,7 @@
 // A part of `Skin`, which hands its settings and backup fields to it.
 import { PRODUCT_VERSION } from '../product';
 import { hasSettings, loadSettings, saveSettings, type Settings } from '../settings';
-import { SettingsBackup, atStart, type BackupGateway, type ReadBackup, type Written } from '../settings-backup';
+import { SettingsBackup, atStart, restoredSettings, type BackupGateway, type ReadBackup, type Written } from '../settings-backup';
 
 export class SettingsStore {
   /** the skin's settings; changed with `set` only, so they are stored */
@@ -58,7 +58,7 @@ export class SettingsStore {
       if (!this.backupAt) this.backupAt = backup?.savedAt ?? null;
       const action = atStart(this.hadSettings, this.settingsChanged, backup, this.settings);
       if (action === 'restore' && backup) {
-        this.settings = backup.settings;
+        this.settings = restoredSettings(backup, this.settings);
         saveSettings(this.settings);
         this.restoredFrom = backup.savedAt ?? '';
       } else if (action === 'write') {
@@ -73,7 +73,7 @@ export class SettingsStore {
     const backup = await this.backup.read();
     if (!backup) return null;
     this.backup.cancel();
-    this.settings = backup.settings;
+    this.settings = restoredSettings(backup, this.settings);
     this.settingsChanged = true;
     saveSettings(this.settings);
     this.backupAt = backup.savedAt;

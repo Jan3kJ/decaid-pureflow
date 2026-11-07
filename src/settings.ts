@@ -6,7 +6,7 @@ import { DEFAULT_PROFILES } from './aflow/defaults';
 import { DOSE_MAX, MAX_FLOW_RANGE } from './aflow/validate';
 import { DISPLAY_SIZES, LINE_WIDTHS, type DisplayChoice } from './display';
 import { isOnTemperature } from './shell/steam-heater';
-import { TANK_UNITS, type TankUnit } from './shell/tank';
+import { TANK_UNITS, tankRowsOk, type TankRow, type TankUnit } from './shell/tank';
 
 export interface Settings {
   /** the editor offers the generated profile steps under the graph; its panel opens closed */
@@ -26,6 +26,12 @@ export interface Settings {
   lineWidth: number;
   /** Quick Adjustments > Water Tank: the state line shows the tank in ml (Streamline's table) or in the machine's mm */
   tankUnit: TankUnit;
+  /**
+   * Quick Adjustments > Tank calibration: the user's own table of the tank, the level read after
+   * each amount poured, rising in both; empty for Decent's table. Read by `tankMl` only. This
+   * tablet's: the backup leaves it out (settings-backup.ts).
+   */
+  tankRows: TankRow[];
   /**
    * The editor's row of profiles to start from: five slots, each the
    * title of an A-Flow 3.0 profile or null for an empty one. A title, not an id: the id is a
@@ -118,6 +124,7 @@ export const DEFAULT_SETTINGS: Settings = {
   displaySize: 1,
   lineWidth: 1,
   tankUnit: 'ml',
+  tankRows: [],
   startProfiles: DEFAULT_START_PROFILES,
   maxFlow: 8,
   defaultDose: 18,
@@ -193,7 +200,21 @@ export function readSettings(stored: unknown): Settings {
     displaySize: choiceOf(DISPLAY_SIZES, settings.displaySize),
     lineWidth: choiceOf(LINE_WIDTHS, settings.lineWidth),
     tankUnit: TANK_UNITS.some((unit) => unit.value === settings.tankUnit) ? settings.tankUnit : DEFAULT_SETTINGS.tankUnit,
+    tankRows: readTankRows(values.tankRows),
   };
+}
+
+/** The most rows a tank table holds: 0 ml and 250 ml steps to 2000 ml are 9. */
+export const TANK_ROWS_MAX = 20;
+
+/** The stored tank rows: a list of `{ mm, ml }` that rise in both, else none (Decent's table). */
+export function readTankRows(stored: unknown): TankRow[] {
+  if (!Array.isArray(stored) || stored.length > TANK_ROWS_MAX) return [];
+  const rows = stored.map((row: unknown) => {
+    const { mm, ml } = (row && typeof row === 'object' ? row : {}) as Record<string, unknown>;
+    return { mm: typeof mm === 'number' ? mm : Number.NaN, ml: typeof ml === 'number' ? ml : Number.NaN };
+  });
+  return tankRowsOk(rows) ? rows : [];
 }
 
 /** The stored adjust amounts: three whole seconds in their range, else the defaults. */

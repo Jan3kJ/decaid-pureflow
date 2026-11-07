@@ -13,6 +13,8 @@ import {
   readAdjustments,
   readSettings,
   readStartProfiles,
+  readTankRows,
+  TANK_ROWS_MAX,
   saveSettings,
   steamValue,
   withRatio,
@@ -54,6 +56,7 @@ describe('settings', () => {
       displaySize: 1.15,
       lineWidth: 2,
       tankUnit: 'mm' as const,
+      tankRows: [{ mm: 9.8, ml: 250 }],
       startProfiles: ['A-Flow / mine', null, 'A-Flow / default-dark', null, null],
       maxFlow: 12,
       defaultDose: 17.5,
@@ -321,5 +324,43 @@ describe('the ratio favourites of the hot water page', () => {
     expect(withRatio(hotWater, 0, 50).ratios[0]).toBe(RATIO_RANGE.max);
     expect(withRatio(hotWater, 2, 0.1).ratios[2]).toBe(RATIO_RANGE.min);
     expect(hotWater.ratios).toEqual([2, 2.5, 3]);
+  });
+});
+
+describe("the user's tank rows", () => {
+  const rows = [
+    { mm: 0.4, ml: 0 },
+    { mm: 9.8, ml: 250 },
+  ];
+
+  it("are none by default: Decent's table", () => {
+    expect(DEFAULT_SETTINGS.tankRows).toEqual([]);
+    expect(loadSettings(fakeStore()).tankRows).toEqual([]);
+  });
+
+  it('are stored and read back', () => {
+    const store = fakeStore();
+    saveSettings({ ...DEFAULT_SETTINGS, tankRows: rows }, store);
+    expect(loadSettings(store).tankRows).toEqual(rows);
+  });
+
+  it('are none when the stored list is not rows that rise in both', () => {
+    expect(readTankRows(rows)).toEqual(rows);
+    expect(readTankRows([{ mm: 30, ml: 700 }])).toEqual([{ mm: 30, ml: 700 }]);
+    expect(readTankRows(null)).toEqual([]);
+    expect(readTankRows('rows')).toEqual([]);
+    expect(readTankRows([{ mm: '1', ml: 0 }])).toEqual([]);
+    expect(readTankRows([rows[1], rows[0]])).toEqual([]);
+    expect(readTankRows([...rows, null])).toEqual([]);
+    const many = Array.from({ length: TANK_ROWS_MAX + 1 }, (_, i) => ({ mm: i, ml: i * 30 }));
+    expect(readTankRows(many)).toEqual([]);
+    expect(
+      readSettings({
+        tankRows: [
+          { mm: 9.8, ml: 250 },
+          { mm: 9.8, ml: 500 },
+        ],
+      }).tankRows,
+    ).toEqual([]);
   });
 });

@@ -1,22 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CLEAN_WATER_MIN_ML, cleanWater, mmToMl } from './water-tank';
-
-describe('mmToMl', () => {
-  it("takes Streamline's table, rounded to whole mm", () => {
-    expect(mmToMl(0)).toBe(0);
-    expect(mmToMl(1)).toBe(16);
-    expect(mmToMl(13.4)).toBe(343);
-    expect(mmToMl(13.6)).toBe(371);
-    expect(mmToMl(38)).toBe(1042);
-    expect(mmToMl(69)).toBe(2058);
-  });
-
-  it('is 0 under the tank and full above the table', () => {
-    expect(mmToMl(-3)).toBe(0);
-    expect(mmToMl(70)).toBe(2058);
-    expect(mmToMl(120)).toBe(2058);
-  });
-});
+import { CLEAN_WATER_MIN_ML, cleanWater } from './water-tank';
 
 describe('cleanWater', () => {
   const at = (currentLevel: number) => cleanWater({ currentLevel, refillLevel: 5 });
@@ -28,6 +11,26 @@ describe('cleanWater', () => {
     expect(at(14)).toEqual({ ml: 371, low: false });
     expect(at(0)).toEqual({ ml: 0, low: true });
     expect(at(38)).toEqual({ ml: 1042, low: false });
+  });
+
+  it('takes the ml the state line takes, between two mm too, and full above the table', () => {
+    // 343 + 0.4 x 28 ml
+    expect(at(13.4)).toEqual({ ml: 354, low: false });
+    expect(at(13.2)).toEqual({ ml: 349, low: true });
+    expect(at(-3)).toEqual({ ml: 0, low: true });
+    expect(at(120)).toEqual({ ml: 2058, low: false });
+  });
+
+  it("takes the user's tank rows when there are any", () => {
+    const rows = [
+      { mm: 0.4, ml: 0 },
+      { mm: 9.8, ml: 250 },
+      { mm: 19.1, ml: 500 },
+    ];
+    // 250 + 2.2 / 9.3 x 250 ml, and 250 + 4.2 / 9.3 x 250 ml
+    expect(cleanWater({ currentLevel: 12, refillLevel: 5 }, rows)).toEqual({ ml: 309, low: true });
+    expect(cleanWater({ currentLevel: 14, refillLevel: 5 }, rows)).toEqual({ ml: 363, low: false });
+    expect(cleanWater({ currentLevel: 14, refillLevel: 5 }, [])).toEqual({ ml: 371, low: false });
   });
 
   it('does not warn while no level was read', () => {

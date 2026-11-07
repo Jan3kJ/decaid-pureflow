@@ -124,7 +124,16 @@ export class Skin {
   readonly appSleep = $derived(appSleepOf(this.machineAsleep, this.asleep, this.canSleep));
   /** the values of the state line, on home and on the steam page */
   readonly stateValues = $derived(
-    stateLine(this.link, this.shown, this.water, this.scaleLink, this.weight, this.scaleLooking, this.settings.tankUnit),
+    stateLine(
+      this.link,
+      this.shown,
+      this.water,
+      this.scaleLink,
+      this.weight,
+      this.scaleLooking,
+      this.settings.tankUnit,
+      this.settings.tankRows,
+    ),
   );
   /** the name of the step that runs, printed after the state line's values; null outside a shot */
   readonly step = $derived(runningStep(this.shot, this.link === 'machine' ? this.snapshot : null, this.workflow?.profile?.steps));

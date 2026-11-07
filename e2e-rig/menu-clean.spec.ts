@@ -1,11 +1,11 @@
 import { expect, test } from '@playwright/test';
 import type { MachineSnapshot } from '../src/api';
-import { mmToMl } from '../src/settings-page/water-tank';
+import { cleanWater } from '../src/settings-page/water-tank';
 import { waterLevels } from './gateway';
 import { IDLE } from './idle';
 
 // The menu's clean against the rig: home's menu opens
-// the settings page on Maintenance's clean, which shows the tank's water in ml as Streamline
+// the settings page on Maintenance's clean, which shows the tank's water in ml as the state line
 // converts the level of `/ws/v1/machine/waterLevels` (Decaid 0.8.8 has no REST request for it:
 // `GET /api/v1/machine/waterLevels` is 404), and the drip tray hint. Nothing is started; the
 // machine's state and the skin's KV backup are left as found. The same with a mocked gateway:
@@ -52,10 +52,10 @@ test("home menu: clean opens Maintenance's clean with the rig's water in ml and 
     await page.getByTestId('open-clean').click();
     await expect(page.getByTestId('settings-content')).toHaveAttribute('data-category', 'maintenance');
     await expect(page.getByTestId('maintenance-clean')).toBeInViewport();
-    await expect(page.getByTestId('maintenance-water-clean')).toHaveText(`water tank: ${mmToMl(levels.currentLevel)} ml`, {
+    await expect(page.getByTestId('maintenance-water-clean')).toHaveText(`water tank: ${cleanWater(levels).ml} ml`, {
       timeout: 15_000,
     });
-    await expect(page.getByTestId('maintenance-water-low-clean')).toHaveCount(mmToMl(levels.currentLevel) < 350 ? 1 : 0);
+    await expect(page.getByTestId('maintenance-water-low-clean')).toHaveCount(cleanWater(levels).low ? 1 : 0);
     await expect(page.getByTestId('maintenance-drip-tray-clean')).toHaveText('empty the drip tray before starting.');
     await expect(page.getByTestId('maintenance-start-clean')).toBeEnabled();
     await page.screenshot({ path: 'e2e-rig/.results/menu-clean-rig.png' });

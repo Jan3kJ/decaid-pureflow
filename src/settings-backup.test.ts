@@ -8,6 +8,8 @@ import {
   backupOf,
   backupTime,
   readBackup,
+  restoredSettings,
+  sameSettings,
   type Written,
 } from './settings-backup';
 
@@ -152,6 +154,25 @@ describe('writing the backup after a save', () => {
     backup.cancel();
     await vi.advanceTimersByTimeAsync(BACKUP_DEBOUNCE_MS * 2);
     expect(gateway.writes).toBe(0);
+  });
+});
+
+describe('the tank rows and the backup', () => {
+  const tankRows = [
+    { mm: 0.4, ml: 0 },
+    { mm: 9.8, ml: 250 },
+  ];
+
+  it("leaves this tablet's tank rows out of the backup", () => {
+    expect(backupOf({ ...CHANGED, tankRows }, '0.1.1', NOW).settings).toEqual(CHANGED);
+    expect(sameSettings({ ...CHANGED, tankRows }, CHANGED)).toBe(true);
+    expect(atStart(true, false, { savedAt: NOW.toISOString(), settings: CHANGED }, { ...CHANGED, tankRows })).toBeNull();
+  });
+
+  it('keeps the tank rows held when a backup is restored', () => {
+    const backup = { savedAt: NOW.toISOString(), settings: CHANGED };
+    expect(restoredSettings(backup, { ...DEFAULT_SETTINGS, tankRows })).toEqual({ ...CHANGED, tankRows });
+    expect(restoredSettings(backup, DEFAULT_SETTINGS)).toEqual(CHANGED);
   });
 });
 

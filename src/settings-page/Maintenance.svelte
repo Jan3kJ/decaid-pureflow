@@ -160,7 +160,9 @@
   const active = $derived(isActive(progress) || cooling !== null);
   // A clean uses about 300 ml and flushes it into the drip tray; the
   // warning does not stop Start.
-  const water = $derived(procedure.id === 'clean' ? cleanWater(skin.link === 'machine' ? skin.water : null) : null);
+  const water = $derived(
+    procedure.id === 'clean' ? cleanWater(skin.link === 'machine' ? skin.water : null, skin.settings.tankRows) : null,
+  );
 </script>
 
 <div class="procedure" data-testid="maintenance-{procedure.id}">

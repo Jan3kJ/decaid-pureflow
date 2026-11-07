@@ -336,6 +336,7 @@
           busy={!!busy[field.id]}
           error={failed[field.id] ?? null}
           onwrite={(value) => write(field, value)}
+          settings={skin.settings}
         />
       {/each}
       {#if sub.content.below && viewShown}{@render shown()}{/if}

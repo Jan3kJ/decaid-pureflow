@@ -16,6 +16,7 @@ import {
   type NumberField,
 } from './fields';
 import { TREE_FIELDS } from './tree';
+import { DEFAULT_SETTINGS } from '../settings';
 
 const byId = (id: string) => TREE_FIELDS.find((field) => field.id === id)!;
 const numberField = (id: string) => byId(id) as NumberField;
@@ -125,6 +126,19 @@ describe('water alert', () => {
     expect(field.note?.(69)).toBe('about 2060 ml');
     expect(field.note?.(0)).toBe('about 0 ml');
     expect(numberField('tank-temperature').note).toBeUndefined();
+  });
+
+  it("says the ml by the user's tank rows, the mm unchanged", () => {
+    const field = numberField('water-alert');
+    const tankRows = [
+      { mm: 0.4, ml: 0 },
+      { mm: 9.8, ml: 250 },
+      { mm: 19.1, ml: 500 },
+    ];
+    expect(field.note?.(15, { ...DEFAULT_SETTINGS, tankRows })).toBe('about 390 ml');
+    expect(field.note?.(15, DEFAULT_SETTINGS)).toBe('about 400 ml');
+    expect(field.unit).toBe('mm');
+    expect(field.max).toBe(69);
   });
 });
 
