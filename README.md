@@ -83,7 +83,10 @@ v0.2.17), "A browser-native skin for Decent Espresso machines", Copyright (C) 20
 Espresso, licensed under the GNU General Public License v3.0 or later as its `LICENSE.txt`
 states; it is used here under GPL-3.0. Each ported file carries that notice, and
 [NOTICE](NOTICE) lists them. `src/steps/fixtures/bundled-profiles.json` holds the 73 profiles
-Decaid 0.8.8 bundles (Decaid is GPL-3.0-or-later), with their numbers as numbers, as test data.
+Decaid 0.8.8 bundles (Decaid is GPL-3.0-or-later), with their numbers as numbers, as test data;
+`src/steps/fixtures/export-profiles.json` holds the 162 profiles of a user's Decaid export, written
+by `scripts/export-profiles.mjs` without their authors and notes, so the shot model is checked on
+them too.
 
 A-Flow was forked from D-Flow by Damian Brakel; the editor here writes A-Flow 3.0 in
 TypeScript, and [Jan3kJ/A_Flow](https://github.com/Jan3kJ/A_Flow) is the previous version of

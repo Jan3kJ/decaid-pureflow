@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULT_PROFILES, generateProfile } from '../aflow';
 import type { Profile, ProfileStep } from '../api';
 import bundled from './fixtures/bundled-profiles.json' with { type: 'json' };
+import exportedProfiles from './fixtures/export-profiles.json' with { type: 'json' };
 import recorded from './fixtures/shots-model.json' with { type: 'json' };
 import { PREDICT_STEP, predictShot, type Puck } from './predict';
 import { PUCK } from './puck';
@@ -10,6 +11,7 @@ import { stepCurve } from './curve';
 
 const profiles = (bundled as unknown as Profile[]).filter((profile) => profile.steps?.length);
 const shots = recorded as unknown as RecordedShot[];
+const exported = exportedProfiles as unknown as Profile[];
 
 const base = { volume: 0, weight: 0, temperature: 93, sensor: 'coffee', exit: null, limiter: null } as const;
 const flowStep = (flow: number, seconds: number, more: Partial<ProfileStep> = {}): ProfileStep => ({
@@ -205,6 +207,24 @@ describe('the check', () => {
     expect(result.mae.temperature.target).toBeCloseTo(1.175, 3);
     expect(result.lengthWithin).toBe(6);
     expect(result.passes).toEqual({ flow: true, pressure: true, temperature: false, length: false });
+  });
+
+  it('keeps of the export profiles the profile only, no name or words of a person', () => {
+    expect(exported).toHaveLength(162);
+    const kept = [
+      'version',
+      'title',
+      'beverage_type',
+      'steps',
+      'tank_temperature',
+      'target_weight',
+      'target_volume',
+      'target_volume_count_start',
+    ];
+    for (const profile of exported) {
+      for (const key of Object.keys(profile)) expect(kept, profile.title).toContain(key);
+    }
+    expect(exported.some((profile) => profile.title === 'A-Flow / imma')).toBe(true);
   });
 
   it('keeps nothing of the export but the measurements and the steps', () => {
