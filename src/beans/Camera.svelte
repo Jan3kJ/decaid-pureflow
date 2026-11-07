@@ -4,7 +4,7 @@
   // each time; where it is refused or missing, the system's camera through a file input stands in.
   import { onMount } from 'svelte';
   import Dialog from '../ui/Dialog.svelte';
-  import { fileToPhoto, toPhoto } from './photo';
+  import { fileToPhoto, nextAngle, toPhoto, type Angle } from './photo';
 
   interface Props {
     /** the photo, a JPEG data URL scaled down */
@@ -20,6 +20,9 @@
   /** why the live camera is not used: the file input stands in */
   let refused: string | null = $state(null);
   let failed: string | null = $state(null);
+  /** the overlay's clockwise turn, for the way the tablet is held; not stored */
+  let angle = $state<Angle>(0);
+  const sideways = $derived(angle === 90 || angle === 270);
 
   onMount(() => {
     let closed = false;
@@ -56,7 +59,7 @@
   function capture() {
     if (!video || !video.videoWidth) return;
     try {
-      oncapture(toPhoto(video, video.videoWidth, video.videoHeight));
+      oncapture(toPhoto(video, video.videoWidth, video.videoHeight, angle));
     } catch {
       failed = 'The picture was not taken.';
     }
@@ -73,36 +76,61 @@
   }
 </script>
 
-<Dialog label="photo of the bag" width="min(48rem, 92vw)" testid="camera" backdrop="camera-backdrop" {oncancel}>
-  <div class="pad">
-    <div class="head">
-      <span class="label">photo of the bag</span>
-      <button class="close" aria-label="cancel" data-testid="camera-close" onclick={oncancel}>×</button>
-    </div>
-    <video bind:this={video} class:hidden={!live} autoplay muted playsinline data-testid="camera-video"></video>
-    {#if refused}
-      <p class="note" data-testid="camera-refused">{refused} Take the picture with the system's camera instead.</p>
-    {:else if !live}
-      <p class="note" data-testid="camera-starting">Starting the camera…</p>
-    {/if}
-    {#if failed}
-      <p class="note warn" role="alert" data-testid="camera-failed">{failed}</p>
-    {/if}
-    <div class="actions">
+<Dialog label="photo of the bag" width={sideways ? 'auto' : 'min(48rem, 92vw)'} testid="camera" backdrop="camera-backdrop" {oncancel}>
+  <div class="stage" class:sideways>
+    <div class="pad" style:transform="rotate({angle}deg)" data-angle={angle} data-testid="camera-pad">
+      <div class="head">
+        <span class="label">photo of the bag</span>
+        <button class="close" aria-label="cancel" data-testid="camera-close" onclick={oncancel}>×</button>
+      </div>
+      <video bind:this={video} class:hidden={!live} autoplay muted playsinline data-testid="camera-video"></video>
       {#if refused}
-        <label class="button primary">
-          take a picture
-          <input type="file" accept="image/*" capture="environment" data-testid="camera-file" onchange={picked} />
-        </label>
-      {:else}
-        <button class="primary" data-testid="camera-capture" disabled={!live} onclick={capture}>capture</button>
+        <p class="note" data-testid="camera-refused">{refused} Take the picture with the system's camera instead.</p>
+      {:else if !live}
+        <p class="note" data-testid="camera-starting">Starting the camera…</p>
       {/if}
-      <button data-testid="camera-cancel" onclick={oncancel}>cancel</button>
+      {#if failed}
+        <p class="note warn" role="alert" data-testid="camera-failed">{failed}</p>
+      {/if}
+      <div class="actions">
+        {#if refused}
+          <label class="button primary">
+            take a picture
+            <input type="file" accept="image/*" capture="environment" data-testid="camera-file" onchange={picked} />
+          </label>
+        {:else}
+          <button class="primary" data-testid="camera-capture" disabled={!live} onclick={capture}>capture</button>
+        {/if}
+        <button data-testid="camera-turn" aria-label="turn the picture" onclick={() => (angle = nextAngle(angle))}>turn</button>
+        <button data-testid="camera-cancel" onclick={oncancel}>cancel</button>
+      </div>
     </div>
   </div>
 </Dialog>
 
 <style>
+  /* Turned a quarter, the pad keeps its landscape box and lies in a stage of the swapped size. */
+  .stage.sideways {
+    position: relative;
+    width: min(30rem, 80vw);
+    height: min(44rem, 86vh);
+  }
+
+  .sideways .pad {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: min(44rem, 86vh);
+    height: min(30rem, 80vw);
+    margin: calc(min(30rem, 80vw) / -2) 0 0 calc(min(44rem, 86vh) / -2);
+  }
+
+  .sideways video {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
+  }
+
   .pad {
     padding: 1rem;
     display: flex;

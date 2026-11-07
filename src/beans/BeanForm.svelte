@@ -13,6 +13,7 @@
   import Form from './Form.svelte';
   import { beanForm, beanTitle, dateOf, validBean, type BeanForm } from './catalogue';
   import { bagFields } from './fields';
+  import { markCapture } from './guard';
   import { photoFrame } from './photo';
   import { readPhoto } from './reading';
 
@@ -64,6 +65,7 @@
 
   function captured(taken: string) {
     shooting = false;
+    markCapture();
     photo = taken;
     if (__OCR__) void read(taken);
   }

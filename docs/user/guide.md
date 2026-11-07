@@ -93,7 +93,10 @@ shot is saved with them, and the history can filter by them.
 To add or change beans, open **Beans and grinders** from the menu, or from this dialog. In a
 bean's form, **photo** takes a picture of the bag with **capture**. It is kept with the bean
 when you save. **new photo** replaces it and **remove photo** deletes it. The photo stays in
-Decaid on the tablet; nothing is sent away.
+Decaid on the tablet; nothing is sent away. **turn** in the camera turns the whole view a quarter
+clockwise each tap, so that **capture** is at the lower side for the way you hold the tablet; the
+photo is saved as you see it. For a second after the capture, taps on the beans list are
+ignored, so a double tap on **capture** does not drop the photo.
 
 The skin with bag reading (the ZIP whose name ends in `-ocr`) also reads a new photo, on the
 tablet itself. While it reads, the form says **Reading the bag**; **cancel** stops it. Then the

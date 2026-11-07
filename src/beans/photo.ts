@@ -32,15 +32,32 @@ export function isPhoto(value: unknown): value is string {
   return typeof value === 'string' && value.startsWith('data:image/jpeg;base64,');
 }
 
-/** Draws a video frame or a picture scaled down into a JPEG data URL. */
-export function toPhoto(source: CanvasImageSource, width: number, height: number): string {
-  const size = photoSize(width, height);
+/** A clockwise turn of the camera's overlay and of the frame taken in it, in degrees. */
+export type Angle = 0 | 90 | 180 | 270;
+
+/** The next angle of the turn button: a quarter turn clockwise, 270 back to 0. */
+export function nextAngle(angle: Angle): Angle {
+  return ((angle + 90) % 360) as Angle;
+}
+
+/** A picture's size once turned by `angle`: width and height swap at 90 and 270. */
+export function turnedSize(width: number, height: number, angle: Angle): { width: number; height: number } {
+  return angle === 90 || angle === 270 ? { width: height, height: width } : { width, height };
+}
+
+/** Draws a video frame or a picture, turned clockwise by `angle` and scaled down, into a JPEG data URL. */
+export function toPhoto(source: CanvasImageSource, width: number, height: number, angle: Angle = 0): string {
+  const turned = turnedSize(width, height, angle);
+  const size = photoSize(turned.width, turned.height);
+  const scale = size.width / turned.width;
   const canvas = document.createElement('canvas');
   canvas.width = size.width;
   canvas.height = size.height;
   const context = canvas.getContext('2d');
   if (!context) throw new Error('no canvas');
-  context.drawImage(source, 0, 0, size.width, size.height);
+  context.translate(size.width / 2, size.height / 2);
+  context.rotate((angle * Math.PI) / 180);
+  context.drawImage(source, (-width * scale) / 2, (-height * scale) / 2, width * scale, height * scale);
   return canvas.toDataURL('image/jpeg', PHOTO_QUALITY);
 }
 

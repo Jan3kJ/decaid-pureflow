@@ -8,6 +8,7 @@
   import Confirm from '../settings-page/Confirm.svelte';
   import type { Skin } from '../shell/skin.svelte';
   import BeanForm from './BeanForm.svelte';
+  import { captureGuarded } from './guard';
   import { beanTitle, dateOf, newestFirst, roasters, search } from './catalogue';
   import GrinderForm from './GrinderForm.svelte';
   import type { BeanForm as BeanFields, GrinderForm as GrinderFields } from './catalogue';
@@ -51,7 +52,13 @@
   const batch = $derived(catalogue.batchOf(bean));
   const grinder = $derived(kind === 'grinders' ? (catalogue.grinders.find((entry) => entry.id === chosen) ?? null) : null);
 
+  /** Selects what a tap chose, unless it falls in the guard after a capture. */
+  function select(id: string | null) {
+    if (!captureGuarded()) chosen = id;
+  }
+
   function choose(next: Kind) {
+    if (captureGuarded()) return;
     kind = next;
     chosen = null;
     query = '';
@@ -139,7 +146,7 @@
         show archived
       </button>
     </div>
-    <button class="row add select-outline" aria-current={chosen === null} data-testid="beans-add" onclick={() => (chosen = null)}>
+    <button class="row add select-outline" aria-current={chosen === null} data-testid="beans-add" onclick={() => select(null)}>
       + {kind === 'beans' ? 'add a bean' : 'add a grinder'}
     </button>
     <ul data-testid="beans-list">
@@ -152,7 +159,7 @@
               class:archived={entry.archived}
               aria-current={entry.id === chosen}
               data-testid="bean-row"
-              onclick={() => (chosen = entry.id)}
+              onclick={() => select(entry.id)}
             >
               <strong class="truncate">{beanTitle(entry)}</strong>
               <small>
@@ -169,7 +176,7 @@
               class:archived={entry.archived}
               aria-current={entry.id === chosen}
               data-testid="grinder-row"
-              onclick={() => (chosen = entry.id)}
+              onclick={() => select(entry.id)}
             >
               <strong class="truncate">{entry.model}</strong>
               <small

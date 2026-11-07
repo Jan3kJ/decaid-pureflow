@@ -1,5 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import { isPhoto, orphanPhotoKeys, photoFrame, photoKey, photoSize } from './photo';
+import { isPhoto, nextAngle, orphanPhotoKeys, photoFrame, photoKey, photoSize, turnedSize, type Angle } from './photo';
+
+describe('the turn', () => {
+  it('cycles 0, 90, 180, 270 and back to 0', () => {
+    const seen: Angle[] = [0];
+    for (let i = 0; i < 4; i++) seen.push(nextAngle(seen[i]));
+    expect(seen).toEqual([0, 90, 180, 270, 0]);
+  });
+
+  it('swaps width and height of the captured frame at 90 and 270', () => {
+    expect(turnedSize(1920, 1080, 0)).toEqual({ width: 1920, height: 1080 });
+    expect(turnedSize(1920, 1080, 90)).toEqual({ width: 1080, height: 1920 });
+    expect(turnedSize(1920, 1080, 180)).toEqual({ width: 1920, height: 1080 });
+    expect(turnedSize(1920, 1080, 270)).toEqual({ width: 1080, height: 1920 });
+  });
+});
 
 describe('photoSize', () => {
   it('scales the longest side down to 1024 px and keeps the shape', () => {

@@ -104,6 +104,8 @@ test('a photo from the live camera is shown in the form, stored with the bean, r
   await expect(page.getByTestId('camera')).toHaveCount(0);
   // Chromium's fake camera gives 1920 x 1080: stored at 1024 px on the long side.
   expect(await photoSize(page)).toEqual({ width: 1024, height: 576, src: 'data:image/jpeg;base64,' });
+  // taps that leave the form are ignored for a second after the capture
+  await page.waitForTimeout(1000);
 
   await expect(page.getByTestId('bean-name')).toHaveValue('');
   await expect(page.getByTestId('bean-roaster')).toHaveValue('');
@@ -152,6 +154,58 @@ async function noReading(page: Page) {
   await expect(form.getByRole('button', { name: 'cancel' })).toHaveCount(0);
   await expect(form.getByRole('button')).toHaveText(['new photo', 'remove photo', 'no roast date', 'add']);
 }
+
+test('the turn button turns the camera a quarter per tap, capture stays the lower control, and the photo is turned the same', async ({
+  page,
+}) => {
+  await cameraShowsBag(page);
+  await openBeans(page);
+  await page.getByTestId('bean-photo-take').click();
+  await expect(page.getByTestId('camera-capture')).toBeEnabled();
+  const pad = page.getByTestId('camera-pad');
+  const box = async (id: string) => (await page.getByTestId(id).boundingBox())!;
+  for (const angle of ['0', '90', '180', '270']) {
+    await expect(pad).toHaveAttribute('data-angle', angle);
+    const capture = await box('camera-capture');
+    const video = await box('camera-video');
+    // the capture button is at the overlay's lower side, which the turn moves to the left, top or right
+    if (angle === '0') expect(capture.y).toBeGreaterThan(video.y + video.height - 1);
+    if (angle === '90') expect(capture.x + capture.width).toBeLessThanOrEqual(video.x + 1);
+    if (angle === '180') expect(capture.y + capture.height).toBeLessThanOrEqual(video.y + 1);
+    if (angle === '270') expect(capture.x).toBeGreaterThanOrEqual(video.x + video.width - 1);
+    await page.getByTestId('camera-turn').click();
+  }
+  await expect(pad).toHaveAttribute('data-angle', '0');
+  await page.getByTestId('camera-turn').click();
+  // at 90 the captured 640 x 400 frame is 400 x 640
+  await expect(pad).toHaveAttribute('data-angle', '90');
+  await page.getByTestId('camera-capture').click();
+  await expect(page.getByTestId('camera')).toHaveCount(0);
+  expect(await photoSize(page)).toEqual({ width: 400, height: 640, src: 'data:image/jpeg;base64,' });
+  // the angle is not kept: the next camera starts upright
+  await page.getByTestId('bean-photo-take').click();
+  await expect(page.getByTestId('camera-pad')).toHaveAttribute('data-angle', '0');
+});
+
+test('a tap on a bean right after the capture is ignored, and works a second later; the photo is kept', async ({ page }) => {
+  await cameraShowsBag(page);
+  await openBeans(page);
+  await page.getByTestId('bean-name').fill('First');
+  await page.getByTestId('bean-roaster').fill('Roaster');
+  await page.getByTestId('bean-save').click();
+  await expect(page.getByTestId('bean-row')).toHaveCount(1);
+  await page.getByTestId('beans-add').click();
+  await page.getByTestId('bean-photo-take').click();
+  await expect(page.getByTestId('camera-capture')).toBeEnabled();
+  await page.getByTestId('camera-capture').click();
+  await expect(page.getByTestId('bean-photo')).toBeVisible();
+  await page.getByTestId('bean-row').click({ noWaitAfter: true });
+  await expect(page.getByTestId('bean-photo')).toBeVisible();
+  await expect(page.getByTestId('bean-row')).not.toHaveAttribute('aria-current', 'true');
+  await page.waitForTimeout(1100);
+  await page.getByTestId('bean-row').click();
+  await expect(page.getByTestId('bean-row')).toHaveAttribute('aria-current', 'true');
+});
 
 test('the photo of a printed bag is kept, not read: the fields stay as they were, with no request to another host', async ({
   page,
