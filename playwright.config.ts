@@ -14,7 +14,7 @@ export default defineConfig({
   outputDir: 'e2e/.results',
   reporter: CI ? [['list'], ['github']] : 'list',
   retries: 0,
-  workers: 1,
+  workers: CI ? 1 : 4,
   use: {
     baseURL: `http://localhost:${PORT}`,
     browserName: 'chromium',
