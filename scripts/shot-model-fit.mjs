@@ -2,7 +2,10 @@
 // Fits the shot model (src/steps/predict.ts) to a Decaid export and checks it on profiles the
 // fit did not see.
 //
-//   node scripts/shot-model-fit.mjs <export .zip, its folder, or its shots.json>
+//   node scripts/shot-model-fit.mjs <export .zip, its folder, or its shots.json> [--keep]
+//
+// With --keep it fits nothing and writes nothing: it checks the constants of src/steps/puck.ts,
+// so a change of the model is measured against the export with the same constants.
 //
 // Writes src/steps/puck.ts (the constants), src/steps/fixtures/shots-model.json (ten held-out
 // shots, one sample per 0.5 s, the measurements and the steps only) and three plots
@@ -30,6 +33,7 @@ registerHooks({
   },
 });
 const { predictShot, PREDICT_STEP } = await import('../src/steps/predict.ts');
+const { PUCK } = await import('../src/steps/puck.ts');
 const { shotEstimate } = await import('../src/steps/estimate.ts');
 const { stepCurve } = await import('../src/steps/curve.ts');
 const { shotErrors, addSums, means, lengthFits, checkShots, modelAt, QUANTITIES } = await import('../src/steps/shot-check.ts');
@@ -295,6 +299,8 @@ function fit(train) {
     kept: 30,
     temperatureOffset: -2,
     temperatureLag: 3,
+    // chosen against the founder's ranges of a step change, not fitted
+    releaseLag: PUCK.releaseLag,
   };
   const toPuck = (x) => ({ ...puck, ...Object.fromEntries(HYDRAULIC.map((key, i) => [key, Math.exp(x[i])])) });
   let best = { x: HYDRAULIC.map((key) => Math.log(puck[key])), y: Infinity };
@@ -508,19 +514,27 @@ console.log(
   );
 }
 
-const puck = fit(train);
+const keep = process.argv.includes('--keep');
+const puck = keep ? PUCK : fit(train);
 const rounded = Object.fromEntries(Object.entries(puck).map(([key, value]) => [key, Number(value.toPrecision(3))]));
 console.log('\nthe puck:', JSON.stringify(rounded));
+console.log(`squared loss: fit set ${loss(train, rounded).toFixed(3)}, held-out set ${loss(held, rounded).toFixed(3)}`);
 report('\nfit set', train, rounded);
 const check = report('\nheld-out set (the check)', held, rounded);
 reportByKind(held, rounded);
 console.log('');
 reportRamps('fit set', train, rounded);
 reportRamps('held-out set', held, rounded);
-
-writeFileSync(
-  join(root, 'src/steps/puck.ts'),
-  `// Written by scripts/shot-model-fit.mjs; run it again rather than edit by hand.
+if (keep) {
+  const fixture = JSON.parse(readFileSync(join(root, 'src/steps/fixtures/shots-model.json'), 'utf8'));
+  const fixtureCheck = checkShots(fixture, rounded);
+  console.log(
+    `\nfixture (${fixture.length} shots): flow ${fixtureCheck.mae.flow.model.toFixed(3)}, pressure ${fixtureCheck.mae.pressure.model.toFixed(3)}, temperature ${fixtureCheck.mae.temperature.model.toFixed(3)}, lengths ${fixtureCheck.lengthWithin} of ${fixture.length}`,
+  );
+} else {
+  writeFileSync(
+    join(root, 'src/steps/puck.ts'),
+    `// Written by scripts/shot-model-fit.mjs; run it again rather than edit by hand.
 import type { Puck } from './predict';
 
 export const PUCK: Puck = {
@@ -529,34 +543,35 @@ ${Object.entries(rounded)
   .join('\n')}
 };
 `,
-);
+  );
 
-// ten held-out shots of ten profiles, the steps without names of their own
-const fixtureTitles = shuffled([...heldTitles].sort(), random(SEED + 1)).slice(0, FIXTURE_SHOTS);
-const fixture = fixtureTitles.map((title, n) => {
-  const { shot } = shuffled(byTitle.get(title), random(SEED + 2 + n))[0];
-  const aflow = shot.profile.steps.every((s) => AFLOW_STEPS.includes(s.name));
-  return {
-    ...shot,
-    profile: {
-      title: `held-out shot ${n + 1} (${aflow ? 'A-Flow' : 'other profile'})`,
-      target_weight: shot.profile.target_weight,
-      steps: shot.profile.steps.map((step, i) => ({ ...step, name: aflow ? step.name : `step ${i + 1}` })),
-    },
-  };
-});
-mkdirSync(join(root, 'src/steps/fixtures'), { recursive: true });
-writeFileSync(join(root, 'src/steps/fixtures/shots-model.json'), `${JSON.stringify(fixture)}\n`);
-const fixtureCheck = checkShots(fixture, rounded);
-console.log(
-  `\nfixture (${fixture.length} shots): flow ${fixtureCheck.mae.flow.model.toFixed(2)} / ${fixtureCheck.mae.flow.target.toFixed(2)}, pressure ${fixtureCheck.mae.pressure.model.toFixed(2)} / ${fixtureCheck.mae.pressure.target.toFixed(2)}, temperature ${fixtureCheck.mae.temperature.model.toFixed(2)} / ${fixtureCheck.mae.temperature.target.toFixed(2)}, lengths ${fixtureCheck.lengthWithin} of ${fixture.length}`,
-);
+  // ten held-out shots of ten profiles, the steps without names of their own
+  const fixtureTitles = shuffled([...heldTitles].sort(), random(SEED + 1)).slice(0, FIXTURE_SHOTS);
+  const fixture = fixtureTitles.map((title, n) => {
+    const { shot } = shuffled(byTitle.get(title), random(SEED + 2 + n))[0];
+    const aflow = shot.profile.steps.every((s) => AFLOW_STEPS.includes(s.name));
+    return {
+      ...shot,
+      profile: {
+        title: `held-out shot ${n + 1} (${aflow ? 'A-Flow' : 'other profile'})`,
+        target_weight: shot.profile.target_weight,
+        steps: shot.profile.steps.map((step, i) => ({ ...step, name: aflow ? step.name : `step ${i + 1}` })),
+      },
+    };
+  });
+  mkdirSync(join(root, 'src/steps/fixtures'), { recursive: true });
+  writeFileSync(join(root, 'src/steps/fixtures/shots-model.json'), `${JSON.stringify(fixture)}\n`);
+  const fixtureCheck = checkShots(fixture, rounded);
+  console.log(
+    `\nfixture (${fixture.length} shots): flow ${fixtureCheck.mae.flow.model.toFixed(2)} / ${fixtureCheck.mae.flow.target.toFixed(2)}, pressure ${fixtureCheck.mae.pressure.model.toFixed(2)} / ${fixtureCheck.mae.pressure.target.toFixed(2)}, temperature ${fixtureCheck.mae.temperature.model.toFixed(2)} / ${fixtureCheck.mae.temperature.target.toFixed(2)}, lengths ${fixtureCheck.lengthWithin} of ${fixture.length}`,
+  );
 
-for (const [n, shot] of fixture.slice(0, 3).entries()) {
-  const model = predictShot(shot.profile, rounded);
-  const kind = shot.profile.title.replace(/^held-out shot \d+ \((.*)\)$/, '$1');
-  const caption = `Held-out shot ${n + 1}, ${kind}: real ${shot.t[shot.t.length - 1].toFixed(0)} s, model ${model.seconds.toFixed(0)} s, stop weight ${shot.profile.target_weight} g`;
-  writeFileSync(join(root, `docs/product/shot-model-${n + 1}.svg`), plot(shot, rounded, caption));
+  for (const [n, shot] of fixture.slice(0, 3).entries()) {
+    const model = predictShot(shot.profile, rounded);
+    const kind = shot.profile.title.replace(/^held-out shot \d+ \((.*)\)$/, '$1');
+    const caption = `Held-out shot ${n + 1}, ${kind}: real ${shot.t[shot.t.length - 1].toFixed(0)} s, model ${model.seconds.toFixed(0)} s, stop weight ${shot.profile.target_weight} g`;
+    writeFileSync(join(root, `docs/product/shot-model-${n + 1}.svg`), plot(shot, rounded, caption));
+  }
 }
 if (process.argv.includes('--shots')) {
   // per held-out shot: the length and the moments the steps start, real against model

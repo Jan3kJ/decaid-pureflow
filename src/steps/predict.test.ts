@@ -106,10 +106,68 @@ describe('predictShot', () => {
     const pressures = shot.pressure.slice(first, Math.round(soak.end / PREDICT_STEP) + 1);
     // the wetting puck's resistance still climbs under the falling flow, which drew a peak of 9.4 bar
     expect(Math.max(...pressures)).toBeLessThanOrEqual(shot.pressure[first] + 1e-9);
-    // the flow is as it was: it falls towards 0 and the step ends under 2 bar
+    // the flow falls towards 0 all through the step; the pressure the puck holds falls slowly, so
+    // the step runs its 4 s rather than ending under 2 bar
     expect(shot.flow.slice(first + 1, first + pressures.length).every((flow, i) => flow < shot.flow[first + i])).toBe(true);
-    expect(soak.end).toBeCloseTo(8.3);
+    expect(soak.end - soak.start).toBeCloseTo(4);
   });
+
+  it('lets the pressure of Baseline, Medium Contact, 6 Bar fall slowly in the Soak, with no rise after it', () => {
+    const profile = profiles.find((entry) => entry.title === 'Baseline • Medium Contact • 6 Bar')!;
+    const shot = predictShot(profile);
+    const [soak, percolation] = [1, 2].map((index) => shot.steps.find((span) => span.index === index)!);
+    const at = (time: number) => Math.round(time / PREDICT_STEP);
+    const start = shot.pressure[at(soak.start)];
+    // the fill ends just over its 4 bar exit: the pressure builds at 5 bar/s at most
+    expect(start).toBeGreaterThan(4);
+    expect(start).toBeLessThan(4.5);
+    // never above the Soak's start across the Soak and the start of the next step
+    expect(Math.max(...shot.pressure.slice(at(soak.start), at(percolation.start + 4) + 1))).toBeLessThanOrEqual(start + 1e-9);
+    // the Soak still holds most of it at its end
+    expect(shot.pressure[at(soak.end)]).toBeGreaterThan(3);
+    // later the step's own flow limit times the wet puck's resistance bounds it
+    const bound = 1.5 * PUCK.r1;
+    expect(Math.max(...shot.pressure.slice(at(percolation.start)))).toBeLessThanOrEqual(bound + 1e-9);
+  });
+
+  it('keeps the pressure of A-Flow / imma when its fill ends, and lets the flow fall over seconds', () => {
+    const profile = exported.find((entry) => entry.title === 'A-Flow / imma')!;
+    const shot = predictShot(profile);
+    const infuse = shot.steps.find((span) => span.index === 2)!;
+    const at = (time: number) => Math.round(time / PREDICT_STEP);
+    const start = at(infuse.start);
+    // the fill ends at its 3 bar exit, not over a jump of the wetting puck's resistance
+    expect(shot.pressure[start]).toBeGreaterThan(3);
+    expect(shot.pressure[start]).toBeLessThan(3.5);
+    // one second later the puck still holds 2.5 bar
+    expect(shot.pressure[start + at(1)]).toBeGreaterThanOrEqual(2.5);
+    // the flow needs at least 2 s to fall to 0.5 ml/s
+    const low = shot.flow.findIndex((flow, i) => i > start && flow <= 0.5);
+    if (low >= 0) expect(shot.t[low] - shot.t[start]).toBeGreaterThanOrEqual(2);
+    expect(shot.flow[start + at(2)]).toBeGreaterThan(0.5);
+    // it falls all the while the pump pushes less
+    for (let i = start + 1; i <= start + at(3); i += 1) {
+      expect(shot.flow[i], `flow at ${shot.t[i]} s`).toBeLessThan(shot.flow[i - 1]);
+    }
+  });
+
+  it('jumps by no more than 0.5 bar or 0.5 ml/s at a step boundary, but for a fast step to a higher target', () => {
+    for (const profile of [...profiles, ...exported]) {
+      const shot = predictShot(profile);
+      for (const span of shot.steps.slice(1)) {
+        const first = Math.round(span.start / PREDICT_STEP);
+        const step = profile.steps[span.index];
+        const drivesFlow = step.pump !== 'pressure';
+        const goal = Number((drivesFlow ? step.flow : step.pressure) ?? 0);
+        if (step.transition !== 'smooth' && goal > (drivesFlow ? shot.flow : shot.pressure)[first]) continue;
+        for (const i of [first, first + 1].filter((i) => i < shot.t.length)) {
+          const where = `${profile.title}, step ${span.index + 1} at ${shot.t[i].toFixed(1)} s`;
+          expect(Math.abs(shot.pressure[i] - shot.pressure[i - 1]), where).toBeLessThanOrEqual(0.5 + 1e-6);
+          expect(Math.abs(shot.flow[i] - shot.flow[i - 1]), where).toBeLessThanOrEqual(0.5 + 1e-6);
+        }
+      }
+    }
+  }, 30_000);
 
   it('never raises the other quantity while the driven one falls', () => {
     const fill = flowStep(8, 15, { exit: { type: 'pressure', condition: 'over', value: 3 } });
@@ -150,6 +208,7 @@ describe('predictShot', () => {
   it('models the bundled profiles, the A-Flow defaults and the fixture: finite, not negative, the same twice', () => {
     const all = [
       ...profiles,
+      ...exported,
       ...DEFAULT_PROFILES.map((entry) => generateProfile(entry.params, { title: entry.id })),
       ...shots.map((shot) => shot.profile),
     ];
@@ -195,17 +254,17 @@ describe('the check', () => {
   });
 
   it('on the ten held-out shots of the fixture: flow and pressure pass, temperature and length do not', () => {
-    // Measured: the same check on all 242 held-out shots passes the flow
-    // and the temperature and fails the pressure (39.7 percent below) and the length (59 percent)
+    // Measured: the same check on all 242 held-out shots passes the flow, the pressure (40.5 percent
+    // below the targets) and the temperature and fails the length (64 percent)
     expect(shots).toHaveLength(10);
     const result = checkShots(shots);
-    expect(result.mae.flow.model).toBeCloseTo(0.635, 3);
+    expect(result.mae.flow.model).toBeCloseTo(0.686, 3);
     expect(result.mae.flow.target).toBeCloseTo(4.815, 3);
-    expect(result.mae.pressure.model).toBeCloseTo(0.938, 3);
+    expect(result.mae.pressure.model).toBeCloseTo(0.841, 3);
     expect(result.mae.pressure.target).toBeCloseTo(1.6865, 3);
-    expect(result.mae.temperature.model).toBeCloseTo(1.339, 3);
+    expect(result.mae.temperature.model).toBeCloseTo(1.342, 3);
     expect(result.mae.temperature.target).toBeCloseTo(1.175, 3);
-    expect(result.lengthWithin).toBe(6);
+    expect(result.lengthWithin).toBe(7);
     expect(result.passes).toEqual({ flow: true, pressure: true, temperature: false, length: false });
   });
 

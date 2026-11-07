@@ -8,6 +8,7 @@ export const PUCK: Puck = {
   headspace: 29,
   flowLag: 1.36,
   pressureLag: 1.34,
+  releaseLag: 4,
   kept: 42.7,
   temperatureOffset: -2.51,
   temperatureLag: 26.1,
