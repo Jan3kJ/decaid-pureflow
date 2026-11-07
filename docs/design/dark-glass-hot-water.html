@@ -1,0 +1,779 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dark glass – hot water</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #04070a;
+        --fg: #e4eff5;
+        --dim: #6f7f8b;
+        --faint: rgb(255 255 255 / 10%);
+        --edge: rgb(255 255 255 / 7%);
+        --edge-hi: rgb(255 255 255 / 13%);
+        --temperature: #ff5c63;
+        --flow: #4aa8ff;
+        --pressure: #3fe39b;
+        --weight: #ffc35c;
+        --time: #cfe6f2;
+        --radius: 1rem;
+        --space-1: 0.3rem;
+        --space-2: 0.6rem;
+        --space-3: 1.2rem;
+        --space-4: 2.4rem;
+        --text-label: 0.85rem;
+        --text-body: 1.1rem;
+        --text-value: 1.3rem;
+        --text-title: 1.6rem;
+        --text-large: 2.2rem;
+        --text-big: 3.6rem;
+        font-family: 'Inter', system-ui, sans-serif;
+        font-size: min(2vh, 1.25vw);
+      }
+
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
+
+      body {
+        color: var(--fg);
+        overflow: hidden;
+        /* the room behind the glass: two faint lights so the blur has something to catch */
+        background:
+          radial-gradient(60rem 40rem at 15% -10%, rgb(74 168 255 / 13%), transparent 60%),
+          radial-gradient(50rem 35rem at 105% 110%, rgb(255 92 99 / 8%), transparent 60%), var(--bg);
+      }
+
+      button {
+        font: inherit;
+        color: inherit;
+        cursor: pointer;
+      }
+
+      .glass {
+        position: relative;
+        border-radius: var(--radius);
+        border: 1px solid var(--edge);
+        background: linear-gradient(165deg, rgb(255 255 255 / 5.5%), rgb(255 255 255 / 1.2%) 45%, rgb(255 255 255 / 2.5%));
+        backdrop-filter: blur(1.4rem) saturate(140%);
+        box-shadow:
+          inset 0 1px 0 var(--edge-hi),
+          inset 0 0 2rem rgb(255 255 255 / 1.5%),
+          0 1.5rem 4rem rgb(0 0 0 / 55%);
+      }
+
+      .page {
+        height: 100%;
+        box-sizing: border-box;
+        padding: 0.8rem var(--space-3) 1rem;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 21rem;
+        grid-template-rows: auto minmax(0, 1fr);
+        gap: var(--space-2) var(--space-3);
+      }
+
+      /* ---------- header: one thin line of light ---------- */
+      header {
+        grid-column: 1 / -1;
+        /* the page's two columns: the values centred over the main frame, title and menu over the column */
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 21rem;
+        align-items: center;
+        column-gap: var(--space-3);
+        min-height: 3.5rem;
+        font-variant-numeric: tabular-nums;
+        position: relative;
+        isolation: isolate;
+      }
+
+      /* the machine's state as a faint light behind the header row: red while heating, blue while water runs */
+      header::before {
+        content: '';
+        position: absolute;
+        inset: -0.8rem calc(-1 * var(--space-3)) -0.4rem;
+        z-index: -1;
+        background: radial-gradient(60% 140% at 38% 0%, rgb(var(--state-rgb, 0 0 0) / 37.5%), transparent 80%);
+        opacity: 0;
+        transition: opacity 0.8s;
+        pointer-events: none;
+      }
+      .heating header::before {
+        --state-rgb: 255 92 99;
+        opacity: 1;
+        animation: breathe 3s ease-in-out infinite;
+      }
+      .pouring header::before {
+        --state-rgb: 74 168 255;
+        opacity: 1;
+      }
+      @keyframes breathe {
+        50% {
+          opacity: 0.55;
+        }
+      }
+      .heating #group b {
+        color: var(--temperature);
+      }
+
+      .menu {
+        width: 3.5rem;
+        height: 3.5rem;
+        display: grid;
+        place-items: center;
+        margin-right: -0.9rem;
+        border: 0;
+        background: none;
+      }
+      .menu span {
+        display: block;
+        width: 1.3rem;
+        height: 1px;
+        background: var(--fg);
+        box-shadow:
+          0 0.4rem 0 var(--fg),
+          0 -0.4rem 0 var(--fg);
+      }
+
+      .readings {
+        display: flex;
+        justify-content: center;
+        gap: var(--space-4);
+      }
+      .end {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: var(--space-3);
+      }
+
+      .reading {
+        display: flex;
+        align-items: baseline;
+        gap: var(--space-1);
+        font-size: var(--text-value);
+        font-weight: 300;
+      }
+      .reading small {
+        font-size: var(--text-label);
+        color: var(--dim);
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        margin-right: var(--space-1);
+      }
+      .reading i {
+        font-style: normal;
+        font-size: var(--text-label);
+        color: var(--dim);
+      }
+      .reading.weight b {
+        color: var(--weight);
+        text-shadow: 0 0 0.8rem rgb(255 195 92 / 45%);
+      }
+      .reading b {
+        font-weight: 400;
+      }
+
+      .title {
+        font-size: var(--text-value);
+        font-weight: 300;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        color: var(--dim);
+      }
+
+      /* ---------- the main frame: four lines of light ---------- */
+      .rows {
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        padding: var(--space-2) var(--space-4);
+      }
+
+      .row {
+        --c: var(--fg);
+        --p: 0.5;
+        flex: 1;
+        position: relative;
+        touch-action: none;
+        cursor: ew-resize;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .row + .row::before {
+        /* no divider: the next line's own spacing separates */
+        content: none;
+      }
+
+      .temperature {
+        --c: var(--temperature);
+        --rgb: 255 92 99;
+      }
+      .flow {
+        --c: var(--flow);
+        --rgb: 74 168 255;
+      }
+      .time {
+        --c: var(--time);
+        --rgb: 207 230 242;
+      }
+      .weight {
+        --c: var(--weight);
+        --rgb: 255 195 92;
+      }
+
+      .track {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 66%;
+        height: 0;
+      }
+
+      .rest {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: -0.5px;
+        height: 1px;
+        background: linear-gradient(90deg, rgb(var(--rgb) / 22%), rgb(255 255 255 / 9%) 30%);
+      }
+
+      .fill {
+        position: absolute;
+        left: 0;
+        top: -1px;
+        height: 2px;
+        width: calc(var(--p) * 100%);
+        background: linear-gradient(90deg, rgb(var(--rgb) / 15%), var(--c));
+        border-radius: 2px;
+        transition:
+          height 0.2s,
+          top 0.2s,
+          box-shadow 0.25s;
+      }
+
+      /* the halo around the tapped value: a soft light under the glass behind number and unit */
+      .value::before {
+        content: '';
+        position: absolute;
+        inset: -2.2rem -3rem;
+        background: radial-gradient(closest-side, rgb(var(--rgb) / 24%), transparent);
+        opacity: 0;
+        z-index: -1;
+        pointer-events: none;
+        transition: opacity 0.3s;
+      }
+
+      .value {
+        position: absolute;
+        bottom: calc(34% + 0.8rem);
+        isolation: isolate;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+        transition: text-shadow 0.25s;
+      }
+      .value b {
+        font-size: var(--text-large);
+        font-weight: 300;
+        color: var(--c);
+        letter-spacing: 0.01em;
+      }
+      .value i {
+        font-style: normal;
+        margin-left: 0.25em;
+        font-size: var(--text-body);
+        font-weight: 300;
+        color: var(--dim);
+        text-shadow: none;
+      }
+
+      /* live values while hot water runs: a brighter fill over the set line */
+      .live {
+        position: absolute;
+        left: 0;
+        top: -2px;
+        height: 4px;
+        width: 0;
+        background: var(--c);
+        box-shadow:
+          0 0 0.9rem rgb(var(--rgb) / 90%),
+          0 0 0.25rem #fff;
+        border-radius: 2px;
+        display: none;
+      }
+      .live-value {
+        position: absolute;
+        top: 1rem;
+        display: none;
+        font-size: var(--text-label);
+        color: var(--c);
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+        transform: translateX(-50%);
+      }
+      .pouring .row.runs .live,
+      .pouring .row.runs .live-value {
+        display: block;
+      }
+      .pouring .row.runs .fill {
+        opacity: 0.35;
+      }
+
+      /* selected: the glow */
+      .row.on .fill {
+        height: 3px;
+        top: -1.5px;
+        box-shadow:
+          0 0 0.6rem rgb(var(--rgb) / 90%),
+          0 0 1.6rem rgb(var(--rgb) / 45%);
+      }
+      .row.on .value::before {
+        opacity: 1;
+      }
+      .row.on .value {
+        text-shadow:
+          0 0 0.8rem rgb(var(--rgb) / 80%),
+          0 0 2.4rem rgb(var(--rgb) / 50%);
+      }
+
+      /* ---------- the column ---------- */
+      aside {
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+      }
+
+      .line {
+        display: flex;
+        align-items: baseline;
+        gap: var(--space-1);
+        padding: 0 var(--space-1);
+        font-variant-numeric: tabular-nums;
+      }
+      .line small {
+        flex: 1;
+        font-size: var(--text-label);
+        color: var(--dim);
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+      }
+      .line b {
+        font-size: var(--text-large);
+        font-weight: 300;
+        color: var(--weight);
+        text-shadow: 0 0 1rem rgb(255 195 92 / 40%);
+      }
+      .line i {
+        font-style: normal;
+        font-size: var(--text-body);
+        color: var(--dim);
+        width: 1.4rem;
+      }
+
+      .scale {
+        min-height: 3rem;
+        align-items: center;
+        padding: 0 var(--space-3) 0 var(--space-2);
+        border-radius: var(--radius);
+        border: 1px solid var(--edge);
+        background: rgb(255 255 255 / 2.5%);
+        text-align: left;
+      }
+      .scale:active {
+        box-shadow:
+          0 0 0 1px rgb(255 195 92 / 60%),
+          0 0 1.5rem rgb(255 195 92 / 25%);
+      }
+      .scale b {
+        font-size: var(--text-title);
+      }
+      .scale .tare {
+        font-size: var(--text-label);
+        color: var(--dim);
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        margin-right: var(--space-2);
+      }
+
+      .ratios {
+        display: flex;
+        gap: var(--space-2);
+      }
+      .chip {
+        flex: 1;
+        min-height: 4.4rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-1);
+        border-radius: var(--radius);
+        border: 1px solid var(--edge);
+        background: rgb(255 255 255 / 2.5%);
+        font-size: var(--text-value);
+        font-weight: 300;
+        font-variant-numeric: tabular-nums;
+        transition:
+          box-shadow 0.25s,
+          border-color 0.25s;
+      }
+      .chip small {
+        font-size: var(--text-label);
+        color: var(--dim);
+      }
+      .chip[aria-pressed='true'] {
+        border-color: rgb(255 195 92 / 70%);
+        box-shadow:
+          0 0 1.2rem rgb(255 195 92 / 25%),
+          inset 0 0 1.2rem rgb(255 195 92 / 10%);
+      }
+      .chip[aria-pressed='true'] small {
+        color: var(--weight);
+      }
+
+      .demos {
+        margin-top: auto;
+        display: flex;
+        gap: var(--space-2);
+      }
+      .demo {
+        flex: 1;
+        min-height: 3rem;
+        border-radius: var(--radius);
+        border: 1px dashed rgb(255 255 255 / 18%);
+        background: none;
+        font-size: var(--text-label);
+        color: var(--dim);
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+      .heating #heat,
+      .pouring #demo {
+        border: 1px solid rgb(255 92 99 / 70%);
+        color: var(--temperature);
+        box-shadow: 0 0 1.4rem rgb(255 92 99 / 25%);
+      }
+
+      /* ---------- number pad ---------- */
+      .scrim {
+        position: fixed;
+        inset: 0;
+        background: rgb(0 0 0 / 50%);
+        backdrop-filter: blur(0.4rem);
+        display: none;
+        place-items: center;
+        z-index: 10;
+      }
+      .scrim.open {
+        display: grid;
+      }
+      .pad {
+        width: 22rem;
+        padding: var(--space-3);
+        display: grid;
+        gap: var(--space-2);
+      }
+      .pad .shown {
+        text-align: right;
+        padding: var(--space-2) var(--space-1) var(--space-3);
+        border-bottom: 1px solid var(--faint);
+        font-variant-numeric: tabular-nums;
+      }
+      .pad .shown b {
+        font-size: var(--text-big);
+        font-weight: 200;
+        color: var(--c);
+        text-shadow: 0 0 1.2rem rgb(var(--rgb) / 60%);
+      }
+      .pad .shown i {
+        font-style: normal;
+        font-size: var(--text-body);
+        color: var(--dim);
+        margin-left: 0.3em;
+      }
+      .keys {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--space-2);
+      }
+      .keys button {
+        min-height: 3.5rem;
+        border-radius: var(--radius);
+        border: 1px solid var(--edge);
+        background: rgb(255 255 255 / 3%);
+        font-size: var(--text-value);
+        font-weight: 300;
+      }
+      .keys button:active {
+        background: rgb(var(--rgb) / 18%);
+      }
+      .keys .ok {
+        color: var(--c);
+        border-color: rgb(var(--rgb) / 50%);
+      }
+
+      .note {
+        position: fixed;
+        right: 0.6rem;
+        bottom: 0.3rem;
+        font-size: 0.7rem;
+        color: rgb(255 255 255 / 25%);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page" id="page">
+      <header>
+        <div class="readings">
+          <div class="reading" id="group"><small>group</small><b>88.2</b><i>°C</i></div>
+          <div class="reading"><small>steam</small><b>148</b><i>°C</i></div>
+          <div class="reading"><small>tank</small><b>1040</b><i>ml</i></div>
+          <div class="reading weight"><small>scale</small><b id="head-scale">0.0</b><i>g</i></div>
+        </div>
+        <div class="end">
+          <div class="title">Hot water</div>
+          <button class="menu" aria-label="menu"><span></span></button>
+        </div>
+      </header>
+
+      <main class="rows glass" id="rows"></main>
+
+      <aside>
+        <div class="line"><small>last shot</small><b>36.4</b><i>g</i></div>
+        <div class="ratios" id="ratios"></div>
+        <button class="scale line" id="scale">
+          <small>scale</small><span class="tare">tare</span><b id="scale-value">0.0</b><i>g</i>
+        </button>
+        <div class="demos"><button class="demo" id="heat">demo · heat</button><button class="demo" id="demo">demo · pour</button></div>
+      </aside>
+    </div>
+
+    <div class="scrim" id="scrim">
+      <div class="pad glass" id="pad">
+        <div class="shown"><b id="pad-value"></b><i id="pad-unit"></i></div>
+        <div class="keys" id="keys"></div>
+      </div>
+    </div>
+
+    <div class="note">prototype · tap a line to light it, drag sideways to change, tap its number again to type</div>
+
+    <script>
+      const fields = [
+        { id: 'temperature', unit: '°C', min: 50, max: 95, dec: false, value: 90 },
+        { id: 'flow', unit: 'ml/s', min: 0.1, max: 8, dec: true, value: 6.5 },
+        { id: 'time', unit: 's', min: 5, max: 120, dec: false, value: 60 },
+        { id: 'weight', unit: 'g', min: 10, max: 500, dec: false, value: 250 },
+      ];
+      const held = (f, v) => Math.min(f.max, Math.max(f.min, f.dec ? Math.round(v * 10) / 10 : Math.round(v)));
+      const text = (f, v) => (f.dec ? v.toFixed(1) : String(Math.round(v)));
+      const frac = (f, v) => (v - f.min) / (f.max - f.min);
+
+      const rowsEl = document.getElementById('rows');
+      let selected = null;
+
+      for (const f of fields) {
+        const row = document.createElement('div');
+        row.className = `row ${f.id}`;
+        row.innerHTML = `
+      <div class="track">
+        <div class="rest"></div>
+        <div class="fill"></div>
+        <div class="live"></div>
+        <div class="live-value"></div>
+      </div>
+      <div class="value"><b></b><i>${f.unit}</i></div>`;
+        rowsEl.append(row);
+        f.row = row;
+        f.valueEl = row.querySelector('.value');
+        draw(f);
+
+        let start = null;
+        row.addEventListener('pointerdown', (e) => {
+          row.setPointerCapture(e.pointerId);
+          const wasOn = selected === f;
+          select(f);
+          start = { x: e.clientX, v: f.value, moved: false, wasOn, onValue: f.valueEl.contains(e.target) };
+        });
+        row.addEventListener('pointermove', (e) => {
+          if (!start) return;
+          const dx = e.clientX - start.x;
+          if (!start.moved && Math.abs(dx) < 6) return;
+          start.moved = true;
+          // relative: the line moves from where it is, a tap never makes it jump
+          const width = row.querySelector('.track').getBoundingClientRect().width;
+          f.value = held(f, start.v + (dx / width) * (f.max - f.min));
+          draw(f);
+          ratiosDraw();
+        });
+        const end = () => {
+          if (start && !start.moved && start.wasOn && start.onValue) openPad(f);
+          start = null;
+        };
+        row.addEventListener('pointerup', end);
+        row.addEventListener('pointercancel', () => (start = null));
+      }
+
+      document.addEventListener('pointerdown', (e) => {
+        if (!rowsEl.contains(e.target) && !document.getElementById('scrim').contains(e.target)) select(null);
+      });
+
+      function select(f) {
+        selected = f;
+        for (const g of fields) g.row.classList.toggle('on', g === f);
+        rowsEl.classList.toggle('has-on', !!f);
+      }
+
+      function draw(f) {
+        const p = frac(f, f.value);
+        f.row.style.setProperty('--p', p);
+        f.valueEl.querySelector('b').textContent = text(f, f.value);
+        // the number stands over its marker, held inside the line's ends
+        const track = f.row.querySelector('.track').getBoundingClientRect();
+        const w = f.valueEl.getBoundingClientRect().width;
+        const x = Math.min(track.width - w, Math.max(0, p * track.width - w / 2));
+        f.valueEl.style.left = `${x}px`;
+      }
+      addEventListener('resize', () => fields.forEach(draw));
+
+      // ratio chips
+      const lastShot = 36.4;
+      const ratios = [2, 2.5, 3];
+      const weight = fields[3];
+      const ratiosEl = document.getElementById('ratios');
+      for (const r of ratios) {
+        const b = document.createElement('button');
+        b.className = 'chip';
+        const amount = held(weight, lastShot * r);
+        b.innerHTML = `1:${r}<small>${amount} g</small>`;
+        b.onclick = () => {
+          weight.value = amount;
+          draw(weight);
+          ratiosDraw();
+          select(weight);
+        };
+        b.dataset.amount = amount;
+        ratiosEl.append(b);
+      }
+      function ratiosDraw() {
+        for (const b of ratiosEl.children) b.setAttribute('aria-pressed', String(+b.dataset.amount === weight.value));
+      }
+      ratiosDraw();
+
+      // number pad
+      const scrim = document.getElementById('scrim');
+      const pad = document.getElementById('pad');
+      let typing = null,
+        typed = '';
+      const keys = ['7', '8', '9', '4', '5', '6', '1', '2', '3', '.', '0', '⌫'];
+      const keysEl = document.getElementById('keys');
+      for (const k of [...keys, 'cancel', '', 'ok']) {
+        const b = document.createElement('button');
+        b.textContent = k;
+        if (k === 'ok') b.className = 'ok';
+        if (k === '') {
+          b.style.visibility = 'hidden';
+        }
+        b.onclick = () => {
+          if (k === 'cancel') return closePad();
+          if (k === 'ok') {
+            if (typed) {
+              typing.value = held(typing, Number(typed));
+              draw(typing);
+              ratiosDraw();
+            }
+            return closePad();
+          }
+          if (k === '⌫') typed = typed.slice(0, -1);
+          else if (k !== '.' || (typing.dec && !typed.includes('.'))) typed += k;
+          padDraw();
+        };
+        keysEl.append(b);
+      }
+      function openPad(f) {
+        typing = f;
+        typed = '';
+        pad.className = `pad glass ${f.id}`;
+        document.getElementById('pad-unit').textContent = f.unit;
+        padDraw();
+        scrim.classList.add('open');
+      }
+      function padDraw() {
+        document.getElementById('pad-value').textContent = typed || text(typing, typing.value);
+      }
+      function closePad() {
+        scrim.classList.remove('open');
+        typing = null;
+      }
+      scrim.addEventListener('pointerdown', (e) => {
+        if (e.target === scrim) closePad();
+      });
+
+      // demo: while hot water runs, the time and weight lines fill with the live values
+      const page = document.getElementById('page');
+      let run = null;
+      document.getElementById('demo').onclick = () => (run ? stopRun() : startRun());
+      function startRun() {
+        page.classList.add('pouring');
+        document.getElementById('demo').textContent = 'stop';
+        fields[2].row.classList.add('runs');
+        fields[3].row.classList.add('runs');
+        const t0 = performance.now();
+        const rate = fields[1].value * 0.95; // g/s
+        const tick = () => {
+          const s = ((performance.now() - t0) / 1000) * 4; // 4x speed
+          const g = Math.min(weight.value, s * rate);
+          live(fields[2], Math.min(s, fields[2].value), `${s.toFixed(0)} s`);
+          live(weight, g, `${g.toFixed(1)} g`);
+          document.getElementById('scale-value').textContent = g.toFixed(1);
+          document.getElementById('head-scale').textContent = g.toFixed(1);
+          if (g >= weight.value || s >= fields[2].value) return stopRun(true);
+          run = requestAnimationFrame(tick);
+        };
+        run = requestAnimationFrame(tick);
+      }
+      function live(f, v, label) {
+        const p = Math.max(0, frac(f, Math.max(f.min, v)));
+        f.row.querySelector('.live').style.width = `${p * 100}%`;
+        const lv = f.row.querySelector('.live-value');
+        lv.style.left = `${p * 100}%`;
+        lv.textContent = label;
+      }
+      function stopRun(done) {
+        cancelAnimationFrame(run);
+        run = null;
+        page.classList.remove('pouring');
+        document.getElementById('demo').textContent = 'demo · pour';
+        for (const f of fields) f.row.classList.remove('runs');
+      }
+      // demo: heating, the header glows red until the group is hot
+      let heat = null;
+      document.getElementById('heat').onclick = () => {
+        const group = document.querySelector('#group b');
+        if (heat) {
+          clearInterval(heat);
+          heat = null;
+          page.classList.remove('heating');
+          group.textContent = '88.2';
+          return;
+        }
+        let t = 62;
+        page.classList.add('heating');
+        heat = setInterval(() => {
+          t = Math.min(88.2, t + 0.4);
+          group.textContent = t.toFixed(1);
+          if (t >= 88.2) document.getElementById('heat').click();
+        }, 80);
+      };
+      document.getElementById('scale').onclick = () => {
+        document.getElementById('scale-value').textContent = '0.0';
+        document.getElementById('head-scale').textContent = '0.0';
+      };
+    </script>
+  </body>
+</html>
