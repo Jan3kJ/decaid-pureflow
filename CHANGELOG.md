@@ -4,6 +4,45 @@ What changed in each version of pureflow, newest first. From 0.7.0 on a section 
 the release script (`npm run release`) from the commits' `Changelog:` lines; the sections up to
 0.6.1 summarise the hand-over builds that came before it.
 
+## 0.11.0 - 2026-11-07
+
+### Added
+
+- A filter on the settings page finds a setting in every category, working where it is listed, and the profile picker's filter now finds words in any order. (Z83)
+- Maintenance has 'Clean with detergent' before 'Clean': it loads Cleaning/Forward Flush x5 for you to start at the machine, follows the run, then leads you through a 10 s flush and the machine's cleaning cycle, and loads your earlier profile again at the end or on cancel. (Z87)
+- The user guide tells how to clean with detergent, step by step. (Z87)
+- The tank's ml can come from your own tank table, on the state line, in the water alert's note and in the clean's 350 ml check alike; the clean now reads the level between two mm as the state line does. (Z90)
+- Settings > Quick Adjustments has 'Tank calibration': empty the tank, pour 250 ml at a time and tap next once the level is steady; 'done' from 1000 ml makes the skin use your own tank table, and 'back to decent's table' goes back. (Z90)
+- The user guide tells how to make your own tank table, and the tank calibration's value and buttons sit together at the right of their row. (Z90)
+- The tank calibration's help starts lower case, as every hint of the settings does. (Z90)
+- The camera has a turn button that turns the whole view a quarter clockwise per tap, and for a second after the capture taps on the beans list are ignored. (Z95)
+
+### Changed
+
+- The stop reason ("stopped by hand") now lies under the temperature row. (Z75)
+- The mug size on the steam page is a plain S, M or L, no frame and no background. (Z76)
+- Anything selected now looks like the profile picker's row, a white frame on a slightly lighter background, on every page. (Z77)
+- The captions beside the time, weight, pressure, flow and temperature are centred in their rows. (Z80)
+- A new release holds pureflow.zip and pureflow-ocr.zip without a version in the name; Skin version installs an older release from that release's own pureflow.zip. (Z81)
+- The space under a profile's description is the same as above it. (Z82)
+- With the machine asleep and the app awake, the menu keeps 'Machine and app sleep' and the two-finger swipe down sends the app to sleep too. (Z84)
+- The bag's photo thumbnail shows the whole photo in its own shape, a portrait photo upright and a landscape one wide. (Z85)
+- The editor's message shows over the top of the graph for 10 s, a failure too, and a tap closes it; the graph no longer makes room for a row. (Z88)
+- With the machine asleep, the menu shows 'Wake machine' before 'Machine and app sleep', which stays last. (Z94)
+- On home the profile card starts level with the graph's top edge, and the title 'Home' stands at the top right. (Z96)
+- In the editor a line dragged on the graph moves slowly at first, so small changes like a flow of 0.1 ml/s are easy, and faster the farther you drag. (Z97)
+
+### Fixed
+
+- The bag's reading finds a name printed up the side of the bag, as well as the upright lines. (Z86)
+- The modelled shot no longer draws a pressure peak when a step's flow falls; the pressure only falls once the pump stops pushing. (Z89)
+- The modelled shot is checked on every profile of a user's export, not only on the bundled ones. (Z93)
+- The modelled shot no longer jumps where a step ends: the pressure the puck holds falls slowly and the flow falls over seconds. (Z93)
+- The modelled flow comes down to a step's flow limit smoothly, without a last step down. (Z93)
+- The architecture notes name the modelled shot, its fit check and the export profiles it is tested on. (Z93)
+
+Checks: npm ci, npm run verify and npm run e2e passed; rig suite: not run.
+
 ## 0.10.0 - 2026-11-01
 
 ### Added
