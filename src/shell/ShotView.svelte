@@ -10,7 +10,7 @@
 
   interface Props {
     skin: Skin;
-    /** home's header, left of the right column, which starts at the page's top beside it */
+    /** home's header, left of the title; the right column starts below both, level with the graph */
     top?: Snippet;
   }
 
@@ -53,6 +53,7 @@
 
 <div class="shot" class:values={table !== null} data-testid="home-shot" data-shot={shown.kind}>
   <div class="top">{@render top?.()}</div>
+  <h1 data-testid="home-title">Home</h1>
   <!-- No strip and no caption over the graph: the step is in the state line, the shot's time
        and weight and a recalled entry's profile, bean and grinder in the column. -->
   <div class="plot" data-testid={PLOT[shown.kind]} data-main-frame>
@@ -145,19 +146,29 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr) 17rem;
     grid-template-rows: auto minmax(0, 1fr);
-    grid-template-areas: 'top side' 'plot side';
+    grid-template-areas: 'top title' 'plot side';
     gap: var(--space-2) var(--space-3);
   }
 
   /* The table's row only when it is drawn: else the graph takes its height. */
   .shot.values {
     grid-template-rows: auto minmax(0, 1fr) auto;
-    grid-template-areas: 'top side' 'plot side' 'table side';
+    grid-template-areas: 'top title' 'plot side' 'table side';
   }
 
   .top {
     grid-area: top;
     min-width: 0;
+  }
+
+  /* a page's header is a name, as on steam and hot water */
+  h1 {
+    grid-area: title;
+    align-self: center;
+    margin: 0;
+    font-size: var(--text-body);
+    font-weight: 600;
+    line-height: 1.15;
   }
 
   .plot {
@@ -227,7 +238,8 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    /* the column has one row less than the page: the smaller gap is what keeps the stop button in view at the largest display size */
+    gap: var(--space-1);
   }
 
   small,
@@ -282,7 +294,7 @@
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    gap: var(--space-1);
   }
 
   dd {

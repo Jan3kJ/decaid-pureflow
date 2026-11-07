@@ -87,8 +87,10 @@ test('no strip on home; while a shot runs the state line ends with the step’s 
   await expect(page.getByTestId('shot-caption')).toHaveCount(0);
   expect(parseFloat((await page.getByTestId('shot-timer').textContent())!)).toBeGreaterThan(25);
   expect(parseFloat((await page.getByTestId('shot-weight').textContent())!)).toBeGreaterThan(0);
-  // The right column starts at the page's top.
-  expect(Math.abs((await box(page, 'shot-column')).y - header.y)).toBeLessThan(2);
+  // The right column starts level with the graph's top, under the header's row.
+  expect(
+    Math.abs((await box(page, 'shot-column')).y - (await page.locator('[data-main-frame]').first().boundingBox())!.y),
+  ).toBeLessThan(2);
   expect(errors).toEqual([]);
 });
 

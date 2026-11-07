@@ -4,7 +4,7 @@ import { toPage } from './touch';
 
 // One header on home, steam and hot water: the menu
 // in the top left corner, the state line right of it at the same place with the same values, the
-// page's title at the right end; on home the right column beside it.
+// page's title at the right end; on home the title 'Home' is at the right end and the right column under it.
 
 const errors: string[] = [];
 
@@ -52,9 +52,9 @@ test('the menu is in the top left corner of home, steam and hot water, the state
   const home = await measure(page, 'home');
   await expect(home.header.getByTestId('page-title')).toHaveCount(0);
   expect(home.entries).toContain('open-settings');
-  // The right column starts at the page's top beside the header, which ends left of it.
+  // The right column starts level with the graph, under the header's row, which ends left of it.
   const column = (await page.getByTestId('shot-column').boundingBox())!;
-  expect(Math.abs(column.y - home.own.y)).toBeLessThan(2);
+  expect(column.y).toBeGreaterThan(home.own.y + home.own.height - 1);
   expect(home.own.x + home.own.width).toBeLessThanOrEqual(column.x);
   await page.screenshot({ path: 'docs/product/header-home.png' });
 

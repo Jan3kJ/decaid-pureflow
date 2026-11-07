@@ -33,7 +33,7 @@ right on a row goes back too, unless the row is open: then it closes the row.
 ## Home is also the shot screen
 
 Start a shot at the machine. Home draws it live: blue is flow, green pressure, red temperature,
-yellow the weight. While it runs the header names the running step. The right column holds the
+yellow the weight. While it runs the header names the running step; the title **Home** is at the top right. The right column starts level with the graph's top edge and holds the
 time, the weight and the live values, each caption on the left and its number on the right; under
 **weight** it says where the shot stops. After the shot the column reads **time, finished** and
 keeps the shot until the next one starts. A line under the weight says why it stopped, as Decaid
