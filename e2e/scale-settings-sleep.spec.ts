@@ -231,6 +231,7 @@ test('settings: the defaults, typed values and both switches survive a reload', 
       displaySize: 1,
       lineWidth: 1,
       tankUnit: 'ml',
+      tankRows: [],
       startProfiles: [
         'A-Flow / default-floral',
         'A-Flow / default-light',

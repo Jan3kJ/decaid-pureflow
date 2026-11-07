@@ -90,7 +90,7 @@
 
   <SettingsRow
     label="how"
-    hint="Empty the tank; set a refill kit to 'force off' first. Then pour 250 ml at a time, slowly, weighed on a scale (1 g = 1 ml), with the machine level, and tap next once the level is steady. You may stop from 1000 ml. The sensor reads to about a mm, about 30 ml. If the level looks low, lift the uptake assembly out of the water for 5 to 10 s before you start."
+    hint="empty the tank; set a refill kit to 'force off' first. Then pour 250 ml at a time, slowly, weighed on a scale (1 g = 1 ml), with the machine level, and tap next once the level is steady. You may stop from 1000 ml. The sensor reads to about a mm, about 30 ml. If the level looks low, lift the uptake assembly out of the water for 5 to 10 s before you start."
   />
 
   <SettingsRow
