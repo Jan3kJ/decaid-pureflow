@@ -125,6 +125,11 @@ can read its steps; a title or a tag does not decide. Every other profile opens 
   operations on a v2 profile that keep every field the editor does not show. Above the cards,
   `StepPreview` draws the targets; a tap on it opens the step under the finger (`stepAt` in
   `curve.ts`) and centres its card. The picker's and the script tab's previews take no tap.
+- **The modelled shot** (`src/steps/predict.ts`, its constants in `puck.ts`): the picker's
+  estimate. `scripts/shot-model-fit.mjs` fits the constants to a Decaid export, or with `--keep`
+  checks the present ones and writes nothing; `scripts/export-profiles.mjs` writes the export's
+  profiles into `src/steps/fixtures/export-profiles.json`, on which the unit tests check every step
+  boundary for jumps.
 
 ## Maintenance
 
