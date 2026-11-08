@@ -18,25 +18,11 @@
     buttonTestid?: string;
     /** after the caption, centred with it */
     children?: Snippet;
-    /** the caption on the number's baseline and the number in the font's own line height (hot water) */
-    baseline?: boolean;
-    /** as thin as the stop's edge: --control rather than --control-big (hot water's scale) */
+    /** as thin as the stop's edge: --control rather than --control-big (the scale of both pages) */
     thin?: boolean;
   }
 
-  let {
-    label,
-    value,
-    unit = 'g',
-    tone,
-    testid,
-    onclick,
-    disabled = false,
-    buttonTestid,
-    children,
-    baseline = false,
-    thin = false,
-  }: Props = $props();
+  let { label, value, unit = 'g', tone, testid, onclick, disabled = false, buttonTestid, children, thin = false }: Props = $props();
 </script>
 
 {#snippet line()}
@@ -47,9 +33,9 @@
 {/snippet}
 
 {#if onclick}
-  <button class="line" class:baseline class:thin data-testid={buttonTestid} {disabled} {onclick}>{@render line()}</button>
+  <button class="line" class:thin data-testid={buttonTestid} {disabled} {onclick}>{@render line()}</button>
 {:else}
-  <div class="line" class:baseline>{@render line()}</div>
+  <div class="line">{@render line()}</div>
 {/if}
 
 <style>
@@ -85,14 +71,6 @@
     gap: var(--space-1);
     color: var(--dim);
     font-size: var(--text-label);
-  }
-
-  .baseline .key {
-    align-self: auto;
-  }
-
-  .baseline b {
-    line-height: normal;
   }
 
   .reading {

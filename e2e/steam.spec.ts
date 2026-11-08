@@ -490,9 +490,9 @@ test("the steam page's scale row is the tare: one button over the row, off while
   gateway.putOnScale(300);
   await expect(page.getByTestId('steam-weight')).toHaveText('300.0 g');
   const row = page.getByTestId('steam-tare');
-  // The whole row: label, number and unit inside one button of 3.5 rem, with no hint.
+  // The whole row: label, number and unit inside one button of 3 rem, with no hint.
   await expect(row).toHaveText(/^scale\s*300\.0\s*g$/);
-  expect((await row.boundingBox())!.height).toBeGreaterThanOrEqual(3.5 * 16 - 0.5);
+  expect((await row.boundingBox())!.height).toBeGreaterThanOrEqual(3 * 16 - 0.5);
   await expect(page.getByText(/tap to tare|tared/)).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'tare', exact: true })).toHaveCount(0);
   await row.click();

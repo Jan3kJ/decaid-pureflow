@@ -130,7 +130,6 @@
 
   <!-- label, number, unit as on the steam page: 'last shot' and 'scale' share the number column -->
   <ValueLine
-    baseline
     label="last shot"
     value={shotWeightText(lastShot)}
     unit={lastShot === null ? '' : 'g'}
@@ -158,7 +157,6 @@
   <!-- The scale's row is the one tare of the skin (Skin.tare), live for an empty cup and
          off while water runs; without a scale it looks for the scale. -->
   <ValueLine
-    baseline
     label="scale"
     value={skin.weight === null ? null : gramsOf(skin.weight, '')}
     tone="weight"

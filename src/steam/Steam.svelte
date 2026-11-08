@@ -100,6 +100,7 @@
         tone="weight"
         testid="steam-weight"
         buttonTestid="steam-tare"
+        thin
         disabled={steaming}
         onclick={() => skin.tare()}
       />
@@ -234,7 +235,7 @@
   /* in place of the scale's lines, as high as one */
   .none {
     display: block;
-    min-height: var(--control-big);
+    min-height: var(--control);
     align-content: center;
     padding: 0 0.6rem 0 1rem;
     text-align: left;
