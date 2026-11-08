@@ -72,6 +72,9 @@ async function dragBy(page: Page, from: { x: number; y: number }, dx: number, dy
   await page.mouse.down();
   await page.mouse.move(from.x + dx / 2, from.y + dy / 2, { steps: 4 });
   await page.mouse.move(from.x + dx, from.y + dy, { steps: 4 });
+  // The drag is drawn on the next frame, and a page nobody draws to (a test only polling it) does
+  // not draw: wait for one, so a read after the move sees the value the finger set.
+  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => resolve(null))));
 }
 
 const number = async (page: Page, testid: string) => parseFloat((await page.getByTestId(testid).textContent())!.replace('pause', ''));
