@@ -273,8 +273,8 @@ export function timeAxis(p: AFlowParams): TimeAxis {
  * linear value; the gain then rises smoothly to `FAST_GAIN`, reached at `RAMP_END` and kept,
  * which makes up for the slow start so a line still reaches the ends of its range in one drag.
  */
-export const FINE_ZONE = 0.1;
-export const RAMP_END = 0.3;
+export const FINE_ZONE = 0.05;
+export const RAMP_END = 0.2;
 export const FINE_GAIN = 0.25;
 export const FAST_GAIN = 2;
 

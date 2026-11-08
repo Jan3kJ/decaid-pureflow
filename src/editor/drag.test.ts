@@ -76,8 +76,8 @@ describe('a finger that lifts or is cancelled', () => {
 
 describe('the dynamic pace of a line drag', () => {
   const height = 300;
-  it('counts at most a quarter of the linear amount over the first 10 % of the height', () => {
-    for (let d = 1; d <= 30; d++) expect(dragPixels(d, height)).toBeLessThanOrEqual(0.25 * d + 1e-9);
+  it('counts at most a quarter of the linear amount over the first 5 % of the height', () => {
+    for (let d = 1; d <= 15; d++) expect(dragPixels(d, height)).toBeLessThanOrEqual(0.25 * d + 1e-9);
   });
   it('is continuous and rises', () => {
     let last = 0;
@@ -88,11 +88,18 @@ describe('the dynamic pace of a line drag', () => {
       last = now;
     }
   });
+  it('keeps the fine pace to 5 % and the present pace from 20 % of the height', () => {
+    const slope = (t: number) => (dragPixels((t + 1e-4) * height, height) - dragPixels(t * height, height)) / (1e-4 * height);
+    expect(slope(0.04)).toBeCloseTo(0.25, 3);
+    expect(slope(0.049)).toBeCloseTo(0.25, 1);
+    expect(slope(0.21)).toBeCloseTo(2, 3);
+    expect(slope(0.5)).toBeCloseTo(2, 3);
+  });
   it('is symmetric and gives the start at the start', () => {
     expect(dragPixels(0, height)).toBe(0);
     for (const d of [3, 40, 120, 250]) expect(dragPixels(-d, height)).toBe(-dragPixels(d, height));
   });
-  it('is at least the linear amount past 30 % of the height, so a full drag reaches the end', () => {
-    for (let d = 0.35 * height; d <= 2 * height; d += 5) expect(dragPixels(d, height)).toBeGreaterThanOrEqual(d);
+  it('is at least the linear amount past 20 % of the height, so a full drag reaches the end', () => {
+    for (let d = 0.25 * height; d <= 2 * height; d += 5) expect(dragPixels(d, height)).toBeGreaterThanOrEqual(d);
   });
 });
