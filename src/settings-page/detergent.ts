@@ -2,7 +2,7 @@
 // by the user at the machine; one flush of 10 s without the portafilter; the machine's cleaning
 // cycle. The skin starts no shot: it loads the profile and watches the machine's state. Pure: the
 // frames in, the state out; `detergent-clean.svelte.ts` does the requests. No UI.
-import type { MachineSnapshot, MachineState, Workflow, WorkflowPatch } from '../api';
+import type { MachineSnapshot, MachineState, RinseData, Workflow, WorkflowPatch } from '../api';
 import { CLEAN, IDLE, advance, caption, type Progress, type Tone } from './maintenance';
 
 /** The title Decaid bundles the profile under. */
@@ -29,13 +29,29 @@ export interface Earlier {
   targetYield: number;
   /** g */
   targetDoseWeight: number | null;
+  /** s, the workflow's flush time (rinseData.duration); null when it had none */
+  flushDuration: number | null;
 }
 
 export const earlierOf = (workflow: Workflow): Earlier => ({
   profile: workflow.profile ?? null,
   targetYield: workflow.context?.targetYield ?? 0,
   targetDoseWeight: workflow.context?.targetDoseWeight ?? null,
+  flushDuration: workflow.rinseData?.duration ?? null,
 });
+
+/** The flush runs the procedure's 10 s whatever the machine's setting was; null when it is set already. */
+export function flushSetPatch(rinse: RinseData | undefined): WorkflowPatch | null {
+  if (!rinse || rinse.duration === FLUSH_SECONDS) return null;
+  return { rinseData: { ...rinse, duration: FLUSH_SECONDS } };
+}
+
+/** The flush time goes back only while it is still the 10 s the procedure wrote: a changed one is the user's. */
+export function flushBackPatch(earlier: Earlier, rinse: RinseData | undefined): WorkflowPatch | null {
+  const before = earlier.flushDuration ?? null;
+  if (before === null || before === FLUSH_SECONDS || rinse?.duration !== FLUSH_SECONDS) return null;
+  return { rinseData: { ...rinse, duration: before } };
+}
 
 /** The profile goes back as the workflow held it, its unsaved edits with it. */
 export function restorePatch(earlier: Earlier): WorkflowPatch {

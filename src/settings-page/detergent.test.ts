@@ -10,7 +10,9 @@ import {
   begun,
   detergentCaption,
   earlierOf,
+  flushBackPatch,
   flushIsOver,
+  flushSetPatch,
   follow,
   followsRun,
   machineRuns,
@@ -24,7 +26,7 @@ import {
 } from './detergent';
 import { CLEAN, IDLE, START_TIMEOUT_MS, started } from './maintenance';
 
-const EARLIER: Earlier = { profile: null, targetYield: 36, targetDoseWeight: 18 };
+const EARLIER: Earlier = { profile: null, targetYield: 36, targetDoseWeight: 18, flushDuration: 4 };
 const LAST = 8;
 
 function frame(state: MachineState, change: Partial<DetergentFrame> = {}): DetergentFrame {
@@ -177,8 +179,24 @@ describe('the clean with detergent', () => {
 
   it('a workflow without a target weight, a dose or a profile gives back what it had', () => {
     const earlier = earlierOf({ context: null });
-    expect(earlier).toEqual({ profile: null, targetYield: 0, targetDoseWeight: null });
+    expect(earlier).toEqual({ profile: null, targetYield: 0, targetDoseWeight: null, flushDuration: null });
     expect(restorePatch(earlier)).toEqual({ context: { targetYield: 0, targetDoseWeight: null } });
+  });
+
+  it('writes the flush time 10 s and back, and leaves a changed one', () => {
+    const rinse = { targetTemperature: 90, duration: 4, flow: 6 };
+    expect(earlierOf({ rinseData: rinse }).flushDuration).toBe(4);
+    expect(flushSetPatch(rinse)).toEqual({ rinseData: { ...rinse, duration: FLUSH_SECONDS } });
+    expect(flushSetPatch({ ...rinse, duration: 10 })).toBeNull();
+    expect(flushSetPatch(undefined)).toBeNull();
+    expect(flushBackPatch(EARLIER, { ...rinse, duration: 10 })).toEqual({ rinseData: rinse });
+    expect(flushBackPatch(EARLIER, { ...rinse, duration: 7 })).toBeNull();
+    expect(flushBackPatch({ ...EARLIER, flushDuration: null }, { ...rinse, duration: 10 })).toBeNull();
+    expect(flushBackPatch({ ...EARLIER, flushDuration: 10 }, { ...rinse, duration: 10 })).toBeNull();
+  });
+
+  it('the remembered flush time survives a reload', () => {
+    expect(readStored(JSON.stringify(at('flush'))).earlier?.flushDuration).toBe(4);
   });
 
   it('survives a reload as it is stored, and anything else is not started', () => {

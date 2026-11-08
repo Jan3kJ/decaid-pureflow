@@ -81,6 +81,8 @@ async function fromCard(page: Page, body: (before: RigWorkflow) => Promise<void>
       'Pressure rise 5',
     ]);
     expect(loaded.context.targetYield).toBe(0);
+    // The flush time is the clean's 10 s while it lasts.
+    expect(loaded.rinseData.duration).toBe(10);
     expect(await machineState()).toBe('idle');
     await body(before);
   } finally {
@@ -88,6 +90,7 @@ async function fromCard(page: Page, body: (before: RigWorkflow) => Promise<void>
     await api('PUT', '/api/v1/workflow', {
       profile: before.profile,
       context: { targetYield: before.context.targetYield ?? 0, targetDoseWeight: before.context.targetDoseWeight },
+      rinseData: before.rinseData,
     });
     if (backupBefore === null) await api('DELETE', BACKUP).catch(() => undefined);
     else await api('POST', BACKUP, backupBefore);
@@ -102,6 +105,7 @@ async function expectRestored(before: RigWorkflow) {
   const after = await workflow();
   expect(after.context.targetYield).toBe(before.context.targetYield);
   expect(after.context.targetDoseWeight).toBe(before.context.targetDoseWeight);
+  expect(after.rinseData.duration).toBe(before.rinseData.duration);
 }
 
 test('the card loads the profile and follows the run; stopped, it is back at its step, and cancel restores', async ({ page }) => {
@@ -147,6 +151,7 @@ test('after a whole run the flush ends at 10 s, the cycle is offered, and cancel
 
     await page.getByTestId('detergent-flush').click();
     await expect.poll(machineState).toBe('flush');
+    expect((await workflow()).rinseData.duration).toBe(10);
     await expect.poll(machineState, { timeout: 20_000 }).toBe('idle');
     await expect(caption(page)).toHaveText("Last step: the machine's cleaning cycle.", { timeout: 15_000 });
 

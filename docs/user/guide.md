@@ -134,9 +134,9 @@ basket with 1 teaspoon of detergent in the portafilter, lock it in and tap **sta
 loads the profile Cleaning/Forward Flush x5, and you start it at the machine (a machine without
 this profile says 'the profile is not on this machine' and nothing is loaded). The card follows the run;
 stopped at the machine, it stays at this step. Next, take the portafilter out and **flush** for
-10 s. Last comes the machine's cleaning cycle, the same as **Clean**: **clean** starts it, **finish**
+10 s: the skin sets the flush time to 10 s for the clean. Last comes the machine's cleaning cycle, the same as **Clean**: **clean** starts it, **finish**
 leaves it out. At the end, or on **cancel**, your earlier profile comes back with its target weight
-and dose, unsaved changes included.
+and dose, unsaved changes included, and the flush time is given back as it was (unless you changed it meanwhile).
 
 ## Your own tank table
 

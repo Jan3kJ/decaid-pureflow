@@ -13,6 +13,8 @@ import {
   abandoned,
   begun,
   earlierOf,
+  flushBackPatch,
+  flushSetPatch,
   flushIsOver,
   follow,
   followsRun,
@@ -125,6 +127,9 @@ export class DetergentClean {
         this.set(NOT_STARTED);
         throw cause;
       }
+      // The flush runs 10 s, the machine's own button's too; restore() gives the earlier time back.
+      const flushPatch = flushSetPatch(this.host.workflow?.rinseData);
+      if (flushPatch) this.host.workflow = await this.host.client.updateWorkflow(flushPatch);
     });
   }
 
@@ -171,15 +176,16 @@ export class DetergentClean {
     });
   }
 
-  /** The workflow's profile, target weight and dose as they were, unless another profile was loaded meanwhile. */
+  /** The workflow's profile, target weight and dose as they were, unless another profile was loaded meanwhile; the flush time too, unless changed. */
   private async restore(): Promise<void> {
     const { earlier } = this.state;
     if (!earlier) return;
     const settling = this.runEndedAt + RUN_SETTLE_MS - Date.now();
     if (settling > 0) await wait(settling);
     const current = await this.host.client.getWorkflow();
-    if (current.profile?.title !== DETERGENT_TITLE) return;
-    this.host.workflow = await this.host.client.updateWorkflow(restorePatch(earlier));
+    const profileBack = current.profile?.title === DETERGENT_TITLE ? restorePatch(earlier) : {};
+    const patch = { ...profileBack, ...flushBackPatch(earlier, current.rinseData) };
+    if (Object.keys(patch).length) this.host.workflow = await this.host.client.updateWorkflow(patch);
   }
 
   /** A sleeping DE1 drops a request: wake it first and wait, then ask anyway. */

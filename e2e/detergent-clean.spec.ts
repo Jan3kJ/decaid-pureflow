@@ -19,6 +19,7 @@ test.beforeEach(async ({ page }) => {
   page.on('pageerror', (error) => errors.push(error.message));
   gateway = await mockGateway(page);
   gateway.workflow.context = { ...gateway.workflow.context, targetYield: 36, targetDoseWeight: 18 };
+  gateway.workflow.rinseData = { ...gateway.workflow.rinseData, duration: 4 };
 });
 
 test.afterEach(() => {
@@ -50,6 +51,15 @@ async function startCard(page: Page) {
 function expectEarlierBack(title: string) {
   expect(gateway.workflow.profile.title).toBe(title);
   expect(gateway.workflow.context).toMatchObject({ targetYield: 36, targetDoseWeight: 18 });
+  // The flush time the procedure set for its flush is the earlier one again.
+  expect(gateway.workflow.rinseData.duration).toBe(4);
+  expect(gateway.machineSettings.flushTimeout).toBe(4);
+}
+
+/** The flush time the clean wrote, on the workflow and on the machine. */
+async function expectFlushTenSeconds() {
+  await expect.poll(() => gateway.workflow.rinseData.duration).toBe(10);
+  expect(gateway.machineSettings.flushTimeout).toBe(10);
 }
 
 test("Maintenance lists 'Clean with detergent' before 'Clean'", async ({ page }) => {
@@ -69,6 +79,7 @@ test('the three steps: the run at the machine, one flush of 10 s, the cycle; the
   expect(gateway.workflow.profile.title).toBe(TITLE);
   expect(gateway.workflow.context).toMatchObject({ targetYield: 0, targetDoseWeight: 18 });
   expect(machineRequests()).toEqual([]);
+  await expectFlushTenSeconds();
   await page.screenshot({ path: 'docs/product/detergent-clean-run.png' });
 
   // The run started at the machine: the card stays and names the profile's steps.
@@ -88,6 +99,7 @@ test('the three steps: the run at the machine, one flush of 10 s, the cycle; the
   // The flush: the skin asks for it and, as the machine's time is longer, ends it at 10 s.
   await page.getByTestId('detergent-flush').click();
   await expect.poll(machineRequests).toEqual(['flush']);
+  await expectFlushTenSeconds();
   gateway.waterFor('flush', 11, 6);
   await expect.poll(machineRequests).toEqual(['flush', 'idle']);
   gateway.waterEnded();
@@ -197,6 +209,16 @@ test('unsaved edits on the machine come back as they were, without a warning', a
   await page.getByTestId('maintenance-cancel-detergent').click();
   await expect(page.getByTestId('maintenance-start-detergent')).toBeVisible();
   expect(gateway.workflow.profile).toEqual(edited);
+});
+
+test('a flush time changed meanwhile is not overwritten when the clean ends', async ({ page }) => {
+  gateway.withDetergentProfile();
+  await startCard(page);
+  await expectFlushTenSeconds();
+  gateway.workflow.rinseData = { ...gateway.workflow.rinseData, duration: 7 };
+  await page.getByTestId('maintenance-cancel-detergent').click();
+  await expect(page.getByTestId('maintenance-start-detergent')).toBeVisible({ timeout: 10_000 });
+  expect(gateway.workflow.rinseData.duration).toBe(7);
 });
 
 test('a profile loaded meanwhile is not replaced', async ({ page }) => {
