@@ -82,7 +82,8 @@ test('a swipe from the left edge to the right opens the overlay, and no other sw
   // the way back is a swipe too (`back`).
   const atRest = () => expect(page.locator('.page')).toHaveCount(1);
   await swipe(page, { x: 600, y: 400 }, { x: 900, y: 400 });
-  await expect(page.locator('.page:not([inert]) [data-testid="screen-hot-water"]')).toBeVisible();
+  // The strip slides on frames, and the four local workers share the CPU that draws them: 15 s.
+  await expect(page.locator('.page:not([inert]) [data-testid="screen-hot-water"]')).toBeVisible({ timeout: 15_000 });
   await atRest();
   await back(page);
   await expect(page.getByTestId('screen-home')).toBeVisible();

@@ -241,7 +241,8 @@ test('the pause is dragged in detail mode only', async ({ page }) => {
   await dragBy(page, await borderOf(page, 'infuse'), -40, 0);
   await expect(page.getByTestId('popup')).toContainText('infuse time');
   // The time follows the finger while it is held: waited for, not read once.
-  await expect.poll(() => number(page, 'value-infuseTime')).toBeLessThan(60);
+  // The page draws the drag on its frames, and the four local workers share the CPU that draws them: 15 s.
+  await expect.poll(() => number(page, 'value-infuseTime'), { timeout: 15_000 }).toBeLessThan(60);
   await page.mouse.up();
   expect(await number(page, 'value-infuseTime')).toBeLessThan(60);
 
