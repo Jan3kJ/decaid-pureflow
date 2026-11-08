@@ -107,8 +107,8 @@
 
 <style>
   button {
-    border: 1px solid var(--line);
-    background: var(--panel);
+    border: 1px solid var(--edge);
+    background: none;
     border-radius: var(--radius);
   }
 
@@ -138,6 +138,7 @@
     border: 0;
     border-radius: var(--radius-none);
     background: var(--scrim-light);
+    backdrop-filter: blur(0.4rem);
   }
 
   .menu {
@@ -153,10 +154,10 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-1);
-    background: var(--raised);
-    border: 1px solid var(--line);
+    background: var(--glass);
+    border: 1px solid var(--edge);
     border-radius: var(--radius);
-    box-shadow: var(--shadow-dialog);
+    box-shadow: var(--shadow-glass);
   }
 
   .menu button {

@@ -274,7 +274,7 @@
     {#if error}
       <div class="offer error" data-testid="profiles-error">
         <span class="warning">{error}</span>
-        <button data-testid="profiles-retry" onclick={read}>try again</button>
+        <button class="primary" data-testid="profiles-retry" onclick={read}>try again</button>
       </div>
     {/if}
     <input
@@ -385,7 +385,7 @@
       <!-- Edit loads too and opens the profile's editor; load goes back to where the picker was opened from. -->
       <div class="actions">
         <button class="edit" data-testid="edit-profile" disabled={busy} onclick={() => load(selected, 'edit')}>edit</button>
-        <button class="load" data-testid="load-profile" disabled={busy} onclick={() => load(selected)}>load</button>
+        <button class="load primary" data-testid="load-profile" disabled={busy} onclick={() => load(selected)}>load</button>
       </div>
     {:else}
       <p class="empty">Tap a profile to see it; load sends it to the machine.</p>
@@ -458,10 +458,6 @@
     min-width: 7rem;
     padding: 0 1rem;
     font-size: var(--text-body);
-    background: var(--fg);
-    border-color: var(--fg);
-    color: var(--bg);
-    font-weight: 600;
   }
 
   ul {
@@ -657,12 +653,6 @@
     min-height: var(--control-big);
     font-size: var(--text-body);
     font-weight: 600;
-  }
-
-  .load {
-    background: var(--fg);
-    border-color: var(--fg);
-    color: var(--bg);
   }
 
   .edit:disabled,

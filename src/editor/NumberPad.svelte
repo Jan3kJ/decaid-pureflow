@@ -13,11 +13,13 @@
     places?: number;
     /** the value before typing, shown until the first key */
     current: string;
+    /** the quantity's colour: the number and the keys glow in it, white without */
+    tone?: 'flow' | 'pressure' | 'temperature' | 'weight' | 'time';
     onconfirm: (value: number) => void;
     oncancel: () => void;
   }
 
-  let { label, unit, min, max, decimals, places = 1, current, onconfirm, oncancel }: Props = $props();
+  let { label, unit, min, max, decimals, places = 1, current, tone, onconfirm, oncancel }: Props = $props();
 
   const MAX_LENGTH = 5;
   let typed = $state('');
@@ -63,7 +65,7 @@
 <svelte:window onkeydown={keydown} />
 
 <Dialog label="type {label}" width="21rem" testid="numpad" backdrop="numpad-backdrop" {oncancel}>
-  <div class="pad">
+  <div class="pad {tone ?? ''}" style:--glow-rgb={tone ? `var(--${tone}-rgb)` : undefined}>
     <div class="head">
       <span class="label">{label}</span>
       <button class="close" aria-label="cancel" data-testid="numpad-cancel" onclick={oncancel}>×</button>
@@ -78,17 +80,19 @@
     </div>
     <div class="keys">
       {#each ['7', '8', '9', '4', '5', '6', '1', '2', '3'] as k (k)}
-        <button data-testid="numpad-key-{k}" onclick={() => key(k)}>{k}</button>
+        <button class="pad-key" data-testid="numpad-key-{k}" onclick={() => key(k)}>{k}</button>
       {/each}
       {#if signed}
-        <button aria-label="change the sign" data-testid="numpad-key-sign" onclick={sign}>±</button>
+        <button class="pad-key" aria-label="change the sign" data-testid="numpad-key-sign" onclick={sign}>±</button>
       {:else}
-        <button data-testid="numpad-key-dot" disabled={!decimals} onclick={() => key('.')}>.</button>
+        <button class="pad-key" data-testid="numpad-key-dot" disabled={!decimals} onclick={() => key('.')}>.</button>
       {/if}
-      <button data-testid="numpad-key-0" onclick={() => key('0')}>0</button>
-      <button aria-label="delete the last digit" data-testid="numpad-back" onclick={() => (typed = typed.slice(0, -1))}>⌫</button>
-      <button class="clear" data-testid="numpad-clear" onclick={() => (typed = '')}>clear</button>
-      <button class="confirm primary" data-testid="numpad-confirm" disabled={!inRange} onclick={confirm}>set</button>
+      <button class="pad-key" data-testid="numpad-key-0" onclick={() => key('0')}>0</button>
+      <button class="pad-key" aria-label="delete the last digit" data-testid="numpad-back" onclick={() => (typed = typed.slice(0, -1))}
+        >⌫</button
+      >
+      <button class="clear pad-key" data-testid="numpad-clear" onclick={() => (typed = '')}>clear</button>
+      <button class="confirm primary pad-key" data-testid="numpad-confirm" disabled={!inRange} onclick={confirm}>set</button>
     </div>
   </div>
 </Dialog>
@@ -119,13 +123,38 @@
     gap: var(--space-2);
     min-height: var(--control-big);
     padding: 0 0.9rem;
-    background: var(--bg);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    font-size: var(--text-large);
+    border-bottom: 1px solid var(--edge);
+    border-radius: var(--radius-none);
+    font-size: var(--text-big);
     font-weight: 300;
-    line-height: 3.6rem;
+
+    line-height: 1.2;
     font-variant-numeric: tabular-nums;
+  }
+
+  .flow .display {
+    color: var(--flow);
+    text-shadow: var(--shadow-glow-flow);
+  }
+
+  .pressure .display {
+    color: var(--pressure);
+    text-shadow: var(--shadow-glow-pressure);
+  }
+
+  .temperature .display {
+    color: var(--temperature);
+    text-shadow: var(--shadow-glow-temperature);
+  }
+
+  .weight .display {
+    color: var(--weight);
+    text-shadow: var(--shadow-glow-weight);
+  }
+
+  .time .display {
+    color: var(--time);
+    text-shadow: var(--shadow-glow-time);
   }
 
   .display.placeholder {
@@ -133,7 +162,7 @@
   }
 
   .display.bad {
-    border-color: var(--temperature);
+    border-bottom-color: var(--temperature);
   }
 
   .unit {
@@ -158,17 +187,8 @@
     gap: var(--space-2);
   }
 
-  button {
+  .keys button {
     grid-column: span 2;
-    min-height: 4.2rem;
-    font-size: var(--text-title);
-    background: var(--raised);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-  }
-
-  button:active:not(:disabled) {
-    background: var(--line);
   }
 
   button:disabled {

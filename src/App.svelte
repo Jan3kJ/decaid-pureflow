@@ -423,7 +423,7 @@
     <span class="truncate">
       Decaid closed the connection{skin.streamError ? `: ${skin.streamError}` : ' with an error'}
     </span>
-    <button data-testid="reconnect" onclick={() => skin.reconnect()}>reconnect</button>
+    <button class="primary" data-testid="reconnect" onclick={() => skin.reconnect()}>reconnect</button>
   </div>
 {/if}
 
@@ -433,7 +433,7 @@
     <span class="truncate">
       Settings restored from the backup in Decaid{skin.restoredFrom ? ` of ${backupTime(skin.restoredFrom)}` : ''}.
     </span>
-    <button data-testid="settings-restored-ok" onclick={() => (skin.restoredFrom = null)}>ok</button>
+    <button class="primary" data-testid="settings-restored-ok" onclick={() => (skin.restoredFrom = null)}>ok</button>
   </div>
 {/if}
 
@@ -542,11 +542,12 @@
     width: 0.6rem;
     height: 0.6rem;
     border-radius: var(--radius-round);
-    background: var(--line);
+    background: var(--edge-hi);
   }
 
   .dots button[aria-current='page'] span {
     background: var(--fg);
+    box-shadow: var(--shadow-dot);
   }
 
   .refused {
@@ -562,15 +563,15 @@
     align-items: center;
     gap: var(--space-3);
     color: var(--warn);
-    background: var(--raised);
+    background: var(--glass), var(--bg);
     border: 1px solid var(--warn);
     border-radius: var(--radius);
-    box-shadow: var(--shadow-dialog);
+    box-shadow: var(--shadow-glass);
   }
 
   .restored {
     color: var(--fg);
-    border-color: var(--line);
+    border-color: var(--edge-hi);
   }
 
   .refused span {
@@ -582,10 +583,6 @@
     min-height: var(--control-big);
     padding: 0 1.6rem;
     font-size: var(--text-body);
-    font-weight: 600;
-    color: var(--bg);
-    background: var(--fg);
-    border: 0;
     border-radius: var(--radius-note);
   }
 

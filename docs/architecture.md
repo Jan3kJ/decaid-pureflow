@@ -337,12 +337,17 @@ cannot be set.
   text-shadow or a drop-shadow, which the lint takes as it takes a box-shadow's token
   (`scripts/token-rules.mjs`). A read number is weight 300, `.caption` is small, upper case and
   spaced. `backdrop-filter` is only for an overlay with a page behind it, never a page's panel.
+- A control has no fill, only the `--edge` line. Pressed (`:active`) or selected (`.select-outline`
+  with `aria-pressed`, or `.glow`) it lights in `--glow-rgb`, white unless the control sets it (a
+  ratio chip in weight, a lever in pressure, a pad's keys in the field's `tone`). `.primary` is the
+  brighter edge and heavier words. `.big-stop` is the stop: a red outline whose `::after` glow
+  pulses in opacity over 3 s, still under `prefers-reduced-motion`; `.pad-key` is a key of the pad.
 - The shared looks of a control are in `src/app.css` only: the button reset on `:where(button)`
   (the page's font and colour, a tap without zoom or text selection), `.action` (a button beside a
-  setting), `.primary` (the main button's white fill), `.chip` (the pill beside a setting),
+  setting), `.primary` (the main button's brighter edge), `.chip` (the pill beside a setting),
   `.hint`, `.notice` (`.notice.info` in the plain colour), `.truncate` (one line with an ellipsis),
   `.visually-hidden`, `.big-number` (a page's timer or weight), `.seg` (a button of an editor's
-  header, `.seg.save` raised) and `.form-button` (a button of the bean's and grinder's form), beside
+  header, `.seg.save`) and `.form-button` (a button of the bean's and grinder's form), beside
   `.warning`, `.danger` and the one selected look `.select-outline` (the white frame on the raised
   background, the words as they are). A component adds to a class (a width, a taller height) or makes a variant of it; it does not
   write the look again, which `src/ui/controls.test.ts` checks; it also checks that steam and

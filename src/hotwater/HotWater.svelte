@@ -168,6 +168,7 @@
     max={typing.max}
     decimals={typing.decimals}
     current={shown(typing)}
+    tone={typing.id as 'flow' | 'temperature' | 'time' | 'weight'}
     onconfirm={confirm}
     oncancel={() => (typing = null)}
   />
@@ -175,8 +176,8 @@
 
 <style>
   button {
-    border: 1px solid var(--line);
-    background: var(--panel);
+    border: 1px solid var(--edge);
+    background: none;
     border-radius: var(--radius);
   }
 
@@ -318,6 +319,7 @@
   }
 
   .chip {
+    --glow-rgb: var(--weight-rgb);
     flex: 1;
     min-height: 4.4rem;
     display: flex;

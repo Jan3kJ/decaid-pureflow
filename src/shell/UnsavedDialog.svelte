@@ -64,8 +64,8 @@
     flex: 1;
     min-height: var(--control-big);
     font-size: var(--text-body);
-    background: var(--raised);
-    border: 1px solid var(--line);
+    background: none;
+    border: 1px solid var(--edge);
     border-radius: var(--radius);
   }
 </style>

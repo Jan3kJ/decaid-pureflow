@@ -45,7 +45,7 @@
     <p class="hint" data-testid="save-hint">{exists ? 'This name is in use.' : ' '}</p>
     <div class="actions">
       <button type="button" data-testid="save-cancel" onclick={oncancel}>cancel</button>
-      <button type="submit" class="confirm" data-testid="save-confirm" disabled={!valid}>save</button>
+      <button type="submit" class="confirm primary" data-testid="save-confirm" disabled={!valid}>save</button>
     </div>
   </form>
 </Dialog>
@@ -95,20 +95,12 @@
     flex: 1;
     min-height: var(--control-big);
     font-size: var(--text-body);
-    background: var(--raised);
-    border: 1px solid var(--line);
+    background: none;
+    border: 1px solid var(--edge);
     border-radius: var(--radius);
   }
 
   button:disabled {
     opacity: 0.35;
-  }
-
-  /* The main button's fill, but off it fades rather than taking the shared off look of `.primary`. */
-  .confirm {
-    background: var(--fg);
-    border-color: var(--fg);
-    color: var(--bg);
-    font-weight: 600;
   }
 </style>

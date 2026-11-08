@@ -172,8 +172,8 @@
   }
 
   button {
-    border: 1px solid var(--line);
-    background: var(--panel);
+    border: 1px solid var(--edge);
+    background: none;
     border-radius: var(--radius);
   }
 
@@ -257,7 +257,7 @@
     text-transform: uppercase;
   }
 
-  /* Raised like the chips, not the main button's fill; off, it takes the shared off look of `.primary`. */
+  /* Edged like the chips; off, it takes the shared off look of `.primary`. */
   .set.primary {
     min-height: 4.5rem;
     font-size: var(--text-value);
@@ -266,8 +266,8 @@
     justify-content: center;
     gap: var(--space-2);
     color: var(--fg);
-    background: var(--raised);
-    border-color: var(--line);
+    background: none;
+    border-color: var(--edge);
   }
 
   .set b {

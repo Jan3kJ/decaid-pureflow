@@ -24,7 +24,7 @@
       <circle class="done" cx="50" cy="50" r="46" pathLength="100" stroke-dasharray="{ring.share * 100} 100" />
     </svg>
     <!-- Nothing is started here: the DE1 is started at the machine. What runs can be stopped. -->
-    <button class="stop" data-testid="water-stop" onclick={() => skin.stop()}>
+    <button class="stop big-stop" data-testid="water-stop" onclick={() => skin.stop()}>
       <span class="kind" data-testid="water-label">{WATER_LABEL[run.kind]}</span>
       <span class="time" data-testid="water-time">{values.time}</span>
       <span class="values">
@@ -89,19 +89,17 @@
     transition: stroke-dasharray var(--motion-follow) linear;
   }
 
-  /* Dark inside, so that the values keep their colours; stop itself is the temperature red. */
+  /* An outline with the glass inside, so that the values keep their colours; stop itself is the temperature red. */
   .stop {
     width: 82%;
     aspect-ratio: 1;
-    border-radius: var(--radius-round);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: min(var(--space-2), 1.4cqw);
     color: var(--fg);
-    background: var(--raised);
-    border: 0.35rem solid var(--temperature);
+    border-radius: var(--radius-round);
     font-variant-numeric: tabular-nums;
   }
 

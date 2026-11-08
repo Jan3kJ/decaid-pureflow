@@ -134,7 +134,7 @@
     {/if}
     <!-- Nothing is started here: the DE1 is started at the machine. What runs can be stopped. -->
     {#if running || skin.canStop}
-      <button class="stop" data-testid="stop" disabled={!skin.canStop} onclick={() => skin.stop()}>stop</button>
+      <button class="stop big-stop" data-testid="stop" disabled={!skin.canStop} onclick={() => skin.stop()}>stop</button>
     {/if}
   </aside>
 </div>
@@ -329,16 +329,5 @@
     flex: 0 1 7rem;
     min-height: var(--control-big);
     font-size: var(--text-large);
-    font-weight: 600;
-    color: var(--bg);
-    background: var(--temperature);
-    border: 1px solid var(--temperature);
-    border-radius: var(--radius);
-  }
-
-  .stop:disabled {
-    background: var(--panel);
-    border-color: var(--line);
-    color: var(--dim);
   }
 </style>

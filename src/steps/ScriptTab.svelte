@@ -139,7 +139,6 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     padding: 0 0.5rem;
     font-weight: 600;
     color: var(--tone);
-    background: none;
     border: 1px solid transparent;
     border-radius: var(--radius-small);
     white-space: nowrap;
@@ -147,8 +146,8 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   }
 
   .pill {
-    background: var(--raised);
-    border-color: var(--line);
+    background: none;
+    border-color: var(--edge);
   }
 
   .chip {
@@ -158,7 +157,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
 
   .chip:active,
   .pill:active {
-    background: var(--line);
+    border-color: var(--edge-hi);
   }
 
   .flow {

@@ -467,7 +467,7 @@ test('the filter by bean and grinder: the catalogue names the entries, a choice 
 
 // The three filter chips are equal in width, also with a long
 // bean's name, and the chosen one is the selected look: a white frame on the raised background.
-test("the filter's three chips are one width, the chosen one the white frame", async ({ page }) => {
+test("the filter's three chips are one width, the chosen one the lit edge", async ({ page }) => {
   const gateway = await mockGateway(page);
   const at = '2026-10-20T10:00:00.000';
   gateway.beans = [
@@ -495,13 +495,7 @@ test("the filter's three chips are one width, the chosen one the white frame", a
     Promise.all(
       chips.map((chip) =>
         chip.evaluate((element) => {
-          const style = getComputedStyle(element);
-          const probe = document.createElement('i');
-          probe.style.color = 'var(--fg)';
-          document.body.append(probe);
-          const fg = getComputedStyle(probe).color;
-          probe.remove();
-          return style.borderTopColor === fg;
+          return /, 0\.7\)$/.test(getComputedStyle(element).borderTopColor);
         }),
       ),
     );

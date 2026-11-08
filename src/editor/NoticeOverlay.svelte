@@ -39,10 +39,10 @@
   .box {
     max-width: 100%;
     padding: var(--space-1) var(--space-2);
-    border: 1px solid var(--line);
+    border: 1px solid var(--edge);
     border-radius: var(--radius);
-    background: var(--raised);
-    box-shadow: var(--shadow-lifted);
+    background: var(--glass), var(--bg);
+    box-shadow: var(--shadow-glass);
     text-align: left;
     pointer-events: auto;
   }

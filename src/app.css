@@ -3,6 +3,7 @@
   /* Near black, for an OLED tablet; the lights of --backdrop lie on it. */
   --bg: #04070a;
   --fg: #e4eff5;
+  --fg-rgb: 228 239 245;
   --dim: #6f7f8b;
   /* A hairline between things: a control's border, a rule. */
   --line: rgb(255 255 255 / 16%);
@@ -101,6 +102,8 @@
   --shadow-dialog: 0 0.6rem 2.4rem rgb(0 0 0 / 70%);
   /* a sheet sliding in from the left */
   --shadow-sheet: 0.6rem 0 2.4rem rgb(0 0 0 / 60%);
+  /* the page dot of the page shown */
+  --shadow-dot: 0 0 0.6rem rgb(var(--fg-rgb) / 60%);
   /* a chip opened over the graph */
   --shadow-lifted: 0 0.3rem 1.2rem rgb(0 0 0 / 60%);
   /* behind a dialog or a sheet: the page dimmed, a tap on it cancels */
@@ -185,13 +188,18 @@ body {
  * Shared looks, one class each for every page; a component's own rule for the class (its width,
  * a taller height) wins.
  */
-/* A button beside a setting: raised, the line's border, as high as a finger. */
+/*
+ * Controls are glass lines: no fill at rest, only the --edge line. Pressed or selected one glows in
+ * its meaning's colour: `--glow-rgb` is the rgb triplet it lights in (white unless the control
+ * says otherwise, a ratio chip in weight).
+ */
+/* A button beside a setting: the edge only, as high as a finger. */
 .action {
   flex: none;
   min-height: var(--control);
   padding: 0 1rem;
-  background: var(--raised);
-  border: 1px solid var(--line);
+  background: none;
+  border: 1px solid var(--edge);
   border-radius: var(--radius);
 }
 
@@ -199,9 +207,19 @@ body {
 .chip {
   min-height: var(--control);
   padding: 0 0.9rem;
-  background: var(--raised);
-  border: 1px solid var(--line);
+  background: none;
+  border: 1px solid var(--edge);
   border-radius: var(--radius-pill);
+}
+
+/* A key of the number pad: thin number, the edge only; it lights in the field's colour when pressed. */
+.pad-key {
+  min-height: 4.2rem;
+  font-size: var(--text-title);
+  font-weight: 300;
+  background: none;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius);
 }
 
 /* The search field over a list: the profile picker's, the settings'. */
@@ -214,8 +232,8 @@ body {
   font: inherit;
   font-size: var(--text-body);
   color: var(--fg);
-  background: var(--raised);
-  border: 1px solid var(--line);
+  background: none;
+  border: 1px solid var(--edge);
   border-radius: var(--radius);
 }
 
@@ -264,31 +282,30 @@ body {
   min-width: 6rem;
   padding: 0 1.1rem;
   font-size: var(--text-body);
-  background: var(--panel);
-  border: 1px solid var(--line);
+  background: none;
+  border: 1px solid var(--edge);
   border-radius: var(--radius);
 }
 
 .seg.save {
   min-width: 0;
-  background: var(--raised);
   white-space: nowrap;
 }
 
 .seg:disabled {
-  background: var(--panel);
-  border-color: var(--line);
+  background: none;
+  border-color: var(--edge);
   color: var(--dim);
   font-weight: 400;
 }
 
-/* A button of the bean's and the grinder's form: raised, as high as a dialog's button; off it fades. */
+/* A button of the bean's and the grinder's form: the edge only, as high as a dialog's button; off it fades. */
 .form-button {
   min-height: var(--control-big);
   padding: 0 var(--space-3);
   font-size: var(--text-body);
-  background: var(--raised);
-  border: 1px solid var(--line);
+  background: none;
+  border: 1px solid var(--edge);
   border-radius: var(--radius);
 }
 
@@ -317,13 +334,14 @@ body {
 }
 
 /*
- * The main button of a page, a dialog or a group: the white fill. `:root` puts it above a
- * component's own rule for its buttons; a component's variant names both classes.
+ * The main button of a page, a dialog or a group: the brighter edge and the heavier words, no fill.
+ * `:root` puts it above a component's own rule for its buttons; a component's variant names both
+ * classes.
  */
 :root :is(button, label).primary {
-  color: var(--bg);
-  background: var(--fg);
-  border-color: var(--fg);
+  color: var(--fg);
+  background: none;
+  border-color: rgb(var(--glow-rgb, var(--fg-rgb)) / 55%);
   font-weight: 600;
 }
 
@@ -347,23 +365,90 @@ body {
   border: 1px solid var(--warn);
 }
 
-/* A main button that is off: the panel's background and grey words, not a pressed look. */
+/* A main button that is off: the plain edge and grey words, not a pressed look. */
 :root button.primary:disabled {
   opacity: 1;
   color: var(--dim);
-  background: var(--panel);
-  border-color: var(--line);
+  background: none;
+  border-color: var(--edge);
+  box-shadow: none;
 }
 
 /*
- * Selected, one look for every page: a chip, a mode, a tab, a row of a list. The white outline on
- * the raised background; the words keep their colour and weight. A control takes the class and says
- * it is selected with `aria-pressed` or `aria-current`. `:root` puts it above a component's own
- * rule for the control. A mark that is not a selection takes no white frame on a raised control.
+ * The big stop: a temperature-red outline with red words, never a block. Its glow pulses slowly
+ * (opacity, 3 s) and holds still under reduced motion. A page sets its size and, for a round
+ * stop, its corner.
+ */
+.big-stop {
+  position: relative;
+  font-weight: 400;
+  color: var(--temperature);
+  background: none;
+  border: 1px solid rgb(var(--temperature-rgb) / 70%);
+  border-radius: var(--radius);
+}
+
+.big-stop::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow:
+    0 0 1.4rem rgb(var(--temperature-rgb) / 35%),
+    inset 0 0 1.2rem rgb(var(--temperature-rgb) / 12%);
+  pointer-events: none;
+  animation: stop-pulse 3s ease-in-out infinite;
+}
+
+@keyframes stop-pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .big-stop::after {
+    animation: none;
+  }
+}
+
+/* A stop that cannot stop anything: grey, no glow. */
+.big-stop:disabled {
+  color: var(--dim);
+  border-color: var(--edge);
+}
+
+.big-stop:disabled::after {
+  content: none;
+}
+
+/*
+ * Selected, one look for every page: a chip, a mode, a tab, a row of a list. No fill: the edge
+ * lights in the control's colour (`--glow-rgb`) with a glow around and within; the words keep their
+ * colour and weight. A control takes the class and says it is selected with `aria-pressed` or
+ * `aria-current`. `:root` puts it above a component's own rule for the control. A mark that is not
+ * a selection takes no lit edge.
  */
 :root .select-outline:is([aria-pressed='true'], [aria-current='true']) {
-  background: var(--raised);
-  border-color: var(--fg);
+  background: none;
+  border-color: rgb(var(--glow-rgb, var(--fg-rgb)) / 70%);
+  box-shadow:
+    0 0 1.2rem rgb(var(--glow-rgb, var(--fg-rgb)) / 25%),
+    inset 0 0 1.2rem rgb(var(--glow-rgb, var(--fg-rgb)) / 10%);
+}
+
+/* A part that is lit by a state of its own (a lever that is on): the same light. */
+:root .glow {
+  border-color: rgb(var(--glow-rgb, var(--fg-rgb)) / 70%);
+  box-shadow:
+    0 0 1.2rem rgb(var(--glow-rgb, var(--fg-rgb)) / 25%),
+    inset 0 0 1.2rem rgb(var(--glow-rgb, var(--fg-rgb)) / 10%);
+}
+
+/* Pressed: the same light, while the finger is down. */
+:root :is(.action, .chip, .seg, .form-button, .pad-key):active:not(:disabled) {
+  border-color: rgb(var(--glow-rgb, var(--fg-rgb)) / 70%);
+  box-shadow: 0 0 1.2rem rgb(var(--glow-rgb, var(--fg-rgb)) / 25%);
 }
 
 /* Text no rule sizes is running text. */

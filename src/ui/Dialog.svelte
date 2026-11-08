@@ -78,6 +78,8 @@
     align-items: center;
     justify-content: center;
     background: var(--scrim);
+    /* an overlay is the one place a page lies behind the glass */
+    backdrop-filter: blur(0.4rem);
   }
 
   .backdrop.top {
@@ -91,8 +93,8 @@
     display: flex;
     flex-direction: column;
     background: var(--panel);
-    border: 1px solid var(--line);
+    border: 1px solid var(--edge);
     border-radius: var(--radius-dialog);
-    box-shadow: var(--shadow-dialog);
+    box-shadow: var(--shadow-glass);
   }
 </style>

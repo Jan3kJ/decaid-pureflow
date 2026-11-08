@@ -4,7 +4,7 @@ import { paint } from './paint';
 import { toPage } from './touch';
 
 // One selected look, against a mocked gateway: whatever is selected, a chip, a mode, a tab or a row
-// of a list, is the profile picker's row: a white frame on the raised background, its words as they
+// of a list, is the profile picker's row: a lit edge and a glow, no fill, its words as they
 // are unselected. Left out are the page dots (they say 'page', a dot too small for a frame) and the
 // editor's lamp toggles, which are switches.
 
@@ -51,14 +51,35 @@ const words = (locator: Locator) =>
     }),
   );
 
+/** The drawn column keeps the white frame on the glass; the editor's SVG is not a control. */
 async function outline(page: Page) {
   const [border, background] = await Promise.all([colour(page, 'var(--fg)'), paint(page, 'var(--raised)')]);
   return { background, border };
 }
 
-/** Every selected control on the screen: none may differ from the picker's row. */
+/** The edge of a selected control: its colour at 70 %, white unless the control says otherwise. */
+const LIT_EDGE = /^rgba\(\d+, \d+, \d+, 0\.7\)$/;
+const NO_FILL = 'rgba(0, 0, 0, 0)';
+
+/** A selected control as the browser draws it: no fill, a lit edge, a glow. */
+const lit = (locator: Locator) =>
+  locator.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      background: style.backgroundImage === 'none' ? style.backgroundColor : style.backgroundImage,
+      border: style.borderTopColor,
+      glow: style.boxShadow,
+    };
+  });
+
+function expectLit(drawn: { background: string; border: string; glow: string }, control: string | null) {
+  expect(drawn.background, `${control}'s fill`).toBe(NO_FILL);
+  expect(drawn.border, `${control}'s edge`).toMatch(LIT_EDGE);
+  expect(drawn.glow, `${control}'s glow`).not.toBe('none');
+}
+
+/** Every selected control on the screen: each is lit, none is filled. */
 async function expectOneLook(page: Page, least: number) {
-  const wanted = await outline(page);
   const found = await page.evaluate(() =>
     [...document.querySelectorAll('[aria-pressed="true"], [aria-current="true"]')]
       .filter((element) => !element.matches('[data-testid^="toggle-"]'))
@@ -68,13 +89,14 @@ async function expectOneLook(page: Page, least: number) {
           control: element.getAttribute('data-testid'),
           background: style.backgroundImage === 'none' ? style.backgroundColor : style.backgroundImage,
           border: style.borderTopColor,
+          glow: style.boxShadow,
           width: style.borderTopWidth,
         };
       }),
   );
   expect(found.length).toBeGreaterThanOrEqual(least);
-  for (const { control, background, border, width } of found) {
-    expect({ control, background, border }).toEqual({ control, ...wanted });
+  for (const { control, background, border, glow, width } of found) {
+    expectLit({ background, border, glow }, control);
     expect(parseFloat(width), `${control}'s frame`).toBeGreaterThan(0);
   }
 }
@@ -123,13 +145,12 @@ test("selected on hot water and steam: the picker's look, the words as they are 
 test('selected in the picker, the beans, the settings and the history: the one look', async ({ page }) => {
   await mockGateway(page);
   await page.goto('/');
-  const wanted = await outline(page);
 
   await page.getByTestId('open-profiles').click();
   await page.getByTestId('profile-item').first().click();
   const row = page.locator('[data-testid="profile-item"][aria-pressed="true"]');
   await expect(row).toHaveCount(1);
-  expect(await look(row)).toEqual(wanted);
+  expectLit(await lit(row), 'profile-item');
   await page.screenshot({ path: 'e2e/.results/selected-picker.png' });
 
   await open(page, 'beans');
@@ -191,7 +212,6 @@ test("a mark that is no selection has no white frame: the date picker's today, t
 }) => {
   await mockGateway(page);
   await page.goto('/');
-  const { border: white } = await outline(page);
   const grey = await colour(page, 'var(--dim)');
 
   await open(page, 'beans');
@@ -213,13 +233,15 @@ test("a mark that is no selection has no white frame: the date picker's today, t
   await page.getByTestId('filter-bean').tap();
   await expect(page.getByTestId('filter-options')).toBeVisible();
   expect((await look(page.getByTestId('filter-bean'))).border).toBe(grey);
-  expect((await look(page.getByTestId('filter-all'))).border).toBe(white);
+  expect((await look(page.getByTestId('filter-all'))).border).toMatch(LIT_EDGE);
 });
 
-test('the main button keeps its white fill', async ({ page }) => {
+test('the main button has no fill, a brighter edge and heavier words', async ({ page }) => {
   await mockGateway(page);
   await page.goto('/');
   await page.getByTestId('open-profiles').click();
   await page.getByTestId('profile-item').first().click();
-  expect((await look(page.getByTestId('load-profile'))).background).toBe(await colour(page, 'var(--fg)'));
+  const main = await look(page.getByTestId('load-profile'));
+  expect(main.background).toBe(NO_FILL);
+  expect(main.border).toMatch(/^rgba\(\d+, \d+, \d+, 0\.55\)$/);
 });

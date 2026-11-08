@@ -27,7 +27,7 @@
     {@render children()}
 
     {#if onstop}
-      <button class="stop" data-testid={stopTestid} onclick={onstop}>stop</button>
+      <button class="stop big-stop" data-testid={stopTestid} onclick={onstop}>stop</button>
     {/if}
   </aside>
 </div>
@@ -61,10 +61,5 @@
     margin-top: auto;
     min-height: 6rem;
     font-size: var(--text-large);
-    font-weight: 600;
-    color: var(--bg);
-    background: var(--temperature);
-    border: 1px solid var(--temperature);
-    border-radius: var(--radius);
   }
 </style>

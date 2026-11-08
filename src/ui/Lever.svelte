@@ -33,8 +33,9 @@
   {disabled}
   data-testid={testid}
   onclick={() => onchange(!checked)}
-  >{#if children}{@render children()}{/if}{#if caption !== undefined}<small>{caption}</small>{/if}<span class="lever"
-    ><span></span></span
+  >{#if children}{@render children()}{/if}{#if caption !== undefined}<small>{caption}</small>{/if}<span
+    class="lever"
+    class:glow={checked}><span></span></span
   ></button
 >
 
@@ -67,7 +68,7 @@
     justify-content: space-between;
     gap: var(--space-3);
     padding: 0.8rem 0;
-    border-top: 1px solid var(--line);
+    border-top: 1px solid var(--edge);
   }
 
   small {
@@ -83,8 +84,8 @@
     padding: var(--space-1);
     box-sizing: border-box;
     border-radius: var(--radius-lever);
-    background: var(--raised);
-    border: 1px solid var(--line);
+    background: none;
+    border: 1px solid var(--edge);
   }
 
   .lever span {
@@ -96,13 +97,13 @@
     transition: transform var(--motion-fast);
   }
 
-  [aria-checked='true'] .lever {
-    background: var(--pressure);
-    border-color: var(--pressure);
+  /* on: the track lights in pressure's green (the shared glow) */
+  .lever-button {
+    --glow-rgb: var(--pressure-rgb);
   }
 
   [aria-checked='true'] .lever span {
-    background: var(--bg);
+    background: var(--pressure);
     transform: translateX(2rem);
   }
 

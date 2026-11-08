@@ -65,8 +65,8 @@
   button.line {
     min-height: var(--control-big);
     align-content: center;
-    background: var(--panel);
-    border-color: var(--line);
+    background: none;
+    border-color: var(--edge);
     border-radius: var(--radius);
   }
 
@@ -95,7 +95,7 @@
   b {
     justify-self: end;
     font-size: var(--text-title);
-    font-weight: 600;
+    font-weight: 300;
     line-height: var(--number-line);
     font-variant-numeric: tabular-nums;
   }
@@ -110,6 +110,7 @@
 
   .weight b {
     color: var(--weight);
+    text-shadow: var(--shadow-glow-weight);
   }
 
   /* off while something runs */
