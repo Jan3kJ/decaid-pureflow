@@ -9,7 +9,7 @@
   // One maintenance procedure: its instructions, Start with a
   // confirm, and Cancel while it runs; the steps the machine reports. It needs only the skin
   // and the procedure, so it can be opened on its own as well as in the settings page.
-  import { onDestroy, onMount } from 'svelte';
+  import { onDestroy, onMount, untrack } from 'svelte';
   import type { Skin } from '../shell/skin.svelte';
   import Confirm from './Confirm.svelte';
   import ProcedureSteps from './ProcedureSteps.svelte';
@@ -30,7 +30,7 @@
     type ProcedureId,
     type Progress,
   } from './maintenance';
-  import { CLEAN_WATER_MIN_ML, cleanWater } from './water-tank';
+  import { CLEAN_WATER_MIN_ML, cleanWarns, cleanWater } from './water-tank';
   import { errorMessage } from '../error-message';
 
   interface Props {
@@ -163,6 +163,18 @@
   const water = $derived(
     procedure.id === 'clean' ? cleanWater(skin.link === 'machine' ? skin.water : null, skin.settings.tankRows) : null,
   );
+  // The warning as it was when the run began; the level falls during the run, so it is not
+  // checked again until the run is over.
+  let lowAtStart = $state<boolean | null>(null);
+  $effect.pre(() => {
+    const running = active;
+    const live = water?.low ?? false;
+    untrack(() => {
+      if (!running) lowAtStart = null;
+      else if (lowAtStart === null) lowAtStart = live;
+    });
+  });
+  const warnLow = $derived(cleanWarns(active, water?.low ?? false, lowAtStart));
 </script>
 
 <div class="procedure" data-testid="maintenance-{procedure.id}">
@@ -173,7 +185,7 @@
       {/if}
       {#if water}
         <small data-testid="maintenance-water-{procedure.id}">water tank: {water.ml === null ? '–' : `${water.ml} ml`}</small>
-        {#if water.low}
+        {#if warnLow}
           <small class="low" data-testid="maintenance-water-low-{procedure.id}">
             Under {CLEAN_WATER_MIN_ML} ml: a clean uses about 300 ml. Fill the tank first.
           </small>

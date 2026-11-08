@@ -26,3 +26,13 @@ export function cleanWater(levels: WaterLevels | null, rows: readonly TankRow[] 
   const ml = Math.round(tankMl(levels.currentLevel, rows));
   return { ml, low: ml < CLEAN_WATER_MIN_ML };
 }
+
+/**
+ * Whether the clean warns. The level falls while the clean draws water, so during the run the
+ * check is not made again: the warning as it was at the start stays (shown, or not) until the
+ * clean ends or is cancelled, then the live check follows the level again.
+ * `atStart` is the live check taken when the run began, null while no run is on.
+ */
+export function cleanWarns(running: boolean, live: boolean, atStart: boolean | null): boolean {
+  return running && atStart !== null ? atStart : live;
+}

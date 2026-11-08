@@ -74,3 +74,35 @@ test('under 350 ml the clean warns, and the warning goes when the tank is filled
   await page.getByTestId('settings-confirm-cancel').click();
   expect(gateway.calls('PUT', /^\/api\/v1\/machine\/state\//)).toHaveLength(0);
 });
+
+test('the warning is not checked again during a clean: as at the start until the end, then live again', async ({ page }) => {
+  await openClean(page);
+  const low = page.getByTestId('maintenance-water-low-clean');
+  await expect(low).toHaveCount(0);
+
+  // Started without the warning: the level falling under 350 shows none during the run.
+  await page.getByTestId('maintenance-start-clean').click();
+  await page.getByTestId('settings-confirm-ok').click();
+  await expect(page.getByTestId('maintenance-cancel-clean')).toBeVisible();
+  gateway.setWater(13);
+  await expect(page.getByTestId('maintenance-water-clean')).toHaveText('water tank: 343 ml');
+  await page.waitForTimeout(700);
+  await expect(low).toHaveCount(0);
+
+  // After the cancel the live check works again.
+  await page.getByTestId('maintenance-cancel-clean').click();
+  await expect(page.getByTestId('maintenance-start-clean')).toBeVisible();
+  await expect(low).toBeVisible();
+
+  // Started with the warning: it stays while the level rises over 350, until the end.
+  await page.getByTestId('maintenance-start-clean').click();
+  await page.getByTestId('settings-confirm-ok').click();
+  await expect(page.getByTestId('maintenance-cancel-clean')).toBeVisible();
+  gateway.setWater(14);
+  await expect(page.getByTestId('maintenance-water-clean')).toHaveText('water tank: 371 ml');
+  await page.waitForTimeout(700);
+  await expect(low).toBeVisible();
+  await page.getByTestId('maintenance-cancel-clean').click();
+  await expect(page.getByTestId('maintenance-start-clean')).toBeVisible();
+  await expect(low).toHaveCount(0);
+});

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CLEAN_WATER_MIN_ML, cleanWater } from './water-tank';
+import { CLEAN_WATER_MIN_ML, cleanWarns, cleanWater } from './water-tank';
 
 describe('cleanWater', () => {
   const at = (currentLevel: number) => cleanWater({ currentLevel, refillLevel: 5 });
@@ -35,5 +35,23 @@ describe('cleanWater', () => {
 
   it('does not warn while no level was read', () => {
     expect(cleanWater(null)).toEqual({ ml: null, low: false });
+  });
+});
+
+describe('cleanWarns', () => {
+  it('follows the level while no clean runs', () => {
+    expect(cleanWarns(false, true, null)).toBe(true);
+    expect(cleanWarns(false, false, null)).toBe(false);
+    // a stale start value does not matter after the end
+    expect(cleanWarns(false, false, true)).toBe(false);
+    expect(cleanWarns(false, true, false)).toBe(true);
+  });
+
+  it('shows no warning during a clean that started without one, however far the level falls', () => {
+    expect(cleanWarns(true, true, false)).toBe(false);
+  });
+
+  it('keeps the warning during a clean that started with it, although the level rises over 350', () => {
+    expect(cleanWarns(true, false, true)).toBe(true);
   });
 });
