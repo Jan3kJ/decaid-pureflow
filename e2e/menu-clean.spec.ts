@@ -24,7 +24,7 @@ test.afterEach(() => {
 
 async function openClean(page: Page) {
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await page.getByTestId('menu').click();
   await expect(page.getByTestId('open-clean')).toContainText('Clean');
   await page.getByTestId('open-clean').click();

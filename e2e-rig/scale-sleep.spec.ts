@@ -61,7 +61,7 @@ test('scale: no scale page; a tap on the weight tares, and the scale reads about
   test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
 
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 15_000 });
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', IDLE, { timeout: 15_000 });
   await page.getByTestId('menu').click();
   await expect(page.getByTestId('menu-list')).toBeVisible();
   await expect(page.getByTestId('open-scale')).toHaveCount(0);
@@ -86,7 +86,7 @@ test('scale: with blockTareDuringShot on, a tare during a simulated shot shows t
   try {
     await api('POST', '/api/v1/settings', { blockTareDuringShot: true });
     await page.goto('/');
-    await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 15_000 });
+    await expect(page.getByTestId('status')).toHaveAttribute('data-state', IDLE, { timeout: 15_000 });
 
     // The shot of whatever profile the workflow holds, started through the gateway as at the
     // machine; home shows the shot by itself, under the state line.
@@ -149,7 +149,7 @@ test('scale: the simulated scale, missing at the start or dropped, is connected 
     // Missing at the start, with the preferred scale set: one round after the first status frame.
     await dropScale(page);
     await page.goto('/');
-    await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 30_000 });
+    await expect(page.getByTestId('status')).toHaveAttribute('data-state', IDLE, { timeout: 30_000 });
     await expect.poll(scaleState, { timeout: 60_000, intervals: [1_000] }).toBe('connected');
     await expect(page.getByTestId('state-scale')).toHaveText(/ g$/, { timeout: 15_000 });
     expect(scans.length).toBeGreaterThanOrEqual(1);
@@ -184,7 +184,7 @@ test('sleep: machine and app sleep puts the machine into sleeping with the Aslee
 
   try {
     await page.goto('/');
-    await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 30_000 });
+    await expect(page.getByTestId('status')).toHaveAttribute('data-state', IDLE, { timeout: 30_000 });
 
     // Sleep is an entry of home's menu.
     await page.getByTestId('menu').click();

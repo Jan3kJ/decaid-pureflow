@@ -34,7 +34,7 @@ const steamWrites = (gateway: Awaited<ReturnType<typeof mockGateway>>) =>
 test('steam off switches the heater off, shows it, and a second tap switches it on again (item 18)', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
 
   await openMenu(page);
   await expect(page.getByTestId('steam-heater')).toBeEnabled();
@@ -65,7 +65,7 @@ test('steam on brings back the temperature the heater had, and it is in the sett
   gateway.workflow.steamSettings = { ...gateway.workflow.steamSettings, targetTemperature: 158 };
   gateway.shotSettings = { ...gateway.shotSettings, targetSteamTemp: 158 };
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
 
   await openMenu(page);
   await page.getByTestId('steam-heater').click();
@@ -115,7 +115,7 @@ function askedOf(gateway: MockGateway, start: number): () => string[] {
 test('the two sleep entries have their labels alone, no line under either', async ({ page }) => {
   await mockGateway(page);
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await openMenu(page);
   await expect(page.getByTestId('machine-sleep')).toHaveText('Machine sleep');
   await expect(page.getByTestId('app-sleep')).toHaveText('Machine and app sleep');
@@ -129,7 +129,7 @@ test('the two sleep entries have their labels alone, no line under either', asyn
 test('beans and grinders and clean have no second line; the steam switch has its line in all three states', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await openMenu(page);
   await expect(page.getByTestId('open-beans')).toHaveText('Beans and grinders');
   await expect(page.getByTestId('open-clean')).toHaveText('Clean');
@@ -150,7 +150,7 @@ test("the steam switch says 'not known' while neither the machine's settings nor
   await page.route(/:8080\/api\/v1\/workflow/, (route) => route.fulfill({ status: 503, body: '' }));
   await page.routeWebSocket(/:8080\/ws\/v1\/machine\/shotSettings/, () => {});
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await openMenu(page);
   await expect(page.getByTestId('steam-heater')).toBeDisabled();
   await expect(page.getByTestId('steam-heater-detail')).toHaveText('not known');
@@ -161,12 +161,12 @@ test("the steam switch says 'not known' while neither the machine's settings nor
 test("machine sleep: sleeping, the app stays awake and undimmed, 'Wake machine' asks for idle", async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   const asked = askedOf(gateway, gateway.requests.length);
   await openMenu(page);
   await page.getByTestId('machine-sleep').click();
   await expect.poll(asked).toEqual(['PUT /api/v1/machine/state/sleeping']);
-  await expect(page.getByTestId('status-title')).toHaveText('Asleep');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Asleep');
   // The skin stays on screen: no Asleep screen, the brightness and the wake lock not touched.
   await expect(page.getByTestId('asleep')).toHaveCount(0);
   await expect(page.getByTestId('screen-home')).toBeVisible();
@@ -191,7 +191,7 @@ test("machine sleep: sleeping, the app stays awake and undimmed, 'Wake machine' 
   await page.screenshot({ path: 'docs/product/home-menu-asleep.png' });
   await page.getByTestId('wake-machine').click();
   await expect.poll(asked).toEqual(['PUT /api/v1/machine/state/sleeping', 'PUT /api/v1/machine/state/idle']);
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await openMenu(page);
   await expect(page.getByTestId('machine-sleep')).toBeEnabled();
   await expect(page.getByTestId('wake-machine')).toHaveCount(0);
@@ -200,9 +200,9 @@ test("machine sleep: sleeping, the app stays awake and undimmed, 'Wake machine' 
   // Woken elsewhere (the machine's button): the next sleep Decaid starts shows the Asleep screen.
   await openMenu(page);
   await page.getByTestId('machine-sleep').click();
-  await expect(page.getByTestId('status-title')).toHaveText('Asleep');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Asleep');
   gateway.state = 'idle';
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   gateway.state = 'sleeping';
   await expect(page.getByTestId('asleep')).toBeVisible();
   await expect
@@ -222,7 +222,7 @@ test('machine and app sleep: sleeping and the Asleep screen at 5, a touch wakes 
   const gateway = await mockGateway(page);
   gateway.display = { ...gateway.display, wakeLockOverride: true };
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   const asked = askedOf(gateway, gateway.requests.length);
   await openMenu(page);
   await page.getByTestId('app-sleep').click();
@@ -247,7 +247,7 @@ test('machine and app sleep: sleeping and the Asleep screen at 5, a touch wakes 
   // The next 'Machine sleep' is the machine's alone: no Asleep screen, no dimming.
   await openMenu(page);
   await page.getByTestId('machine-sleep').click();
-  await expect(page.getByTestId('status-title')).toHaveText('Asleep');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Asleep');
   await expect(page.getByTestId('asleep')).toHaveCount(0);
   await page.waitForTimeout(500);
   expect(asked().slice(4)).toEqual(['PUT /api/v1/machine/state/sleeping']);
@@ -258,7 +258,7 @@ test('without a machine the steam switch is offered from the workflow, machine s
   const gateway = await mockGateway(page);
   gateway.machineConnected = false;
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('No machine connected', { timeout: 10_000 });
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'No machine connected', { timeout: 10_000 });
   await openMenu(page);
   await expect(page.getByTestId('machine-sleep')).toBeDisabled();
   await expect(page.getByTestId('app-sleep')).toBeDisabled();

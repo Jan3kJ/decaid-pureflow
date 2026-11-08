@@ -71,7 +71,7 @@ test('home menu: steam off and on again, read back from the machine; machine sle
 
   try {
     await page.goto('/');
-    await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 30_000 });
+    await expect(page.getByTestId('status')).toHaveAttribute('data-state', IDLE, { timeout: 30_000 });
 
     await page.getByTestId('menu').click();
     await expect(page.getByTestId('steam-heater-detail')).toHaveText('on', { timeout: 15_000 });
@@ -93,7 +93,7 @@ test('home menu: steam off and on again, read back from the machine; machine sle
     await expect(page.getByTestId('machine-sleep-detail')).toHaveCount(0);
     await page.getByTestId('machine-sleep').click();
     await expect.poll(machineState, { timeout: 15_000 }).toBe('sleeping');
-    await expect(page.getByTestId('status-title')).toHaveText('Asleep', { timeout: 15_000 });
+    await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Asleep', { timeout: 15_000 });
     // The app stays awake: no Asleep screen, the screen not dimmed.
     await page.waitForTimeout(2_000);
     await expect(page.getByTestId('asleep')).toHaveCount(0);
@@ -105,7 +105,7 @@ test('home menu: steam off and on again, read back from the machine; machine sle
     await page.getByTestId('menu').click();
     await page.getByTestId('wake-machine').click();
     await expect.poll(machineState, { timeout: 15_000 }).not.toBe('sleeping');
-    await expect(page.getByTestId('status-title')).not.toHaveText('Asleep', { timeout: 15_000 });
+    await expect(page.getByTestId('status')).not.toHaveAttribute('data-state', 'Asleep', { timeout: 15_000 });
     // The rig drops the scale while the machine sleeps: the next test needs it.
     await expect(page.getByTestId('state-scale')).toHaveText(/ g$/, { timeout: 30_000 });
   } finally {
@@ -151,7 +151,7 @@ test('home menu: machine and app sleep shows the Asleep screen at 5, a touch wak
 
   try {
     await page.goto('/');
-    await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 30_000 });
+    await expect(page.getByTestId('status')).toHaveAttribute('data-state', IDLE, { timeout: 30_000 });
     await page.getByTestId('menu').click();
     await expect(page.getByTestId('app-sleep')).toHaveText('Machine and app sleep');
     await expect(page.getByTestId('app-sleep-detail')).toHaveCount(0);

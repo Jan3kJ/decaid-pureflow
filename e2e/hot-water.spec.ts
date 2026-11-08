@@ -67,7 +67,7 @@ const lastWrite = (gateway: MockGateway) =>
 test('the hot water dot opens the page; it has no start button', async ({ page }) => {
   await mockGateway(page);
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
 
   await toPage(page, 'hot-water');
   await expect(page.getByTestId('screen-hot-water')).toBeVisible();

@@ -83,7 +83,7 @@ test('flush: the one ring over the main frame of home, the history, steam, setti
 }) => {
   const gateway = (await mockGateway(page)).withDefaults('dark');
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await expect(page.getByTestId('water-view')).toHaveCount(0);
 
   gateway.waterFor('flush', 6, 6, 90);
@@ -142,7 +142,7 @@ test('flush: the one ring over the main frame of home, the history, steam, setti
 test('flush: the ring over the picker and the A-Flow editor', async ({ page }) => {
   const gateway = (await mockGateway(page)).withDefaults('dark');
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
 
   await page.getByTestId('open-profiles').click();
   await expect(page.getByTestId('screen-profiles')).toBeVisible();
@@ -170,7 +170,7 @@ test('hot water: the ring over the step editor, its page and steam, gone when it
   gateway.workflow.profile = profile('Steps', 36, 3);
   gateway.connectScale(false);
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
 
   await page.getByTestId('open-editor').click();
   await expect(page.getByTestId('step-cards')).toBeVisible();
@@ -232,7 +232,7 @@ async function stopLines(page: Page) {
 test('hot water: the target under the values, in g with a scale and in ml without, none for a flush or 0', async ({ page }) => {
   const gateway = (await mockGateway(page)).withDefaults('dark');
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   gateway.putOnScale(12.4);
 
   gateway.waterFor('hotWater', 4, 8, 80);
@@ -279,7 +279,7 @@ test('hot water without a stop (a target of 0): no target line', async ({ page }
   const gateway = (await mockGateway(page)).withDefaults('dark');
   gateway.workflow.hotWaterData = { ...gateway.workflow.hotWaterData, volume: 0 };
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   gateway.waterFor('hotWater', 4, 8, 80);
   await expectRing(page, 'hotWater', '4 / 30 s');
   await expect(page.getByTestId('water-temperature')).toBeVisible();

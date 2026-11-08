@@ -37,7 +37,7 @@ async function escapes(page: Page, testid: string) {
 
 async function menuTo(page: Page, screen: string) {
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await page.getByTestId('menu').click();
   await page.getByTestId(`open-${screen}`).click();
 }

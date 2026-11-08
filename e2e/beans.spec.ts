@@ -27,7 +27,7 @@ test.afterEach(() => {
 
 async function openBeans(page: Page) {
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await page.getByTestId('menu').click();
   await page.getByTestId('open-beans').click();
   await expect(page.getByTestId('screen-beans')).toBeVisible();
@@ -260,7 +260,7 @@ test("home's chip opens the pick: bean, grinder and setting go out in one PUT an
   // DYE2's keys, as on the rig: the pick leaves them alone.
   gateway.workflow.context = { ...gateway.workflow.context, extras: { basketId: null, rpm: null } };
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await expect(page.getByTestId('next-bean')).toHaveText('no bean');
   await expect(page.getByTestId('next-setting')).toHaveText('5.2');
 
@@ -315,7 +315,7 @@ test("home's chip opens the pick: bean, grinder and setting go out in one PUT an
 
 test('the setting is typed on the number pad; Cancel leaves the workflow as it was', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await page.getByTestId('open-pick').click();
   await expect(page.getByTestId('pick-empty')).toBeVisible();
   await page.getByTestId('pick-setting').click();

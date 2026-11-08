@@ -25,7 +25,7 @@ const points = async (graph: Locator) => Number(await graph.getByTestId('shot-gr
 
 async function home(page: Page) {
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
 }
 
 test('a live shot starts its graph and timer when water moves, not while the machine heats', async ({ page }) => {
@@ -210,7 +210,7 @@ test('the legend is under the graph by default, and the settings page switches i
 
   // It is one stored setting: it survives a reload.
   await page.reload();
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await page.getByTestId('menu').click();
   await page.getByTestId('open-settings').click();
   await page.getByTestId('settings-category-skin').click();

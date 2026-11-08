@@ -20,7 +20,7 @@ test.beforeEach(({ page }) => {
 
 async function home(page: Page) {
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
 }
 
 const box = async (page: Page, testid: string) => (await page.getByTestId(testid).boundingBox())!;
@@ -81,7 +81,7 @@ test('idle before a shot, a running shot, and the finished shot that stays: one 
 
   // The machine stops and goes idle: the shot stays, with 'time, finished' and the table.
   await gateway.replay(page, 0.6, 1);
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await page.waitForTimeout(500);
   await expect(page.getByTestId('last-shot')).toBeVisible();
   await expect(page.getByTestId('home-shot')).toHaveAttribute('data-shot', 'finished');
@@ -235,7 +235,7 @@ test('with the setting shot values off, home shows no per-phase table after a sh
   await expect(page.getByTestId('screen-home')).toBeVisible();
 
   await gateway.replay(page, 0, 1);
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await expect(page.getByTestId('last-shot')).toBeVisible();
   await page.waitForTimeout(500);
   await expect(page.getByTestId('shot-phases')).toHaveCount(0);

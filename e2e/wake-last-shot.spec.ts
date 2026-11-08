@@ -32,7 +32,7 @@ test('home shows the newest shot after a start, a reload, a sleep with a reconne
   gateway.addShot('shot-1', '2026-10-24T07:00:00.000000', medium, { targetYield: 36 });
   gateway.measurements['shot-1'] = measurementsOf(20);
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
 
   // The start: the newest record, not the empty graph.
   await expect(page.getByTestId('last-shot')).toBeVisible();
@@ -71,7 +71,7 @@ test('home shows the newest shot after a start, a reload, a sleep with a reconne
   gateway.addShot('shot-4', '2026-10-24T10:00:00.000000', medium, { targetYield: 36 });
   gateway.measurements['shot-4'] = measurementsOf(10);
   gateway.dropStreams();
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await screenOffOn(page);
   await page.waitForTimeout(500);
   expect(await timer(page)).toBe(kept);

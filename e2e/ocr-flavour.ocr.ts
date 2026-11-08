@@ -37,7 +37,7 @@ test('the ocr flavour loads and reads a new photo with its reader', async ({ pag
     if (/\/assets\/read-[\w-]+\.js$/.test(request.url())) readers.push(request.url());
   });
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await page.getByTestId('menu').click();
   await page.getByTestId('open-beans').click();
   await page.getByTestId('bean-photo-take').click();

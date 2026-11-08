@@ -45,7 +45,9 @@ const look = (locator: Locator) =>
 // The sign and a no-break space, so the sign never ends a line on its own.
 const SIGN = '"⚠ "';
 
-test('--warn is the orange #ff8a3d; Off and the scale warning are in it, after the warning sign', async ({ page }) => {
+test('--warn is the orange #ff8a3d; the scale warning is in it, after the warning sign; the steam heater Off is dim', async ({
+  page,
+}) => {
   const gateway = await mockGateway(page);
   gateway.setMachineSteamTarget(0);
   await page.goto('/');
@@ -53,9 +55,9 @@ test('--warn is the orange #ff8a3d; Off and the scale warning are in it, after t
   expect(warn).toBe('rgb(255, 138, 61)');
 
   await toPage(page, 'steam');
-  const title = page.getByTestId('screen-steam').getByTestId('status-title');
-  await expect(title).toHaveText('Off');
-  expect(await look(title)).toMatchObject({ color: warn, sign: SIGN });
+  const word = page.getByTestId('screen-steam').getByTestId('status-word');
+  await expect(word).toHaveText('Off');
+  expect((await look(word)).color).toBe(await colour(page, 'var(--dim)'));
 
   gateway.connectScale(false);
   const scale = page.getByTestId('screen-steam').getByTestId('state-scale');

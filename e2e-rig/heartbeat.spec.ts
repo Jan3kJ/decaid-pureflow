@@ -70,7 +70,7 @@ test('a touched skin keeps the machine awake; left alone it sleeps after the min
     await api('POST', '/api/v1/presence/settings', { userPresenceEnabled: true });
 
     await page.goto('/');
-    await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 30_000 });
+    await expect(page.getByTestId('status')).toHaveAttribute('data-state', IDLE, { timeout: 30_000 });
 
     // Touched every 10 s for three minutes: awake throughout, a heartbeat at most every 30 s.
     const start = Date.now();

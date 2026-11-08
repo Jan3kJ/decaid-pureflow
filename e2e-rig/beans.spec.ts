@@ -82,7 +82,7 @@ test('beans and grinders: added, edited, archived and restored on the screen; th
 
   try {
     await page.goto('/');
-    await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 15_000 });
+    await expect(page.getByTestId('status')).toHaveAttribute('data-state', IDLE, { timeout: 15_000 });
     await page.getByTestId('menu').click();
     await page.getByTestId('open-beans').click();
     await expect(page.getByTestId('screen-beans')).toBeVisible();

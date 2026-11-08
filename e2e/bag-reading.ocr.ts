@@ -46,7 +46,7 @@ test.beforeEach(async ({ page, baseURL, cameraPhoto }) => {
   }, cameraPhoto);
   await mockGateway(page);
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await page.getByTestId('menu').click();
   await page.getByTestId('open-beans').click();
 });

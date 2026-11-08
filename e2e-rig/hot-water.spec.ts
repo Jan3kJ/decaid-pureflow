@@ -72,7 +72,7 @@ test('the hot water page writes hotWaterData, 1:2 of a 40 g shot is 80 g, Decaid
 
     // The hot water dot opens the page.
     await page.goto('/');
-    await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 30_000 });
+    await expect(page.getByTestId('status')).toHaveAttribute('data-state', IDLE, { timeout: 30_000 });
     await toPage(page, 'hot-water');
     await expect(page.getByTestId('screen-hot-water')).toBeVisible();
     // The last shot's weight as the page shows it: near the 40 g the shot was stopped at.
@@ -115,9 +115,9 @@ test('the hot water page writes hotWaterData, 1:2 of a 40 g shot is 80 g, Decaid
         }),
       )
       .toBe(true);
-    // The page's state line says what home's says: Hot water, then Idle or Heating.
-    const title = page.getByTestId('screen-hot-water').getByTestId('status-title');
-    await expect(title).toHaveText('Hot water');
+    // The page's header says what home's says: Hot water, then Idle or Heating.
+    const title = page.getByTestId('screen-hot-water').getByTestId('status');
+    await expect(title).toHaveAttribute('data-state', 'Hot water');
     await expect.poll(machineState, { timeout: 70_000, intervals: [300] }).not.toBe('hotWater');
     const seconds = (Date.now() - started) / 1000;
     expect(seconds).toBeLessThan(40);
@@ -127,7 +127,7 @@ test('the hot water page writes hotWaterData, 1:2 of a 40 g shot is 80 g, Decaid
     expect(weighed).toBeLessThan(grams(2) + 5);
     console.log(`hot water stopped after ${seconds.toFixed(1)} s at ${weighed} g`);
     await expect(page.getByTestId('water-view')).toHaveCount(0);
-    await expect(title).toHaveText(IDLE);
+    await expect(title).toHaveAttribute('data-state', IDLE);
     await expect(page.getByTestId('hot-water-time')).toContainText('60s');
 
     // The tare button tares.

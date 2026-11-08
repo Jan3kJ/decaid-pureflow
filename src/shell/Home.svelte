@@ -10,9 +10,9 @@
   let { skin }: Props = $props();
 </script>
 
-<!-- The menu and the state line only: the profile and bean are in the right column. -->
+<!-- The header only: the profile and bean are in the right column. -->
 {#snippet header()}
-  <PageHeader {skin} heat="group" />
+  <PageHeader {skin} heat="group" title="Home" titleTestid="home-title" />
 {/snippet}
 
 <div class="home">

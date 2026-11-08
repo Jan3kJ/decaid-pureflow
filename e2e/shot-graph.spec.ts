@@ -33,7 +33,7 @@ function stretched(factor: number) {
 
 async function home(page: Page) {
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
 }
 
 test('a shot that stays at or under 10 bar has a scale to 10, live and afterwards', async ({ page }) => {

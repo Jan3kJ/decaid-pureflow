@@ -56,7 +56,7 @@ async function gatewayFor(page: Page, shots = true): Promise<MockGateway> {
 
 async function home(page: Page) {
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
 }
 
 /** Waits for transitions and the graph's drawing to settle, then writes the picture. */

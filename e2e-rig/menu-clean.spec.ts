@@ -47,7 +47,7 @@ test("home menu: clean opens Maintenance's clean with the rig's water in ml and 
 
   try {
     await page.goto('/');
-    await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 30_000 });
+    await expect(page.getByTestId('status')).toHaveAttribute('data-state', IDLE, { timeout: 30_000 });
     await page.getByTestId('menu').click();
     await page.getByTestId('open-clean').click();
     await expect(page.getByTestId('settings-content')).toHaveAttribute('data-category', 'maintenance');

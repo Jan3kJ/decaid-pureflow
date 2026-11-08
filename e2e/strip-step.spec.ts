@@ -39,7 +39,7 @@ test('no strip on home; while a shot runs the state line ends with the step’s 
   steps[2] = { ...steps[2], name: 'Extraction' };
   steps[5] = { ...steps[5], name: '' };
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
 
   // The graph starts right under the header's row: no strip between them.
   await expect(page.getByTestId('shot-caption')).toHaveCount(0);
@@ -59,8 +59,8 @@ test('no strip on home; while a shot runs the state line ends with the step’s 
   await expect(page.getByTestId('state-step')).toHaveText('Preinfusion');
   await gateway.replay(page, shareAt(1), shareAt(2));
   await expect(page.getByTestId('state-step')).toHaveText('Extraction');
-  await expect(page.getByTestId('status-title')).toHaveText('Pouring');
-  // After the scale's weight, in the state line's value size and the state word's colour.
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Pouring');
+  // After the scale's weight, in the state line's value size.
   const step = await box(page, 'state-step');
   const weight = await box(page, 'state-scale');
   expect(step.x).toBeGreaterThan(weight.x + weight.width);
@@ -71,7 +71,6 @@ test('no strip on home; while a shot runs the state line ends with the step’s 
       return { fontSize, color };
     });
   expect((await style('state-step')).fontSize).toBe((await style('state-scale')).fontSize);
-  expect((await style('state-step')).color).toBe((await style('status-title')).color);
   await expect(page.getByTestId('shot-caption')).toHaveCount(0);
   await page.screenshot({ path: 'docs/product/home-step.png' });
 
@@ -80,7 +79,7 @@ test('no strip on home; while a shot runs the state line ends with the step’s 
 
   // The shot ends: the step goes, the column says 'time, finished', the state line Idle.
   await gateway.replay(page, shareAt(5), 1);
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await expect(page.getByTestId('home-shot')).toHaveAttribute('data-shot', 'finished');
   await expect(page.getByTestId('state-step')).toHaveCount(0);
   await expect(page.getByTestId('shot-timer-label')).toHaveText('time, finished');
@@ -97,19 +96,19 @@ test('no strip on home; while a shot runs the state line ends with the step’s 
 test('hot water, flush and steam print no step', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
 
   for (const kind of ['hotWater', 'flush'] as const) {
     gateway.waterFor(kind, 4, 4);
     await expect(page.getByTestId('water-view')).toBeVisible();
     await expect(page.getByTestId('state-step')).toHaveCount(0);
     gateway.waterEnded();
-    await expect(page.getByTestId('status-title')).toHaveText('Idle');
+    await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   }
 
   await toPage(page, 'steam');
   gateway.steamFor(6);
-  await expect(page.getByTestId('status-title')).toHaveText('Steam');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Steam');
   await expect(page.getByTestId('state-step')).toHaveCount(0);
   expect(errors).toEqual([]);
 });

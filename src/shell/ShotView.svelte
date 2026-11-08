@@ -10,7 +10,7 @@
 
   interface Props {
     skin: Skin;
-    /** home's header, left of the title; the right column starts below both, level with the graph */
+    /** home's header over both columns; the right column starts below it, level with the graph */
     top?: Snippet;
   }
 
@@ -53,7 +53,6 @@
 
 <div class="shot" class:values={table !== null} data-testid="home-shot" data-shot={shown.kind}>
   <div class="top">{@render top?.()}</div>
-  <h1 data-testid="home-title">Home</h1>
   <!-- No strip and no caption over the graph: the step is in the state line, the shot's time
        and weight and a recalled entry's profile, bean and grinder in the column. -->
   <div class="plot" data-testid={PLOT[shown.kind]} data-main-frame>
@@ -146,30 +145,21 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr) 17rem;
     grid-template-rows: auto minmax(0, 1fr);
-    grid-template-areas: 'top title' 'plot side';
+    grid-template-areas: 'top top' 'plot side';
     gap: var(--space-2) var(--space-3);
   }
 
   /* The table's row only when it is drawn: else the graph takes its height. */
   .shot.values {
     grid-template-rows: auto minmax(0, 1fr) auto;
-    grid-template-areas: 'top title' 'plot side' 'table side';
+    grid-template-areas: 'top top' 'plot side' 'table side';
   }
 
   .top {
     grid-area: top;
     min-width: 0;
-  }
-
-  /* a page's header is a name, as on steam and hot water */
-  h1 {
-    grid-area: title;
-    align-self: center;
-    justify-self: end;
-    margin: 0;
-    font-size: var(--text-body);
-    font-weight: 600;
-    white-space: nowrap;
+    /* the column's width, for the header's grid */
+    --side-width: 17rem;
   }
 
   .plot {

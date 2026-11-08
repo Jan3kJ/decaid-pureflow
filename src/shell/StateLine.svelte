@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { HEATER_OFF, type HeatTarget } from './machine';
+  import type { HeatTarget } from './machine';
   import type { Skin } from './skin.svelte';
 
   interface Props {
@@ -15,14 +15,13 @@
 
   const status = $derived(skin.statusFor(heat ?? null));
 
-  // With a machine the line is its values; without one, what the skin knows about the link.
+  // The readings are the machine's values; without a machine there are none, and the corner says why.
   const machine = $derived(skin.link === 'machine' && skin.snapshot !== null);
 </script>
 
-<!-- The machine's state in one line, on home, the hot water and the steam page. -->
-<section class="state {status.tone}" class:heater-off={status.title === HEATER_OFF} data-testid="status" data-link={skin.link}>
-  <span class="dot"></span>
-  <strong class:warning={status.tone === 'warn' || status.title === HEATER_OFF} data-testid="status-title">{status.title}</strong>
+<!-- The readings of the header, centred over the page's main frame: group or steam, tank, scale and the step
+     that runs. `data-state` is the machine's state as the header says it, for the tests; no word shows. -->
+<section class="state" data-testid="status" data-state={status.title} data-link={skin.link}>
   {#if machine}
     {#each skin.stateValues as item (item.key)}
       {#if item.key === 'scale' && skin.scaleLink === 'connected'}
@@ -45,71 +44,45 @@
       {/if}
     {/each}
     {#if skin.step}
-      <!-- The step that runs, after the weight: in the values' size and the state word's colour. -->
+      <!-- The step that runs, after the weight: in the values' size. -->
       <span class="step" data-testid="state-step">{skin.step}</span>
     {/if}
-  {:else}
-    <span class="detail" data-testid="status-detail">{status.detail}</span>
   {/if}
 </section>
 
 <style>
+  /* centred over the main frame (the header's first column); a long step is cut, not wrapped */
   .state {
     min-width: 0;
     display: flex;
     align-items: baseline;
-    gap: var(--space-3);
+    justify-content: center;
+    gap: var(--space-4);
     font-size: var(--text-value);
+    font-weight: 300;
     white-space: nowrap;
+    /* it lies over the corner's word, which stays tappable; only its buttons take touches */
+    pointer-events: none;
     /* Clipped sideways only: the weight's tap target reaches above and below the line. */
     overflow-x: clip;
-  }
-
-  .dot {
-    flex: none;
-    align-self: center;
-    width: 0.7rem;
-    height: 0.7rem;
-    border-radius: var(--radius-round);
-    background: var(--dim);
-  }
-  .ok .dot {
-    background: var(--pressure);
-  }
-  .busy .dot {
-    background: var(--flow);
-  }
-  .warn .dot,
-  .heater-off .dot {
-    background: var(--warn);
-  }
-
-  /* The state word is a name, the profile name's size and weight; its values are values. */
-  strong {
-    margin-left: -0.5rem;
-    font-size: var(--text-body);
-    font-weight: 600;
   }
 
   .step {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-weight: 600;
-  }
-
-  .state.warn .step {
-    color: var(--warn);
   }
 
   small {
     margin-right: var(--space-1);
     color: var(--dim);
     font-size: var(--text-label);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
   }
 
   b {
-    font-weight: 600;
+    font-weight: 400;
     font-variant-numeric: tabular-nums;
   }
 
@@ -119,9 +92,11 @@
 
   /* The weight as a tare button: the line's text, with a finger's target around it. */
   button.value {
+    pointer-events: auto;
     margin: -0.9rem -0.6rem;
     padding: 0.9rem 0.6rem;
     color: inherit;
+    font-weight: inherit;
     background: none;
     border: 0;
     border-radius: var(--radius-small);
@@ -131,16 +106,8 @@
     background: var(--raised);
   }
 
-  /* The scale's warning is a hint, not a value: at a label's size it fits beside the profile. */
+  /* The scale's warning is a hint, not a value: at a label's size it fits beside the others. */
   .scale.warn b {
     font-size: var(--text-label);
-  }
-
-  .detail {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    color: var(--dim);
-    font-size: var(--text-body);
   }
 </style>

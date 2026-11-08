@@ -19,7 +19,7 @@ test.beforeEach(({ page }) => {
 
 async function home(page: Page) {
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
 }
 
 /** The shown page: the one screen that is not the neighbour coming in. */

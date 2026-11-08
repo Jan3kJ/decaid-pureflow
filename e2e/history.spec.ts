@@ -36,7 +36,7 @@ const points = async (page: Page) =>
 
 async function home(page: Page) {
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
 }
 
 test('the handle opens the overlay: one entry per profile and bean, newest first, with the latest grinder setting', async ({

@@ -55,7 +55,7 @@ test('a simulated shot: the live graph ends with the shot, as long as its record
   try {
     await api('PUT', '/api/v1/workflow', { profile: record!.profile, context: { targetDoseWeight: 18, targetYield: TARGET } });
     await page.goto('/');
-    await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 15_000 });
+    await expect(page.getByTestId('status')).toHaveAttribute('data-state', IDLE, { timeout: 15_000 });
     await expect(page.getByTestId('profile-name')).toHaveText(titleLines(PROFILE).name);
     if (previous)
       await page

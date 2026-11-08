@@ -42,7 +42,7 @@ test('hot water started at the machine: the ring on home and on steam, whose sto
   const ring = page.getByTestId('water-view');
   try {
     await page.goto('/');
-    await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 30_000 });
+    await expect(page.getByTestId('status')).toHaveAttribute('data-state', IDLE, { timeout: 30_000 });
 
     await api('PUT', '/api/v1/machine/state/hotWater');
     await expect(page.getByTestId('water-view')).toHaveAttribute('data-kind', 'hotWater');

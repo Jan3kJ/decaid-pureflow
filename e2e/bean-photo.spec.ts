@@ -51,7 +51,7 @@ test.afterEach(() => {
 
 async function openBeans(page: Page) {
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await page.getByTestId('menu').click();
   await page.getByTestId('open-beans').click();
   await expect(page.getByTestId('screen-beans')).toBeVisible();

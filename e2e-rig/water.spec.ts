@@ -53,7 +53,7 @@ test('hot water and flush started at the machine show the ring and the values in
   };
   try {
     await page.goto('/');
-    await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 30_000 });
+    await expect(page.getByTestId('status')).toHaveAttribute('data-state', IDLE, { timeout: 30_000 });
 
     // Hot water: it pours, the button shows the mock scale's weight, and it ends by itself.
     await api('PUT', '/api/v1/machine/state/hotWater');

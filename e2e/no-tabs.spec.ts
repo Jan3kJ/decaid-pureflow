@@ -18,7 +18,7 @@ test.beforeEach(({ page }) => {
 
 async function home(page: Page) {
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
 }
 
 /** The shown page: the one screen that is not a page sliding in. */
@@ -40,13 +40,13 @@ test('home draws no edge tab and uses the full width', async ({ page }) => {
   const screen = (await page.getByTestId('screen-home').boundingBox())!;
   expect(screen.x).toBe(0);
   expect(screen.width).toBe(1280);
-  // The menu opens under its button, in the top left corner.
+  // The menu opens under its button, in the top right corner.
   const button = (await page.getByTestId('menu').boundingBox())!;
   await page.getByTestId('menu').click();
   const menu = (await page.getByTestId('menu-list').boundingBox())!;
-  expect(Math.abs(menu.x - button.x)).toBeLessThan(2);
+  expect(Math.abs(menu.x + menu.width - (button.x + button.width))).toBeLessThan(2);
   expect(menu.y).toBeGreaterThan(button.y + button.height - 1);
-  await page.getByTestId('menu-backdrop').click({ position: { x: 1100, y: 400 } });
+  await page.getByTestId('menu-backdrop').click({ position: { x: 300, y: 400 } });
   await page.screenshot({ path: 'docs/product/home-no-tabs.png' });
   expect(errors).toEqual([]);
 });

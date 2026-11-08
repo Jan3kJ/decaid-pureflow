@@ -71,7 +71,7 @@ test(`every button on the mock's screens is at least ${MIN_REM} rem on its short
   const found: string[] = [];
 
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   found.push(...(await small(page, 'home')));
   await page.getByTestId('open-pick').click();
   await expect(page.getByTestId('pick-use')).toBeVisible();

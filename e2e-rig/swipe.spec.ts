@@ -43,7 +43,7 @@ test('a swipe opens steam and hot water from home, and writes nothing to the mac
 
   try {
     await page.goto('/');
-    await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 30_000 });
+    await expect(page.getByTestId('status')).toHaveAttribute('data-state', IDLE, { timeout: 30_000 });
 
     await swipe(page, { x: 800, y: 500 }, { x: 300, y: 500 });
     await expect(shown(page, 'steam')).toBeVisible();

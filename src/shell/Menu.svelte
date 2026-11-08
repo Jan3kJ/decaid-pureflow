@@ -78,7 +78,7 @@
   }
 </script>
 
-<!-- 56 CSS pixels square, where the back arrow was: the state line begins right of it. -->
+<!-- A bare icon in the header's top right corner: 56 CSS pixels square to touch, nothing drawn but the three lines. -->
 <button class="corner" data-testid="menu" aria-label="menu" aria-expanded={menuOpen} onclick={() => (menuOpen = !menuOpen)}>
   <svg viewBox="0 0 24 24" aria-hidden="true">
     <path d="M4 7h16 M4 12h16 M4 17h16" />
@@ -114,6 +114,8 @@
 
   .corner {
     flex: none;
+    border: 0;
+    color: var(--dim);
     width: 3.5rem;
     height: var(--control-big);
     display: grid;
@@ -143,9 +145,9 @@
 
   .menu {
     position: fixed;
-    /* under the corner button, at the pages' left padding */
+    /* under the corner button, at the pages' right padding */
     top: 4.6rem;
-    left: 1.2rem;
+    right: var(--space-3);
     z-index: var(--layer-sheet);
     min-width: 14rem;
     margin: 0;

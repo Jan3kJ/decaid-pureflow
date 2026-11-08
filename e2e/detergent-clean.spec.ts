@@ -32,7 +32,7 @@ const machineRequests = () => gateway.calls('PUT', /^\/api\/v1\/machine\/state\/
 
 async function openMaintenance(page: Page) {
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await page.getByTestId('menu').click();
   await page.getByTestId('open-clean').click();
   await expect(page.getByTestId('settings-content')).toHaveAttribute('data-category', 'maintenance');

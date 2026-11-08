@@ -338,17 +338,17 @@ test('sleep: the brightness is left alone where the platform does not support it
 test('sleep is not offered while something runs or without a machine', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   // The menu stays open while the machine changes: its sleep entry follows.
   await page.getByTestId('menu').click();
   await expect(page.getByTestId('machine-sleep')).toBeEnabled();
   gateway.steamFor(3);
-  await expect(page.getByTestId('status-title')).toHaveText('Steam');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Steam');
   await expect(page.getByTestId('machine-sleep')).toBeDisabled();
   gateway.state = 'idle';
   await expect(page.getByTestId('machine-sleep')).toBeEnabled();
   gateway.machineConnected = false;
-  await expect(page.getByTestId('status-title')).toHaveText('No machine connected', { timeout: 10_000 });
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'No machine connected', { timeout: 10_000 });
   await expect(page.getByTestId('machine-sleep')).toBeDisabled();
   expect(errors).toEqual([]);
 });
@@ -357,7 +357,7 @@ test('a workflow without a dose takes the default dose; one with a dose keeps it
   const gateway = await mockGateway(page);
   gateway.workflow = { ...gateway.workflow, context: { targetYield: 36 } };
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await expect.poll(() => gateway.workflow.context.targetDoseWeight).toBe(18);
   expect(gateway.calls('PUT', '/api/v1/workflow').map((call) => call.body)).toContainEqual({ context: { targetDoseWeight: 18 } });
 
@@ -368,7 +368,7 @@ test('a workflow without a dose takes the default dose; one with a dose keeps it
   await page.getByTestId('settings-category-skin').click();
   await type(page, 'setting-default-dose', '16');
   await back(page);
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await page.waitForTimeout(500);
   expect(gateway.workflow.context.targetDoseWeight).toBe(20);
   expect(errors).toEqual([]);
@@ -384,7 +384,7 @@ test('a stream the gateway closed with an error is tried again for 30 s, then sh
   await page.goto('/');
 
   // The skin tries again by itself for 30 s from the first refusal: no reconnect button yet.
-  await expect(page.getByTestId('status-title')).toHaveText('Decaid is not reachable');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Decaid is not reachable');
   const failed = page.getByTestId('stream-failed');
   let seconds = 0;
   for (; seconds < 40 && !(await failed.isVisible()); seconds++) {
@@ -402,7 +402,7 @@ test('a stream the gateway closed with an error is tried again for 30 s, then sh
 
   // Then the skin says what happened and offers the way on.
   await expect(page.getByTestId('stream-failed')).toContainText('Decaid closed the connection: the mock refuses this stream');
-  await expect(page.getByTestId('status-title')).toHaveText('Decaid closed the connection');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Decaid closed the connection');
   await expect(page.getByTestId('status')).toHaveAttribute('data-link', 'refused');
   await expect(page.getByTestId('stop')).toHaveCount(0);
   await expect(page.getByTestId('state-group')).toHaveCount(0);
@@ -434,7 +434,7 @@ test('a stream the gateway closed with an error is tried again for 30 s, then sh
   await page.getByTestId('reconnect').click();
   await expect(page.getByTestId('stream-failed')).toHaveCount(0);
   await back(page);
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await expect(page.getByTestId('state-scale')).toHaveText('0.0 g');
   expect(errors).toEqual([]);
 });

@@ -90,7 +90,7 @@ test("the skin switch makes another skin Decaid's default and opens it; the defa
 
   try {
     await page.goto('/');
-    await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 15_000 });
+    await expect(page.getByTestId('status')).toHaveAttribute('data-state', IDLE, { timeout: 15_000 });
     await page.getByTestId('menu').click();
     await page.getByTestId('open-settings').click();
     await page.getByTestId('settings-category-skin').click();
@@ -187,7 +187,7 @@ test("after the update check Decaid's newer version of this skin is offered, and
       await expect(page.getByTestId('skins')).toBeVisible();
     };
     await page.goto(`http://localhost:${status.port}/`);
-    await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 15_000 });
+    await expect(page.getByTestId('status')).toHaveAttribute('data-state', IDLE, { timeout: 15_000 });
     await page.getByTestId('menu').click();
     await page.getByTestId('open-settings').click();
     await openActive();

@@ -29,20 +29,21 @@ test('the profile and bean buttons are in the column while idle, off during a sh
   const gateway = await mockGateway(page);
   gateway.workflow.context = { ...gateway.workflow.context, grinderSetting: '5.2' };
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
 
   // The header: the state line and the menu, nothing else.
   const header = page.getByTestId('screen-home').locator('header.page-header');
   await expect(header.getByTestId('status')).toBeVisible();
   await expect(header.getByTestId('menu')).toBeVisible();
   for (const id of BUTTONS) await expect(header.getByTestId(id)).toHaveCount(0);
-  // The state line takes the header's width but the menu's, and the header ends left of the column.
+  // The menu is the header's right end, over the column; the readings are left of it.
   const line = await box(page, 'status');
   const menu = await box(page, 'menu');
   const own = (await header.boundingBox())!;
-  expect(line.x - (menu.x + menu.width)).toBeLessThan(1.5 * REM);
-  expect(line.x + line.width).toBeCloseTo(own.x + own.width, 0);
-  expect(own.x + own.width).toBeLessThanOrEqual((await box(page, 'shot-column')).x);
+  const side = await box(page, 'shot-column');
+  expect(menu.x + menu.width).toBeCloseTo(own.x + own.width, 0);
+  expect(menu.x).toBeGreaterThanOrEqual(side.x);
+  expect(line.x + line.width).toBeLessThanOrEqual(side.x);
 
   // Idle: both buttons at the column's top, one under the other, each as wide as the column.
   const column = page.getByTestId('shot-column');
@@ -74,7 +75,7 @@ test('the profile and bean buttons are in the column while idle, off during a sh
   // theirs, and the stop button keeps its 7 rem at the column's bottom, under the values.
   await gateway.replay(page, 0, 0.6);
   await expect(page.getByTestId('home-shot')).toHaveAttribute('data-shot', 'running');
-  await expect(page.getByTestId('status-title')).toHaveText('Pouring');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Pouring');
   for (const id of BUTTONS) await expect(column.getByTestId(id)).toBeVisible();
   for (const id of TAPPABLE) await expect(page.getByTestId(id)).toBeDisabled();
   expect(await box(page, 'open-pick')).toEqual(pick);
@@ -92,7 +93,7 @@ test('the profile and bean buttons are in the column while idle, off during a sh
   // After it: the buttons are live again at the same place, the stop button's place is empty.
   await gateway.replay(page, 0.6, 1);
   await expect(page.getByTestId('home-shot')).toHaveAttribute('data-shot', 'finished');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await expect(page.getByTestId('stop')).toHaveCount(0);
   for (const id of BUTTONS) await expect(column.getByTestId(id)).toBeVisible();
   for (const id of TAPPABLE) await expect(page.getByTestId(id)).toBeEnabled();
@@ -125,7 +126,7 @@ async function longNames(page: Page) {
 test('long names show the name first; each line is cut with an ellipsis and the column keeps its width', async ({ page }) => {
   await longNames(page);
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   const area = await box(page, 'shot-column');
   expect(area.width).toBeCloseTo(17 * REM, 0);
   await expect(page.getByTestId('profile-name')).toHaveText('a very long profile name that never fits into the column');
@@ -183,7 +184,7 @@ for (const [size, factor] of [
     await page.addInitScript((value) => localStorage.setItem('pureflow.settings', JSON.stringify({ displaySize: value })), factor);
     const gateway = await longNames(page);
     await page.goto('/');
-    await expect(page.getByTestId('status-title')).toHaveText('Idle');
+    await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
     const root = () => page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--display-size').trim());
     expect(await root()).toBe(`${factor}`);
 
@@ -241,7 +242,7 @@ test("the numbers are aligned as on the steam page: caption left, number and uni
 }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await gateway.replay(page, 0, 0.6);
   await expect(page.getByTestId('home-shot')).toHaveAttribute('data-shot', 'running');
   const area = await box(page, 'shot-column');
@@ -276,7 +277,7 @@ test('no number moves when the caption has one line or two', async ({ page }) =>
     const gateway = await mockGateway(page);
     gateway.workflow.context = { ...gateway.workflow.context, targetYield: target };
     await page.goto('/');
-    await expect(page.getByTestId('status-title')).toHaveText('Idle');
+    await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
     await expect(page.getByTestId('shot-stops-at')).toHaveCount(target ? 1 : 0);
     return (await rows(page)).map(({ value }) => value);
   };
@@ -289,7 +290,7 @@ test('no number moves when the caption has one line or two', async ({ page }) =>
 test('the caption is centred on the middle of its row, running and finished, and no row moves', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   const measure = async () =>
     Promise.all(
       VALUES.map(async (id, at) => {

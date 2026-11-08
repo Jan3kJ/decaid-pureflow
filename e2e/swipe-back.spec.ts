@@ -41,7 +41,7 @@ test('a swipe to the right leaves the settings, the beans, the picker and the ed
 }) => {
   await mockGateway(page);
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await noColumn(page, 'home');
 
   await fromMenu(page, 'open-settings');
@@ -109,7 +109,7 @@ test('hot water, the leftmost page, goes home by a swipe to the left; a swipe on
 test('the history opens by the edge swipe to the right and closes by a swipe to the left', async ({ page }) => {
   await mockGateway(page);
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await swipe(page, { x: 30, y: 400 }, { x: 300, y: 400 });
   await expect(page.getByTestId('history')).toBeVisible();
   await swipe(page, { x: 1000, y: 400 }, { x: 500, y: 400 });
@@ -162,7 +162,7 @@ async function goesBack(page: Page, open: () => Promise<void>, screen: string, f
 test('a swipe to the right goes back from the settings, the picker and the beans page, from their columns too', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
 
   const settings = () => fromMenu(page, 'open-settings');
   const tree = async () => {

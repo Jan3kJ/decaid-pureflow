@@ -63,7 +63,7 @@ test("every button's word on the main screens starts lower case; the menu and ti
   const found: string[] = [];
 
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   found.push(...(await capitalised(page, 'home')));
   await page.getByTestId('open-pick').click();
   await expect(page.getByTestId('pick-use')).toBeVisible();

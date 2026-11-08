@@ -15,8 +15,13 @@ It feels less natural there, but it works.
 
 ![Home sliding off to the left while the steam page comes in from the right](img/swipe-row.png)
 
-- The button in the top left corner opens the menu on all three pages: settings, beans and
-  grinders, clean, steam on or off, the machine's sleep and wake.
+- The three lines in the top right corner open the menu on all three pages: settings, beans and
+  grinders, clean, steam on or off, the machine's sleep and wake. The page's name stands left of
+  them, the readings (group or steam, tank, scale) in the middle. The machine's state is a faint
+  light behind the header: red and breathing while it heats, blue while water or a shot runs, red
+  and steady while it steams. The top left corner stays empty; only "Asleep" and "Off" (the steam
+  heater) show there, dim. A fault (needs water, error, no machine, no connection) shows there in
+  orange with an orange light; tap it for the details.
 - There is no back button anywhere. **To go back, swipe from left to right.** This leaves the
   editors, the settings, the beans screen and the profile picker. The one exception is the hot
   water page: home lies to its right, so you swipe from right to left.

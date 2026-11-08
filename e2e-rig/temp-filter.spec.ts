@@ -41,7 +41,7 @@ test("the state line takes the group's drop at once and its heating in small ste
   const shotsBefore = await shotIds();
   try {
     await page.goto('/');
-    await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 15_000 });
+    await expect(page.getByTestId('status')).toHaveAttribute('data-state', IDLE, { timeout: 15_000 });
     await expect(page.getByTestId('state-group')).toHaveText(/^\d+\.\d °C$/);
 
     // The page samples the state line every 100 ms and keeps the raw frames of its own stream.

@@ -7,7 +7,7 @@ import { toPage } from './touch';
 test('home title is right-aligned on the right edge of the hot water title, level with the header', async ({ page }) => {
   await mockGateway(page);
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
 
   const home = page.getByTestId('home-title');
   await expect(home).toHaveText('Home');

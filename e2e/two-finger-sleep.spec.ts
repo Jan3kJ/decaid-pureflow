@@ -27,7 +27,7 @@ async function twoFingers(page: Page, dx: number, dy: number) {
 async function home(page: Page) {
   const gateway = await mockGateway(page);
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   return gateway;
 }
 
@@ -69,7 +69,7 @@ async function machineAsleepAppAwake(page: Page) {
   const gateway = await home(page);
   await page.getByTestId('menu').click();
   await page.getByTestId('machine-sleep').click();
-  await expect(page.getByTestId('status-title')).toHaveText('Asleep');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Asleep');
   await expect(page.getByTestId('asleep')).toHaveCount(0);
   expect(sleeps(gateway)).toBe(1);
   return gateway;

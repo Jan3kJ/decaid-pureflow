@@ -56,7 +56,7 @@ test('wake: home shows the newest shot after a start, a sleep and wake, a reload
 
   try {
     await page.goto('/');
-    await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 15_000 });
+    await expect(page.getByTestId('status')).toHaveAttribute('data-state', IDLE, { timeout: 15_000 });
     await showsShot(page);
     expect(reads).toContain(`/api/v1/shots/${newest!.id}`);
     const seconds = await page.getByTestId('shot-timer').textContent();

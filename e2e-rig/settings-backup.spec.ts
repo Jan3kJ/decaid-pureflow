@@ -46,7 +46,7 @@ test('a changed setting is backed up in the KV store and comes back after localS
   try {
     await api('DELETE', BACKUP);
     await page.goto('/');
-    await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 15_000 });
+    await expect(page.getByTestId('status')).toHaveAttribute('data-state', IDLE, { timeout: 15_000 });
     await page.getByTestId('menu').click();
     await page.getByTestId('open-settings').click();
     await page.getByTestId('settings-category-skin').click();

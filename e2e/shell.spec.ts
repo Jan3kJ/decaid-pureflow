@@ -54,7 +54,7 @@ test('home shows the state line the machine sent, the profile, and no start: the
 
   await expect(page.getByTestId('screen-home')).toBeVisible();
   // One line: the state, group, steam, tank and scale, each read from a stream.
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await expect(page.getByTestId('state-group')).toHaveText('92.6 °C');
   await expect(page.getByTestId('state-steam')).toHaveText('148 °C');
   // 38 mm of water is 1040 ml in Streamline's table .
@@ -98,7 +98,7 @@ test('the menu opens with settings, beans and grinders, clean, steam off and mac
 }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await expect(page.getByTestId('menu-list')).toHaveCount(0);
 
   // A tap outside closes it and does nothing else.
@@ -179,11 +179,11 @@ test('home follows the machine: a running state offers stop, idle offers nothing
   const gateway = await mockGateway(page);
   gateway.state = 'sleeping';
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Asleep');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Asleep');
   await expect(page.getByTestId('stop')).toHaveCount(0);
 
   gateway.state = 'steam';
-  await expect(page.getByTestId('status-title')).toHaveText('Steam');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Steam');
   await page.getByTestId('stop').click();
   await expect.poll(() => gateway.calls('PUT', '/api/v1/machine/state/idle').length).toBe(1);
   gateway.state = 'idle';
@@ -195,8 +195,14 @@ test('home says when Decaid is not reachable', async ({ page }) => {
   await mockGateway(page, { gateway: false });
   await page.goto('/');
 
-  await expect(page.getByTestId('status-title')).toHaveText('Decaid is not reachable');
-  await expect(page.getByTestId('status-detail')).toContainText('http://localhost:8080');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Decaid is not reachable');
+  // the corner holds the fault; its details are one tap away
+  await expect(page.getByTestId('status-fault')).toHaveText('Decaid is not reachable');
+  await page.getByTestId('status-fault').click();
+  await expect(page.getByTestId('status-dialog-detail')).toContainText('http://localhost:8080');
+  await expect(page.getByTestId('status-reconnect')).toHaveCount(0);
+  await page.getByTestId('status-dialog-close').click();
+  await expect(page.getByTestId('status-dialog')).toHaveCount(0);
   // Nothing was read, so no value is shown.
   await expect(page.getByTestId('state-group')).toHaveCount(0);
   await expect(page.getByTestId('profile-name')).toHaveText('–');
@@ -207,13 +213,13 @@ test('home says when no machine is connected, and shows the machine when it come
   await page.goto('/');
 
   // The gateway answers and its stream is silent.
-  await expect(page.getByTestId('status-title')).toHaveText('No machine connected', { timeout: 8000 });
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'No machine connected', { timeout: 8000 });
   await expect(page.getByTestId('state-group')).toHaveCount(0);
   // The workflow is the gateway's, with or without a machine.
   await expect(page.getByTestId('profile-name')).toHaveText('default-medium');
 
   gateway.machineConnected = true;
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await expect(page.getByTestId('state-group')).toHaveText('92.6 °C');
   expect(errors).toEqual([]);
 });
@@ -223,7 +229,7 @@ test('a shot started at the machine: home shows it by itself with a live graph a
 }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
 
   // The shot is started at the machine: home shows it when a frame says espresso.
   await expect(page.getByTestId('screen-home')).toBeVisible();
@@ -255,7 +261,7 @@ test('a shot started at the machine: home shows it by itself with a live graph a
   expect(gateway.calls('PUT', '/api/v1/scale/tare')).toHaveLength(0);
 
   await gateway.replay(page, 0.7, 1);
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   // The finished shot stays on home with its table; nothing dismisses it.
   await expect(page.getByTestId('shot-phases')).toBeVisible();
   await expect(page.getByTestId('shot-plot')).toHaveCount(0);
@@ -466,6 +472,6 @@ test('every screen is one tap from home and back, and the screen survives a relo
   await expect(page.getByTestId('screen-editor')).toBeVisible();
   await expect(page.getByTestId('graph')).toBeVisible();
   await back(page);
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   expect(errors).toEqual([]);
 });

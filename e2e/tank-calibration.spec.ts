@@ -32,7 +32,7 @@ test.afterEach(() => {
 
 async function openCalibration(page: Page) {
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await page.getByTestId('menu').click();
   await page.getByTestId('open-settings').click();
   await expect(page.getByTestId('settings-content')).toHaveAttribute('data-category', 'quickadjustments');

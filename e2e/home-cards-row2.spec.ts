@@ -25,7 +25,7 @@ test('the profile card and the graph frame share a top edge with a long name and
     title: 'A-Flow 3.0 by a very long family name / a very long profile name that never fits into the column',
   };
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await expect(page.getByTestId('open-editor')).toBeVisible();
 
   const tops = async () => {
@@ -54,7 +54,7 @@ test('the profile card and the graph frame share a top edge with a long name and
   await page.screenshot({ path: 'docs/product/home-cards-row2-running.png' });
 
   await gateway.replay(page, 0.6, 1);
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await expect(page.getByTestId('home-shot')).toHaveAttribute('data-shot', 'finished');
   await expect(page.getByTestId('shot-phases')).toBeVisible();
   await level();

@@ -28,7 +28,7 @@ test('a touch sends a heartbeat, at most one every 30 s, on every screen', async
   const gateway = await mockGateway(page);
   await page.clock.install();
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await page.clock.pauseAt(Date.now() + 1000);
   const sent = heartbeats(gateway);
   // Nothing without a touch.
@@ -58,18 +58,18 @@ test('no heartbeat while the machine sleeps; the first touch after the wake send
   const gateway = await mockGateway(page);
   await page.clock.install();
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await page.clock.pauseAt(Date.now() + 1000);
   const sent = heartbeats(gateway);
   // 'Machine sleep' leaves the skin on screen while the machine sleeps.
   await page.getByTestId('menu').click();
   await page.getByTestId('machine-sleep').click();
-  await expect(page.getByTestId('status-title')).toHaveText('Asleep');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Asleep');
   const before = sent();
   for (let i = 0; i < 2; i++) {
     await page.clock.runFor(31_000);
     // The frames come in again after the clock's jump, still sleeping.
-    await expect(page.getByTestId('status-title')).toHaveText('Asleep');
+    await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Asleep');
     await touch(page);
   }
   await page.waitForTimeout(300);
@@ -77,7 +77,7 @@ test('no heartbeat while the machine sleeps; the first touch after the wake send
 
   await page.getByTestId('menu').click();
   await page.getByTestId('wake-machine').click();
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await touch(page);
   await expect.poll(sent).toBe(before + 1);
   expect(errors).toEqual([]);
@@ -87,12 +87,12 @@ test('a failed heartbeat is ignored, with no notice', async ({ page }) => {
   const gateway = await mockGateway(page);
   gateway.heartbeatFails = true;
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await touch(page);
   await expect.poll(heartbeats(gateway)).toBe(1);
   await page.waitForTimeout(300);
   await expect(page.getByTestId('notice')).toHaveCount(0);
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   // The browser itself logs the 500; the skin adds nothing.
   expect(errors.filter((error) => !/status of 500/.test(error))).toEqual([]);
 });

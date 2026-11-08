@@ -62,7 +62,7 @@ test('a simulated shot: the state, an A-Flow profile, a live graph, the stop at 
   try {
     // The skin loads and shows the state the machine sent.
     await page.goto('/');
-    await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 15_000 });
+    await expect(page.getByTestId('status')).toHaveAttribute('data-state', IDLE, { timeout: 15_000 });
     await expect(page.getByTestId('status')).toHaveAttribute('data-link', 'machine');
     await expect(page.getByTestId('profile-name')).toHaveText(titleLines(workflowBefore.profile.title).name);
     // The state line: every value read from the gateway's streams, the tank from its own.
@@ -112,7 +112,7 @@ test('a simulated shot: the state, an A-Flow profile, a live graph, the stop at 
     await expect(page.getByTestId('shot-column').getByTestId('stop')).toBeEnabled();
     // The step that runs is the state line's last item, a step of the profile.
     const steps = workflow.profile.steps.map((step, i) => step.name?.trim() || `Step ${i + 1}`);
-    await expect(page.getByTestId('status-title')).toHaveText('Pouring');
+    await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Pouring');
     expect(steps).toContain(await page.getByTestId('state-step').textContent());
     await expect(page.getByTestId('shot-timer-label')).toHaveText('time');
     await page.screenshot({ path: 'e2e-rig/.results/espresso-rig.png' });
@@ -120,7 +120,7 @@ test('a simulated shot: the state, an A-Flow profile, a live graph, the stop at 
     // It ends by itself at the target weight; home keeps the finished shot with the per-phase
     // table, its time and weight in the column.
     await expect(page.getByTestId('shot-phases')).toBeVisible({ timeout: 180_000 });
-    await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 15_000 });
+    await expect(page.getByTestId('status')).toHaveAttribute('data-state', IDLE, { timeout: 15_000 });
     await expect(page.getByTestId('shot-phases').locator('tbody th')).toHaveText(['Preinfusion', 'Extraction', 'Total']);
     const live = {
       preinfusion: Number(await page.getByTestId('phase-preinfusion-seconds').textContent()),

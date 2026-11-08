@@ -96,7 +96,7 @@ async function gatewayFor(page: Page): Promise<MockGateway> {
 
 async function home(page: Page) {
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
 }
 
 test('every screen', async ({ page }) => {

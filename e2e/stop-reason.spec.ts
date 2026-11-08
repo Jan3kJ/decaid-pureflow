@@ -25,7 +25,7 @@ const box = async (page: Page, testid: string) => (await page.getByTestId(testid
 
 async function home(page: Page) {
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
 }
 
 /** A shot that runs, gets the sequencer's frame for `reason`, and ends. */
@@ -120,7 +120,7 @@ test('a shot recalled from the history and the newest record after a reload have
 
   // After a reload home shows the newest record: no line, even when the feed names its stop.
   await page.reload();
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await expect(page.getByTestId('home-shot')).toHaveAttribute('data-shot', 'finished');
   gateway.sendStop('targetWeight', 'stop', 'shot-1');
   await page.waitForTimeout(300);

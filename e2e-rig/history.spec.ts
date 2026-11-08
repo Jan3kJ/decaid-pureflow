@@ -110,7 +110,7 @@ test('the history: shots with another profile or bean are entries, a tap restore
       if (url.pathname === '/api/v1/shots') lists.push(url.search);
     });
     await page.goto('/');
-    await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 15_000 });
+    await expect(page.getByTestId('status')).toHaveAttribute('data-state', IDLE, { timeout: 15_000 });
     await expect(page.getByTestId('profile-name')).toHaveText(titleLines(workflowBefore.profile.title).name);
 
     // The handle opens the overlay. The rig's older shots have their own entries.
@@ -247,7 +247,7 @@ test('the history filtered by a bean of the catalogue shows only its entry', asy
     expect(one.workflow!.context!.beanBatchId).toBe(made[0].batch);
 
     await page.goto('/');
-    await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 15_000 });
+    await expect(page.getByTestId('status')).toHaveAttribute('data-state', IDLE, { timeout: 15_000 });
     await page.getByTestId('history-handle').tap();
     const entries = page.getByTestId('history-entry');
     const mine = entries.filter({ hasText: PREFIX });

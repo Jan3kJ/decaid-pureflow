@@ -53,7 +53,7 @@ function face(locator: Locator) {
 test("home's profile and bean, and the rows of every list, are names: one size and weight", async ({ page }) => {
   await gateway(page);
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
 
   const profile = await face(page.getByTestId('profile-name'));
   const bean = await face(page.getByTestId('next-bean'));
@@ -80,14 +80,14 @@ test("home's profile and bean, and the rows of every list, are names: one size a
   expect(await face(page.getByTestId('grinder-row').first().locator('strong'))).toEqual(profile);
 });
 
-test("the state word and the page header have the profile name's size and weight", async ({ page }) => {
+test('the page header is a quiet title and no state word, one line as tall as the menu button', async ({ page }) => {
   await gateway(page);
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
-  const profile = await face(page.getByTestId('profile-name'));
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
+  const value = (await face(page.getByTestId('state-group'))).size;
 
   for (const [screen, title] of [
-    ['home', null],
+    ['home', 'Home'],
     ['steam', 'Steam'],
     ['hot-water', 'Hot water'],
   ] as const) {
@@ -96,15 +96,14 @@ test("the state word and the page header have the profile name's size and weight
       await toPage(page, screen);
     }
     const header = page.getByTestId(`screen-${screen}`).locator('header.page-header');
-    expect(await face(header.getByTestId('status-title'))).toEqual(profile);
-    if (title) {
-      await expect(header.getByTestId('page-title')).toHaveText(title);
-      expect(await face(header.getByTestId('page-title'))).toEqual(profile);
-    }
+    await expect(header.getByTestId('status-word')).toHaveCount(0);
+    await expect(header.locator('h1')).toHaveText(title);
+    // the title has the value's size, light
+    const name = await face(header.locator('h1'));
+    expect(name.size).toBe(value);
+    expect(name.weight).toBe('300');
     // The header row stays one line, as tall as the menu button.
     const row = (await header.boundingBox())!;
     expect(row.height).toBeCloseTo(56, 0);
-    const word = (await header.getByTestId('status-title').boundingBox())!;
-    expect(word.height).toBeLessThan(row.height);
   }
 });

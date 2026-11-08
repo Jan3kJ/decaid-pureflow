@@ -25,7 +25,7 @@ const popup = (page: Page) => page.getByTestId('abnormal-end-dialog');
 
 async function pouring(page: Page) {
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await gateway.replay(page, 0, 0.6);
   await expect(page.getByTestId('home-shot')).toHaveAttribute('data-shot', 'running');
 }
@@ -68,7 +68,7 @@ test('a scale lost in a shot with a target weight shows the notice on every scre
 
 test('the notice shows on another screen too, and goes with the frame of the finished shot', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await page.getByTestId('menu').click();
   await page.getByTestId('open-settings').click();
   await expect(page.getByTestId('settings-content')).toBeVisible();

@@ -110,7 +110,7 @@ test('hot water without a scale: no picture, no weight; the ring counts against 
   const gateway = await mockGateway(page);
   gateway.connectScale(false);
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
 
   gateway.waterFor('hotWater', 3, 8, 40);
   await expect(page.getByTestId('water-view')).toHaveAttribute('data-kind', 'hotWater');
@@ -133,7 +133,7 @@ test('hot water without a scale: no picture, no weight; the ring counts against 
 test("hot water with a scale: the stop button shows the scale's weight in g", async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
 
   gateway.waterFor('hotWater', 4, 10, 75);
   gateway.putOnScale(31.4);

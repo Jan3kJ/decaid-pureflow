@@ -222,13 +222,13 @@ test('steam started at the machine shows its graph of pressure, flow and tempera
   await expect(page.getByRole('button', { name: /start/ })).toHaveCount(0);
   await expect(page.getByTestId('steam-stop')).toHaveCount(0);
   // The machine's state line, as on home.
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await expect(page.getByTestId('state-steam')).toHaveText('148 °C');
   await expect(page.getByTestId('state-tank')).toHaveText('1040 ml');
   await expect(page.getByTestId('state-scale')).toHaveText('525.0 g');
 
   gateway.steamFor(18);
-  await expect(page.getByTestId('status-title')).toHaveText('Steam');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Steam');
   await expect(page.getByTestId('steam-stop')).toBeVisible();
   // While steam runs 'steam left' is the one clock: no elapsed time in the header.
   await expect(page.getByText('steam left')).toBeVisible();
@@ -413,7 +413,7 @@ test("while steam runs the timer counts down; after the steam the graph adds no 
 
   // 10 s of steam: 38 s are left, then fewer as the machine's frames go on.
   gateway.steamFor(10);
-  await expect(page.getByTestId('status-title')).toHaveText('Steam');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Steam');
   await expect(page.getByTestId('steam-state')).toHaveCount(0);
   const left = async () => parseInt((await page.getByTestId('steam-timer').textContent())!, 10);
   await expect.poll(left).toBeLessThanOrEqual(38);
@@ -608,7 +608,7 @@ test('with the steam heater off Steam on sits in the header left of the title an
 }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await toPage(page, 'steam');
   const screen = page.getByTestId('screen-steam');
   await expect(page.getByTestId('steam-favourite')).toHaveCount(3);
@@ -624,7 +624,7 @@ test('with the steam heater off Steam on sits in the header left of the title an
   gateway.setMachineSteamTarget(0);
   const button = page.getByTestId('steam-heater-on');
   await expect(button).toBeVisible();
-  await expect(screen.getByTestId('status-title')).toHaveText('Off');
+  await expect(screen.getByTestId('status')).toHaveAttribute('data-state', 'Off');
   // The button is in the header row, left of the title, and the sentence is gone.
   await expect(screen.locator('.page-header').getByTestId('steam-heater-on')).toHaveCount(1);
   await expect(page.getByText('The steam heater is off')).toHaveCount(0);
@@ -658,7 +658,7 @@ test('with the steam heater off Steam on sits in the header left of the title an
 test('Steam on in the header says so when Decaid refuses it, and stays', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
-  await expect(page.getByTestId('status-title')).toHaveText('Idle');
+  await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await toPage(page, 'steam');
   gateway.setMachineSteamTarget(0);
   await expect(page.getByTestId('steam-heater-on')).toBeVisible();

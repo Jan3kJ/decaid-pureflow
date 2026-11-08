@@ -44,7 +44,7 @@
             <b data-testid="steam-elapsed">{steamSeconds(skin.steam).toFixed(0)} s</b>
           </span>
         {/if}
-        <!-- With the heater off the state line says Off; the switch that turns it on sits left of the title. -->
+        <!-- With the heater off the corner says Off; the switch that turns it on sits left of the title. -->
         {#if skin.steamHeater === 'off'}
           <button class="heater-on" data-testid="steam-heater-on" onclick={() => skin.setSteamHeater(true)}>steam on</button>
         {/if}

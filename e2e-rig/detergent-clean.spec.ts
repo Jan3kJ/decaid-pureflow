@@ -61,7 +61,7 @@ async function fromCard(page: Page, body: (before: RigWorkflow) => Promise<void>
   const shotsBefore = await api<string[]>('GET', '/api/v1/shots/ids');
   try {
     await page.goto('/');
-    await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 30_000 });
+    await expect(page.getByTestId('status')).toHaveAttribute('data-state', IDLE, { timeout: 30_000 });
     await page.getByTestId('menu').click();
     await page.getByTestId('open-clean').click();
     await page.getByTestId('maintenance-start-detergent').click();

@@ -55,7 +55,7 @@ test('the finished shot keeps its weight after 15 s and through hot water; the s
       hotWaterData: { ...workflowBefore.hotWaterData, volume: WATER, duration: 60 },
     });
     await page.goto('/');
-    await expect(page.getByTestId('status-title')).toHaveText(IDLE, { timeout: 30_000 });
+    await expect(page.getByTestId('status')).toHaveAttribute('data-state', IDLE, { timeout: 30_000 });
 
     await api('PUT', '/api/v1/machine/state/espresso');
     await expect.poll(machineState, { timeout: 15_000, intervals: [200] }).toBe('espresso');
