@@ -5,20 +5,26 @@ import { expect, type Page } from '@playwright/test';
  * over a quarter of a second. Sent with no time between them they are a fling so fast that
  * Chromium drops the tap that follows it. With `hold`, the finger rests
  * at the end that many milliseconds before it lifts: no fling, so a tap after it is never dropped.
+ * Each event carries its own time, a quarter of a second in all, as `flick` does: the speed the
+ * screen reads is then the swipe's, not the wall-clock gaps a loaded machine makes between events
+ * (a slow swipe springs back).
  */
 export async function swipe(page: Page, from: { x: number; y: number }, to: { x: number; y: number }, hold = 0) {
   const cdp = await page.context().newCDPSession(page);
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [from] });
+  // Seconds, as the protocol takes them.
+  const start = Date.now() / 1000;
+  const at = (i: number) => start + (i * 250) / 8 / 1000;
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [from], timestamp: at(0) });
   for (let i = 1; i <= 8; i += 1) {
-    const at = { x: from.x + ((to.x - from.x) * i) / 8, y: from.y + ((to.y - from.y) * i) / 8 };
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [at] });
-    await page.waitForTimeout(30);
+    const point = { x: from.x + ((to.x - from.x) * i) / 8, y: from.y + ((to.y - from.y) * i) / 8 };
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [point], timestamp: at(i) });
   }
   if (hold) {
+    // The finger rests at the end for `hold` ms, then lifts: its time says so.
     await page.waitForTimeout(hold);
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [to] });
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [to], timestamp: at(8) + hold / 1000 });
   }
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [], timestamp: at(8) + hold / 1000 });
   await cdp.detach();
 }
 
