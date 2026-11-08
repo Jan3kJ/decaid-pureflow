@@ -7,6 +7,8 @@
   --dim: #6f7f8b;
   /* A hairline between things: a control's border, a rule. */
   --line: rgb(255 255 255 / 16%);
+  /* the graphs' grid: a trace on the glass, not a drawing */
+  --grid: rgb(255 255 255 / 3.5%);
   /*
    * Glass: a faint white gradient, a thin edge and a brighter top edge, as the prototype
    * (docs/design/dark-glass-hot-water.html). A panel is a surface, a light on it is a glow.

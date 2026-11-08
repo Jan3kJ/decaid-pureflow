@@ -352,6 +352,7 @@
     flex: 1;
     min-height: 0;
     background: var(--panel);
+    border: 1px solid var(--line);
     border-radius: var(--radius-card);
   }
 

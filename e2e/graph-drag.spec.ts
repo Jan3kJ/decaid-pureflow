@@ -115,3 +115,26 @@ test('a pointercancel during a drag ends it where the finger last set the value'
   await page.mouse.up();
   expect(await number(page, 'value-infusePressure')).toBe(set);
 });
+
+test("each curve has a glow under it that takes no touch, and the grid is a faint trace; the lines' drag hits as before", async ({
+  page,
+}) => {
+  await page.waitForTimeout(700);
+  const glows = page.locator('[data-testid=graph] .glow');
+  expect(await glows.count()).toBe(3);
+  for (const glow of await glows.all()) expect(await glow.evaluate((element) => getComputedStyle(element).pointerEvents)).toBe('none');
+  expect(
+    await page
+      .locator('[data-testid=graph] line.grid')
+      .first()
+      .evaluate((line) => getComputedStyle(line).stroke),
+  ).toBe('rgba(255, 255, 255, 0.035)');
+  await page.screenshot({ path: 'test-results/graph-editor.png' });
+  const before = await number(page, 'value-infusePressure');
+  const at = await middleOf(page, 'infusePressure');
+  await page.mouse.move(at.x, at.y);
+  await page.mouse.down();
+  await page.mouse.move(at.x, at.y - 40, { steps: 6 });
+  await page.mouse.up();
+  expect(await number(page, 'value-infusePressure')).not.toBe(before);
+});

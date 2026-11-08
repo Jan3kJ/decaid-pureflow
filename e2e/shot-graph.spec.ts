@@ -165,3 +165,44 @@ test("without a shot of the profile the axis starts at the profile's estimate", 
   expect(await attribute(page, 'data-seconds')).toBe(140);
   expect(errors).toEqual([]);
 });
+
+const drawIns = (page: Page) =>
+  page.evaluate(() => document.getAnimations().filter((a) => a instanceof CSSAnimation && a.animationName.includes('draw-in')).length);
+
+test('a curve draws in once when the graph opens, never on a live update', async ({ page }) => {
+  const gateway = await mockGateway(page);
+  await home(page);
+  await gateway.replay(page, 0, 0.5, { tail: 5 });
+  await expect(page.getByTestId('shot-line-pressure')).toBeVisible();
+  const line = page.getByTestId('shot-line-pressure');
+  expect(await line.evaluate((element) => getComputedStyle(element).animationName)).toContain('draw-in');
+  // The glow is a second stroke under the curve, and has no test id of its own.
+  expect(await svg(page).locator('path.glow.pressure').count()).toBe(1);
+  // The draw-in has run its 0.4 s; points added after it do not start it again.
+  await page.waitForTimeout(700);
+  expect(await drawIns(page)).toBe(0);
+  await page.screenshot({ path: 'test-results/graph-home-shot.png' });
+  const points = await attribute(page, 'data-points');
+  await gateway.replay(page, 0.5, 0.7, { tail: 5 });
+  await expect.poll(() => attribute(page, 'data-points')).toBeGreaterThan(points);
+  expect(await drawIns(page)).toBe(0);
+  expect(errors).toEqual([]);
+});
+
+test.describe('reduced motion', () => {
+  test.use({ reducedMotion: 'reduce' });
+
+  test('turns the draw-in off', async ({ page }) => {
+    const gateway = await mockGateway(page);
+    await home(page);
+    await gateway.replay(page, 0, 0.5, { tail: 5 });
+    await expect(page.getByTestId('shot-line-pressure')).toBeVisible();
+    expect(await page.getByTestId('shot-line-pressure').evaluate((element) => getComputedStyle(element).animationName)).toBe('none');
+    expect(
+      await svg(page)
+        .locator('path.glow.pressure')
+        .evaluate((element) => getComputedStyle(element).animationName),
+    ).toBe('none');
+    expect(await drawIns(page)).toBe(0);
+  });
+});

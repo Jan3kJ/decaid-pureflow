@@ -197,8 +197,12 @@ test('tapping an entry closes the overlay, restores profile, bean and grinder se
   // The same colours as the editor and the live graph.
   const colours = await page.evaluate(() => {
     const style = getComputedStyle(document.documentElement);
-    const stroke = (line: string) =>
-      getComputedStyle(document.querySelector(`[data-testid="history-graph"] [data-testid="shot-line-${line}"]`)!).stroke;
+    // A curve is stroked with a gradient that ends in its quantity's colour.
+    const stroke = (line: string) => {
+      const curve = document.querySelector(`[data-testid="history-graph"] [data-testid="shot-line-${line}"]`)!;
+      const id = /#([^")]+)/.exec(getComputedStyle(curve).stroke)![1];
+      return getComputedStyle(document.querySelector(`#${id} stop:last-child`)!).stopColor;
+    };
     const probe = document.createElement('i');
     document.body.append(probe);
     const rgb = (name: string) => {

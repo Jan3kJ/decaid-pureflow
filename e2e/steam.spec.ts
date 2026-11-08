@@ -289,8 +289,12 @@ test('a finished steam draws its flow in blue on the scale of pressure, ending w
   await expect(page.getByTestId('shot-tick-temperature')).toHaveText(['140', '170']);
   await expect(page.getByTestId('shot-unit-main')).toHaveText('bar · ml/s');
   const flow = page.getByTestId('shot-line-flow');
-  // Blue, the app's --flow (#4aa8ff).
-  await expect(flow).toHaveCSS('stroke', 'rgb(74, 168, 255)');
+  // The curve is stroked with a gradient that ends in it.
+  await expect(flow).toHaveCSS('stroke', /^url\(.*-flow.*\)$/);
+  await expect(page.locator('[data-testid=screen-steam] linearGradient[id$=-flow] stop:last-child')).toHaveCSS(
+    'stop-color',
+    'rgb(74, 168, 255)',
+  );
   await expect(page.locator('[data-testid^="shot-target-"]')).toHaveCount(0);
 
   // One point a frame of the run; the flow ends with the run, as pressure and temperature do.

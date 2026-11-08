@@ -114,13 +114,12 @@
 
   .tick {
     text-anchor: end;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
   }
 
   .grid {
-    stroke: var(--line);
+    stroke: var(--grid);
     stroke-width: 1;
-    opacity: 0.55;
   }
 
   .border {

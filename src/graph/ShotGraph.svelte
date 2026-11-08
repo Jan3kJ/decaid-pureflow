@@ -9,6 +9,7 @@
   // limit as a thin dotted line in its quantity's colour, muted. As the picker's estimate
   // (`estimate`) the curves are a modelled shot, the targets thin dotted lines under them, the
   // limits as in the preview.
+  import CurveFade from './CurveFade.svelte';
   import { fixedScale, graphUnits, inBand, shotScale, temperatureBand, timeAxis, UNIT_SEPARATOR, type TemperatureBand } from './axis';
 
   interface Props {
@@ -138,6 +139,9 @@
     box.tempBottom -
     ((inBand(value, temperatureRange) - temperatureRange.min) / (temperatureRange.max - temperatureRange.min)) * box.tempH;
 
+  const uid = $props.id();
+  const fadeId = `fade-${uid}`;
+
   let plot: HTMLDivElement | undefined = $state();
 
   // A tap is a shortcut for the finger, so it listens on the plot without making it a control.
@@ -168,6 +172,12 @@
     return d;
   }
 </script>
+
+{#snippet curve(quantity: string, testid: string, d: string)}
+  <!-- The glow is a second, wider stroke at low opacity: it costs a stroke, a filter costs a pass over the plot. -->
+  <path class="glow {quantity}" pathLength="1" style:stroke="url(#{fadeId}-{quantity})" {d} />
+  <path class="line {quantity}" pathLength="1" style:stroke="url(#{fadeId}-{quantity})" data-testid={testid} {d} />
+{/snippet}
 
 <div class="graph">
   <div class="plot" bind:this={plot} bind:clientWidth={width} bind:clientHeight={height}>
@@ -252,17 +262,18 @@
         />
       {/if}
 
+      <CurveFade id={fadeId} left={box.left} right={box.right} />
       {#if temperature}
-        <path class="line temperature" data-testid="shot-line-temperature" d={path(temperature, yTemperature)} />
+        {@render curve('temperature', 'shot-line-temperature', path(temperature, yTemperature))}
       {/if}
       {#if hasWeightFlow}
-        <path class="line weight" data-testid="shot-line-weight-flow" d={path(weightFlow, yMain)} />
+        {@render curve('weight', 'shot-line-weight-flow', path(weightFlow, yMain))}
       {/if}
       {#if pressure}
-        <path class="line pressure" data-testid="shot-line-pressure" d={path(pressure, yMain)} />
+        {@render curve('pressure', 'shot-line-pressure', path(pressure, yMain))}
       {/if}
       {#if flow}
-        <path class="line flow" data-testid="shot-line-flow" d={path(flow, yMain)} />
+        {@render curve('flow', 'shot-line-flow', path(flow, yMain))}
       {/if}
     </svg>
   </div>
@@ -307,7 +318,7 @@
    */
   text {
     fill: var(--dim);
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-variant-numeric: tabular-nums;
   }
 
@@ -320,16 +331,16 @@
   }
 
   .unit {
-    font-weight: 600;
+    font-weight: 400;
   }
 
   .grid {
-    stroke: var(--line);
+    stroke: var(--grid);
     stroke-width: 1;
-    opacity: 0.55;
   }
 
   .line,
+  .glow,
   .target {
     fill: none;
     stroke-linejoin: round;
@@ -341,8 +352,40 @@
     stroke-linecap: round;
   }
 
+  /* The glow: the line's path under it, wider and faint. It is no part of the drawn curve (no hit, no test id). */
+  .glow {
+    stroke-width: calc(0.7rem * var(--line-width, 1));
+    stroke-linecap: round;
+    opacity: 0.16;
+    pointer-events: none;
+  }
+
+  /* A curve draws in once, when the graph opens; a live update moves the path, the animation does not restart. */
+  .line,
+  .glow {
+    animation: draw-in 0.4s ease-out;
+  }
+
+  @keyframes draw-in {
+    from {
+      stroke-dasharray: 1;
+      stroke-dashoffset: 1;
+    }
+    to {
+      stroke-dasharray: 1;
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .line,
+    .glow {
+      animation: none;
+    }
+  }
+
   .target {
-    stroke-width: calc(0.09rem * var(--line-width, 1));
+    stroke-width: calc(0.07rem * var(--line-width, 1));
     stroke-dasharray: 0.4rem 0.3rem;
     opacity: 0.85;
   }

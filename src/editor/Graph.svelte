@@ -5,6 +5,7 @@
   import { FIELD_LABEL, FIELD_STEP, formatValue, snap } from './fields';
   import GraphChips from './GraphChips.svelte';
   import GraphGrid from './GraphGrid.svelte';
+  import CurveFade from '../graph/CurveFade.svelte';
   import {
     flowPath,
     mainTicks,
@@ -60,6 +61,10 @@
   });
   const box = $derived(plotBox(width, height, rem));
   const projection = $derived(plotProjection(box, temperature, yMax));
+
+  const uid = $props.id();
+  const fadeId = `fade-${uid}`;
+  const stroke = (quantity: string) => `url(#${fadeId}-${quantity})`;
 
   let drag = $state<Drag | null>(null);
 
@@ -171,7 +176,20 @@
       dragging={drag?.field}
     />
 
-    <polyline class="line temperature" points={polylinePoints(curve.temperature, 'temperature', projection)} />
+    <CurveFade id={fadeId} left={box.left} right={box.right} />
+    <!-- Each curve has a glow under it: a wider, faint stroke of the same points. -->
+    <polyline
+      class="glow"
+      pathLength="1"
+      style:stroke={stroke('temperature')}
+      points={polylinePoints(curve.temperature, 'temperature', projection)}
+    />
+    <polyline
+      class="line temperature"
+      pathLength="1"
+      style:stroke={stroke('temperature')}
+      points={polylinePoints(curve.temperature, 'temperature', projection)}
+    />
     {#if curve.pressureLimit}
       <polyline
         class="line pressure limit"
@@ -179,8 +197,27 @@
         points={polylinePoints(curve.pressureLimit, 'pressure', projection)}
       />
     {/if}
-    <polyline class="line pressure" data-testid="line-pressure" points={polylinePoints(curve.pressure, 'pressure', projection)} />
-    <path class="line flow" data-testid="line-flow" d={flowPath(curve.flow, projection)} />
+    <polyline
+      class="glow"
+      pathLength="1"
+      style:stroke={stroke('pressure')}
+      points={polylinePoints(curve.pressure, 'pressure', projection)}
+    />
+    <polyline
+      class="line pressure"
+      pathLength="1"
+      style:stroke={stroke('pressure')}
+      data-testid="line-pressure"
+      points={polylinePoints(curve.pressure, 'pressure', projection)}
+    />
+    <path class="glow" pathLength="1" style:stroke={stroke('flow')} d={flowPath(curve.flow, projection)} />
+    <path
+      class="line flow"
+      pathLength="1"
+      style:stroke={stroke('flow')}
+      data-testid="line-flow"
+      d={flowPath(curve.flow, projection)}
+    />
 
     <!-- The stretches that can be dragged. They are not drawn until one is held. -->
     {#each curve.levels as level (level.field)}
@@ -300,14 +337,42 @@
     stroke-linecap: round;
   }
 
-  .flow {
-    stroke: var(--flow);
+  /* The glow: the curve's points again, wider and faint; it takes no touch. */
+  .glow {
+    fill: none;
+    stroke-width: calc(0.8rem * var(--line-width, 1));
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    opacity: 0.16;
+    pointer-events: none;
   }
-  .pressure {
+
+  .pressure.limit {
     stroke: var(--pressure);
   }
-  .temperature {
-    stroke: var(--temperature);
+
+  /* A curve draws in once, when the graph opens; a drag moves its points, the animation does not restart. */
+  .line:not(.limit),
+  .glow {
+    animation: draw-in 0.4s ease-out;
+  }
+
+  @keyframes draw-in {
+    from {
+      stroke-dasharray: 1;
+      stroke-dashoffset: 1;
+    }
+    to {
+      stroke-dasharray: 1;
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .line:not(.limit),
+    .glow {
+      animation: none;
+    }
   }
 
   /* The pour's pressure limiter, where it is not the target pressure. */

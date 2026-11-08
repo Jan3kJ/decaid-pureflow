@@ -69,7 +69,11 @@ test('the targets are dashed lines with their quantity, every scale has its unit
       const css = getComputedStyle(element);
       return { dashed: css.strokeDasharray !== 'none', stroke: css.stroke };
     });
-    const curve = await graph.getByTestId(`shot-line-${target}`).evaluate((element) => getComputedStyle(element).stroke);
+    // The curve is stroked with a gradient that ends in the quantity's colour; the glow lies under it.
+    const curve = await graph.getByTestId(`shot-line-${target}`).evaluate((element) => {
+      const id = /#([^")]+)/.exec(getComputedStyle(element).stroke)![1];
+      return getComputedStyle(document.querySelector(`#${id} stop:last-child`)!).stopColor;
+    });
     expect(style).toEqual({ dashed: true, stroke: curve });
   }
 
@@ -94,7 +98,9 @@ test('the targets are dashed lines with their quantity, every scale has its unit
     document.body.append(probe);
     const weight = getComputedStyle(probe).color;
     probe.remove();
-    return { stroke: getComputedStyle(path).stroke, weight };
+    // The curve is stroked with a gradient that ends in the quantity's colour.
+    const id = /#([^")]+)/.exec(getComputedStyle(path).stroke)![1];
+    return { stroke: getComputedStyle(document.querySelector(`#${id} stop:last-child`)!).stopColor, weight };
   });
   expect(colours.stroke).toBe(colours.weight);
   // The recorded shot's weight flow peaks at about 2.3 g/s, under its flow's peak in ml/s:
