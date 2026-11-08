@@ -76,8 +76,9 @@ test('the three steps: the run at the machine, one flush of 10 s, the cycle; the
   const earlier = gateway.workflow.profile.title;
   await startCard(page);
 
-  // The first step loads the profile, without a stop at a weight, and starts nothing.
-  expect(gateway.workflow.profile.title).toBe(TITLE);
+  // The first step loads the profile, without a stop at a weight, and starts nothing. The caption
+  // says it is loaded before the write reaches the gateway, so the write is waited for.
+  await expect.poll(() => gateway.workflow.profile.title).toBe(TITLE);
   expect(gateway.workflow.context).toMatchObject({ targetYield: 0, targetDoseWeight: 18 });
   expect(machineRequests()).toEqual([]);
   await expectFlushTenSeconds();
@@ -158,8 +159,9 @@ test('home keeps the last real shot during and after the run, and a reload shows
   // Home has no running graph and no cleaning run: the last real shot, with its own time.
   await home();
   await expect(page.getByTestId('home-shot')).toHaveAttribute('data-shot', 'finished');
+  // The shot's time fills in after its state shows: waited for, not read once.
+  await expect.poll(timer).toBeGreaterThan(10);
   const real = await timer();
-  expect(real).toBeGreaterThan(10);
   expect(real).toBeLessThanOrEqual(20);
 
   // Decaid records the run; a reload reads the last real shot, not the cleaning one.
@@ -168,7 +170,7 @@ test('home keeps the last real shot during and after the run, and a reload shows
   await page.reload();
   await home();
   await expect(page.getByTestId('home-shot')).toHaveAttribute('data-shot', 'finished');
-  expect(await timer()).toBe(real);
+  await expect.poll(timer).toBe(real);
 });
 
 test('a run stopped at the machine puts the card back at its step, and cancel brings the earlier profile back', async ({ page }) => {
