@@ -67,7 +67,7 @@
     top: 1.2rem;
     right: calc(50% + 1.2rem);
     width: calc(100% - 2.4rem);
-    border-top: 1px solid var(--line);
+    border-top: 1px solid var(--edge);
   }
 
   .dot {
@@ -78,7 +78,7 @@
     align-items: center;
     justify-content: center;
     border-radius: var(--radius-round);
-    border: 1px solid var(--line);
+    border: 1px solid var(--edge);
     color: var(--dim);
     font-weight: 600;
   }

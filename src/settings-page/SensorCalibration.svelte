@@ -262,7 +262,7 @@
 
 <style>
   .sensor {
-    border-top: 1px solid var(--line);
+    border-top: 1px solid var(--edge);
     padding: var(--space-1) 0;
   }
 
@@ -318,8 +318,8 @@
     min-width: 9rem;
     min-height: var(--control);
     padding: 0 0.8rem;
-    background: var(--raised);
-    border: 1px solid var(--line);
+    background: none;
+    border: 1px solid var(--edge);
     border-radius: var(--radius);
   }
 

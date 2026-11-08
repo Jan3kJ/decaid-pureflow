@@ -419,6 +419,10 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-1);
+    padding: var(--space-1);
+    background: var(--glass);
+    border: 1px solid var(--edge);
+    border-radius: var(--radius);
   }
 
   .category {
@@ -427,8 +431,8 @@
     text-align: left;
     font-size: var(--text-body);
     font-weight: 600;
-    background: var(--panel);
-    border: 1px solid var(--line);
+    background: none;
+    border: 1px solid transparent;
     border-radius: var(--radius);
   }
 
@@ -444,7 +448,7 @@
     color: var(--dim);
     background: none;
     border: 0;
-    border-left: 2px solid var(--line);
+    border-left: 2px solid var(--edge);
   }
 
   .panel {
@@ -460,9 +464,9 @@
 
   section {
     padding: var(--space-1) var(--space-3) var(--space-2);
-    border: 1px solid var(--line);
+    border: 1px solid var(--edge);
     border-radius: var(--radius);
-    background: var(--panel);
+    background: var(--glass);
     scroll-margin-top: 0.6rem;
   }
 

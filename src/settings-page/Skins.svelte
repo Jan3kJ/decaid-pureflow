@@ -171,8 +171,8 @@
     justify-content: center;
     gap: var(--space-1);
     text-align: left;
-    background: var(--raised);
-    border: 1px solid var(--line);
+    background: none;
+    border: 1px solid var(--edge);
     border-radius: var(--radius);
   }
 

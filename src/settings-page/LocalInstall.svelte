@@ -100,7 +100,7 @@
 </SettingsRow>
 <div class="server">
   <input
-    class="field"
+    class="field line-field"
     type="text"
     inputmode="url"
     aria-label="the server's address"
@@ -142,7 +142,7 @@
   </p>
   <div class="server">
     <input
-      class="field"
+      class="field line-field"
       type="text"
       aria-label="the ZIP's file name"
       autocomplete="off"
@@ -201,9 +201,6 @@
     font: inherit;
     font-size: var(--text-body);
     color: var(--fg);
-    background: var(--raised);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
   }
 
   .action:disabled,
@@ -227,8 +224,8 @@
     justify-content: center;
     gap: var(--space-1);
     text-align: left;
-    background: var(--raised);
-    border: 1px solid var(--line);
+    background: none;
+    border: 1px solid var(--edge);
     border-radius: var(--radius);
   }
 

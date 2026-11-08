@@ -68,7 +68,7 @@
     justify-content: space-between;
     gap: var(--space-3);
     padding: var(--space-2) 0;
-    border-top: 1px solid var(--line);
+    border-top: 1px solid var(--edge);
   }
 
   .tight {
@@ -122,8 +122,8 @@
     min-width: 8rem;
     min-height: var(--control-big);
     padding: 0 0.8rem;
-    background: var(--raised);
-    border: 1px solid var(--line);
+    background: none;
+    border: 1px solid var(--edge);
     border-radius: var(--radius);
   }
 

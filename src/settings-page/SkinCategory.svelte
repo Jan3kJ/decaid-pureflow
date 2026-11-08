@@ -467,9 +467,9 @@
 <style>
   section {
     padding: var(--space-1) var(--space-3) var(--space-2);
-    border: 1px solid var(--line);
+    border: 1px solid var(--edge);
     border-radius: var(--radius);
-    background: var(--panel);
+    background: var(--glass);
     scroll-margin-top: 0.6rem;
   }
 
@@ -516,8 +516,8 @@
     align-items: center;
     justify-content: center;
     gap: var(--space-1);
-    background: var(--raised);
-    border: 1px solid var(--line);
+    background: none;
+    border: 1px solid var(--edge);
     border-radius: var(--radius);
   }
 
@@ -562,8 +562,8 @@
     flex: none;
     min-height: var(--control);
     padding: 0 1rem;
-    background: var(--raised);
-    border: 1px solid var(--line);
+    background: none;
+    border: 1px solid var(--edge);
     border-radius: var(--radius);
   }
 
@@ -603,8 +603,8 @@
     padding: 0 1rem;
     text-align: left;
     font-size: var(--text-body);
-    background: var(--raised);
-    border: 1px solid var(--line);
+    background: none;
+    border: 1px solid var(--edge);
     border-radius: var(--radius);
   }
 

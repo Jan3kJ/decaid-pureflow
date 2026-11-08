@@ -196,6 +196,7 @@
       </div>
       <div class="add">
         <input
+          class="line-field"
           type="text"
           inputmode="url"
           autocomplete="off"
@@ -237,7 +238,7 @@
     align-items: center;
     gap: var(--space-3);
     padding: var(--space-2) 0;
-    border-top: 1px solid var(--line);
+    border-top: 1px solid var(--edge);
   }
 
   .head {
@@ -334,8 +335,5 @@
     min-height: var(--control-tall);
     box-sizing: border-box;
     padding: 0 0.8rem;
-    background: var(--raised);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
   }
 </style>

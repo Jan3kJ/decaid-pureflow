@@ -82,11 +82,12 @@
     </div>
     <label>
       <span>title</span>
-      <input data-testid="feedback-title" bind:value={title} placeholder="Short summary of your feedback…" />
+      <input class="line-field" data-testid="feedback-title" bind:value={title} placeholder="Short summary of your feedback…" />
     </label>
     <label>
       <span>description</span>
-      <textarea data-testid="feedback-description" rows="5" bind:value={description} placeholder="Tell us more…"></textarea>
+      <textarea class="line-field" data-testid="feedback-description" rows="5" bind:value={description} placeholder="Tell us more…"
+      ></textarea>
     </label>
     <SettingsRow
       label="attach system information and logs"
@@ -184,9 +185,6 @@
     font: inherit;
     color: var(--fg);
     padding: 0.6rem 0.8rem;
-    background: var(--raised);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
     resize: none;
   }
 
@@ -216,7 +214,7 @@
   /* The row's main action: the white outline, not the main button's fill; off, it is the shared off look. */
   .action.primary {
     color: var(--fg);
-    background: var(--raised);
+    background: none;
     font-weight: 400;
   }
 </style>

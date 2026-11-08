@@ -240,7 +240,7 @@
     align-items: flex-start;
     gap: var(--space-2);
     padding: var(--space-2) 0;
-    border-top: 1px solid var(--line);
+    border-top: 1px solid var(--edge);
   }
 
   .progress p {
@@ -252,7 +252,7 @@
     width: 100%;
     height: 0.6rem;
     border-radius: var(--radius-pill);
-    background: var(--raised);
+    background: var(--edge);
     overflow: hidden;
   }
 

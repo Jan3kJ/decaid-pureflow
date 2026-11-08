@@ -221,9 +221,9 @@
   .form {
     margin: var(--space-1) 0;
     padding: var(--space-1) 1rem;
-    border: 1px solid var(--line);
+    border: 1px solid var(--edge);
     border-radius: var(--radius);
-    background: var(--bg);
+    background: none;
   }
 
   h3 {

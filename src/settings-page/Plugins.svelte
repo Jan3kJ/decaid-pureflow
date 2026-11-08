@@ -255,6 +255,7 @@
           {:else if control.kind === 'secure'}
             <!-- Never filled from the gateway: it reports only whether one is stored. -->
             <input
+              class="line-field"
               type="password"
               autocomplete="off"
               placeholder={String(value)}
@@ -265,6 +266,7 @@
             />
           {:else}
             <input
+              class="line-field"
               type="text"
               autocomplete="off"
               disabled={!read || !!busy[at]}
@@ -317,9 +319,9 @@
   .card {
     margin: var(--space-2) 0 var(--space-1);
     padding: var(--space-1) 1rem var(--space-1);
-    border: 1px solid var(--line);
+    border: 1px solid var(--edge);
     border-radius: var(--radius);
-    background: var(--bg);
+    background: none;
   }
 
   .head {
@@ -339,7 +341,7 @@
   .pill {
     margin-left: auto;
     padding: 0.15rem var(--space-2);
-    border: 1px solid var(--line);
+    border: 1px solid var(--edge);
     border-radius: var(--radius-pill);
     color: var(--dim);
     font-size: var(--text-label);
@@ -377,9 +379,6 @@
     min-height: var(--control-tall);
     box-sizing: border-box;
     padding: 0 0.8rem;
-    background: var(--raised);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
   }
 
   .choices {

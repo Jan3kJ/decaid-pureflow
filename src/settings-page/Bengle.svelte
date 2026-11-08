@@ -299,7 +299,7 @@
   /* The row's main action: the white outline, not the main button's fill; off, it is the shared off look. */
   .action.primary {
     color: var(--fg);
-    background: var(--raised);
+    background: none;
     font-weight: 400;
   }
 
@@ -307,8 +307,8 @@
     width: 5rem;
     height: var(--control);
     padding: 0.2rem;
-    background: var(--raised);
-    border: 1px solid var(--line);
+    background: none;
+    border: 1px solid var(--edge);
     border-radius: var(--radius);
   }
 </style>

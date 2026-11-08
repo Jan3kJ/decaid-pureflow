@@ -54,7 +54,7 @@
     {#if text}<p>{text}</p>{/if}
     {#if value !== undefined}
       <input
-        class="field"
+        class="field line-field"
         type="text"
         aria-label={label}
         autocomplete="off"
@@ -99,9 +99,6 @@
     font: inherit;
     font-size: var(--text-body);
     color: var(--fg);
-    background: var(--raised);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
   }
 
   /* The reason's line holds its place, so the buttons do not move when it appears. */
