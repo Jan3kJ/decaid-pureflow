@@ -165,10 +165,11 @@
   h1 {
     grid-area: title;
     align-self: center;
+    justify-self: end;
     margin: 0;
     font-size: var(--text-body);
     font-weight: 600;
-    line-height: 1.15;
+    white-space: nowrap;
   }
 
   .plot {
