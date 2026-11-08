@@ -22,7 +22,7 @@
 
 <label class:missing>
   <span>{label}</span>
-  <input bind:value {list} autocomplete="off" {spellcheck} {enterkeyhint} data-testid={testid} />
+  <input class="line-field" bind:value {list} autocomplete="off" {spellcheck} {enterkeyhint} data-testid={testid} />
   {@render children?.()}
 </label>
 
@@ -43,17 +43,9 @@
     font-size: var(--text-value);
     color: var(--fg);
     color-scheme: dark;
-    background: var(--bg);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    outline: none;
-  }
-
-  input:focus {
-    border-color: var(--fg);
   }
 
   .missing input {
-    border-color: var(--temperature);
+    border-bottom-color: var(--temperature);
   }
 </style>

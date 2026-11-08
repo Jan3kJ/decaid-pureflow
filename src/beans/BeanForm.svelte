@@ -191,7 +191,7 @@
     <span id="bean-roast-date-label">roast date{bean ? ' of this bag' : ''}</span>
     <button
       type="button"
-      class="form-button date"
+      class="form-button line-field date"
       class:none={!form.roastDate}
       aria-labelledby="bean-roast-date-label"
       data-testid="bean-roast-date"
@@ -244,7 +244,6 @@
     text-align: left;
     padding: 0 0.9rem;
     font-size: var(--text-value);
-    background: var(--bg);
   }
 
   .date.none {
@@ -260,7 +259,7 @@
   .photo img {
     width: 9rem;
     object-fit: contain;
-    border: 1px solid var(--line);
+    border: 1px solid var(--edge);
     border-radius: var(--radius);
   }
 
@@ -298,11 +297,10 @@
     display: flex;
     gap: var(--space-1);
     padding-right: var(--space-2);
-    border-right: 1px solid var(--line);
+    border-right: 1px solid var(--edge);
   }
 
   .chip {
     max-width: 100%;
-    background: var(--bg);
   }
 </style>

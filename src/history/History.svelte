@@ -202,6 +202,21 @@
     scrollbar-width: thin;
   }
 
+  /* A list is rows on one glass panel with faint separators; a chosen row lights (.select-outline). */
+  ul[data-testid='history-list'],
+  ul[data-testid='filter-options'] {
+    display: block;
+    padding: var(--space-1);
+    margin-bottom: 1rem;
+    background: var(--glass);
+    border: 1px solid var(--edge);
+    border-radius: var(--radius);
+  }
+
+  li + li {
+    border-top: 1px solid var(--edge);
+  }
+
   .entry {
     width: 100%;
     min-height: 5.6rem;
@@ -211,9 +226,9 @@
     justify-content: center;
     gap: var(--space-1);
     text-align: left;
-    border: 1px solid var(--line);
+    border: 1px solid transparent;
     border-radius: var(--radius);
-    background: var(--raised);
+    background: none;
   }
 
   .entry strong {
@@ -251,12 +266,12 @@
     min-width: 0;
     min-height: var(--control);
     padding: 0 0.9rem;
-    border: 1px solid var(--line);
+    border: 1px solid var(--edge);
     border-radius: var(--radius-pill);
-    background: var(--raised);
+    background: none;
   }
 
-  /* The chip whose list is open: grey, as a white frame says a filter is chosen. */
+  /* The chip whose list is open: the brighter edge. */
   .filter .open {
     border-color: var(--dim);
   }
@@ -270,9 +285,9 @@
     align-items: center;
     gap: var(--space-3);
     text-align: left;
-    border: 1px solid var(--line);
+    border: 1px solid transparent;
     border-radius: var(--radius);
-    background: var(--raised);
+    background: none;
   }
 
   .option small {
@@ -292,8 +307,8 @@
   .retry {
     flex: none;
     min-height: var(--control-tall);
-    border: 1px solid var(--line);
+    border: 1px solid var(--edge);
     border-radius: var(--radius);
-    background: var(--raised);
+    background: none;
   }
 </style>

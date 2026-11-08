@@ -73,6 +73,7 @@
           <label class="search">
             <span class="visually-hidden">search the beans</span>
             <input
+              class="line-field"
               type="search"
               bind:value={query}
               placeholder="search"
@@ -222,17 +223,23 @@
     min-height: 0;
     max-height: 22rem;
     margin: 0;
-    padding: 0;
     list-style: none;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: var(--space-1);
+    padding: var(--space-1);
+    background: var(--glass);
+    border: 1px solid var(--edge);
+    border-radius: var(--radius);
+  }
+
+  li + li {
+    border-top: 1px solid var(--edge);
   }
 
   button {
-    background: var(--raised);
-    border: 1px solid var(--line);
+    background: none;
+    border: 1px solid var(--edge);
     border-radius: var(--radius);
   }
 
@@ -248,7 +255,7 @@
     flex-direction: column;
     justify-content: center;
     text-align: left;
-    background: var(--bg);
+    border-color: transparent;
   }
 
   .row strong {
@@ -275,10 +282,6 @@
     padding: 0 0.9rem;
     font: inherit;
     color: var(--fg);
-    background: var(--bg);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    outline: none;
   }
 
   .setting {

@@ -128,6 +128,7 @@
       <label class="search">
         <span class="visually-hidden">search</span>
         <input
+          class="line-field"
           type="search"
           bind:value={query}
           placeholder="search"
@@ -286,8 +287,8 @@
     text-align: left;
     font-size: var(--text-body);
     font-weight: 600;
-    background: var(--panel);
-    border: 1px solid var(--line);
+    background: none;
+    border: 1px solid var(--edge);
     border-radius: var(--radius);
   }
 
@@ -318,14 +319,6 @@
     font: inherit;
     font-size: var(--text-body);
     color: var(--fg);
-    background: var(--bg);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    outline: none;
-  }
-
-  input:focus {
-    border-color: var(--fg);
   }
 
   .toggle {
@@ -333,20 +326,27 @@
     min-height: var(--control-tall);
     padding: 0 0.9rem;
     font-size: var(--text-label);
-    background: var(--raised);
-    border: 1px solid var(--line);
+    background: none;
+    border: 1px solid var(--edge);
     border-radius: var(--radius);
   }
 
+  /* A list is rows on one glass panel with faint separators; the chosen row lights (.select-outline). */
   ul {
     min-height: 0;
     margin: 0;
-    padding: 0;
+    padding: var(--space-1);
     list-style: none;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: var(--space-1);
+    background: var(--glass);
+    border: 1px solid var(--edge);
+    border-radius: var(--radius);
+  }
+
+  li + li {
+    border-top: 1px solid var(--edge);
   }
 
   .row {
@@ -357,8 +357,8 @@
     flex-direction: column;
     justify-content: center;
     text-align: left;
-    background: var(--panel);
-    border: 1px solid var(--line);
+    background: none;
+    border: 1px solid transparent;
     border-radius: var(--radius);
   }
 
@@ -382,6 +382,7 @@
     color: var(--dim);
     font-size: var(--text-body);
     border-style: dashed;
+    border-color: var(--edge);
   }
 
   .empty {
@@ -394,9 +395,9 @@
     min-width: 0;
     overflow-y: auto;
     padding: 0.8rem var(--space-3) var(--space-3);
-    border: 1px solid var(--line);
+    border: 1px solid var(--edge);
     border-radius: var(--radius);
-    background: var(--panel);
+    background: var(--glass);
   }
 
   .warn {

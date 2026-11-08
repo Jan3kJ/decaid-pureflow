@@ -163,26 +163,34 @@
     </div>
     <div class="nav">
       <button
-        class="arrow"
+        class="arrow pick-key"
         aria-label={byYear ? 'previous year' : 'previous month'}
         data-testid="datepicker-prev"
         onclick={() => step(-1)}>‹</button
       >
       <div class="title" data-testid="datepicker-month" data-month={shownKey}>
         <button
-          class="part select-outline"
+          class="part pick-key select-outline"
           aria-pressed={!byYear}
           data-testid="datepicker-month-name"
           onclick={() => (byYear = false)}
         >
           {MONTH_NAMES[shown.month - 1]}
         </button>
-        <button class="part select-outline" aria-pressed={byYear} data-testid="datepicker-year" onclick={() => (byYear = !byYear)}>
+        <button
+          class="part pick-key select-outline"
+          aria-pressed={byYear}
+          data-testid="datepicker-year"
+          onclick={() => (byYear = !byYear)}
+        >
           {shown.year}
         </button>
       </div>
-      <button class="arrow" aria-label={byYear ? 'next year' : 'next month'} data-testid="datepicker-next" onclick={() => step(1)}
-        >›</button
+      <button
+        class="arrow pick-key"
+        aria-label={byYear ? 'next year' : 'next month'}
+        data-testid="datepicker-next"
+        onclick={() => step(1)}>›</button
       >
     </div>
     <div class="weekdays">
@@ -206,7 +214,7 @@
             {#each week as day, d (d)}
               {#if day}
                 <button
-                  class="day select-outline"
+                  class="day pick-key select-outline"
                   class:today={day === today}
                   aria-pressed={day === value}
                   data-testid="datepicker-day-{day}"
@@ -222,9 +230,9 @@
       </div>
     </div>
     <div class="actions">
-      <button data-testid="datepicker-today" onclick={() => onpick(today)}>today</button>
-      <button data-testid="datepicker-clear" onclick={() => onpick('')}>clear</button>
-      <button data-testid="datepicker-cancel" onclick={oncancel}>cancel</button>
+      <button class="pick-key" data-testid="datepicker-today" onclick={() => onpick(today)}>today</button>
+      <button class="pick-key" data-testid="datepicker-clear" onclick={() => onpick('')}>clear</button>
+      <button class="pick-key" data-testid="datepicker-cancel" onclick={oncancel}>cancel</button>
     </div>
   </div>
 </Dialog>
@@ -252,13 +260,9 @@
   button {
     min-height: var(--control-big);
     font-size: var(--text-value);
-    background: var(--raised);
-    border: 1px solid var(--line);
+    background: none;
+    border: 1px solid var(--edge);
     border-radius: var(--radius);
-  }
-
-  button:active {
-    background: var(--line);
   }
 
   .close {
@@ -328,8 +332,8 @@
     justify-content: center;
     box-sizing: border-box;
     font-size: var(--text-value);
-    background: var(--raised);
-    border: 1px solid var(--line);
+    background: none;
+    border: 1px solid transparent;
     border-radius: var(--radius);
     width: var(--control-big);
     height: var(--control-big);
@@ -337,9 +341,9 @@
     font-variant-numeric: tabular-nums;
   }
 
-  /* Today's ring is grey: a white frame says the day is chosen. */
+  /* Today's ring is grey and faint; the chosen day lights (.select-outline). */
   .day.today {
-    border: 2px solid var(--dim);
+    border: 1px solid var(--dim);
   }
 
   .actions {

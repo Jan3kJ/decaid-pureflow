@@ -198,8 +198,8 @@
     min-height: var(--control-big);
     padding: 0 var(--space-3);
     font-size: var(--text-body);
-    background: var(--raised);
-    border: 1px solid var(--line);
+    background: none;
+    border: 1px solid var(--edge);
     border-radius: var(--radius);
   }
 

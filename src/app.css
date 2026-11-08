@@ -226,6 +226,23 @@ body {
   border-radius: var(--radius);
 }
 
+/*
+ * A field in a form or over a list is a bottom line, no box; typed in, the line and a soft glow
+ * under it light in the text colour. The roast date's button takes it too.
+ */
+:root .line-field {
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--edge);
+  border-radius: 0;
+  outline: none;
+}
+
+:root .line-field:focus {
+  border-bottom-color: var(--fg);
+  box-shadow: 0 0.6rem 0.8rem -0.6rem rgb(var(--fg-rgb) / 45%);
+}
+
 /* The search field over a list: the profile picker's, the settings'. */
 .filter-field {
   flex: none;
@@ -450,7 +467,7 @@ body {
 }
 
 /* Pressed: the same light, while the finger is down. */
-:root :is(.action, .chip, .seg, .form-button, .pad-key, .card, .cycle):active:not(:disabled) {
+:root :is(.action, .chip, .seg, .form-button, .pad-key, .card, .cycle, .pick-key):active:not(:disabled) {
   border-color: rgb(var(--glow-rgb, var(--fg-rgb)) / 70%);
   box-shadow: 0 0 1.2rem rgb(var(--glow-rgb, var(--fg-rgb)) / 25%);
 }
