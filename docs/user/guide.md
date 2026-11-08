@@ -129,8 +129,8 @@ volume or the time. The ratio buttons set the weight from the last shot, for exa
 
 ## Cleaning with detergent
 
-Settings > Maintenance > **Clean with detergent** leads you through three steps. Put a blind
-basket with 3 g of detergent in the portafilter, lock it in and tap **start**, then **load**: the skin
+Settings > Maintenance > **Clean with detergent** leads you through three steps. Empty the drip tray first. Put a blind
+basket with 1 teaspoon of detergent in the portafilter, lock it in and tap **start**, then **load**: the skin
 loads the profile Cleaning/Forward Flush x5, and you start it at the machine (a machine without
 this profile says 'the profile is not on this machine' and nothing is loaded). The card follows the run;
 stopped at the machine, it stays at this step. Next, take the portafilter out and **flush** for

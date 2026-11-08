@@ -15,10 +15,10 @@
 </script>
 
 <div class="progress" role="status" aria-live="polite">
-  <ol class="steps">
+  <ol class="steps" data-testid="maintenance-steps-{id}">
     {#each milestones as label, i (label)}
       <li class:done={i < milestone} class:now={i === milestone}>
-        <span class="dot">{i < milestone ? '✓' : i + 1}</span>
+        <span class="dot" data-testid="maintenance-dot-{id}">{i < milestone ? '✓' : i + 1}</span>
         <small>{label}</small>
       </li>
     {/each}
@@ -44,18 +44,34 @@
     margin: 0;
     padding: 0;
     list-style: none;
-    display: flex;
-    gap: var(--space-3);
+    /* equal columns as wide as the longest label: the circles are evenly spaced whatever the labels */
+    display: inline-grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
   }
 
   li {
+    position: relative;
+    padding: 0 var(--space-2);
+    text-align: center;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: var(--space-1);
   }
 
+  /* the line from the previous circle's edge to this one's */
+  li + li::before {
+    content: '';
+    position: absolute;
+    top: 1.2rem;
+    right: calc(50% + 1.2rem);
+    width: calc(100% - 2.4rem);
+    border-top: 1px solid var(--line);
+  }
+
   .dot {
+    box-sizing: border-box;
     width: 2.4rem;
     height: 2.4rem;
     display: flex;

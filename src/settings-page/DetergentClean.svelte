@@ -50,7 +50,7 @@
 
 <div class="procedure" data-testid="maintenance-detergent">
   <SettingsRow
-    hint="a guided clean with a blind basket and 3 g of detergent: the machine runs {DETERGENT_TITLE}, then one flush of {FLUSH_SECONDS} s, then its cleaning cycle. Your profile comes back at the end."
+    hint="a guided clean with a blind basket and 1 teaspoon of detergent: the machine runs {DETERGENT_TITLE}, then one flush of {FLUSH_SECONDS} s, then its cleaning cycle. Your profile comes back at the end."
     end
   >
     {#if stage === 'flush-ready'}
@@ -98,7 +98,7 @@
 {#if asking === 'run'}
   <Confirm
     title="{DETERGENT_NAME}?"
-    text="Put a blind basket with 3 g of detergent in the portafilter and lock it into the group head. The skin loads {DETERGENT_TITLE}; you start it at the machine."
+    text="Empty the drip tray first. Put a blind basket with 1 teaspoon of detergent in the portafilter and lock it into the group head. The skin loads {DETERGENT_TITLE}; you start it at the machine."
     ok="load"
     onok={confirmed}
     oncancel={() => (asking = null)}

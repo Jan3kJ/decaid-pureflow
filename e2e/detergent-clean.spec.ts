@@ -40,7 +40,9 @@ async function openMaintenance(page: Page) {
 async function startCard(page: Page) {
   await openMaintenance(page);
   await page.getByTestId('maintenance-start-detergent').click();
-  await expect(page.getByTestId('settings-confirm')).toContainText('3 g of detergent');
+  await expect(page.getByTestId('settings-confirm')).toContainText(
+    'Empty the drip tray first. Put a blind basket with 1 teaspoon of detergent',
+  );
   await page.getByTestId('settings-confirm-ok').click();
   await expect(caption(page)).toHaveText(`${TITLE} is loaded: start it at the machine.`);
 }
@@ -235,4 +237,44 @@ test("'Clean' still sends the cleaning state alone", async ({ page }) => {
   expect(gateway.calls('PUT', '/api/v1/workflow')).toEqual([]);
   await page.getByTestId('maintenance-cancel-clean').click();
   await expect.poll(machineRequests).toEqual(['cleaning', 'idle']);
+});
+
+/** The gaps between the circles' edges, and whether a line lies between each two circles. */
+async function circleGaps(page: Page, id: string) {
+  return page.getByTestId(`maintenance-steps-${id}`).evaluate((list, dotId) => {
+    const dots = [...list.querySelectorAll(`[data-testid="maintenance-dot-${dotId}"]`)].map((one) => one.getBoundingClientRect());
+    const items = [...list.querySelectorAll('li')];
+    const gaps = dots.slice(1).map((dot, i) => dot.left - dots[i].right);
+    const lines = items.slice(1).map((item, i) => {
+      const style = getComputedStyle(item, '::before');
+      return { width: parseFloat(style.width), border: style.borderTopWidth, gap: gaps[i] };
+    });
+    return { count: dots.length, gaps, lines };
+  }, id);
+}
+
+test('the circles of both cards stand equally far apart, with a line between each two', async ({ page }) => {
+  gateway.withDetergentProfile();
+  await startCard(page);
+  await page.screenshot({ path: 'docs/product/detergent-clean-steps.png' });
+  const detergent = await circleGaps(page, 'detergent');
+  expect(detergent.count).toBe(3);
+  await page.getByTestId('maintenance-cancel-detergent').click();
+  await expect(page.getByTestId('maintenance-start-clean')).toBeVisible();
+
+  await page.getByTestId('maintenance-start-clean').click();
+  await page.getByTestId('settings-confirm-ok').click();
+  await expect(page.getByTestId('maintenance-steps-clean')).toBeVisible();
+  await page.screenshot({ path: 'docs/product/clean-steps.png' });
+  const clean = await circleGaps(page, 'clean');
+  expect(clean.count).toBe(4);
+
+  for (const { gaps, lines } of [detergent, clean]) {
+    expect(Math.max(...gaps) - Math.min(...gaps)).toBeLessThanOrEqual(1);
+    expect(lines).toHaveLength(gaps.length);
+    for (const line of lines) {
+      expect(line.border).toBe('1px');
+      expect(Math.abs(line.width - line.gap)).toBeLessThanOrEqual(1);
+    }
+  }
 });
