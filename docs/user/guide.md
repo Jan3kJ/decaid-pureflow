@@ -137,6 +137,8 @@ stopped at the machine, it stays at this step. Next, take the portafilter out an
 10 s: the skin sets the flush time to 10 s for the clean. Last comes the machine's cleaning cycle, the same as **Clean**: **clean** starts it, **finish**
 leaves it out. At the end, or on **cancel**, your earlier profile comes back with its target weight
 and dose, unsaved changes included, and the flush time is given back as it was (unless you changed it meanwhile).
+Home keeps your last shot during the clean: the run of the cleaning profile is not drawn there as a shot, and after a
+reload home shows your last real shot, not the cleaning run. The run stays in the shot history as the machine records it.
 
 ## Your own tank table
 

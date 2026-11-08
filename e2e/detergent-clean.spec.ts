@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
-import { mockGateway, type MockGateway } from './mock-gateway';
+import { back } from './touch';
+import { measurementsOf, mockGateway, profile, type MockGateway } from './mock-gateway';
 
 // The clean with detergent against the mocked gateway: the three steps, a run stopped at the
 // machine, the earlier profile back at the end, on cancel and after a reload, and a machine without
@@ -134,6 +135,40 @@ test('the three steps: the run at the machine, one flush of 10 s, the cycle; the
   await expect.poll(() => gateway.workflow.profile.title).toBe(earlier);
   expectEarlierBack(earlier);
   await expect(page.getByTestId('maintenance-start-detergent')).toBeVisible();
+});
+
+test('home keeps the last real shot during and after the run, and a reload shows it and not the cleaning run', async ({ page }) => {
+  gateway.withDetergentProfile();
+  gateway.addShot('shot-real', '2026-10-24T07:00:00.000000', profile('A-Flow / default-medium', 36, 3), { targetYield: 36 });
+  gateway.measurements['shot-real'] = measurementsOf(20);
+  await startCard(page);
+  const timer = async () => parseFloat((await page.getByTestId('shot-timer').textContent())!);
+  const home = async () => {
+    if (!(await page.getByTestId('home-shot').isVisible())) await back(page);
+    await expect(page.getByTestId('home-shot')).toBeVisible();
+  };
+  // The run, followed at the card: the card keeps the screen until it has ended.
+  gateway.runAtStep(0);
+  await expect(caption(page)).toHaveText('Pressure rise 1');
+  gateway.runAtStep(LAST_STEP);
+  await expect(caption(page)).toHaveText('Pressure rise 5');
+  gateway.waterEnded();
+  await expect(caption(page)).toHaveText('Take the portafilter out and flush for 10 s.');
+
+  // Home has no running graph and no cleaning run: the last real shot, with its own time.
+  await home();
+  await expect(page.getByTestId('home-shot')).toHaveAttribute('data-shot', 'finished');
+  const real = await timer();
+  expect(real).toBeGreaterThan(10);
+  expect(real).toBeLessThanOrEqual(20);
+
+  // Decaid records the run; a reload reads the last real shot, not the cleaning one.
+  gateway.addShot('shot-clean', '2026-10-24T08:00:00.000000', gateway.profiles.at(-1)!.profile, { targetYield: 0 });
+  gateway.measurements['shot-clean'] = measurementsOf(5);
+  await page.reload();
+  await home();
+  await expect(page.getByTestId('home-shot')).toHaveAttribute('data-shot', 'finished');
+  expect(await timer()).toBe(real);
 });
 
 test('a run stopped at the machine puts the card back at its step, and cancel brings the earlier profile back', async ({ page }) => {

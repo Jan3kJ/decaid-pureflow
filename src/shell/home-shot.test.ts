@@ -2,8 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MachineSnapshot } from '../api';
 // Both streams of a simulated shot recorded on the rig (Decaid 0.8.8, A-Flow / default-medium).
 import recording from '../../e2e/fixtures/shot.json';
-import { homeShot, wantsNewest } from './home-shot';
+import { homeShot, isDetergentRun, wantsNewest } from './home-shot';
+import { newestRealShot } from '../history/shot-list';
 import { emptySeries, recordFrame, type Shot, type ShotSeries } from './shot';
+import { DETERGENT_TITLE, begun, earlierOf } from '../settings-page/detergent';
 import { Skin } from './skin.svelte';
 
 // What home shows: `homeShot` for the running and the finished shot, a recalled
@@ -198,5 +200,47 @@ describe('the filter of the state line', () => {
     expect(skin.shot?.series.temperature.length).toBeGreaterThan(10);
     expect(skin.shot?.series.temperature).toEqual(expected?.series.temperature);
     expect(filtered).toBeGreaterThan(10);
+  });
+});
+
+describe('the detergent run', () => {
+  const record = (id: string, title: string) => ({ id, timestamp: '', workflow: { profile: { title } } }) as never;
+
+  it('is not a shot for home from the begin of the procedure until it is over; a normal shot is', () => {
+    expect(isDetergentRun(DETERGENT_TITLE, 'run')).toBe(true);
+    expect(isDetergentRun(DETERGENT_TITLE, 'flush')).toBe(true);
+    expect(isDetergentRun(DETERGENT_TITLE, 'cycle')).toBe(true);
+    expect(isDetergentRun(DETERGENT_TITLE, 'idle')).toBe(false);
+    expect(isDetergentRun(DETERGENT_TITLE, 'run-ready')).toBe(true);
+    expect(isDetergentRun(DETERGENT_TITLE, 'done')).toBe(false);
+    expect(isDetergentRun('Default', 'run')).toBe(false);
+    expect(isDetergentRun(undefined, 'run')).toBe(false);
+  });
+
+  it('is skipped for the newest record: the newest of the last 10 with another profile, none if all are', () => {
+    const real = record('real', 'Default');
+    expect(newestRealShot([record('a', DETERGENT_TITLE), real])?.id).toBe('real');
+    expect(newestRealShot([real, record('a', DETERGENT_TITLE)])?.id).toBe('real');
+    const cleans = Array.from({ length: 10 }, (_, i) => record(`c${i}`, DETERGENT_TITLE));
+    expect(newestRealShot(cleans)).toBeNull();
+    expect(newestRealShot([...cleans, real])).toBeNull();
+  });
+
+  it('leaves the last real shot on home, running or finished, while the skin sees the run', () => {
+    const espresso = frames.slice(firstEspresso, lastEspresso + 1);
+    const skin = new Skin('http://rig:8080');
+    skin.workflow = { profile: { title: DETERGENT_TITLE } } as never;
+    const real = shot(true, { finalWeight: 30 });
+    skin.shot = real;
+    skin.detergent.state = begun(earlierOf(skin.workflow));
+    feed(skin, espresso);
+    expect(skin.shot).toBe(real);
+    expect(skin.shotRunning).toBe(false);
+    expect(homeShot(skin.shot, null, 0).kind).toBe('finished');
+    // A normal profile with the procedure idle is a shot.
+    const other = new Skin('http://rig:8080');
+    other.workflow = { profile: { title: 'Default' } } as never;
+    feed(other, espresso.slice(0, 20));
+    expect(other.shot).not.toBeNull();
   });
 });

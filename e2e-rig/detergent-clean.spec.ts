@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import type { MachineSnapshot } from '../src/api';
 import type { RigWorkflow } from './gateway';
+import { back } from '../e2e/touch';
 import { IDLE } from './idle';
 
 // The clean with detergent against the rig. The test starts the run through the API, as the
@@ -148,6 +149,13 @@ test('after a whole run the flush ends at 10 s, the cycle is offered, and cancel
     await api('PUT', '/api/v1/machine/state/espresso');
     await expect(caption(page)).toHaveText('Pressure rise 5', { timeout: 150_000 });
     await expect(caption(page)).toHaveText('Take the portafilter out and flush for 10 s.', { timeout: 30_000 });
+
+    // Home does not draw the cleaning run as a shot: no running or finished graph of it.
+    await page.reload();
+    await back(page);
+    await expect(page.getByTestId('home-shot')).not.toHaveAttribute('data-shot', 'running');
+    await page.getByTestId('menu').click();
+    await page.getByTestId('open-clean').click();
 
     await page.getByTestId('detergent-flush').click();
     await expect.poll(machineState).toBe('flush');

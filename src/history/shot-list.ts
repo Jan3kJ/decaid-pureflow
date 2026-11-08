@@ -1,6 +1,7 @@
 // The plain parts of `ShotCache` (shots.svelte.ts): lists of shots merged and cut where the held
 // ones begin, and the records with measurements kept for a while. Nothing here is reactive.
 import type { ShotRecord, ShotRecordSummary } from '../api';
+import { DETERGENT_TITLE } from '../settings-page/detergent';
 import { frameTime } from '../shell/shot';
 
 /** Two lists of shots as one, newest first, each shot once, at most `most`. */
@@ -43,4 +44,12 @@ export class Records {
     }
     return record;
   }
+}
+
+/** How many of the newest records are looked through for one that is not a cleaning run. */
+export const NEWEST_LOOKBACK = 10;
+
+/** The newest record whose profile is not the detergent profile, among the newest ones; null if all are. */
+export function newestRealShot(shots: readonly ShotRecordSummary[]): ShotRecordSummary | null {
+  return shots.slice(0, NEWEST_LOOKBACK).find((shot) => shot.workflow?.profile?.title !== DETERGENT_TITLE) ?? null;
 }

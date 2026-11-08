@@ -3,7 +3,7 @@
 // time axis. Read once in the background after the start, the newest `FIRST_SHOTS` first and
 // the rest after them; later only what is newer than the newest one held.
 import type { DecaidClient, ShotRecord, ShotRecordSummary } from '../api';
-import { Records, merge, newerThan } from './shot-list';
+import { Records, merge, newerThan, newestRealShot } from './shot-list';
 import { errorMessage } from '../error-message';
 
 /** How many shots the first read asks for: the history shows them before the rest arrive. */
@@ -78,12 +78,14 @@ export class ShotCache {
 
   /**
    * The newest shot after a look for newer ones (`sync`), null without one or while the gateway
-   * is away. On the first read the first page is enough; the older shots go on arriving.
+   * is away. A run of the clean with detergent is no shot for home: the newest of the last ten
+   * that is not one, none if all are (`newestRealShot`). On the first read the first page is
+   * enough; the older shots go on arriving.
    */
   async newest(): Promise<ShotRecordSummary | null> {
     const reading = this.sync().catch(() => undefined);
     await (this.read === 'all' ? reading : Promise.race([reading, this.firstPage]));
-    return this.shots[0] ?? null;
+    return newestRealShot(this.shots);
   }
 
   /**

@@ -32,6 +32,7 @@ import {
 } from './machine';
 import { followMachine, loadScreen, saveScreen, type Screen } from './nav';
 import { NoScale } from './no-scale.svelte';
+import { isDetergentRun } from './home-shot';
 import { isPage } from './swipe';
 import { doseToSet } from './profiles';
 import { Recall, type Recalled } from './recall.svelte';
@@ -381,7 +382,9 @@ export class Skin {
     // A shot starts: home shows it, over the history too.
     if (state === 'espresso' && before !== 'espresso') this.historyOpen = false;
     const running = this.shot !== null && !this.shot.ended;
-    this.shot = recordFrame(this.shot, frame, this.weight, this.streams.weightFlow);
+    // The detergent profile's run is not a shot for home: the last real shot stays.
+    if (!(state === 'espresso' && isDetergentRun(this.workflow?.profile?.title, this.detergent.state.stage)))
+      this.shot = recordFrame(this.shot, frame, this.weight, this.streams.weightFlow);
     // A new shot: the last one's reason goes with it.
     if (this.shot && !this.shot.ended && !running) this.stopMark = null;
     if (this.shot && !this.shot.ended) this.recall.recalled = null;

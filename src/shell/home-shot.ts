@@ -1,6 +1,7 @@
 // What home's graph and right column show: home is the shot screen. Pure: the
 // shot, the recalled history entry's series, the newest shot record's series and the scale's
 // weight in, one choice out.
+import { DETERGENT_TITLE, type Stage } from '../settings-page/detergent';
 import { emptySeries, lastShotWeight, seriesWeight, shotSeconds, type Shot, type ShotSeries } from './shot';
 
 export type HomeShotKind = 'running' | 'finished' | 'recalled' | 'none';
@@ -43,4 +44,15 @@ export function homeShot(
  */
 export function wantsNewest(shot: Shot | null, recalled: ShotSeries | null): boolean {
   return shot === null && recalled === null;
+}
+
+/**
+ * Whether a run of the workflow's profile is the clean with detergent's first step, which home
+ * does not take as a shot: the profile is the detergent profile and the procedure has begun and
+ * is not over. A frame that comes before the procedure has seen the start (it is busy with its
+ * load) counts as the run, since only the run starts with this profile loaded. The last real
+ * shot stays on home.
+ */
+export function isDetergentRun(title: string | undefined, stage: Stage): boolean {
+  return title === DETERGENT_TITLE && stage !== 'idle' && stage !== 'done';
 }
