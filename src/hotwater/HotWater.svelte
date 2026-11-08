@@ -222,7 +222,7 @@
 
   .value b {
     font-size: var(--text-large);
-    font-weight: 600;
+    font-weight: 300;
     line-height: 1.1;
     font-variant-numeric: tabular-nums;
   }

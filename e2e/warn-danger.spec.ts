@@ -2,6 +2,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import type { Profile } from '../src/api';
 import blooming from '../src/steps/fixtures/bundled-profiles.json' with { type: 'json' };
 import { mockGateway } from './mock-gateway';
+import { paint } from './paint';
 import { back, swipe, toPage } from './touch';
 
 // Warning, danger and off, against a mocked gateway: `--warn`
@@ -35,7 +36,7 @@ const look = (locator: Locator) =>
     const style = getComputedStyle(element);
     return {
       color: style.color,
-      background: style.backgroundColor,
+      background: style.backgroundImage === 'none' ? style.backgroundColor : style.backgroundImage,
       border: style.borderTopColor,
       opacity: style.opacity,
       sign: getComputedStyle(element, '::before').content,
@@ -148,7 +149,7 @@ test("a disabled 'set', bean 'save' and grinder 'save' look as the steam page's 
   const off = await look(timer);
   expect(off).toMatchObject({
     color: await colour(page, 'var(--dim)'),
-    background: await colour(page, 'var(--panel)'),
+    background: await paint(page, 'var(--panel)'),
     border: await colour(page, 'var(--line)'),
     opacity: '1',
   });

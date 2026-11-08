@@ -459,7 +459,7 @@
   .page {
     position: absolute;
     inset: 0;
-    background: var(--bg);
+    background: var(--backdrop);
   }
 
   .page.settling,

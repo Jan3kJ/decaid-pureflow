@@ -123,7 +123,7 @@
     border: 1px solid var(--line);
     border-radius: var(--radius);
     font-size: var(--text-large);
-    font-weight: 600;
+    font-weight: 300;
     line-height: 3.6rem;
     font-variant-numeric: tabular-nums;
   }

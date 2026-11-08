@@ -1,19 +1,59 @@
 :root {
   color-scheme: dark;
-  --bg: #111315;
-  --panel: #181b1e;
-  --raised: #24282d;
-  --line: #3a4047;
-  --fg: #e8eaed;
-  --dim: #9aa3ad;
-  /* Colour carries the meaning: the same three in every graph of the skin. */
-  --flow: #4da3ff;
-  --pressure: #3fcf8e;
-  --temperature: #ff6b6b;
+  /* Near black, for an OLED tablet; the lights of --backdrop lie on it. */
+  --bg: #04070a;
+  --fg: #e4eff5;
+  --dim: #6f7f8b;
+  /* A hairline between things: a control's border, a rule. */
+  --line: rgb(255 255 255 / 16%);
+  /*
+   * Glass: a faint white gradient, a thin edge and a brighter top edge, as the prototype
+   * (docs/design/dark-glass-hot-water.html). A panel is a surface, a light on it is a glow.
+   */
+  --glass: linear-gradient(165deg, rgb(255 255 255 / 5.5%), rgb(255 255 255 / 1.2%) 45%, rgb(255 255 255 / 2.5%));
+  --edge: rgb(255 255 255 / 7%);
+  /* the inner top highlight of a glass surface */
+  --edge-hi: rgb(255 255 255 / 13%);
+  /* the glass's highlight and its drop shadow */
+  --shadow-glass: inset 0 1px 0 var(--edge-hi), inset 0 0 2rem rgb(255 255 255 / 1.5%), 0 1.5rem 4rem rgb(0 0 0 / 55%);
+  /* The glass flat, for what takes a colour and no gradient: an SVG fill. */
+  --glass-flat: rgb(255 255 255 / 4%);
+  /* A panel and a raised part are glass: every page changes with these two. */
+  --panel: var(--glass);
+  --raised: var(--glass);
+  /*
+   * Colour carries the meaning: the same in every graph of the skin. Each quantity is also
+   * a triplet, so that a glow is `rgb(var(--flow-rgb) / 40%)`.
+   */
+  --flow-rgb: 74 168 255;
+  --pressure-rgb: 63 227 155;
+  --temperature-rgb: 255 92 99;
   /* Weight is the fourth line of a measured graph. */
-  --weight: #e0b057;
+  --weight-rgb: 255 195 92;
   /* Warning: clearly orange, apart from the weight's yellow. */
-  --warn: #ff8a3d;
+  --warn-rgb: 255 138 61;
+  /* Time: the pale blue of a clock, no curve's colour. */
+  --time-rgb: 207 230 242;
+  --flow: rgb(var(--flow-rgb));
+  --pressure: rgb(var(--pressure-rgb));
+  --temperature: rgb(var(--temperature-rgb));
+  --weight: rgb(var(--weight-rgb));
+  --warn: rgb(var(--warn-rgb));
+  --time: rgb(var(--time-rgb));
+  /* The room behind the glass: two faint lights, flow blue top left, temperature red bottom right. */
+  --backdrop:
+    radial-gradient(60rem 40rem at 15% -10%, rgb(var(--flow-rgb) / 13%), transparent 60%),
+    radial-gradient(50rem 35rem at 105% 110%, rgb(var(--temperature-rgb) / 8%), transparent 60%), var(--bg);
+  /*
+   * A glow in a quantity's colour, for text-shadow and drop-shadow (`npm run lint` takes only
+   * these there). Selected or live it lights; a text has a soft one, a line a wider.
+   */
+  --shadow-glow-flow: 0 0 0.8rem rgb(var(--flow-rgb) / 45%);
+  --shadow-glow-pressure: 0 0 0.8rem rgb(var(--pressure-rgb) / 45%);
+  --shadow-glow-temperature: 0 0 0.8rem rgb(var(--temperature-rgb) / 45%);
+  --shadow-glow-weight: 0 0 0.8rem rgb(var(--weight-rgb) / 45%);
+  --shadow-glow-warn: 0 0 0.8rem rgb(var(--warn-rgb) / 45%);
+  --shadow-glow-time: 0 0 0.8rem rgb(var(--time-rgb) / 45%);
   /* The way back to home, light blue: lighter and paler than --flow
      (HSL 200° 72% 78% against 211° 100% 65%, a CIELAB distance of 40), so no curve's colour. */
   --accent: #9fd4f0;
@@ -98,9 +138,9 @@
   --text-value: 1.3rem;
   /* title: a page's or dialog's title, the state word */
   --text-title: 1.6rem;
-  /* large: a stop button, a number of the running ring, the timer */
+  /* large: a stop button, a number of the running ring, the timer; a number read in it is weight 300 */
   --text-large: 2.2rem;
-  /* big: the big number of a page, the shot's time and weight */
+  /* big: the big number of a page, the shot's time and weight; weight 300 */
   --text-big: 3.6rem;
   /*
    * Four steps of space, each twice the one before: every gap of the skin takes one;
@@ -183,6 +223,14 @@ body {
   color: var(--dim);
 }
 
+/* A caption: small, upper case, spaced and dim, over or beside a value. */
+.caption {
+  font-size: var(--text-label);
+  color: var(--dim);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
 /* The small grey line that explains a setting or a field. */
 .hint {
   margin: 0;
@@ -205,7 +253,7 @@ body {
 /* A page's big number: the steam timer, the shot's time and weight. */
 .big-number {
   font-size: var(--text-big);
-  font-weight: 600;
+  font-weight: 300;
   line-height: 1.1;
   font-variant-numeric: tabular-nums;
 }
@@ -321,7 +369,7 @@ body {
 /* Text no rule sizes is running text. */
 body {
   font-size: var(--text-body);
-  background: var(--bg);
+  background: var(--backdrop);
   color: var(--fg);
   overflow: hidden;
   overscroll-behavior: none;

@@ -1,5 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { MEASUREMENTS, mockGateway, profile } from './mock-gateway';
+import { paint } from './paint';
 import { toPage } from './touch';
 
 // One selected look, against a mocked gateway: whatever is selected, a chip, a mode, a tab or a row
@@ -35,7 +36,10 @@ const colour = (page: Page, value: string) =>
 const look = (locator: Locator) =>
   locator.evaluate((element) => {
     const style = getComputedStyle(element);
-    return { background: style.backgroundColor, border: style.borderTopColor };
+    return {
+      background: style.backgroundImage === 'none' ? style.backgroundColor : style.backgroundImage,
+      border: style.borderTopColor,
+    };
   });
 
 /** The colour and weight of a control's words and of what is inside it. */
@@ -48,7 +52,7 @@ const words = (locator: Locator) =>
   );
 
 async function outline(page: Page) {
-  const [border, background] = await Promise.all(['var(--fg)', 'var(--raised)'].map((value) => colour(page, value)));
+  const [border, background] = await Promise.all([colour(page, 'var(--fg)'), paint(page, 'var(--raised)')]);
   return { background, border };
 }
 
@@ -62,7 +66,7 @@ async function expectOneLook(page: Page, least: number) {
         const style = getComputedStyle(element);
         return {
           control: element.getAttribute('data-testid'),
-          background: style.backgroundColor,
+          background: style.backgroundImage === 'none' ? style.backgroundColor : style.backgroundImage,
           border: style.borderTopColor,
           width: style.borderTopWidth,
         };
@@ -169,7 +173,7 @@ test('selected in the editor: the modes and the phase column', async ({ page }) 
     const style = getComputedStyle(element);
     return { background: style.fill, border: style.stroke };
   });
-  expect(drawn).toEqual(await outline(page));
+  expect(drawn).toEqual({ ...(await outline(page)), background: await colour(page, 'var(--glass-flat)') });
   await page.screenshot({ path: 'e2e/.results/selected-editor-detail.png' });
 });
 

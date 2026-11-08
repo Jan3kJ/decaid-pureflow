@@ -330,6 +330,13 @@ cannot be set.
   their values meet. A colour is one of `src/app.css`'s too. The lint refuses a literal corner,
   shadow, layer, colour or control height; `e2e/touch-targets.spec.ts` takes its minimum from
   `--control`.
+- The look is dark glass (`docs/design/dark-glass-hot-water.html` is its reference). `src/app.css`
+  holds it as tokens: `--bg` and `--backdrop` (two faint lights on it), `--glass`, `--edge`,
+  `--edge-hi`, `--shadow-glass`, `--panel` and `--raised` (both the glass), an `rgb` triplet per
+  quantity (`--flow-rgb`, so a glow is `rgb(var(--flow-rgb) / 40%)`) and `--shadow-glow-*` for a
+  text-shadow or a drop-shadow, which the lint takes as it takes a box-shadow's token
+  (`scripts/token-rules.mjs`). A read number is weight 300, `.caption` is small, upper case and
+  spaced. `backdrop-filter` is only for an overlay with a page behind it, never a page's panel.
 - The shared looks of a control are in `src/app.css` only: the button reset on `:where(button)`
   (the page's font and colour, a tap without zoom or text selection), `.action` (a button beside a
   setting), `.primary` (the main button's white fill), `.chip` (the pill beside a setting),

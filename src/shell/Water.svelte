@@ -116,13 +116,14 @@
 
   .time {
     font-size: min(var(--text-big), 10.5cqw);
-    font-weight: 600;
+    font-weight: 300;
   }
 
   .values {
     display: flex;
     gap: min(var(--space-3), 3cqw);
     font-size: min(var(--text-large), 6.2cqw);
+    font-weight: 300;
   }
 
   /* The value role, scaled as the others; yellow with a scale, as the weight it is read with. */

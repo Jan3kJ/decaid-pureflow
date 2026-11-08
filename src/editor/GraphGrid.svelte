@@ -139,7 +139,7 @@
   }
 
   .column.selected {
-    fill: var(--raised);
+    fill: var(--glass-flat);
     stroke: var(--fg);
   }
 </style>
