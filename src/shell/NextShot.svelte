@@ -27,7 +27,13 @@
 
 <div class="next" class:off data-testid="next-shot">
   <div class="profile">
-    <button class="name" data-testid="open-profiles" aria-label="choose a profile" disabled={off} onclick={() => skin.go('profiles')}>
+    <button
+      class="name card"
+      data-testid="open-profiles"
+      aria-label="choose a profile"
+      disabled={off}
+      onclick={() => skin.go('profiles')}
+    >
       <strong class="truncate" data-testid="profile-name">{profile.name}</strong>
       {#if profile.caption}<small class="truncate" data-testid="profile-caption">{profile.caption}</small>{/if}
     </button>
@@ -39,7 +45,7 @@
   </div>
 
   <button
-    class="pick"
+    class="pick card"
     data-testid="open-pick"
     aria-label="bean and grinder for the next shot"
     disabled={off}
@@ -68,6 +74,7 @@
     opacity: 0.4;
   }
 
+  /* A card is a glass panel; pressed it lights as a control does (.card in app.css). */
   button {
     border: 1px solid var(--line);
     background: var(--panel);

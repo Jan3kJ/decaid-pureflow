@@ -21,6 +21,7 @@
   <div class="ring" data-testid="water-ring" data-share={ring.share.toFixed(3)}>
     <svg viewBox="0 0 100 100" aria-hidden="true">
       <circle class="track" cx="50" cy="50" r="46" />
+      <circle class="glow-arc" cx="50" cy="50" r="46" pathLength="100" stroke-dasharray="{ring.share * 100} 100" />
       <circle class="done" cx="50" cy="50" r="46" pathLength="100" stroke-dasharray="{ring.share * 100} 100" />
     </svg>
     <!-- Nothing is started here: the DE1 is started at the machine. What runs can be stopped. -->
@@ -84,9 +85,16 @@
     stroke: var(--line);
   }
 
-  .done {
-    stroke: var(--fg);
+  /* The arc is the flow's blue; its glow is a wider stroke under it at low opacity, not a filter (the arc moves every frame). */
+  .done,
+  .glow-arc {
+    stroke: var(--flow);
     transition: stroke-dasharray var(--motion-follow) linear;
+  }
+
+  .glow-arc {
+    stroke-width: 9;
+    opacity: 0.16;
   }
 
   /* An outline with the glass inside, so that the values keep their colours; stop itself is the temperature red. */

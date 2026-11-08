@@ -98,11 +98,11 @@
     <!-- Each row: the caption on the left, the number and its unit on the right; the units have one
          width, so every number ends on one edge. -->
     <div class="row big">
-      <small data-testid="shot-timer-label">{finished ? 'time, finished' : 'time'}</small>
+      <small class="caption" data-testid="shot-timer-label">{finished ? 'time, finished' : 'time'}</small>
       <b class="big-number" data-testid="shot-timer">{value(shown.seconds)}<i>s</i></b>
     </div>
     <div class="row big weight">
-      <small data-testid="shot-weight-label"
+      <small class="caption" data-testid="shot-weight-label"
         ><span>weight</span>{#if target}<span data-testid="shot-stops-at">stops at {+target.toFixed(1)} g</span>{/if}</small
       >
       <b class="big-number" data-testid="shot-weight"
@@ -111,15 +111,15 @@
     </div>
     <dl>
       <div class="row pressure">
-        <dt>pressure</dt>
+        <dt class="caption">pressure</dt>
         <dd data-testid="shot-pressure">{value(snapshot?.pressure)}<i>bar</i></dd>
       </div>
       <div class="row flow">
-        <dt>flow</dt>
+        <dt class="caption">flow</dt>
         <dd data-testid="shot-flow">{value(snapshot?.flow)}<i>ml/s</i></dd>
       </div>
       <div class="row temperature">
-        <dt>temperature</dt>
+        <dt class="caption">temperature</dt>
         <dd data-testid="shot-temperature">{value(snapshot?.groupTemperature)}<i>°C</i></dd>
       </div>
     </dl>
@@ -194,6 +194,8 @@
     color: var(--dim);
     font-size: var(--text-label);
     font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
   }
 
   tbody th {
@@ -233,12 +235,6 @@
     gap: var(--space-1);
   }
 
-  small,
-  dt {
-    color: var(--dim);
-    font-size: var(--text-label);
-  }
-
   /* The caption, its two lines as one block, is centred on the row's middle: the row keeps the
      number's height, so no number moves when the caption changes. */
   .row {
@@ -273,8 +269,15 @@
     flex: none;
   }
 
+  /* the live numbers: thin, with a faint glow in their colour */
+  .big b {
+    color: var(--time);
+    text-shadow: var(--shadow-glow-time);
+  }
+
   .big.weight b {
     color: var(--weight);
+    text-shadow: var(--shadow-glow-weight);
   }
 
   .stop-reason {
@@ -292,7 +295,7 @@
     flex: none;
     margin: 0;
     font-size: var(--text-title);
-    font-weight: 600;
+    font-weight: 300;
     font-variant-numeric: tabular-nums;
   }
 
@@ -302,12 +305,20 @@
 
   .pressure dd {
     color: var(--pressure);
+    text-shadow: var(--shadow-glow-pressure);
   }
   .flow dd {
     color: var(--flow);
+    text-shadow: var(--shadow-glow-flow);
   }
   .temperature dd {
     color: var(--temperature);
+    text-shadow: var(--shadow-glow-temperature);
+  }
+
+  /* the unit beside a number takes no glow */
+  i {
+    text-shadow: none;
   }
 
   /*

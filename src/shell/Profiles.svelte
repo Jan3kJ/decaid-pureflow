@@ -362,15 +362,15 @@
       <p class="author truncate" data-testid="profile-author">{profile.author ? `by ${profile.author}` : ''}</p>
       <dl>
         <div>
-          <dt>steps</dt>
+          <dt class="caption">steps</dt>
           <dd>{profile.steps.length}</dd>
         </div>
         <div>
-          <dt>stop at</dt>
+          <dt class="caption">stop at</dt>
           <dd>{profile.target_weight ? `${profile.target_weight} g` : '–'}</dd>
         </div>
         <div>
-          <dt>dose</dt>
+          <dt class="caption">dose</dt>
           <dd>{dose === undefined ? '–' : `${dose} g`}</dd>
         </div>
       </dl>
@@ -434,8 +434,9 @@
     gap: var(--space-2);
   }
 
+  /* A row and a button of the picker are glass with the faint edge; a selected row lights (.select-outline). */
   button {
-    border: 1px solid var(--line);
+    border: 1px solid var(--edge);
     background: var(--panel);
     border-radius: var(--radius);
   }
@@ -501,9 +502,8 @@
   }
 
   .rename {
-    background: var(--dim);
-    border-color: var(--dim);
-    color: var(--bg);
+    background: none;
+    color: var(--dim);
   }
 
   .item {
@@ -597,15 +597,10 @@
     gap: var(--space-3);
   }
 
-  dt {
-    color: var(--dim);
-    font-size: var(--text-label);
-  }
-
   dd {
     margin: 0;
     font-size: var(--text-value);
-    font-weight: 600;
+    font-weight: 300;
     font-variant-numeric: tabular-nums;
   }
 
@@ -632,7 +627,7 @@
     white-space: pre-line;
     scrollbar-width: thin;
     padding: var(--space-1) var(--space-2);
-    border: 1px solid var(--line);
+    border: 1px solid var(--edge);
     border-radius: var(--radius-small);
   }
 

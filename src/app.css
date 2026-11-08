@@ -450,7 +450,7 @@ body {
 }
 
 /* Pressed: the same light, while the finger is down. */
-:root :is(.action, .chip, .seg, .form-button, .pad-key):active:not(:disabled) {
+:root :is(.action, .chip, .seg, .form-button, .pad-key, .card):active:not(:disabled) {
   border-color: rgb(var(--glow-rgb, var(--fg-rgb)) / 70%);
   box-shadow: 0 0 1.2rem rgb(var(--glow-rgb, var(--fg-rgb)) / 25%);
 }
