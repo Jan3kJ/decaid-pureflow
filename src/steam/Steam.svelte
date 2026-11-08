@@ -84,7 +84,7 @@
 
   <!-- In the centre of the column, in line with 'set timer'. -->
   <div class="big">
-    <small>{steaming ? 'steam left' : 'steam timer'}</small>
+    <small class="caption">{steaming ? 'steam left' : 'steam timer'}</small>
     <b class="big-number" data-testid="steam-timer">{shown ?? '–'}<i>s</i></b>
   </div>
 
@@ -172,7 +172,8 @@
     background: var(--panel);
   }
 
-  button {
+  .heater-on,
+  .none {
     border: 1px solid var(--edge);
     background: none;
     border-radius: var(--radius);
@@ -212,10 +213,16 @@
     font-size: var(--text-label);
   }
 
+  /* the timer is a time: a thin number in the time colour, lit */
+  .big-number {
+    color: var(--time);
+    text-shadow: var(--shadow-glow-time);
+  }
+
   i {
     font-style: normal;
     font-size: var(--text-title);
-    font-weight: 400;
+    font-weight: 300;
     color: var(--dim);
     margin-left: 0.2em;
   }
@@ -268,7 +275,8 @@
     gap: var(--space-2);
     color: var(--fg);
     background: none;
-    border-color: var(--edge);
+    border: 1px solid var(--edge);
+    border-radius: var(--radius);
   }
 
   .set b {
