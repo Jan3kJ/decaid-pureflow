@@ -4,7 +4,7 @@
   // each time; where it is refused or missing, the system's camera through a file input stands in.
   import { onMount } from 'svelte';
   import Dialog from '../ui/Dialog.svelte';
-  import { fileToPhoto, nextAngle, toPhoto, type Angle } from './photo';
+  import { fileToPhoto, nextAngle, previousAngle, toPhoto, type Angle } from './photo';
 
   interface Props {
     /** the photo, a JPEG data URL scaled down */
@@ -101,7 +101,12 @@
         {:else}
           <button class="primary" data-testid="camera-capture" disabled={!live} onclick={capture}>capture</button>
         {/if}
-        <button data-testid="camera-turn" aria-label="turn the picture" onclick={() => (angle = nextAngle(angle))}>turn</button>
+        <button class="turn" data-testid="camera-turn-left" aria-label="turn left" onclick={() => (angle = previousAngle(angle))}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5 5 9l4 4M5 9h9a5 5 0 0 1 0 10h-3" /></svg>
+        </button>
+        <button class="turn" data-testid="camera-turn-right" aria-label="turn right" onclick={() => (angle = nextAngle(angle))}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5 4 4-4 4M19 9h-9a5 5 0 0 0 0 10h3" /></svg>
+        </button>
         <button data-testid="camera-cancel" onclick={oncancel}>cancel</button>
       </div>
     </div>
@@ -200,6 +205,21 @@
 
   button:disabled {
     opacity: 0.4;
+  }
+
+  .turn {
+    width: var(--control-big);
+    padding: 0;
+  }
+
+  .turn svg {
+    width: 1.5rem;
+    height: 1.5rem;
+    fill: none;
+    stroke: var(--fg);
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
 
   .primary {

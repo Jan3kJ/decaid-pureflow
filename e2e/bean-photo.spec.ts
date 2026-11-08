@@ -155,7 +155,7 @@ async function noReading(page: Page) {
   await expect(form.getByRole('button')).toHaveText(['new photo', 'remove photo', 'no roast date', 'add']);
 }
 
-test('the turn button turns the camera a quarter per tap, capture stays the lower control, and the photo is turned the same', async ({
+test('the turn buttons turn the camera a quarter left or right per tap, capture stays the lower control, and the photo is turned the same', async ({
   page,
 }) => {
   await cameraShowsBag(page);
@@ -173,10 +173,16 @@ test('the turn button turns the camera a quarter per tap, capture stays the lowe
     if (angle === '90') expect(capture.x + capture.width).toBeLessThanOrEqual(video.x + 1);
     if (angle === '180') expect(capture.y + capture.height).toBeLessThanOrEqual(video.y + 1);
     if (angle === '270') expect(capture.x).toBeGreaterThanOrEqual(video.x + video.width - 1);
-    await page.getByTestId('camera-turn').click();
+    await page.getByTestId('camera-turn-right').click();
   }
   await expect(pad).toHaveAttribute('data-angle', '0');
-  await page.getByTestId('camera-turn').click();
+  await page.getByTestId('camera-turn-left').click();
+  await expect(pad).toHaveAttribute('data-angle', '270');
+  await page.getByTestId('camera-turn-left').click();
+  await page.getByTestId('camera-turn-left').click();
+  await page.getByTestId('camera-turn-left').click();
+  await expect(pad).toHaveAttribute('data-angle', '0');
+  await page.getByTestId('camera-turn-right').click();
   // at 90 the captured 640 x 400 frame is 400 x 640
   await expect(pad).toHaveAttribute('data-angle', '90');
   await page.getByTestId('camera-capture').click();

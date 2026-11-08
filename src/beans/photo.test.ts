@@ -1,11 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { isPhoto, nextAngle, orphanPhotoKeys, photoFrame, photoKey, photoSize, turnedSize, type Angle } from './photo';
+import { isPhoto, nextAngle, orphanPhotoKeys, photoFrame, photoKey, photoSize, previousAngle, turnedSize, type Angle } from './photo';
 
 describe('the turn', () => {
   it('cycles 0, 90, 180, 270 and back to 0', () => {
     const seen: Angle[] = [0];
     for (let i = 0; i < 4; i++) seen.push(nextAngle(seen[i]));
     expect(seen).toEqual([0, 90, 180, 270, 0]);
+  });
+
+  it('turns left by a quarter, 0 back to 270, and undoes a turn right', () => {
+    const seen: Angle[] = [0];
+    for (let i = 0; i < 4; i++) seen.push(previousAngle(seen[i]));
+    expect(seen).toEqual([0, 270, 180, 90, 0]);
+    for (const angle of [0, 90, 180, 270] as Angle[]) expect(previousAngle(nextAngle(angle))).toBe(angle);
   });
 
   it('swaps width and height of the captured frame at 90 and 270', () => {

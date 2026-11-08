@@ -35,9 +35,14 @@ export function isPhoto(value: unknown): value is string {
 /** A clockwise turn of the camera's overlay and of the frame taken in it, in degrees. */
 export type Angle = 0 | 90 | 180 | 270;
 
-/** The next angle of the turn button: a quarter turn clockwise, 270 back to 0. */
+/** The angle after 'turn right': a quarter turn clockwise, 270 back to 0. */
 export function nextAngle(angle: Angle): Angle {
   return ((angle + 90) % 360) as Angle;
+}
+
+/** The angle after 'turn left': a quarter turn counter-clockwise, 0 back to 270. */
+export function previousAngle(angle: Angle): Angle {
+  return ((angle + 270) % 360) as Angle;
 }
 
 /** A picture's size once turned by `angle`: width and height swap at 90 and 270. */
