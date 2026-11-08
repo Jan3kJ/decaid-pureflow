@@ -39,7 +39,7 @@
   import UnsavedDialog from './shell/UnsavedDialog.svelte';
   import { coverOf, MAIN_FRAME, type Rect } from './shell/cover';
   import Water from './shell/Water.svelte';
-  import { shownRun } from './shell/water';
+  import { ringRun, shownRun } from './shell/water';
 
   const skin = new Skin();
   onMount(() => skin.connect());
@@ -65,10 +65,10 @@
   // which is not drawn beside it; there is no back arrow. Not while a shot runs on home. A drag that
   // starts on a control is the control's.
   const home = $derived(skin.screen === 'home');
-  // Hot water or flush: the one large ring over the screen's main frame (`data-main-frame`), or over
+  // Hot water or flush: the one large ring (not for hot water on its own page, whose lines show the run) over the screen's main frame (`data-main-frame`), or over
   // the screen under its header where none is marked (src/shell/cover.ts). The open
   // history is the screen then. The frame's content stays under the ring and is back when the run ends.
-  const water = $derived(shownRun(skin.waterRun, skin.canStop));
+  const water = $derived(ringRun(shownRun(skin.waterRun, skin.canStop), skin.screen));
   const watering = $derived(water !== null);
   const overHistory = $derived(home && skin.historyOpen);
   let cover: Rect | null = $state.raw(null);

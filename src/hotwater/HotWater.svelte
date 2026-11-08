@@ -4,10 +4,11 @@
   import NumberPad from '../editor/NumberPad.svelte';
   import PageHeader from '../shell/PageHeader.svelte';
   import SidePage from '../ui/SidePage.svelte';
+  import LineSlider from '../ui/LineSlider.svelte';
   import ValueLine from '../ui/ValueLine.svelte';
   import type { Skin } from '../shell/skin.svelte';
   import { shotWeightText } from '../shell/shot';
-  import { shownRun } from '../shell/water';
+  import { ringRun, shownRun, waterSeconds } from '../shell/water';
   import {
     fieldStep,
     heldValue,
@@ -31,24 +32,42 @@
   /** stop at weight in g with a connected scale, stop at volume in ml without one */
   const fields = $derived(hotWaterFields(skin.scaleLink));
   const stopField = $derived(fields.find((field) => field.key === 'volume')!);
-  /** Hot water or flush: the shell's ring covers the rows, with stop in it. */
-  const water = $derived(shownRun(skin.waterRun, skin.canStop));
-  const pouring = $derived(skin.waterRun !== null && !skin.waterRun.ended);
+  /** A flush, or hot water seen from another page: the shell's ring covers the rows, with stop in it. */
+  const water = $derived(ringRun(shownRun(skin.waterRun, skin.canStop), 'hot-water'));
+  /** Hot water runs: the time and weight lines fill with the live values. */
+  const pouring = $derived(skin.waterRun?.kind === 'hotWater' && !skin.waterRun.ended && skin.canStop ? skin.waterRun : null);
+  const weighed = $derived(skin.scaleLink === 'connected');
+
+  /** The live value of a line while hot water runs: the seconds, and the grams on the scale or the ml so far without one. */
+  function liveOf(field: HotWaterField): { value: number; text: string } | null {
+    if (!pouring) return null;
+    if (field.id === 'time') {
+      const seconds = waterSeconds(pouring);
+      return { value: seconds, text: `${Math.floor(seconds)} s` };
+    }
+    if (field.id !== 'weight') return null;
+    if (weighed && skin.weight !== null) return { value: Math.max(0, skin.weight), text: gramsOf(Math.max(0, skin.weight)) };
+    return weighed ? null : { value: pouring.volume, text: `${Math.round(pouring.volume)} ml` };
+  }
 
   /** The value a slider is dragged to: shown while it moves, written once when it is let go. */
   let dragged: { id: string; value: number } | null = $state.raw(null);
   const valueOf = (field: HotWaterField) => (dragged?.id === field.id ? dragged.value : (values?.[field.key] ?? null));
   const shown = (field: HotWaterField) => shownValue(field, valueOf(field));
 
-  function drag(field: HotWaterField, event: Event) {
-    dragged = { id: field.id, value: heldValue(field, Number((event.currentTarget as HTMLInputElement).value)) };
+  /** the line that is lit: a tap lights one, a tap elsewhere puts it out */
+  let lit: string | null = $state(null);
+  let frame: HTMLElement | undefined = $state();
+
+  function elsewhere(event: PointerEvent) {
+    if (!frame?.contains(event.target as Node)) lit = null;
   }
 
-  async function release(field: HotWaterField, event: Event) {
-    const value = heldValue(field, Number((event.currentTarget as HTMLInputElement).value));
-    dragged = { id: field.id, value };
-    // The dragged value stays shown until Decaid answers, so the row does not jump back.
-    await skin.setHotWater(field, value);
+  async function release(field: HotWaterField, value: number) {
+    const held = heldValue(field, value);
+    dragged = { id: field.id, value: held };
+    // The dragged value stays shown until Decaid answers, so the line does not jump back.
+    await skin.setHotWater(field, held);
     if (dragged?.id === field.id) dragged = null;
   }
 
@@ -73,35 +92,38 @@
   });
 </script>
 
-<!-- The ring holds stop while hot water or flush runs; this one stops anything else that runs. -->
+<svelte:window onpointerdown={elsewhere} />
+
+<!-- A flush's ring holds its stop; this one stops hot water and anything else that runs. -->
 <SidePage onstop={skin.canStop && !water ? () => skin.stop() : undefined} stopTestid="hot-water-stop">
   {#snippet header()}
     <PageHeader {skin} heat="group" title="Hot water" />
   {/snippet}
 
-  <!-- A row per value with a slider under it; a tap on the value opens the number pad.
-       The page's main frame, which hot water and flush cover (App.svelte). -->
+  <!-- A line per value; a second tap on the lit number opens the number pad.
+       The page's main frame, which a flush covers (App.svelte). -->
   {#snippet main()}
-    <div class="values" data-main-frame>
+    <div class="values" data-main-frame bind:this={frame}>
       {#each fields as field (field.id)}
-        <div class="row {field.id}">
-          <span class="label">{field.label}</span>
-          <button class="value" data-testid="hot-water-{field.id}" disabled={!values} onclick={() => (typing = field)}>
-            <b>{shown(field)}<i>{field.unit}</i></b>
-          </button>
-          <input
-            type="range"
-            aria-label={field.label}
-            data-testid="hot-water-slider-{field.id}"
-            min={field.min}
-            max={field.max}
-            step={fieldStep(field)}
-            value={valueOf(field) ?? field.min}
-            disabled={!values}
-            oninput={(event) => drag(field, event)}
-            onchange={(event) => release(field, event)}
-          />
-        </div>
+        <LineSlider
+          label={field.label}
+          unit={field.unit}
+          min={field.min}
+          max={field.max}
+          step={fieldStep(field)}
+          value={valueOf(field)}
+          shown={shown(field)}
+          tone={field.id as 'flow' | 'temperature' | 'time' | 'weight'}
+          lit={lit === field.id}
+          disabled={!values || pouring !== null}
+          live={liveOf(field)}
+          testid="hot-water-slider-{field.id}"
+          numberTestid="hot-water-{field.id}"
+          onlight={() => (lit = field.id)}
+          onmove={(value: number) => (dragged = { id: field.id, value })}
+          onrelease={(value: number) => release(field, value)}
+          onpad={() => (typing = field)}
+        />
       {/each}
     </div>
   {/snippet}
@@ -142,14 +164,10 @@
     tone="weight"
     testid="hot-water-scale"
     buttonTestid="hot-water-tare"
-    disabled={pouring}
+    disabled={pouring !== null}
+    thin
     onclick={() => skin.tare()}
   />
-
-  <p class="hint" data-testid="hot-water-hint">
-    Start hot water at the machine. With a scale Decaid tares it and stops at the weight; without one the machine stops at as many ml,
-    or at the time.
-  </p>
 
   {#if skin.notice}
     <p class="notice" data-testid="notice">{skin.notice}</p>
@@ -189,123 +207,7 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
-  }
-
-  .row {
-    flex: 1;
-    min-height: 0;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-rows: auto auto;
-    align-content: center;
-    column-gap: var(--space-3);
-    padding: var(--space-1) 1.4rem;
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    background: var(--panel);
-  }
-
-  .label {
-    align-self: center;
-    color: var(--dim);
-    font-size: var(--text-value);
-  }
-
-  .value {
-    min-width: 9rem;
-    min-height: var(--control-big);
-    padding: 0 0.8rem;
-    border-color: transparent;
-    background: none;
-    text-align: right;
-  }
-
-  .value b {
-    font-size: var(--text-large);
-    font-weight: 300;
-    line-height: 1.1;
-    font-variant-numeric: tabular-nums;
-  }
-
-  /* The slider: the whole row wide, its thumb a finger's target, in the value's colour. */
-  input[type='range'] {
-    --tint: var(--fg);
-    grid-column: 1 / -1;
-    width: 100%;
-    height: var(--control);
-    margin: 0;
-    background: none;
-    appearance: none;
-    touch-action: none;
-    cursor: pointer;
-  }
-
-  input[type='range']:disabled {
-    --tint: var(--dim);
-  }
-
-  input[type='range']::-webkit-slider-runnable-track {
-    height: 0.5rem;
-    border-radius: var(--radius-pill);
-    background: var(--line);
-  }
-
-  input[type='range']::-moz-range-track {
-    height: 0.5rem;
-    border-radius: var(--radius-pill);
-    background: var(--line);
-  }
-
-  input[type='range']::-webkit-slider-thumb {
-    appearance: none;
-    width: 2.4rem;
-    height: 2.4rem;
-    margin-top: -0.95rem;
-    border: 0;
-    border-radius: var(--radius-round);
-    background: var(--tint);
-  }
-
-  input[type='range']::-moz-range-thumb {
-    width: 2.4rem;
-    height: 2.4rem;
-    border: 0;
-    border-radius: var(--radius-round);
-    background: var(--tint);
-  }
-
-  /* The skin's colours: temperature red, flow blue, weight yellow. */
-  .temperature b {
-    color: var(--temperature);
-  }
-
-  .temperature input {
-    --tint: var(--temperature);
-  }
-
-  .flow b {
-    color: var(--flow);
-  }
-
-  .flow input {
-    --tint: var(--flow);
-  }
-
-  .weight b {
-    color: var(--weight);
-  }
-
-  .weight input {
-    --tint: var(--weight);
-  }
-
-  i {
-    margin-left: 0.2em;
-    font-style: normal;
-    font-size: var(--text-body);
-    font-weight: 400;
-    color: var(--dim);
+    padding: var(--space-2) var(--space-4);
   }
 
   small {

@@ -1,6 +1,6 @@
 <script lang="ts">
-  // Hot water and flush, over the main frame of every screen (drawn by
-  // App.svelte): the countdown ring around the stop button, and inside the button what runs:
+  // Hot water and flush, over the main frame of every screen but hot water's own for hot water, whose
+  // lines show the run (App.svelte draws it, ringRun says where): the countdown ring around the stop button, and inside the button what runs:
   // temperature, flow, time and, for hot water with a scale, the weight; for hot water with a stop, its
   // target under them. The numbers come from water.ts.
   import type { Skin } from './skin.svelte';

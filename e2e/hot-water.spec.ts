@@ -9,8 +9,8 @@ import { back, toPage } from './touch';
 // favourites come from the settings; its tare button tares. Without a scale the row reads stop at
 // volume in ml. That Decaid stops hot water at the
 // weight is the rig's to show (e2e-rig/hot-water.spec.ts): the mock has no pump. A value
-// is a row with a slider under it, the page shows the ring while hot
-// water pours, and the left edge has no state dot.
+// is a line with its number above it; the page shows no ring while hot water pours
+// (e2e/hot-water-live.spec.ts), a flush has one, and the left edge has no state dot.
 
 const errors: string[] = [];
 
@@ -39,10 +39,17 @@ async function overflow(page: Page) {
   });
 }
 
-/** Types a value on the number pad that a tap on `testid` opens. */
-async function type(page: Page, testid: string, value: string) {
-  await page.getByTestId(testid).click();
+/** A hot water line takes a tap to light and a second on its number to open the number pad; a settings row opens it at once. */
+async function openPad(page: Page, testid: string) {
+  const number = page.getByTestId(testid);
+  await number.click();
+  if ((await page.getByTestId('numpad').count()) === 0) await number.click();
   await expect(page.getByTestId('numpad')).toBeVisible();
+}
+
+/** Types a value on the number pad that two taps on `testid` open. */
+async function type(page: Page, testid: string, value: string) {
+  await openPad(page, testid);
   for (const key of value) await page.getByTestId(`numpad-key-${key === '.' ? 'dot' : key}`).click();
   await page.getByTestId('numpad-confirm').click();
   await expect(page.getByTestId('numpad')).toHaveCount(0);
@@ -103,7 +110,7 @@ test('temperature, flow, time and stop at weight are written to hotWaterData (it
   await expect(page.getByTestId('hot-water-flow')).toContainText('6.5ml/s');
 
   // The number pad keeps a value inside Streamline's ranges.
-  await page.getByTestId('hot-water-temperature').click();
+  await openPad(page, 'hot-water-temperature');
   await expect(page.getByTestId('numpad-range')).toHaveText('50 to 95 °C');
   await expect(page.getByTestId('numpad-key-dot')).toBeDisabled();
   await page.getByTestId('numpad-cancel').click();
@@ -128,13 +135,14 @@ test('a ratio favourite with a last shot of 40 g sets 80 g for 1:2; the tare but
   await expect(page.getByTestId('hot-water-weight')).toContainText('100g');
   await expect(ratios.nth(0)).not.toHaveAttribute('aria-pressed', 'true');
 
-  // The scale's row is the tare, the one tare of the skin: one button of 3.5 rem over the row,
+  // The scale's row is the tare, the one tare of the skin: one button of 3 rem (as thin as the stop's edge) over the row,
   // live while idle; 'last shot' and 'scale' end on one right edge, their units in one column.
   await expect(page.getByTestId('hot-water-scale')).toHaveText('212.4 g');
   const row = page.getByTestId('hot-water-tare');
   await expect(row).toBeEnabled();
   await expect(row).toHaveText(/^scale\s*212\.4\s*g$/);
-  expect((await row.boundingBox())!.height).toBeGreaterThanOrEqual(3.5 * 16 - 0.5);
+  expect((await row.boundingBox())!.height).toBeGreaterThanOrEqual(3 * 16 - 0.5);
+  expect((await row.boundingBox())!.height).toBeLessThan(3.5 * 16);
   await expect(page.getByText(/tap to tare|tared/)).toHaveCount(0);
   const part = async (id: string, part: string) => (await page.getByTestId(id).locator(part).boundingBox())!;
   const [shot, scale] = [await part('hot-water-last-shot', 'b'), await part('hot-water-scale', 'b')];
@@ -200,16 +208,15 @@ test('stop at weight in g with a scale, stop at volume in ml without one; favour
   gateway.measurements['shot-unweighed'] = MEASUREMENTS.map((measurement) => ({ ...measurement, scale: null }));
   await page.goto('/');
   await toPage(page, 'hot-water');
-  const label = page.locator('.row.weight .label');
-  await expect(label).toHaveText('stop at volume');
+  await expect(page.getByRole('slider', { name: 'stop at volume' })).toBeVisible();
   await expect(page.getByTestId('hot-water-weight')).toContainText('50ml');
-  await expect(page.getByRole('slider', { name: 'stop at volume' })).toHaveAttribute('max', '500');
+  await expect(page.getByRole('slider', { name: 'stop at volume' })).toHaveAttribute('aria-valuemax', '500');
   await expect(page.getByTestId('hot-water-last-shot')).toHaveText('–');
   await expect(page.getByTestId('hot-water-ratio')).toHaveCount(3);
   for (const chip of await page.getByTestId('hot-water-ratio').all()) await expect(chip).toBeDisabled();
 
   // The number pad in ml writes the same field, the number as it is.
-  await page.getByTestId('hot-water-weight').click();
+  await openPad(page, 'hot-water-weight');
   await expect(page.getByTestId('numpad-range')).toHaveText('10 to 500 ml');
   await page.getByTestId('numpad-cancel').click();
   await type(page, 'hot-water-weight', '150');
@@ -218,47 +225,60 @@ test('stop at weight in g with a scale, stop at volume in ml without one; favour
 
   // The scale connects: the same row reads stop at weight in g, the number unchanged.
   gateway.connectScale(true);
-  await expect(label).toHaveText('stop at weight');
+  await expect(page.getByRole('slider', { name: 'stop at weight' })).toHaveAttribute('aria-valuenow', '150');
   await expect(page.getByTestId('hot-water-weight')).toContainText('150g');
-  await expect(page.getByRole('slider', { name: 'stop at weight' })).toHaveValue('150');
   expect(await overflow(page)).toEqual({ scrolls: false, outside: 0 });
   expect(errors).toEqual([]);
 });
 
-test('a row per value with a slider: the drag moves the shown value and writes once when let go', async ({ page }) => {
+test('a line per value: a tap lights it, a drag moves it from where it was and writes once when let go', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
   await toPage(page, 'hot-water');
   await expect(page.getByTestId('hot-water-time')).toContainText('30s');
+  await expect(page.getByTestId('hot-water-hint')).toHaveCount(0);
 
-  // Four rows, one under the other, each with its slider under the value, in the field's range.
-  const rows = ['temperature', 'flow', 'time', 'weight'];
+  // Four lines, one under the other; the number stands above its line, no caption, no thumb.
+  const ids = ['temperature', 'flow', 'time', 'weight'];
   const boxes = [];
-  for (const id of rows) {
+  for (const id of ids) {
     const value = (await page.getByTestId(`hot-water-${id}`).boundingBox())!;
     const slider = (await page.getByTestId(`hot-water-slider-${id}`).boundingBox())!;
-    expect(slider.y).toBeGreaterThanOrEqual(value.y + value.height - 1);
+    expect(value.y + value.height).toBeLessThan(slider.y + slider.height * 0.66);
     expect(slider.height).toBeGreaterThanOrEqual(40);
     boxes.push(slider);
   }
-  for (let i = 1; i < boxes.length; i += 1) expect(boxes[i].y).toBeGreaterThan(boxes[i - 1].y + boxes[i - 1].height);
+  for (let i = 1; i < boxes.length; i += 1) expect(boxes[i].y).toBeGreaterThanOrEqual(boxes[i - 1].y + boxes[i - 1].height - 1);
+  await expect(page.locator('.label')).toHaveCount(0);
   const time = page.getByTestId('hot-water-slider-time');
-  await expect(time).toHaveAttribute('min', '5');
-  await expect(time).toHaveAttribute('max', '120');
-  await expect(time).toHaveAttribute('step', '1');
-  await expect(page.getByTestId('hot-water-slider-flow')).toHaveAttribute('step', '0.1');
-  await expect(page.getByTestId('hot-water-slider-flow')).toHaveAttribute('max', '8');
+  await expect(time).toHaveAttribute('role', 'slider');
+  await expect(time).toHaveAttribute('aria-label', 'time');
+  await expect(time).toHaveAttribute('aria-valuemin', '5');
+  await expect(time).toHaveAttribute('aria-valuemax', '120');
+  await expect(time).toHaveAttribute('aria-valuenow', '30');
+  await expect(page.getByTestId('hot-water-slider-flow')).toHaveAttribute('aria-valuemax', '8');
 
-  // A drag with the mouse: the value follows it, nothing is written until it is let go.
+  // A tap lights only that line and moves nothing, wherever on the line it lands.
   const writes = () => gateway.calls('PUT', '/api/v1/workflow').filter((call) => call.body.hotWaterData).length;
   const box = (await time.boundingBox())!;
-  const y = box.y + box.height / 2;
-  const thumb = box.x + 19 + ((box.width - 38) * (30 - 5)) / 115;
-  await page.mouse.move(thumb, y);
+  const y = box.y + box.height * 0.7;
+  await expect(time).toHaveAttribute('data-lit', 'false');
+  await page.mouse.click(box.x + box.width * 0.9, y);
+  await expect(time).toHaveAttribute('data-lit', 'true');
+  await expect(page.getByTestId('hot-water-slider-flow')).toHaveAttribute('data-lit', 'false');
+  await expect(time).toHaveAttribute('aria-valuenow', '30');
+  expect(writes()).toBe(0);
+  await page.screenshot({ path: 'docs/product/hot-water-lit.png' });
+  // A tap elsewhere puts it out.
+  await page.getByTestId('hot-water-last-shot').click({ force: true });
+  await expect(time).toHaveAttribute('data-lit', 'false');
+
+  // A drag from anywhere on the line: the value follows by the travel, nothing is written before the release.
+  await page.mouse.move(box.x + box.width * 0.2, y);
   await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.4, y, { steps: 5 });
   await page.mouse.move(box.x + box.width * 0.6, y, { steps: 5 });
-  await page.mouse.move(box.x + box.width * 0.8, y, { steps: 5 });
-  const dragged = Number(await time.inputValue());
+  const dragged = Number(await time.getAttribute('aria-valuenow'));
   expect(dragged).toBeGreaterThan(80);
   await expect(page.getByTestId('hot-water-time')).toContainText(`${dragged}s`);
   expect(writes()).toBe(0);
@@ -267,21 +287,20 @@ test('a row per value with a slider: the drag moves the shown value and writes o
   expect(lastWrite(gateway)).toEqual({ targetTemperature: 75, duration: dragged, volume: 50, flow: 8 });
   await expect(page.getByTestId('hot-water-time')).toContainText(`${dragged}s`);
 
-  // The flow by the keyboard's arrow: one step of 0.1 from the held 8.
+  // The arrow keys step: one 0.1 from the held 8.
   await page.getByTestId('hot-water-slider-flow').focus();
   await page.keyboard.press('ArrowLeft');
   await expect.poll(() => lastWrite(gateway)?.flow).toBe(7.9);
   await expect(page.getByTestId('hot-water-flow')).toContainText('7.9ml/s');
 
-  // A tap on the value still opens the number pad.
-  await page.getByTestId('hot-water-weight').click();
-  await expect(page.getByTestId('numpad')).toBeVisible();
+  // A second tap on the number of a lit line opens the number pad.
+  await openPad(page, 'hot-water-weight');
   await page.getByTestId('numpad-cancel').click();
   expect(await overflow(page)).toEqual({ scrolls: false, outside: 0 });
   expect(errors).toEqual([]);
 });
 
-test('while hot water or flush runs the ring covers the rows, and they come back after', async ({ page }) => {
+test('a flush covers the rows with its ring; the rows come back after', async ({ page }) => {
   const gateway = await mockGateway(page);
   gateway.putOnScale(0);
   await page.goto('/');
@@ -291,20 +310,15 @@ test('while hot water or flush runs the ring covers the rows, and they come back
   await expect(page.getByTestId('nav-status')).toHaveCount(0);
   await expect(page.locator('.page > nav')).toHaveCount(0);
 
-  gateway.waterFor('hotWater', 12, 4, 80);
-  gateway.putOnScale(48.2);
   const screen = page.getByTestId('screen-hot-water');
-  await expect(page.getByTestId('water-view')).toHaveAttribute('data-kind', 'hotWater');
-  await expect(page.getByTestId('water-time')).toHaveText('12 / 30 s');
-  await expect(page.getByTestId('water-ring')).toHaveAttribute('data-share', '0.400');
-  await expect(page.getByTestId('water-weight')).toHaveText('48.2 g');
-  // The rows are under the ring: a finger on them reaches the ring.
   const covered = (id: string) =>
     page.evaluate((id) => {
       const box = document.querySelector(`[data-testid="${id}"]`)!.getBoundingClientRect();
       const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
       return !!hit?.closest('[data-testid="water-cover"]');
     }, id);
+  gateway.waterFor('flush', 3, 6, 90);
+  await expect(page.getByTestId('water-view')).toHaveAttribute('data-kind', 'flush');
   await expect.poll(() => covered('hot-water-time')).toBe(true);
   expect(await covered('hot-water-slider-time')).toBe(true);
   // One stop: the ring's; the right column stays.
@@ -312,8 +326,6 @@ test('while hot water or flush runs the ring covers the rows, and they come back
   await expect(page.getByTestId('water-stop')).toHaveCount(1);
   await expect(screen.getByTestId('hot-water-tare')).toBeVisible();
   expect(await covered('hot-water-tare')).toBe(false);
-  // The scale's row is off while water runs.
-  await expect(screen.getByTestId('hot-water-tare')).toBeDisabled();
   expect(await overflow(page)).toEqual({ scrolls: false, outside: 0 });
 
   await page.getByTestId('water-stop').click();
@@ -322,14 +334,6 @@ test('while hot water or flush runs the ring covers the rows, and they come back
   await expect(page.getByTestId('water-view')).toHaveCount(0);
   await expect(screen.getByTestId('hot-water-time')).toContainText('30s');
   expect(await covered('hot-water-time')).toBe(false);
-
-  // A flush covers the rows too.
-  gateway.waterFor('flush', 3, 6, 90);
-  await expect(page.getByTestId('water-view')).toHaveAttribute('data-kind', 'flush');
-  await expect.poll(() => covered('hot-water-time')).toBe(true);
-  await expect(screen.getByTestId('hot-water-stop')).toHaveCount(0);
-  gateway.waterEnded();
-  await expect(page.getByTestId('water-view')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 

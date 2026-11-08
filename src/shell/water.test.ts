@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import type { MachineSnapshot, MachineState, Workflow } from '../api';
-import { recordWaterFrame, ringOf, shownRun, waterDuration, waterKindOf, waterSeconds, waterValues, type WaterRun } from './water';
+import {
+  recordWaterFrame,
+  ringOf,
+  ringRun,
+  shownRun,
+  waterDuration,
+  waterKindOf,
+  waterSeconds,
+  waterValues,
+  type WaterRun,
+} from './water';
 
 function frame(state: MachineState, second: number, flow = 0, mixTemperature = 75): MachineSnapshot {
   return {
@@ -172,5 +182,22 @@ describe('the run a page draws as the ring', () => {
 
   it('is gone when the run has ended', () => {
     expect(shownRun({ ...hot, ended: true }, true)).toBeNull();
+  });
+});
+
+describe('the ring and the live volume', () => {
+  it('sums the flow over the frames into the ml poured so far', () => {
+    const run = record([frame('hotWater', 0, 4), frame('hotWater', 1, 4), frame('hotWater', 3, 6)])!;
+    expect(run.volume).toBeCloseTo(4 + 12);
+  });
+
+  it('draws no ring for hot water on the hot water page, and keeps it for a flush and the other pages', () => {
+    const hot = record([frame('hotWater', 0, 4)]);
+    const flush = record([frame('flush', 0, 4)]);
+    expect(ringRun(hot, 'hot-water')).toBeNull();
+    expect(ringRun(hot, 'home')).toBe(hot);
+    expect(ringRun(hot, 'steam')).toBe(hot);
+    expect(ringRun(flush, 'hot-water')).toBe(flush);
+    expect(ringRun(null, 'hot-water')).toBeNull();
   });
 });

@@ -44,11 +44,11 @@ test('a swipe moves along hot water, home and steam, and springs back at the end
   // To the right from right of the history's fifth: hot water, and back.
   await swipe(page, { x: 400, y: 500 }, { x: 900, y: 500 });
   await expect(shown(page, 'hot-water')).toBeVisible();
-  // On hot water between its sliders: a drag on one is the slider's.
-  await swipe(page, { x: 400, y: 400 }, { x: 900, y: 400 });
+  // On hot water the header is no control: a swipe there moves the page (a drag on a line is the line's).
+  await swipe(page, { x: 400, y: 48 }, { x: 900, y: 48 });
   await page.waitForTimeout(400);
   await expect(shown(page, 'hot-water')).toBeVisible();
-  await swipe(page, { x: 900, y: 400 }, { x: 400, y: 400 });
+  await swipe(page, { x: 900, y: 48 }, { x: 400, y: 48 });
   await expect(shown(page, 'home')).toBeVisible();
 
   // A short move springs back; a move down is not a swipe.
@@ -128,9 +128,11 @@ test('a drag on a control moves no page: a slider, the number pad', async ({ pag
   await page.waitForTimeout(400);
   await expect(shown(page, 'hot-water')).toBeVisible();
   await expect(page.locator('.page')).toHaveCount(1);
-  expect(Number(await page.getByTestId('hot-water-slider-time').inputValue())).toBeLessThan(30);
+  expect(Number(await page.getByTestId('hot-water-slider-time').getAttribute('aria-valuenow'))).toBeLessThan(30);
 
   // The number pad: a drag over its keys and over its backdrop.
+  // a tap lights the line, a second tap on its number opens the pad
+  await page.getByTestId('hot-water-temperature').tap();
   await page.getByTestId('hot-water-temperature').tap();
   const pad = (await page.getByTestId('numpad').boundingBox())!;
   await swipe(page, { x: pad.x + pad.width - 20, y: pad.y + pad.height / 2 }, { x: pad.x + 20, y: pad.y + pad.height / 2 });

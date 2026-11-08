@@ -24,6 +24,8 @@ export interface WaterRun {
   flow: number;
   /** °C, the latest frame's mix temperature */
   temperature: number;
+  /** ml poured so far: the flow summed over the frames' time (the live line of hot water without a scale) */
+  volume: number;
   /** the machine has left the state */
   ended: boolean;
 }
@@ -40,14 +42,23 @@ export function recordWaterFrame(run: WaterRun | null, frame: MachineSnapshot): 
   const flow = Math.max(0, frame.flow);
   const temperature = frame.mixTemperature;
   if (!run || run.ended || run.kind !== kind) {
-    return { kind, startedAt: at, at, flow, temperature, ended: false };
+    return { kind, startedAt: at, at, flow, temperature, volume: 0, ended: false };
   }
-  return { ...run, at: Math.max(at, run.at), flow, temperature };
+  const next = Math.max(at, run.at);
+  return { ...run, at: next, flow, temperature, volume: run.volume + (flow * (next - run.at)) / 1000 };
 }
 
 /** The run the shell draws as the ring: one that has not ended while the machine can be stopped; else null. */
 export function shownRun(run: WaterRun | null, canStop: boolean): WaterRun | null {
   return canStop && run && !run.ended ? run : null;
+}
+
+/**
+ * The ring of a run on the page that shows it: none for hot water on the hot water page, whose
+ * rows fill with the live values; a flush, and hot water seen from another page, keep it.
+ */
+export function ringRun(run: WaterRun | null, screen: string): WaterRun | null {
+  return run?.kind === 'hotWater' && screen === 'hot-water' ? null : run;
 }
 
 /** s from the run's first frame to its latest */

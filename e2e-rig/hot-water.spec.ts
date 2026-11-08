@@ -36,6 +36,8 @@ const hotWaterData = async () => (await api<RigWorkflow>('GET', '/api/v1/workflo
 
 /** Types a value on the number pad that a tap on `testid` opens. */
 async function type(page: Page, testid: string, value: string) {
+  // A tap lights the line, a second tap on its number opens the pad.
+  await page.getByTestId(testid).click();
   await page.getByTestId(testid).click();
   await expect(page.getByTestId('numpad')).toBeVisible();
   for (const key of value) await page.getByTestId(`numpad-key-${key === '.' ? 'dot' : key}`).click();
@@ -91,8 +93,11 @@ test('the hot water page writes hotWaterData, 1:2 of a 40 g shot is 80 g, Decaid
     await expect.poll(async () => (await hotWaterData()).volume).toBe(grams(2));
     await type(page, 'hot-water-temperature', '80');
     await type(page, 'hot-water-flow', '4');
-    // The time by its slider: written once when it is let go.
-    await page.getByTestId('hot-water-slider-time').fill('60');
+    // The time by its line's keys (Home, page up for ten, arrow for one): each key is written.
+    await page.getByTestId('hot-water-slider-time').focus();
+    await page.keyboard.press('Home');
+    for (let i = 0; i < 5; i += 1) await page.keyboard.press('PageUp');
+    for (let i = 0; i < 5; i += 1) await page.keyboard.press('ArrowRight');
     await expect(page.getByTestId('hot-water-time')).toContainText('60s');
     await expect.poll(hotWaterData).toEqual({ targetTemperature: 80, duration: 60, volume: grams(2), flow: 4 });
     await expect(page.getByTestId('hot-water-weight')).toContainText(`${grams(2)}g`);
@@ -103,18 +108,11 @@ test('the hot water page writes hotWaterData, 1:2 of a 40 g shot is 80 g, Decaid
     await api('PUT', '/api/v1/machine/state/hotWater');
     await expect.poll(machineState, { timeout: 10_000, intervals: [200] }).toBe('hotWater');
     const started = Date.now();
-    // While it pours the ring covers the rows: a finger on them reaches the ring.
-    await expect(page.getByTestId('water-view')).toHaveAttribute('data-kind', 'hotWater', { timeout: 5_000 });
-    await expect
-      .poll(() =>
-        page.evaluate(() => {
-          const box = document.querySelector('[data-testid="hot-water-time"]')!.getBoundingClientRect();
-          return !!document
-            .elementFromPoint(box.left + box.width / 2, box.top + box.height / 2)
-            ?.closest('[data-testid="water-cover"]');
-        }),
-      )
-      .toBe(true);
+    // While it pours there is no ring on this page: the time and weight lines fill with the live values, and the column's stop is there.
+    await expect(page.getByTestId('hot-water-time-live')).toHaveText(/^\d+ s$/, { timeout: 5_000 });
+    await expect(page.getByTestId('hot-water-weight-live')).toHaveText(/^-?\d+\.\d g$/);
+    await expect(page.getByTestId('water-view')).toHaveCount(0);
+    await expect(page.getByTestId('hot-water-stop')).toBeVisible();
     // The page's header says what home's says: Hot water, then Idle or Heating.
     const title = page.getByTestId('screen-hot-water').getByTestId('status');
     await expect(title).toHaveAttribute('data-state', 'Hot water');
@@ -126,7 +124,7 @@ test('the hot water page writes hotWaterData, 1:2 of a 40 g shot is 80 g, Decaid
     expect(weighed).toBeGreaterThan(grams(2) - 5);
     expect(weighed).toBeLessThan(grams(2) + 5);
     console.log(`hot water stopped after ${seconds.toFixed(1)} s at ${weighed} g`);
-    await expect(page.getByTestId('water-view')).toHaveCount(0);
+    await expect(page.getByTestId('hot-water-time-live')).toHaveCount(0);
     await expect(title).toHaveAttribute('data-state', IDLE);
     await expect(page.getByTestId('hot-water-time')).toContainText('60s');
 

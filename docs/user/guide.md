@@ -32,7 +32,7 @@ It feels less natural there, but it works.
 
 ![The shot history over home](img/history.png)
 
-A swipe does not start on a slider or the editor's graph. In the profile picker a swipe to the
+A swipe does not start on a line of the hot water page or the editor's graph. In the profile picker a swipe to the
 right on a row goes back too, unless the row is open: then it closes the row.
 
 ## Home is also the shot screen
@@ -125,12 +125,21 @@ take them off. A timer shorter than the time already steamed ends the steam.
 ## The ring
 
 While hot water or a flush runs, a large ring covers the screen's main area, on every screen.
-It shows the time and has the **stop** button. The rest of the screen stays.
+It shows the time and has the **stop** button. The rest of the screen stays. The hot water page has
+no ring for hot water: its lines show the run (see below), and its **stop** button is in the column.
 
 ## Hot water
 
 Hot water is started at the machine. With a scale it stops at the weight; without one at the
-volume or the time. The ratio buttons set the weight from the last shot, for example 1:2; without a weighed last shot (none, or 0 g) they are grayed out and do nothing.
+volume or the time.
+
+Each value is a thin line with its number above it. Tap a line to light it, and drag sideways to change
+the value from where it is: the first centimetres of a drag are fine, then it gets faster. A second tap on the
+number of the lit line opens the number pad; a tap anywhere else puts the line out. While hot water runs,
+the time and weight lines fill with the live values: a brighter line grows over the set one, with the
+seconds, and the grams on the scale (the millilitres so far without one), under its end.
+
+The ratio buttons set the weight from the last shot, for example 1:2; without a weighed last shot (none, or 0 g) they are grayed out and do nothing.
 
 ## Cleaning with detergent
 

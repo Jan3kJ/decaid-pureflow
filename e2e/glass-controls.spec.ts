@@ -70,6 +70,8 @@ test('chips, a dialog and the pad are glass: no fill at rest, a selected ratio c
   for (const chip of await chips.all()) expect(await fill(chip)).toEqual({ image: 'none', colour: NONE });
   await page.screenshot({ path: 'e2e/.results/glass-controls-chips.png' });
 
+  // a tap lights the line, a second tap on its number opens the pad
+  await page.getByTestId('hot-water-weight').click();
   await page.getByTestId('hot-water-weight').click();
   await expect(page.getByTestId('numpad')).toBeVisible();
   for (const key of ['7', '0', 'dot'])

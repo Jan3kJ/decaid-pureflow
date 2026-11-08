@@ -184,8 +184,10 @@ test('hot water: the ring over the step editor, its page and steam, gone when it
 
   await back(page);
   await toPage(page, 'hot-water');
-  await expectRing(page, 'hotWater', '3 / 30 s');
-  await page.screenshot({ path: 'docs/product/hot-water-pouring.png' });
+  // Not on its own page: the lines show the run (e2e/hot-water-live.spec.ts).
+  await expect(page.getByTestId('screen-hot-water')).toBeVisible();
+  await expect(page.getByTestId('water-view')).toHaveCount(0);
+  await expect(page.getByTestId('hot-water-slider-time-live')).toHaveCount(1);
 
   await back(page);
   await toPage(page, 'steam');
@@ -257,8 +259,8 @@ test('hot water: the target under the values, in g with a scale and in ml withou
     fits: true,
   });
 
-  // Over another screen's frame too: the hot water page.
-  await toPage(page, 'hot-water');
+  // Over another screen's frame too: the steam page.
+  await toPage(page, 'steam');
   await expectRing(page, 'hotWater', '4 / 30 s');
   await expect(page.getByTestId('water-target')).toHaveText('target 50 ml');
   expect((await stopLines(page)).fits).toBe(true);
@@ -328,6 +330,8 @@ const MATRIX = ['home', 'steam', 'hot-water', 'profiles', 'editor-aflow', 'edito
 
 for (const kind of ['hotWater', 'flush'] as const) {
   for (const where of MATRIX) {
+    // Hot water on its own page has no ring: its lines fill instead (e2e/hot-water-live.spec.ts).
+    if (kind === 'hotWater' && where === 'hot-water') continue;
     test(`rings everywhere: ${kind === 'flush' ? 'flush' : 'hot water'} on ${where}`, async ({ page }) => {
       const gateway = (await mockGateway(page)).withDefaults('dark');
       if (where === 'editor-steps') gateway.workflow.profile = profile('Steps', 36, 3);

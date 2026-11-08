@@ -110,6 +110,8 @@
   --scrim: rgb(0 0 0 / 55%);
   /* behind the menu: the page still readable */
   --scrim-light: rgb(0 0 0 / 35%);
+  /* behind its own element: the halo of a lit number */
+  --layer-under: -1;
   /* Layers, lowest first: which overlay wins. A page sliding in during a swipe. */
   --layer-cover: 9;
   /* a dialog and its backdrop, the swipe's handle and the page dots */
@@ -485,4 +487,40 @@ body {
 /* Portrait by the stored size (src/viewport.ts), not by a viewport the keyboard shrank. */
 :root[data-portrait] {
   font-size: calc(min(calc(var(--app-w) * 0.02), calc(var(--app-h) * 0.0125)) * var(--display-size, 1));
+}
+
+/*
+ * The look of a line slider (LineSlider.svelte) in its quantity's colour, set as data-tone: the
+ * line bright from the start to the value and faint after it, the lit line's glow, the live line
+ * over it and the halo behind a lit number. Written here because only this file writes colours.
+ */
+.slider-tone {
+  --tone: var(--fg);
+  --tone-rgb: var(--fg-rgb);
+  --line-rest: linear-gradient(90deg, rgb(var(--tone-rgb) / 22%), rgb(255 255 255 / 9%) 30%);
+  --line-fill: linear-gradient(90deg, rgb(var(--tone-rgb) / 15%), var(--tone));
+  --halo: radial-gradient(closest-side, rgb(var(--tone-rgb) / 24%), transparent);
+  --shadow-line: 0 0 0.6rem rgb(var(--tone-rgb) / 90%), 0 0 1.6rem rgb(var(--tone-rgb) / 45%);
+  --shadow-live: 0 0 0.9rem rgb(var(--tone-rgb) / 90%), 0 0 0.25rem var(--fg);
+  --shadow-glow-number: 0 0 0.8rem rgb(var(--tone-rgb) / 80%), 0 0 2.4rem rgb(var(--tone-rgb) / 50%);
+}
+
+.slider-tone[data-tone='temperature'] {
+  --tone: var(--temperature);
+  --tone-rgb: var(--temperature-rgb);
+}
+
+.slider-tone[data-tone='flow'] {
+  --tone: var(--flow);
+  --tone-rgb: var(--flow-rgb);
+}
+
+.slider-tone[data-tone='time'] {
+  --tone: var(--time);
+  --tone-rgb: var(--time-rgb);
+}
+
+.slider-tone[data-tone='weight'] {
+  --tone: var(--weight);
+  --tone-rgb: var(--weight-rgb);
 }

@@ -20,6 +20,8 @@
     children?: Snippet;
     /** the caption on the number's baseline and the number in the font's own line height (hot water) */
     baseline?: boolean;
+    /** as thin as the stop's edge: --control rather than --control-big (hot water's scale) */
+    thin?: boolean;
   }
 
   let {
@@ -33,6 +35,7 @@
     buttonTestid,
     children,
     baseline = false,
+    thin = false,
   }: Props = $props();
 </script>
 
@@ -44,7 +47,7 @@
 {/snippet}
 
 {#if onclick}
-  <button class="line" class:baseline data-testid={buttonTestid} {disabled} {onclick}>{@render line()}</button>
+  <button class="line" class:baseline class:thin data-testid={buttonTestid} {disabled} {onclick}>{@render line()}</button>
 {:else}
   <div class="line" class:baseline>{@render line()}</div>
 {/if}
@@ -68,6 +71,10 @@
     background: none;
     border-color: var(--edge);
     border-radius: var(--radius);
+  }
+
+  button.line.thin {
+    min-height: var(--control);
   }
 
   /* the numbers and units share a baseline; the caption is centred against the number */
