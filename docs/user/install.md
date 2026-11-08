@@ -5,7 +5,7 @@ app for the DE1 espresso machine. It replaces Decaid's default skin, Streamline.
 and Decaid on an Android tablet. A scale is optional, but the steam timer and the stop at weight
 need one.
 
-Checked against pureflow 0.6.1.
+Checked against pureflow 0.11.0.
 
 ## Install the ZIP
 
@@ -62,10 +62,11 @@ A release from before the fixed names (0.9.0 and older) is installed from its ow
 
 Decaid lists the skin as **pureflow** with its version. The skin opens on home:
 
-![Home after the install: the state line at the top, the graph, and the profile and bean on the right](img/home-idle.png)
+![Home after the install: the header with the readings, the graph, and the profile and bean on the right](img/home-idle.png)
 
-- The top line is the machine's state: `Idle`, the group and steam temperature, the water in
-  the tank and the scale's weight.
+- The top line shows the group and steam temperature, the water in the tank and the scale's
+  weight; the menu is the icon at the top right. The top left corner stays empty while all is
+  well; it names only a sleeping machine, a switched-off steam heater or a fault.
 - On the right are the profile and the bean for the next shot, then the shot's time and weight.
 - The three dots at the bottom are the three pages: hot water, home and steam. The
   [guide](guide.md) explains them.

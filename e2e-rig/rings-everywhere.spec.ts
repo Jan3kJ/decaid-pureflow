@@ -58,6 +58,14 @@ test('hot water on settings, the picker and its page, flush on beans: the large 
     for (const screen of ['settings', 'profiles', 'hot-water']) {
       await open(page, screen);
       await api('PUT', '/api/v1/machine/state/hotWater');
+      if (screen === 'hot-water') {
+        // Hot water's own page has no ring for hot water: its time line fills with the live value.
+        await expect(page.getByTestId('hot-water-time-live')).toHaveText(/^\d+ s$/, { timeout: 5_000 });
+        await expect(ring).toHaveCount(0);
+        await expect(page.getByTestId('hot-water-time-live')).toHaveCount(0, { timeout: 30_000 });
+        await expect.poll(machineState, { timeout: 15_000 }).toBe('idle');
+        continue;
+      }
       await expect(ring).toHaveAttribute('data-kind', 'hotWater');
       await expect(page.getByTestId('water-label')).toHaveText('Hot water');
       await expect(page.getByTestId('water-time')).toHaveText(/^\d+ \/ \d+ s$/);

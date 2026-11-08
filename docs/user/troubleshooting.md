@@ -1,6 +1,6 @@
 # Troubleshooting
 
-Checked against pureflow 0.6.1. For the DE1 itself, see
+Checked against pureflow 0.11.0. For the DE1 itself, see
 [Decent's documentation](https://decentespresso.com/docs).
 
 ## The connection

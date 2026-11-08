@@ -4,7 +4,7 @@ Only what is the skin's own and not obvious. For the DE1 itself and Decaid's set
 [Decent's documentation](https://decentespresso.com/docs) and
 [Decaid](https://github.com/decentespresso/decaid).
 
-Checked against pureflow 0.6.1.
+Checked against pureflow 0.11.0.
 
 ## Pages, the corner menu and the swipe back
 
@@ -169,7 +169,7 @@ table:
 4. From 1000 ml **done** saves the table; going on to the full tank is not needed. **start
    again** drops the steps; leaving the page keeps the table saved before.
 
-**using** says which table is in force; **back to decent's table** removes yours. The state line,
+**using** says which table is in force; **back to decent's table** removes yours. The header,
 the water alert's note and the clean's check of 350 ml then follow your table. The machine still
 works in mm: the water alert and its refill warning do not change. The sensor reads to about a mm,
 which is about 30 ml, so expect no better than that. The table belongs to this tank: it is not in
@@ -199,7 +199,7 @@ setting right there, or tap the name over it to go to its place.
 - **Backup and version**: the backup in Decaid and the skin's version.
 
 One of the skin's settings sits with the machine's: **tank unit**, under **1. Quick
-Adjustments > Water Tank**, shows the tank on the state line in ml or in mm.
+Adjustments > Water Tank**, shows the tank in the header in ml or in mm.
 
 The two sleep entries of the menu differ: **Machine sleep** puts only the DE1 to sleep;
 **Machine and app sleep** also turns the skin dark, with 'touch to wake'. A touch on it wakes
