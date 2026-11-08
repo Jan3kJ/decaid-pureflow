@@ -28,6 +28,8 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
 <style>
   .cycle {
     --tone: var(--fg);
+    --tone-rgb: var(--fg-rgb);
+    --glow-rgb: var(--tone-rgb);
     min-height: var(--control-big);
     min-width: 0;
     padding: 0.3rem 0.8rem;
@@ -36,20 +38,23 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     align-items: flex-start;
     justify-content: center;
     gap: var(--space-1);
-    background: var(--raised);
-    border: 1px solid var(--line);
+    background: none;
+    border: 1px solid var(--edge);
     border-radius: var(--radius);
     white-space: nowrap;
   }
 
   .cycle.flow {
     --tone: var(--flow);
+    --tone-rgb: var(--flow-rgb);
   }
   .cycle.pressure {
     --tone: var(--pressure);
+    --tone-rgb: var(--pressure-rgb);
   }
   .cycle.temperature {
     --tone: var(--temperature);
+    --tone-rgb: var(--temperature-rgb);
   }
 
   .label {
@@ -59,11 +64,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
 
   .value {
     font-size: var(--text-body);
-    font-weight: 600;
+    font-weight: 300;
     color: var(--tone);
-  }
-
-  .cycle:active {
-    background: var(--line);
   }
 </style>

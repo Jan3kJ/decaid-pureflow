@@ -94,7 +94,15 @@
 
 <svelte:window onpointerdown={outside} />
 
-<div class="value-chip {tone}" class:compact class:open class:dragging bind:this={root} data-testid="chip-{testid}">
+<div
+  class="value-chip {tone}"
+  class:compact
+  class:open
+  class:dragging
+  class:glow={compact && (dragging || open)}
+  bind:this={root}
+  data-testid="chip-{testid}"
+>
   {#if !compact || open}
     <button
       type="button"
@@ -151,10 +159,12 @@
 <style>
   .value-chip {
     --tone: var(--fg);
+    --tone-rgb: var(--fg-rgb);
+    --glow-rgb: var(--tone-rgb);
     display: flex;
     align-items: stretch;
     background: var(--panel);
-    border: 1px solid var(--line);
+    border: 1px solid var(--edge);
     border-radius: var(--radius);
     overflow: hidden;
     touch-action: none;
@@ -163,12 +173,15 @@
 
   .value-chip.flow {
     --tone: var(--flow);
+    --tone-rgb: var(--flow-rgb);
   }
   .value-chip.pressure {
     --tone: var(--pressure);
+    --tone-rgb: var(--pressure-rgb);
   }
   .value-chip.temperature {
     --tone: var(--temperature);
+    --tone-rgb: var(--temperature-rgb);
   }
 
   .body {
@@ -193,7 +206,7 @@
 
   .value {
     font-size: var(--text-value);
-    font-weight: 600;
+    font-weight: 300;
     color: var(--tone);
     font-variant-numeric: tabular-nums;
   }
@@ -202,7 +215,7 @@
     width: 4rem;
     min-width: 3rem;
     min-height: var(--control-big);
-    background: var(--raised);
+    background: none;
     border: 0;
     color: var(--fg);
     font: inherit;
@@ -214,9 +227,10 @@
     background: var(--line);
   }
 
+  /* a chip on the graph is a glass line; dragged or opened it glows in its quantity's colour */
   .compact {
     border-radius: var(--radius-graph);
-    background: var(--raised);
+    background: none;
   }
 
   .compact .body {
@@ -233,13 +247,5 @@
   .compact .step {
     width: 3.5rem;
     min-height: var(--control-big);
-  }
-
-  .compact.dragging {
-    border-color: var(--fg);
-  }
-
-  .compact.open {
-    box-shadow: var(--shadow-lifted);
   }
 </style>

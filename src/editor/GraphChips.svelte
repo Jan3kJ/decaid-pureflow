@@ -114,8 +114,8 @@
     gap: var(--space-1);
     min-height: var(--control);
     padding: 0 0.9rem;
-    background: var(--panel);
-    border: 1px dashed var(--dim);
+    background: none;
+    border: 1px dashed var(--edge-hi);
     border-radius: var(--radius-graph);
     color: var(--dim);
     font: inherit;

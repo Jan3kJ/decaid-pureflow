@@ -70,8 +70,8 @@
     font: inherit;
     font-size: var(--text-value);
     color: var(--fg);
-    background: var(--bg);
-    border: 1px solid var(--line);
+    background: none;
+    border: 1px solid var(--edge);
     border-radius: var(--radius);
     outline: none;
   }

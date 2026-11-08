@@ -147,8 +147,8 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     font: inherit;
     font-size: var(--text-body);
     color: var(--fg);
-    background: var(--raised);
-    border: 1px solid var(--line);
+    background: none;
+    border: 1px solid var(--edge);
     border-radius: var(--radius-inner);
   }
 

@@ -16,7 +16,7 @@
 </script>
 
 <footer>
-  <button class="toggle" aria-pressed={secondFill} data-testid="toggle-second-fill" onclick={onsecondfill}>
+  <button class="toggle select-outline" aria-pressed={secondFill} data-testid="toggle-second-fill" onclick={onsecondfill}>
     <span class="lamp"></span>2nd fill
   </button>
   <button class="toggle" data-testid="toggle-flow" aria-label="flow direction" onclick={onflow}>
@@ -28,7 +28,7 @@
     <span class="temperature">temperature °C</span>
   </div>
   {#if showSteps}
-    <button class="toggle setting" aria-pressed={stepsOpen} data-testid="toggle-steps" onclick={onsteps}>
+    <button class="toggle setting select-outline" aria-pressed={stepsOpen} data-testid="toggle-steps" onclick={onsteps}>
       <span class="lamp"></span>profile steps
     </button>
   {/if}
@@ -43,11 +43,12 @@
   }
 
   button {
-    border: 1px solid var(--line);
-    background: var(--panel);
+    border: 1px solid var(--edge);
+    background: none;
   }
 
   .toggle {
+    --glow-rgb: var(--flow-rgb);
     min-height: var(--control);
     min-width: 9rem;
     padding: 0 var(--space-3);
@@ -65,10 +66,6 @@
     height: 0.8rem;
     border-radius: var(--radius-round);
     border: 2px solid var(--dim);
-  }
-
-  .toggle[aria-pressed='true'] {
-    border-color: var(--flow);
   }
 
   .toggle[aria-pressed='true'] .lamp {
@@ -92,10 +89,6 @@
     margin-left: auto;
     min-width: 0;
     color: var(--dim);
-  }
-
-  .setting[aria-pressed='true'] {
-    border-color: var(--line);
   }
 
   .setting[aria-pressed='true'] .lamp {

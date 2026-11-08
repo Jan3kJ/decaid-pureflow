@@ -59,7 +59,13 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
 </script>
 
 {#if open}
-  <article class="card open" class:warn={problems.length > 0} data-testid="step-card-{index}" data-open="true">
+  <article
+    class="card open"
+    class:glow={problems.length === 0}
+    class:warn={problems.length > 0}
+    data-testid="step-card-{index}"
+    data-open="true"
+  >
     <header>
       <span class="number">{index + 1}</span>
       <input
@@ -288,7 +294,6 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
-    border-color: var(--fg);
     overflow-y: auto;
   }
 
@@ -311,8 +316,8 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     font-size: var(--text-body);
     font-weight: 600;
     color: var(--fg);
-    background: var(--raised);
-    border: 1px solid var(--line);
+    background: none;
+    border: 1px solid var(--edge);
     border-radius: var(--radius-inner);
   }
 
@@ -357,8 +362,8 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
 
   .act {
     min-height: var(--control);
-    background: var(--raised);
-    border: 1px solid var(--line);
+    background: none;
+    border: 1px solid var(--edge);
     border-radius: var(--radius-inner);
   }
 

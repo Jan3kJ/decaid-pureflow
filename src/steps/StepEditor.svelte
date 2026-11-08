@@ -401,8 +401,8 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   }
 
   button {
-    border: 1px solid var(--line);
-    background: var(--panel);
+    border: 1px solid var(--edge);
+    background: none;
   }
 
   .anchor {
@@ -448,10 +448,6 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     margin-top: var(--space-3);
     display: flex;
     gap: var(--space-2);
-  }
-
-  .actions button:not(.danger) {
-    background: var(--raised);
   }
 
   .actions button {
