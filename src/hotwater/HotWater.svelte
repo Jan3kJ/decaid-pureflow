@@ -207,7 +207,11 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
-    padding: var(--space-2) var(--space-4);
+    /* the frame of home's graph (.plot in ShotView.svelte); the padding keeps the lines clear of the rounded corners */
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--panel);
+    padding: var(--space-3) var(--space-4);
   }
 
   small {
