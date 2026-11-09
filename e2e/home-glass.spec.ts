@@ -2,12 +2,12 @@ import { expect, test } from '@playwright/test';
 import { mockGateway } from './mock-gateway';
 
 // Home in glass: the cards and the picker's rows are glass, the right column's live numbers are
-// thin with a glow in their colour, the captions are small capitals, and the ring's arc glows in
+// thin with a glow in their colour, the captions are lower case, and the ring's arc glows in
 // the flow's blue. It writes test-results/home-glass-*.png for the commit.
 
 test.use({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 2 });
 
-test('home: glass cards, thin lit numbers, small-capital captions, the ring glows; the picker is glass', async ({ page }) => {
+test('home: glass cards, thin lit numbers, lower case captions, the ring glows; the picker is glass', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
   await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
@@ -29,7 +29,7 @@ test('home: glass cards, thin lit numbers, small-capital captions, the ring glow
     expect(number.shadow, id).not.toBe('none');
   }
   for (const id of ['shot-timer-label', 'shot-weight-label']) {
-    await expect(page.getByTestId(id)).toHaveCSS('text-transform', 'uppercase');
+    await expect(page.getByTestId(id)).toHaveCSS('text-transform', 'none');
   }
   await page.screenshot({ path: 'test-results/home-glass-idle.png' });
 

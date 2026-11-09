@@ -37,8 +37,9 @@
   {#snippet header()}
     <PageHeader {skin} heat="steam" title="Steam">
       {#snippet beside()}
-        <!-- Only after the steam: while it runs 'steam left' is the one clock. -->
-        {#if skin.steam?.ended}
+        <!-- Only after the steam and with the heater on: while it runs 'steam left' is the one clock, and with
+             the heater off the button takes its place. -->
+        {#if skin.steam?.ended && skin.steamHeater !== 'off'}
           <span class="run" data-testid="steam-state">
             last steam
             <b data-testid="steam-elapsed">{steamSeconds(skin.steam).toFixed(0)} s</b>

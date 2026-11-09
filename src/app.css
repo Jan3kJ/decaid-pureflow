@@ -262,12 +262,10 @@ body {
   color: var(--dim);
 }
 
-/* A caption: small, upper case, spaced and dim, over or beside a value. */
+/* A caption: small, lower case and dim, over or beside a value; it looks as ValueLine's does. */
 .caption {
   font-size: var(--text-label);
   color: var(--dim);
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
 }
 
 /* The small grey line that explains a setting or a field. */
