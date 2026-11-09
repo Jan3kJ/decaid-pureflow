@@ -176,8 +176,9 @@ test('a curve draws in once when the graph opens, never on a live update', async
   await expect(page.getByTestId('shot-line-pressure')).toBeVisible();
   const line = page.getByTestId('shot-line-pressure');
   expect(await line.evaluate((element) => getComputedStyle(element).animationName)).toContain('draw-in');
-  // The glow is a second stroke under the curve, and has no test id of its own.
-  expect(await svg(page).locator('path.glow.pressure').count()).toBe(1);
+  // The glow is several strokes under the curve, none with a test id of its own.
+  expect(await svg(page).locator('path.glow.pressure').count()).toBeGreaterThan(1);
+  expect(await svg(page).locator('path.glow[data-testid]').count()).toBe(0);
   // The draw-in has run its 0.4 s; points added after it do not start it again.
   await page.waitForTimeout(700);
   expect(await drawIns(page)).toBe(0);
@@ -187,6 +188,30 @@ test('a curve draws in once when the graph opens, never on a live update', async
   await expect.poll(() => attribute(page, 'data-points')).toBeGreaterThan(points);
   expect(await drawIns(page)).toBe(0);
   expect(errors).toEqual([]);
+});
+
+test('the glow is soft: several strokes, the widest faint, none strong, none takes a touch', async ({ page }) => {
+  const gateway = await mockGateway(page);
+  await home(page);
+  await gateway.replay(page, 0, 0.5, { tail: 5 });
+  await expect(page.getByTestId('shot-line-pressure')).toBeVisible();
+  const strokes = await svg(page)
+    .locator('path.glow.pressure')
+    .evaluateAll((nodes) =>
+      nodes.map((node) => {
+        const css = getComputedStyle(node);
+        return { width: parseFloat(css.strokeWidth), opacity: parseFloat(css.opacity), events: css.pointerEvents };
+      }),
+    );
+  expect(strokes.length).toBeGreaterThan(1);
+  const widest = strokes.reduce((a, b) => (b.width > a.width ? b : a));
+  expect(widest.opacity).toBeLessThan(0.05);
+  for (const stroke of strokes) {
+    expect(stroke.opacity).toBeLessThanOrEqual(0.12);
+    expect(stroke.events).toBe('none');
+  }
+  // At the line the strokes add up to no more than a faint 0.12.
+  expect(1 - strokes.reduce((rest, stroke) => rest * (1 - stroke.opacity), 1)).toBeLessThanOrEqual(0.12);
 });
 
 test.describe('reduced motion', () => {
@@ -201,6 +226,7 @@ test.describe('reduced motion', () => {
     expect(
       await svg(page)
         .locator('path.glow.pressure')
+        .first()
         .evaluate((element) => getComputedStyle(element).animationName),
     ).toBe('none');
     expect(await drawIns(page)).toBe(0);

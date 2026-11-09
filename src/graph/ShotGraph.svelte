@@ -157,6 +157,9 @@
     return () => target.removeEventListener('click', listener);
   });
 
+  /** Widest and faintest first, so that the narrow ones lie over the wide. */
+  const glowSteps = ['outer', 'wide', 'mid', 'inner'];
+
   /** One path; a null starts a new stretch. */
   function path(values: readonly (number | null)[] | undefined, y: (value: number) => number): string {
     let d = '';
@@ -174,8 +177,11 @@
 </script>
 
 {#snippet curve(quantity: string, testid: string, d: string)}
-  <!-- The glow is a second, wider stroke at low opacity: it costs a stroke, a filter costs a pass over the plot. -->
-  <path class="glow {quantity}" pathLength="1" style:stroke="url(#{fadeId}-{quantity})" {d} />
+  <!-- The glow is four strokes, each wider and fainter than the one over it, so that no step shows: strokes
+       cost little, a blur filter costs a pass over the plot on every live update. -->
+  {#each glowSteps as step (step)}
+    <path class="glow {step} {quantity}" pathLength="1" style:stroke="url(#{fadeId}-{quantity})" {d} />
+  {/each}
   <path class="line {quantity}" pathLength="1" style:stroke="url(#{fadeId}-{quantity})" data-testid={testid} {d} />
 {/snippet}
 
@@ -352,12 +358,31 @@
     stroke-linecap: round;
   }
 
-  /* The glow: the line's path under it, wider and faint. It is no part of the drawn curve (no hit, no test id). */
+  /* The glow: the line's path under it, in four strokes that fade toward the outside; at the line they add up to
+     about 0.12. It is no part of the drawn curve (no hit, no test id). */
   .glow {
-    stroke-width: calc(0.7rem * var(--line-width, 1));
     stroke-linecap: round;
-    opacity: 0.16;
     pointer-events: none;
+  }
+
+  .glow.outer {
+    stroke-width: calc(1.2rem * var(--line-width, 1));
+    opacity: 0.02;
+  }
+
+  .glow.wide {
+    stroke-width: calc(0.8rem * var(--line-width, 1));
+    opacity: 0.03;
+  }
+
+  .glow.mid {
+    stroke-width: calc(0.5rem * var(--line-width, 1));
+    opacity: 0.03;
+  }
+
+  .glow.inner {
+    stroke-width: calc(0.3rem * var(--line-width, 1));
+    opacity: 0.04;
   }
 
   /* A curve draws in once, when the graph opens; a live update moves the path, the animation does not restart. */
