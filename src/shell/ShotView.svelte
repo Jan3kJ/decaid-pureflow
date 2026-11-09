@@ -97,35 +97,37 @@
     <NextShot {skin} off={running} />
     <!-- Each row: the caption on the left, the number and its unit on the right; the units have one
          width, so every number ends on one edge. -->
-    <div class="row big">
-      <small class="caption" data-testid="shot-timer-label">{finished ? 'time, finished' : 'time'}</small>
-      <b class="big-number" data-testid="shot-timer">{value(shown.seconds)}<i>s</i></b>
-    </div>
-    <div class="row big weight">
-      <small class="caption" data-testid="shot-weight-label"
-        ><span>weight</span>{#if target}<span data-testid="shot-stops-at">stops at {+target.toFixed(1)} g</span>{/if}</small
-      >
-      <b class="big-number" data-testid="shot-weight"
-        >{shown.kind === 'running' ? gramsOf(shown.weight, '') : shotWeightText(shown.weight)}<i>g</i></b
-      >
-    </div>
-    <dl>
-      <div class="row pressure">
-        <dt class="caption">pressure</dt>
-        <dd data-testid="shot-pressure">{value(snapshot?.pressure)}<i>bar</i></dd>
+    <div class="numbers">
+      <div class="row big">
+        <small class="caption" data-testid="shot-timer-label">{finished ? 'time, finished' : 'time'}</small>
+        <b class="big-number" data-testid="shot-timer">{value(shown.seconds)}<i>s</i></b>
       </div>
-      <div class="row flow">
-        <dt class="caption">flow</dt>
-        <dd data-testid="shot-flow">{value(snapshot?.flow)}<i>ml/s</i></dd>
+      <div class="row big weight">
+        <small class="caption" data-testid="shot-weight-label"
+          ><span>weight</span>{#if target}<span data-testid="shot-stops-at">stops at {+target.toFixed(1)} g</span>{/if}</small
+        >
+        <b class="big-number" data-testid="shot-weight"
+          >{shown.kind === 'running' ? gramsOf(shown.weight, '') : shotWeightText(shown.weight)}<i>g</i></b
+        >
       </div>
-      <div class="row temperature">
-        <dt class="caption">temperature</dt>
-        <dd data-testid="shot-temperature">{value(snapshot?.groupTemperature)}<i>°C</i></dd>
-      </div>
-    </dl>
-    <!-- Why the finished shot stopped, as Decaid's sequencer said it (stop-reason.ts), under the last
+      <dl>
+        <div class="row pressure">
+          <dt class="caption">pressure</dt>
+          <dd data-testid="shot-pressure">{value(snapshot?.pressure)}<i>bar</i></dd>
+        </div>
+        <div class="row flow">
+          <dt class="caption">flow</dt>
+          <dd data-testid="shot-flow">{value(snapshot?.flow)}<i>ml/s</i></dd>
+        </div>
+        <div class="row temperature">
+          <dt class="caption">temperature</dt>
+          <dd data-testid="shot-temperature">{value(snapshot?.groupTemperature)}<i>°C</i></dd>
+        </div>
+      </dl>
+      <!-- Why the finished shot stopped, as Decaid's sequencer said it (stop-reason.ts), under the last
          of the values. The line keeps its height when empty, so nothing under it moves when a shot starts. -->
-    <p class="hint stop-reason" data-testid="stop-reason">{finished ? (skin.stopLine ?? '') : ''}</p>
+      <p class="hint stop-reason" data-testid="stop-reason">{finished ? (skin.stopLine ?? '') : ''}</p>
+    </div>
     {#if skin.notice}
       <p class="notice" data-testid="notice">{skin.notice}</p>
     {:else if skin.info}
@@ -231,8 +233,16 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
-    /* the column has one row less than the page: the smaller gap is what keeps the stop button in view at the largest display size */
-    gap: var(--space-1);
+    /* the steam page's gap */
+    gap: var(--space-3);
+  }
+
+  /* the five rows and the stop line, as far apart as steam's */
+  .numbers,
+  dl {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
   }
 
   /* The caption, its two lines as one block, is centred on the row's middle: the row keeps the
@@ -251,6 +261,7 @@
 
   small span {
     display: block;
+    white-space: nowrap;
   }
 
   /* the unit column: one width in every row, the unit at its left */
@@ -267,6 +278,11 @@
 
   .big b {
     flex: none;
+  }
+
+  /* a step under steam's: the weight's caption and a target of 120.5 g share the row with the number, and the stop stays whole in view at the largest display size */
+  .big-number {
+    font-size: var(--text-large);
   }
 
   /* the live numbers: thin, with a faint glow in their colour */
@@ -286,9 +302,6 @@
 
   dl {
     margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
   }
 
   dd {
