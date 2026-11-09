@@ -4,6 +4,42 @@ What changed in each version of pureflow, newest first. From 0.7.0 on a section 
 the release script (`npm run release`) from the commits' `Changelog:` lines; the sections up to
 0.6.1 summarise the hand-over builds that came before it.
 
+## 0.12.0 - 2026-11-09
+
+### Changed
+
+- On home the title 'Home' stands at the right end, on the same right edge as hot water and steam. (Z98)
+- The camera has two arrow buttons, turn left and turn right, each turning the view a quarter. (Z99)
+- Clean with detergent says 1 teaspoon and to empty the drip tray first, and the steps stand evenly apart with a line between them. (Z100)
+- Home keeps your last shot during the clean with detergent; the cleaning run is not drawn there as a shot. (Z103)
+- The slow start of a line drag is shorter: fine for the first 5 % of the plot's height, back to the full pace at 20 %. (Z116)
+- The skin's look turns to dark glass: a near-black background with two faint lights, glass panels, brighter quantity colours, thin read numbers. (Z104)
+- Buttons, chips and pad keys are glass lines that light when pressed or selected; the stop is a red outline with a slowly pulsing glow. (Z105)
+- The header is one glass line on home, steam and hot water: the menu is a bare icon top right with the page's title beside it, the readings are centred over the main frame, and the state is a light behind the header instead of a word. (Z106)
+- Hot water's values are thin lines with the number above: tap to light one, drag sideways to change it from where it was, tap its number again to type; while hot water runs the time and weight lines fill with the live values and there is no ring on this page. (Z107)
+- Hot water's four lines sit in a glass frame like the graph on home: the same thin border, rounded corners and glass, with the lines and their numbers clear of the edge. (Z117)
+- The scale row looks the same on steam and hot water: a thin 3 rem line with its caption centred against the number, and the 'last shot' caption on hot water is centred too. (Z118)
+- Graphs are drawn as light: each measured curve glows softly in its colour and fades toward its start, the profile's dashed targets are thinner and have no glow, the grid is a faint trace, the axis labels are small and dim, and a curve draws in once when a page opens (not with reduced motion, never on a live update). (Z109)
+- Steam is in glass: the timer is a thin number in the time colour with a soft glow, its caption small capitals, the timer and adjust chips are round edge-only glass chips that light when selected, and mug and milk are plain lines without boxes. (Z111)
+- Home is in glass: the shot's live numbers are thin with a faint glow in their colour, captions are small capitals, the profile and bean cards light when pressed, the ring's arc is flow blue with a soft glow, and the profile picker's rows and panels are glass with the faint edge. (Z110)
+- The profile editor is in glass: cards, fields and buttons are glass lines without fills, the open step card has the glowing edge, and a chip on the graph or a cycle chip glows in its quantity's colour while dragged, opened or pressed. (Z112)
+- History, beans and the date picker are in glass: a list is rows on one glass panel with faint separators and the chosen row has the glowing edge, fields are a bottom line that glows in the text colour while typed in, and buttons are glass lines without fills. (Z113)
+- Settings is in glass: the category column is text on a glass panel and the chosen category glows, rows and sections have faint edges, fields are a bottom line that glows while typed in, and value buttons, tiles and cards are glass lines without fills. (Z114)
+- The user guide and its pictures show the dark glass: the eight screenshots are taken again, and the pages name the header, the top left corner and the lines instead of the state line. (Z115)
+- Home's column keeps 'stops at' on one row and spaces its rows like the steam page. (Z120)
+- The menu, the shot history and the dialogs have a dense dark surface, and the page behind the menu is darker. (Z121)
+- The graphs' glow is dimmer and fades out softly, with no hard edge beside the line. (Z122)
+- The graphs name their units in the legend ('flow · ml/s') and draw no unit text over the axes. (Z123)
+
+### Fixed
+
+- The clean's low-water warning no longer blinks during the run. (Z101)
+- Clean with detergent flushes for 10 s whatever your flush time is, and gives your flush time back afterwards. (Z102)
+- Steam's header shows no last steam while the heater is off, and every caption is lower case. (Z119)
+- The camera overlay, turned a quarter, fills the screen with the video large and every button whole. (Z124)
+
+Checks: npm ci, npm run verify and npm run e2e passed; rig suite: not run.
+
 ## 0.11.0 - 2026-11-07
 
 ### Added
