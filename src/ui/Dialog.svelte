@@ -19,6 +19,8 @@
     maxHeight?: string;
     /** near the top of the screen, not in its middle: a field in it, the tablet's keyboard covers the lower half */
     top?: boolean;
+    /** the frame fills the viewport, with no corner, border or gap: the content lays itself out in it */
+    fill?: boolean;
     testid?: string;
     /** the scrim's test id */
     backdrop?: string;
@@ -33,6 +35,7 @@
     width = 'auto',
     maxHeight = '96%',
     top = false,
+    fill = false,
     testid,
     backdrop,
     oncancel,
@@ -61,9 +64,10 @@
     aria-modal="true"
     aria-label={label}
     aria-labelledby={labelledby}
+    class:fill
     data-testid={testid}
-    style:width
-    style:max-height={maxHeight}
+    style:width={fill ? '100vw' : width}
+    style:max-height={fill ? 'none' : maxHeight}
   >
     {@render children()}
   </div>
@@ -96,5 +100,13 @@
     border: 1px solid var(--edge);
     border-radius: var(--radius-dialog);
     box-shadow: var(--shadow-glass);
+  }
+
+  .dialog.fill {
+    position: relative;
+    height: 100vh;
+    overflow: hidden;
+    border: 0;
+    --radius-dialog: 0;
   }
 </style>

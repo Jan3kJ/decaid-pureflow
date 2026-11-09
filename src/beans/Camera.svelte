@@ -76,7 +76,7 @@
   }
 </script>
 
-<Dialog label="photo of the bag" width={sideways ? 'auto' : 'min(48rem, 92vw)'} testid="camera" backdrop="camera-backdrop" {oncancel}>
+<Dialog label="photo of the bag" width="min(48rem, 92vw)" fill={sideways} testid="camera" backdrop="camera-backdrop" {oncancel}>
   <div class="stage" class:sideways>
     <div class="pad" style:transform="rotate({angle}deg)" data-angle={angle} data-testid="camera-pad">
       <div class="head">
@@ -114,20 +114,16 @@
 </Dialog>
 
 <style>
-  /* Turned a quarter, the pad keeps its landscape box and lies in a stage of the swapped size. */
-  .stage.sideways {
-    position: relative;
-    width: min(30rem, 80vw);
-    height: min(44rem, 86vh);
-  }
-
+  /* Turned a quarter, the dialog fills the viewport and the pad, as wide as the viewport is high and
+     as high as it is wide, is turned about its centre: its turned box is the viewport. */
   .sideways .pad {
     position: absolute;
     left: 50%;
     top: 50%;
-    width: min(44rem, 86vh);
-    height: min(30rem, 80vw);
-    margin: calc(min(30rem, 80vw) / -2) 0 0 calc(min(44rem, 86vh) / -2);
+    box-sizing: border-box;
+    width: 100vh;
+    height: 100vw;
+    margin: -50vw 0 0 -50vh;
   }
 
   .sideways video {
