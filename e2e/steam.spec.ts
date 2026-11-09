@@ -287,7 +287,7 @@ test('a finished steam draws its flow in blue on the scale of pressure, ending w
   await expect(graph).toHaveAttribute('data-points', String(series.t.length));
   await expect(graph).toHaveAttribute('data-scale', '4');
   await expect(page.getByTestId('shot-tick-temperature')).toHaveText(['140', '170']);
-  await expect(page.getByTestId('shot-unit-main')).toHaveText('bar · ml/s');
+  await expect(page.getByTestId('shot-unit-main')).toHaveCount(0);
   const flow = page.getByTestId('shot-line-flow');
   // The curve is stroked with a gradient that ends in it.
   await expect(flow).toHaveCSS('stroke', /^url\(.*-flow.*\)$/);
@@ -311,7 +311,7 @@ test('a finished steam draws its flow in blue on the scale of pressure, ending w
   expect(flowPoints.at(-1)!.y).toBeGreaterThan(peak + (base - peak) / 2);
 
   // The legend (on by default) names the three curves.
-  await expect(page.getByTestId('shot-legend').locator('li')).toHaveText(['flow', 'pressure', 'temperature']);
+  await expect(page.getByTestId('shot-legend').locator('li')).toHaveText(['flow · ml/s', 'pressure · bar', 'temperature · °C']);
   await page.screenshot({ path: 'docs/product/steam-flow.png' });
 
   // With the setting off there is none; the curves stay.

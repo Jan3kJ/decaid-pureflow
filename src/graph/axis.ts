@@ -83,23 +83,19 @@ export function inBand(value: number, band: TemperatureBand): number {
   return Math.min(band.max, Math.max(band.min, value));
 }
 
-/** A unit over the main band, in its quantity's colour (`quantity` is the CSS class). */
-export interface GraphUnit {
-  label: string;
-  quantity: 'pressure' | 'flow' | 'weight';
-}
+/** The graph's quantities, each with its CSS class. */
+export type Quantity = 'pressure' | 'flow' | 'temperature' | 'weight';
 
-/** The units of the curves that are drawn, in their order over the main band. */
-export function graphUnits(shown: { pressure: boolean; flow: boolean; weightFlow: boolean }): GraphUnit[] {
-  const units: GraphUnit[] = [];
-  if (shown.pressure) units.push({ label: 'bar', quantity: 'pressure' });
-  if (shown.flow) units.push({ label: 'ml/s', quantity: 'flow' });
-  if (shown.weightFlow) units.push({ label: 'g/s', quantity: 'weight' });
-  return units;
-}
+/** The unit of each quantity: the one place the graph names a unit (its legend). */
+export const QUANTITY_UNITS: Record<Quantity, string> = {
+  flow: 'ml/s',
+  pressure: 'bar',
+  temperature: '°C',
+  weight: 'g/s',
+};
 
-/** What stands between two units of the unit line. */
+/** What stands between a legend entry's name and its unit. */
 export const UNIT_SEPARATOR = ' · ';
 
-/** The unit line as it reads: a dot between every two units, none for one. */
-export const unitLine = (units: readonly GraphUnit[]) => units.map((unit) => unit.label).join(UNIT_SEPARATOR);
+/** A legend entry as it reads: the name, a dot, the unit. */
+export const legendLabel = (name: string, quantity: Quantity) => `${name}${UNIT_SEPARATOR}${QUANTITY_UNITS[quantity]}`;

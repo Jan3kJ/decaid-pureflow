@@ -194,7 +194,7 @@ test('tapping an entry closes the overlay, restores profile, bean and grinder se
   for (const line of ['pressure', 'flow', 'weight-flow', 'temperature']) {
     expect((await graph.getByTestId(`shot-line-${line}`).getAttribute('d'))!.length).toBeGreaterThan(100);
   }
-  await expect(graph.getByTestId('shot-unit-main')).toHaveText('bar · ml/s · g/s');
+  await expect(graph.getByTestId('shot-unit-main')).toHaveCount(0);
   // The same colours as the editor and the live graph.
   const colours = await page.evaluate(() => {
     const style = getComputedStyle(document.documentElement);

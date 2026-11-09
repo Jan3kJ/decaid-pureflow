@@ -251,7 +251,7 @@ test('a shot started at the machine: home shows it by itself with a live graph a
   }
   // The graph draws the weight flow in g/s, the screen keeps the weight in g.
   await expect(page.getByTestId('shot-line-weight')).toHaveCount(0);
-  await expect(page.getByTestId('shot-unit-weight-flow')).toHaveText('g/s');
+  await expect(page.getByTestId('shot-legend')).toContainText('weight flow · g/s');
   await expectInsideViewport(page);
   await page.screenshot({ path: 'docs/product/espresso.png' });
 

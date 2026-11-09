@@ -4,13 +4,13 @@
   // pressure, red is temperature in its own band on top; yellow is the weight flow in g/s,
   // on the scale of flow and pressure, and only while there is a scale.
   // The profile's targets are thin dashed lines in the colour and on the scale of their
-  // quantity. Every scale names its unit in its colour. As the step editor's preview (`preview`)
+  // quantity. The units are named in the legend only. As the step editor's preview (`preview`)
   // it draws a profile's targets alone, as solid lines, with its steps' borders, and each step's
   // limit as a thin dotted line in its quantity's colour, muted. As the picker's estimate
   // (`estimate`) the curves are a modelled shot, the targets thin dotted lines under them, the
   // limits as in the preview.
   import CurveFade from './CurveFade.svelte';
-  import { fixedScale, graphUnits, inBand, shotScale, temperatureBand, timeAxis, UNIT_SEPARATOR, type TemperatureBand } from './axis';
+  import { fixedScale, inBand, legendLabel, shotScale, temperatureBand, timeAxis, type TemperatureBand } from './axis';
 
   interface Props {
     /** s, one entry per sample; every other array is as long */
@@ -113,21 +113,19 @@
   const drawn = (values: readonly (number | null)[] | undefined) => (values ?? []).filter((value): value is number => value !== null);
   // Without a scale there is no weight flow: nothing yellow is drawn.
   const hasWeightFlow = $derived(drawn(weightFlow).length > 0);
-  // The line over the main band: the units of what is drawn, a dot between every two.
-  const units = $derived(graphUnits({ pressure: !!pressure, flow: !!flow, weightFlow: hasWeightFlow }));
   const hasTargets = $derived([targetPressure, targetFlow, targetTemperature].some((values) => drawn(values).length > 0));
 
   // The temperature band covers 80 to 100 °C and opens for a colder or hotter group or target.
   const temperatureRange = $derived(temperatureBand([...(temperature ?? []), ...drawn(targetTemperature)], temperatureScale));
 
-  // The plot in pixels: a band for the temperature on top, a gap, and the main band. Over
-  // each band is a line for its units.
+  // The plot in pixels: a band for the temperature on top, a gap, and the main band. The gap and
+  // the top leave room for the tick numbers only.
   const box = $derived.by(() => {
     const left = bare ? 0.4 * rem : 2.8 * rem;
     const right = Math.max(left + 1, width - (bare ? 0.4 : 1.2) * rem);
-    const top = bare ? 0.4 * rem : 1.5 * rem;
+    const top = bare ? 0.4 * rem : 0.6 * rem;
     const bottom = Math.max(top + 3, height - (bare ? 0.4 : 2) * rem);
-    const gap = temperature ? 1.5 * rem : 0;
+    const gap = temperature ? 1 * rem : 0;
     const tempH = temperature ? Math.max(1, Math.min(bottom - top - gap, Math.max((bottom - top) * 0.18, 2.6 * rem))) : 0;
     const mainTop = top + tempH + gap;
     return { left, right, top, bottom, tempBottom: top + tempH, tempH, mainTop, mainH: Math.max(1, bottom - mainTop) };
@@ -202,16 +200,6 @@
         {#if !bare}<text class="tick" x={box.left - 0.5 * rem} y={yMain(tick) + 0.3 * rem}>{tick}</text>{/if}
       {/each}
       {#if !bare}
-        <text class="unit" data-testid="shot-unit-main" x={box.left} y={box.mainTop - 0.5 * rem}>
-          {#each units as unit, i (unit.label)}
-            {#if i > 0}<tspan dx={0.3 * rem}>{UNIT_SEPARATOR}</tspan>{/if}
-            <tspan
-              class={unit.quantity}
-              data-testid={unit.quantity === 'weight' ? 'shot-unit-weight-flow' : undefined}
-              dx={i > 0 ? 0.3 * rem : 0}>{unit.label}</tspan
-            >
-          {/each}
-        </text>
         {#if temperature}
           {#each [temperatureRange.min, temperatureRange.max] as tick (tick)}
             <line class="grid" x1={box.left} x2={box.right} y1={yTemperature(tick)} y2={yTemperature(tick)} />
@@ -222,7 +210,6 @@
               y={yTemperature(tick) + 0.3 * rem}>{tick}</text
             >
           {/each}
-          <text class="unit temperature" data-testid="shot-unit-temperature" x={box.left} y={box.top - 0.5 * rem}>°C</text>
         {/if}
         {#each axis.ticks as tick (tick)}
           <text class="time" x={x(tick)} y={box.bottom + 1.4 * rem}>{tick}{tick === 0 ? ' s' : ''}</text>
@@ -285,10 +272,10 @@
   </div>
   {#if legend}
     <ul class="legend" data-testid="shot-legend">
-      {#if flow}<li><i class="flow"></i>flow</li>{/if}
-      {#if pressure}<li><i class="pressure"></i>pressure</li>{/if}
-      {#if temperature}<li><i class="temperature"></i>temperature</li>{/if}
-      {#if hasWeightFlow}<li><i class="weight"></i>weight flow (g/s)</li>{/if}
+      {#if flow}<li><i class="flow"></i>{legendLabel('flow', 'flow')}</li>{/if}
+      {#if pressure}<li><i class="pressure"></i>{legendLabel('pressure', 'pressure')}</li>{/if}
+      {#if temperature}<li><i class="temperature"></i>{legendLabel('temperature', 'temperature')}</li>{/if}
+      {#if hasWeightFlow}<li><i class="weight"></i>{legendLabel('weight flow', 'weight')}</li>{/if}
       {#if hasTargets}<li data-testid="shot-legend-target"><i class="dashed"></i>dashed: the profile's target</li>{/if}
     </ul>
   {/if}
@@ -334,10 +321,6 @@
 
   .time {
     text-anchor: middle;
-  }
-
-  .unit {
-    font-weight: 400;
   }
 
   .grid {
@@ -458,21 +441,9 @@
     stroke: var(--weight);
   }
 
-  text.temperature,
-  tspan {
-    stroke: none;
-  }
-  tspan.flow {
-    fill: var(--flow);
-  }
-  tspan.pressure {
-    fill: var(--pressure);
-  }
   text.temperature {
+    stroke: none;
     fill: var(--temperature);
-  }
-  tspan.weight {
-    fill: var(--weight);
   }
 
   /* Under the graph at the bottom left, starting where the plot starts. */

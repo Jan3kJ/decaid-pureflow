@@ -67,7 +67,7 @@ export const GRAPH_SWITCHES: SkinSwitch[] = [
     key: 'showGraphLegend',
     id: 'show-graph-legend',
     label: 'legend',
-    hint: 'the shot graph names its curves under it, and what a dashed line is.',
+    hint: 'the shot graph names its curves and their units under it, and what a dashed line is. Without it the graph shows no unit.',
   },
   {
     key: 'showShotValues',

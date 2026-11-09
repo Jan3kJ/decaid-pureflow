@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fixedScale, graphUnits, inBand, shotScale, startSeconds, temperatureBand, timeAxis, unitLine } from './axis';
+import { fixedScale, inBand, legendLabel, QUANTITY_UNITS, shotScale, startSeconds, temperatureBand, timeAxis } from './axis';
 
 describe('timeAxis', () => {
   it('ends at the last sample of a stored shot, short or long', () => {
@@ -89,26 +89,15 @@ describe('temperatureBand', () => {
   });
 });
 
-describe('graphUnits and unitLine', () => {
-  const line = (pressure: boolean, flow: boolean, weightFlow: boolean) => unitLine(graphUnits({ pressure, flow, weightFlow }));
-
-  it('puts a dot between every two units that are shown', () => {
-    expect(line(true, true, false)).toBe('bar · ml/s');
-    expect(line(true, true, true)).toBe('bar · ml/s · g/s');
-    expect(line(false, true, true)).toBe('ml/s · g/s');
+describe('legendLabel', () => {
+  it('reads the name, a dot and the unit of its quantity', () => {
+    expect(legendLabel('flow', 'flow')).toBe('flow · ml/s');
+    expect(legendLabel('pressure', 'pressure')).toBe('pressure · bar');
+    expect(legendLabel('temperature', 'temperature')).toBe('temperature · °C');
+    expect(legendLabel('weight flow', 'weight')).toBe('weight flow · g/s');
   });
 
-  it('has no dot for one unit and nothing for none', () => {
-    expect(line(true, false, false)).toBe('bar');
-    expect(line(false, false, true)).toBe('g/s');
-    expect(line(false, false, false)).toBe('');
-  });
-
-  it('gives each unit its quantity for the colour', () => {
-    expect(graphUnits({ pressure: true, flow: true, weightFlow: true }).map((unit) => unit.quantity)).toEqual([
-      'pressure',
-      'flow',
-      'weight',
-    ]);
+  it('has one unit per quantity', () => {
+    expect(QUANTITY_UNITS).toEqual({ flow: 'ml/s', pressure: 'bar', temperature: '°C', weight: 'g/s' });
   });
 });

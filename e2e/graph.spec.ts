@@ -79,15 +79,12 @@ test('the targets are dashed lines with their quantity, every scale has its unit
 
   // The temperature target lies in the temperature lane, over the band of pressure and flow.
   const temperatureTarget = await box(graph.getByTestId('shot-target-temperature'));
-  const mainUnit = await box(graph.getByTestId('shot-unit-main'));
-  const temperatureUnit = await box(graph.getByTestId('shot-unit-temperature'));
-  expect(temperatureTarget.y + temperatureTarget.height).toBeLessThan(mainUnit.y);
-  expect(temperatureTarget.y).toBeGreaterThan(temperatureUnit.y);
-  await expect(graph.getByTestId('shot-unit-temperature')).toHaveText('°C');
-  // The weight flow shares the scale of flow and pressure, so that scale names g/s too;
-  // there is no scale in grams and no target weight on the graph.
-  await expect(graph.getByTestId('shot-unit-main')).toHaveText('bar · ml/s · g/s');
-  await expect(graph.getByTestId('shot-unit-weight-flow')).toHaveText('g/s');
+  const mainTick = await box(graph.locator('text.tick:not(.temperature)').last());
+  expect(temperatureTarget.y + temperatureTarget.height).toBeLessThan(mainTick.y);
+  // The units are in the legend only; there is no scale in grams and no target weight on the graph.
+  for (const id of ['shot-unit-main', 'shot-unit-weight-flow', 'shot-unit-temperature']) {
+    await expect(page.getByTestId(id)).toHaveCount(0);
+  }
   await expect(graph.getByTestId('shot-line-weight')).toHaveCount(0);
   await expect(graph.getByTestId('shot-target-weight')).toHaveCount(0);
   const weightFlow = graph.getByTestId('shot-line-weight-flow');
@@ -136,12 +133,10 @@ test('a shot without a scale has no weight flow: nothing yellow, no g/s', async 
   const graph = page.getByTestId('history-graph');
   await expect(graph.getByTestId('shot-line-pressure')).toHaveCount(1);
   await expect(graph.getByTestId('shot-line-weight-flow')).toHaveCount(0);
-  await expect(graph.getByTestId('shot-unit-weight-flow')).toHaveCount(0);
-  await expect(graph.getByTestId('shot-unit-main')).toHaveText('bar · ml/s');
   await expect(graph.getByTestId('shot-legend').locator('li')).toHaveText([
-    'flow',
-    'pressure',
-    'temperature',
+    'flow · ml/s',
+    'pressure · bar',
+    'temperature · °C',
     "dashed: the profile's target",
   ]);
   expect(errors).toEqual([]);
@@ -186,12 +181,13 @@ test('the legend is under the graph by default, and the settings page switches i
   const legend = page.getByTestId('shot-legend');
   await expect(legend).toBeVisible();
   await expect(legend.locator('li')).toHaveText([
-    'flow',
-    'pressure',
-    'temperature',
-    'weight flow (g/s)',
+    'flow · ml/s',
+    'pressure · bar',
+    'temperature · °C',
+    'weight flow · g/s',
     "dashed: the profile's target",
   ]);
+  expect(await legend.textContent()).not.toContain('(');
   // At the bottom left, under the plot.
   const plot = await box(page.getByTestId('shot-graph'));
   const shown = await box(legend);
@@ -213,6 +209,8 @@ test('the legend is under the graph by default, and the settings page switches i
   await back(page);
   await expect(page.getByTestId('last-shot')).toBeVisible();
   await expect(page.getByTestId('shot-legend')).toHaveCount(0);
+  // With the legend off a graph shows no unit at all.
+  expect(await page.getByTestId('shot-graph').first().textContent()).not.toMatch(/bar|ml\/s|g\/s|°C/);
 
   // It is one stored setting: it survives a reload.
   await page.reload();
