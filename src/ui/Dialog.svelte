@@ -92,7 +92,7 @@
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    background: var(--panel);
+    background: var(--overlay);
     border: 1px solid var(--edge);
     border-radius: var(--radius-dialog);
     box-shadow: var(--shadow-glass);

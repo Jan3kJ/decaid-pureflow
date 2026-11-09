@@ -170,7 +170,7 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
-    background: var(--panel);
+    background: var(--overlay);
     border-right: 1px solid var(--line);
     box-shadow: var(--shadow-sheet);
     animation: slide var(--motion) ease-out;

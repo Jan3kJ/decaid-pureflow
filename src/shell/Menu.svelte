@@ -156,7 +156,7 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-1);
-    background: var(--glass);
+    background: var(--overlay);
     border: 1px solid var(--edge);
     border-radius: var(--radius);
     box-shadow: var(--shadow-glass);

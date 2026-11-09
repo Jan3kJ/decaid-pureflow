@@ -41,7 +41,7 @@
     padding: var(--space-1) var(--space-2);
     border: 1px solid var(--edge);
     border-radius: var(--radius);
-    background: var(--glass), var(--bg);
+    background: var(--overlay);
     box-shadow: var(--shadow-glass);
     text-align: left;
     pointer-events: auto;

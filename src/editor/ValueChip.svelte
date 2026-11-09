@@ -163,7 +163,7 @@
     --glow-rgb: var(--tone-rgb);
     display: flex;
     align-items: stretch;
-    background: var(--panel);
+    background: var(--overlay);
     border: 1px solid var(--edge);
     border-radius: var(--radius);
     overflow: hidden;

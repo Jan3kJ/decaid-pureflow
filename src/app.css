@@ -2,6 +2,7 @@
   color-scheme: dark;
   /* Near black, for an OLED tablet; the lights of --backdrop lie on it. */
   --bg: #04070a;
+  --bg-rgb: 4 7 10;
   --fg: #e4eff5;
   --fg-rgb: 228 239 245;
   --dim: #6f7f8b;
@@ -21,6 +22,11 @@
   --shadow-glass: inset 0 1px 0 var(--edge-hi), inset 0 0 2rem rgb(255 255 255 / 1.5%), 0 1.5rem 4rem rgb(0 0 0 / 55%);
   /* The glass flat, for what takes a colour and no gradient: an SVG fill. */
   --glass-flat: rgb(255 255 255 / 4%);
+  /*
+   * A surface that lies over page content (the menu, the history, a dialog, a popup): the glass's
+   * highlight on a dense dark base, so the page does not show through. Only overlays take it.
+   */
+  --overlay: var(--glass), rgb(var(--bg-rgb) / 94%);
   /* A panel and a raised part are glass: every page changes with these two. */
   --panel: var(--glass);
   --raised: var(--glass);
@@ -110,8 +116,8 @@
   --shadow-lifted: 0 0.3rem 1.2rem rgb(0 0 0 / 60%);
   /* behind a dialog or a sheet: the page dimmed, a tap on it cancels */
   --scrim: rgb(0 0 0 / 55%);
-  /* behind the menu: the page still readable */
-  --scrim-light: rgb(0 0 0 / 35%);
+  /* behind the menu and the history: the page quiet */
+  --scrim-light: rgb(0 0 0 / 55%);
   /* behind its own element: the halo of a lit number */
   --layer-under: -1;
   /* Layers, lowest first: which overlay wins. A page sliding in during a swipe. */
