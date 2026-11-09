@@ -65,6 +65,7 @@ function shotOf(gateway: MockGateway, grams: number, yielded = grams) {
   }));
 }
 
+/** The hotWaterData of the last workflow write. It reaches the gateway after the tap: poll it. */
 const lastWrite = (gateway: MockGateway) =>
   gateway
     .calls('PUT', '/api/v1/workflow')
@@ -100,11 +101,11 @@ test('temperature, flow, time and stop at weight are written to hotWaterData (it
   await expect(page.getByTestId('hot-water-weight')).toContainText('50g');
 
   await type(page, 'hot-water-temperature', '85');
-  expect(lastWrite(gateway)).toEqual({ targetTemperature: 85, duration: 30, volume: 50, flow: 8 });
+  await expect.poll(() => lastWrite(gateway)).toEqual({ targetTemperature: 85, duration: 30, volume: 50, flow: 8 });
   await type(page, 'hot-water-flow', '6.5');
   await type(page, 'hot-water-time', '45');
   await type(page, 'hot-water-weight', '120');
-  expect(lastWrite(gateway)).toEqual({ targetTemperature: 85, duration: 45, volume: 120, flow: 6.5 });
+  await expect.poll(() => lastWrite(gateway)).toEqual({ targetTemperature: 85, duration: 45, volume: 120, flow: 6.5 });
   expect(gateway.workflow.hotWaterData).toEqual({ targetTemperature: 85, duration: 45, volume: 120, flow: 6.5 });
   await expect(page.getByTestId('hot-water-weight')).toContainText('120g');
   await expect(page.getByTestId('hot-water-flow')).toContainText('6.5ml/s');
@@ -128,7 +129,7 @@ test('a ratio favourite with a last shot of 40 g sets 80 g for 1:2; the tare but
   await expect(ratios).toHaveText(['1:2 80 g', '1:2.5 100 g', '1:3 120 g']);
 
   await ratios.nth(0).click();
-  expect(lastWrite(gateway)).toEqual({ targetTemperature: 75, duration: 30, volume: 80, flow: 8 });
+  await expect.poll(() => lastWrite(gateway)).toEqual({ targetTemperature: 75, duration: 30, volume: 80, flow: 8 });
   await expect(page.getByTestId('hot-water-weight')).toContainText('80g');
   await expect(ratios.nth(0)).toHaveAttribute('aria-pressed', 'true');
   await ratios.nth(1).click();
@@ -183,7 +184,7 @@ test('the favourites come from the settings; without a last shot or a scale they
   // Without a scale the favourites stay, in ml: the shot's grams estimate the water.
   await expect(page.getByTestId('hot-water-ratio')).toHaveText(['1:1.5 60 ml', '1:2.5 100 ml', '1:3 120 ml']);
   await page.getByTestId('hot-water-ratio').first().click();
-  expect(lastWrite(gateway)?.volume).toBe(60);
+  await expect.poll(() => lastWrite(gateway)?.volume).toBe(60);
   await expect(page.getByTestId('hot-water-scale')).toHaveText('–');
   await page.screenshot({ path: 'docs/product/hot-water-no-scale.png' });
   // Without a scale a tap tares nothing and looks for the scale.
@@ -220,7 +221,7 @@ test('stop at weight in g with a scale, stop at volume in ml without one; favour
   await expect(page.getByTestId('numpad-range')).toHaveText('10 to 500 ml');
   await page.getByTestId('numpad-cancel').click();
   await type(page, 'hot-water-weight', '150');
-  expect(lastWrite(gateway)).toEqual({ targetTemperature: 75, duration: 30, volume: 150, flow: 8 });
+  await expect.poll(() => lastWrite(gateway)).toEqual({ targetTemperature: 75, duration: 30, volume: 150, flow: 8 });
   await expect(page.getByTestId('hot-water-weight')).toContainText('150ml');
 
   // The scale connects: the same row reads stop at weight in g, the number unchanged.

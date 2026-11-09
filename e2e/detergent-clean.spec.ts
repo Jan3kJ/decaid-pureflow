@@ -47,6 +47,10 @@ async function startCard(page: Page) {
   );
   await page.getByTestId('settings-confirm-ok').click();
   await expect(caption(page)).toHaveText(`${TITLE} is loaded: start it at the machine.`);
+  // The caption shows while the load and the flush time are still written; the card's buttons
+  // are off until both have come back. A run at the machine needs the profile on it, so the run
+  // and the test's own changes to the workflow wait for that.
+  await expect(page.getByTestId('maintenance-cancel-detergent')).toBeEnabled();
 }
 
 function expectEarlierBack(title: string) {
@@ -261,7 +265,6 @@ test('a flush time changed meanwhile is not overwritten when the clean ends', as
 test('a profile loaded meanwhile is not replaced', async ({ page }) => {
   gateway.withDetergentProfile();
   await startCard(page);
-  await page.getByTestId('maintenance-cancel-detergent').waitFor();
   gateway.workflow.profile = gateway.profiles[0].profile;
   const before = gateway.workflow.profile.title;
   await page.getByTestId('maintenance-cancel-detergent').click();

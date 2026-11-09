@@ -51,7 +51,8 @@ async function open(page: Page, screen: string) {
   await expect(page.getByTestId(`screen-${screen}`)).toBeVisible();
 }
 
-test("every button's word on the main screens starts lower case; the menu and titles excepted", async ({ page }) => {
+/** The mock with the default profiles, a bean and a grinder, so every list has a row. */
+async function stocked(page: Page) {
   const at = '2026-10-18T10:00:00.000';
   const gateway = (await mockGateway(page)).withDefaults('medium');
   gateway.beans = [
@@ -60,6 +61,14 @@ test("every button's word on the main screens starts lower case; the menu and ti
   gateway.grinders = [
     { id: 'g1', model: 'Hand grinder', archived: false, settingType: 'numeric', settingSmallStep: 0.5, createdAt: at, updatedAt: at },
   ];
+  return gateway;
+}
+
+// The walk is three tests: each page load is a full load from the dev server, and one test of
+// all of them outlasts the test timeout when the workers share a slow machine.
+
+test("every button's word on home, the bean pick and the history starts lower case", async ({ page }) => {
+  await stocked(page);
   const found: string[] = [];
 
   await page.goto('/');
@@ -73,6 +82,14 @@ test("every button's word on the main screens starts lower case; the menu and ti
   await expect(page.getByTestId('history')).toBeVisible();
   found.push(...(await capitalised(page, 'history')));
 
+  expect(found).toEqual([]);
+});
+
+test("every button's word on the other main screens starts lower case; the menu and titles excepted", async ({ page }) => {
+  const gateway = await stocked(page);
+  const found: string[] = [];
+
+  await page.goto('/');
   for (const screen of ['profiles', 'editor', 'steam', 'hot-water']) {
     await open(page, screen);
     found.push(...(await capitalised(page, screen)));
@@ -94,6 +111,14 @@ test("every button's word on the main screens starts lower case; the menu and ti
   await expect(page.getByTestId('step-card-0')).toBeVisible();
   found.push(...(await capitalised(page, 'step editor')));
 
+  expect(found).toEqual([]);
+});
+
+test("every button's word in the settings starts lower case; the category list excepted", async ({ page }) => {
+  await stocked(page);
+  const found: string[] = [];
+
+  await page.goto('/');
   await open(page, 'settings');
   const categories = page.locator('[data-testid^="settings-category-"]');
   for (let i = 0; i < (await categories.count()); i++) {
