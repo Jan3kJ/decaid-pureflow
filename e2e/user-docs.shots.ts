@@ -1,10 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
-import { mockGateway, profile, type MockGateway } from './mock-gateway';
+import { DOCS_SHOT, DOCS_STEAM, eventsOf, mockGateway, profile, type MockGateway } from './mock-gateway';
 import { toPage } from './touch';
 
 // The pictures of the user documentation:
 // `npm run screenshots` writes the eight into docs/user/img/, on the mock gateway at the design
-// target. Every name in them is invented here: no real bean, roaster, device or address.
+// target. Every name in them is invented here: no real bean, roaster, device or address. The curves
+// of the home shot and of the steam are two records of a real DE1 (e2e/fixtures/docs-*.json).
 
 const IMG = 'docs/user/img';
 
@@ -65,18 +66,26 @@ async function shoot(page: Page, name: string) {
   await page.screenshot({ path: `${IMG}/${name}.png`, animations: 'disabled', caret: 'hide' });
 }
 
-test('home idle, home during a shot, and the swipe row', async ({ page }) => {
+test('home idle', async ({ page }) => {
   // No shot in the history yet: home's empty graph, as on the first start (with one, home shows it).
-  const gateway = await gatewayFor(page, false);
+  await gatewayFor(page, false);
   await home(page);
   await expect(page.getByTestId('empty-graph')).toBeVisible();
   await shoot(page, 'home-idle');
+});
 
-  await gateway.replay(page, 0, 0.6);
+test('home during a shot, and the swipe row', async ({ page }) => {
+  const gateway = await gatewayFor(page, false);
+  // The page agrees with the curve: the record's profile and target.
+  gateway.workflow.profile = DOCS_SHOT.workflow.profile!;
+  gateway.workflow.context = { ...gateway.workflow.context, ...DOCS_SHOT.workflow.context };
+  await home(page);
+  const events = eventsOf(DOCS_SHOT);
+  await gateway.replay(page, 0, 0.6, { events });
   await expect(page.getByTestId('home-shot')).toHaveAttribute('data-shot', 'running');
   await expect(page.getByTestId('stop')).toBeEnabled();
   await page.screenshot({ path: `${IMG}/home-shot.png`, animations: 'disabled', caret: 'hide' });
-  await gateway.replay(page, 0.6, 1);
+  await gateway.replay(page, 0.6, 1, { events });
   await expect(page.getByTestId('home-shot')).toHaveAttribute('data-shot', 'finished');
 
   // The row of pages under a finger, half way: home slides away, steam comes in from the right.
@@ -103,11 +112,12 @@ test('the A-Flow editor', async ({ page }) => {
 
 test('the steam page during steaming', async ({ page }) => {
   const gateway = await gatewayFor(page);
+  gateway.workflow.steamSettings = { ...gateway.workflow.steamSettings, ...DOCS_STEAM.workflow.steamSettings };
   await home(page);
   await toPage(page, 'steam');
   gateway.putOnScale(420);
   await page.getByTestId('steam-set-timer').click();
-  gateway.steamFor(15, true);
+  gateway.steamRecord(0.6, true);
   await expect(page.getByTestId('steam-stop')).toBeVisible();
   await shoot(page, 'steam');
 });

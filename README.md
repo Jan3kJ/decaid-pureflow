@@ -8,7 +8,7 @@ an Android tablet in landscape, and it is built around an editor for A-Flow 3.0 
 for people who own a DE1 and run Decaid on a tablet. A scale is optional, but the steam timer and
 the stop at weight need one.
 
-![Home after a shot: flow, pressure, temperature and weight drawn, the profile, bean, time and weight on the right](docs/user/img/home-shot.png)
+![Home during a shot: flow, pressure, temperature and weight drawn, the profile, bean, time and weight on the right](docs/user/img/home-shot.png)
 
 ## What it does
 
@@ -31,7 +31,7 @@ the stop at weight need one.
 
 ![The A-Flow editor in simple mode](docs/user/img/editor.png)
 
-![The steam page after a steam: the graph of the last steam, the timer, the scale, mug and milk](docs/user/img/steam.png)
+![The steam page while steaming: the graph of the steam so far, the timer, the scale, mug and milk](docs/user/img/steam.png)
 
 ## Install and use
 

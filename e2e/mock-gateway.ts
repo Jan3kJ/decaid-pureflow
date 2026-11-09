@@ -93,6 +93,36 @@ export const EXPORT_STEAMS = JSON.parse(
   })[];
 }[];
 
+/** A shot record of the export, as `GET /api/v1/shots/<id>` answers (e2e/fixtures). */
+interface ExportRecord {
+  id: string;
+  timestamp: string;
+  workflow: Workflow;
+  measurements: { machine: MachineSnapshot; scale?: ScaleFrame | null }[];
+}
+const exportRecord = (name: string) =>
+  JSON.parse(readFileSync(new URL(`./fixtures/${name}`, import.meta.url), 'utf8')) as ExportRecord;
+
+/** The user guide's shot: a real DE1's A-Flow shot with a scale, read from the export, unchanged. */
+export const DOCS_SHOT = exportRecord('docs-shot.json');
+/** The user guide's steam: a real DE1's steam read from the export, unchanged. */
+export const DOCS_STEAM = exportRecord('docs-steam.json');
+
+/** The record's measurements as a replay's events: a machine frame each, a scale frame when the scale sent one. */
+export function eventsOf(record: ExportRecord): RecordedEvent[] {
+  const first = Date.parse(`${record.measurements[0].machine.timestamp}Z`);
+  const events: RecordedEvent[] = [];
+  let scaleAt = '';
+  for (const { machine, scale } of record.measurements) {
+    events.push({ at: Date.parse(`${machine.timestamp}Z`) - first, machine });
+    if (scale && 'weight' in scale && scale.timestamp !== scaleAt) {
+      scaleAt = scale.timestamp;
+      events.push({ at: Date.parse(`${scale.timestamp}Z`) - first, scale });
+    }
+  }
+  return events.sort((a, b) => a.at - b.at);
+}
+
 /** s, the heating at the start of the recording: espresso frames in which no water moves */
 export const HEATING_SECONDS = 4.5;
 
@@ -115,6 +145,8 @@ export interface ReplayOptions {
   tail?: number;
   /** pressure and its target times this factor: 1.15 takes the recording's 10 bar to 11.5 */
   pressure?: number;
+  /** another recording than the rig's: `eventsOf` a record of the export */
+  events?: RecordedEvent[];
 }
 
 const stamp = (at: number) => new Date(at).toISOString().replace('Z', '000');
@@ -127,7 +159,7 @@ const stamp = (at: number) => new Date(at).toISOString().replace('Z', '000');
  */
 export function shotEvents(options: ReplayOptions = {}): RecordedEvent[] {
   const factor = options.pressure ?? 1;
-  let events = SHOT_EVENTS.map((event) =>
+  let events = (options.events ?? SHOT_EVENTS).map((event) =>
     event.machine && factor !== 1
       ? {
           ...event,
@@ -857,6 +889,25 @@ export class MockGateway {
       this.sendMachine({ ...this.frame(Date.parse(`${timestamp.slice(0, 23)}Z`) + shift), state: { state, substate }, ...values });
     }
     this.state = 'idle';
+  }
+
+  /**
+   * The first `share` of the user guide's steam (`DOCS_STEAM`), sent at once and ending now. With `hold` the
+   * machine goes on sending its latest frame, so the time on screen stands still.
+   */
+  steamRecord(share = 1, hold = false): void {
+    const frames = DOCS_STEAM.measurements.slice(0, Math.round(share * DOCS_STEAM.measurements.length));
+    const shift = Date.now() - Date.parse(`${frames.at(-1)!.machine.timestamp.slice(0, 23)}Z`);
+    for (const { machine } of frames) {
+      this.state = machine.state.state;
+      const frame = {
+        ...machine,
+        timestamp: new Date(Date.parse(`${machine.timestamp.slice(0, 23)}Z`) + shift).toISOString().replace('Z', '000'),
+      };
+      this.sendMachine(frame);
+      if (hold) this.held = frame;
+    }
+    if (!hold) this.state = 'idle';
   }
 
   /**

@@ -38,7 +38,9 @@ right on a row goes back too, unless the row is open: then it closes the row.
 ## Home is also the shot screen
 
 Start a shot at the machine. Home draws it live: blue is flow, green pressure, red temperature,
-yellow the weight. While it runs the header names the running step; the title **Home** is at the top right. The right column starts level with the graph's top edge and holds the
+yellow the weight. The legend under the graph names each curve with its unit, for example **flow · ml/s**;
+the setting **legend** under Settings > 6. Skin > Shot graph turns it off, and then the graph shows no unit.
+While it runs the header names the running step; the title **Home** is at the top right. The right column starts level with the graph's top edge and holds the
 time, the weight and the live values, each caption on the left and its number on the right; under
 **weight** it says where the shot stops. After the shot the column reads **time, finished** and
 keeps the shot until the next one starts. A line under the weight says why it stopped, as Decaid
@@ -113,7 +115,7 @@ the choice then moves to the other field. Nothing is filled in until you tap.
 
 Steam is started at the machine. The steam page sets its timer from the milk's weight.
 
-![The steam page after a steam: the graph of the last steam, the timer, the scale, mug and milk](img/steam.png)
+![The steam page while steaming: the graph of the steam so far, the timer, the scale, mug and milk](img/steam.png)
 
 Put the mug with milk on the scale. The skin tells which mug it is (**s**, **m** or **l**, by
 its weight) and how much milk is in it. **set timer** sends the time to the machine. Use the
@@ -190,6 +192,8 @@ setting right there, or tap the name over it to go to its place.
 - **Hot water**: the three ratios.
 - **Profile**: the highest flow the editor offers, the dose, the start row of the editor, and
   **convert to 3.0**.
+- **Shot graph**: the **legend** under the graph, which names the curves and their units, and the
+  shot values after a shot.
 - **Display Size**: the size of everything on screen and the line width.
 - **Active Skin**: Decaid's skins; a tap on another one switches to it. **check** has Decaid look
   for newer versions; when it holds another pureflow than this screen runs, **reload** loads it.
