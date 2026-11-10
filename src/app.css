@@ -470,10 +470,65 @@ body {
     inset 0 0 1.2rem rgb(var(--glow-rgb, var(--fg-rgb)) / 10%);
 }
 
-/* Pressed: the same light, while the finger is down. */
-:root :is(.action, .chip, .seg, .form-button, .pad-key, .card, .cycle, .pick-key):active:not(:disabled) {
+/*
+ * Pressed: the selected light for as long as the finger is down, and it fades out over 0.35 s on
+ * release, so a quick tap still shows. One rule for every button, and every label or link drawn as
+ * one, except a chip (it changes its fill on a press), a selection (it lights its edge by being
+ * selected), the number pad's keys, the slider lines, a disabled button and the invisible
+ * backdrops. A stop glows in its own colour. Under reduced motion the light shows and goes at once.
+ */
+:root
+  :is(button, a.action, label.button):not(
+    .chip,
+    .chip *,
+    .select-outline,
+    [aria-pressed],
+    [aria-current],
+    [role='tab'],
+    .pad-key,
+    .line,
+    .backdrop,
+    .outside,
+    :disabled
+  ) {
+  transition:
+    box-shadow 0.35s ease-out,
+    border-color 0.35s ease-out;
+}
+
+:root
+  :is(button, a.action, label.button):not(
+    .chip,
+    .chip *,
+    .select-outline,
+    [aria-pressed],
+    [aria-current],
+    [role='tab'],
+    .pad-key,
+    .line,
+    .backdrop,
+    .outside,
+    :disabled
+  ):active {
   border-color: rgb(var(--glow-rgb, var(--fg-rgb)) / 70%);
   box-shadow: 0 0 1.2rem rgb(var(--glow-rgb, var(--fg-rgb)) / 25%);
+  transition: none;
+}
+
+:where(.big-stop) {
+  --glow-rgb: var(--temperature-rgb);
+}
+
+/* A chip keeps its own press look: the same light, while the finger is down. */
+:root .chip:active:not(:disabled) {
+  border-color: rgb(var(--glow-rgb, var(--fg-rgb)) / 70%);
+  box-shadow: 0 0 1.2rem rgb(var(--glow-rgb, var(--fg-rgb)) / 25%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root :is(button, a.action, label.button) {
+    transition: none;
+  }
 }
 
 /* Text no rule sizes is running text. */
