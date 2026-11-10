@@ -237,8 +237,11 @@ test('the pause is dragged in detail mode only', async ({ page }) => {
   await page.mouse.up();
   await expect(page.getByTestId('value-pauseDuration')).toHaveText('pause 15 s');
 
-  // The other borders still move in simple mode.
-  await dragBy(page, await borderOf(page, 'infuse'), -40, 0);
+  // The other borders still move in simple mode. The infuse time is kept at 60 s while the border
+  // stays right of the move-on weight's estimate (curve.ts, borderTarget), so the drag crosses it:
+  // the weight's point sits at about 40 % of the column, so a drag of 70 % goes past it.
+  const infuse = await column(page, 'infuse');
+  await dragBy(page, await borderOf(page, 'infuse'), -infuse.width * 0.7, 0);
   await expect(page.getByTestId('popup')).toContainText('infuse time');
   // The time follows the finger while it is held: waited for, not read once.
   // The page draws the drag on its frames, and the four local workers share the CPU that draws them: 15 s.
