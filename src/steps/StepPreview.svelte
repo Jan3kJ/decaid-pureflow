@@ -14,7 +14,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   import type { Snippet } from 'svelte';
   import type { Profile } from '../api';
   import ShotGraph from '../graph/ShotGraph.svelte';
-  import { stepAt, stepCurve, type StepSpan } from './curve';
+  import { spanOf, stepAt, stepCurve, type StepSpan } from './curve';
   import { shotEstimate } from './estimate';
 
   interface Props {
@@ -27,13 +27,24 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     mainFrame?: boolean;
     /** the modelled shot is the curves, the targets dotted under them (the picker) */
     estimate?: boolean;
+    /** the profile's step index lit on the graph (the cards tab's open step); none, or a step without a span, lights nothing */
+    selected?: number | null;
     /** a tap on the graph chose this step (its index in the profile); without it the graph takes no tap */
     onselect?: (index: number) => void;
     /** drawn over the top of the frame (a message) */
     children?: Snippet;
   }
 
-  let { profile, bare = false, lastStepSeconds, mainFrame = false, estimate = false, onselect, children }: Props = $props();
+  let {
+    profile,
+    bare = false,
+    lastStepSeconds,
+    mainFrame = false,
+    estimate = false,
+    selected = null,
+    onselect,
+    children,
+  }: Props = $props();
 
   // The model runs only for the estimate, once per profile shown.
   const drawn = $derived.by((): ReturnType<typeof shotEstimate> & { steps: StepSpan[] } => {
@@ -69,6 +80,11 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     ),
   );
 
+  const lit = $derived.by(() => {
+    const span = spanOf(drawn.steps, selected);
+    return span ? { from: span.start, to: span.end } : null;
+  });
+
   /** A step only where the curve draws one: a step of no time has no span and is never hit. */
   function tapped(seconds: number) {
     const index = stepAt(drawn.steps, seconds);
@@ -93,6 +109,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     preview={!estimate}
     {estimate}
     {bare}
+    selected={lit}
     label={estimate ? 'estimated shot' : 'curve preview'}
     ontap={onselect ? tapped : undefined}
   />

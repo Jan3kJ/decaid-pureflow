@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Profile, ProfileStep } from '../api';
 import bundled from './fixtures/bundled-profiles.json' with { type: 'json' };
-import { pushChannel, stepAt, stepCurve } from './curve';
+import { pushChannel, spanOf, stepAt, stepCurve } from './curve';
 import { insertStepAfter, moveStep, removeStepAt, setPump, setValue } from './model';
 import { DEFAULT_PROFILES } from '../aflow';
 import { buildCurve } from '../editor/curve';
@@ -318,5 +318,36 @@ describe('stepAt', () => {
     expect(stepAt(spans, -0.1)).toBeNull();
     expect(stepAt(spans, 17.1)).toBeNull();
     expect(stepAt([], 0)).toBeNull();
+  });
+});
+
+describe('spanOf', () => {
+  const spans = [
+    { index: 0, start: 0, end: 10 },
+    { index: 2, start: 10, end: 25 },
+  ];
+  it('finds the span of a step by its index in the profile', () => {
+    expect(spanOf(spans, 0)).toEqual(spans[0]);
+    expect(spanOf(spans, 2)).toEqual(spans[1]);
+  });
+  it('has none for a step of no time, a missing step, or no step', () => {
+    expect(spanOf(spans, 1)).toBeNull();
+    expect(spanOf(spans, -1)).toBeNull();
+    expect(spanOf(spans, null)).toBeNull();
+    expect(spanOf(spans, undefined)).toBeNull();
+  });
+  it('follows the cut of the last step', () => {
+    const cut = stepCurve(
+      {
+        steps: [
+          { pump: 'flow', flow: 2, seconds: 8 },
+          { pump: 'flow', flow: 2, seconds: 60 },
+        ],
+      } as unknown as Profile,
+      {
+        lastStepSeconds: 20,
+      },
+    );
+    expect(spanOf(cut.steps, 1)).toEqual({ index: 1, start: 8, end: 28 });
   });
 });

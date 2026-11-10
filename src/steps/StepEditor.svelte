@@ -294,7 +294,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     <ScriptTab {profile} disabled={busy} onedit={edit} ontype={(index: number, value: StepValue) => (typing = { index, value })} />
   {:else}
     <!-- The curve preview: the targets of the steps, redrawn with every edit; a tap opens the step under the finger. -->
-    <StepPreview {profile} mainFrame onselect={(index: number) => (openIndex = index)}>
+    <StepPreview {profile} mainFrame selected={openIndex} onselect={(index: number) => (openIndex = index)}>
       <NoticeOverlay {notice} onclose={() => (notice = null)} />
     </StepPreview>
 

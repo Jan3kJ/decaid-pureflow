@@ -137,3 +137,9 @@ export function stepAt(spans: readonly StepSpan[], time: number): number | null 
   if (!last || time < spans[0].start || time > last.end) return null;
   return (spans.find((span) => time < span.end) ?? last).index;
 }
+
+/** The span of the step at this index in the profile; null for a step that draws nothing (no time) or a missing one. */
+export function spanOf(spans: readonly StepSpan[], index: number | null | undefined): StepSpan | null {
+  if (index === null || index === undefined) return null;
+  return spans.find((span) => span.index === index) ?? null;
+}

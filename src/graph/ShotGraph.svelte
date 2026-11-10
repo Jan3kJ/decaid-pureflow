@@ -55,6 +55,8 @@
     borders?: number[];
     /** no ticks, units or times: the picker's small preview of a profile */
     bare?: boolean;
+    /** s, a stretch of the time axis lit under the curves (the step editor's open step); null or none draws nothing */
+    selected?: { from: number; to: number } | null;
     /** s, a tap on the plot at this time on its axis (the step editor's cards tab); without it the graph takes no tap */
     ontap?: (seconds: number) => void;
   }
@@ -80,6 +82,7 @@
     flowLimit,
     borders = [],
     bare = false,
+    selected = null,
     ontap,
   }: Props = $props();
 
@@ -214,6 +217,19 @@
         {#each axis.ticks as tick (tick)}
           <text class="time" x={x(tick)} y={box.bottom + 1.4 * rem}>{tick}{tick === 0 ? ' s' : ''}</text>
         {/each}
+      {/if}
+
+      <!-- The flow editor's selected column (GraphGrid.svelte), the same declarations. -->
+      {#if selected}
+        <rect
+          class="selected"
+          data-testid="step-selected"
+          x={x(selected.from)}
+          y={box.top - 0.6 * rem}
+          width={Math.max(0, x(selected.to) - x(selected.from))}
+          height={Math.max(0, height - box.top)}
+          rx={0.5 * rem}
+        />
       {/if}
 
       {#each borders as border, i (i)}
@@ -419,6 +435,12 @@
     stroke-dasharray: calc(0.01rem * var(--curve-thin)) calc(0.32rem * var(--curve-thin));
     stroke-linecap: round;
     opacity: 0.55;
+  }
+
+  .selected {
+    fill: var(--glass-flat);
+    stroke: var(--fg);
+    pointer-events: none;
   }
 
   .border {
