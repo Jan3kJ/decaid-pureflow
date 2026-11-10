@@ -4,6 +4,20 @@ What changed in each version of pureflow, newest first. From 0.7.0 on a section 
 the release script (`npm run release`) from the commits' `Changelog:` lines; the sections up to
 0.6.1 summarise the hand-over builds that came before it.
 
+## 0.13.0 - 2026-11-10
+
+### Added
+
+- The step editor's graph lights the open step like the flow editor's selected phase. (Z130)
+
+### Changed
+
+- The flush and hot water ring covers its frame fully and its circle no longer glows. (Z127)
+- Every button glows briefly when pressed and the light fades out after. (Z128)
+- Every graph draws its lines and their glow 30 % thinner. (Z129)
+
+Checks: npm ci, npm run verify and npm run e2e passed; rig suite: not run.
+
 ## 0.12.0 - 2026-11-09
 
 ### Changed
