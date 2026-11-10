@@ -60,6 +60,9 @@ test('the menu is the top right corner of home, steam and hot water, the title l
   gateway.putOnScale(525);
   await page.goto('/');
   await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
+  // The scale's weight arrives on its own stream, after the state: home's readings are taken once it is in,
+  // or hot water's (which has it) would never match them.
+  await expect(page.getByTestId('state-scale')).toHaveText('525.0 g');
 
   const home = await measure(page, 'home');
   await expect(home.header.getByTestId('home-title')).toHaveText('Home');
