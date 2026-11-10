@@ -2,12 +2,11 @@ import { expect, test } from '@playwright/test';
 import { mockGateway } from './mock-gateway';
 
 // Home in glass: the cards and the picker's rows are glass, the right column's live numbers are
-// thin with a glow in their colour, the captions are lower case, and the ring's arc glows in
-// the flow's blue. It writes test-results/home-glass-*.png for the commit.
+// thin with a glow in their colour, the captions are lower case, and the ring's arc is the flow's blue. It writes test-results/home-glass-*.png for the commit.
 
 test.use({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 2 });
 
-test('home: glass cards, thin lit numbers, lower case captions, the ring glows; the picker is glass', async ({ page }) => {
+test('home: glass cards, thin lit numbers, lower case captions; the picker is glass', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
   await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
@@ -36,12 +35,7 @@ test('home: glass cards, thin lit numbers, lower case captions, the ring glows; 
   gateway.waterFor('flush', 6, 6, 90);
   await expect(page.getByTestId('water-view')).toHaveCount(1);
   await page.waitForTimeout(1200);
-  const arc = await page.locator('[data-testid="water-ring"] .glow-arc').evaluate((node) => {
-    const style = getComputedStyle(node);
-    return { opacity: style.opacity, width: parseFloat(style.strokeWidth) };
-  });
-  expect(Number(arc.opacity)).toBeLessThan(0.3);
-  expect(arc.width).toBeGreaterThan(5);
+  await expect(page.locator('[data-testid="water-ring"] .glow-arc')).toHaveCount(0);
   await page.screenshot({ path: 'test-results/home-glass-ring.png' });
 });
 
