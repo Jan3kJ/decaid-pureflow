@@ -111,8 +111,8 @@ test("the chart line width widens every graph's curves: the profile picker's pre
     return [preview, await strokeOf('[data-testid="line-flow"]')];
   };
   const [preview, editor] = await widths();
-  expect(preview).toBeCloseTo(0.2 * 16, 1);
-  expect(editor).toBeCloseTo(0.24 * 16, 1);
+  expect(preview).toBeCloseTo(0.2 * 0.7 * 16, 1);
+  expect(editor).toBeCloseTo(0.24 * 0.7 * 16, 1);
 
   for (const [value, factor] of [
     ['0.6', 0.6],

@@ -10,6 +10,8 @@
   --line: rgb(255 255 255 / 16%);
   /* the graphs' grid: a trace on the glass, not a drawing */
   --grid: rgb(255 255 255 / 3.5%);
+  /* The share of its old width every graph curve and its glow is stroked at (with Skin > Display line width). */
+  --curve-thin: 0.7;
   /*
    * Glass: a faint white gradient, a thin edge and a brighter top edge, as the prototype
    * (docs/design/dark-glass-hot-water.html). A panel is a surface, a light on it is a glow.
