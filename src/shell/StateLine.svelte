@@ -19,39 +19,43 @@
   const machine = $derived(skin.link === 'machine' && skin.snapshot !== null);
 </script>
 
-<!-- The readings of the header, centred over the page's main frame: group or steam, tank, scale and the step
-     that runs. `data-state` is the machine's state as the header says it, for the tests; no word shows. -->
+<!-- The readings of the header, centred over the page's main frame: group or steam, tank and scale. Each has a slot
+     sized from its widest text, in place from the first frame, so no reading moves another. `data-state` is the
+     machine's state as the header says it, for the tests; no word shows. -->
 <section class="state" data-testid="status" data-state={status.title} data-link={skin.link}>
-  {#if machine}
-    {#each skin.stateValues as item (item.key)}
-      {#if item.key === 'scale' && skin.scaleLink === 'connected'}
-        <!-- A tap on the weight tares the scale; without a scale it is not a button. -->
-        <button class="value scale" data-testid="tare" aria-label="tare the scale" onclick={() => skin.tare()}>
-          <small>{item.label}</small>
-          <b data-testid="state-scale">{item.value}</b>
-        </button>
-      {:else if item.key === 'scale'}
-        <!-- Without a scale the warning is a button: a tap looks for the scale again. -->
-        <button class="value scale warn" data-testid="scale-retry" aria-label="look for the scale" onclick={() => skin.findScale()}>
-          <small>{item.label}</small>
-          <b class="warning" data-testid="state-scale">{item.value}</b>
-        </button>
-      {:else}
-        <span class="value {item.key}" class:warn={item.warn}>
-          <small>{item.label}</small>
-          <b class:warning={item.warn} data-testid="state-{item.key}">{item.value}</b>
-        </span>
-      {/if}
-    {/each}
-    {#if skin.step}
-      <!-- The step that runs, after the weight: in the values' size. -->
-      <span class="step" data-testid="state-step">{skin.step}</span>
+  {#each skin.stateValues as item (item.key)}
+    {#if item.key === 'scale' && !machine}
+      <span class="value scale">
+        <small>{item.label}</small>
+        <span class="slot" data-max={item.widest}><b data-testid="state-scale">–</b></span>
+      </span>
+    {:else if item.key === 'scale' && skin.scaleLink === 'connected'}
+      <!-- A tap on the weight tares the scale; without a scale it is not a button. -->
+      <button class="value scale" data-testid="tare" aria-label="tare the scale" onclick={() => skin.tare()}>
+        <small>{item.label}</small>
+        <span class="slot" data-max={item.widest}><b data-testid="state-scale">{item.value}</b></span>
+      </button>
+    {:else if item.key === 'scale'}
+      <!-- Without a scale the slot holds a warning sign and is a button: a tap looks for the scale again. The
+           sentence is a small line under the slot, drawn over the frame's top edge, so nothing moves for it. -->
+      <button class="value scale warn" data-testid="scale-retry" aria-label="look for the scale" onclick={() => skin.findScale()}>
+        <small>{item.label}</small>
+        <span class="slot" data-max={item.widest}><b class="warning" data-testid="state-scale">{item.value}</b></span>
+        <span class="sentence warning" data-testid="scale-hint">{item.hint}</span>
+      </button>
+    {:else}
+      <span class="value {item.key}" class:warn={item.warn}>
+        <small>{item.label}</small>
+        <span class="slot" data-max={item.widest}
+          ><b class:warning={item.warn} data-testid="state-{item.key}">{machine ? item.value : '–'}</b></span
+        >
+      </span>
     {/if}
-  {/if}
+  {/each}
 </section>
 
 <style>
-  /* centred over the main frame (the header's first column); a long step is cut, not wrapped */
+  /* centred over the main frame (the header's first column); nothing wraps */
   .state {
     min-width: 0;
     display: flex;
@@ -67,12 +71,6 @@
     overflow-x: clip;
   }
 
-  .step {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
   small {
     margin-right: var(--space-1);
     color: var(--dim);
@@ -81,9 +79,27 @@
     letter-spacing: 0.14em;
   }
 
+  /* The slot: as wide as the value's widest text, which an invisible, empty-height copy holds open; the number
+     is right aligned in it. */
+  .slot {
+    display: inline-grid;
+    justify-items: end;
+  }
+
+  .slot::after {
+    content: attr(data-max);
+    height: 0;
+    overflow: hidden;
+    visibility: hidden;
+  }
+
   b {
     font-weight: 400;
     font-variant-numeric: tabular-nums;
+  }
+
+  .scale.warn small {
+    color: var(--warn);
   }
 
   .scale b:not(.warning) {
@@ -106,8 +122,16 @@
     background: var(--raised);
   }
 
-  /* The scale's warning is a hint, not a value: at a label's size it fits beside the others. */
-  .scale.warn b {
+  /* The warning's sentence hangs under the slot, ending at its right edge, and takes no room. */
+  .scale.warn {
+    position: relative;
+  }
+
+  .sentence {
+    position: absolute;
+    top: 100%;
+    right: 0.6rem;
     font-size: var(--text-label);
+    pointer-events: none;
   }
 </style>

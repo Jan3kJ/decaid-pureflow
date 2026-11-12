@@ -44,7 +44,7 @@ test('a dropped scale is scanned for 3 times, 5 s apart; then a tap on the warni
   expect(gateway.calls('GET', SCAN)).toHaveLength(0);
 
   gateway.connectScale(false);
-  await expect(page.getByTestId('state-scale')).toHaveText('looking for it');
+  await expect(page.getByTestId('scale-hint')).toHaveText('scale looking for it');
   await pass(page, 4_000);
   expect(gateway.calls('GET', SCAN)).toHaveLength(0);
   await pass(page, 1_500);
@@ -59,7 +59,7 @@ test('a dropped scale is scanned for 3 times, 5 s apart; then a tap on the warni
   await expect.poll(() => gateway.scanning).toBe(false);
   // The round ends at the tick after the third scan.
   await pass(page, 5_000);
-  await expect(page.getByTestId('state-scale')).toHaveText('not connected, tap to retry');
+  await expect(page.getByTestId('scale-hint')).toHaveText('scale not connected, tap to retry');
   await pass(page, 5_500);
   expect(gateway.calls('GET', SCAN)).toHaveLength(3);
   await page.screenshot({ path: 'e2e/.results/scale-retry-gave-up.png' });
@@ -80,7 +80,7 @@ test('a scale missing at the start is scanned for without a touch and connects',
   gateway.connectScale(false);
   gateway.scanConnectsScale = true;
   await loadWithClock(page);
-  await expect(page.getByTestId('state-scale')).toHaveText('looking for it');
+  await expect(page.getByTestId('scale-hint')).toHaveText('scale looking for it');
   await pass(page, 6_000);
   await expect(page.getByTestId('state-scale')).toHaveText(/ g$/);
   expect(gateway.calls('GET', SCAN)).toHaveLength(1);
@@ -93,7 +93,7 @@ test('without a preferred scale no scan starts by itself; the hot water tare sca
   gateway.connectScale(false);
   await loadWithClock(page);
   await pass(page, 6_000);
-  await expect(page.getByTestId('state-scale')).toHaveText('not connected, tap to retry');
+  await expect(page.getByTestId('scale-hint')).toHaveText('scale not connected, tap to retry');
   expect(gateway.calls('GET', SCAN)).toHaveLength(0);
 
   // The page change is an animation of the clock's timers: the clock runs on from here.

@@ -154,7 +154,7 @@ test('no machine connected and a gateway that is not reachable are faults too', 
   await page.goto('/');
   await expect(page.getByTestId('status-fault')).toHaveText('No machine connected', { timeout: 8000 });
   await expect(header(page)).toHaveAttribute('data-light', 'fault');
-  await expect(page.getByTestId('state-group')).toHaveCount(0);
+  await expect(page.getByTestId('state-group')).toHaveText('–');
   await page.getByTestId('status-fault').click();
   await expect(page.getByTestId('status-dialog-detail')).toContainText('Connect it in Decaid');
 });

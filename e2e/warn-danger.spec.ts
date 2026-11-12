@@ -61,7 +61,7 @@ test('--warn is the orange #ff8a3d; the scale warning is in it, after the warnin
 
   gateway.connectScale(false);
   const scale = page.getByTestId('screen-steam').getByTestId('state-scale');
-  await expect(scale).toHaveText('looking for it');
+  await expect(page.getByTestId('screen-steam').getByTestId('scale-hint')).toHaveText('scale looking for it');
   expect(await look(scale)).toMatchObject({ color: warn, sign: SIGN });
   // A warning is not a weight: the weight's yellow is far from it.
   expect(warn).not.toBe(await colour(page, 'var(--weight)'));

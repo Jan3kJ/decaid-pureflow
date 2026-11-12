@@ -2,8 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { mockGateway, shotEvents } from './mock-gateway';
 import { toPage } from './touch';
 
-// No strip above home's graph; the step that runs is printed in the state line, after the scale's
-// weight. The column's time says 'time, finished' after a shot.
+// No strip above home's graph and no step in the header. The column's time says 'time, finished' after a shot.
 
 const errors: string[] = [];
 
@@ -29,15 +28,12 @@ function shareAt(frame: number): number {
   return (index + 1) / events.length;
 }
 
-test('no strip on home; while a shot runs the state line ends with the step’s name, which follows the machine’s frame', async ({
-  page,
-}) => {
+test('no strip on home; while a shot runs the header prints no step', async ({ page }) => {
   const gateway = await mockGateway(page);
   gateway.putOnScale(0);
   const steps = gateway.workflow.profile.steps;
   steps[1] = { ...steps[1], name: 'Preinfusion' };
   steps[2] = { ...steps[2], name: 'Extraction' };
-  steps[5] = { ...steps[5], name: '' };
   await page.goto('/');
   await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
 
@@ -54,30 +50,15 @@ test('no strip on home; while a shot runs the state line ends with the step’s 
   await expect(page.getByTestId('state-step')).toHaveCount(0);
   await expect(page.getByTestId('shot-timer-label')).toHaveText('time');
 
-  // The steps by the machine's frame number: their names, 'Step 6' for one without.
-  await gateway.replay(page, shareAt(0) - 0.01, shareAt(1));
-  await expect(page.getByTestId('state-step')).toHaveText('Preinfusion');
-  await gateway.replay(page, shareAt(1), shareAt(2));
-  await expect(page.getByTestId('state-step')).toHaveText('Extraction');
+  // Through the steps the header prints none: the machine's frame number shows nowhere in it.
+  await gateway.replay(page, shareAt(0) - 0.01, shareAt(2));
   await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Pouring');
-  // After the scale's weight, in the state line's value size.
-  const step = await box(page, 'state-step');
-  const weight = await box(page, 'state-scale');
-  expect(step.x).toBeGreaterThan(weight.x + weight.width);
-  expect(Math.abs(step.y + step.height - (weight.y + weight.height))).toBeLessThan(3);
-  const style = (testid: string) =>
-    page.getByTestId(testid).evaluate((element) => {
-      const { fontSize, color } = getComputedStyle(element);
-      return { fontSize, color };
-    });
-  expect((await style('state-step')).fontSize).toBe((await style('state-scale')).fontSize);
+  await expect(page.getByTestId('state-step')).toHaveCount(0);
   await expect(page.getByTestId('shot-caption')).toHaveCount(0);
-  await page.screenshot({ path: 'docs/product/home-step.png' });
-
   await gateway.replay(page, shareAt(2), shareAt(5));
-  await expect(page.getByTestId('state-step')).toHaveText('Step 6');
+  await expect(page.getByTestId('state-step')).toHaveCount(0);
 
-  // The shot ends: the step goes, the column says 'time, finished', the state line Idle.
+  // The shot ends: the column says 'time, finished', the state line Idle.
   await gateway.replay(page, shareAt(5), 1);
   await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
   await expect(page.getByTestId('home-shot')).toHaveAttribute('data-shot', 'finished');

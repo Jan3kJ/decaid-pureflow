@@ -196,12 +196,16 @@ export interface StateValue {
   label: string;
   value: string;
   warn: boolean;
+  /** the widest text the value takes, which sizes its slot so that no reading moves another */
+  widest: string;
+  /** the scale's warning in full; its value is empty, the warning class draws the sign */
+  hint?: string;
 }
 
 /**
  * The state line of home and the steam page: the machine's values only from a fresh frame
  * (principle 3), the tank's level only from its stream, the weight only from a connected scale.
- * A value that was not read is '–'. Without a scale the warning says whether the skin is looking
+ * A value that was not read is '–'. Without a scale the slot shows the warning sign and its `hint` says whether the skin is looking
  * for it (`scaleLooking`) or that a tap looks again. The tank is in ml or mm
  * (`tankUnit`), the ml by the user's own tank rows when there are any (`tankRows`); its warning
  * compares the mm with the refill level either way.
@@ -220,16 +224,30 @@ export function stateLine(
   const tank = link === 'machine' ? water : null;
   const degrees = (value: number | undefined) => (value === undefined ? '–' : `${value.toFixed(0)} °C`);
   return [
-    { key: 'group', label: 'group', value: machine ? `${machine.groupTemperature.toFixed(1)} °C` : '–', warn: false },
-    { key: 'steam', label: 'steam', value: degrees(machine?.steamTemperature), warn: false },
+    {
+      key: 'group',
+      label: 'group',
+      value: machine ? `${machine.groupTemperature.toFixed(1)} °C` : '–',
+      warn: false,
+      widest: '100.0 °C',
+    },
+    { key: 'steam', label: 'steam', value: degrees(machine?.steamTemperature), warn: false, widest: '200 °C' },
     {
       key: 'tank',
       label: 'tank',
       value: tank ? tankText(tank.currentLevel, tankUnit, tankRows) : '–',
       warn: tank !== null && tank.currentLevel < tank.refillLevel,
+      widest: '999.9 mm',
     },
     scaleLink === 'connected'
-      ? { key: 'scale', label: 'scale', value: gramsOf(weight), warn: false }
-      : { key: 'scale', label: 'scale', value: scaleLooking ? 'looking for it' : 'not connected, tap to retry', warn: true },
+      ? { key: 'scale', label: 'scale', value: gramsOf(weight), warn: false, widest: '-2000.0 g' }
+      : {
+          key: 'scale',
+          label: 'scale',
+          value: '',
+          warn: true,
+          widest: '-2000.0 g',
+          hint: scaleLooking ? 'scale looking for it' : 'scale not connected, tap to retry',
+        },
   ];
 }

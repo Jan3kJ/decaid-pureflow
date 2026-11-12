@@ -86,7 +86,7 @@ test('the state line warns in place of the weight when the scale is not connecte
   await expect(page.getByTestId('state-scale')).toHaveText('0.0 g');
 
   gateway.connectScale(false);
-  await expect(page.getByTestId('state-scale')).toHaveText(/^(looking for it|not connected, tap to retry)$/);
+  await expect(page.getByTestId('scale-hint')).toHaveText(/^scale (looking for it|not connected, tap to retry)$/);
   gateway.connectScale(true);
   gateway.putOnScale(12.3);
   await expect(page.getByTestId('state-scale')).toHaveText('12.3 g');
@@ -204,7 +204,7 @@ test('home says when Decaid is not reachable', async ({ page }) => {
   await page.getByTestId('status-dialog-close').click();
   await expect(page.getByTestId('status-dialog')).toHaveCount(0);
   // Nothing was read, so no value is shown.
-  await expect(page.getByTestId('state-group')).toHaveCount(0);
+  await expect(page.getByTestId('state-group')).toHaveText('–');
   await expect(page.getByTestId('profile-name')).toHaveText('–');
 });
 
@@ -214,7 +214,7 @@ test('home says when no machine is connected, and shows the machine when it come
 
   // The gateway answers and its stream is silent.
   await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'No machine connected', { timeout: 8000 });
-  await expect(page.getByTestId('state-group')).toHaveCount(0);
+  await expect(page.getByTestId('state-group')).toHaveText('–');
   // The workflow is the gateway's, with or without a machine.
   await expect(page.getByTestId('profile-name')).toHaveText('default-medium');
 

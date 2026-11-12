@@ -39,7 +39,7 @@ import { Recall, type Recalled } from './recall.svelte';
 import { SettingsStore } from './settings-store.svelte';
 import { AWAKE, askSleep, followSleep, type SleepMark } from './sleep';
 import { appSleepOf } from './two-finger';
-import { recordFrame, runningStep, settleWeight, type Shot } from './shot';
+import { recordFrame, settleWeight, type Shot } from './shot';
 import { SCALE_LOST_NOTICE, ShotWarnings } from './shot-warnings.svelte';
 import { SteamControl } from './steam-control.svelte';
 import { markStop, stopLine, type StopMark } from './stop-reason';
@@ -136,8 +136,6 @@ export class Skin {
       this.settings.tankRows,
     ),
   );
-  /** the name of the step that runs, printed after the state line's values; null outside a shot */
-  readonly step = $derived(runningStep(this.shot, this.link === 'machine' ? this.snapshot : null, this.workflow?.profile?.steps));
 
   constructor(baseUrl: string = gatewayBaseUrl(location)) {
     this.baseUrl = baseUrl;

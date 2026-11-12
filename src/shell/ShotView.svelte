@@ -53,7 +53,7 @@
 
 <div class="shot" class:values={table !== null} data-testid="home-shot" data-shot={shown.kind}>
   <div class="top">{@render top?.()}</div>
-  <!-- No strip and no caption over the graph: the step is in the state line, the shot's time
+  <!-- No strip and no caption over the graph: the shot's time
        and weight and a recalled entry's profile, bean and grinder in the column. -->
   <div class="plot" data-testid={PLOT[shown.kind]} data-main-frame>
     <ShotGraph

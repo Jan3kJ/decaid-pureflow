@@ -29,7 +29,9 @@ async function open(page: Page, options: { required?: boolean; scale?: boolean }
   gateway.decaidSettings.blockOnNoScale = options.required ?? true;
   gateway.connectScale(options.scale ?? false);
   await page.goto('/');
-  await expect(page.getByTestId('state-scale')).toHaveText(options.scale ? '0.0 g' : /looking for it|not connected/);
+  await expect(options.scale ? page.getByTestId('state-scale') : page.getByTestId('scale-hint')).toHaveText(
+    options.scale ? '0.0 g' : /looking for it|not connected/,
+  );
 }
 
 const dialog = (page: Page) => page.getByTestId('no-scale-dialog');

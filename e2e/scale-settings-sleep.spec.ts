@@ -83,7 +83,7 @@ test('scale: there is no scale page and no menu entry; a tap on the weight tares
 
   // The scale goes away: the warning looks for it, and a tap on it tares nothing.
   gateway.connectScale(false);
-  await expect(page.getByTestId('state-scale')).toHaveText('looking for it');
+  await expect(page.getByTestId('scale-hint')).toHaveText('scale looking for it');
   await expect(page.getByTestId('tare')).toHaveCount(0);
   await page.getByTestId('state-scale').click();
   await page.waitForTimeout(300);
@@ -405,7 +405,7 @@ test('a stream the gateway closed with an error is tried again for 30 s, then sh
   await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Decaid closed the connection');
   await expect(page.getByTestId('status')).toHaveAttribute('data-link', 'refused');
   await expect(page.getByTestId('stop')).toHaveCount(0);
-  await expect(page.getByTestId('state-group')).toHaveCount(0);
+  await expect(page.getByTestId('state-group')).toHaveText('–');
   expect(await overflow(page)).toEqual({ scrolls: false, outside: 0 });
 
   // After the 30 s it does not try again by itself: it is still refused after a while.

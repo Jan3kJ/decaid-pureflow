@@ -331,10 +331,18 @@ describe('stateLine', () => {
     );
   });
 
-  it('warns in place of the weight when the scale is not connected', () => {
-    expect(text(stateLine('machine', frame('idle'), water, 'disconnected', null)).at(-1)).toBe('scale not connected, tap to retry!');
-    expect(text(stateLine('machine', frame('idle'), water, 'unknown', null)).at(-1)).toBe('scale not connected, tap to retry!');
-    expect(text(stateLine('machine', frame('idle'), water, 'disconnected', null, true)).at(-1)).toBe('scale looking for it!');
+  it('warns in place of the weight when the scale is not connected: a sign in the slot, the sentence as a hint', () => {
+    const scale = (link: 'disconnected' | 'unknown', looking = false) =>
+      stateLine('machine', frame('idle'), water, link, null, looking).at(-1)!;
+    expect(text([scale('disconnected')])).toEqual(['scale !']);
+    expect(scale('disconnected').hint).toBe('scale not connected, tap to retry');
+    expect(scale('unknown').hint).toBe('scale not connected, tap to retry');
+    expect(scale('disconnected', true).hint).toBe('scale looking for it');
+  });
+
+  it('sizes every slot from its widest text', () => {
+    const line = stateLine('machine', frame('idle'), water, 'connected', 0);
+    expect(line.map((v) => v.widest)).toEqual(['100.0 °C', '200 °C', '999.9 mm', '-2000.0 g']);
   });
 
   it('warns when the tank is under its refill level', () => {

@@ -110,10 +110,9 @@ test('a simulated shot: the state, an A-Flow profile, a live graph, the stop at 
       expect(parseFloat((await page.getByTestId(id).textContent())!)).not.toBeNaN();
     }
     await expect(page.getByTestId('shot-column').getByTestId('stop')).toBeEnabled();
-    // The step that runs is the state line's last item, a step of the profile.
-    const steps = workflow.profile.steps.map((step, i) => step.name?.trim() || `Step ${i + 1}`);
+    // The header prints no step.
     await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Pouring');
-    expect(steps).toContain(await page.getByTestId('state-step').textContent());
+    await expect(page.getByTestId('state-step')).toHaveCount(0);
     await expect(page.getByTestId('shot-timer-label')).toHaveText('time');
     await page.screenshot({ path: 'e2e-rig/.results/espresso-rig.png' });
 
