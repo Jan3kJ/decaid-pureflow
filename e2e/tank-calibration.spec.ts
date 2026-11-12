@@ -55,9 +55,11 @@ test("a fill of four pours makes the skin use the user's own table, and the way 
   await expect(fill).toContainText('1 g = 1 ml');
   await expect(fill).toContainText('about 30 ml');
   await expect(fill.getByTestId('tank-calibration-back')).toHaveCount(0);
+  await expect(fill.getByTestId('tank-calibration-table')).toHaveCount(0);
 
   // The empty tank, then 250 ml at a time.
-  await expect(fill).toContainText('the tank empty.');
+  await expect(fill).toContainText('start with an empty tank: empty it completely');
+  await expect(fill).toContainText('start with an empty tank. Empty it completely');
   await settle(page, 0.4);
   await fill.getByTestId('tank-calibration-next').click();
   await expect(fill).toContainText('pour until 250 ml in all.');
@@ -94,6 +96,21 @@ test("a fill of four pours makes the skin use the user's own table, and the way 
   await expect(fill.getByTestId('tank-calibration-using')).toHaveText('your table, 5 rows to 1000 ml');
   await expect(fill.getByTestId('tank-calibration-message')).toHaveText('Saved: your table, 5 rows to 1000 ml.');
   await expect(fill.getByTestId('tank-calibration-row')).toHaveCount(0);
+
+  // The saved rows can be looked at: closed at first, read only, one row per step.
+  await expect(fill.getByTestId('tank-calibration-saved-row')).toHaveCount(0);
+  await fill.getByTestId('tank-calibration-table').click();
+  await expect(fill.getByTestId('tank-calibration-table')).toHaveText('hide table');
+  await expect(fill.getByTestId('tank-calibration-saved-row')).toHaveText([
+    /0 ml\s*0\.4 mm/,
+    /250 ml\s*9\.8 mm/,
+    /500 ml\s*19\.1 mm/,
+    /750 ml\s*27\.5 mm/,
+    /1000 ml\s*35\.6 mm/,
+  ]);
+  await fill.getByTestId('tank-calibration-table').click();
+  await expect(fill.getByTestId('tank-calibration-saved-row')).toHaveCount(0);
+  await expect(fill.getByTestId('tank-calibration-table')).toHaveText('show table');
   const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('pureflow.settings') ?? '{}') as { tankRows: unknown });
   expect(stored.tankRows).toEqual([
     { mm: 0.4, ml: 0 },
@@ -121,6 +138,7 @@ test("a fill of four pours makes the skin use the user's own table, and the way 
   await fill.getByTestId('tank-calibration-back').click();
   await expect(fill.getByTestId('tank-calibration-using')).toHaveText("Decent's table");
   await expect(fill.getByTestId('tank-calibration-back')).toHaveCount(0);
+  await expect(fill.getByTestId('tank-calibration-table')).toHaveCount(0);
   expect(
     await page.evaluate(() => (JSON.parse(localStorage.getItem('pureflow.settings') ?? '{}') as { tankRows: unknown }).tankRows),
   ).toEqual([]);
@@ -138,7 +156,7 @@ test("'start again' drops the fill, and leaving the page keeps what was saved be
   await expect(fill.getByTestId('tank-calibration-row')).toHaveCount(2);
   await fill.getByTestId('tank-calibration-again').click();
   await expect(fill.getByTestId('tank-calibration-row')).toHaveCount(0);
-  await expect(fill).toContainText('the tank empty.');
+  await expect(fill).toContainText('start with an empty tank: empty it completely');
 
   // The level has stood still since: the row is taken at once.
   await fill.getByTestId('tank-calibration-next').click();
@@ -149,4 +167,34 @@ test("'start again' drops the fill, and leaving the page keeps what was saved be
   await page.getByTestId('open-settings').click();
   await expect(page.getByTestId('tank-calibration-row')).toHaveCount(0);
   await expect(page.getByTestId('tank-calibration-using')).toHaveText("Decent's table");
+});
+
+test("a level that toggles by 0.1 mm every 300 ms enables 'next' within 7 s and keeps it enabled", async ({ page }) => {
+  await openCalibration(page);
+  const next = page.getByTestId('tank-calibration-next');
+  const noise = [0.4, 0.5, 0.3, 0.6, 0.3];
+  let k = 0;
+  const shake = setInterval(() => gateway.setWater(noise[k++ % noise.length]), 300);
+  try {
+    await expect(next).toBeEnabled({ timeout: 7000 });
+    // 20 s without a single disabled look.
+    const disabled = await page.evaluate(
+      (ms) =>
+        new Promise<number>((resolve) => {
+          let count = 0;
+          const button = document.querySelector<HTMLButtonElement>('[data-testid="tank-calibration-next"]');
+          const look = setInterval(() => {
+            if (button?.disabled) count++;
+          }, 50);
+          setTimeout(() => {
+            clearInterval(look);
+            resolve(count);
+          }, ms);
+        }),
+      20_000,
+    );
+    expect(disabled).toBe(0);
+  } finally {
+    clearInterval(shake);
+  }
 });

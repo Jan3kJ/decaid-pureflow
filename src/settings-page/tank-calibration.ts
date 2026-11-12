@@ -48,6 +48,22 @@ export function isSteady(readings: readonly Reading[], now: number): boolean {
   return Math.max(...levels) - Math.min(...levels) < STEADY_MM;
 }
 
+/**
+ * What the page shows about the level: steady or settling. `pending` is set when the last look
+ * disagreed with it; a second look that disagrees too flips it, so one look never switches it.
+ */
+export interface Verdict {
+  steady: boolean;
+  pending: boolean;
+}
+
+/** The verdict after one more look (one per tick, on the same data): it holds for one look before it flips. */
+export function judge(previous: Verdict | null, readings: readonly Reading[], now: number): Verdict {
+  const steady = isSteady(readings, now);
+  if (previous === null || steady === previous.steady) return { steady: previous === null ? steady : previous.steady, pending: false };
+  return previous.pending ? { steady, pending: false } : { steady: previous.steady, pending: true };
+}
+
 /** ml in all the next row is for: 0 for the empty tank, then a step more each; null once the tank is full. */
 export function nextMl(rows: readonly TankRow[]): number | null {
   const ml = rows.length === 0 ? 0 : rows[rows.length - 1].ml + STEP_ML;

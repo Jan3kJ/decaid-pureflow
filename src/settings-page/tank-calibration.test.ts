@@ -13,12 +13,15 @@ import {
   STEP_ML,
   canFinish,
   isSteady,
+  judge,
   nextMl,
   recentReadings,
   stepProblem,
   takeRow,
   tenth,
   usingText,
+  type Reading,
+  type Verdict,
 } from './tank-calibration';
 
 /** The rows of a fill to `ml` in all, 8.5 mm a step from 0.4 mm. */
@@ -87,6 +90,56 @@ describe('a steady level', () => {
   });
 });
 
+/** The page's way: readings kept by `recentReadings`, one verdict per 500 ms tick. */
+function simulate(level: (at: number) => number | null, every: number, until: number): boolean[] {
+  let readings: Reading[] = [];
+  let verdict: Verdict | null = null;
+  const seen: boolean[] = [];
+  for (let t = 0; t <= until; t += 100) {
+    const mm = t % every === 0 ? level(t) : null;
+    if (mm !== null) readings = [...recentReadings(readings, t), { at: t, mm }];
+    if (t % 500 === 0) {
+      verdict = judge(verdict, readings, t);
+      seen.push(verdict.steady);
+    }
+  }
+  return seen;
+}
+
+describe('the verdict per tick', () => {
+  const noise = [100.0, 100.1, 99.9, 100.2, 99.9];
+
+  it('is steady from 5 s on for a level that toggles by 0.1 mm every 300 ms, and stays steady for 30 s', () => {
+    let k = 0;
+    const seen = simulate(() => noise[k++ % noise.length], 300, 30_000);
+    const first = seen.indexOf(true);
+    expect(first * 500).toBeLessThanOrEqual(6500);
+    expect(seen.slice(first).every(Boolean)).toBe(true);
+    expect(seen.slice(0, 10).some(Boolean)).toBe(false);
+  });
+
+  it('is not steady for a spread of 0.5 mm or more', () => {
+    const seen = simulate((at) => (Math.floor(at / 300) % 2 === 0 ? 100 : 100.5), 300, 30_000);
+    expect(seen.some(Boolean)).toBe(false);
+  });
+
+  it('holds when the machine sends nothing for a while', () => {
+    const seen = simulate((at) => (at === 0 ? 100 : null), 100, 30_000);
+    expect(seen.slice(11).every(Boolean)).toBe(true);
+  });
+
+  it('lets one look that disagrees leave the verdict as it was, and flips on the second', () => {
+    const steady: Verdict = { steady: true, pending: false };
+    const still = [{ at: 0, mm: 10 }];
+    const moved = [...still, { at: 6000, mm: 11 }];
+    const first = judge(steady, moved, 6000);
+    expect(first).toEqual({ steady: true, pending: true });
+    expect(judge(first, still, 6500)).toEqual({ steady: true, pending: false });
+    expect(judge(first, moved, 6500)).toEqual({ steady: false, pending: false });
+    expect(judge(null, moved, 6000)).toEqual({ steady: false, pending: false });
+  });
+});
+
 /** A skin as the page reads it: the link, the tank's level and the settings. */
 function skinWith(level: number | null, tankRows: TankRow[] = []): Skin {
   const settings: Settings = { ...DEFAULT_SETTINGS, tankRows };
@@ -105,7 +158,9 @@ describe('the page', () => {
     const html = page(skinWith(18.73));
     expect(html).toContain("Decent's table");
     expect(html).toContain('18.7 mm');
-    expect(html).toContain('the tank empty.');
+    expect(html).toContain('start with an empty tank: empty it completely (set a refill kit to force off first)');
+    expect(html).toContain('then tap next to take the empty tank as the first row, 0 ml');
+    expect(html).toContain('start with an empty tank. Empty it completely');
     expect(html).toContain('1 g = 1 ml');
     expect(html).toContain('about 30 ml');
     expect(html).toMatch(
@@ -126,6 +181,13 @@ describe('the page', () => {
     const html = page(skinWith(30, fill(1000)));
     expect(html).toContain('your table, 5 rows to 1000 ml');
     expect(html).toContain("back to decent's table");
+  });
+
+  it("offers 'show table' only with saved rows, and lists none until it is tapped", () => {
+    const own = page(skinWith(30, fill(1000)));
+    expect(own).toContain('show table');
+    expect(own).not.toContain('tank-calibration-saved-row');
+    expect(page(skinWith(30))).not.toContain('tank-calibration-table');
   });
 
   it('has its buttons in lower case', () => {

@@ -7,7 +7,7 @@
   import type { Skin } from '../shell/skin.svelte';
   import type { TankRow } from '../shell/tank';
   import SettingsRow from './SettingsRow.svelte';
-  import { canFinish, isSteady, nextMl, recentReadings, takeRow, usingText, type Reading } from './tank-calibration';
+  import { canFinish, judge, nextMl, recentReadings, takeRow, usingText, type Reading, type Verdict } from './tank-calibration';
 
   interface Props {
     skin: Skin;
@@ -20,14 +20,17 @@
 
   let rows: TankRow[] = $state([]);
   let readings: Reading[] = $state([]);
-  let now = $state(Date.now());
+  /** the verdict on the level, made once per tick */
+  let verdict = $state(null) as Verdict | null;
+  /** the saved rows are listed under 'using' */
+  let tableShown = $state(false);
   /** what the last tap did: a refused row (a warning) or the saved table */
   let message: { text: string; saved: boolean } | null = $state(null);
   let timer: ReturnType<typeof setInterval> | undefined;
 
   const level = $derived(skin.link === 'machine' ? skin.water : null);
   const saved = $derived(skin.settings.tankRows);
-  const steady = $derived(level !== null && isSteady(readings, now));
+  const steady = $derived(level !== null && verdict !== null && verdict.steady);
   const next = $derived(nextMl(rows));
 
   // Every level the machine sends; a level it stops sending is no reading.
@@ -42,7 +45,7 @@
   });
 
   onMount(() => {
-    timer = setInterval(() => (now = Date.now()), TICK_MS);
+    timer = setInterval(() => (verdict = level ? judge(verdict, readings, Date.now()) : null), TICK_MS);
   });
   onDestroy(() => clearInterval(timer));
 
@@ -61,6 +64,7 @@
     skin.setSettings({ tankRows: rows });
     message = { text: `Saved: ${usingText(rows)}.`, saved: true };
     rows = [];
+    tableShown = false;
   }
 
   function startAgain() {
@@ -70,6 +74,7 @@
 
   function backToTable() {
     skin.setSettings({ tankRows: [] });
+    tableShown = false;
     rows = [];
     message = null;
   }
@@ -83,19 +88,34 @@
     <div class="controls">
       <b class="using" data-testid="tank-calibration-using">{usingText(saved)}</b>
       {#if saved.length > 0}
+        <button class="action" data-testid="tank-calibration-table" onclick={() => (tableShown = !tableShown)}>
+          {tableShown ? 'hide table' : 'show table'}
+        </button>
         <button class="action" data-testid="tank-calibration-back" onclick={backToTable}>back to decent's table</button>
       {/if}
     </div>
   </SettingsRow>
 
+  {#if tableShown}
+    {#each saved as row (row.ml)}
+      <SettingsRow label="{row.ml} ml" spacing="tight" testid="tank-calibration-saved-row">
+        <b>{row.mm.toFixed(1)} mm</b>
+      </SettingsRow>
+    {/each}
+  {/if}
+
   <SettingsRow
     label="how"
-    hint="empty the tank; set a refill kit to 'force off' first. Then pour 250 ml at a time, slowly, weighed on a scale (1 g = 1 ml), with the machine level, and tap next once the level is steady. You may stop from 1000 ml. The sensor reads to about a mm, about 30 ml. If the level looks low, lift the uptake assembly out of the water for 5 to 10 s before you start."
+    hint="start with an empty tank. Empty it completely; set a refill kit to 'force off' first. Then pour 250 ml at a time, slowly, weighed on a scale (1 g = 1 ml), with the machine level, and tap next once the level is steady. You may stop from 1000 ml. The sensor reads to about a mm, about 30 ml. If the level looks low, lift the uptake assembly out of the water for 5 to 10 s before you start."
   />
 
   <SettingsRow
     label="now"
-    hint={next === null ? 'the tank is full: tap done.' : next === 0 ? 'the tank empty.' : `pour until ${next} ml in all.`}
+    hint={next === null
+      ? 'the tank is full: tap done.'
+      : next === 0
+        ? 'start with an empty tank: empty it completely (set a refill kit to force off first), wait until the level is steady, then tap next to take the empty tank as the first row, 0 ml'
+        : `pour until ${next} ml in all.`}
   >
     {#snippet about()}
       <small data-testid="tank-calibration-steady"
