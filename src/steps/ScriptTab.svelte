@@ -21,11 +21,34 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     disabled?: boolean;
     onedit: (next: Profile) => void;
     ontype: (index: number, value: StepValue) => void;
+    /** the step lit in the list and on the graph; none lights nothing */
+    selected?: number | null;
+    /** a step was chosen: by a tap on the graph (the list scrolls to it) or by an edit of one of its chips */
+    onselect: (index: number) => void;
   }
 
-  let { profile, disabled = false, onedit, ontype }: Props = $props();
+  let { profile, disabled = false, onedit, ontype, selected = null, onselect }: Props = $props();
+
+  let list: HTMLElement | undefined = $state();
+
+  /** Centres the step in the list's own box, never scrolling the page; a list that fits does not move. */
+  function centre(index: number) {
+    const step = list?.querySelector<HTMLElement>(`[data-testid="script-step-${index}"]`);
+    if (!list || !step) return;
+    const box = list.getBoundingClientRect();
+    const at = step.getBoundingClientRect();
+    const top = list.scrollTop + (at.top + at.height / 2) - (box.top + box.height / 2);
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    list.scrollTo({ top: Math.max(0, top), behavior: still ? 'auto' : 'smooth' });
+  }
+
+  function graphTap(index: number) {
+    onselect(index);
+    centre(index);
+  }
 
   function cycle(index: number, chip: ScriptChip) {
+    onselect(index);
     if (chip === 'sensor') onedit(cycleSensor(profile, index));
     else if (chip === 'pump') onedit(cyclePump(profile, index));
     else if (chip === 'limit') onedit(switchLimiterOn(profile, index));
@@ -34,9 +57,9 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
 </script>
 
 <div class="script" data-testid="step-script">
-  <div class="steps" data-testid="script-steps">
+  <div class="steps" data-testid="script-steps" bind:this={list}>
     {#each profile.steps as step, index (index)}
-      <div class="step" data-testid="script-step-{index}">
+      <div class="step select-outline" aria-current={selected === index} data-testid="script-step-{index}">
         <p class="name">{index + 1}: {step.name || 'Step'}</p>
         <ul>
           {#each stepSentences(profile, index) as sentence (sentence.kind)}
@@ -60,7 +83,10 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
                     data-off={part.off ? 'true' : 'false'}
                     aria-label="{part.text}, tap to type"
                     {disabled}
-                    onclick={() => ontype(index, part.value)}>{part.text}</button
+                    onclick={() => {
+                      onselect(index);
+                      ontype(index, part.value);
+                    }}>{part.text}</button
                   >
                 {/if}
               {/each}
@@ -72,7 +98,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
       <p class="empty">No steps: add one on the cards.</p>
     {/each}
   </div>
-  <StepPreview {profile} />
+  <StepPreview {profile} {selected} onselect={graphTap} />
 </div>
 
 <style>
@@ -88,6 +114,8 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     min-width: 0;
     box-sizing: border-box;
     padding: var(--graph-pad);
+    /* The last step's own padding and edge make up the rest of the foot's gap. */
+    padding-bottom: calc(var(--graph-pad) - var(--space-1) - 1px);
     overflow-y: auto;
     background: var(--panel);
     border: 1px solid var(--line);
@@ -97,21 +125,20 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   .step {
     display: flex;
     gap: var(--space-2);
-    padding: var(--space-2) 0;
+    padding: var(--space-1);
+    border: 1px solid transparent;
+    border-radius: var(--radius-small);
+    /* The lit edge sits outside the words: the words keep the frame's gap. */
+    margin: 0 calc(-1px - var(--space-1));
   }
 
-  /* The first and the last step stand a gap from the frame, as a graph's content does. */
   .step:first-child {
-    padding-top: 0;
+    margin-top: calc(-1px - var(--space-1));
   }
 
-  .step:last-child {
-    padding-bottom: 0;
-  }
-
-  /* A hairline between steps, not above the first. */
+  /* A hairline between steps, not above the first; the selected look lights the whole edge. */
   .step + .step {
-    border-top: 1px solid var(--line);
+    border-top-color: var(--line);
   }
 
   .name {

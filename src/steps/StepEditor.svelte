@@ -69,6 +69,8 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   /** the profile a load on leaving failed for: a second 'back' with it leaves without loading */
   let refused: Profile | null = null;
   let openIndex = $state(0);
+  /** The script tab lights a step only once one was chosen, on either tab; the cards always have one open. */
+  let chosen = $state(false);
   let typing: { index: number; value: StepValue } | null = $state(null);
   let deleting: number | null = $state(null);
   let naming = $state(false);
@@ -291,10 +293,28 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   {#if tab === 'settings'}
     <ProfileSettings {profile} {titleProblem} disabled={busy} onedit={edit} />
   {:else if tab === 'script'}
-    <ScriptTab {profile} disabled={busy} onedit={edit} ontype={(index: number, value: StepValue) => (typing = { index, value })} />
+    <ScriptTab
+      {profile}
+      disabled={busy}
+      selected={chosen ? openIndex : null}
+      onselect={(index: number) => {
+        openIndex = index;
+        chosen = true;
+      }}
+      onedit={edit}
+      ontype={(index: number, value: StepValue) => (typing = { index, value })}
+    />
   {:else}
     <!-- The curve preview: the targets of the steps, redrawn with every edit; a tap opens the step under the finger. -->
-    <StepPreview {profile} mainFrame selected={openIndex} onselect={(index: number) => (openIndex = index)}>
+    <StepPreview
+      {profile}
+      mainFrame
+      selected={openIndex}
+      onselect={(index: number) => {
+        openIndex = index;
+        chosen = true;
+      }}
+    >
       <NoticeOverlay {notice} onclose={() => (notice = null)} />
     </StepPreview>
 
@@ -306,7 +326,10 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
           count={profile.steps.length}
           open={index === openIndex}
           disabled={busy}
-          onopen={() => (openIndex = index)}
+          onopen={() => {
+            openIndex = index;
+            chosen = true;
+          }}
           onstep={(value: StepValue, direction: 1 | -1) => edit(stepValue(profile, index, value, direction))}
           ontype={(value: StepValue) => (typing = { index, value })}
           oncycle={(what: 'sensor' | 'pump' | 'exit') => cycle(index, what)}

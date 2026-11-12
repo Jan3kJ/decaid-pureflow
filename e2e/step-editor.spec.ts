@@ -218,7 +218,7 @@ async function tapGraph(page: Page, seconds: number) {
   await graph.click({ position });
 }
 
-test('a tap on the graph of the cards tab opens the step under the finger and centres its card; the script tab takes no tap', async ({
+test('a tap on the graph of the cards tab opens the step under the finger and centres its card; the script tab picks a step too', async ({
   page,
 }) => {
   await withMine(page);
@@ -240,11 +240,12 @@ test('a tap on the graph of the cards tab opens the step under the finger and ce
   await expect(card(page, 0)).toHaveAttribute('data-open', 'true');
   await centred(page, 'start');
 
-  // The script tab's graph is read-only: the open step stays the first.
+  // The script tab's graph picks a step too (script-step-scroll.spec.ts): the cards tab shows it open.
   await page.getByTestId('tab-script').click();
   await tapGraph(page, 40);
   await page.getByTestId('tab-cards').click();
-  await expect(card(page, 0)).toHaveAttribute('data-open', 'true');
+  await expect(page.locator('[data-testid^="step-card-"][data-open="true"]')).toHaveCount(1);
+  await expect(card(page, 0)).toHaveAttribute('data-open', 'false');
   expect(errors).toEqual([]);
 });
 
