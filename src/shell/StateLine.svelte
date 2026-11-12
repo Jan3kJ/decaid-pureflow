@@ -118,10 +118,6 @@
     border-radius: var(--radius-small);
   }
 
-  button.value:active {
-    background: var(--raised);
-  }
-
   /* The warning's sentence hangs under the slot, ending at its right edge, and takes no room. */
   .scale.warn {
     position: relative;

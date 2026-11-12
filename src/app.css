@@ -498,7 +498,7 @@ body {
  * Pressed: the selected light for as long as the finger is down, and it fades out over 0.35 s on
  * release, so a quick tap still shows. One rule for every button, and every label or link drawn as
  * one, except a chip (it changes its fill on a press), a selection (it lights its edge by being
- * selected), the number pad's keys, the slider lines, a disabled button and the invisible
+ * selected), the number pad's keys, a slider line, a disabled button and the invisible
  * backdrops. A stop glows in its own colour. Under reduced motion the light shows and goes at once.
  */
 :root
@@ -510,7 +510,7 @@ body {
     [aria-current],
     [role='tab'],
     .pad-key,
-    .line,
+    [role='slider'],
     .backdrop,
     .outside,
     :disabled
@@ -529,7 +529,7 @@ body {
     [aria-current],
     [role='tab'],
     .pad-key,
-    .line,
+    [role='slider'],
     .backdrop,
     .outside,
     :disabled

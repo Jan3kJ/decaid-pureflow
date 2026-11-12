@@ -149,3 +149,46 @@ test('a disabled button takes no light', async ({ page }) => {
   expect(await shadow(button)).toBe('none');
   await page.mouse.up();
 });
+
+test("steam's scale row glows while it is held and fades after", async ({ page }) => {
+  const gateway = await mockGateway(page);
+  await page.goto('/');
+  await toPage(page, 'steam');
+  gateway.putOnScale(300);
+  await glows(page, page.getByTestId('steam-tare'));
+});
+
+test("the header's weight glows while it is held and fades after", async ({ page }) => {
+  const gateway = await mockGateway(page);
+  await page.goto('/');
+  gateway.putOnScale(300);
+  await expect(page.getByTestId('state-scale')).toHaveText(/300/);
+  await glows(page, page.getByTestId('tare'), { x: 640, y: 400 });
+});
+
+test('a hot water slider line takes no light on a press', async ({ page }) => {
+  await mockGateway(page);
+  await page.goto('/');
+  await toPage(page, 'hot-water');
+  const slider = page.getByTestId('hot-water-slider-time');
+  const box = (await slider.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  expect(await shadow(slider)).toBe('none');
+  await page.mouse.up();
+});
+
+test('the scale row takes no light while steam runs', async ({ page }) => {
+  const gateway = await mockGateway(page);
+  await page.goto('/');
+  await toPage(page, 'steam');
+  gateway.putOnScale(300);
+  gateway.steamFor(6);
+  const row = page.getByTestId('steam-tare');
+  await expect(row).toBeDisabled();
+  const box = (await row.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  expect(await shadow(row)).toBe('none');
+  await page.mouse.up();
+});
