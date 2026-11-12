@@ -10,7 +10,6 @@
   // (`estimate`) the curves are a modelled shot, the targets thin dotted lines under them, the
   // limits as in the preview.
   import { tick, untrack } from 'svelte';
-  import CurveFade from './CurveFade.svelte';
   import { graphPad, labelReach, NO_REACH, reachMoved, type Reach } from './reach';
   import { fixedScale, inBand, legendLabel, shotScale, temperatureBand, timeAxis, type TemperatureBand } from './axis';
 
@@ -174,9 +173,6 @@
     box.tempBottom -
     ((inBand(value, temperatureRange) - temperatureRange.min) / (temperatureRange.max - temperatureRange.min)) * box.tempH;
 
-  const uid = $props.id();
-  const fadeId = `fade-${uid}`;
-
   let plot: HTMLDivElement | undefined = $state();
   let svg: SVGSVGElement | undefined = $state();
 
@@ -216,9 +212,9 @@
   <!-- The glow is four strokes, each wider and fainter than the one over it, so that no step shows: strokes
        cost little, a blur filter costs a pass over the plot on every live update. -->
   {#each glowSteps as step (step)}
-    <path class="glow {step} {quantity}" pathLength="1" style:stroke="url(#{fadeId}-{quantity})" {d} />
+    <path class="glow {step} {quantity}" pathLength="1" {d} />
   {/each}
-  <path class="line {quantity}" pathLength="1" style:stroke="url(#{fadeId}-{quantity})" data-testid={testid} {d} />
+  <path class="line {quantity}" pathLength="1" data-testid={testid} {d} />
 {/snippet}
 
 <div class="graph" style:--plot-left="{box.left}px">
@@ -307,7 +303,6 @@
         />
       {/if}
 
-      <CurveFade id={fadeId} left={box.left} right={box.right} />
       {#if temperature}
         {@render curve('temperature', 'shot-line-temperature', path(temperature, yTemperature))}
       {/if}
