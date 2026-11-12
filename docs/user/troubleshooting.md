@@ -17,7 +17,8 @@ The top line says when something is missing.
 
 ## The scale
 
-Without a scale the top line reads **scale ⚠ not connected, tap to retry**. The skin looks for a
+Without a scale the scale's place in the top line reads **scale ⚠**, with the sentence
+**scale not connected, tap to retry** in small letters under it. The skin looks for a
 known scale by itself when it drops. A tap on the warning, or on **tare**, looks again. If that
 does not find it, wake the scale and connect it under **Settings > 2. Connections > 2. Scale**.
 

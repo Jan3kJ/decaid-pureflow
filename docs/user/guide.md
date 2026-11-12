@@ -17,7 +17,8 @@ It feels less natural there, but it works.
 
 - The three lines in the top right corner open the menu on all three pages: settings, beans and
   grinders, clean, steam on or off, the machine's sleep and wake. The page's name stands left of
-  them, the readings (group or steam, tank, scale) in the middle. The machine's state is a faint
+  them, the readings (group or steam, tank, scale) in the middle. Each reading has its own place
+  from the first frame, so none moves when another changes; without a machine each shows a dash. The machine's state is a faint
   light behind the header: red and breathing while it heats, blue while water or a shot runs, red
   and steady while it steams. The top left corner stays empty; only "Asleep" and "Off" (the steam
   heater) show there, dim. A fault (needs water, error, no machine, no connection) shows there in
@@ -40,7 +41,7 @@ right on a row goes back too, unless the row is open: then it closes the row.
 Start a shot at the machine. Home draws it live: blue is flow, green pressure, red temperature,
 yellow the weight. The legend under the graph names each curve with its unit, for example **flow · ml/s**;
 the setting **legend** under Settings > 6. Skin > Shot graph turns it off, and then the graph shows no unit.
-While it runs the header names the running step; the title **Home** is at the top right. The right column starts level with the graph's top edge and holds the
+The title **Home** is at the top right. The right column starts level with the graph's top edge and holds the
 time, the weight and the live values, each caption on the left and its number on the right; under
 **weight** it says where the shot stops. After the shot the column reads **time, finished** and
 keeps the shot until the next one starts. A line under the weight says why it stopped, as Decaid
@@ -162,7 +163,7 @@ The tank's level is measured in mm, and the skin turns it into ml with Decent's 
 look wrong for your tank, Settings > 1. Quick Adjustments > **Tank calibration** makes your own
 table:
 
-1. Set a refill kit to 'force off' first, then empty the tank. If the level looked low before,
+1. Start with an empty tank. Set a refill kit to 'force off' first, then empty it completely. If the level looked low before,
    lift the uptake assembly out of the water for 5 to 10 s and put it back.
 2. Keep the machine level. When **now** says 'steady', tap **next**: that is the empty tank.
 3. Pour 250 ml, slowly, weighed on a scale (1 g = 1 ml), wait for 'steady' and tap **next**.
@@ -171,7 +172,8 @@ table:
 4. From 1000 ml **done** saves the table; going on to the full tank is not needed. **start
    again** drops the steps; leaving the page keeps the table saved before.
 
-**using** says which table is in force; **back to decent's table** removes yours. The header,
+**using** says which table is in force; **show table** lists its rows (mm for each ml) and
+**hide table** closes the list; **back to decent's table** removes yours. The header,
 the water alert's note and the clean's check of 350 ml then follow your table. The machine still
 works in mm: the water alert and its refill warning do not change. The sensor reads to about a mm,
 which is about 30 ml, so expect no better than that. The table belongs to this tank: it is not in
