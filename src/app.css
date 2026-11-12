@@ -115,6 +115,7 @@
   --control-tall: 3.2rem;
   /* a page's or dialog's own button, a value to tap, the page header, a day of the calendar */
   --control-big: 3.5rem;
+  --main-button-height: 4.5rem;
   /* Over the page. A dialog, the menu or a notice lifted off it. */
   --shadow-dialog: 0 0.6rem 2.4rem rgb(0 0 0 / 70%);
   /* a sheet sliding in from the left */
@@ -408,6 +409,18 @@ body {
   background: none;
   border-color: var(--edge);
   box-shadow: none;
+}
+
+/*
+ * The main button of a page's column: the stop of home, steam and hot water and steam's 'set timer'
+ * have this one box, exactly this high and this size of text, the column's width, at its foot.
+ */
+.main-button {
+  box-sizing: border-box;
+  flex: none;
+  height: var(--main-button-height);
+  min-height: 0;
+  font-size: var(--text-value);
 }
 
 /*

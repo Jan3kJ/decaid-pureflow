@@ -131,7 +131,7 @@
   </div>
 
   <button
-    class="set primary"
+    class="set primary main-button"
     data-testid="steam-set-timer"
     disabled={calculated === 0}
     onclick={() => calculated > 0 && skin.setSteamTimer(calculated)}
@@ -268,8 +268,6 @@
 
   /* Edged like the chips; off, it takes the shared off look of `.primary`. */
   .set.primary {
-    min-height: 4.5rem;
-    font-size: var(--text-value);
     display: flex;
     align-items: center;
     justify-content: center;

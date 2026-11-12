@@ -135,13 +135,14 @@
     {/if}
     <!-- Nothing is started here: the DE1 is started at the machine. What runs can be stopped. -->
     {#if running || skin.canStop}
-      <button class="stop big-stop" data-testid="stop" disabled={!skin.canStop} onclick={() => skin.stop()}>stop</button>
+      <button class="stop big-stop main-button" data-testid="stop" disabled={!skin.canStop} onclick={() => skin.stop()}>stop</button>
     {/if}
   </aside>
 </div>
 
 <style>
   .shot {
+    container-type: size;
     flex: 1;
     min-height: 0;
     display: grid;
@@ -235,6 +236,13 @@
     flex-direction: column;
     /* the steam page's gap */
     gap: var(--space-3);
+  }
+
+  /* a page under 42 rem high (the largest display size) gives the column the smaller gap, so the stop stays whole in view */
+  @container (max-height: 42rem) {
+    aside {
+      gap: var(--space-2);
+    }
   }
 
   /* the five rows and the stop line, as far apart as steam's */
@@ -334,14 +342,8 @@
     text-shadow: none;
   }
 
-  /*
-   * 7 rem high where the column has room; at a larger display size it gives up height, never
-   * less than 3.5 rem, so it stays whole in view under the values.
-   */
+  /* the main button's box is app.css's; the stop stands at the column's foot */
   .stop {
     margin-top: auto;
-    flex: 0 1 7rem;
-    min-height: var(--control-big);
-    font-size: var(--text-large);
   }
 </style>

@@ -27,7 +27,7 @@
     {@render children()}
 
     {#if onstop}
-      <button class="stop big-stop" data-testid={stopTestid} onclick={onstop}>stop</button>
+      <button class="stop big-stop main-button" data-testid={stopTestid} onclick={onstop}>stop</button>
     {/if}
   </aside>
 </div>
@@ -59,7 +59,5 @@
 
   .stop {
     margin-top: auto;
-    min-height: 6rem;
-    font-size: var(--text-large);
   }
 </style>

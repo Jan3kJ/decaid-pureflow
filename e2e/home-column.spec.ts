@@ -82,7 +82,7 @@ test('the profile and bean buttons are in the column while idle, off during a sh
   expect(await top(page, 'shot-timer')).toBeCloseTo(timerTop, 0);
   expect(await top(page, 'shot-weight')).toBeCloseTo(weightTop, 0);
   const stop = await box(page, 'stop');
-  expect(stop.height).toBeCloseTo(7 * REM, 0);
+  expect(stop.height).toBeCloseTo(4.5 * REM, 0);
   expect(stop.y + stop.height).toBeCloseTo(area.y + area.height, 0);
   const temperatureNow = await box(page, 'shot-temperature');
   expect(stop.y).toBeGreaterThanOrEqual(temperatureNow.y + temperatureNow.height);
