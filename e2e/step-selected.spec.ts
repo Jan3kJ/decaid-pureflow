@@ -47,10 +47,10 @@ async function expected(page: Page, from: number, to: number) {
     (preview, [a, b]) => {
       const svg = preview.querySelector('[data-testid="shot-graph"]')!;
       const seconds = Number(svg.getAttribute('data-seconds'));
-      const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
       const box = svg.getBoundingClientRect();
-      const left = 2.8 * rem;
-      const right = box.width - 1.2 * rem;
+      const grid = svg.querySelector('line.grid')!;
+      const left = Number(grid.getAttribute('x1'));
+      const right = Number(grid.getAttribute('x2'));
       const x = (time: number) => box.left + left + (time / seconds) * (right - left);
       return { left: x(a), right: x(b) };
     },

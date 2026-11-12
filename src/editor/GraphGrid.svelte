@@ -13,8 +13,9 @@
     params: AFlowParams;
     box: PlotBox;
     projection: Projection;
-    /** the graph's height in pixels, and the root font size */
+    /** the graph's height in pixels, the frame's gap (`--graph-pad`), and the root font size */
     height: number;
+    pad: number;
     rem: number;
     mode: 'simple' | 'detail';
     selected: PhaseId;
@@ -24,7 +25,7 @@
     dragging: EditField | undefined;
   }
 
-  let { curve, params, box, projection, height, rem, mode, selected, mainTicks, temperatureTicks, dragging }: Props = $props();
+  let { curve, params, box, projection, height, pad, rem, mode, selected, mainTicks, temperatureTicks, dragging }: Props = $props();
 
   const durationOf = $derived(durationFields(curve));
 </script>
@@ -39,9 +40,9 @@
     class:selected={mode === 'detail' && phase.id === selected}
     data-testid="column-{phase.id}"
     x={x0}
-    y={box.top - 0.6 * rem}
+    y={pad}
     width={x1 - x0}
-    height={Math.max(0, height - box.top)}
+    height={Math.max(0, height - 2 * pad)}
     rx={0.5 * rem}
   />
   {#if x1 > x0}

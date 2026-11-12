@@ -1,6 +1,7 @@
 // Where the editor's graph lands on the screen: the plot's box, the scales and the drawn
 // paths, in pixels. Pure: sizes and the curve in, numbers and strings out.
 import type { AFlowParams, MachineLimits, NumberField } from '../aflow';
+import { NO_REACH, type Reach } from '../graph/reach';
 import { formatValue } from './fields';
 import {
   GRAPH_WIDTH,
@@ -31,12 +32,15 @@ export interface PlotBox {
   mainH: number;
 }
 
-/** The box for a graph `width` x `height` pixels, with `rem` pixels to the root font size. */
-export function plotBox(width: number, height: number, rem: number): PlotBox {
-  const left = 2.8 * rem;
-  const right = Math.max(left + 1, width - 1.2 * rem);
-  const top = 1.8 * rem;
-  const bottom = Math.max(top + 3, height - 3.4 * rem);
+/**
+ * The box for a graph `width` x `height` pixels, with `rem` pixels to the root font size: the
+ * grid stands where the labels' `reach` past it and the frame's `pad` leave room (src/graph/reach.ts).
+ */
+export function plotBox(width: number, height: number, rem: number, pad: number, reach: Reach = NO_REACH): PlotBox {
+  const left = pad + reach.left;
+  const right = Math.max(left + 1, width - pad - reach.right);
+  const top = pad + reach.top;
+  const bottom = Math.max(top + 3, height - pad - reach.bottom);
   const gap = 3.4 * rem;
   const tempH = Math.max(1, Math.min(bottom - top - gap, Math.max((bottom - top - gap) * 0.22, 3.2 * rem)));
   const mainTop = top + tempH + gap;

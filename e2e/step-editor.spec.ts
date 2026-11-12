@@ -203,16 +203,16 @@ test('cards have no arrow buttons: a tap selects a card and centres it, the firs
 });
 
 /**
- * A tap on a graph at a time on its axis: the plot starts 2.8 rem from the left and ends 1.2 rem
- * before the right (ShotGraph's box), and runs over the profile's seconds; half way down.
+ * A tap on a graph at a time on its axis: the plot is the span of the drawn grid (ShotGraph's box),
+ * and runs over the profile's seconds; half way down.
  */
 async function tapGraph(page: Page, seconds: number) {
   const graph = page.getByTestId('step-preview').getByTestId('shot-graph');
   const position = await graph.evaluate((svg, at) => {
-    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
-    const { width, height } = svg.getBoundingClientRect();
-    const left = 2.8 * rem;
-    const right = width - 1.2 * rem;
+    const { height } = svg.getBoundingClientRect();
+    const grid = svg.querySelector('line.grid')!;
+    const left = Number(grid.getAttribute('x1'));
+    const right = Number(grid.getAttribute('x2'));
     return { x: left + (at / Number(svg.dataset.seconds)) * (right - left), y: height / 2 };
   }, seconds);
   await graph.click({ position });

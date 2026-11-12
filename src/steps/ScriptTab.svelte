@@ -87,7 +87,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     flex: 0 0 56%;
     min-width: 0;
     box-sizing: border-box;
-    padding: var(--space-1) 0.9rem;
+    padding: var(--graph-pad);
     overflow-y: auto;
     background: var(--panel);
     border: 1px solid var(--line);
@@ -98,6 +98,15 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     display: flex;
     gap: var(--space-2);
     padding: var(--space-2) 0;
+  }
+
+  /* The first and the last step stand a gap from the frame, as a graph's content does. */
+  .step:first-child {
+    padding-top: 0;
+  }
+
+  .step:last-child {
+    padding-bottom: 0;
   }
 
   /* A hairline between steps, not above the first. */

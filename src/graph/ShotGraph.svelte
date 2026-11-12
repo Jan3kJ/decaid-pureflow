@@ -9,7 +9,9 @@
   // limit as a thin dotted line in its quantity's colour, muted. As the picker's estimate
   // (`estimate`) the curves are a modelled shot, the targets thin dotted lines under them, the
   // limits as in the preview.
+  import { tick, untrack } from 'svelte';
   import CurveFade from './CurveFade.svelte';
+  import { graphPad, labelReach, NO_REACH, reachMoved, type Reach } from './reach';
   import { fixedScale, inBand, legendLabel, shotScale, temperatureBand, timeAxis, type TemperatureBand } from './axis';
 
   interface Props {
@@ -102,12 +104,14 @@
   let width = $state(0);
   let height = $state(0);
   let rem = $state(16);
+  let pad = $state(9.6);
 
   $effect(() => {
     // The root font size follows the viewport (app.css): read it again when the size changes.
     void width;
     void height;
     rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    pad = graphPad(rem);
   });
 
   const axis = $derived(timeAxis(t.at(-1) ?? 0, fit, minSeconds));
@@ -122,16 +126,46 @@
   const temperatureRange = $derived(temperatureBand([...(temperature ?? []), ...drawn(targetTemperature)], temperatureScale));
 
   // The plot in pixels: a band for the temperature on top, a gap, and the main band. The gap and
-  // the top leave room for the tick numbers only.
+  // the top leave room for the tick numbers only. The nearest drawn content on each side, the
+  // tick numbers, the time labels or the legend and the lit step's rect, stands `pad` from the
+  // frame; the labels' reach past the grid is read from the drawn texts.
+  let reach: Reach = $state(NO_REACH);
+  // A lit step's rect is the nearest content: the labels stand this far inside it.
+  const inset = $derived(selected && !bare ? 0.3 * rem : 0);
+  // Under the plot: the legend's own space when it is there, else the frame's gap.
+  const foot = $derived(height - (legend ? 0.3 * rem : pad));
   const box = $derived.by(() => {
-    const left = bare ? 0.4 * rem : 2.8 * rem;
-    const right = Math.max(left + 1, width - (bare ? 0.4 : 1.2) * rem);
-    const top = bare ? 0.4 * rem : 0.6 * rem;
-    const bottom = Math.max(top + 3, height - (bare ? 0.4 : 2) * rem);
+    const left = bare ? 0.4 * rem : pad + reach.left;
+    const right = Math.max(left + 1, width - (bare ? 0.4 * rem : pad + reach.right));
+    const top = bare ? 0.4 * rem : pad + reach.top + inset;
+    const bottom = Math.max(top + 3, bare ? height - 0.4 * rem : foot - reach.bottom - inset);
     const gap = temperature ? 1 * rem : 0;
     const tempH = temperature ? Math.max(1, Math.min(bottom - top - gap, Math.max((bottom - top) * 0.18, 2.6 * rem))) : 0;
     const mainTop = top + tempH + gap;
     return { left, right, top, bottom, tempBottom: top + tempH, tempH, mainTop, mainH: Math.max(1, bottom - mainTop) };
+  });
+
+  $effect(() => {
+    // The texts move with the box, so the reach read off them is the same at any box: it settles.
+    // Read once the DOM has the new size (a size that came with the first frame is not drawn yet).
+    void [width, height, rem, pad, mainTicks, temperatureRange, axis.ticks, bare, legend, !!selected];
+    if (bare) return;
+    let stale = false;
+    void tick().then(() => {
+      if (stale || !svg) return;
+      const next = labelReach(
+        svg,
+        untrack(() => box),
+      );
+      if (
+        reachMoved(
+          next,
+          untrack(() => reach),
+        )
+      )
+        reach = next;
+    });
+    return () => (stale = true);
   });
 
   const x = (time: number) => box.left + (time / seconds) * (box.right - box.left);
@@ -144,6 +178,7 @@
   const fadeId = `fade-${uid}`;
 
   let plot: HTMLDivElement | undefined = $state();
+  let svg: SVGSVGElement | undefined = $state();
 
   // A tap is a shortcut for the finger, so it listens on the plot without making it a control.
   $effect(() => {
@@ -186,9 +221,10 @@
   <path class="line {quantity}" pathLength="1" style:stroke="url(#{fadeId}-{quantity})" data-testid={testid} {d} />
 {/snippet}
 
-<div class="graph">
+<div class="graph" style:--plot-left="{box.left}px">
   <div class="plot" bind:this={plot} bind:clientWidth={width} bind:clientHeight={height}>
     <svg
+      bind:this={svg}
       {width}
       {height}
       role="img"
@@ -225,9 +261,9 @@
           class="selected"
           data-testid="step-selected"
           x={x(selected.from)}
-          y={box.top - 0.6 * rem}
+          y={pad}
           width={Math.max(0, x(selected.to) - x(selected.from))}
-          height={Math.max(0, height - box.top)}
+          height={Math.max(0, foot - pad)}
           rx={0.5 * rem}
         />
       {/if}
@@ -472,7 +508,7 @@
   .legend {
     flex: none;
     margin: 0;
-    padding: 0 1.2rem 0.6rem 2.8rem;
+    padding: 0 var(--graph-pad) var(--graph-pad) var(--plot-left);
     list-style: none;
     display: flex;
     flex-wrap: wrap;

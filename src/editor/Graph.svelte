@@ -5,7 +5,9 @@
   import { FIELD_LABEL, FIELD_STEP, formatValue, snap } from './fields';
   import GraphChips from './GraphChips.svelte';
   import GraphGrid from './GraphGrid.svelte';
+  import { tick, untrack } from 'svelte';
   import CurveFade from '../graph/CurveFade.svelte';
+  import { graphPad, labelReach, NO_REACH, reachMoved, type Reach } from '../graph/reach';
   import {
     flowPath,
     mainTicks,
@@ -42,6 +44,8 @@
   let width = $state(0);
   let height = $state(0);
   let rem = $state(16);
+  let pad = $state(9.6);
+  let reach: Reach = $state(NO_REACH);
   let svg: SVGSVGElement | undefined = $state();
 
   $effect(() => {
@@ -49,6 +53,7 @@
     void width;
     void height;
     rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    pad = graphPad(rem);
   });
 
   // 80 to 100 °C, wider while a temperature is outside. It follows a drag as it goes: the line
@@ -59,7 +64,31 @@
     levels: curve.levels,
     borders: curve.borders.filter((b) => !b.off && (mode === 'detail' || !b.detailOnly)),
   });
-  const box = $derived(plotBox(width, height, rem));
+  // In detail mode the selected column is the nearest content: the labels stand inside it.
+  const inset = $derived(mode === 'detail' ? 0.3 * rem : 0);
+  const box = $derived(plotBox(width, height, rem, pad, { ...reach, top: reach.top + inset, bottom: reach.bottom + inset }));
+
+  $effect(() => {
+    // The captions and numbers move with the box: their reach past the grid is the same at any box.
+    // Read once the DOM has the new size.
+    void [width, height, rem, pad, inset, yMax, temperature];
+    let stale = false;
+    void tick().then(() => {
+      if (stale || !svg) return;
+      const next = labelReach(
+        svg,
+        untrack(() => box),
+      );
+      if (
+        reachMoved(
+          next,
+          untrack(() => reach),
+        )
+      )
+        reach = next;
+    });
+    return () => (stale = true);
+  });
   const projection = $derived(plotProjection(box, temperature, yMax));
 
   const uid = $props.id();
@@ -168,6 +197,7 @@
       {box}
       {projection}
       {height}
+      {pad}
       {rem}
       {mode}
       {selected}
@@ -243,7 +273,10 @@
           class:held={drag?.shown === level.field}
           data-testid="value-{level.field}"
           x={level.label === 'start' ? x1 + 0.5 * rem : level.label === 'end' ? x2 - 0.5 * rem : (x1 + x2) / 2}
-          y={level.label === 'start' ? y1 - 0.9 * rem : level.label === 'end' ? y2 - 0.9 * rem : (y1 + y2) / 2 - 0.6 * rem}
+          y={Math.max(
+            level.label === 'start' ? y1 - 0.9 * rem : level.label === 'end' ? y2 - 0.9 * rem : (y1 + y2) / 2 - 0.6 * rem,
+            pad + inset + 0.8 * rem,
+          )}
         >
           {formatValue(level.field, resolved[level.field])}
         </text>

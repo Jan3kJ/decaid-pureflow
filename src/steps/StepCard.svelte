@@ -237,7 +237,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
 
   .closed {
     width: 13.5rem;
-    padding: 0.8rem 0.9rem;
+    padding: var(--graph-pad);
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -290,7 +290,7 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
 
   .open {
     width: 46rem;
-    padding: var(--space-2) 0.9rem;
+    padding: var(--graph-pad);
     display: flex;
     flex-direction: column;
     gap: var(--space-2);

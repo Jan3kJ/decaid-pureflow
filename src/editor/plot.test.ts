@@ -18,16 +18,18 @@ import {
 } from './plot';
 
 const rem = 16;
-const box = plotBox(1000, 500, rem);
+const pad = 0.6 * rem;
+const reach = { left: 2.2 * rem, top: 0.3 * rem, right: 0.4 * rem, bottom: 2.9 * rem };
+const box = plotBox(1000, 500, rem, pad, reach);
 const temperature = { min: 80, max: 100 };
 
 describe("the editor graph's plot", () => {
   it('puts the temperature band on top, a gap for the chips, pressure and flow below', () => {
-    expect(box.left).toBe(2.8 * rem);
-    expect(box.right).toBe(1000 - 1.2 * rem);
+    expect(box.left).toBe(pad + reach.left);
+    expect(box.right).toBe(1000 - pad - reach.right);
     expect(box.plotW).toBe(box.right - box.left);
-    expect(box.top).toBe(1.8 * rem);
-    expect(box.bottom).toBe(500 - 3.4 * rem);
+    expect(box.top).toBe(pad + reach.top);
+    expect(box.bottom).toBe(500 - pad - reach.bottom);
     expect(box.tempBottom).toBe(box.top + box.tempH);
     expect(box.mainTop - box.tempBottom).toBeCloseTo(3.4 * rem);
     expect(box.gapMiddle).toBeCloseTo((box.tempBottom + box.mainTop) / 2);
@@ -35,7 +37,7 @@ describe("the editor graph's plot", () => {
   });
 
   it('keeps a usable box on an empty graph', () => {
-    const empty = plotBox(0, 0, rem);
+    const empty = plotBox(0, 0, rem, pad);
     expect(empty.plotW).toBe(1);
     expect(empty.tempH).toBeGreaterThan(0);
     expect(empty.mainH).toBe(1);
