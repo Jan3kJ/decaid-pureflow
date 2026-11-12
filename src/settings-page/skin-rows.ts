@@ -3,6 +3,7 @@
 import { DISPLAY_SIZES, LINE_WIDTHS, type DisplayChoice } from '../display';
 import { PRODUCT_NAME, PRODUCT_VERSION } from '../product';
 import { STEAM_FIELDS } from '../settings';
+import { TUNING_VALUES } from './local-install';
 import type { SkinPart } from './tree';
 
 /** What the filter reads of a row; `id` names it within its subcategory. */
@@ -105,6 +106,21 @@ export const DEVELOPER_ROW: RowWords = {
   hint: 'shows Skin > Developer, to install a build from a server on your PC. Only on this tablet.',
 };
 
+export const LOCAL_INSTALL_ROW: RowWords = {
+  id: 'local-install',
+  label: 'install from a local server',
+  hint: 'a build from the server on your PC, to test it before it is published.',
+};
+
+/** Skin > Developer's look tuning: one row per value, and the reset for all of them. */
+export const TUNING_ROWS: RowWords[] = TUNING_VALUES;
+
+export const TUNING_RESET_ROW: RowWords = {
+  id: 'tuning-reset',
+  label: 'reset tuning',
+  hint: 'sets every value above back to 1.00, the look as designed. Only on this tablet.',
+};
+
 /** The rows of each part of the category Skin; a part without any is a view, found by its subcategory's name. */
 export const SKIN_ROWS: Record<SkinPart, RowWords[]> = {
   steam: STEAM_ROWS,
@@ -115,5 +131,5 @@ export const SKIN_ROWS: Record<SkinPart, RowWords[]> = {
   skins: [],
   versions: [],
   backup: [BACKUP_ROW, VERSION_ROW, DEVELOPER_ROW],
-  developer: [],
+  developer: [...TUNING_ROWS, TUNING_RESET_ROW, LOCAL_INSTALL_ROW],
 };

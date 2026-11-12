@@ -389,7 +389,7 @@
 
   /* Skin > Display's line width is a factor on every curve's stroke (src/display.ts). */
   .line {
-    stroke-width: calc(0.2rem * var(--curve-thin) * var(--line-width, 1));
+    stroke-width: calc(0.2rem * var(--curve-thin) * var(--line-width, 1) * var(--curve-thick, 1));
     stroke-linecap: round;
   }
 
@@ -401,23 +401,23 @@
   }
 
   .glow.outer {
-    stroke-width: calc(1.2rem * var(--curve-thin) * var(--line-width, 1));
-    opacity: 0.02;
+    stroke-width: calc(1.2rem * var(--curve-thin) * var(--line-width, 1) * var(--curve-thick, 1) * var(--glow-range, 1));
+    opacity: min(1, calc(0.02 * var(--glow-brightness, 1)));
   }
 
   .glow.wide {
-    stroke-width: calc(0.8rem * var(--curve-thin) * var(--line-width, 1));
-    opacity: 0.03;
+    stroke-width: calc(0.8rem * var(--curve-thin) * var(--line-width, 1) * var(--curve-thick, 1) * var(--glow-range, 1));
+    opacity: min(1, calc(0.03 * var(--glow-brightness, 1)));
   }
 
   .glow.mid {
-    stroke-width: calc(0.5rem * var(--curve-thin) * var(--line-width, 1));
-    opacity: 0.03;
+    stroke-width: calc(0.5rem * var(--curve-thin) * var(--line-width, 1) * var(--curve-thick, 1) * var(--glow-range, 1));
+    opacity: min(1, calc(0.03 * var(--glow-brightness, 1)));
   }
 
   .glow.inner {
-    stroke-width: calc(0.3rem * var(--curve-thin) * var(--line-width, 1));
-    opacity: 0.04;
+    stroke-width: calc(0.3rem * var(--curve-thin) * var(--line-width, 1) * var(--curve-thick, 1) * var(--glow-range, 1));
+    opacity: min(1, calc(0.04 * var(--glow-brightness, 1)));
   }
 
   /* A curve draws in once, when the graph opens; a live update moves the path, the animation does not restart. */
@@ -445,13 +445,13 @@
   }
 
   .target {
-    stroke-width: calc(0.07rem * var(--curve-thin) * var(--line-width, 1));
+    stroke-width: calc(0.07rem * var(--curve-thin) * var(--line-width, 1) * var(--curve-thick, 1));
     stroke-dasharray: calc(0.4rem * var(--curve-thin)) calc(0.3rem * var(--curve-thin));
     opacity: 0.85;
   }
 
   .target.solid {
-    stroke-width: calc(0.2rem * var(--curve-thin) * var(--line-width, 1));
+    stroke-width: calc(0.2rem * var(--curve-thin) * var(--line-width, 1) * var(--curve-thick, 1));
     stroke-dasharray: none;
     stroke-linecap: round;
     opacity: 1;
@@ -459,7 +459,7 @@
 
   /* The estimate's targets: thin dots under the model's curves. */
   .target.dotted {
-    stroke-width: calc(0.12rem * var(--curve-thin) * var(--line-width, 1));
+    stroke-width: calc(0.12rem * var(--curve-thin) * var(--line-width, 1) * var(--curve-thick, 1));
     stroke-dasharray: calc(0.01rem * var(--curve-thin)) calc(0.22rem * var(--curve-thin));
     stroke-linecap: round;
   }
@@ -467,7 +467,7 @@
   /* A limit, not a target: dotted, thinner, muted. */
   .limit {
     fill: none;
-    stroke-width: calc(0.13rem * var(--curve-thin) * var(--line-width, 1));
+    stroke-width: calc(0.13rem * var(--curve-thin) * var(--line-width, 1) * var(--curve-thick, 1));
     stroke-dasharray: calc(0.01rem * var(--curve-thin)) calc(0.32rem * var(--curve-thin));
     stroke-linecap: round;
     opacity: 0.55;

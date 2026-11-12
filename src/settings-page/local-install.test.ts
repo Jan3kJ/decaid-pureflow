@@ -3,15 +3,21 @@ import { DecaidApiError } from '../api';
 import {
   DEVELOPER_KEY,
   SERVER_KEY,
+  TUNING_DEFAULTS,
+  TUNING_KEY,
+  applyTuning,
+  clampTuning,
   installError,
   installQuestion,
   loadDeveloper,
   loadServer,
+  loadTuning,
   readHtmlListing,
   readIndex,
   readListing,
   saveDeveloper,
   saveServer,
+  saveTuning,
   serverBase,
   sizeText,
   zipNames,
@@ -153,5 +159,58 @@ describe('the words', () => {
       'This Decaid does not allow installing from a URL.',
     );
     expect(installError(new Error('no answer'))).toBe('Decaid did not install it: no answer');
+  });
+});
+
+describe('the look tuning', () => {
+  const memory = () => {
+    const data = new Map<string, string>();
+    return {
+      getItem: (key: string) => data.get(key) ?? null,
+      setItem: (key: string, value: string) => void data.set(key, value),
+      removeItem: (key: string) => void data.delete(key),
+    };
+  };
+
+  it('keeps a value in 0.05 steps from 0 to 2 and gives the default for anything else', () => {
+    expect(clampTuning(0.35)).toBe(0.35);
+    expect(clampTuning(0.37)).toBe(0.35);
+    expect(clampTuning(0)).toBe(0);
+    expect(clampTuning(2)).toBe(2);
+    for (const bad of [-0.1, 2.05, Number.NaN, Infinity, '0.5', null, undefined, {}]) expect(clampTuning(bad)).toBe(1);
+  });
+
+  it('loads the defaults without or with a broken store and the stored values otherwise', () => {
+    const store = memory();
+    expect(loadTuning(store)).toEqual(TUNING_DEFAULTS);
+    store.setItem(TUNING_KEY, 'not json');
+    expect(loadTuning(store)).toEqual(TUNING_DEFAULTS);
+    store.setItem(TUNING_KEY, JSON.stringify({ glowRange: 0.35, glowBrightness: 7, curveThick: 'x', waterLineGlow: 0 }));
+    expect(loadTuning(store)).toEqual({ ...TUNING_DEFAULTS, glowRange: 0.35, waterLineGlow: 0 });
+  });
+
+  it('saves what differs from the defaults and nothing when all are default', () => {
+    const store = memory();
+    saveTuning({ ...TUNING_DEFAULTS, curveThick: 0.5 }, store);
+    expect(loadTuning(store).curveThick).toBe(0.5);
+    saveTuning(TUNING_DEFAULTS, store);
+    expect(store.getItem(TUNING_KEY)).toBeNull();
+  });
+
+  it('puts the values on the root as custom properties, and 1 for all with developer options off', () => {
+    const tuning = { ...TUNING_DEFAULTS, glowRange: 2, glowBrightness: 0, curveThick: 0.5 };
+    const set: Record<string, string> = {};
+    const root = { style: { setProperty: (name: string, value: string) => void (set[name] = value) } };
+    applyTuning(true, tuning, root as unknown as HTMLElement);
+    expect(set).toEqual({
+      '--glow-range': '2',
+      '--glow-brightness': '0',
+      '--curve-thick': '0.5',
+      '--water-line-thick': '1',
+      '--water-line-glow': '1',
+      '--water-spot-glow': '1',
+    });
+    applyTuning(false, tuning, root as unknown as HTMLElement);
+    expect(Object.values(set).every((value) => value === '1')).toBe(true);
   });
 });

@@ -31,6 +31,113 @@ export function saveDeveloper(on: boolean, store: Pick<Storage, 'setItem' | 'rem
   }
 }
 
+/** The look's tuning values of Skin > Developer, on this tablet only like the switch. */
+export const TUNING_KEY = 'pureflow.tuning';
+
+/** One tuning value: its key in the store, the root custom property it drives, and its words. */
+export interface TuningValue {
+  key: 'glowRange' | 'glowBrightness' | 'curveThick' | 'waterLineThick' | 'waterLineGlow' | 'waterSpotGlow';
+  property: string;
+  id: string;
+  label: string;
+  hint: string;
+}
+
+export type Tuning = Record<TuningValue['key'], number>;
+
+export const TUNING_MIN = 0;
+export const TUNING_MAX = 2;
+export const TUNING_STEP = 0.05;
+export const TUNING_DEFAULT = 1;
+
+export const TUNING_VALUES: TuningValue[] = [
+  {
+    key: 'glowRange',
+    property: '--glow-range',
+    id: 'glow-range',
+    label: 'graph glow range',
+    hint: 'how far the glow of a graph curve reaches, on home, steam and in the editor.',
+  },
+  {
+    key: 'glowBrightness',
+    property: '--glow-brightness',
+    id: 'glow-brightness',
+    label: 'glow brightness',
+    hint: 'how strong every glow of the skin is; 0.00 shows none.',
+  },
+  {
+    key: 'curveThick',
+    property: '--curve-thick',
+    id: 'curve-thick',
+    label: 'graph line thickness',
+    hint: 'the thickness of a graph curve, on top of Display > chart line width.',
+  },
+  {
+    key: 'waterLineThick',
+    property: '--water-line-thick',
+    id: 'water-line-thick',
+    label: 'hot water line thickness',
+    hint: 'the thickness of the lines of the hot water page.',
+  },
+  {
+    key: 'waterLineGlow',
+    property: '--water-line-glow',
+    id: 'water-line-glow',
+    label: 'hot water line glow range',
+    hint: 'how far the glow of a lit line on the hot water page reaches; 0.00 shows none.',
+  },
+  {
+    key: 'waterSpotGlow',
+    property: '--water-spot-glow',
+    id: 'water-spot-glow',
+    label: 'hot water spot glow range',
+    hint: 'the size of the glow around the number of a lit line on the hot water page; 0.00 shows none.',
+  },
+];
+
+export const TUNING_DEFAULTS = Object.fromEntries(TUNING_VALUES.map((value) => [value.key, TUNING_DEFAULT])) as Tuning;
+
+/** A tuning value in 0.05 steps from 0 to 2; the default for anything else (not a number, below 0, above 2). */
+export function clampTuning(value: unknown): number {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < TUNING_MIN || value > TUNING_MAX) return TUNING_DEFAULT;
+  return Math.round(value * 20) / 20;
+}
+
+export function loadTuning(store: Pick<Storage, 'getItem'> = localStorage): Tuning {
+  let stored: unknown;
+  try {
+    const text = store.getItem(TUNING_KEY);
+    stored = text ? JSON.parse(text) : null;
+  } catch {
+    stored = null;
+  }
+  const record = typeof stored === 'object' && stored !== null ? (stored as Record<string, unknown>) : {};
+  return Object.fromEntries(TUNING_VALUES.map((value) => [value.key, clampTuning(record[value.key])])) as Tuning;
+}
+
+export function saveTuning(tuning: Tuning, store: Pick<Storage, 'setItem' | 'removeItem'> = localStorage): void {
+  try {
+    if (TUNING_VALUES.every((value) => tuning[value.key] === TUNING_DEFAULT)) store.removeItem(TUNING_KEY);
+    else store.setItem(TUNING_KEY, JSON.stringify(tuning));
+  } catch {
+    // no storage: the values are the defaults again next time
+  }
+}
+
+/** The custom properties the root gets: the tuning with developer options on, 1 for all with them off. */
+export function tuningProperties(tuning: Tuning, developer: boolean): [string, string][] {
+  return TUNING_VALUES.map((value) => [value.property, `${developer ? tuning[value.key] : TUNING_DEFAULT}`]);
+}
+
+/** Puts the stored tuning on the root, or the defaults while developer options are off. */
+export function applyTuning(
+  developer: boolean = loadDeveloper(),
+  tuning: Tuning = loadTuning(),
+  root: Pick<HTMLElement, 'style'> = document.documentElement,
+): void {
+  for (const [property, value] of tuningProperties(tuning, developer)) root.style.setProperty(property, value);
+}
+
 export function loadServer(store: Pick<Storage, 'getItem'> = localStorage): string {
   try {
     return store.getItem(SERVER_KEY) ?? '';

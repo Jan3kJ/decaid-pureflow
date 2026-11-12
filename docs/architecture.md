@@ -251,6 +251,13 @@ to type, and has Decaid install the ZIP with `POST /api/v1/webui/skins/install/u
 skin, the page starts Decaid's skin server again and opens it, as the skin switch does. How to
 use it: [CONTRIBUTING](../CONTRIBUTING.md#testing-a-build-on-the-tablet).
 
+Skin > Developer also tunes the look with six values from 0.00 to 2.00 in steps of 0.05 (default 1.00, the designed
+look): graph glow range, glow brightness, graph line thickness, hot water line thickness, and the hot water line's and
+spot's glow range. They are kept in `localStorage` (`pureflow.tuning`) and applied by `applyTuning`
+(`src/settings-page/local-install.ts`) as `--glow-range`, `--glow-brightness`, `--curve-thick`, `--water-line-thick`,
+`--water-line-glow` and `--water-spot-glow` on the root, and as 1 while developer options are off. Every glow colour in
+`src/app.css` multiplies its alpha by `--glow-brightness`, capped at 100 %.
+
 After Settings > Skin > Active Skin > check (`POST /api/v1/webui/skins/update`), the page compares
 the version of Decaid's default skin with the build constant `PRODUCT_VERSION`; when this skin is
 the default at another version, it offers 'reload' (`installedOther` in

@@ -164,16 +164,16 @@
     position: absolute;
     left: 0;
     right: 0;
-    top: -0.5px;
-    height: 1px;
+    top: calc(-0.5px * var(--water-line-thick));
+    height: calc(1px * var(--water-line-thick));
     background: var(--line-rest);
   }
 
   .fill {
     position: absolute;
     left: 0;
-    top: -1px;
-    height: 2px;
+    top: calc(-1px * var(--water-line-thick));
+    height: calc(2px * var(--water-line-thick));
     width: calc(var(--p) * 100%);
     border-radius: var(--radius-line);
     background: var(--line-fill);
@@ -190,8 +190,8 @@
   .live {
     position: absolute;
     left: 0;
-    top: -2px;
-    height: 4px;
+    top: calc(-2px * var(--water-line-thick));
+    height: calc(4px * var(--water-line-thick));
     border-radius: var(--radius-line);
     background: var(--tone);
     box-shadow: var(--shadow-live);
@@ -220,7 +220,7 @@
   .value::before {
     content: '';
     position: absolute;
-    inset: -2.2rem -3rem;
+    inset: calc(-2.2rem * var(--water-spot-glow)) calc(-3rem * var(--water-spot-glow));
     z-index: var(--layer-under);
     background: var(--halo);
     opacity: 0;
@@ -248,13 +248,14 @@
   }
 
   .lit .fill {
-    top: -1.5px;
-    height: 3px;
+    top: calc(-1.5px * var(--water-line-thick));
+    height: calc(3px * var(--water-line-thick));
     box-shadow: var(--shadow-line);
   }
 
+  /* no halo at all when the spot's range is 0: a box of no size still carries the gradient */
   .lit .value::before {
-    opacity: 1;
+    opacity: clamp(0, calc(var(--water-spot-glow) * 100), 1);
   }
 
   .lit b {
@@ -262,7 +263,7 @@
   }
 
   .slider:focus-visible .rest {
-    height: 2px;
-    top: -1px;
+    height: calc(2px * var(--water-line-thick));
+    top: calc(-1px * var(--water-line-thick));
   }
 </style>

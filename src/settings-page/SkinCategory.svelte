@@ -27,9 +27,11 @@
     DISPLAY,
     EDITOR_DOSE_ROW,
     GRAPH_SWITCHES,
+    LOCAL_INSTALL_ROW,
     OLD_AFLOW_ROW,
     RATIOS_ROW,
     START_ROW,
+    TUNING_RESET_ROW,
     STEAM_ROWS,
     SWITCHES,
     VERSION_ROW,
@@ -43,7 +45,19 @@
   import Versions from './Versions.svelte';
   import SettingsRow from './SettingsRow.svelte';
   import LocalInstall from './LocalInstall.svelte';
-  import { saveDeveloper } from './local-install';
+  import {
+    TUNING_DEFAULT,
+    TUNING_DEFAULTS,
+    TUNING_STEP,
+    TUNING_VALUES,
+    applyTuning,
+    clampTuning,
+    loadTuning,
+    saveDeveloper,
+    saveTuning,
+    type Tuning,
+    type TuningValue,
+  } from './local-install';
   import { signed } from '../display';
 
   interface Props {
@@ -64,6 +78,22 @@
   function toggleDeveloper() {
     developer = !developer;
     saveDeveloper(developer);
+    applyTuning(developer, tuning);
+  }
+
+  // Skin > Developer's look tuning, on the root while developer options are on.
+  let tuning: Tuning = $state(loadTuning());
+
+  function tune(value: TuningValue, to: number) {
+    tuning[value.key] = clampTuning(to);
+    saveTuning(tuning);
+    applyTuning(developer, tuning);
+  }
+
+  function resetTuning() {
+    tuning = { ...TUNING_DEFAULTS };
+    saveTuning(tuning);
+    applyTuning(developer, tuning);
   }
 
   // The category Skin of the settings page: the skin's own settings, all in
@@ -359,7 +389,42 @@
 {#if developer && shows('skin-developer')}
   <section id="sub-skin-developer" data-testid="settings-developer">
     {@render heading(SUB['skin-developer'])}
-    <LocalInstall {skin} />
+    {#each TUNING_VALUES as value (value.key)}
+      {#if showsRow('skin-developer', value.id)}
+        <SettingsRow label={value.label} hint={value.hint} spacing="skin">
+          <div class="stepper" data-testid="tuning-{value.id}">
+            <button
+              class="action"
+              aria-label="less {value.label}"
+              data-testid="tuning-{value.id}-less"
+              disabled={tuning[value.key] <= 0}
+              onclick={() => tune(value, tuning[value.key] - TUNING_STEP)}>−</button
+            >
+            <b data-testid="tuning-{value.id}-value">{tuning[value.key].toFixed(2)}</b>
+            <button
+              class="action"
+              aria-label="more {value.label}"
+              data-testid="tuning-{value.id}-more"
+              disabled={tuning[value.key] >= 2}
+              onclick={() => tune(value, tuning[value.key] + TUNING_STEP)}>+</button
+            >
+          </div>
+        </SettingsRow>
+      {/if}
+    {/each}
+    {#if showsRow('skin-developer', TUNING_RESET_ROW.id)}
+      <SettingsRow label={TUNING_RESET_ROW.label} hint={TUNING_RESET_ROW.hint} spacing="skin">
+        <button
+          class="retry"
+          data-testid="tuning-reset"
+          disabled={TUNING_VALUES.every((value) => tuning[value.key] === TUNING_DEFAULT)}
+          onclick={resetTuning}>reset</button
+        >
+      </SettingsRow>
+    {/if}
+    {#if showsRow('skin-developer', LOCAL_INSTALL_ROW.id)}
+      <LocalInstall {skin} />
+    {/if}
   </section>
 {/if}
 
@@ -556,6 +621,21 @@
   .none {
     color: var(--dim);
     font-style: italic;
+  }
+
+  .stepper {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .stepper b {
+    min-width: 3.5rem;
+    text-align: center;
+    font-size: var(--text-value);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
   }
 
   .retry {

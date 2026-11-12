@@ -12,6 +12,13 @@
   --grid: rgb(255 255 255 / 3.5%);
   /* The share of its old width every graph curve and its glow is stroked at (with Skin > Display line width). */
   --curve-thin: 0.7;
+  /* The developer tuning (Skin > Developer, src/settings-page/local-install.ts): 1 is the look as designed. */
+  --glow-brightness: 1;
+  --glow-range: 1;
+  --curve-thick: 1;
+  --water-line-thick: 1;
+  --water-line-glow: 1;
+  --water-spot-glow: 1;
   /*
    * Glass: a faint white gradient, a thin edge and a brighter top edge, as the prototype
    * (docs/design/dark-glass-hot-water.html). A panel is a surface, a light on it is a glow.
@@ -59,12 +66,12 @@
    * A glow in a quantity's colour, for text-shadow and drop-shadow (`npm run lint` takes only
    * these there). Selected or live it lights; a text has a soft one, a line a wider.
    */
-  --shadow-glow-flow: 0 0 0.8rem rgb(var(--flow-rgb) / 45%);
-  --shadow-glow-pressure: 0 0 0.8rem rgb(var(--pressure-rgb) / 45%);
-  --shadow-glow-temperature: 0 0 0.8rem rgb(var(--temperature-rgb) / 45%);
-  --shadow-glow-weight: 0 0 0.8rem rgb(var(--weight-rgb) / 45%);
-  --shadow-glow-warn: 0 0 0.8rem rgb(var(--warn-rgb) / 45%);
-  --shadow-glow-time: 0 0 0.8rem rgb(var(--time-rgb) / 45%);
+  --shadow-glow-flow: 0 0 0.8rem rgb(var(--flow-rgb) / min(100%, calc(45% * var(--glow-brightness))));
+  --shadow-glow-pressure: 0 0 0.8rem rgb(var(--pressure-rgb) / min(100%, calc(45% * var(--glow-brightness))));
+  --shadow-glow-temperature: 0 0 0.8rem rgb(var(--temperature-rgb) / min(100%, calc(45% * var(--glow-brightness))));
+  --shadow-glow-weight: 0 0 0.8rem rgb(var(--weight-rgb) / min(100%, calc(45% * var(--glow-brightness))));
+  --shadow-glow-warn: 0 0 0.8rem rgb(var(--warn-rgb) / min(100%, calc(45% * var(--glow-brightness))));
+  --shadow-glow-time: 0 0 0.8rem rgb(var(--time-rgb) / min(100%, calc(45% * var(--glow-brightness))));
   /* The way back to home, light blue: lighter and paler than --flow
      (HSL 200° 72% 78% against 211° 100% 65%, a CIELAB distance of 40), so no curve's colour. */
   --accent: #9fd4f0;
@@ -250,7 +257,7 @@ body {
 
 :root .line-field:focus {
   border-bottom-color: var(--fg);
-  box-shadow: 0 0.6rem 0.8rem -0.6rem rgb(var(--fg-rgb) / 45%);
+  box-shadow: 0 0.6rem 0.8rem -0.6rem rgb(var(--fg-rgb) / min(100%, calc(45% * var(--glow-brightness))));
 }
 
 /* The search field over a list: the profile picker's, the settings'. */
@@ -423,8 +430,8 @@ body {
   inset: 0;
   border-radius: inherit;
   box-shadow:
-    0 0 1.4rem rgb(var(--temperature-rgb) / 35%),
-    inset 0 0 1.2rem rgb(var(--temperature-rgb) / 12%);
+    0 0 1.4rem rgb(var(--temperature-rgb) / min(100%, calc(35% * var(--glow-brightness)))),
+    inset 0 0 1.2rem rgb(var(--temperature-rgb) / min(100%, calc(12% * var(--glow-brightness))));
   pointer-events: none;
   animation: stop-pulse 3s ease-in-out infinite;
 }
@@ -462,16 +469,16 @@ body {
   background: none;
   border-color: rgb(var(--glow-rgb, var(--fg-rgb)) / 70%);
   box-shadow:
-    0 0 1.2rem rgb(var(--glow-rgb, var(--fg-rgb)) / 25%),
-    inset 0 0 1.2rem rgb(var(--glow-rgb, var(--fg-rgb)) / 10%);
+    0 0 1.2rem rgb(var(--glow-rgb, var(--fg-rgb)) / min(100%, calc(25% * var(--glow-brightness)))),
+    inset 0 0 1.2rem rgb(var(--glow-rgb, var(--fg-rgb)) / min(100%, calc(10% * var(--glow-brightness))));
 }
 
 /* A part that is lit by a state of its own (a lever that is on): the same light. */
 :root .glow {
   border-color: rgb(var(--glow-rgb, var(--fg-rgb)) / 70%);
   box-shadow:
-    0 0 1.2rem rgb(var(--glow-rgb, var(--fg-rgb)) / 25%),
-    inset 0 0 1.2rem rgb(var(--glow-rgb, var(--fg-rgb)) / 10%);
+    0 0 1.2rem rgb(var(--glow-rgb, var(--fg-rgb)) / min(100%, calc(25% * var(--glow-brightness)))),
+    inset 0 0 1.2rem rgb(var(--glow-rgb, var(--fg-rgb)) / min(100%, calc(10% * var(--glow-brightness))));
 }
 
 /*
@@ -515,7 +522,7 @@ body {
     :disabled
   ):active {
   border-color: rgb(var(--glow-rgb, var(--fg-rgb)) / 70%);
-  box-shadow: 0 0 1.2rem rgb(var(--glow-rgb, var(--fg-rgb)) / 25%);
+  box-shadow: 0 0 1.2rem rgb(var(--glow-rgb, var(--fg-rgb)) / min(100%, calc(25% * var(--glow-brightness))));
   transition: none;
 }
 
@@ -526,7 +533,7 @@ body {
 /* A chip keeps its own press look: the same light, while the finger is down. */
 :root .chip:active:not(:disabled) {
   border-color: rgb(var(--glow-rgb, var(--fg-rgb)) / 70%);
-  box-shadow: 0 0 1.2rem rgb(var(--glow-rgb, var(--fg-rgb)) / 25%);
+  box-shadow: 0 0 1.2rem rgb(var(--glow-rgb, var(--fg-rgb)) / min(100%, calc(25% * var(--glow-brightness))));
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -581,10 +588,16 @@ body {
   --tone-rgb: var(--fg-rgb);
   --line-rest: linear-gradient(90deg, rgb(var(--tone-rgb) / 22%), rgb(255 255 255 / 9%) 30%);
   --line-fill: linear-gradient(90deg, rgb(var(--tone-rgb) / 15%), var(--tone));
-  --halo: radial-gradient(closest-side, rgb(var(--tone-rgb) / 24%), transparent);
-  --shadow-line: 0 0 0.6rem rgb(var(--tone-rgb) / 90%), 0 0 1.6rem rgb(var(--tone-rgb) / 45%);
-  --shadow-live: 0 0 0.9rem rgb(var(--tone-rgb) / 90%), 0 0 0.25rem var(--fg);
-  --shadow-glow-number: 0 0 0.8rem rgb(var(--tone-rgb) / 80%), 0 0 2.4rem rgb(var(--tone-rgb) / 50%);
+  --halo: radial-gradient(closest-side, rgb(var(--tone-rgb) / min(100%, calc(24% * var(--glow-brightness)))), transparent);
+  --shadow-line:
+    0 0 calc(0.6rem * var(--water-line-glow)) rgb(var(--tone-rgb) / min(100%, calc(90% * var(--glow-brightness)))),
+    0 0 calc(1.6rem * var(--water-line-glow)) rgb(var(--tone-rgb) / min(100%, calc(45% * var(--glow-brightness))));
+  --shadow-live:
+    0 0 calc(0.9rem * var(--water-line-glow)) rgb(var(--tone-rgb) / min(100%, calc(90% * var(--glow-brightness)))),
+    0 0 calc(0.25rem * var(--water-line-glow)) rgb(var(--fg-rgb) / min(100%, calc(100% * var(--glow-brightness))));
+  --shadow-glow-number:
+    0 0 calc(0.8rem * var(--water-spot-glow)) rgb(var(--tone-rgb) / min(100%, calc(80% * var(--glow-brightness)))),
+    0 0 calc(2.4rem * var(--water-spot-glow)) rgb(var(--tone-rgb) / min(100%, calc(50% * var(--glow-brightness))));
 }
 
 .slider-tone[data-tone='temperature'] {

@@ -14,6 +14,7 @@
   import { Skin } from './shell/skin.svelte';
   import { backupTime } from './settings-backup';
   import { applyDisplay } from './display';
+  import { applyTuning } from './settings-page/local-install';
   import Steam from './steam/Steam.svelte';
   import StepEditor from './steps/StepEditor.svelte';
   import {
@@ -56,6 +57,7 @@
     };
   });
   $effect(() => applyDisplay(skin.settings));
+  onMount(() => applyTuning());
 
   // One horizontal gesture for the pages, the way back and the shot history (src/shell/swipe.ts):
   // hot water, home and steam are one row, and a swipe slides to the neighbour,

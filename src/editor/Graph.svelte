@@ -365,7 +365,7 @@
   /* Skin > Display's line width is a factor on every curve's stroke (src/display.ts). */
   .line {
     fill: none;
-    stroke-width: calc(0.24rem * var(--curve-thin) * var(--line-width, 1));
+    stroke-width: calc(0.24rem * var(--curve-thin) * var(--line-width, 1) * var(--curve-thick, 1));
     stroke-linejoin: round;
     stroke-linecap: round;
   }
@@ -373,10 +373,10 @@
   /* The glow: the curve's points again, wider and faint; it takes no touch. */
   .glow {
     fill: none;
-    stroke-width: calc(0.8rem * var(--curve-thin) * var(--line-width, 1));
+    stroke-width: calc(0.8rem * var(--curve-thin) * var(--line-width, 1) * var(--curve-thick, 1) * var(--glow-range, 1));
     stroke-linejoin: round;
     stroke-linecap: round;
-    opacity: 0.16;
+    opacity: min(1, calc(0.16 * var(--glow-brightness, 1)));
     pointer-events: none;
   }
 
@@ -410,7 +410,7 @@
 
   /* The pour's pressure limiter, where it is not the target pressure. */
   .line.limit {
-    stroke-width: calc(0.12rem * var(--curve-thin) * var(--line-width, 1));
+    stroke-width: calc(0.12rem * var(--curve-thin) * var(--line-width, 1) * var(--curve-thick, 1));
     stroke-dasharray: calc(0.5rem * var(--curve-thin)) calc(0.5rem * var(--curve-thin));
     opacity: 0.7;
   }
