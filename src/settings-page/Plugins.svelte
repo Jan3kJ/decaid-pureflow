@@ -18,6 +18,7 @@
   import NumberPad from '../editor/NumberPad.svelte';
   import type { Skin } from '../shell/skin.svelte';
   import Confirm from './Confirm.svelte';
+  import { withManageToken } from './manage-token.svelte';
   import SettingsRow from './SettingsRow.svelte';
   import { textOf } from './text';
   import {
@@ -82,7 +83,7 @@
     busy[at] = true;
     delete failed[at];
     try {
-      await skin.client.updatePluginSettings(plugin.id, { [control.key]: value });
+      await withManageToken(skin.client, () => skin.client.updatePluginSettings(plugin.id, { [control.key]: value }));
       if (control.kind === 'secure') secret[at] = '';
       // The answer is redacted too, but a read is what the gateway holds.
       stored[plugin.id] = await skin.client.getPluginSettings(plugin.id);
@@ -97,7 +98,7 @@
     busy[plugin.id] = true;
     delete failed[plugin.id];
     try {
-      await skin.client.setPluginEnabled(plugin.id, on);
+      await withManageToken(skin.client, () => skin.client.setPluginEnabled(plugin.id, on));
       plugins = sortedPlugins(await skin.client.listPlugins());
     } catch (cause) {
       failed[plugin.id] = `${on ? 'Not enabled' : 'Not disabled'}: ${errorMessage(cause)}`;
@@ -121,7 +122,7 @@
     busy[plugin.id] = true;
     delete failed[plugin.id];
     try {
-      await skin.client.approvePluginUpdate(plugin.id);
+      await withManageToken(skin.client, () => skin.client.approvePluginUpdate(plugin.id));
       plugins = sortedPlugins(await skin.client.listPlugins());
     } catch (cause) {
       failed[plugin.id] = `Not updated: ${errorMessage(cause)}`;
@@ -134,7 +135,7 @@
     checking = true;
     checked = null;
     try {
-      await skin.client.checkPluginUpdates();
+      await withManageToken(skin.client, () => skin.client.checkPluginUpdates());
       plugins = sortedPlugins(await skin.client.listPlugins());
       checked = 'Checked; the states below are what Decaid reports now.';
     } catch (cause) {

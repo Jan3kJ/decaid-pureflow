@@ -9,6 +9,7 @@
   import SettingsRow from './SettingsRow.svelte';
   import { errorMessage } from '../error-message';
   import { installError } from './local-install';
+  import { withManageToken } from './manage-token.svelte';
   import { FLAVOURS, fetchReleases, installOf, installQuestion, releaseDate, type Flavour, type Release } from './releases';
 
   interface Props {
@@ -53,8 +54,9 @@
     reloadable = false;
     said = `Decaid downloads and installs ${how.asset} …`;
     try {
-      if (how.kind === 'release') await skin.client.installSkinFromGitHubRelease(how.repo, how.asset);
-      else await skin.client.installSkinFromUrl(how.url);
+      await withManageToken(skin.client, () =>
+        how.kind === 'release' ? skin.client.installSkinFromGitHubRelease(how.repo, how.asset) : skin.client.installSkinFromUrl(how.url),
+      );
     } catch (cause) {
       said = installError(cause);
       busy = false;

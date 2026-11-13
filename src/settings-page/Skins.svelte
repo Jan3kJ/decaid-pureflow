@@ -19,6 +19,7 @@
   import type { Skin } from '../shell/skin.svelte';
   import Confirm from './Confirm.svelte';
   import SettingsRow from './SettingsRow.svelte';
+  import { withManageToken } from './manage-token.svelte';
   import { OPEN_WAIT_MS, installedOther, orderSkins, reloadLine, skinAddress, switchSkin } from './skins';
   import { errorMessage } from '../error-message';
 
@@ -61,7 +62,7 @@
     busy = true;
     said = `Switching to ${target.name} …`;
     try {
-      const port = await switchSkin(skin.client, target.id);
+      const port = await withManageToken(skin.client, () => switchSkin(skin.client, target.id));
       defaultId = target.id;
       said = `${target.name} is Decaid's default skin. Opening it …`;
       location.assign(skinAddress(port, location));
@@ -80,7 +81,7 @@
     busy = true;
     said = 'Decaid looks for newer skins …';
     try {
-      await skin.client.updateSkins();
+      await withManageToken(skin.client, () => skin.client.updateSkins());
       await read();
       said = 'Checked: the versions above are what Decaid holds now.';
     } catch (cause) {

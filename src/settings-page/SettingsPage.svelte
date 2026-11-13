@@ -22,6 +22,7 @@
   import MachineInfo from './MachineInfo.svelte';
   import DetergentClean from './DetergentClean.svelte';
   import Maintenance from './Maintenance.svelte';
+  import ManageTokenDialog from './ManageTokenDialog.svelte';
   import Plugins from './Plugins.svelte';
   import Presence from './Presence.svelte';
   import SettingsRow from './SettingsRow.svelte';
@@ -356,6 +357,8 @@
     {/if}
   </section>
 {/snippet}
+
+<ManageTokenDialog />
 
 {#if confirming}
   <Confirm title={confirming.title} text={confirming.text} onok={confirming.run} oncancel={() => (confirming = null)} />

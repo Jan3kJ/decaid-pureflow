@@ -23,6 +23,7 @@
     zipUrl,
     type Listing,
   } from './local-install';
+  import { forgetToken, loadToken, withManageToken } from './manage-token.svelte';
   import { OPEN_WAIT_MS, skinAddress, switchSkin } from './skins';
 
   interface Props {
@@ -45,6 +46,8 @@
   let busy = $state(false);
   /** what the last list or install did */
   let said: string | null = $state(null);
+  /** the API token is kept on this tablet (manage-token.svelte.ts) */
+  let tokenKept = $state(loadToken() !== null);
 
   async function list() {
     said = null;
@@ -66,7 +69,8 @@
     busy = true;
     said = `Decaid downloads and installs ${file} …`;
     try {
-      await skin.client.installSkinFromUrl(url);
+      await withManageToken(skin.client, () => skin.client.installSkinFromUrl(url), true);
+      tokenKept = loadToken() !== null;
     } catch (cause) {
       said = installError(cause);
       busy = false;
@@ -82,7 +86,7 @@
         return;
       }
       said = `Installed ${what}. Opening it …`;
-      const port = await switchSkin(skin.client, installed.id);
+      const port = await withManageToken(skin.client, () => switchSkin(skin.client, installed.id), true);
       location.assign(skinAddress(port, location));
       setTimeout(() => {
         said = `Installed ${what}, but this screen did not open it. Decaid's back gesture reaches its dashboard.`;
@@ -162,6 +166,17 @@
       >
     {/each}
   </div>
+{/if}
+{#if tokenKept}
+  <button
+    class="action"
+    data-testid="local-forget-token"
+    onclick={() => {
+      forgetToken();
+      skin.client.manageToken = null;
+      tokenKept = false;
+    }}>forget token</button
+  >
 {/if}
 {#if said}<p class="said" data-testid="local-said">{said}</p>{/if}
 

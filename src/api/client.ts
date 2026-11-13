@@ -133,6 +133,11 @@ export function isNoScaleBlock(error: unknown): error is DecaidApiError {
 
 export class DecaidClient {
   readonly baseUrl: string;
+  /**
+   * The user's "Manage plugins and skins" API token (Decaid 0.9+ gates installs, skin switches and
+   * plugin changes with it). Kept in memory only, never stored: the page's origin is shared.
+   */
+  manageToken: string | null = null;
   private readonly fetchFn: FetchLike;
 
   constructor(options: DecaidClientOptions = {}) {
@@ -581,22 +586,22 @@ export class DecaidClient {
 
   /** Changes the given values (`null` clears one); the answer is the stored values, secure ones redacted. */
   async updatePluginSettings(id: string, patch: PluginSettings): Promise<PluginSettings> {
-    return (await this.request<PluginSettings | undefined>('POST', `/api/v1/plugins/${segment(id)}/settings`, patch)) ?? {};
+    return (await this.request<PluginSettings | undefined>('POST', `/api/v1/plugins/${segment(id)}/settings`, patch, true)) ?? {};
   }
 
   /** Enables and loads a plugin, or disables and unloads it. */
   async setPluginEnabled(id: string, enabled: boolean): Promise<void> {
-    await this.request('POST', `/api/v1/plugins/${segment(id)}/${enabled ? 'enable' : 'disable'}`);
+    await this.request('POST', `/api/v1/plugins/${segment(id)}/${enabled ? 'enable' : 'disable'}`, undefined, true);
   }
 
   /** Checks every plugin from GitHub for an update; one that asks for more permissions is held back. */
   async checkPluginUpdates(): Promise<void> {
-    await this.request('POST', '/api/v1/plugins/update');
+    await this.request('POST', '/api/v1/plugins/update', undefined, true);
   }
 
   /** Installs the held update of a plugin, with the permissions it adds. */
   async approvePluginUpdate(id: string): Promise<void> {
-    await this.request('POST', `/api/v1/plugins/${segment(id)}/update/approve`);
+    await this.request('POST', `/api/v1/plugins/${segment(id)}/update/approve`, undefined, true);
   }
 
   // --- KV store ---
@@ -652,12 +657,12 @@ export class DecaidClient {
 
   /** Makes a skin the default; Decaid serves it after its skin server is started again. */
   async setDefaultSkin(skinId: string): Promise<void> {
-    await this.request('PUT', '/api/v1/webui/skins/default', { skinId });
+    await this.request('PUT', '/api/v1/webui/skins/default', { skinId }, true);
   }
 
   /** Decaid looks for newer versions of every skin at its source and installs them. */
   async updateSkins(): Promise<void> {
-    await this.request('POST', '/api/v1/webui/skins/update');
+    await this.request('POST', '/api/v1/webui/skins/update', undefined, true);
   }
 
   /**
@@ -665,7 +670,7 @@ export class DecaidClient {
    * same manifest id; it keeps the URL as the skin's source for its update check.
    */
   async installSkinFromUrl(url: string): Promise<void> {
-    await this.request('POST', '/api/v1/webui/skins/install/url', { url });
+    await this.request('POST', '/api/v1/webui/skins/install/url', { url }, true);
   }
 
   /**
@@ -674,27 +679,33 @@ export class DecaidClient {
    * releases with the same asset name.
    */
   async installSkinFromGitHubRelease(repo: string, asset: string): Promise<void> {
-    await this.request('POST', '/api/v1/webui/skins/install/github-release', { repo, asset });
+    await this.request('POST', '/api/v1/webui/skins/install/github-release', { repo, asset }, true);
   }
 
   async stopWebUiServer(): Promise<void> {
-    await this.request('POST', '/api/v1/webui/server/stop');
+    await this.request('POST', '/api/v1/webui/server/stop', undefined, true);
   }
 
   /** Serves the default skin. */
   async startWebUiServer(): Promise<void> {
-    await this.request('POST', '/api/v1/webui/server/start');
+    await this.request('POST', '/api/v1/webui/server/start', undefined, true);
   }
 
   // --- transport ---
 
-  /** One request. A body is sent as JSON; an empty answer gives `undefined`. */
-  async request<T = unknown>(method: string, path: string, body?: unknown): Promise<T> {
+  /**
+   * One request. A body is sent as JSON; an empty answer gives `undefined`. A `manage` request (a
+   * route Decaid gates with the `extensions:manage` scope) carries `manageToken` as its bearer.
+   */
+  async request<T = unknown>(method: string, path: string, body?: unknown, manage = false): Promise<T> {
     const init: RequestInit = { method };
+    const headers: Record<string, string> = {};
     if (body !== undefined) {
-      init.headers = { 'Content-Type': 'application/json' };
+      headers['Content-Type'] = 'application/json';
       init.body = JSON.stringify(body);
     }
+    if (manage && this.manageToken) headers.Authorization = `Bearer ${this.manageToken}`;
+    if (Object.keys(headers).length) init.headers = headers;
 
     let response: Response;
     let text: string;
