@@ -4,9 +4,9 @@ import bundled from '../src/steps/fixtures/bundled-profiles.json' with { type: '
 import { mockGateway, record } from './mock-gateway';
 import { toPage } from './touch';
 
-// Every graph's curves and their glow are stroked at 0.7 times the old width (--curve-thin), at the default
-// display size and scale 2: home, steam, the profile picker's preview, the step editor's preview and the
-// flow editor.
+// Every graph's curves, and the glow of the measured ones (home, steam), are stroked at 0.7 times the old width
+// (--curve-thin), at the default display size and scale 2: home, steam, the profile picker's preview, the step
+// editor's preview and the flow editor. The designed profiles' graphs have no glow (editor-no-glow.spec.ts).
 
 test.use({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 2 });
 
@@ -14,7 +14,7 @@ const ESPRESSO_80S = (bundled as unknown as Profile[]).find((entry) => entry.tit
 
 /** The old widths in px at the 16 px root of 1280 x 800: line, then the glow's four strokes. */
 const OLD = { line: 0.2 * 16, outer: 1.2 * 16, wide: 0.8 * 16, mid: 0.5 * 16, inner: 0.3 * 16 };
-const OLD_EDITOR = { line: 0.24 * 16, glow: 0.8 * 16 };
+const OLD_EDITOR = { line: 0.24 * 16 };
 
 const width = (target: Locator) => target.first().evaluate((element) => parseFloat(getComputedStyle(element).strokeWidth));
 
@@ -35,7 +35,7 @@ async function open(page: Page) {
   await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
 }
 
-test('home, steam and the picker stroke the curve and its glow at 0.7 times the old width', async ({ page }) => {
+test('home and steam stroke the curve and its glow, the picker its curve, at 0.7 times the old width', async ({ page }) => {
   const gateway = await mockGateway(page);
   gateway.profiles.push(record('profile:mine', structuredClone({ ...ESPRESSO_80S, title: 'My 80s' }), null));
   await open(page);
@@ -51,24 +51,23 @@ test('home, steam and the picker stroke the curve and its glow at 0.7 times the 
   await toPage(page, 'home');
   await page.getByTestId('open-profiles').click();
   await page.getByTestId('profile-item').filter({ hasText: 'My 80s' }).first().click();
-  await expectShotGraph(page.getByTestId('profile-preview'));
+  await expectShotGraph(page.getByTestId('profile-preview'), false);
 });
 
-test("the step editor's preview strokes its curve and glow at 0.7 times the old width", async ({ page }) => {
+test("the step editor's preview strokes its curve at 0.7 times the old width", async ({ page }) => {
   const gateway = await mockGateway(page);
   gateway.workflow.profile = structuredClone({ ...ESPRESSO_80S, title: 'My 80s' });
   await open(page);
   await page.getByTestId('open-editor').click();
   await expect(page.getByTestId('step-preview')).toBeVisible();
-  await expectShotGraph(page.getByTestId('step-preview'));
+  await expectShotGraph(page.getByTestId('step-preview'), false);
 });
 
-test('the flow editor strokes its line and glow at 0.7 times the old width', async ({ page }) => {
+test('the flow editor strokes its line at 0.7 times the old width', async ({ page }) => {
   (await mockGateway(page)).withDefaults('light');
   await page.addInitScript(() => localStorage.setItem('pureflow.screen', 'editor'));
   await page.goto('/');
   const graph = page.getByTestId('graph');
   await expect(graph).toBeVisible();
   expect(Math.abs((await width(graph.getByTestId('line-flow'))) - OLD_EDITOR.line * 0.7)).toBeLessThan(0.05);
-  expect(Math.abs((await width(graph.locator('.glow'))) - OLD_EDITOR.glow * 0.7)).toBeLessThan(0.05);
 });

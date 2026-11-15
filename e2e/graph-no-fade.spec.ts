@@ -75,12 +75,12 @@ test('steam strokes its curves and glow in plain colours', async ({ page }) => {
   await noFadeGradient(page);
 });
 
-test('the flow editor strokes its curves and glow in plain colours', async ({ page }) => {
+test('the flow editor strokes its curves in plain colours', async ({ page }) => {
   (await mockGateway(page)).withDefaults('light');
   await page.addInitScript(() => localStorage.setItem('pureflow.screen', 'editor'));
   await page.goto('/');
   const graph = page.getByTestId('graph');
   await expect(graph).toBeVisible();
-  await expectPlain(graph, 6);
+  await expectPlain(graph, 3);
   await noFadeGradient(page);
 });

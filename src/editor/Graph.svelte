@@ -201,8 +201,6 @@
       dragging={drag?.field}
     />
 
-    <!-- Each curve has a glow under it: a wider, faint stroke of the same points. -->
-    <polyline class="glow temperature" pathLength="1" points={polylinePoints(curve.temperature, 'temperature', projection)} />
     <polyline class="line temperature" pathLength="1" points={polylinePoints(curve.temperature, 'temperature', projection)} />
     {#if curve.pressureLimit}
       <polyline
@@ -211,14 +209,12 @@
         points={polylinePoints(curve.pressureLimit, 'pressure', projection)}
       />
     {/if}
-    <polyline class="glow pressure" pathLength="1" points={polylinePoints(curve.pressure, 'pressure', projection)} />
     <polyline
       class="line pressure"
       pathLength="1"
       data-testid="line-pressure"
       points={polylinePoints(curve.pressure, 'pressure', projection)}
     />
-    <path class="glow flow" pathLength="1" d={flowPath(curve.flow, projection)} />
     <path class="line flow" pathLength="1" data-testid="line-flow" d={flowPath(curve.flow, projection)} />
 
     <!-- The stretches that can be dragged. They are not drawn until one is held. -->
@@ -342,33 +338,19 @@
     stroke-linecap: round;
   }
 
-  /* The glow: the curve's points again, wider and faint; it takes no touch. */
-  .glow {
-    fill: none;
-    stroke-width: calc(0.8rem * var(--curve-thin) * var(--line-width, 1) * var(--curve-thick, 1) * var(--glow-range, 1));
-    stroke-linejoin: round;
-    stroke-linecap: round;
-    opacity: min(1, calc(0.16 * var(--glow-brightness, 1)));
-    pointer-events: none;
-  }
-
-  /* Each curve and its glow have their quantity's colour from the first point. */
-  .line.flow,
-  .glow.flow {
+  /* Each curve has its quantity's colour from the first point. */
+  .line.flow {
     stroke: var(--flow);
   }
-  .line.pressure,
-  .glow.pressure {
+  .line.pressure {
     stroke: var(--pressure);
   }
-  .line.temperature,
-  .glow.temperature {
+  .line.temperature {
     stroke: var(--temperature);
   }
 
   /* A curve draws in once, when the graph opens; a drag moves its points, the animation does not restart. */
-  .line:not(.limit),
-  .glow {
+  .line:not(.limit) {
     animation: draw-in 0.4s ease-out;
   }
 
@@ -384,8 +366,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .line:not(.limit),
-    .glow {
+    .line:not(.limit) {
       animation: none;
     }
   }

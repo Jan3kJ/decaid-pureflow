@@ -69,7 +69,7 @@ test('the targets are dashed lines with their quantity, every scale has its unit
       const css = getComputedStyle(element);
       return { dashed: css.strokeDasharray !== 'none', stroke: css.stroke };
     });
-    // The curve is stroked in the quantity's plain colour; the glow lies under it.
+    // The curve is stroked in the quantity's plain colour.
     const curve = await graph.getByTestId(`shot-line-${target}`).evaluate((element) => getComputedStyle(element).stroke);
     expect(style).toEqual({ dashed: true, stroke: curve });
   }

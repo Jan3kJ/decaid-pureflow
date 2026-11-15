@@ -210,10 +210,13 @@
 
 {#snippet curve(quantity: string, testid: string, d: string)}
   <!-- The glow is four strokes, each wider and fainter than the one over it, so that no step shows: strokes
-       cost little, a blur filter costs a pass over the plot on every live update. -->
-  {#each glowSteps as step (step)}
-    <path class="glow {step} {quantity}" pathLength="1" {d} />
-  {/each}
+       cost little, a blur filter costs a pass over the plot on every live update. Only a measured curve has
+       it: a profile as designed (the preview, the estimate) is drawn without. -->
+  {#if !preview && !estimate}
+    {#each glowSteps as step (step)}
+      <path class="glow {step} {quantity}" pathLength="1" {d} />
+    {/each}
+  {/if}
   <path class="line {quantity}" pathLength="1" data-testid={testid} {d} />
 {/snippet}
 
