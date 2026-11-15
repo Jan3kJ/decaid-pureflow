@@ -329,17 +329,23 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
 
   .pair {
     display: grid;
-    grid-template-columns: 9.5rem minmax(0, 1fr);
+    grid-template-columns: 8.5rem minmax(0, 1fr);
     align-items: center;
     gap: var(--space-2);
   }
 
+  /* The caption takes its own width, and the chips' buttons may narrow to 2.5rem: a chip with a value of
+     any font's width stays inside the card, not past its edge. */
   .maxima {
     grid-column: 1 / -1;
     display: grid;
-    grid-template-columns: 5.5rem repeat(3, minmax(0, 1fr));
+    grid-template-columns: auto repeat(3, minmax(0, 1fr));
     align-items: center;
     gap: var(--space-2);
+  }
+
+  .open :global(.step) {
+    min-width: 2.5rem;
   }
 
   .caption {
