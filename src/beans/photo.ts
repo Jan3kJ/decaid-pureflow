@@ -32,7 +32,11 @@ export function isPhoto(value: unknown): value is string {
   return typeof value === 'string' && value.startsWith('data:image/jpeg;base64,');
 }
 
-/** A clockwise turn of the camera's overlay and of the frame taken in it, in degrees. */
+/**
+ * The turn of the camera's overlay, clockwise, in degrees. The overlay is turned so that it stands
+ * upright for a tablet held turned the other way, so the camera's frame is shown and stored turned
+ * back by the same angle, counter-clockwise.
+ */
 export type Angle = 0 | 90 | 180 | 270;
 
 /** The angle after 'turn right': a quarter turn clockwise, 270 back to 0. */
@@ -50,7 +54,7 @@ export function turnedSize(width: number, height: number, angle: Angle): { width
   return angle === 90 || angle === 270 ? { width: height, height: width } : { width, height };
 }
 
-/** Draws a video frame or a picture, turned clockwise by `angle` and scaled down, into a JPEG data URL. */
+/** Draws a video frame or a picture, turned counter-clockwise by `angle` and scaled down, into a JPEG data URL. */
 export function toPhoto(source: CanvasImageSource, width: number, height: number, angle: Angle = 0): string {
   const turned = turnedSize(width, height, angle);
   const size = photoSize(turned.width, turned.height);
@@ -61,7 +65,7 @@ export function toPhoto(source: CanvasImageSource, width: number, height: number
   const context = canvas.getContext('2d');
   if (!context) throw new Error('no canvas');
   context.translate(size.width / 2, size.height / 2);
-  context.rotate((angle * Math.PI) / 180);
+  context.rotate((-angle * Math.PI) / 180);
   context.drawImage(source, (-width * scale) / 2, (-height * scale) / 2, width * scale, height * scale);
   return canvas.toDataURL('image/jpeg', PHOTO_QUALITY);
 }

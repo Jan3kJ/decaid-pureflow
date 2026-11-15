@@ -103,7 +103,8 @@ bean's form, **photo** takes a picture of the bag with **capture**. It is kept w
 when you save. **new photo** replaces it and **remove photo** deletes it. The photo stays in
 Decaid on the tablet; nothing is sent away. The two arrows in the camera, **turn left** and **turn right**, turn the whole view a
 quarter counter-clockwise or clockwise each tap, so that **capture** is at the lower side for the way you hold the tablet; the
-photo is saved as you see it. For a second after the capture, taps on the beans list are
+photo is saved as you see it: turned a quarter, the frame is a portrait box and the photo is
+taller than wide, upright. For a second after the capture, taps on the beans list are
 ignored, so a double tap on **capture** does not drop the photo.
 
 The skin with bag reading (the ZIP whose name ends in `-ocr`) also reads a new photo, on the

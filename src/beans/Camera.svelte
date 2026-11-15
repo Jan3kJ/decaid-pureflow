@@ -4,7 +4,7 @@
   // each time; where it is refused or missing, the system's camera through a file input stands in.
   import { onMount } from 'svelte';
   import Dialog from '../ui/Dialog.svelte';
-  import { fileToPhoto, nextAngle, previousAngle, toPhoto, type Angle } from './photo';
+  import { fileToPhoto, nextAngle, previousAngle, toPhoto, turnedSize, type Angle } from './photo';
 
   interface Props {
     /** the photo, a JPEG data URL scaled down */
@@ -23,6 +23,9 @@
   /** the overlay's clockwise turn, for the way the tablet is held; not stored */
   let angle = $state<Angle>(0);
   const sideways = $derived(angle === 90 || angle === 270);
+  /** the camera's frame size, once known; the viewfinder takes the frame's shape as stored */
+  let frame = $state({ width: 16, height: 9 });
+  const ratio = $derived(turnedSize(frame.width, frame.height, angle).width / turnedSize(frame.width, frame.height, angle).height);
 
   onMount(() => {
     let closed = false;
@@ -56,6 +59,10 @@
     };
   });
 
+  function measured() {
+    if (video?.videoWidth) frame = { width: video.videoWidth, height: video.videoHeight };
+  }
+
   function capture() {
     if (!video || !video.videoWidth) return;
     try {
@@ -83,7 +90,20 @@
         <span class="label">photo of the bag</span>
         <button class="close" aria-label="cancel" data-testid="camera-close" onclick={oncancel}>×</button>
       </div>
-      <video bind:this={video} class:hidden={!live} autoplay muted playsinline data-testid="camera-video"></video>
+      <div class="viewfinder" class:hidden={!live}>
+        <div class="frame" style:--ratio={ratio} data-testid="camera-frame">
+          <video
+            bind:this={video}
+            style:transform="translate(-50%, -50%) rotate({-angle}deg)"
+            autoplay
+            muted
+            playsinline
+            onloadedmetadata={measured}
+            onresize={measured}
+            data-testid="camera-video"
+          ></video>
+        </div>
+      </div>
       {#if refused}
         <p class="note" data-testid="camera-refused">{refused} Take the picture with the system's camera instead.</p>
       {:else if !live}
@@ -126,10 +146,14 @@
     margin: -50vw 0 0 -50vh;
   }
 
-  .sideways video {
+  .sideways .viewfinder {
     flex: 1;
     min-height: 0;
-    max-height: none;
+    container-type: size;
+  }
+
+  .sideways .frame {
+    width: min(100cqw, calc(100cqh * var(--ratio)));
   }
 
   .pad {
@@ -150,13 +174,35 @@
     color: var(--dim);
   }
 
-  video {
-    display: block;
-    width: 100%;
-    max-height: 60vh;
-    object-fit: contain;
+  .viewfinder {
+    display: flex;
+    justify-content: center;
+  }
+
+  /* The viewfinder has the shape of the stored photo. The video keeps the camera's own shape in a box
+     turned back by the overlay's angle and is centred in the frame; the frame's box is the photo's. */
+  .frame {
+    position: relative;
+    container-type: size;
+    width: min(100%, calc(60vh * var(--ratio)));
+    aspect-ratio: var(--ratio);
     background: var(--bg);
     border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  video {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 100cqw;
+    height: 100cqh;
+    object-fit: contain;
+  }
+
+  .sideways video {
+    width: 100cqh;
+    height: 100cqw;
   }
 
   .hidden {
