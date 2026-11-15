@@ -309,7 +309,7 @@
   {#if screen === 'home'}
     <!-- Home has no edge tabs: the history's handle at the left edge shows the swipe from there. -->
     <button
-      class="handle"
+      class="handle hint-button"
       data-testid="history-handle"
       aria-label="shot history"
       disabled={held}
@@ -347,6 +347,7 @@
     <div class="dots" role="group" aria-label="pages">
       {#each PAGES as page (page)}
         <button
+          class="hint-button"
           data-testid="page-dot-{page}"
           aria-label={PAGE_NAMES[page]}
           aria-current={page === screen ? 'page' : undefined}

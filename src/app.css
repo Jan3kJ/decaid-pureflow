@@ -498,7 +498,8 @@ body {
  * release, so a quick tap still shows. One rule for every button, and every label or link drawn as
  * one, except a chip (it changes its fill on a press), a selection (it lights its edge by being
  * selected), the number pad's keys, a slider line, a disabled button and the invisible
- * backdrops. A stop glows in its own colour. Under reduced motion the light shows and goes at once.
+ * backdrops. A hint button (the history's handle, the page dots) takes none either: its target is
+ * larger than the mark drawn, so a glow around the target would not match what is seen. A stop glows in its own colour. Under reduced motion the light shows and goes at once.
  */
 :root
   :is(button, a.action, label.button):not(
@@ -512,6 +513,7 @@ body {
     [role='slider'],
     .backdrop,
     .outside,
+    .hint-button,
     :disabled
   ) {
   transition:
@@ -531,6 +533,7 @@ body {
     [role='slider'],
     .backdrop,
     .outside,
+    .hint-button,
     :disabled
   ):active {
   border-color: rgb(var(--glow-rgb, var(--fg-rgb)) / 70%);
