@@ -4,6 +4,34 @@ What changed in each version of pureflow, newest first. From 0.7.0 on a section 
 the release script (`npm run release`) from the commits' `Changelog:` lines; the sections up to
 0.6.1 summarise the hand-over builds that came before it.
 
+## 0.14.0 - 2026-11-15
+
+### Added
+
+- Skin > Developer tunes the glow range, glow brightness and line thickness, with a reset. (Z133)
+- A tap on a step in the script tab's graph selects it, scrolls the list to centre it and lights it; the cards tab shares the selection. (Z139)
+
+### Changed
+
+- Every graph stands the same gap from its frame on all four sides. (Z131)
+- The header row stays put: a fixed slot for every reading, no step, the scale warning inside its slot. (Z132)
+- The stop is as big as 'set timer' on home, steam and hot water. (Z134)
+- The graph's curves and their glow start at full brightness, with no fade at the left. (Z140)
+- The scale's warning sits inside the header's scale cell and a tap anywhere on it looks for the scale again. (Z141)
+- The profile picker's preview and the profile editors' graphs are drawn without a glow. (Z142)
+- The steam page's 'set timer' button has regular text, not bold. (Z143)
+- Numbers the skin only shows have no glow. (Z144)
+- The history handle and the page dots no longer glow when tapped. (Z145)
+
+### Fixed
+
+- The scale rows and the header's weight glow briefly when tapped to tare. (Z135)
+- The tank calibration's 'next' no longer flickers, the saved table can be shown, and the first step says to start with an empty tank. (Z136)
+- Installs, skin switches and plugin changes send Decaid's extensions:manage token. (none)
+- The camera's frame and the stored photo are portrait when the tablet is turned a quarter. (Z146)
+
+Checks: npm ci, npm run verify and npm run e2e passed; rig suite: not run.
+
 ## 0.13.0 - 2026-11-10
 
 ### Added
