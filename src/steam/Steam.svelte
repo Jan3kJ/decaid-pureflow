@@ -278,7 +278,13 @@
     border-radius: var(--radius);
   }
 
+  /* The regular weight of the shared chip's words; `:root` lifts it above the shared primary 600. */
+  :root .set.primary {
+    font-weight: 400;
+  }
+
   .set b {
+    font-weight: inherit;
     font-variant-numeric: tabular-nums;
   }
 
