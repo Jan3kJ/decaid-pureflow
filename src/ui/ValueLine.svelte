@@ -95,7 +95,6 @@
 
   .weight b {
     color: var(--weight);
-    text-shadow: var(--shadow-glow-weight);
   }
 
   /* off while something runs */

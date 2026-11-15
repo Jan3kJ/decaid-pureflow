@@ -7,7 +7,7 @@ import { toPage } from './touch';
 
 test.use({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 2 });
 
-test('the steam timer is a thin lit number, the chips are glass and mug and milk have no box', async ({ page }) => {
+test('the steam timer is a thin number, the chips are glass and mug and milk have no box', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
   await toPage(page, 'steam');
@@ -20,7 +20,7 @@ test('the steam timer is a thin lit number, the chips are glass and mug and milk
     return { weight: style.fontWeight, shadow: style.textShadow, color: style.color };
   });
   expect(timer.weight).toBe('300');
-  expect(timer.shadow).not.toBe('none');
+  expect(timer.shadow).toBe('none');
   const time = await page.evaluate(() => {
     const probe = document.createElement('span');
     probe.style.color = 'var(--time)';

@@ -64,13 +64,12 @@
     radial-gradient(50rem 35rem at 105% 110%, rgb(var(--temperature-rgb) / 8%), transparent 60%), var(--bg);
   /*
    * A glow in a quantity's colour, for text-shadow and drop-shadow (`npm run lint` takes only
-   * these there). Selected or live it lights; a text has a soft one, a line a wider.
+   * these there). Only what the user acts on (the number pad's field, the lit line) takes one; a number only shown has none.
    */
   --shadow-glow-flow: 0 0 0.8rem rgb(var(--flow-rgb) / min(100%, calc(45% * var(--glow-brightness))));
   --shadow-glow-pressure: 0 0 0.8rem rgb(var(--pressure-rgb) / min(100%, calc(45% * var(--glow-brightness))));
   --shadow-glow-temperature: 0 0 0.8rem rgb(var(--temperature-rgb) / min(100%, calc(45% * var(--glow-brightness))));
   --shadow-glow-weight: 0 0 0.8rem rgb(var(--weight-rgb) / min(100%, calc(45% * var(--glow-brightness))));
-  --shadow-glow-warn: 0 0 0.8rem rgb(var(--warn-rgb) / min(100%, calc(45% * var(--glow-brightness))));
   --shadow-glow-time: 0 0 0.8rem rgb(var(--time-rgb) / min(100%, calc(45% * var(--glow-brightness))));
   /* The way back to home, light blue: lighter and paler than --flow
      (HSL 200° 72% 78% against 211° 100% 65%, a CIELAB distance of 40), so no curve's colour. */

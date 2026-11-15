@@ -6,7 +6,7 @@ import { mockGateway } from './mock-gateway';
 
 test.use({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 2 });
 
-test('home: glass cards, thin lit numbers, lower case captions; the picker is glass', async ({ page }) => {
+test('home: glass cards, thin numbers, lower case captions; the picker is glass', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');
   await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'Idle');
@@ -25,7 +25,7 @@ test('home: glass cards, thin lit numbers, lower case captions; the picker is gl
       return { weight: style.fontWeight, shadow: style.textShadow };
     });
     expect(number.weight, id).toBe('300');
-    expect(number.shadow, id).not.toBe('none');
+    expect(number.shadow, id).toBe('none');
   }
   for (const id of ['shot-timer-label', 'shot-weight-label']) {
     await expect(page.getByTestId(id)).toHaveCSS('text-transform', 'none');

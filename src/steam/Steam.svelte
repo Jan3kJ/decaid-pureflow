@@ -214,10 +214,9 @@
     font-size: var(--text-label);
   }
 
-  /* the timer is a time: a thin number in the time colour, lit */
+  /* the timer is a time: a thin number in the time colour */
   .big-number {
     color: var(--time);
-    text-shadow: var(--shadow-glow-time);
   }
 
   i {

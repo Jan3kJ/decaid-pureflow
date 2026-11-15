@@ -126,7 +126,8 @@ test('the home graph, the glows of home and a press follow glow range, brightnes
   };
   const timer = page.getByTestId('shot-timer');
   const textShadow = () => timer.evaluate((element) => getComputedStyle(element).textShadow);
-  expect(alphas(await textShadow())[0]).toBeCloseTo(0.45, 2);
+  // a shown number has no glow for the settings to act on
+  expect(await textShadow()).toBe('none');
 
   await tuned(page, { glowRange: 2, glowBrightness: 0, curveThick: 0.5 });
   await page.reload();
@@ -137,8 +138,8 @@ test('the home graph, the glows of home and a press follow glow range, brightnes
   expect(outer.width).toBeCloseTo(plain.outer.width * 2 * 0.5, 2);
   expect(outer.opacity).toBe(0);
   expect((await strokes(page, '.glow.inner')).opacity).toBe(0);
-  // no glow on the live numbers and none on a pressed button
-  expect(alphas(await textShadow()).every((alpha) => alpha === 0)).toBe(true);
+  // none on a pressed button either
+  expect(await textShadow()).toBe('none');
   const button = page.getByTestId('menu');
   await button.hover();
   await page.mouse.down();
@@ -152,7 +153,7 @@ test('the home graph, the glows of home and a press follow glow range, brightnes
   await page.reload();
   await gateway.replay(page, 0, 1);
   expect((await strokes(page, '.glow.inner')).opacity).toBeCloseTo(plain.inner.opacity * 2, 3);
-  expect(alphas(await textShadow())[0]).toBeCloseTo(0.9, 2);
+  expect(await textShadow()).toBe('none');
 });
 
 test("hot water's line thickness, line glow and spot glow follow their own values", async ({ page }) => {

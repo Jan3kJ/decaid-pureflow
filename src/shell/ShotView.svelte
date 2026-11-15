@@ -293,15 +293,13 @@
     font-size: var(--text-large);
   }
 
-  /* the live numbers: thin, with a faint glow in their colour */
+  /* the live numbers: thin, in their colour, with no glow (a number only shown has none) */
   .big b {
     color: var(--time);
-    text-shadow: var(--shadow-glow-time);
   }
 
   .big.weight b {
     color: var(--weight);
-    text-shadow: var(--shadow-glow-weight);
   }
 
   .stop-reason {
@@ -326,20 +324,12 @@
 
   .pressure dd {
     color: var(--pressure);
-    text-shadow: var(--shadow-glow-pressure);
   }
   .flow dd {
     color: var(--flow);
-    text-shadow: var(--shadow-glow-flow);
   }
   .temperature dd {
     color: var(--temperature);
-    text-shadow: var(--shadow-glow-temperature);
-  }
-
-  /* the unit beside a number takes no glow */
-  i {
-    text-shadow: none;
   }
 
   /* the main button's box is app.css's; the stop stands at the column's foot */
