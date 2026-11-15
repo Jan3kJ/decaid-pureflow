@@ -205,7 +205,7 @@ export interface StateValue {
 /**
  * The state line of home and the steam page: the machine's values only from a fresh frame
  * (principle 3), the tank's level only from its stream, the weight only from a connected scale.
- * A value that was not read is '–'. Without a scale the slot shows the warning sign and its `hint` says whether the skin is looking
+ * A value that was not read is '–'. Without a scale the cell shows the warning sign and its `hint` says whether the skin is looking
  * for it (`scaleLooking`) or that a tap looks again. The tank is in ml or mm
  * (`tankUnit`), the ml by the user's own tank rows when there are any (`tankRows`); its warning
  * compares the mm with the refill level either way.
@@ -247,7 +247,7 @@ export function stateLine(
           value: '',
           warn: true,
           widest: '-2000.0 g',
-          hint: scaleLooking ? 'scale looking for it' : 'scale not connected, tap to retry',
+          hint: scaleLooking ? 'looking for scale' : 'no scale, tap to retry',
         },
   ];
 }

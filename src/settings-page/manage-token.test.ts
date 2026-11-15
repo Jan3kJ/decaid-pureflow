@@ -37,7 +37,9 @@ describe('the extensions:manage token', () => {
     const client = { manageToken: null as string | null };
     expect(await withManageToken(client, () => Promise.resolve('open'))).toBe('open');
     expect(tokenDialog.ask).toBeNull();
-    const run = withManageToken(client, () => (client.manageToken ? Promise.resolve(client.manageToken) : Promise.reject(unauthorized())));
+    const run = withManageToken(client, () =>
+      client.manageToken ? Promise.resolve(client.manageToken) : Promise.reject(unauthorized()),
+    );
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(tokenDialog.ask?.refused).toBeNull();
     tokenDialog.ask!.done('abc');

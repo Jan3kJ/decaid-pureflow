@@ -331,13 +331,13 @@ describe('stateLine', () => {
     );
   });
 
-  it('warns in place of the weight when the scale is not connected: a sign in the slot, the sentence as a hint', () => {
+  it('warns in place of the weight when the scale is not connected: a sign and the sentence as a hint', () => {
     const scale = (link: 'disconnected' | 'unknown', looking = false) =>
       stateLine('machine', frame('idle'), water, link, null, looking).at(-1)!;
     expect(text([scale('disconnected')])).toEqual(['scale !']);
-    expect(scale('disconnected').hint).toBe('scale not connected, tap to retry');
-    expect(scale('unknown').hint).toBe('scale not connected, tap to retry');
-    expect(scale('disconnected', true).hint).toBe('scale looking for it');
+    expect(scale('disconnected').hint).toBe('no scale, tap to retry');
+    expect(scale('unknown').hint).toBe('no scale, tap to retry');
+    expect(scale('disconnected', true).hint).toBe('looking for scale');
   });
 
   it('sizes every slot from its widest text', () => {

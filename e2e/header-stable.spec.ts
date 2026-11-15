@@ -27,7 +27,21 @@ async function layout(page: Page, screen: Screen) {
         const box = element.getBoundingClientRect();
         return [box.left, box.right];
       });
-    return { slots: edges('.slot'), height: node.getBoundingClientRect().height };
+    // the cell's own box without the finger's padding that a button has around it
+    const element = node.querySelector('.value.scale')!;
+    const style = getComputedStyle(element);
+    const outer = element.getBoundingClientRect();
+    const cell = {
+      left: outer.left + parseFloat(style.paddingLeft),
+      right: outer.right - parseFloat(style.paddingRight),
+      top: outer.top + parseFloat(style.paddingTop),
+      bottom: outer.bottom - parseFloat(style.paddingBottom),
+    };
+    return {
+      slots: edges('.slot'),
+      cell: [cell.left, cell.right, cell.top, cell.bottom],
+      height: node.getBoundingClientRect().height,
+    };
   });
 }
 
@@ -35,6 +49,7 @@ type Layout = Awaited<ReturnType<typeof layout>>;
 
 function expectSame(shown: Layout, first: Layout, state: string) {
   expect(shown.height, `${state}: height`).toBeCloseTo(first.height, 0);
+  shown.cell.forEach((edge, i) => expect(Math.abs(edge - first.cell[i]), `${state}: scale cell edge ${i}`).toBeLessThanOrEqual(1));
   for (const kind of ['slots'] as const) {
     expect(shown[kind], `${state}: ${kind}`).toHaveLength(4);
     shown[kind].forEach(([left, right], i) => {
@@ -69,14 +84,14 @@ for (const screen of ['home', 'steam', 'hot-water'] as const) {
     gateway.decaidSettings.preferredScaleId = null;
     gateway.connectScale(false);
     await open(page, screen);
-    await expect(hint(page, screen)).toHaveText('scale not connected, tap to retry', { timeout: 15_000 });
+    await expect(hint(page, screen)).toHaveText('no scale, tap to retry', { timeout: 15_000 });
     await check('not connected');
 
     // The scale away while the skin looks for it.
     gateway.decaidSettings.preferredScaleId = 'MockScale';
     await open(page, screen);
     await expect(reading(page, screen, 'group')).not.toHaveText('–');
-    await expect(hint(page, screen)).toHaveText(/^scale (looking for it|not connected)/);
+    await expect(hint(page, screen)).toHaveText(/^(looking for scale|no scale)/);
     await check('looking for the scale');
 
     // The scale there, with the weights.
@@ -121,38 +136,52 @@ for (const screen of ['home', 'steam', 'hot-water'] as const) {
   });
 }
 
-test('the scale warning is a button in its slot; its sentence is drawn under the header and moves nothing', async ({ page }) => {
-  const gateway = await mockGateway(page);
-  gateway.decaidSettings.preferredScaleId = null;
-  gateway.connectScale(false);
-  await page.goto('/');
-  const retry = page.getByTestId('scale-retry');
-  const sentence = page.getByTestId('scale-hint');
-  await expect(sentence).toHaveText('scale not connected, tap to retry', { timeout: 15_000 });
-  const slot = (await page.getByTestId('state-scale').boundingBox())!;
-  const own = (await retry.boundingBox())!;
-  expect(own.x).toBeLessThanOrEqual(slot.x);
-  expect(own.x + own.width).toBeGreaterThanOrEqual(slot.x + slot.width);
-  // the sentence is taken out of the flow, at the label size, whole inside the screen
-  const line = await sentence.evaluate((node) => {
-    const style = getComputedStyle(node);
-    return { position: style.position, size: parseFloat(style.fontSize) };
-  });
-  expect(line.position).toBe('absolute');
-  expect(line.size).toBeGreaterThanOrEqual(0.85 * 16 - 0.5);
-  const header = (await page.getByTestId('screen-home').locator('header.page-header').boundingBox())!;
-  const frame = (await page.getByTestId('screen-home').locator('[data-main-frame]').boundingBox())!;
-  const shown = (await sentence.boundingBox())!;
-  expect(shown.x).toBeGreaterThan(0);
-  expect(shown.x + shown.width).toBeLessThanOrEqual(1280);
-  // it hangs from the header over the frame's top edge
-  expect(shown.y).toBeGreaterThanOrEqual(header.y);
-  expect(shown.y).toBeLessThan(frame.y + 16);
-  await page.screenshot({ path: 'e2e/.results/header-scale-warning.png', clip: { x: 0, y: 0, width: 1280, height: 120 } });
+for (const screen of ['home', 'steam', 'hot-water'] as const) {
+  test(`the scale warning fills the scale cell on ${screen}; a tap on the sentence or the sign looks again`, async ({ page }) => {
+    const gateway = await mockGateway(page);
+    gateway.decaidSettings.preferredScaleId = null;
+    gateway.connectScale(false);
+    await open(page, screen);
+    const root = page.getByTestId(`screen-${screen}`);
+    const retry = root.getByTestId('scale-retry');
+    const sentence = root.getByTestId('scale-hint');
+    await expect(sentence).toHaveText('no scale, tap to retry', { timeout: 15_000 });
+    const cell = (await retry.boundingBox())!;
+    const header = (await root.locator('header.page-header').boundingBox())!;
+    const frame = (await root.locator('[data-main-frame]').boundingBox())!;
+    const sign = (await root.getByTestId('state-scale').boundingBox())!;
+    const text = (await sentence.boundingBox())!;
+    for (const box of [sign, text]) {
+      expect(box.x).toBeGreaterThanOrEqual(cell.x - 0.5);
+      expect(box.x + box.width).toBeLessThanOrEqual(cell.x + cell.width + 0.5);
+      expect(box.y).toBeGreaterThanOrEqual(cell.y - 0.5);
+      expect(box.y + box.height).toBeLessThanOrEqual(cell.y + cell.height + 0.5);
+      expect(box.y + box.height).toBeLessThanOrEqual(header.y + header.height + 0.5);
+      expect(box.y + box.height, 'clear of the main frame').toBeLessThanOrEqual(frame.y);
+    }
+    // two rows of label size, nothing with pointer-events: none
+    const style = await sentence.evaluate((node) => {
+      const computed = getComputedStyle(node);
+      return { size: parseFloat(computed.fontSize), line: parseFloat(computed.lineHeight), events: computed.pointerEvents };
+    });
+    expect(style.size).toBeGreaterThanOrEqual(0.85 * 16 - 0.5);
+    expect(text.height).toBeGreaterThan(style.line * 1.5);
+    expect(style.events).not.toBe('none');
+    if (screen !== 'hot-water')
+      await page.screenshot({
+        path: `e2e/.results/header-scale-warning-${screen}.png`,
+        clip: { x: 0, y: 0, width: 1280, height: 120 },
+      });
 
-  // the tap still looks for the scale again
-  const scans = gateway.calls('GET', '/api/v1/devices/scan').length;
-  await retry.click();
-  await expect.poll(() => gateway.calls('GET', '/api/v1/devices/scan').length).toBe(scans + 1);
-  expect(errors).toEqual([]);
-});
+    for (const target of [sentence, root.getByTestId('state-scale')]) {
+      const scans = gateway.calls('GET', '/api/v1/devices/scan').length;
+      const box = (await target.boundingBox())!;
+      await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+      await expect.poll(() => gateway.calls('GET', '/api/v1/devices/scan').length).toBeGreaterThan(scans);
+      // a tap during a round starts none: the second target is tapped on a fresh page
+      await open(page, screen);
+      await expect(sentence).toHaveText('no scale, tap to retry', { timeout: 15_000 });
+    }
+    expect(errors).toEqual([]);
+  });
+}

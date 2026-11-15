@@ -78,7 +78,7 @@ test("a dialog's close glows while it is held and fades after", async ({ page })
   gateway.decaidSettings.blockOnNoScale = true;
   gateway.connectScale(false);
   await page.goto('/');
-  await expect(page.getByTestId('scale-hint')).toHaveText(/looking for it|not connected/);
+  await expect(page.getByTestId('scale-hint')).toHaveText(/looking for scale|no scale/);
   gateway.blockedStart();
   // Let go over the dialog's text, not the scrim, which would cancel it.
   const text = (await page.getByTestId('no-scale-text').boundingBox())!;

@@ -30,7 +30,7 @@ async function open(page: Page, options: { required?: boolean; scale?: boolean }
   gateway.connectScale(options.scale ?? false);
   await page.goto('/');
   await expect(options.scale ? page.getByTestId('state-scale') : page.getByTestId('scale-hint')).toHaveText(
-    options.scale ? '0.0 g' : /looking for it|not connected/,
+    options.scale ? '0.0 g' : /looking for scale|no scale/,
   );
 }
 

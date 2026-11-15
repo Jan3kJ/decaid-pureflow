@@ -71,11 +71,7 @@ export function refusal(cause: unknown): string | null {
  * for a token and `run` goes again; a refused token is dropped and asked for again. Cancelling
  * throws, so the caller says it did not run.
  */
-export async function withManageToken<T>(
-  client: { manageToken: string | null },
-  run: () => Promise<T>,
-  remember = false,
-): Promise<T> {
+export async function withManageToken<T>(client: { manageToken: string | null }, run: () => Promise<T>, remember = false): Promise<T> {
   if (remember && !client.manageToken) client.manageToken = loadToken();
   for (;;) {
     try {

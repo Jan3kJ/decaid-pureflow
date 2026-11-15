@@ -16,7 +16,7 @@
 {#if ask}
   <Confirm
     title="Paste an API token"
-    text='Decaid only lets a skin install or change skins and plugins with a "Manage plugins and skins" token: Decent Account page > API access tokens > Create. It is kept until this screen is closed.'
+    text="Decaid only lets a skin install or change skins and plugins with a “Manage plugins and skins” token: Decent Account page > API access tokens > Create. It is kept until this screen is closed."
     ok="use"
     label="the API token"
     error={ask.refused}

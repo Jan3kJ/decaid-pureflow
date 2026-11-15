@@ -36,12 +36,17 @@
         <span class="slot" data-max={item.widest}><b data-testid="state-scale">{item.value}</b></span>
       </button>
     {:else if item.key === 'scale'}
-      <!-- Without a scale the slot holds a warning sign and is a button: a tap looks for the scale again. The
-           sentence is a small line under the slot, drawn over the frame's top edge, so nothing moves for it. -->
+      <!-- Without a scale the cell is a button, a tap looks for the scale again. Its box is held by an invisible copy
+           of the connected cell (label and slot); the warning's two rows lie inside that box. -->
       <button class="value scale warn" data-testid="scale-retry" aria-label="look for the scale" onclick={() => skin.findScale()}>
-        <small>{item.label}</small>
-        <span class="slot" data-max={item.widest}><b class="warning" data-testid="state-scale">{item.value}</b></span>
-        <span class="sentence warning" data-testid="scale-hint">{item.hint}</span>
+        <span class="ghost" aria-hidden="true">
+          <small>{item.label}</small>
+          <span class="slot" data-max={item.widest}><b>0</b></span>
+        </span>
+        <span class="rows">
+          <b class="warning" data-testid="state-scale">{item.value}</b>
+          <span class="sentence" data-testid="scale-hint">{item.hint}</span>
+        </span>
       </button>
     {:else}
       <span class="value {item.key}" class:warn={item.warn}>
@@ -118,16 +123,33 @@
     border-radius: var(--radius-small);
   }
 
-  /* The warning's sentence hangs under the slot, ending at its right edge, and takes no room. */
+  /* The warning without a scale: the cell's box is held by the invisible copy of the weight cell; the sign and
+     the sentence, two rows of label size, fill that box. The whole cell takes the tap. */
   .scale.warn {
     position: relative;
   }
 
-  .sentence {
+  .ghost {
+    visibility: hidden;
+  }
+
+  .rows {
     position: absolute;
-    top: 100%;
-    right: 0.6rem;
+    inset: 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: var(--space-1);
+    padding: 0 0.6rem;
     font-size: var(--text-label);
-    pointer-events: none;
+    line-height: 1.15;
+    text-align: left;
+    white-space: normal;
+  }
+
+  .sentence {
+    max-width: 12ch;
+    color: var(--warn);
+    text-wrap: balance;
   }
 </style>

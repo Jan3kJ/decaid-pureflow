@@ -55,7 +55,9 @@
     said = `Decaid downloads and installs ${how.asset} …`;
     try {
       await withManageToken(skin.client, () =>
-        how.kind === 'release' ? skin.client.installSkinFromGitHubRelease(how.repo, how.asset) : skin.client.installSkinFromUrl(how.url),
+        how.kind === 'release'
+          ? skin.client.installSkinFromGitHubRelease(how.repo, how.asset)
+          : skin.client.installSkinFromUrl(how.url),
       );
     } catch (cause) {
       said = installError(cause);
