@@ -1,6 +1,6 @@
 ---
 name: release
-description: Prepares and walks the user through a pureflow release with `npm run release` - checks the tree, CI and rig, previews the version and CHANGELOG from the commit trailers, repairs missing or duplicate entries via .release-notes.json, runs the release in the user's terminal (it needs typed yeses), and checks the published result. Use it whenever the user wants to release, ship, publish, cut or tag a version, make a hand-over or test ZIP, asks "what would the next version be", "what goes into the next release", or a release run stopped and needs resuming.
+description: Prepares and walks the user through a pureflow release with `npm run release` - updates the dev dependencies and fixes npm audit advisories first, checks the tree, CI and rig, previews the version and CHANGELOG from the commit trailers, repairs missing or duplicate entries via .release-notes.json, runs the release in the user's terminal (it needs typed yeses), and checks the published result. Use it whenever the user wants to release, ship, publish, cut or tag a version, make a hand-over or test ZIP, asks "what would the next version be", "what goes into the next release", a release run stopped and needs resuming, or asks to update dependencies, run npm audit fix or bump the dev tools.
 ---
 
 # Release pureflow
@@ -19,7 +19,44 @@ Two facts shape everything below:
 - **It takes 30 minutes or more** (e2e about 11 min, rig about 15 min, verify, build). That is
   far past the 10-minute limit of one foreground tool call, another reason it runs in a terminal.
 
-## 1. Preflight (you, read-only)
+## 1. Dependencies first
+
+A release is the natural moment to update the dev tools: the release runs every check anyway,
+so the update is tested for free, and `npm audit --audit-level=high` (part of verify, on CI too)
+turns red on its own whenever a new advisory appears. Do this before the preflight, because it
+makes a commit and the release needs a clean tree.
+
+```bash
+npm outdated
+npm audit --audit-level=high
+```
+
+Show the user a short table: the packages with a newer version in range (Wanted), those with a
+new major (Latest beyond Wanted), and any advisory. Then ask which to take. The usual answer:
+
+- **In-range updates and audit fixes**: take them. `npm update` and `npm audit fix` (never
+  `--force`: it jumps majors silently). Check `package.json`'s ranges did not change unless
+  intended.
+- **Majors** (a new TypeScript, Vite, Svelte, Playwright, ESLint major): not as part of a
+  release. They can change the build or the tests in ways that need their own change and a full
+  run; propose them as a separate task with the `develop` skill.
+- **Svelte** is the one package that ships inside the skin (its runtime is bundled). An update
+  of it is a change for users even when nothing should look different, so mention it to the user
+  and keep an eye on the e2e results.
+- **Playwright**: after a version change, `npx playwright install chromium` so the local browser
+  matches; CI installs its own.
+- **Prettier**: a new version may format some files differently; run `npm run format` and
+  include those files in the same commit.
+
+Then the quick checks (`npm run check`, `npm run lint`, `npm run format:check`, `npm test`,
+`npm run build`; a minute or two) so that a broken update shows now and not 20 minutes into the
+release, and `npm audit --audit-level=high` must be clean. Commit `package.json` and
+`package-lock.json` (and any reformatted files) on `main`: subject "Dev tools updated to their
+latest minor versions" or similar, the updated packages in the body, `Changelog: internal`. If
+the user does not want updates now, skip this step; if the audit fails and they skip it, the
+release stops at verify, so say that.
+
+## 2. Preflight (you, read-only)
 
 Run these and collect every problem before saying anything:
 
@@ -60,10 +97,14 @@ Decaid, `docs/architecture.md` > "The rig"), or to release with `--no-rig` when 
 last tag touches what the rig specs drive (the CHANGELOG's checks line then says the rig was not
 run). Check that with `git diff v<last>..HEAD --stat` against `e2e-rig/`'s selectors if unsure.
 
+**The user docs**: if the section has added or changed entries, ask whether the user guide
+should be brought up to date first (the `user-docs` skill); its pages say which version they
+were last checked against.
+
 Then tell the user in one short block: the version, the CHANGELOG section, any repairs you made or
 propose, whether the rig is up, and the command you are about to start. Ask for their go.
 
-## 2. Run it in a terminal the user can answer
+## 3. Run it in a terminal the user can answer
 
 The usual forms:
 
@@ -86,7 +127,7 @@ While it runs you can follow it with `read_terminal` (with `wait_for_output_ms`)
 asking. Do not start other commands in this repository meanwhile: the e2e and rig runs use port
 24800 and the release needs the tree unchanged.
 
-## 3. When it stops
+## 4. When it stops
 
 Every stop prints what is wrong and the one line that fixes it. Before the files are written
 (steps 1-5) nothing has changed: fix the cause and start again. Typical ones:
@@ -99,7 +140,7 @@ Every stop prints what is wrong and the one line that fixes it. Before the files
   throw the release away instead: `git tag -d vX.Y.Z && git reset --hard HEAD~1` - ask the user
   first, it discards the release commit.
 
-## 4. After it
+## 5. After it
 
 - Check the result: `gh release view vX.Y.Z` (draft or not, three assets: `pureflow.zip`,
   `pureflow-ocr.zip`, `SHA256SUMS.txt`) and `git log --oneline -2` (the `Release X.Y.Z` commit).
