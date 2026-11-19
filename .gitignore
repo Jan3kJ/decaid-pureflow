@@ -2,7 +2,7 @@ node_modules/
 dist/
 dist-ocr/
 .cache/
-release/
+/release/
 data/
 e2e/.results/
 test-results/
