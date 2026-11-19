@@ -68,14 +68,24 @@ npm test
 npx playwright test e2e/<the specs you touched or that cover the area>
 ```
 
-Then the full gate. A single tool call is killed at 10 minutes and the mocked suite takes about
-11, so split it:
+Then stop and ask the user before the full gate (verify plus the whole mocked e2e, about 15
+minutes together). They often have two or three changes lined up, and running the gate once
+after all of them is much faster than once per change. Offer: "run the full checks now", or
+"go on with the next change and run them once at the end". If they batch, commit each change on
+its own once its targeted checks pass (step 5), and say in its message that the full gate is
+still to run. Run the gate once over all of them at the end; a failure it finds gets its own
+fix commit for the change it belongs to, not a fix mixed into another change.
+
+The full gate:
 
 ```bash
 npm run verify
-npx playwright test --shard=1/2
-npx playwright test --shard=2/2
+npm run e2e
 ```
+
+Run each as a background command (`run_in_background`) and wait for its completion notice: the
+mocked suite takes about 11 minutes and a foreground tool call is killed at 10. Do not poll the
+output while it runs, and start nothing else that uses port 24800 meanwhile.
 
 A failure in a spec you did not touch: run that spec alone once. If it passes alone, it is a
 flake; say so in the commit and to the user, do not retry it into green. If it fails alone,

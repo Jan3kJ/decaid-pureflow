@@ -76,8 +76,8 @@ npx playwright test e2e/<spec>.ts --repeat-each=10 --workers=6   # under load
 
 Setting `CI=1` gives CI's reporter, one worker and traces in `e2e/.results/`. To run CI's exact
 shard: `npx playwright test --shard=<n>/3`. The whole suite takes about 11 min on 4 workers and
-one tool call is killed at 10 min, so run a full suite as separate foreground shard calls
-(`--shard=1/2`, `--shard=2/2`).
+a foreground tool call is killed at 10 min, so run any long run (the whole suite, a big
+`--repeat-each`) as a background command and wait for its completion notice.
 
 **Linux-only failures**: CI runs Chromium on ubuntu-latest with other fonts than Windows. If it
 fails there every time and never here, measure what the test measures and reason about the font
@@ -91,8 +91,9 @@ exactly; ask the user before pulling an image.
   the failure; unrelated clean-ups are another commit.
 - A flake is fixed when the repeat run that showed it is clean: e.g. 0 of 20 with
   `--repeat-each=20 --workers=6` where it was 2 of 20 before. Report both numbers.
-- Then the touched specs, `npm run lint`, `npm run check`, `npm test`, and for anything shared
-  the full mocked suite in two foreground calls (`--shard=1/2`, `--shard=2/2`).
+- Then the touched specs, `npm run lint`, `npm run check`, `npm test`. For anything shared,
+  ask the user whether to run the full mocked suite now (`npm run e2e` in the background) or
+  later together with other changes.
 - Commit on `main` (the `develop` skill's commit format): a subject for a user of the skin when
   the product changed (`Changelog: fixed`), or a plain description with `Changelog: internal`
   when only tests or tooling changed. The body says the cause, the evidence and the repeat
