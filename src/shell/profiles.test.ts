@@ -218,12 +218,12 @@ mine`,
     expect((calls[1].body as { profile: Profile }).profile.title).toBe('mine');
   });
 
-  it('leaves the dose alone for a profile that brings none, and the yield for one without a stop weight', async () => {
+  it('leaves the dose alone for a profile that brings none, and resets the yield for one without a stop weight', async () => {
     const { client: api, calls } = client(() => ({}));
     await loadProfile(api, { ...other, target_weight: 40 });
     await loadProfile(api, { ...other, target_weight: 0 });
     expect(calls[0].body).toEqual({ profile: { ...other, target_weight: 40 }, context: { targetYield: 40 } });
-    expect(calls[1].body).toEqual({ profile: { ...other, target_weight: 0 }, context: {} });
+    expect(calls[1].body).toEqual({ profile: { ...other, target_weight: 0 }, context: { targetYield: 0 } });
   });
 
   it('knows the dose of a profile that carries its A-Flow parameters', () => {

@@ -154,7 +154,8 @@ export function doseToSet(workflow: Workflow, defaultDose: number): number | nul
  * pulled; `POST /api/v1/machine/profile` would leave the workflow as it was (research 9.3).
  * Decaid stops a shot at the workflow's `targetYield`, not at the profile's `target_weight`,
  * and loading a profile does not change it: so the profile's stop
- * weight is written as the target yield here, and its dose where it has one. The picker, the
+ * weight is written as the target yield here (0 where it has none, so the last profile's weight
+ * does not carry over), and its dose where it has one. The picker, the
  * editor's 'load to machine' and the shot history all load with this function; the history
  * sends an entry's bean and grinder along as `more`, in the same call.
  *
@@ -168,8 +169,8 @@ export function loadProfile(
   more: WorkflowContextPatch = {},
   metadata?: Record<string, unknown> | null,
 ): Promise<Workflow> {
-  const context: WorkflowContextPatch = { ...more };
-  if (profile.target_weight) context.targetYield = profile.target_weight;
+  // A profile without a stop weight writes 0, no target: the previous profile's weight must not stay.
+  const context: WorkflowContextPatch = { targetYield: profile.target_weight || 0, ...more };
   const params = readParams(profile, metadata);
   if (params) context.targetDoseWeight = params.dose;
   return client.updateWorkflow({ profile: params ? workflowProfile(profile, params) : profile, context });
