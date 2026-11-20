@@ -48,6 +48,22 @@ async function openMenu(page: Page) {
 
 const points = async (page: Page) => Number(await page.getByTestId('shot-graph').getAttribute('data-points'));
 
+test('the header keeps its height when the tank falls under the refill level and the warning sign shows', async ({ page }) => {
+  const gateway = await mockGateway(page);
+  await page.goto('/');
+  await expect(page.getByTestId('state-tank')).toHaveText('1040 ml');
+  const heights = () =>
+    page.evaluate(() => {
+      const tank = document.querySelector('[data-testid="state-tank"]')!;
+      const row = tank.closest('[data-testid="status"]')!;
+      return { line: row.getBoundingClientRect().height, below: Math.round(row.getBoundingClientRect().bottom * 100) / 100 };
+    });
+  const before = await heights();
+  gateway.setWater(3);
+  await expect(page.getByTestId('state-tank')).toHaveClass(/warning/);
+  expect(await heights()).toEqual(before);
+});
+
 test('home shows the state line the machine sent, the profile, and no start: the DE1 is started at the machine', async ({ page }) => {
   const gateway = await mockGateway(page);
   await page.goto('/');

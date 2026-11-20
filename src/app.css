@@ -392,6 +392,8 @@ body {
 
 :root .warning::before {
   content: '⚠\00a0';
+  /* The sign comes from a fallback font with taller metrics; it must not grow the line it stands in. */
+  line-height: 0;
 }
 
 /* An action that deletes or discards: an outline in the warning colour, never filled. */
