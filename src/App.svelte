@@ -10,7 +10,7 @@
   import type { Screen } from './shell/nav';
   import Profiles from './shell/Profiles.svelte';
   import SettingsPage from './settings-page/SettingsPage.svelte';
-  import type { LoadAnswer } from './shell/load-warning.svelte';
+  import type { LoadAnswer, VolumeAnswer } from './shell/load-warning.svelte';
   import { Skin } from './shell/skin.svelte';
   import { backupTime } from './settings-backup';
   import { applyDisplay } from './display';
@@ -38,6 +38,7 @@
   import NoScaleDialog from './shell/NoScaleDialog.svelte';
   import AbnormalEndDialog from './shell/AbnormalEndDialog.svelte';
   import UnsavedDialog from './shell/UnsavedDialog.svelte';
+  import VolumeDialog from './shell/VolumeDialog.svelte';
   import { coverOf, MAIN_FRAME, type Rect } from './shell/cover';
   import Water from './shell/Water.svelte';
   import { ringRun, shownRun } from './shell/water';
@@ -401,6 +402,11 @@
 <!-- Unsaved edits on the machine: asked before any load of the skin. -->
 {#if skin.unsaved}
   <UnsavedDialog unsaved={skin.unsaved} onanswer={(answer: LoadAnswer) => skin.answerLoad(answer)} />
+{/if}
+
+<!-- A water volume of its own in the workflow: asked before any load of the skin, after the unsaved edits. -->
+{#if skin.waterVolume !== null}
+  <VolumeDialog volume={skin.waterVolume} onanswer={(answer: VolumeAnswer) => skin.answerVolume(answer)} />
 {/if}
 
 <!-- Decaid stopped a shot for want of a scale: on every screen, once for one blocked start. -->

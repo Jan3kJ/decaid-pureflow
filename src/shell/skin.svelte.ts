@@ -17,7 +17,7 @@ import type { ReadBackup } from '../settings-backup';
 import { Dimmer } from './dimmer';
 import { Heartbeat } from './heartbeat';
 import { gatewayBaseUrl } from './gateway';
-import { LoadWarning, type LoadAnswer } from './load-warning.svelte';
+import { LoadWarning, type LoadAnswer, type VolumeAnswer } from './load-warning.svelte';
 import {
   canSleep,
   canStop,
@@ -589,6 +589,16 @@ export class Skin {
   /** The warning's buttons. */
   answerLoad(answer: LoadAnswer): void {
     this.warning.answer(answer);
+  }
+
+  /** The workflow's own water volume in ml, while the question about it before a load is open. */
+  get waterVolume(): LoadWarning['volume'] {
+    return this.warning.volume;
+  }
+
+  /** The water volume question's buttons. */
+  answerVolume(answer: VolumeAnswer): void {
+    this.warning.answerVolume(answer);
   }
 
   /** The warning's 'Save as…' outside the editor: the editor opens on the machine's values and asks for a name. */
