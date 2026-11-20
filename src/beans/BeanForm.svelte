@@ -257,7 +257,7 @@
   }
 
   .photo img {
-    width: 9rem;
+    width: 12rem;
     object-fit: contain;
     border: 1px solid var(--edge);
     border-radius: var(--radius);
@@ -265,7 +265,7 @@
 
   .photo img.portrait {
     width: auto;
-    height: 10rem;
+    height: 8rem;
   }
 
   .photo-tools {
