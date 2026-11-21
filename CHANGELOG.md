@@ -4,6 +4,24 @@ What changed in each version of pureflow, newest first. From 0.7.0 on a section 
 the release script (`npm run release`) from the commits' `Changelog:` lines; the sections up to
 0.6.1 summarise the hand-over builds that came before it.
 
+## 0.15.0 - 2026-11-21
+
+### Added
+
+- Loading a profile asks first when the machine holds a water volume of its own.
+
+### Changed
+
+- The bag photo's frame is smaller in portrait and larger in landscape.
+
+### Fixed
+
+- The open step card's chips stay inside its right edge in any font.
+- The header row keeps its height when the tank's warning sign shows.
+- A profile without a stop weight no longer inherits the stop weight of the one before.
+
+Checks: npm ci, npm run verify, npm run e2e and the rig suite passed.
+
 ## 0.14.0 - 2026-11-15
 
 ### Added
