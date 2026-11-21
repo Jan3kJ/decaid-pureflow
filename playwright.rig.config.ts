@@ -13,4 +13,8 @@ export default defineConfig({
   globalSetup: './e2e-rig/global-setup.ts',
   // The simulated shot of the test takes about 100 s.
   timeout: 300_000,
+  // One rig, one machine: specs that ran side by side changed each other's workflow, bean,
+  // sleep and scale. The base config's 4 local workers are for the mocked suite only.
+  workers: 1,
+  fullyParallel: false,
 });

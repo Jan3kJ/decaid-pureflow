@@ -84,9 +84,18 @@ test('the hot water page writes hotWaterData, 1:2 of a 40 g shot is 80 g, Decaid
     expect(lastShot).toBeGreaterThan(SHOT_GRAMS - 10);
     expect(lastShot).toBeLessThan(SHOT_GRAMS + 10);
     expect(lastShotText).toBe(`${lastShot.toFixed(1)} g`);
-    // The favourites are the settings' defaults, on that weight.
-    const grams = (ratio: number) => Math.round(lastShot * ratio);
-    await expect(page.getByTestId('hot-water-ratio')).toHaveText([`1:2 ${grams(2)} g`, `1:2.5 ${grams(2.5)} g`, `1:3 ${grams(3)} g`]);
+    // The favourites are the settings' defaults, on that weight. The page multiplies the scale's
+    // unrounded reading, the text shows one decimal: 34.96 g is "35.0 g" and 1:2.5 of it 87 g, not 88.
+    const ratios = [2, 2.5, 3];
+    await expect(page.getByTestId('hot-water-ratio')).toHaveText(ratios.map((ratio) => new RegExp(`^1:${ratio} \\d+ g$`)));
+    const shown = new Map<number, number>();
+    for (const [i, ratio] of ratios.entries()) {
+      const amount = parseInt(((await page.getByTestId('hot-water-ratio').nth(i).textContent()) ?? '').split(' ')[1], 10);
+      expect(amount, `1:${ratio}`).toBeGreaterThanOrEqual(Math.round((lastShot - 0.05) * ratio));
+      expect(amount, `1:${ratio}`).toBeLessThanOrEqual(Math.round((lastShot + 0.05) * ratio));
+      shown.set(ratio, amount);
+    }
+    const grams = (ratio: number) => shown.get(ratio)!;
 
     // 1:2 of the last shot: twice its weight in hotWaterData.volume; temperature, flow and time beside it.
     await page.getByTestId('hot-water-ratio').first().click();
