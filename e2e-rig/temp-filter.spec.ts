@@ -1,12 +1,21 @@
 import { expect, test } from '@playwright/test';
 import type { MachineSnapshot, PaginatedShots } from '../src/api';
+import { smooth, type Smoothed } from '../src/shell/smooth';
 import { IDLE } from './idle';
 
 // The state line's temperatures, filtered against the rig: when a shot starts
 // the simulated machine drops its group by far more than 5 °C in one frame (15.5 °C, seen
-// on the rig), which restarts the filter, and heats it back at 1 to 5 °C a second, which the
-// state line follows in small steps. The test removes the shot record it makes; the workflow is
-// not changed.
+// on the rig), which restarts the filter, and heats it back, which the state line follows
+// through the filter. The rig's frame rate changes during the shot (10 a second for the first
+// 1.6 s, then about 2), so the test replays the filter over the frames as they came and holds
+// the line to it, instead of a fixed step size. The test removes the shot record it makes; the
+// workflow is not changed.
+
+/** A value and the page's time it was seen at, in ms. */
+interface Timed {
+  t: number;
+  v: number;
+}
 
 const GATEWAY = 'http://localhost:8080';
 /** ms the state line is watched after the shot starts */
@@ -35,6 +44,15 @@ test.beforeAll(async () => {
 /** The largest change between two neighbours of a list. */
 const largestStep = (values: number[]) => Math.max(...values.slice(1).map((value, i) => Math.abs(value - values[i])));
 
+/** The filter replayed over the frames, each at the time it came: the values the line may show. */
+function replay(frames: Timed[]): Timed[] {
+  let last: Smoothed | null = null;
+  return frames.map(({ t, v }) => {
+    last = smooth(last, t, v);
+    return { t, v: last.value };
+  });
+}
+
 test("the state line takes the group's drop at once and its heating in small steps", async ({ page }) => {
   test.skip(!gatewayUp, `no machine at ${GATEWAY}: start the rig (docs/architecture.md, The rig)`);
 
@@ -44,50 +62,64 @@ test("the state line takes the group's drop at once and its heating in small ste
     await expect(page.getByTestId('status')).toHaveAttribute('data-state', IDLE, { timeout: 15_000 });
     await expect(page.getByTestId('state-group')).toHaveText(/^\d+\.\d °C$/);
 
-    // The page samples the state line every 100 ms and keeps the raw frames of its own stream.
+    // The page samples the state line every 100 ms and keeps the frames of its own stream, each
+    // with the time it came.
     await page.evaluate(
       ({ url, ms }) => {
-        const shown: number[] = [];
-        const raw: number[] = [];
+        const shown: Timed[] = [];
+        const frames: Timed[] = [];
         const socket = new WebSocket(url);
-        socket.onmessage = (event) => raw.push((JSON.parse(event.data as string) as MachineSnapshot).groupTemperature);
+        socket.onmessage = (event) =>
+          frames.push({ t: Date.now(), v: (JSON.parse(event.data as string) as MachineSnapshot).groupTemperature });
         const timer = setInterval(() => {
           const text = document.querySelector('[data-testid="state-group"]')?.textContent ?? '';
           const value = parseFloat(text);
-          if (Number.isFinite(value)) shown.push(value);
+          if (Number.isFinite(value)) shown.push({ t: Date.now(), v: value });
         }, 100);
-        (window as unknown as { watched: Promise<{ shown: number[]; raw: number[] }> }).watched = new Promise((resolve) =>
+        (window as unknown as { watched: Promise<{ shown: Timed[]; frames: Timed[] }> }).watched = new Promise((resolve) =>
           setTimeout(() => {
             clearInterval(timer);
             socket.close();
-            resolve({ shown, raw });
+            resolve({ shown, frames });
           }, ms),
         );
       },
       { url: `${GATEWAY.replace('http', 'ws')}/ws/v1/machine/snapshot`, ms: WATCH_MS },
     );
     await api('PUT', '/api/v1/machine/state/espresso');
-    const { shown, raw } = await page.evaluate(
-      () => (window as unknown as { watched: Promise<{ shown: number[]; raw: number[] }> }).watched,
+    const { shown, frames } = await page.evaluate(
+      () => (window as unknown as { watched: Promise<{ shown: Timed[]; frames: Timed[] }> }).watched,
     );
     await page.screenshot({ path: 'e2e-rig/.results/temp-filter-rig.png' });
 
+    const raw = frames.map((frame) => frame.v);
+    const values = shown.map((sample) => sample.v);
     const drop = largestStep(raw);
-    const lowest = shown.indexOf(Math.min(...shown));
+    const lowest = values.indexOf(Math.min(...values));
     const climb = shown.slice(lowest);
+    const filtered = replay(frames);
     console.log(
       `raw: ${raw.length} frames, ${Math.min(...raw).toFixed(2)}..${Math.max(...raw)} °C, largest step ${drop.toFixed(2)} °C`,
     );
     console.log(
-      `state line: ${shown.length} samples, ${shown[lowest]}..${Math.max(...shown)} °C, climbing by ${largestStep(climb).toFixed(2)} °C at most`,
+      `state line: ${shown.length} samples, ${values[lowest]}..${Math.max(...values)} °C, climbing by ${largestStep(climb.map((s) => s.v)).toFixed(2)} °C at most`,
     );
     // The drop is a jump: the state line takes it at once.
     expect(drop).toBeGreaterThan(5);
-    expect(shown[lowest]).toBeLessThanOrEqual(Math.min(...raw) + 0.1);
-    // The heating after it: the line climbs by more than 5 °C in steps of under 1 °C.
-    expect(climb.at(-1)! - shown[lowest]).toBeGreaterThan(5);
-    expect(largestStep(climb)).toBeLessThan(1);
-    expect(new Set(climb).size).toBeGreaterThan(20);
+    expect(values[lowest]).toBeLessThanOrEqual(Math.min(...raw) + 0.1);
+    // The heating after it: the line climbs by more than 5 °C ...
+    expect(climb.at(-1)!.v - values[lowest]).toBeGreaterThan(5);
+    // ... and lags the frames, so it is filtered and does not follow them ...
+    const lag = Math.max(...filtered.map((value, i) => raw[i] - value.v).filter((_, i) => frames[i].t >= climb[0].t));
+    expect(lag).toBeGreaterThan(1);
+    // ... and shows the filter of the frames as they came: each sample is the replayed value of
+    // the last frame before it, or of the one before that (the skin's socket and the page's are
+    // two, and either may get a frame first), to the tenth the line shows.
+    for (const sample of climb) {
+      const before = filtered.filter((value) => value.t <= sample.t + 20).slice(-2);
+      const near = Math.min(...before.map((value) => Math.abs(value.v - sample.v)));
+      expect(near, `${sample.v} °C at ${sample.t}`).toBeLessThanOrEqual(0.11);
+    }
   } finally {
     const state = await api<MachineSnapshot>('GET', '/api/v1/machine/state').catch(() => undefined);
     if (state?.state.state === 'espresso') await api('PUT', '/api/v1/machine/state/idle');

@@ -527,7 +527,8 @@ describe('the release script: run in a temporary repository', () => {
     expect(git('rev-list', '--count', 'v0.6.1..HEAD')).toBe('2');
     expect(git('cat-file', '-t', 'v0.7.0')).toBe('tag');
     expect(git('status', '--porcelain')).toBe('');
-    expect(spawnSync('git', ['-C', origin, 'tag'], { encoding: 'utf8' }).stdout.trim()).toBe('v0.6.1');
+    // --git-dir, not -C: with safe.bareRepository=explicit (some terminals set it) git does not find a bare repository by itself.
+    expect(spawnSync('git', ['--git-dir', origin, 'tag'], { encoding: 'utf8' }).stdout.trim()).toBe('v0.6.1');
   }, 120_000);
 
   it('a failing check or a missing rig stops before any file is written', () => {
