@@ -113,8 +113,10 @@
       onpointerup={release}
       onpointerleave={release}
       onpointercancel={release}
-      onkeydown={(e) => key(e, -1)}>−</button
+      onkeydown={(e) => key(e, -1)}
     >
+      −
+    </button>
   {/if}
   {#if compact}
     <button
@@ -151,8 +153,10 @@
       onpointerup={release}
       onpointerleave={release}
       onpointercancel={release}
-      onkeydown={(e) => key(e, 1)}>+</button
+      onkeydown={(e) => key(e, 1)}
     >
+      +
+    </button>
   {/if}
 </div>
 

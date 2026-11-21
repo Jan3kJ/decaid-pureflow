@@ -86,8 +86,10 @@
         aria-pressed={flavour === entry.id}
         disabled={busy}
         data-testid="version-flavour-{entry.id}"
-        onclick={() => (flavour = entry.id)}>{entry.name}</button
+        onclick={() => (flavour = entry.id)}
       >
+        {entry.name}
+      </button>
     {/each}
   </div>
 </SettingsRow>

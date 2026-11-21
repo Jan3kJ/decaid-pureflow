@@ -103,12 +103,12 @@
         <b class="big-number" data-testid="shot-timer">{value(shown.seconds)}<i>s</i></b>
       </div>
       <div class="row big weight">
-        <small class="caption" data-testid="shot-weight-label"
-          ><span>weight</span>{#if target}<span data-testid="shot-stops-at">stops at {+target.toFixed(1)} g</span>{/if}</small
-        >
-        <b class="big-number" data-testid="shot-weight"
-          >{shown.kind === 'running' ? gramsOf(shown.weight, '') : shotWeightText(shown.weight)}<i>g</i></b
-        >
+        <small class="caption" data-testid="shot-weight-label">
+          <span>weight</span>{#if target}<span data-testid="shot-stops-at">stops at {+target.toFixed(1)} g</span>{/if}
+        </small>
+        <b class="big-number" data-testid="shot-weight">
+          {shown.kind === 'running' ? gramsOf(shown.weight, '') : shotWeightText(shown.weight)}<i>g</i>
+        </b>
       </div>
       <dl>
         <div class="row pressure">

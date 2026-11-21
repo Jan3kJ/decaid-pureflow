@@ -33,11 +33,14 @@
   {disabled}
   data-testid={testid}
   onclick={() => onchange(!checked)}
-  >{#if children}{@render children()}{/if}{#if caption !== undefined}<small>{caption}</small>{/if}<span
-    class="lever"
-    class:glow={checked}><span></span></span
-  ></button
 >
+  {#if children}{@render children()}{/if}{#if caption !== undefined}<small>{caption}</small>{/if}<span
+    class="lever"
+    class:glow={checked}
+  >
+    <span></span>
+  </span>
+</button>
 
 <style>
   .lever-button {

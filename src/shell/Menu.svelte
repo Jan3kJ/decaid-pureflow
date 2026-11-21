@@ -95,9 +95,9 @@
         <button role="menuitem" data-testid={entry.id} disabled={entry.disabled?.()} onclick={() => choose(entry)}>
           <span class="label">{entry.label()}</span>
           {#if entry.detail}
-            <span class="state" data-testid="{entry.id}-detail" class:off={entry.id === 'steam-heater' && skin.steamHeater === 'off'}
-              >{entry.detail()}</span
-            >
+            <span class="state" data-testid="{entry.id}-detail" class:off={entry.id === 'steam-heater' && skin.steamHeater === 'off'}>
+              {entry.detail()}
+            </span>
           {/if}
         </button>
       </li>

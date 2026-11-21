@@ -164,8 +164,9 @@
       <div class="about">
         <strong class="name">{row.device.name}</strong>
         <small class="id name truncate">{row.device.id}</small>
-        {#if messages[row.device.id]}<small class="warn" data-testid="device-message-{row.device.id}">{messages[row.device.id]}</small
-          >{/if}
+        {#if messages[row.device.id]}<small class="warn" data-testid="device-message-{row.device.id}">
+            {messages[row.device.id]}
+          </small>{/if}
       </div>
       <Lever
         checked={row.preferred}
@@ -182,8 +183,10 @@
           class:danger={action === 'forget'}
           data-testid="device-{action}-{row.device.id}"
           disabled={!!busy[row.device.id]}
-          onclick={() => act(row, action)}>{ACTION_LABEL[action]}</button
+          onclick={() => act(row, action)}
         >
+          {ACTION_LABEL[action]}
+        </button>
       {/each}
     </div>
   {/each}

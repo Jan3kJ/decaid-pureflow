@@ -56,15 +56,19 @@
         class="form-button select-outline"
         aria-pressed={form.settingType === 'numeric'}
         data-testid="grinder-numeric"
-        onclick={() => (form.settingType = 'numeric')}>numbers</button
+        onclick={() => (form.settingType = 'numeric')}
       >
+        numbers
+      </button>
       <button
         type="button"
         class="form-button select-outline"
         aria-pressed={form.settingType === 'preset'}
         data-testid="grinder-preset"
-        onclick={() => (form.settingType = 'preset')}>named positions</button
+        onclick={() => (form.settingType = 'preset')}
       >
+        named positions
+      </button>
     </div>
   </div>
   {#if form.settingType === 'numeric'}

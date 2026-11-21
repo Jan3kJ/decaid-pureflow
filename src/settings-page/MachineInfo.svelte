@@ -79,14 +79,15 @@
   <div class="info" data-testid="machine-info">
     {#if info}
       <SettingsRow label="model" spacing="tight"><b data-testid="machine-info-model">{info.model ?? '–'}</b></SettingsRow>
-      <SettingsRow label="firmware version" spacing="tight"
-        ><b data-testid="machine-info-firmware">{info.version ?? '–'}</b></SettingsRow
-      >
+      <SettingsRow label="firmware version" spacing="tight">
+        <b data-testid="machine-info-firmware">{info.version ?? '–'}</b>
+      </SettingsRow>
       <SettingsRow label="serial number" spacing="tight">
         <span class="serial">
           {#if info.serialNumber}
-            <button class="action" data-testid="machine-info-copy" onclick={() => copy(info!.serialNumber!)}>{copied ?? 'copy'}</button
-            >
+            <button class="action" data-testid="machine-info-copy" onclick={() => copy(info!.serialNumber!)}>
+              {copied ?? 'copy'}
+            </button>
           {/if}
           <b data-testid="machine-info-serial">{info.serialNumber ?? '–'}</b>
         </span>

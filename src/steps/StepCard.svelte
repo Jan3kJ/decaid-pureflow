@@ -180,16 +180,16 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     {/if}
 
     <footer>
-      <button class="act danger warning" data-testid="step-delete-{index}" disabled={disabled || count === 1} onclick={ondelete}
-        >delete step</button
-      >
+      <button class="act danger warning" data-testid="step-delete-{index}" disabled={disabled || count === 1} onclick={ondelete}>
+        delete step
+      </button>
       <span class="moves">
-        <button class="act" data-testid="step-move-left-{index}" disabled={disabled || index === 0} onclick={() => onmove(-1)}
-          >move left</button
-        >
-        <button class="act" data-testid="step-move-right-{index}" disabled={disabled || index === count - 1} onclick={() => onmove(1)}
-          >move right</button
-        >
+        <button class="act" data-testid="step-move-left-{index}" disabled={disabled || index === 0} onclick={() => onmove(-1)}>
+          move left
+        </button>
+        <button class="act" data-testid="step-move-right-{index}" disabled={disabled || index === count - 1} onclick={() => onmove(1)}>
+          move right
+        </button>
         <button class="act" data-testid="step-insert-{index}" {disabled} onclick={oninsert}>+ step after</button>
       </span>
     </footer>
@@ -205,9 +205,10 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
   >
     <span class="head"><span class="number">{index + 1}</span><span class="title truncate">{step.name}</span></span>
     <span class="line temperature">{shown(step, 'temperature')} {step.sensor === 'water' ? 'water' : 'coffee'}</span>
-    <span class="line {pressure ? 'pressure' : 'flow'}"
-      >{pumpLabel({ pump: step.pump, transition: step.transition })} {shown(step, 'target')}</span
-    >
+    <span class="line {pressure ? 'pressure' : 'flow'}">
+      {pumpLabel({ pump: step.pump, transition: step.transition })}
+      {shown(step, 'target')}
+    </span>
     {#if !isOff(step, 'limiter')}
       <span class="line {pressure ? 'flow' : 'pressure'}">limit {shown(step, 'limiter')}</span>
     {/if}

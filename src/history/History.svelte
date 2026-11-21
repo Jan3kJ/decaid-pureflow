@@ -75,22 +75,28 @@
       class="select-outline truncate"
       aria-pressed={!filtered}
       data-testid="filter-all"
-      onclick={() => ((skin.historyFilter = NO_FILTER), (choosing = null))}>all</button
+      onclick={() => ((skin.historyFilter = NO_FILTER), (choosing = null))}
     >
+      all
+    </button>
     <button
       class="select-outline truncate"
       aria-pressed={filter.beanId !== null}
       class:open={choosing === 'bean'}
       data-testid="filter-bean"
-      onclick={() => (choosing = choosing === 'bean' ? null : 'bean')}>{beanChosen}</button
+      onclick={() => (choosing = choosing === 'bean' ? null : 'bean')}
     >
+      {beanChosen}
+    </button>
     <button
       class="select-outline truncate"
       aria-pressed={filter.grinderId !== null}
       class:open={choosing === 'grinder'}
       data-testid="filter-grinder"
-      onclick={() => (choosing = choosing === 'grinder' ? null : 'grinder')}>{grinderChosen}</button
+      onclick={() => (choosing = choosing === 'grinder' ? null : 'grinder')}
     >
+      {grinderChosen}
+    </button>
   </div>
   {#if choosing}
     <ul data-testid="filter-options" data-main-frame>
@@ -99,8 +105,10 @@
           class="option select-outline"
           aria-pressed={(choosing === 'bean' ? filter.beanId : filter.grinderId) === null}
           data-testid="filter-any"
-          onclick={() => choose(null)}>{choosing === 'bean' ? 'any bean' : 'any grinder'}</button
+          onclick={() => choose(null)}
         >
+          {choosing === 'bean' ? 'any bean' : 'any grinder'}
+        </button>
       </li>
       {#each options as option (option.id)}
         <li>

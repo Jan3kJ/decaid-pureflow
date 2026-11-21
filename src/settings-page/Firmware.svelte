@@ -124,9 +124,9 @@
   {@const latest = summary.latest}
   <div data-testid="firmware">
     <SettingsRow label="machine" spacing="tight"><b>{summary.model ?? 'None connected'}</b></SettingsRow>
-    <SettingsRow label="installed build" spacing="tight"
-      ><b data-testid="firmware-installed">{summary.installedBuild ?? '–'}</b></SettingsRow
-    >
+    <SettingsRow label="installed build" spacing="tight">
+      <b data-testid="firmware-installed">{summary.installedBuild ?? '–'}</b>
+    </SettingsRow>
     <SettingsRow label="status" spacing="tight">
       <b data-testid="firmware-status" data-status={summary.status}>
         {STATUS_TEXT[summary.status]}{#if summary.status === 'unknown' && summary.reason}: {REASON_TEXT[summary.reason] ??
@@ -162,9 +162,9 @@
         {#if progress?.status === 'uploading'}
           <div class="bar"><div style="width: {Math.max(0, Math.min(1, progress.progress)) * 100}%"></div></div>
         {/if}
-        <button class="action" data-testid="firmware-cancel" disabled={cancelling} onclick={cancel}
-          >{cancelling ? 'cancelling…' : 'cancel'}</button
-        >
+        <button class="action" data-testid="firmware-cancel" disabled={cancelling} onclick={cancel}>
+          {cancelling ? 'cancelling…' : 'cancel'}
+        </button>
       </div>
     {:else if summary.status === 'update-available' && latest}
       <SettingsRow label="install build {latest.versionLabel ?? latest.build}" hint={DURATION_NOTE} spacing="tight">

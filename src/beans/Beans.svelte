@@ -180,11 +180,9 @@
               onclick={() => select(entry.id)}
             >
               <strong class="truncate">{entry.model}</strong>
-              <small
-                >{entry.archived
-                  ? 'archived'
-                  : (entry.burrs ?? (entry.settingType === 'preset' ? 'named positions' : 'numbers'))}</small
-              >
+              <small>
+                {entry.archived ? 'archived' : (entry.burrs ?? (entry.settingType === 'preset' ? 'named positions' : 'numbers'))}
+              </small>
             </button>
           </li>
         {/each}

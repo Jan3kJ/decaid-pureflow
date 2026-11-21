@@ -51,9 +51,9 @@
     {:else}
       <span class="value {item.key}" class:warn={item.warn}>
         <small>{item.label}</small>
-        <span class="slot" data-max={item.widest}
-          ><b class:warning={item.warn} data-testid="state-{item.key}">{machine ? item.value : '–'}</b></span
-        >
+        <span class="slot" data-max={item.widest}>
+          <b class:warning={item.warn} data-testid="state-{item.key}">{machine ? item.value : '–'}</b>
+        </span>
       </span>
     {/if}
   {/each}

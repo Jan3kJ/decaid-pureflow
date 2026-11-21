@@ -46,12 +46,12 @@
       <button class="seg save" data-testid="save-as" disabled={busy} onclick={onsaveas}> save as </button>
     </div>
     <div class="group" role="group" aria-label="editor mode">
-      <button class="seg select-outline" aria-pressed={mode === 'simple'} data-testid="mode-simple" onclick={() => onmode('simple')}
-        >simple</button
-      >
-      <button class="seg select-outline" aria-pressed={mode === 'detail'} data-testid="mode-detail" onclick={() => onmode('detail')}
-        >detail</button
-      >
+      <button class="seg select-outline" aria-pressed={mode === 'simple'} data-testid="mode-simple" onclick={() => onmode('simple')}>
+        simple
+      </button>
+      <button class="seg select-outline" aria-pressed={mode === 'detail'} data-testid="mode-detail" onclick={() => onmode('detail')}>
+        detail
+      </button>
     </div>
   </div>
 </header>

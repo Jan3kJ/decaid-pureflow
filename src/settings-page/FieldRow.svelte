@@ -63,11 +63,11 @@
   {/snippet}
   {#if field.kind === 'number' || field.kind === 'time'}
     <button class="value" data-testid="setting-{field.id}" disabled={!known || busy} onclick={() => (typing = true)}>
-      <b
-        >{text}{#if field.kind === 'number' && field.unit}<i
-            >{field.unit}{#if field.note && typeof value === 'number'}, {field.note(value, settings)}{/if}</i
-          >{/if}</b
-      >
+      <b>
+        {text}{#if field.kind === 'number' && field.unit}<i>
+            {field.unit}{#if field.note && typeof value === 'number'}, {field.note(value, settings)}{/if}
+          </i>{/if}
+      </b>
     </button>
   {:else if field.kind === 'choice'}
     <div class="choices" data-testid="setting-{field.id}">
@@ -77,8 +77,10 @@
           aria-pressed={value === option.value}
           disabled={!read || busy}
           data-testid="setting-{field.id}-{option.value}"
-          onclick={() => value !== option.value && onwrite(option.value)}>{option.label}</button
+          onclick={() => value !== option.value && onwrite(option.value)}
         >
+          {option.label}
+        </button>
       {/each}
     </div>
   {:else if field.kind === 'switch'}

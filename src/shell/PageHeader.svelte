@@ -67,8 +67,10 @@
             onclick={() => {
               skin.reconnect();
               details = false;
-            }}>reconnect</button
+            }}
           >
+            reconnect
+          </button>
         {/if}
       </div>
     </div>

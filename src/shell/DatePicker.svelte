@@ -166,8 +166,10 @@
         class="arrow pick-key"
         aria-label={byYear ? 'previous year' : 'previous month'}
         data-testid="datepicker-prev"
-        onclick={() => step(-1)}>‹</button
+        onclick={() => step(-1)}
       >
+        ‹
+      </button>
       <div class="title" data-testid="datepicker-month" data-month={shownKey}>
         <button
           class="part pick-key select-outline"
@@ -190,8 +192,10 @@
         class="arrow pick-key"
         aria-label={byYear ? 'next year' : 'next month'}
         data-testid="datepicker-next"
-        onclick={() => step(1)}>›</button
+        onclick={() => step(1)}
       >
+        ›
+      </button>
     </div>
     <div class="weekdays">
       {#each WEEKDAYS as weekday (weekday)}<span class="weekday">{weekday}</span>{/each}
@@ -218,8 +222,10 @@
                   class:today={day === today}
                   aria-pressed={day === value}
                   data-testid="datepicker-day-{day}"
-                  onclick={() => onpick(day)}>{Number(day.slice(8))}</button
+                  onclick={() => onpick(day)}
                 >
+                  {Number(day.slice(8))}
+                </button>
               {:else}
                 <span></span>
               {/if}

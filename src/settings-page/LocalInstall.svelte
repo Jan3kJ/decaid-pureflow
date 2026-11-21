@@ -155,15 +155,15 @@
       data-testid="local-name"
       bind:value={typed}
     />
-    <button class="action" data-testid="local-install" disabled={busy || !typed.trim()} onclick={() => (asking = typed.trim())}
-      >install</button
-    >
+    <button class="action" data-testid="local-install" disabled={busy || !typed.trim()} onclick={() => (asking = typed.trim())}>
+      install
+    </button>
   </div>
   <div class="chips">
     {#each names as name (name)}
-      <button class="chip select-outline" aria-pressed={typed === name} data-testid="local-name-chip" onclick={() => (typed = name)}
-        >{name}</button
-      >
+      <button class="chip select-outline" aria-pressed={typed === name} data-testid="local-name-chip" onclick={() => (typed = name)}>
+        {name}
+      </button>
     {/each}
   </div>
 {/if}
@@ -175,8 +175,10 @@
       forgetToken();
       skin.client.manageToken = null;
       tokenKept = false;
-    }}>forget token</button
+    }}
   >
+    forget token
+  </button>
 {/if}
 {#if said}<p class="said" data-testid="local-said">{said}</p>{/if}
 

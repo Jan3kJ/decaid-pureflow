@@ -183,16 +183,17 @@
         <div class="line">
           <strong>{sensor.label}</strong>
           <span class="cell">stored <b data-testid="sensor-stored-{sensor.id}">{calibrationText(sensor.kind, entry.current)}</b></span>
-          <span class="cell"
-            >previous <b data-testid="sensor-previous-{sensor.id}">{calibrationText(sensor.kind, previous[sensor.id] ?? null)}</b
-            ></span
-          >
+          <span class="cell">
+            previous <b data-testid="sensor-previous-{sensor.id}">{calibrationText(sensor.kind, previous[sensor.id] ?? null)}</b>
+          </span>
           <button
             class="action"
             data-testid="sensor-restore-{sensor.id}"
             disabled={entry.busy || !canRestore(sensor, entry)}
-            onclick={() => restore(sensor)}>restore</button
+            onclick={() => restore(sensor)}
           >
+            restore
+          </button>
         </div>
         <div class="line">
           <span class="cell">machine reads <b data-testid="sensor-reading-{sensor.id}">{readingText(sensor, live)}</b></span>
@@ -201,17 +202,20 @@
             data-testid="sensor-capture-{sensor.id}"
             disabled={entry.busy || live === null}
             onclick={() => capture(sensor)}
-            >{entry.captured === null ? 'capture' : `captured ${readingText(sensor, entry.captured)}`}</button
           >
-          <button class="value" data-testid="sensor-measured-{sensor.id}" disabled={entry.busy} onclick={() => (typing = sensor)}
-            ><small>measured</small> <b>{entry.measured === null ? '–' : entry.measured}</b><i>{sensor.unit}</i></button
-          >
+            {entry.captured === null ? 'capture' : `captured ${readingText(sensor, entry.captured)}`}
+          </button>
+          <button class="value" data-testid="sensor-measured-{sensor.id}" disabled={entry.busy} onclick={() => (typing = sensor)}>
+            <small>measured</small> <b>{entry.measured === null ? '–' : entry.measured}</b><i>{sensor.unit}</i>
+          </button>
           <button
             class="action primary"
             data-testid="sensor-apply-{sensor.id}"
             disabled={entry.busy || !planned || 'why' in planned}
-            onclick={() => planned && 'to' in planned && (confirming = { sensor, ...planned })}>apply</button
+            onclick={() => planned && 'to' in planned && (confirming = { sensor, ...planned })}
           >
+            apply
+          </button>
         </div>
         <p class="status" data-testid="sensor-status-{sensor.id}">
           {#if entry.error}<span class="warn">{entry.error}</span>

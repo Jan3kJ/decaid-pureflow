@@ -229,8 +229,11 @@
           class="category select-outline"
           aria-current={entry.id === category.id}
           data-testid="settings-category-{entry.id}"
-          onclick={() => open(entry.id)}><span class="number">{entry.number}.</span> {entry.name}</button
+          onclick={() => open(entry.id)}
         >
+          <span class="number">{entry.number}.</span>
+          {entry.name}
+        </button>
         {#if entry.id === category.id}
           {#each visibleSubcategories(entry, bengle, developer) as sub (sub.id)}
             <button class="sub" data-testid="settings-sub-{sub.id}" onclick={() => jump(sub)}>{sub.name}</button>
@@ -349,9 +352,9 @@
           {#snippet about()}
             {#if done[sub.id]}<small data-testid="settings-done-{action}">{done[sub.id]}</small>{/if}
           {/snippet}
-          <button class="action" data-testid="settings-action-{action}" disabled={!!busy[action]} onclick={() => act(sub, action)}
-            >{ACTIONS[action].label}</button
-          >
+          <button class="action" data-testid="settings-action-{action}" disabled={!!busy[action]} onclick={() => act(sub, action)}>
+            {ACTIONS[action].label}
+          </button>
         </SettingsRow>
       {/each}
     {/if}

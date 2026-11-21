@@ -146,9 +146,9 @@
         />
       </SettingsRow>
       <SettingsRow label="target" spacing="tight">
-        <button class="action" disabled={busy} data-testid="cup-warmer-target" onclick={() => (typing = 'temperature')}
-          >{target}<i>°C</i></button
-        >
+        <button class="action" disabled={busy} data-testid="cup-warmer-target" onclick={() => (typing = 'temperature')}>
+          {target}<i>°C</i>
+        </button>
       </SettingsRow>
       {#if preheat}
         <SettingsRow
@@ -168,9 +168,9 @@
           />
         </SettingsRow>
         <SettingsRow label="pre-warm lead" spacing="tight">
-          <button class="action" disabled={busy} data-testid="cup-warmer-lead" onclick={() => (typing = 'lead')}
-            >{preheat.leadMinutes}<i>min</i></button
-          >
+          <button class="action" disabled={busy} data-testid="cup-warmer-lead" onclick={() => (typing = 'lead')}>
+            {preheat.leadMinutes}<i>min</i>
+          </button>
         </SettingsRow>
       {/if}
     </div>
@@ -210,14 +210,14 @@
       <b data-testid="calibration-step">{STEP_TEXT[calibration.step]}{running ? ` (${calibration.secondsRemaining} s)` : ''}</b>
     </SettingsRow>
     <SettingsRow label="last latch" spacing="tight">
-      <b data-testid="calibration-result"
-        >{RESULT_TEXT[calibration.status] ?? calibration.status}{#if calibration.detectedCell !== 'none'}, load cell {calibration.detectedCell.toUpperCase()}{/if}</b
-      >
+      <b data-testid="calibration-result">
+        {RESULT_TEXT[calibration.status] ?? calibration.status}{#if calibration.detectedCell !== 'none'}, load cell {calibration.detectedCell.toUpperCase()}{/if}
+      </b>
     </SettingsRow>
     <SettingsRow label="1. precision zero" hint="the platform stays empty." spacing="tight">
-      <button class="action" data-testid="calibration-zero" disabled={busy || running} onclick={() => sendCalibration('zero')}
-        >find zero</button
-      >
+      <button class="action" data-testid="calibration-zero" disabled={busy || running} onclick={() => sendCalibration('zero')}>
+        find zero
+      </button>
     </SettingsRow>
     <SettingsRow
       label="2. known mass on one load cell"
@@ -225,21 +225,23 @@
       spacing="tight"
     >
       <span class="pair">
-        <button class="action" disabled={busy || running} data-testid="calibration-grams" onclick={() => (typing = 'grams')}
-          >{grams}<i>g</i></button
-        >
+        <button class="action" disabled={busy || running} data-testid="calibration-grams" onclick={() => (typing = 'grams')}>
+          {grams}<i>g</i>
+        </button>
         <button
           class="action"
           data-testid="calibration-latch"
           disabled={busy || running || !validGrams(grams)}
-          onclick={() => sendCalibration({ latch: grams })}>latch</button
+          onclick={() => sendCalibration({ latch: grams })}
         >
+          latch
+        </button>
       </span>
     </SettingsRow>
     <SettingsRow label="stop the procedure" spacing="tight">
-      <button class="action" data-testid="calibration-abort" disabled={busy || !running} onclick={() => sendCalibration('abort')}
-        >abort</button
-      >
+      <button class="action" data-testid="calibration-abort" disabled={busy || !running} onclick={() => sendCalibration('abort')}>
+        abort
+      </button>
     </SettingsRow>
   </div>
 {:else}

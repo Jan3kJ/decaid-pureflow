@@ -137,8 +137,10 @@
             onclick={() => {
               photo = null;
               endReading();
-            }}>remove photo</button
+            }}
           >
+            remove photo
+          </button>
         {/if}
       </div>
     </div>
@@ -155,15 +157,19 @@
             class="form-button select-outline"
             aria-pressed={target === 'name'}
             data-testid="bean-chip-to-name"
-            onclick={() => (target = 'name')}>name</button
+            onclick={() => (target = 'name')}
           >
+            name
+          </button>
           <button
             type="button"
             class="form-button select-outline"
             aria-pressed={target === 'roaster'}
             data-testid="bean-chip-to-roaster"
-            onclick={() => (target = 'roaster')}>roaster</button
+            onclick={() => (target = 'roaster')}
           >
+            roaster
+          </button>
         </div>
         {#each chips as chip (chip)}
           <button type="button" class="form-button chip truncate" data-testid="bean-chip" onclick={() => put(chip)}>{chip}</button>
@@ -195,8 +201,10 @@
       class:none={!form.roastDate}
       aria-labelledby="bean-roast-date-label"
       data-testid="bean-roast-date"
-      onclick={() => (picking = true)}>{dateOf(form.roastDate) || 'no roast date'}</button
+      onclick={() => (picking = true)}
     >
+      {dateOf(form.roastDate) || 'no roast date'}
+    </button>
   </div>
   <Field label="notes" bind:value={form.notes} enterkeyhint="done" testid="bean-notes" />
 

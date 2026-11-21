@@ -24,8 +24,10 @@
         class="chip select-outline"
         aria-pressed={skin.settings.tankUnit === choice.value}
         data-testid="setting-tank-unit-{choice.value}"
-        onclick={() => skin.setSettings({ tankUnit: choice.value })}>{choice.label}</button
+        onclick={() => skin.setSettings({ tankUnit: choice.value })}
       >
+        {choice.label}
+      </button>
     {/each}
   </div>
 </SettingsRow>

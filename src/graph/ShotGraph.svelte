@@ -245,8 +245,10 @@
               class="tick temperature"
               data-testid="shot-tick-temperature"
               x={box.left - 0.5 * rem}
-              y={yTemperature(tick) + 0.3 * rem}>{tick}</text
+              y={yTemperature(tick) + 0.3 * rem}
             >
+              {tick}
+            </text>
           {/each}
         {/if}
         {#each axis.ticks as tick (tick)}

@@ -76,8 +76,10 @@
           class="chip select-outline"
           aria-pressed={type === option.value}
           data-testid="feedback-type-{option.value}"
-          onclick={() => (type = option.value)}>{option.label}<small>{option.hint}</small></button
+          onclick={() => (type = option.value)}
         >
+          {option.label}<small>{option.hint}</small>
+        </button>
       {/each}
     </div>
     <label>
@@ -105,15 +107,15 @@
       <div class="status" aria-live="polite">
         {#if failed}<b class="warn" data-testid="feedback-failed">Error: {failed}</b>{/if}
         {#if sent}
-          <b data-testid="feedback-sent"
-            >Submitted!
-            {#if sent.issueUrl}<a href={sent.issueUrl} target="_blank" rel="noopener noreferrer">View issue</a>{/if}</b
-          >
+          <b data-testid="feedback-sent">
+            Submitted!
+            {#if sent.issueUrl}<a href={sent.issueUrl} target="_blank" rel="noopener noreferrer">View issue</a>{/if}
+          </b>
         {/if}
       </div>
-      <button class="action primary" data-testid="feedback-send" disabled={!ready || sending} onclick={() => (asking = true)}
-        >{sending ? 'submitting…' : 'send'}</button
-      >
+      <button class="action primary" data-testid="feedback-send" disabled={!ready || sending} onclick={() => (asking = true)}>
+        {sending ? 'submitting…' : 'send'}
+      </button>
     </SettingsRow>
   </div>
 {/if}

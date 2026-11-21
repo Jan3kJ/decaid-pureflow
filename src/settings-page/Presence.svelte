@@ -93,8 +93,10 @@
       class="action"
       data-testid="schedule-add"
       disabled={busy || schedules === null || editing !== null}
-      onclick={() => edit(null)}>add schedule</button
+      onclick={() => edit(null)}
     >
+      add schedule
+    </button>
   </SettingsRow>
 
   {#if schedules !== null && !schedules.length && editing !== 'new'}
@@ -115,11 +117,13 @@
           class="action"
           data-testid="schedule-edit-{schedule.id}"
           disabled={busy || editing !== null}
-          onclick={() => edit(schedule)}>edit</button
+          onclick={() => edit(schedule)}
         >
-        <button class="action" data-testid="schedule-delete-{schedule.id}" disabled={busy} onclick={() => (deleting = schedule)}
-          >delete</button
-        >
+          edit
+        </button>
+        <button class="action" data-testid="schedule-delete-{schedule.id}" disabled={busy} onclick={() => (deleting = schedule)}>
+          delete
+        </button>
       </div>
     </SettingsRow>
   {/each}
@@ -137,15 +141,17 @@
               class="chip select-outline"
               aria-pressed={form.days.includes(i + 1)}
               data-testid="schedule-day-{i + 1}"
-              onclick={() => toggleDay(i + 1)}>{day}</button
+              onclick={() => toggleDay(i + 1)}
             >
+              {day}
+            </button>
           {/each}
         </div>
       </SettingsRow>
       <SettingsRow label="keep awake for" hint="minutes after it wakes, at most 720 (12 hours); 0 only wakes.">
-        <button class="value" data-testid="schedule-keep-awake" onclick={() => (typing = 'keep-awake')}
-          ><b>{form.keepAwake}<i>min</i></b></button
-        >
+        <button class="value" data-testid="schedule-keep-awake" onclick={() => (typing = 'keep-awake')}>
+          <b>{form.keepAwake}<i>min</i></b>
+        </button>
       </SettingsRow>
       <SettingsRow end>
         <button class="action" data-testid="schedule-cancel" disabled={busy} onclick={() => (editing = null)}>cancel</button>

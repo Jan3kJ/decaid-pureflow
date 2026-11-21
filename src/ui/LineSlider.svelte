@@ -132,8 +132,9 @@
       <div class="live-value" data-testid="{numberTestid}-live" style:left="{liveFraction * 100}%">{live.text}</div>
     {/if}
   </div>
-  <span class="value" data-testid={numberTestid} bind:clientWidth={numberWidth} style:left="{left}px"><b>{shown}</b><i>{unit}</i></span
-  >
+  <span class="value" data-testid={numberTestid} bind:clientWidth={numberWidth} style:left="{left}px">
+    <b>{shown}</b><i>{unit}</i>
+  </span>
 </div>
 
 <style>

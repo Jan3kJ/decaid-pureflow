@@ -158,9 +158,9 @@
     {#snippet about()}
       {#if checked}<small data-testid="plugins-checked">{checked}</small>{/if}
     {/snippet}
-    <button class="action" data-testid="plugins-check" disabled={checking || !plugins} onclick={checkUpdates}
-      >{checking ? 'checking…' : 'check'}</button
-    >
+    <button class="action" data-testid="plugins-check" disabled={checking || !plugins} onclick={checkUpdates}>
+      {checking ? 'checking…' : 'check'}
+    </button>
   </SettingsRow>
 
   {#if readError}
@@ -204,9 +204,9 @@
           label="update {plugin.pendingUpdate.version ?? ''}"
           hint="asks for: {(plugin.pendingUpdate.addedPermissions ?? []).join(', ') || 'more permissions'}"
         >
-          <button class="action" data-testid="plugin-approve-{plugin.id}" disabled={!!busy[plugin.id]} onclick={() => approve(plugin)}
-            >approve</button
-          >
+          <button class="action" data-testid="plugin-approve-{plugin.id}" disabled={!!busy[plugin.id]} onclick={() => approve(plugin)}>
+            approve
+          </button>
         </SettingsRow>
       {/if}
 
@@ -239,8 +239,9 @@
               disabled={!read || !!busy[at]}
               data-testid="plugin-setting-{plugin.id}-{control.key}"
               onclick={() => (typing = { plugin, control, current: value === null ? '' : textOf(value) })}
-              ><b>{value === null ? '–' : textOf(value)}</b></button
             >
+              <b>{value === null ? '–' : textOf(value)}</b>
+            </button>
           {:else if control.kind === 'enum'}
             <div class="choices" data-testid="plugin-setting-{plugin.id}-{control.key}">
               {#each control.values as option (option)}
@@ -249,8 +250,10 @@
                   aria-pressed={value === option}
                   disabled={!read || !!busy[at]}
                   data-testid="plugin-setting-{plugin.id}-{control.key}-{option}"
-                  onclick={() => value !== option && write(plugin, control, option)}>{option}</button
+                  onclick={() => value !== option && write(plugin, control, option)}
                 >
+                  {option}
+                </button>
               {/each}
             </div>
           {:else if control.kind === 'secure'}

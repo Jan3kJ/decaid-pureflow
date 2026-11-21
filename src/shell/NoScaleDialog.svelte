@@ -27,8 +27,10 @@
         onclick={() => {
           onfind();
           onclose();
-        }}>look for the scale</button
+        }}
       >
+        look for the scale
+      </button>
     </div>
   </div>
 </Dialog>

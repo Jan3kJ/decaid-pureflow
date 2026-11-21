@@ -88,9 +88,14 @@
         <button class="pad-key" data-testid="numpad-key-dot" disabled={!decimals} onclick={() => key('.')}>.</button>
       {/if}
       <button class="pad-key" data-testid="numpad-key-0" onclick={() => key('0')}>0</button>
-      <button class="pad-key" aria-label="delete the last digit" data-testid="numpad-back" onclick={() => (typed = typed.slice(0, -1))}
-        >⌫</button
+      <button
+        class="pad-key"
+        aria-label="delete the last digit"
+        data-testid="numpad-back"
+        onclick={() => (typed = typed.slice(0, -1))}
       >
+        ⌫
+      </button>
       <button class="clear pad-key" data-testid="numpad-clear" onclick={() => (typed = '')}>clear</button>
       <button class="confirm primary pad-key" data-testid="numpad-confirm" disabled={!inRange} onclick={confirm}>set</button>
     </div>

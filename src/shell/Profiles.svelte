@@ -313,9 +313,9 @@
                 <button class="rename" data-testid="profile-rename" disabled={busy} onclick={() => askRename(entry)}>rename</button>
               {/if}
               {#if buttons.delete}
-                <button class="delete danger" data-testid="profile-delete" disabled={busy} onclick={() => (asking = entry)}
-                  >delete</button
-                >
+                <button class="delete danger" data-testid="profile-delete" disabled={busy} onclick={() => (asking = entry)}>
+                  delete
+                </button>
               {/if}
             </div>
           {/if}
@@ -333,9 +333,9 @@
           >
             <span class="title truncate">{entry.profile.title}</span>
             <!-- The loaded row, open, says why it has no delete. -->
-            {#if open && deleteRefusal(entry, current) === 'loaded'}<span class="refusal warning" data-testid="profile-refusal"
-                >{LOADED_REFUSAL}</span
-              >
+            {#if open && deleteRefusal(entry, current) === 'loaded'}<span class="refusal warning" data-testid="profile-refusal">
+                {LOADED_REFUSAL}
+              </span>
             {:else}
               {#if isLoaded(entry)}<span class="tag loaded">loaded</span>{/if}
               {#if entry.isDefault}<span class="tag" data-testid="default-tag">A-Flow 3.0 default</span>

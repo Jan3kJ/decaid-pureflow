@@ -73,8 +73,10 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
                     data-testid="script-chip-{index}-{part.chip}"
                     aria-label="{part.text}, tap for the next"
                     {disabled}
-                    onclick={() => cycle(index, part.chip)}>{part.text}</button
+                    onclick={() => cycle(index, part.chip)}
                   >
+                    {part.text}
+                  </button>
                 {:else}
                   <button
                     class="pill {part.tone}"
@@ -86,8 +88,10 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
                     onclick={() => {
                       onselect(index);
                       ontype(index, part.value);
-                    }}>{part.text}</button
+                    }}
                   >
+                    {part.text}
+                  </button>
                 {/if}
               {/each}
             </li>

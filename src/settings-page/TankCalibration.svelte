@@ -118,9 +118,9 @@
         : `pour until ${next} ml in all.`}
   >
     {#snippet about()}
-      <small data-testid="tank-calibration-steady"
-        >{level === null ? 'no level from the machine' : steady ? 'steady' : 'settling'}</small
-      >
+      <small data-testid="tank-calibration-steady">
+        {level === null ? 'no level from the machine' : steady ? 'steady' : 'settling'}
+      </small>
     {/snippet}
     <div class="controls">
       <b data-testid="tank-calibration-level">{level === null ? '–' : `${level.currentLevel.toFixed(1)} mm`}</b>

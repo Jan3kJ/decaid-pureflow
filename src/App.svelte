@@ -353,8 +353,10 @@
           aria-label={PAGE_NAMES[page]}
           aria-current={page === screen ? 'page' : undefined}
           disabled={held}
-          onclick={() => slideTo(page)}><span></span></button
+          onclick={() => slideTo(page)}
         >
+          <span></span>
+        </button>
       {/each}
     </div>
   {/if}

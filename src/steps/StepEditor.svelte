@@ -266,15 +266,15 @@ Licensed under the GNU General Public License v3.0 or later; used here under GPL
     <!-- The shortcut to the profile picker: a profile chosen there is loaded and opens in its editor. -->
     <ProfileName name={profile.title} disabled={busy} width="24rem" onclick={() => skin.leave('profiles')} />
     <div class="group tabs" role="group" aria-label="view">
-      <button class="seg select-outline" aria-pressed={tab === 'cards'} data-testid="tab-cards" onclick={() => open('cards')}
-        >cards</button
-      >
-      <button class="seg select-outline" aria-pressed={tab === 'script'} data-testid="tab-script" onclick={() => open('script')}
-        >script</button
-      >
-      <button class="seg select-outline" aria-pressed={tab === 'settings'} data-testid="tab-settings" onclick={() => open('settings')}
-        >settings</button
-      >
+      <button class="seg select-outline" aria-pressed={tab === 'cards'} data-testid="tab-cards" onclick={() => open('cards')}>
+        cards
+      </button>
+      <button class="seg select-outline" aria-pressed={tab === 'script'} data-testid="tab-script" onclick={() => open('script')}>
+        script
+      </button>
+      <button class="seg select-outline" aria-pressed={tab === 'settings'} data-testid="tab-settings" onclick={() => open('settings')}>
+        settings
+      </button>
     </div>
     <span class="count" data-testid="step-count">{profile.steps.length} {profile.steps.length === 1 ? 'step' : 'steps'}</span>
     <div class="group" role="group" aria-label="profile actions">

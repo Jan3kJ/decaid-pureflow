@@ -330,8 +330,10 @@
                 class="chip select-outline"
                 aria-pressed={settings[item.key] === choice.value}
                 data-testid="setting-{item.id}-{choice.value}"
-                onclick={() => skin.setSettings({ [item.key]: choice.value })}>{choice.label}</button
+                onclick={() => skin.setSettings({ [item.key]: choice.value })}
               >
+                {choice.label}
+              </button>
             {/each}
           </div>
         </SettingsRow>
@@ -367,9 +369,9 @@
           {#if skin.backupError}<small class="warn" data-testid="backup-error">{skin.backupError}</small>{/if}
           {#if restored}<small data-testid="backup-restored">{restored}</small>{/if}
         {/snippet}
-        <button class="retry" data-testid="backup-restore" onclick={() => ((restored = null), (confirming = true))}
-          >restore from backup</button
-        >
+        <button class="retry" data-testid="backup-restore" onclick={() => ((restored = null), (confirming = true))}>
+          restore from backup
+        </button>
       </SettingsRow>
     {/if}
     {#if showsRow('skin-backup', VERSION_ROW.id)}
@@ -398,16 +400,20 @@
               aria-label="less {value.label}"
               data-testid="tuning-{value.id}-less"
               disabled={tuning[value.key] <= 0}
-              onclick={() => tune(value, tuning[value.key] - TUNING_STEP)}>−</button
+              onclick={() => tune(value, tuning[value.key] - TUNING_STEP)}
             >
+              −
+            </button>
             <b data-testid="tuning-{value.id}-value">{tuning[value.key].toFixed(2)}</b>
             <button
               class="action"
               aria-label="more {value.label}"
               data-testid="tuning-{value.id}-more"
               disabled={tuning[value.key] >= 2}
-              onclick={() => tune(value, tuning[value.key] + TUNING_STEP)}>+</button
+              onclick={() => tune(value, tuning[value.key] + TUNING_STEP)}
             >
+              +
+            </button>
           </div>
         </SettingsRow>
       {/if}
@@ -418,8 +424,10 @@
           class="retry"
           data-testid="tuning-reset"
           disabled={TUNING_VALUES.every((value) => tuning[value.key] === TUNING_DEFAULT)}
-          onclick={resetTuning}>reset</button
+          onclick={resetTuning}
         >
+          reset
+        </button>
       </SettingsRow>
     {/if}
     {#if showsRow('skin-developer', LOCAL_INSTALL_ROW.id)}
@@ -470,8 +478,10 @@
             class="choice select-outline"
             aria-pressed={settings.startProfiles[choosing] === null}
             data-testid="start-choice-empty"
-            onclick={() => choose(null)}><span class="none">empty</span></button
+            onclick={() => choose(null)}
           >
+            <span class="none">empty</span>
+          </button>
         </li>
         {#each offered as choice (choice.title)}
           <li>
@@ -480,8 +490,10 @@
               aria-pressed={settings.startProfiles[choosing] === choice.title}
               data-testid="start-choice"
               data-title={choice.title}
-              onclick={() => choose(choice.title)}>{choice.name}</button
+              onclick={() => choose(choice.title)}
             >
+              {choice.name}
+            </button>
           </li>
         {/each}
         {#if !records && !unread}<li class="none">Reading the profiles …</li>{/if}

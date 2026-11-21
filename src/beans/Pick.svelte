@@ -146,15 +146,19 @@
             class="step"
             aria-label="finer"
             data-testid="pick-setting-down"
-            onclick={() => (setting = stepSetting(grinder, setting, -1))}>−</button
+            onclick={() => (setting = stepSetting(grinder, setting, -1))}
           >
+            −
+          </button>
           <button class="value" data-testid="pick-setting" disabled={preset} onclick={() => (typing = true)}>{setting ?? '–'}</button>
           <button
             class="step"
             aria-label="coarser"
             data-testid="pick-setting-up"
-            onclick={() => (setting = stepSetting(grinder, setting, 1))}>+</button
+            onclick={() => (setting = stepSetting(grinder, setting, 1))}
           >
+            +
+          </button>
         </div>
       </section>
     </div>
